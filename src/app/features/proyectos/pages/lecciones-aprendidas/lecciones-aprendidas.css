@@ -1,0 +1,61 @@
+img {
+  width: 500px;
+}
+
+.select-wrapper {
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 100%;
+
+  background-repeat: no-repeat;
+  background-image: url("data:image/svg+xml;utf8,<svg width='16' height='9' viewBox='0 0 16 9' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83984 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z' fill='%230086A5'/></svg>");
+  background-position: right 14px center;
+  padding-right: 30px;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-modal-in {
+  animation: modalIn 220ms ease-out forwards;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

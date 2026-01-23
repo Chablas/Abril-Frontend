@@ -1,0 +1,135 @@
+<div class="bg-white rounded-lg p-[20px]">
+        <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+        <div class="flex w-full">
+            <button (click)="openCreateModal($event)"
+                class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                <div class="flex items-center gap-[10px]">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <p>Nuevo registro</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-col justify-center items-center px-[40px]">
+        <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+
+            <table class="w-full table-fixed">
+                <thead class="bg-[#E5F7D1]">
+                    <tr class="text-[#64BC04]">
+                        <th class="w-[200px]">Fase</th>
+                        <th class="w-[200px]">Etapa</th>
+                        <th class="w-[200px]">Subetapa</th>
+                        <th class="w-[200px]">Subespecialidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <ng-container *ngFor="let phase of filtersRelations">
+            
+                        <!-- Fase sin etapas -->
+                        <tr *ngIf="!phase.stages?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                            <td class="text-center">{{ phase.phaseDescription }}</td>
+                            <td class="text-center">-</td>
+                            <td class="text-center">-</td>
+                            <td class="text-center">-</td>
+                        </tr>
+            
+                        <ng-container *ngFor="let stage of phase.stages">
+            
+                            <!-- Etapa sin subetapas -->
+                            <tr *ngIf="!stage.subStages?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                                <td class="text-center">{{ phase.phaseDescription }}</td>
+                                <td class="text-center">{{ stage.stageDescription }}</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                            </tr>
+            
+                            <ng-container *ngFor="let sub of stage.subStages">
+            
+                                <!-- Subetapa sin subespecialidades -->
+                                <tr *ngIf="!sub.subSpecialties?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                                    <td class="text-center">{{ phase.phaseDescription }}</td>
+                                    <td class="text-center">{{ stage.stageDescription }}</td>
+                                    <td class="text-center">{{ sub.subStageDescription }}</td>
+                                    <td class="text-center">-</td>
+                                </tr>
+            
+                                <ng-container *ngFor="let spec of sub.subSpecialties">
+                                    <tr class="border-b border-[#D6DEE5] h-[30px]">
+                                        <td class="text-center">{{ phase.phaseDescription }}</td>
+                                        <td class="text-center">{{ stage.stageDescription }}</td>
+                                        <td class="text-center">{{ sub.subStageDescription }}</td>
+                                        <td class="text-center">{{ spec.subSpecialtyDescription }}</td>
+                                    </tr>
+                                </ng-container>
+            
+                            </ng-container>
+                        </ng-container>
+                    </ng-container>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto" (click)="closeModal()" >
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[800px] rounded-xl shadow-xl animate-modal-in" (click)="$event.stopPropagation()">
+                <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                    <h1 class="text-2xl text-center">AGREGAR RELACIÓN</h1>
+                    <div class="flex justify-between w-full flex-wrap">
+                        <div class="flex flex-col">
+                            <p class="text-[#64BC04]">Fase</p>
+                            <select [(ngModel)]="createModalSelectedPhase"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="null">Seleccionar</option>
+                                <option *ngFor="let item of createModalShowFormData.phases" [ngValue]="item">{{item.phaseDescription}}</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="text-[#64BC04]">Etapa</p>
+                            <select [(ngModel)]="createModalSelectedStage"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="null">Seleccionar</option>
+                                <option *ngFor="let item of createModalShowFormData.stages" [ngValue]="item">{{item.stageDescription}}</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="text-[#64BC04]">Subetapa</p>
+                            <select [(ngModel)]="createModalSelectedSubStage"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="null">Seleccionar</option>
+                                <option *ngFor="let item of createModalShowFormData.subStages" [ngValue]="item">{{item.subStageDescription}}</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="text-[#64BC04]">Subespecialidad</p>
+                            <select [(ngModel)]="createModalSelectedSubSpecialty"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="null">Seleccionar</option>
+                                <option *ngFor="let item of createModalShowFormData.subSpecialties" [ngValue]="item">{{item.subSpecialtyDescription}}</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col jus">
+                            <p class="text-[#64BC04]">Estado</p>
+                            <select [(ngModel)]="createModalSelectedActive"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="true">ACTIVO</option>
+                                <option [ngValue]="false">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button (click)="saveItem()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                        <p class="text-[#ffffff] text-lg">Guardar</p>
+                    </button>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,11 @@
+<div class="flex h-screen overflow-hidden">
+    <app-sidebar></app-sidebar>
+    <div class="w-full overflow-hidden bg-white py-[20px] pr-[20px] h-full">
+        <div class="w-full flex flex-col flex-1 overflow-hidden rounded rounded-lg h-full">
+            <app-header></app-header>
+            <main class="w-full flex-1 bg-[#eef7fc] px-[20px] pb-[20px] overflow-hidden">
+                <router-outlet></router-outlet>
+            </main>
+        </div>
+    </div>
+</div>

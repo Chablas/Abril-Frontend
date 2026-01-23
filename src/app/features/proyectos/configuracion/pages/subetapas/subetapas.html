@@ -1,0 +1,74 @@
+<div class="bg-white rounded-lg p-[20px]">
+        <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+        <div class="flex w-full">
+            <button (click)="createModal($event)"
+                class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                <div class="flex items-center gap-[10px]">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <p>Nuevo registro</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-col justify-center items-center px-[40px]">
+        <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+
+            <table class="w-full table-fixed">
+                <thead class="bg-[#E5F7D1]">
+                    <tr class="text-[#64BC04]">
+                        <th class="w-[50px]"></th>
+                        <th class="w-[150px]">Descripción</th>
+                        <th class="w-[150px]">Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let item of subStages.data" class="border-b border-[#D6DEE5] h-[30px]">
+                        <td></td>
+
+                        <td class="text-center">{{ item.subStageDescription }}</td>
+
+                        <td class="text-center">
+                            <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
+                                      'bg-[#D7FAF4] text-[#009C87]': item.active == true,
+                                      'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
+                                {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto" (click)="closeModal()" >
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[500px] rounded-xl shadow-xl animate-modal-in" (click)="$event.stopPropagation()">
+                <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                    <h1 class="text-2xl text-center">AGREGAR SUBETAPA</h1>
+                    <div class="flex justify-between w-full">
+                        <div class="flex flex-col">
+                            <p class="text-[#64BC04]">Descripción</p>
+                            <input type="text" [(ngModel)]="createDto.subStageDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                        </div>
+                        <div class="flex flex-col jus">
+                            <p class="text-[#64BC04]">Estado</p>
+                            <select [(ngModel)]="createDto.active"
+                                class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                                <option [ngValue]="true">ACTIVO</option>
+                                <option [ngValue]="false">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button (click)="saveSubStage()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                        <p class="text-[#ffffff] text-lg">Guardar</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

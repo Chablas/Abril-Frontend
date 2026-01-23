@@ -1,0 +1,168 @@
+<div class="max-w-xs min-h-screen py-[20px] px-[5px]">
+  <div class="flex flex-col items-center w-[100px] gap-[5px]">
+    <!-- ITEM PRINCIPAL -->
+    <div
+      class="relative flex flex-col items-center w-full cursor-pointer
+                   hover:bg-[#E5F7D1] rounded-lg p-[5px]"
+                   (click)="toggleMenu('proyectos', $event)"
+                   [ngClass]="{
+                    'bg-[#E5F7D1]': isActiveModule('proyectos'),
+                    'hover:bg-[#E5F7D1]': !isActiveModule('proyectos')
+                  }"
+    >
+      <!-- ICONO -->
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 25 25"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12.5007 7.29134C13.0759 7.29134 13.5423 6.82497 13.5423 6.24967C13.5423 5.67438 13.0759 5.20801 12.5007 5.20801C11.9254 5.20801 11.459 5.67438 11.459 6.24967C11.459 6.82497 11.9254 7.29134 12.5007 7.29134Z"
+          fill="#64BC04"
+        />
+        <path
+          d="M6.25 17.708H18.75V19.7913H6.25V17.708ZM10.4167 12.3226L13.325 15.233L17.4208 11.134L18.75 12.4997V8.33301H14.5833L15.9479 9.66113L13.324 12.2851L10.4167 9.37467L6.25 13.5413L7.72292 15.0143L10.4167 12.3226Z"
+          fill="#64BC04"
+        />
+        <path
+          d="M19.7923 3.1254H16.3569C16.2537 2.97202 16.1425 2.82424 16.0236 2.68269L16.0132 2.67019C15.2475 1.77912 14.1709 1.2136 13.0027 1.08894C12.6709 1.02634 12.3304 1.02634 11.9986 1.08894C10.8304 1.2136 9.75376 1.77912 8.98815 2.67019L8.97773 2.68269C8.85888 2.8239 8.74761 2.97133 8.6444 3.12436V3.1254H5.20898C4.38044 3.12622 3.58606 3.45573 3.00019 4.0416C2.41432 4.62747 2.08481 5.42185 2.08398 6.2504V20.8337C2.08481 21.6623 2.41432 22.4567 3.00019 23.0425C3.58606 23.6284 4.38044 23.9579 5.20898 23.9587H19.7923C20.6209 23.9579 21.4152 23.6284 22.0011 23.0425C22.587 22.4567 22.9165 21.6623 22.9173 20.8337V6.2504C22.9165 5.42185 22.587 4.62747 22.0011 4.0416C21.4152 3.45573 20.6209 3.12622 19.7923 3.1254ZM20.834 20.8337C20.834 21.11 20.7242 21.375 20.5289 21.5703C20.3335 21.7656 20.0686 21.8754 19.7923 21.8754H5.20898C4.93272 21.8754 4.66777 21.7656 4.47241 21.5703C4.27706 21.375 4.16732 21.11 4.16732 20.8337V6.2504C4.16732 5.97413 4.27706 5.70918 4.47241 5.51383C4.66777 5.31848 4.93272 5.20873 5.20898 5.20873H9.94857C10.0681 4.62004 10.3875 4.09077 10.8526 3.71062C11.3177 3.33046 11.8999 3.12279 12.5007 3.12279C13.1014 3.12279 13.6836 3.33046 14.1487 3.71062C14.6138 4.09077 14.9332 4.62004 15.0527 5.20873H19.7923C20.0686 5.20873 20.3335 5.31848 20.5289 5.51383C20.7242 5.70918 20.834 5.97413 20.834 6.2504V20.8337Z"
+          fill="#64BC04"
+        />
+      </svg>
+
+      <p class="font-sans text-sm mt-1">Proyectos</p>
+
+      <!-- MENÚ DESPLEGABLE -->
+      <div
+        *ngIf="activeMenu === 'proyectos'"
+        class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50"
+      >
+        <!-- ITEM SIMPLE -->
+        <a
+          routerLink="/proyectos/lecciones"
+          class="block px-4 py-2 text-sm rounded-xl
+                       hover:bg-[#E5F7D1] font-sans"
+        >
+          Lecciones aprendidas
+        </a>
+
+        <!-- ITEM CON SUBMENÚ -->
+        <div class="relative" (click)="toggleConfig($event)">
+          <div
+            class="flex justify-between items-center px-4 py-2 text-sm
+                         rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer"
+          >
+            <span>Configuración</span>
+            <svg
+              width="9"
+              height="16"
+              viewBox="0 0 9 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z"
+                fill="#64BC04"
+              />
+            </svg>
+          </div>
+
+          <!-- SUBMENÚ -->
+          <div
+            *ngIf="configOpen"
+            class="absolute left-full top-0 ml-2 w-56
+                         bg-white rounded-xl shadow-lg z-50 p-[5px]"
+          >
+            <a
+              routerLink="/proyectos/configuracion/proyectos"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                          hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Proyectos
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/areas"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                            hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Áreas
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/fases"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Fases
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/etapas"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Etapas
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/subetapas"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Subetapas
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/subespecialidades"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Subespecialidades
+            </a>
+            <a
+              routerLink="/proyectos/configuracion/relaciones"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Config. Relaciones
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="relative flex flex-col items-center w-full cursor-pointer
+                    hover:bg-[#E5F7D1] rounded-lg p-[5px]" (click)="toggleMenu('seguridad', $event)"
+                    [ngClass]="{
+                      'bg-[#E5F7D1]': isActiveModule('seguridad'),
+                      'hover:bg-[#E5F7D1]': !isActiveModule('seguridad')
+                    }"
+    >
+      <svg
+        width="30"
+        height="30"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 5C12.7956 5 13.5587 5.31607 14.1213 5.87868C14.6839 6.44129 15 7.20435 15 8C15 8.79565 14.6839 9.55871 14.1213 10.1213C13.5587 10.6839 12.7956 11 12 11C11.2044 11 10.4413 10.6839 9.87868 10.1213C9.31607 9.55871 9 8.79565 9 8C9 7.20435 9.31607 6.44129 9.87868 5.87868C10.4413 5.31607 11.2044 5 12 5ZM17.13 17C15.9178 18.8541 14.1074 20.2374 12 20.92C9.89255 20.2374 8.08222 18.8541 6.87 17C6.53 16.5 6.24 16 6 15.47C6 13.82 8.71 12.47 12 12.47C15.29 12.47 18 13.79 18 15.47C17.76 16 17.47 16.5 17.13 17Z"
+          fill="#64BC04"
+        />
+      </svg>
+      <p class="font-sans text-sm mt-1">Seguridad</p>
+      <div *ngIf="activeMenu === 'seguridad'" class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50">
+        <!-- ITEM SIMPLE -->
+        <a routerLink="/seguridad/usuarios" class="block px-4 py-2 text-sm rounded-xl
+                                 hover:bg-[#E5F7D1] font-sans">
+          Creación de usuarios
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
