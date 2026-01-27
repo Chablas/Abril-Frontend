@@ -19,4 +19,7 @@ export class AreaService {
   createArea(dto: AreaCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deleteArea(areaId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${areaId}`);
+  }
 }

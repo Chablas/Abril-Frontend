@@ -19,4 +19,7 @@ export class PhaseStageSubStageSubSpecialtyService {
   createPhaseStageSubStageSubSpecialty(form: PhaseStageSubStageSubSpecialtySendFormDataDTO) {
     return this.http.post(`${this.apiUrl}`, form);
   }
+  deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${phaseStageSubStageSubSpecialtyId}`);
+  }
 }

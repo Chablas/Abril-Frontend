@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { CommonModule } from "@angular/common";
 import { SubStageCreateDTO } from "../../../../../models/subStageCreate.model";
 import { FormsModule } from "@angular/forms";
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-subetapas',
@@ -14,7 +15,8 @@ import { FormsModule } from "@angular/forms";
 })
 export class Subetapas implements OnInit {
   subStages!: SubStagePagedDTO;
-  loading = false;
+  loadingModal = false;
+  loadingLoadSubStages = false;
 
   showCreateModal = false;
   createDto: SubStageCreateDTO = {
@@ -28,19 +30,23 @@ export class Subetapas implements OnInit {
     this.loadSubStages();
   }
   loadSubStages() {
-    this.loading = true;
-  
+    this.loadingLoadSubStages = true;
     forkJoin({
       subStages: this.subStageService.getSubStagePaged(1),
     }).subscribe({
       next: ({ subStages }) => {
         this.subStages = subStages;
-        this.loading = false;
+        this.loadingLoadSubStages = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading data', err);
-        this.loading = false;
+        this.loadingLoadSubStages = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }
@@ -49,20 +55,71 @@ export class Subetapas implements OnInit {
     if (!this.createDto.subStageDescription.trim()) {
       return;
     }
-
+    this.loadingModal = true;
     this.subStageService.createSubStage(this.createDto).subscribe({
       next: () => {
         this.showCreateModal = false;
         this.createDto = { subStageDescription: '', active: true };
+        this.loadingModal = false;
+        this.cdr.detectChanges();
         this.loadSubStages();
+        Swal.fire({
+          title: 'Subetapa creada exitosamente',
+          icon: 'success',
+          draggable: true
+        });
       },
       error: err => {
-        console.error('Error creating phase', err);
+        this.loadingModal = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }
   closeModal() {
     this.showCreateModal = false;
+  }
+  deleteSubStage(subStageId: number, event: MouseEvent) {
+    event.stopPropagation();
+    Swal.fire({
+      title: '¿Estás seguro/a?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: '¡Sí, elimínalo!'
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.loadingModal = true;
+        this.subStageService.deleteSubStage(subStageId, 1).subscribe({
+          next: () => {
+            this.loadSubStages();
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: 'El registro ha sido eliminado.',
+              confirmButtonColor: '#64BC04',
+              icon: 'success'
+            });
+          },
+          error: (error) => {
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: 'Error',
+              text: error.error,
+              icon: 'error'
+            });
+          },
+        });
+      }
+    });
   }
 
   createModal(event: MouseEvent) {

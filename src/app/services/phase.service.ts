@@ -19,4 +19,7 @@ export class PhaseService {
   createPhase(dto: PhaseCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deletePhase(phaseId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${phaseId}`);
+  }
 }

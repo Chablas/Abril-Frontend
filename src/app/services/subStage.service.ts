@@ -19,4 +19,7 @@ export class SubStageService {
   createSubStage(dto: SubStageCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deleteSubStage(subStageId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${subStageId}`);
+  }
 }

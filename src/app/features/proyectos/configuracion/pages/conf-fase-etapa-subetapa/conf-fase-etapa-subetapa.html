@@ -21,6 +21,7 @@
             <table class="w-full table-fixed">
                 <thead class="bg-[#E5F7D1]">
                     <tr class="text-[#64BC04]">
+                        <th class="w-[200px]"></th>
                         <th class="w-[200px]">Fase</th>
                         <th class="w-[200px]">Etapa</th>
                         <th class="w-[200px]">Subetapa</th>
@@ -29,9 +30,18 @@
                 </thead>
                 <tbody>
                     <ng-container *ngFor="let phase of filtersRelations">
-            
+                        
                         <!-- Fase sin etapas -->
                         <tr *ngIf="!phase.stages?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                            <td class="text-center">
+                                <button class="cursor-pointer" (click)="deletePhaseStageSubStageSubSpecialty(phase.linkId!, $event)">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                            fill="#64BC04" />
+                                    </svg>
+                                </button>
+                            </td>
                             <td class="text-center">{{ phase.phaseDescription }}</td>
                             <td class="text-center">-</td>
                             <td class="text-center">-</td>
@@ -42,6 +52,15 @@
             
                             <!-- Etapa sin subetapas -->
                             <tr *ngIf="!stage.subStages?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                                <td class="text-center">
+                                    <button class="cursor-pointer" (click)="deletePhaseStageSubStageSubSpecialty(stage.linkId!, $event)">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                                fill="#64BC04" />
+                                        </svg>
+                                    </button>
+                                </td>
                                 <td class="text-center">{{ phase.phaseDescription }}</td>
                                 <td class="text-center">{{ stage.stageDescription }}</td>
                                 <td class="text-center">-</td>
@@ -52,6 +71,15 @@
             
                                 <!-- Subetapa sin subespecialidades -->
                                 <tr *ngIf="!sub.subSpecialties?.length" class="border-b border-[#D6DEE5] h-[30px]">
+                                    <td class="text-center">
+                                        <button class="cursor-pointer" (click)="deletePhaseStageSubStageSubSpecialty(sub.linkId!, $event)">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path
+                                                    d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                                    fill="#64BC04" />
+                                            </svg>
+                                        </button>
+                                    </td>
                                     <td class="text-center">{{ phase.phaseDescription }}</td>
                                     <td class="text-center">{{ stage.stageDescription }}</td>
                                     <td class="text-center">{{ sub.subStageDescription }}</td>
@@ -60,6 +88,15 @@
             
                                 <ng-container *ngFor="let spec of sub.subSpecialties">
                                     <tr class="border-b border-[#D6DEE5] h-[30px]">
+                                        <td class="text-center">
+                                            <button class="cursor-pointer" (click)="deletePhaseStageSubStageSubSpecialty(spec.linkId!, $event)">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path
+                                                        d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                                                        fill="#64BC04" />
+                                                </svg>
+                                            </button>
+                                        </td>
                                         <td class="text-center">{{ phase.phaseDescription }}</td>
                                         <td class="text-center">{{ stage.stageDescription }}</td>
                                         <td class="text-center">{{ sub.subStageDescription }}</td>
@@ -131,5 +168,7 @@
             </div>
         </div>
     </div>
-
 </div>
+
+<div *ngIf="loadingModal" class="loader"></div>
+<div *ngIf="loadingLoadPhaseStageSubStageSubSpecialties" class="loader"></div>

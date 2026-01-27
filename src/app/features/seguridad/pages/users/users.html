@@ -110,7 +110,7 @@
               <p class="text-[#64BC04]">DNI</p>
               <input
                 type="text"
-                [(ngModel)]="createDto.dni"
+                [(ngModel)]="createDto.documentIdentityCode"
                 class="border border-[#E2E2E2] rounded-lg p-[10px]"
                 placeholder="Escribe aquí"
               />
@@ -121,19 +121,11 @@
             </svg>
                 
             </div>
-            <div class="flex flex-col">
-              <p class="text-[#64BC04]">Primer nombre</p>
+            <div class="flex flex-1 flex-col">
+              <p class="text-[#64BC04]">Nombres</p>
               <input
                 type="text"
-                [(ngModel)]="createDto.firstName"
-                class="border border-[#E2E2E2] rounded-lg p-[10px]"
-              />
-            </div>
-            <div class="flex flex-col">
-              <p class="text-[#64BC04]">Segundo nombre</p>
-              <input
-                type="text"
-                [(ngModel)]="createDto.secondName"
+                [(ngModel)]="createDto.firstNames"
                 class="border border-[#E2E2E2] rounded-lg p-[10px]"
               />
             </div>
@@ -155,7 +147,15 @@
             </div>
             <div class="flex flex-1 flex-col">
                 <p class="text-[#64BC04]">Correo</p>
-                <input type="text" [(ngModel)]="createDto.email" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                <input type="email" [(ngModel)]="createDto.email" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+            </div>
+            <div class="flex flex-col">
+              <p class="text-[#64BC04]">Celular</p>
+              <input
+                type="number"
+                [(ngModel)]="createDto.phoneNumber"
+                class="border border-[#E2E2E2] rounded-lg p-[10px]"
+              />
             </div>
             <div class="flex flex-col">
               <p class="text-[#64BC04]">Estado</p>
@@ -179,3 +179,6 @@
     </div>
   </div>
 </div>
+
+<div *ngIf="loadingModal" class="loader"></div>
+<div *ngIf="loadingLoad" class="loader"></div>

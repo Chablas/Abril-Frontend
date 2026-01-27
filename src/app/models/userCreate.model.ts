@@ -1,9 +1,12 @@
+import { interceptors } from "undici-types";
+
 export interface UserCreateDTO {
-    dni: string;
-    firstName: string;
-    secondName: string;
+    documentIdentityCode: string;
+    firstNames: string;
     firstLastName: string;
     secondLastName: string;
     email: string;
+    phoneNumber: number;
+    createdUserId: number;
     active: boolean;
 }

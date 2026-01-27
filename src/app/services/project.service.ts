@@ -19,4 +19,7 @@ export class ProjectService {
   createProject(dto: ProjectCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deleteProject(projectId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${projectId}`);
+  }
 }

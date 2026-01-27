@@ -10,7 +10,8 @@ import { PhaseGetDTO } from "../../../../../models/phase.model";
 import { StageGetDTO } from "../../../../../models/stage.model";
 import { SubStageGetDTO } from "../../../../../models/subStage.model";
 import { SubSpecialtyGetDTO } from "../../../../../models/subSpecialty.model";
-import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyCreate.model"
+import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyCreate.model";
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-conf-fase-etapa-subetapa',
@@ -20,7 +21,8 @@ import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../../../../../mo
 })
 export class ConfFaseEtapaSubetapa {
   filtersRelations!: PhaseStageSubStageSubSpecialtyDTO[];
-  loading = false;
+  loadingModal = false;
+  loadingLoadPhaseStageSubStageSubSpecialties = false;
   createModalShowFormData: PhaseStageSubStageSubSpecialtyShowFormDataDTO = {
     areas: [],
     projects: [],
@@ -74,19 +76,23 @@ export class ConfFaseEtapaSubetapa {
   }
 
   loadfiltersRelations() {
-    this.loading = true;
-  
+    this.loadingLoadPhaseStageSubStageSubSpecialties = true;
     forkJoin({
       filtersRelations: this.lessonService.getFiltersCreate(),
     }).subscribe({
       next: ({ filtersRelations }) => {
         this.filtersRelations = filtersRelations;
-        this.loading = false;
+        this.loadingLoadPhaseStageSubStageSubSpecialties = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading data', err);
-        this.loading = false;
+        this.loadingLoadPhaseStageSubStageSubSpecialties = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }
@@ -98,10 +104,10 @@ export class ConfFaseEtapaSubetapa {
     }
 
     this.createModalSendFormData = {
-      phaseId: this.createModalSelectedPhase?.phaseId ?? 0,
-      stageId: this.createModalSelectedStage?.stageId ?? null,
-      subStageId: this.createModalSelectedSubStage?.subStageId ?? null,
-      subSpecialtyId: this.createModalSelectedSubSpecialty?.subSpecialtyId ?? null,
+      phaseId: this.createModalSelectedPhase ?.phaseId ?? 0,
+      stageId: this.createModalSelectedStage ?.stageId ?? null,
+      subStageId: this.createModalSelectedSubStage ?.subStageId ?? null,
+      subSpecialtyId: this.createModalSelectedSubSpecialty ?.subSpecialtyId ?? null,
       createdUserId: 1,
       active: this.createModalSelectedActive ?? true,
     };
@@ -111,12 +117,64 @@ export class ConfFaseEtapaSubetapa {
       .subscribe({
         next: () => {
           this.showCreateModal = false;
+          this.loadingModal = false;
+          this.cdr.detectChanges();
           this.loadfiltersRelations();
+          Swal.fire({
+            title: 'Relación creada exitosamente',
+            icon: 'success',
+            draggable: true
+          });
         },
         error: err => {
-          console.error('Error creating item', err);
+          this.loadingModal = false;
+          this.cdr.detectChanges();
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: err.error,
+          });
         }
       });
+  }
+
+  deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, event: MouseEvent) {
+    event.stopPropagation();
+    Swal.fire({
+      title: '¿Estás seguro/a?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: '¡Sí, elimínalo!'
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.loadingModal = true;
+        this.phaseStageSubStageSubSpecialtyService.deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId, 1).subscribe({
+          next: () => {
+            this.loadfiltersRelations();
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: 'El registro ha sido eliminado.',
+              confirmButtonColor: '#64BC04',
+              icon: 'success'
+            });
+          },
+          error: (error) => {
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: 'Error',
+              text: error.error,
+              icon: 'error'
+            });
+          },
+        });
+      }
+    });
   }
 
   closeModal() {

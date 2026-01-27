@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { UserCreateDTO } from "../../../../models/userCreate.model";
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-users',
@@ -16,16 +17,18 @@ import { UserCreateDTO } from "../../../../models/userCreate.model";
 })
 export class Users implements OnInit {
   users!: PagedResponseDTO<UserDTO>;
-  loading = false;
+  loadingModal = false;
+  loadingLoad = false;
 
   showCreateModal = false;
   createDto: UserCreateDTO = {
-    dni: '',
-    firstName: '',
-    secondName: '',
+    documentIdentityCode: '',
+    firstNames: '',
     firstLastName: '',
     secondLastName: '',
     email: '',
+    phoneNumber: 0,
+    createdUserId: 1,
     active: true
   };
 
@@ -41,61 +44,77 @@ export class Users implements OnInit {
   }
 
   getPersonRENIEC() {
-    const dni = this.createDto.dni?.trim();
+    const dni = this.createDto.documentIdentityCode?.trim();
   
     if (!dni || dni.length !== 8) {
       alert('El DNI debe tener 8 dígitos');
       return;
     }
   
-    this.loading = true;
   
     this.personService.getPersonRENIEC(dni).subscribe({
       next: res => {
-        this.createDto.firstName = res.first_name;
-        this.createDto.secondName = '';
+        this.createDto.firstNames = res.first_name;
         this.createDto.firstLastName = res.first_last_name;
         this.createDto.secondLastName = res.second_last_name;
-  
-        this.loading = false;
+
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error RENIEC', err);
-        alert('No se encontró el DNI');
-        this.loading = false;
+        Swal.fire({
+          icon: "error",
+          title: "No se encontró el DNI",
+          text: err.error,
+        });
       }
     });
   }
 
   loadUsers() {
-    this.loading = true;
-  
+    this.loadingLoad = true;
     forkJoin({
       users: this.userService.getUserPaged(1),
     }).subscribe({
       next: ({ users }) => {
         this.users = users;
-        this.loading = false;
+        this.loadingLoad = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading data', err);
-        this.loading = false;
+        this.loadingLoad = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }
 
   saveUser() {
-
+    this.loadingModal = true;
     this.userService.createUser(this.createDto).subscribe({
       next: () => {
         this.showCreateModal = false;
-        //this.createDto = { userDescription: '', active: true };
+        this.loadingModal = false;
+        this.cdr.detectChanges();
         this.loadUsers();
+        Swal.fire({
+          title: "Usuario creado exitosamente",
+          icon: "success",
+          draggable: true
+        });
+        this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error creating user', err);
+        this.loadingModal = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }

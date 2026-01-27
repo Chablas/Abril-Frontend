@@ -19,4 +19,7 @@ export class SubSpecialtyService {
   createSubSpecialty(dto: SubSpecialtyCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deleteSubSpecialty(subSpecialtyId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${subSpecialtyId}`);
+  }
 }

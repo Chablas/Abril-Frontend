@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjectCreateDTO } from '../../../../../models/projectCreate.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-proyectos',
@@ -14,7 +15,8 @@ import { ProjectCreateDTO } from '../../../../../models/projectCreate.model';
 })
 export class Proyectos implements OnInit {
   projects!: ProjectPagedDTO;
-  loading = false;
+  loadingModal = false;
+  loadingLoadProjects = false;
 
   showCreateModal = false;
   createDto: ProjectCreateDTO = {
@@ -34,19 +36,23 @@ export class Proyectos implements OnInit {
   }
 
   loadProjects() {
-    this.loading = true;
-
+    this.loadingLoadProjects = true;
     forkJoin({
       projects: this.projectService.getProjectPaged(1)
     }).subscribe({
       next: ({ projects }) => {
         this.projects = projects;
-        this.loading = false;
+        this.loadingLoadProjects = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading data', err);
-        this.loading = false;
+        this.loadingLoadProjects = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
       }
     });
   }
@@ -55,15 +61,67 @@ export class Proyectos implements OnInit {
     if (!this.createDto.projectDescription.trim()) {
       return;
     }
-
+    this.loadingModal = true;
     this.projectService.createProject(this.createDto).subscribe({
       next: () => {
         this.showCreateModal = false;
         this.createDto = { projectDescription: '', active: true };
+        this.loadingModal = false;
+        this.cdr.detectChanges();
         this.loadProjects();
+        Swal.fire({
+          title: 'Proyecto creado exitosamente',
+          icon: 'success',
+          draggable: true
+        });
       },
       error: err => {
-        console.error('Error creating project', err);
+        this.loadingModal = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: err.error,
+        });
+      }
+    });
+  }
+
+  deleteProject(projectId: number, event: MouseEvent) {
+    event.stopPropagation();
+    Swal.fire({
+      title: '¿Estás seguro/a?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: '¡Sí, elimínalo!'
+    }).then(result => {
+      if (result.isConfirmed) {
+        this.loadingModal = true;
+        this.projectService.deleteProject(projectId, 1).subscribe({
+          next: () => {
+            this.loadProjects();
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: 'El registro ha sido eliminado.',
+              confirmButtonColor: '#64BC04',
+              icon: 'success'
+            });
+          },
+          error: (error) => {
+            this.loadingModal = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: 'Error',
+              text: error.error,
+              icon: 'error'
+            });
+          },
+        });
       }
     });
   }

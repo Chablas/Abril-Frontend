@@ -19,4 +19,7 @@ export class StageService {
   createStage(dto: StageCreateDTO): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto);
   }
+  deleteStage(stageId: number, updatedUserId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${stageId}`);
+  }
 }

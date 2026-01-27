@@ -9,7 +9,7 @@ const routes: Routes = [
     { path: '', redirectTo: 'users', pathMatch: 'full' },
     { path: "usuarios", children: [
       { path: "", component: Users, data: { titulo: 'USUARIOS' } }
-    ] },
+    ] }
   ] }
 ];
 
