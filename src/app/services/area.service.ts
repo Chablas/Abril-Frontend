@@ -3,13 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AreaPagedDTO } from '../models/areaPaged.model';
 import { AreaCreateDTO } from "../models/areaCreate.model";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AreaService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/area';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/area`;
 
   constructor(private http: HttpClient) {}
 

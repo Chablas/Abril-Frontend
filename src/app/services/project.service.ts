@@ -3,13 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProjectPagedDTO } from '../models/projectPaged.model';
 import { ProjectCreateDTO } from "../models/projectCreate.model";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProjectService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/project';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/project`;
 
   constructor(private http: HttpClient) {}
 

@@ -3,13 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SubStagePagedDTO } from '../models/subStagePaged.model';
 import { SubStageCreateDTO } from "../models/subStageCreate.model";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SubStageService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/substage';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/substage`;
 
   constructor(private http: HttpClient) {}
 

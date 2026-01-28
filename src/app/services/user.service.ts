@@ -4,13 +4,14 @@ import { Observable } from 'rxjs';
 import { UserCreateDTO } from "../models/userCreate.model";
 import { PagedResponseDTO } from "../models/pagedResponse.model";
 import { UserDTO } from '../models/user.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/user';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/user`;
 
   constructor(private http: HttpClient) {}
 

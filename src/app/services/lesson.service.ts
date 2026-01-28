@@ -5,13 +5,14 @@ import { LessonListDTO } from '../models/lesson.model';
 import { LessonDetailDTO } from '../models/lessonDetail.model';
 import { LessonFiltersDTO } from "../models/lessonFilters.model";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty.model";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LessonService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/lesson';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/lesson`;
 
   constructor(private http: HttpClient) {}
 

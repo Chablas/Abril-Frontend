@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { LoginRequestDTO  } from "../models/auth/login-request.model";
 import { LoginResponseDTO   } from "../models/auth/login-response.model";
 import { tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private readonly api = 'http://localhost:5236/api/v1/user';
-  private readonly apiUrl = 'http://localhost:5236/api/v1/auth';
+  private readonly api = `${environment.apiUrl}api/v1/user`;
+  private readonly apiUrl = `${environment.apiUrl}api/v1/auth`;
 
   constructor(private http: HttpClient) { }
 

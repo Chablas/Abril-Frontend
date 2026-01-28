@@ -3,13 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PhasePagedDTO } from '../models/phasePaged.model';
 import { PhaseCreateDTO } from "../models/phaseCreate.model";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PhaseService {
 
-  private readonly apiUrl = 'http://localhost:5236/api/v1/phase';
+  private readonly apiUrl = `${environment.apiUrl}api/v1/phase`;
 
   constructor(private http: HttpClient) {}
 
