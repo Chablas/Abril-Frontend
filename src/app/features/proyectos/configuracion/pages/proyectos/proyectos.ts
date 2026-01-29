@@ -16,6 +16,10 @@ import Swal from 'sweetalert2';
 export class Proyectos implements OnInit {
   projects!: ProjectPagedDTO;
   loadingModal = false;
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
   loadingLoadProjects = false;
 
   showCreateModal = false;
@@ -26,8 +30,8 @@ export class Proyectos implements OnInit {
 
   constructor(private projectService: ProjectService, private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void {
-    this.loadProjects();
+  ngOnInit() {
+    this.loadProjects(1);
   }
 
   createModal(event: MouseEvent) {
@@ -35,26 +39,56 @@ export class Proyectos implements OnInit {
     this.showCreateModal = true;
   }
 
-  loadProjects() {
+  loadProjects(page: number = 1) {
     this.loadingLoadProjects = true;
-    forkJoin({
-      projects: this.projectService.getProjectPaged(1)
-    }).subscribe({
-      next: ({ projects }) => {
-        this.projects = projects;
+  
+    this.projectService.getProjectPaged(page).subscribe({
+      next: (response) => {
+        this.projects = response;
+        this.currentPage = response.page;
+        this.totalPages = response.totalPages;
+        this.pageSize = response.pageSize;
+        this.totalRecords = response.totalRecords;
+  
         this.loadingLoadProjects = false;
         this.cdr.detectChanges();
       },
       error: err => {
         this.loadingLoadProjects = false;
         this.cdr.detectChanges();
+  
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: err.error,
+          icon: 'error',
+          title: 'Oops...',
+          text: err.error ?? 'Error al cargar proyectos'
         });
       }
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadProjects(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadProjects(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadProjects(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
   saveProject() {

@@ -83,6 +83,23 @@
                 </tbody>
             </table>
         </div>
+        <div class="flex gap-2 mt-4 justify-around w-full border border-[#D6DEE5] rounded-lg h-[30px]">
+            <span># Registros: {{totalRecords}}</span>
+            <div class="flex gap-[10px] items-center">
+                <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">
+                    «
+                </button>
+            
+                <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages" (click)="goToPage(page)"
+                    [ngClass]="{'bg-[#0086A5] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                    {{ page }}
+                </button>
+            
+                <button class="cursor-pointer text-[#0086A5]" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                    »
+                </button>
+            </div>
+        </div>
     </div>
 
     <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto" (click)="closeModal()" >

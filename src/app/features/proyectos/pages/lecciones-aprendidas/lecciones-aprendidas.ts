@@ -8,6 +8,7 @@ import { forkJoin } from 'rxjs';
 import { LessonFiltersDTO } from "../../../../models/lessonFilters.model";
 import { FormsModule } from '@angular/forms';
 import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-lecciones-aprendidas',
@@ -28,6 +29,7 @@ export class LeccionesAprendidas implements OnInit {
   loading = false;
   opportunityImages: LessonImageDTO[] = [];
   improvementImages: LessonImageDTO[] = [];
+  apiUrl = environment.apiUrl;
 
   // Modal
   showViewModal = false;

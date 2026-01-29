@@ -261,7 +261,7 @@
 
             <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
                 <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="'http://localhost:5236' + item.images[0].imageUrl"
+                    <img [src]="apiUrl + item.images[0].imageUrl"
                         class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
                 </ng-container>
             
@@ -271,7 +271,7 @@
             </td>
             <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
                 <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="'http://localhost:5236' + item.images[1].imageUrl"
+                    <img [src]="apiUrl + item.images[1].imageUrl"
                         class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
                 </ng-container>
             
@@ -414,7 +414,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="'http://localhost:5236' + image.imageUrl"
+                      [src]="apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
@@ -441,7 +441,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="'http://localhost:5236' + image.imageUrl"
+                      [src]="apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
@@ -596,7 +596,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="'http://localhost:5236' + image.imageUrl"
+                      [src]="apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
@@ -623,7 +623,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="'http://localhost:5236' + image.imageUrl"
+                      [src]="apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
