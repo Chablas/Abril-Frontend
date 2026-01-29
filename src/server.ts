@@ -34,17 +34,34 @@ app.use(
     redirect: false,
   }),
 );
-
+app.get('/', (req, res, next) => {
+  angularApp
+    .handle(req)
+    .then((response) => {
+      if (response) {
+        writeResponseToNodeResponse(response, res);
+      } else {
+        next();
+      }
+    })
+    .catch(next);
+});
 /**
  * Handle all other requests by rendering the Angular application.
  */
-app.use((req, res, next) => {
-  angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
-    .catch(next);
+app.use(async (req, res, next) => {
+  try {
+    const response = await angularApp.handle(req);
+
+    if (response) {
+      writeResponseToNodeResponse(response, res);
+    } else {
+      // 👇 fallback explícito para /
+      res.sendFile(join(browserDistFolder, 'index.csr.html'));
+    }
+  } catch (err) {
+    next(err);
+  }
 });
 
 /**
