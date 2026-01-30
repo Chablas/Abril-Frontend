@@ -41,7 +41,7 @@
       >
         <!-- ITEM SIMPLE -->
         <a
-          routerLink="/proyectos/lecciones"
+          routerLink="/projects/lessons"
           class="block px-4 py-2 text-sm rounded-xl
                        hover:bg-[#E5F7D1] font-sans"
         >
@@ -76,7 +76,7 @@
                          bg-white rounded-xl shadow-lg z-50 p-[5px]"
           >
             <a
-              routerLink="/proyectos/configuracion/proyectos"
+              routerLink="/projects/configuration/projects"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                           hover:bg-[#E5F7D1] rounded-xl"
@@ -84,7 +84,7 @@
               Proyectos
             </a>
             <a
-              routerLink="/proyectos/configuracion/areas"
+              routerLink="/projects/configuration/areas"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                             hover:bg-[#E5F7D1] rounded-xl"
@@ -92,7 +92,7 @@
               Áreas
             </a>
             <a
-              routerLink="/proyectos/configuracion/fases"
+              routerLink="/projects/configuration/phases"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                            hover:bg-[#E5F7D1] rounded-xl"
@@ -100,7 +100,7 @@
               Fases
             </a>
             <a
-              routerLink="/proyectos/configuracion/etapas"
+              routerLink="/projects/configuration/stages"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                            hover:bg-[#E5F7D1] rounded-xl"
@@ -108,7 +108,15 @@
               Etapas
             </a>
             <a
-              routerLink="/proyectos/configuracion/subetapas"
+              routerLink="/projects/configuration/layers"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Niveles
+            </a>
+            <a
+              routerLink="/projects/configuration/sub-stages"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                            hover:bg-[#E5F7D1] rounded-xl"
@@ -116,7 +124,7 @@
               Subetapas
             </a>
             <a
-              routerLink="/proyectos/configuracion/subespecialidades"
+              routerLink="/projects/configuration/sub-specialties"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                            hover:bg-[#E5F7D1] rounded-xl"
@@ -124,7 +132,7 @@
               Subespecialidades
             </a>
             <a
-              routerLink="/proyectos/configuracion/relaciones"
+              routerLink="/projects/configuration/relations"
               (click)="closeAllMenus()"
               class="block px-4 py-2 text-sm
                            hover:bg-[#E5F7D1] rounded-xl"
@@ -158,7 +166,7 @@
       <p class="font-sans text-sm mt-1">Seguridad</p>
       <div *ngIf="activeMenu === 'seguridad'" class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50">
         <!-- ITEM SIMPLE -->
-        <a routerLink="/security/usuarios" class="block px-4 py-2 text-sm rounded-xl
+        <a routerLink="/security/users" class="block px-4 py-2 text-sm rounded-xl
                                  hover:bg-[#E5F7D1] font-sans">
           Creación de usuarios
         </a>

@@ -1,37 +1,37 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { AreaService } from "../../../../../services/area.service";
-import { AreaPagedDTO } from "../../../../../models/areaPaged.model";
+import { LayerService } from "../../../../../services/layer.service";
+import { LayerPagedDTO } from "../../../../../models/layer/layerPaged.model";
 import { forkJoin } from 'rxjs';
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { AreaCreateDTO } from "../../../../../models/areaCreate.model";
+import { LayerCreateDTO } from "../../../../../models/layer/layerCreate.model";
 import Swal from 'sweetalert2';
 
 @Component({
-  selector: 'app-areas',
+  selector: 'app-layers',
   imports: [CommonModule, FormsModule],
-  templateUrl: './areas.html',
-  styleUrl: './areas.css'
+  templateUrl: './layers.html',
+  styleUrl: './layers.css',
 })
-export class Areas implements OnInit {
-  areas!: AreaPagedDTO;
+export class Layers implements OnInit {
+  layers!: LayerPagedDTO;
   loadingModal = false;
   currentPage = 1;
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
-  loadingLoadAreas = false;
+  loadingLoadLayers = false;
 
   showCreateModal = false;
-  createDto: AreaCreateDTO = {
-    areaDescription: '',
+  createDto: LayerCreateDTO = {
+    layerDescription: '',
     active: true
   };
 
-  constructor(private areaService: AreaService, private cdr: ChangeDetectorRef) {}
+  constructor(private layerService: LayerService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.loadAreas();
+    this.loadLayers();
   }
 
   createModal(event: MouseEvent) {
@@ -39,23 +39,22 @@ export class Areas implements OnInit {
     this.showCreateModal = true;
   }
 
-  loadAreas(page: number = 1) {
-
-    this.loadingLoadAreas = true;
+  loadLayers(page: number = 1) {
+    this.loadingLoadLayers = true;
     forkJoin({
-      areas: this.areaService.getAreaPaged(page)
+      layers: this.layerService.getLayerPaged(page),
     }).subscribe({
-      next: ({ areas }) => {
-        this.areas = areas;
-        this.currentPage = areas.page;
-        this.totalPages = areas.totalPages;
-        this.pageSize = areas.pageSize;
-        this.totalRecords = areas.totalRecords;
-        this.loadingLoadAreas = false;
+      next: ({ layers }) => {
+        this.layers = layers;
+        this.currentPage = layers.page;
+        this.totalPages = layers.totalPages;
+        this.pageSize = layers.pageSize;
+        this.totalRecords = layers.totalRecords;
+        this.loadingLoadLayers = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        this.loadingLoadAreas = false;
+        this.loadingLoadLayers = false;
         this.cdr.detectChanges();
         Swal.fire({
           icon: "error",
@@ -66,20 +65,20 @@ export class Areas implements OnInit {
     });
   }
 
-  saveArea() {
-    if (!this.createDto.areaDescription.trim()) {
+  saveLayer() {
+    if (!this.createDto.layerDescription.trim()) {
       return;
     }
     this.loadingModal = true;
-    this.areaService.createArea(this.createDto).subscribe({
+    this.layerService.createLayer(this.createDto).subscribe({
       next: () => {
         this.showCreateModal = false;
-        this.createDto = { areaDescription: '', active: true };
+        this.createDto = { layerDescription: '', active: true };
         this.loadingModal = false;
         this.cdr.detectChanges();
-        this.loadAreas();
+        this.loadLayers();
         Swal.fire({
-          title: 'Area creada exitosamente',
+          title: 'Nivel creado exitosamente',
           icon: 'success',
           draggable: true
         });
@@ -96,7 +95,7 @@ export class Areas implements OnInit {
     });
   }
 
-  deleteArea(areaId: number, event: MouseEvent) {
+  deleteLayer(layerId: number, event: MouseEvent) {
     event.stopPropagation();
     Swal.fire({
       title: '¿Estás seguro/a?',
@@ -109,9 +108,9 @@ export class Areas implements OnInit {
     }).then(result => {
       if (result.isConfirmed) {
         this.loadingModal = true;
-        this.areaService.deleteArea(areaId, 1).subscribe({
+        this.layerService.deleteLayer(layerId, 1).subscribe({
           next: () => {
-            this.loadAreas();
+            this.loadLayers();
             this.loadingModal = false;
             this.cdr.detectChanges();
             Swal.fire({
@@ -135,27 +134,23 @@ export class Areas implements OnInit {
     });
   }
 
-  closeModal() {
-    this.showCreateModal = false;
-  }
-
   nextPage() {
     if (this.currentPage < this.totalPages) {
-      this.loadAreas(this.currentPage + 1);
+      this.loadLayers(this.currentPage + 1);
       this.cdr.detectChanges();
     }
   }
   
   prevPage() {
     if (this.currentPage > 1) {
-      this.loadAreas(this.currentPage - 1);
+      this.loadLayers(this.currentPage - 1);
       this.cdr.detectChanges();
     }
   }
   
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
-      this.loadAreas(page);
+      this.loadLayers(page);
       this.cdr.detectChanges();
     }
   }
@@ -186,5 +181,9 @@ export class Areas implements OnInit {
     }
   
     return pages;
+  }
+
+  closeModal() {
+    this.showCreateModal = false;
   }
 }

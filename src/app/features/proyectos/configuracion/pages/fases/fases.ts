@@ -16,6 +16,10 @@ import Swal from 'sweetalert2';
 export class Fases implements OnInit {
   phases!: PhasePagedDTO;
   loadingModal = false;
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
   loadingLoadPhases = false;
 
   showCreateModal = false;
@@ -35,13 +39,17 @@ export class Fases implements OnInit {
     this.showCreateModal = true;
   }
 
-  loadPhases() {
+  loadPhases(page: number = 1) {
     this.loadingLoadPhases = true;
     forkJoin({
-      phases: this.phaseService.getPhasePaged(1),
+      phases: this.phaseService.getPhasePaged(page),
     }).subscribe({
       next: ({ phases }) => {
         this.phases = phases;
+        this.currentPage = phases.page;
+        this.totalPages = phases.totalPages;
+        this.pageSize = phases.pageSize;
+        this.totalRecords = phases.totalRecords;
         this.loadingLoadPhases = false;
         this.cdr.detectChanges();
       },
@@ -124,6 +132,55 @@ export class Fases implements OnInit {
         });
       }
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadPhases(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadPhases(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadPhases(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    const maxButtons = 5;
+  
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+  
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+  
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+  
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    return pages;
   }
 
   closeModal() {

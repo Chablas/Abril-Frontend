@@ -7,16 +7,18 @@ import { Fases } from "./pages/fases/fases";
 import { Proyectos } from "./pages/proyectos/proyectos";
 import { Subetapas } from "./pages/subetapas/subetapas";
 import { Subespecialidades } from "./pages/subespecialidades/subespecialidades";
+import { Layers } from "./pages/layers/layers";
 
 const routes: Routes = [
-  { path: "proyectos", component: Proyectos, data: { titulo: 'PROYECTOS' } },
+  { path: "projects", component: Proyectos, data: { titulo: 'PROYECTOS' } },
   { path: "areas", component: Areas, data: { titulo: 'ÁREAS' } },
-  { path: "etapas", component: Etapas, data: { titulo: 'ETAPAS' } },
-  { path: "fases", component: Fases, data: { titulo: 'FASES' } },
-  { path: "subetapas", component: Subetapas, data: { titulo: 'SUBETAPAS' } },
-  { path: "subespecialidades", component: Subespecialidades, data: { titulo: 'SUBESPECIALIDADES' } },
-  { path: "relaciones", component: ConfFaseEtapaSubetapa, data: { titulo: 'RELACIONES' } },
-  { path: '', redirectTo: 'proyectos', pathMatch: 'full' }
+  { path: "stages", component: Etapas, data: { titulo: 'ETAPAS' } },
+  { path: "layers", component: Layers, data: { titulo: 'NIVELES' } },
+  { path: "phases", component: Fases, data: { titulo: 'FASES' } },
+  { path: "sub-stages", component: Subetapas, data: { titulo: 'SUBETAPAS' } },
+  { path: "sub-specialties", component: Subespecialidades, data: { titulo: 'SUBESPECIALIDADES' } },
+  { path: "relations", component: ConfFaseEtapaSubetapa, data: { titulo: 'RELACIONES' } },
+  { path: '', redirectTo: 'projects', pathMatch: 'full' }
 ];
 
 @NgModule({

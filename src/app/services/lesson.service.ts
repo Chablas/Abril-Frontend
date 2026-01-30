@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LessonListDTO } from '../models/lesson.model';
+import { LessonListDTO, LessonListPagedDTO } from '../models/lesson.model';
 import { LessonDetailDTO } from '../models/lessonDetail.model';
 import { LessonFiltersDTO } from "../models/lessonFilters.model";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty.model";
@@ -41,7 +41,7 @@ export class LessonService {
       }
     });
   
-    return this.http.get<LessonListDTO[]>(this.apiUrl, { params });
+    return this.http.get<LessonListPagedDTO>(this.apiUrl, { params });
   }
 
   async getByIdFetch(id: number | null): Promise<LessonDetailDTO> {

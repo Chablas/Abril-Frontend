@@ -6,8 +6,11 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { PhaseStageSubStageSubSpecialtyService } from "../../../../../services/phaseStageSubStageSubSpecialty.service";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../../../../../models/phaseStageSubStageSubSpecialty.model";
+import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
+import { PhaseStageSubStageSubSpecialtyFlatDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
 import { PhaseGetDTO } from "../../../../../models/phase.model";
 import { StageGetDTO } from "../../../../../models/stage.model";
+import { LayerGetDTO } from "../../../../../models/layer.model";
 import { SubStageGetDTO } from "../../../../../models/subStage.model";
 import { SubSpecialtyGetDTO } from "../../../../../models/subSpecialty.model";
 import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyCreate.model";
@@ -20,7 +23,13 @@ import Swal from 'sweetalert2';
   styleUrl: './conf-fase-etapa-subetapa.css',
 })
 export class ConfFaseEtapaSubetapa {
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
   filtersRelations!: PhaseStageSubStageSubSpecialtyDTO[];
+  relationsPaged!: PhaseStageSubStageSubSpecialtyFlatPagedDTO;
+  relations: PhaseStageSubStageSubSpecialtyFlatDTO[] = [];
   loadingModal = false;
   loadingLoadPhaseStageSubStageSubSpecialties = false;
   createModalShowFormData: PhaseStageSubStageSubSpecialtyShowFormDataDTO = {
@@ -28,12 +37,14 @@ export class ConfFaseEtapaSubetapa {
     projects: [],
     phases: [],
     stages: [],
+    layers: [],
     subStages: [],
     subSpecialties: []
   }
   createModalSendFormData: PhaseStageSubStageSubSpecialtySendFormDataDTO = {
     phaseId: 0,
     stageId: 0,
+    layerId: 0,
     subStageId: 0,
     subSpecialtyId: 0,
     createdUserId: 0,
@@ -41,6 +52,7 @@ export class ConfFaseEtapaSubetapa {
   }
   createModalSelectedPhase: PhaseGetDTO | null = null;
   createModalSelectedStage: StageGetDTO | null = null;
+  createModalSelectedLayer: LayerGetDTO | null = null;
   createModalSelectedSubStage: SubStageGetDTO | null = null;
   createModalSelectedSubSpecialty: SubSpecialtyGetDTO | null = null;
   createModalSelectedActive: boolean = true;
@@ -55,7 +67,7 @@ export class ConfFaseEtapaSubetapa {
   constructor(private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService, private lessonService: LessonService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.loadfiltersRelations();
+    this.loadfiltersRelations(1);
   }
 
   openCreateModal(event: MouseEvent) {
@@ -75,23 +87,30 @@ export class ConfFaseEtapaSubetapa {
     });
   }
 
-  loadfiltersRelations() {
+  loadfiltersRelations(page: number = 1) {
     this.loadingLoadPhaseStageSubStageSubSpecialties = true;
-    forkJoin({
-      filtersRelations: this.lessonService.getFiltersCreate(),
-    }).subscribe({
-      next: ({ filtersRelations }) => {
-        this.filtersRelations = filtersRelations;
+
+    this.phaseStageSubStageSubSpecialtyService.getPaged(page).subscribe({
+      next: res => {
+        this.relationsPaged = res;
+        this.relations = res.data;
+
+        this.currentPage = res.page;
+        this.totalPages = res.totalPages;
+        this.pageSize = res.pageSize;
+        this.totalRecords = res.totalRecords;
+
         this.loadingLoadPhaseStageSubStageSubSpecialties = false;
         this.cdr.detectChanges();
       },
       error: err => {
         this.loadingLoadPhaseStageSubStageSubSpecialties = false;
         this.cdr.detectChanges();
+
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: err.error,
+          icon: 'error',
+          title: 'Oops...',
+          text: err.error
         });
       }
     });
@@ -106,6 +125,7 @@ export class ConfFaseEtapaSubetapa {
     this.createModalSendFormData = {
       phaseId: this.createModalSelectedPhase ?.phaseId ?? 0,
       stageId: this.createModalSelectedStage ?.stageId ?? null,
+      layerId: this.createModalSelectedLayer ?.layerId ?? null,
       subStageId: this.createModalSelectedSubStage ?.subStageId ?? null,
       subSpecialtyId: this.createModalSelectedSubSpecialty ?.subSpecialtyId ?? null,
       createdUserId: 1,
@@ -175,6 +195,55 @@ export class ConfFaseEtapaSubetapa {
         });
       }
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadfiltersRelations(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadfiltersRelations(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadfiltersRelations(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    const maxButtons = 5;
+  
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+  
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+  
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+  
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    return pages;
   }
 
   closeModal() {

@@ -1,14 +1,22 @@
 export interface PhaseStageSubStageSubSpecialtyDTO {
   phaseId: number;
   phaseDescription: string;
-  linkId?: number | undefined;
+  linkId?: number;
   stages?: StageFilterDTO[];
 }
 
 export interface StageFilterDTO {
   stageId: number;
   stageDescription: string;
-  linkId?: number | undefined;
+  linkId?: number;
+  subStages?: SubStageFilterDTO[];
+  layers?: LayerFilterDTO[];
+}
+
+export interface LayerFilterDTO {
+  layerId: number;
+  layerDescription: string;
+  linkId?: number;
   subStages?: SubStageFilterDTO[];
 }
 

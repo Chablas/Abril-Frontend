@@ -16,6 +16,10 @@ import Swal from 'sweetalert2';
 export class Etapas implements OnInit {
   stages!: StagePagedDTO;
   loadingModal = false;
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
   loadingLoadStages = false;
 
   showCreateModal = false;
@@ -30,13 +34,17 @@ export class Etapas implements OnInit {
     this.loadStages();
   }
 
-  loadStages() {
+  loadStages(page: number = 1) {
     this.loadingLoadStages = true;
     forkJoin({
-      stages: this.stageService.getStagePaged(1),
+      stages: this.stageService.getStagePaged(page),
     }).subscribe({
       next: ({ stages }) => {
         this.stages = stages;
+        this.currentPage = stages.page;
+        this.totalPages = stages.totalPages;
+        this.pageSize = stages.pageSize;
+        this.totalRecords = stages.totalRecords;
         this.loadingLoadStages = false;
         this.cdr.detectChanges();
       },
@@ -121,6 +129,55 @@ export class Etapas implements OnInit {
         });
       }
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadStages(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadStages(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadStages(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    const maxButtons = 5;
+  
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+  
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+  
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+  
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    return pages;
   }
 
   createModal(event: MouseEvent) {

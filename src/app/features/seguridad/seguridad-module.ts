@@ -7,7 +7,7 @@ import { Users } from "./pages/users/users";
 const routes: Routes = [
   { path: "", component: Layout, children: [
     { path: '', redirectTo: 'users', pathMatch: 'full' },
-    { path: "usuarios", children: [
+    { path: "users", children: [
       { path: "", component: Users, data: { titulo: 'USUARIOS' } }
     ] }
   ] }

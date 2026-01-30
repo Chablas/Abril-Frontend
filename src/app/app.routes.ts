@@ -12,7 +12,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivateChild: [authGuard],
+    //canActivateChild: [authGuard],
     children: [
       { path: '', component: Layout, children: [{ path: '', component: Inicio }] },
       {
@@ -22,7 +22,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'proyectos',
+        path: 'projects',
         loadChildren: () => {
           return import('./features/proyectos/proyectos-module').then(x => x.ProyectosModule);
         }

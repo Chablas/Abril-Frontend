@@ -88,7 +88,31 @@ export class Proyectos implements OnInit {
   }
 
   get pages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    const maxButtons = 5;
+  
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+  
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+  
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+  
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    return pages;
   }
 
   saveProject() {

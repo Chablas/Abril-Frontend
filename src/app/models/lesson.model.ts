@@ -18,6 +18,8 @@ export interface LessonListDTO {
   phaseDescription?: string;
   stageId?: number;
   stageDescription?: string;
+  layerId?: number;
+  layerDescription?: string;
   subStageId?: number;
   subStageDescription?: string;
   subSpecialtyId?: number;
@@ -32,6 +34,14 @@ export interface LessonListDTO {
   updatedDateTime?: string;
   updatedUserId?: number;
   active: boolean;
+}
+
+export interface LessonListPagedDTO {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+  data: LessonListDTO[];
 }
 
 interface LessonImage {

@@ -1,0 +1,163 @@
+<div class="bg-white rounded-lg p-[20px]">
+        <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+          <div class="flex w-full">
+            <button
+              (click)="createModal($event)"
+              class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer"
+            >
+              <div class="flex items-center gap-[10px]">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                    fill="#64BC04"
+                  />
+                </svg>
+                <p>Nuevo registro</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      
+        <div class="flex flex-col justify-center items-center px-[40px]">
+          <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+            <table class="w-full table-fixed">
+              <thead class="bg-[#E5F7D1]">
+                <tr class="text-[#64BC04]">
+                  <th class="w-[50px]"></th>
+                  <th class="w-[150px]">Descripción</th>
+                  <th class="w-[150px]">Estado</th>
+                </tr>
+              </thead>
+      
+              <tbody>
+                <tr *ngFor="let item of layers.data" class="border-b border-[#D6DEE5] h-[30px]">
+                  <td class="text-center">
+                    <button class="cursor-pointer" (click)="deleteLayer(item.layerId, $event)">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                          fill="#64BC04" />
+                      </svg>
+                    </button>
+                  </td>
+      
+                  <!-- Ver 
+                          <td class="text-center">
+                              <button class="cursor-pointer" (click)="openModal(item.lessonId, $event)">
+                                  <svg *ngIf="item.stateDescription.toUpperCase() == 'SUBIDO'" width="24" height="24"
+                                      viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path
+                                          d="M15 12C15 12.7956 14.6839 13.5587 14.1213 14.1213C13.5587 14.6839 12.7956 15 12 15C11.2044 15 10.4413 14.6839 9.87868 14.1213C9.31607 13.5587 9 12.7956 9 12C9 11.2044 9.31607 10.4413 9.87868 9.87868C10.4413 9.31607 11.2044 9 12 9C12.7956 9 13.5587 9.31607 14.1213 9.87868C14.6839 10.4413 15 11.2044 15 12Z"
+                                          stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                          stroke-linejoin="round" />
+                                      <path
+                                          d="M2 12C3.6 7.903 7.336 5 12 5C16.664 5 20.4 7.903 22 12C20.4 16.097 16.664 19 12 19C7.336 19 3.6 16.097 2 12Z"
+                                          stroke="#686971" stroke-width="1.5" stroke-linecap="round"
+                                          stroke-linejoin="round" />
+                                  </svg>
+                              </button>
+                          </td>
+                          -->
+      
+                  <!-- Editar 
+                          <td class="text-center">
+                              <button class="cursor-pointer" (click)="editModal(item.lessonId, $event)">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                      xmlns="http://www.w3.org/2000/svg">
+                                      <path
+                                          d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z"
+                                          fill="#686971" />
+                                  </svg>
+                              </button>
+                          </td>
+                          -->
+      
+                  <td class="text-center">{{ item.layerDescription }}</td>
+      
+                  <td class="text-center">
+                    <span
+                      class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]"
+                      [ngClass]="{
+                        'bg-[#D7FAF4] text-[#009C87]': item.active == true,
+                        'bg-[#FAD5D4] text-[#D30000]': item.active == false
+                      }"
+                    >
+                      {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex gap-2 mt-4 justify-around w-full border border-[#D6DEE5] rounded-lg h-[30px]">
+              <span># Registros: {{totalRecords}}</span>
+              <div class="flex gap-[10px] items-center">
+                  <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">
+                      «
+                  </button>
+          
+                  <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages"
+                      (click)="goToPage(page)"
+                      [ngClass]="{'bg-[#0086A5] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                      {{ page }}
+                  </button>
+          
+                  <button class="cursor-pointer text-[#0086A5]" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                      »
+                  </button>
+              </div>
+          </div>
+        </div>
+      
+        <div
+          *ngIf="showCreateModal"
+          class="fixed inset-0 bg-black/40 z-50 overflow-y-auto"
+          (click)="closeModal()"
+        >
+          <div class="min-h-screen flex items-center justify-center py-10">
+            <div
+              class="bg-white w-[500px] rounded-xl shadow-xl animate-modal-in"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                <h1 class="text-2xl text-center">AGREGAR FASE</h1>
+                <div class="flex justify-between w-full">
+                  <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Descripción</p>
+                    <input
+                      type="text"
+                      [(ngModel)]="createDto.layerDescription"
+                      class="border border-[#E2E2E2] rounded-lg p-[10px]"
+                    />
+                  </div>
+                  <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Estado</p>
+                    <select
+                      [(ngModel)]="createDto.active"
+                      class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer"
+                    >
+                      <option [ngValue]="true">ACTIVO</option>
+                      <option [ngValue]="false">INACTIVO</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  (click)="saveLayer()"
+                  class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
+                >
+                  <p class="text-[#ffffff] text-lg">Guardar</p>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="loadingModal" class="loader"></div>
+      <div *ngIf="loadingLoadLayers" class="loader"></div>

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from "../models/phaseStageSubStageSubSpecialtyFormData.model";
 import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../models/phaseStageSubStageSubSpecialtyCreate.model";
+import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -22,5 +23,8 @@ export class PhaseStageSubStageSubSpecialtyService {
   }
   deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, updatedUserId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${phaseStageSubStageSubSpecialtyId}`);
+  }
+  getPaged(page: number): Observable<PhaseStageSubStageSubSpecialtyFlatPagedDTO> {
+    return this.http.get<PhaseStageSubStageSubSpecialtyFlatPagedDTO>(`${this.apiUrl}/paged?page=${page}`);
   }
 }

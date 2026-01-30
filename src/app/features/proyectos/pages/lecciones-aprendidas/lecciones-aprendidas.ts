@@ -2,13 +2,15 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { HttpClientModule } from '@angular/common/http';
 import { LessonService } from "../../../../services/lesson.service";
-import { LessonListDTO } from "../../../../models/lesson.model";
+import { PhaseStageSubStageSubSpecialtyService } from "../../../../services/phaseStageSubStageSubSpecialty.service";
+import { LessonListDTO, LessonListPagedDTO } from "../../../../models/lesson.model";
 import { LessonDetailDTO, LessonImageDTO } from "../../../../models/lessonDetail.model";
 import { forkJoin } from 'rxjs';
 import { LessonFiltersDTO } from "../../../../models/lessonFilters.model";
 import { FormsModule } from '@angular/forms';
-import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
+import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../../../environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-lecciones-aprendidas',
@@ -20,13 +22,23 @@ import { environment } from '../../../../../environments/environment';
 export class LeccionesAprendidas implements OnInit {
 
   // Todos
-  lessons: LessonListDTO[] = [];
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
+  lessons!: LessonListPagedDTO;
   filtersData!: LessonFiltersDTO;
   filtersTable = {
     projectId: null as number | null,
     areaId: null as number | null,
+    phaseId: null as number | null,
+    stageId: null as number | null,
+    layerId: null as number | null,
+    subStageId: null as number | null,
+    subSpecialtyId: null as number | null,
   };
-  loading = false;
+  loadingModal = false;
+  loadingLoadLessons = false;
   opportunityImages: LessonImageDTO[] = [];
   improvementImages: LessonImageDTO[] = [];
   apiUrl = environment.apiUrl;
@@ -42,6 +54,7 @@ export class LeccionesAprendidas implements OnInit {
   selectedStageId?: number;
   selectedSubStageId?: number;
   selectedSubSpecialtyId?: number;
+  selectedLayerId?: number;
   problemDescription = '';
   reasonDescription = '';
   lessonDescription = '';
@@ -53,6 +66,7 @@ export class LeccionesAprendidas implements OnInit {
   phases: PhaseStageSubStageSubSpecialtyDTO[] = [];
   stages: StageFilterDTO[] = [];
   subStages: SubStageFilterDTO[] = [];
+  layers: LayerFilterDTO[] = [];
   subSpecialties: SubSpecialtyFilterDTO[] = [];
   filtersPSSSCreateModal: PhaseStageSubStageSubSpecialtyDTO[] = [];
   saving = false;
@@ -68,41 +82,42 @@ export class LeccionesAprendidas implements OnInit {
   lastX = 0;
   lastY = 0;
 
-  constructor(private lessonService: LessonService, private cdr: ChangeDetectorRef) { }
+  constructor(private lessonService: LessonService, private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-    this.loading = true;
+    this.loadLessons();
+  }
+
+  loadLessons(page: number = 1): void {
+    this.loadingLoadLessons = true;
 
     forkJoin({
-      lessons: this.lessonService.getLessons(),
-      filtersTable: this.lessonService.getFiltersInitialLoad()
+      lessons: this.lessonService.getLessonsUsingFilters({page: page}),
+      filtersTable: this.phaseStageSubStageSubSpecialtyService.getFormData(),
+      filtersPSSSCreateModal: this.lessonService.getFiltersCreate()
     }).subscribe({
-      next: ({ lessons, filtersTable }) => {
+      next: ({ lessons, filtersTable, filtersPSSSCreateModal }) => {
         this.lessons = lessons;
         this.filtersData = filtersTable;
-        this.loading = false;
+        this.currentPage = lessons.page;
+        this.totalPages = lessons.totalPages;
+        this.pageSize = lessons.pageSize;
+        this.totalRecords = lessons.totalRecords;
+        this.filtersPSSSCreateModal = filtersPSSSCreateModal;
+        this.loadingLoadLessons = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading data', err);
-        this.loading = false;
+        this.loadingLoadLessons = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: err.error ?? 'Error al cargar lecciones'
+        });
       }
     });
   }
-  /*
-  loadLessons(): void {
-    this.loading = true;
-    this.lessonService.getLessons().subscribe({
-      next: data => {
-        this.lessons = data;
-        this.loading = false;
-      },
-      error: err => {
-        console.error('Error loading lessons', err);
-        this.loading = false;
-      }
-    });
-  }*/
 
   openViewModal(id: number, event: MouseEvent, showActiveTab: 'general' | 'images') {
     event.stopPropagation();
@@ -118,10 +133,8 @@ export class LeccionesAprendidas implements OnInit {
         this.improvementImages = data.images ?.filter(img => img.imageTypeDescription === 'MEJORA') || [];
         this.detailLoading = false;
         this.cdr.detectChanges();
-        console.log(this.selectedLesson);
       },
       error: err => {
-        console.error(err);
         this.detailLoading = false;
         this.cdr.detectChanges();
       }
@@ -142,17 +155,18 @@ export class LeccionesAprendidas implements OnInit {
         this.stages = [];
         this.subStages = [];
         this.subSpecialties = [];
+        this.layers = [];
 
         this.selectedPhaseId = undefined;
         this.selectedStageId = undefined;
         this.selectedSubStageId = undefined;
         this.selectedSubSpecialtyId = undefined;
+        this.selectedLayerId = undefined;
 
         this.detailLoading = false;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error(err);
         this.detailLoading = false;
         this.cdr.detectChanges();
       }
@@ -160,21 +174,38 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   onPhaseChange() {
-    const phase = this.filtersPSSSCreateModal.find(p => p.phaseId === this.selectedPhaseId);
-    this.stages = phase ?.stages ?? [];
-
+    const phase = this.filtersPSSSCreateModal.find(
+      p => p.phaseId === this.selectedPhaseId
+    );
+  
+    this.stages = phase?.stages ?? [];
+  
+    this.layers = [];
     this.subStages = [];
     this.subSpecialties = [];
+  
     this.selectedStageId = undefined;
+    this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   }
 
   onStageChange() {
     const stage = this.stages.find(s => s.stageId === this.selectedStageId);
-    this.subStages = stage ?.subStages ?? [];
-
+  
+    this.layers = stage?.layers ?? [];
+  
+    if (this.layers.length === 0) {
+      // Stage SIN Layer
+      this.subStages = stage?.subStages ?? [];
+    } else {
+      // Stage CON Layer
+      this.subStages = [];
+    }
+  
     this.subSpecialties = [];
+  
+    this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   }
@@ -183,6 +214,16 @@ export class LeccionesAprendidas implements OnInit {
     const subStage = this.subStages.find(ss => ss.subStageId === this.selectedSubStageId);
     this.subSpecialties = subStage ?.subSpecialties ?? [];
 
+    this.selectedSubSpecialtyId = undefined;
+  }
+
+  onLayerChange() {
+    const layer = this.layers.find(l => l.layerId === this.selectedLayerId);
+  
+    this.subStages = layer?.subStages ?? [];
+    this.subSpecialties = [];
+  
+    this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   }
 
@@ -270,17 +311,26 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   onSearch(): void {
-    this.loading = true;
+    this.loadingLoadLessons = true;
 
     this.lessonService.getLessonsUsingFilters(this.filtersTable).subscribe({
       next: data => {
         this.lessons = data;
-        this.loading = false;
+        this.loadingLoadLessons = false;
+        this.currentPage = data.page;
+        this.totalPages = data.totalPages;
+        this.pageSize = data.pageSize;
+        this.totalRecords = data.totalRecords;
         this.cdr.detectChanges();
       },
       error: err => {
-        console.error('Error loading lessons with filters', err);
-        this.loading = false;
+        this.loadingLoadLessons = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: err.error ?? 'Error al cargar lecciones'
+        });
       }
     });
   }
@@ -325,14 +375,16 @@ export class LeccionesAprendidas implements OnInit {
 
   submitLesson() {
     if (!this.filtersTable.areaId || !this.selectedPhaseId) {
-      // validaciones mínimas
-      alert('Área y Fase son obligatorias');
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Seleccionar área y fase'
+      });
       return;
     }
 
     const form = new FormData();
 
-    // campos de texto
     form.append('ProblemDescription', this.problemDescription ?? '');
     form.append('ReasonDescription', this.reasonDescription ?? '');
     form.append('LessonDescription', this.lessonDescription ?? '');
@@ -347,6 +399,9 @@ export class LeccionesAprendidas implements OnInit {
 
     if (this.selectedStageId)
       form.append('StageId', String(this.selectedStageId));
+
+    if (this.selectedLayerId)
+      form.append('LayerId', String(this.selectedLayerId));
 
     if (this.selectedSubStageId)
       form.append('SubStageId', String(this.selectedSubStageId));
@@ -364,16 +419,24 @@ export class LeccionesAprendidas implements OnInit {
     });
 
     this.saving = true;
-
+    this.loadingModal = true;
     this.lessonService.createLesson(form).subscribe({
       next: () => {
         this.saving = false;
         this.closeModal();
+        this.loadingModal = false;
         this.resetForm();
         this.cdr.detectChanges();
+        this.loadLessons();
+        Swal.fire({
+          title: 'Lección creada exitosamente',
+          icon: 'success',
+          draggable: true
+        });
       },
       error: err => {
-        console.error(err);
+        this.loadingModal = false;
+        this.cdr.detectChanges();
         this.saving = false;
       }
     });
@@ -389,6 +452,7 @@ export class LeccionesAprendidas implements OnInit {
     this.filtersTable.areaId = null;
     this.selectedPhaseId = undefined;
     this.selectedStageId = undefined;
+    this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   
@@ -398,4 +462,52 @@ export class LeccionesAprendidas implements OnInit {
     this.improvementPreviews = [];
   }
 
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadLessons(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadLessons(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+  
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadLessons(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    const maxButtons = 5;
+  
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+  
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+  
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+  
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    return pages;
+  }
 }

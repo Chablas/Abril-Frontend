@@ -5,12 +5,12 @@ import { Layout } from "../../shared/components/layout/layout";
 
 const routes: Routes = [
   { path: "", component: Layout, children: [
-    { path: '', redirectTo: 'lecciones', pathMatch: 'full' },
-    { path: "lecciones", children: [
+    { path: '', redirectTo: 'lessons', pathMatch: 'full' },
+    { path: "lessons", children: [
       { path: "", component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } }
     ] },
     {
-      path: "configuracion", loadChildren: () => {
+      path: "configuration", loadChildren: () => {
         return import("./configuracion/configuracion-module").then(x => x.ConfiguracionModule)
       }
     }
