@@ -29,6 +29,7 @@ export interface LessonDetailDTO {
 
     createdDateTime: string;
     createdUserId: number;
+    createdUserFullName: string;
     updatedDateTime?: string;
     updatedUserId?: number;
     active: boolean;

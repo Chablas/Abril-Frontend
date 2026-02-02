@@ -31,6 +31,7 @@ export interface LessonListDTO {
 
   createdDateTime: string;
   createdUserId: number;
+  createdUserFullName: string;
   updatedDateTime?: string;
   updatedUserId?: number;
   active: boolean;
