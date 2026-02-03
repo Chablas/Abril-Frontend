@@ -28,97 +28,112 @@
     <form (ngSubmit)="onSearch()" class="w-full">
       <div class="flex">
         <div class="flex flex-col flex-5">
-    
           <div class="flex flex-wrap gap-4 py-[10px]">
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Proyecto</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.projectId" name="projectId">
+                [(ngModel)]="filtersTable.projectId"
+                name="projectId"
+              >
                 <option [ngValue]="null">Todos los proyectos</option>
                 <option *ngFor="let p of filtersData.projects" [ngValue]="p.projectId">
                   {{ p.projectDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Área</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.areaId" name="areaId">
+                [(ngModel)]="filtersTable.areaId"
+                name="areaId"
+              >
                 <option class="cursor-pointer" [ngValue]="null">Todas las áreas</option>
-                <option class="cursor-pointer" *ngFor="let a of filtersData.areas" [ngValue]="a.areaId">
+                <option
+                  class="cursor-pointer"
+                  *ngFor="let a of filtersData.areas"
+                  [ngValue]="a.areaId"
+                >
                   {{ a.areaDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Fase</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.phaseId" name="projectId">
+                [(ngModel)]="filtersTable.phaseId"
+                name="projectId"
+              >
                 <option [ngValue]="null">Todas las fases</option>
                 <option *ngFor="let p of filtersData.phases" [ngValue]="p.phaseId">
                   {{ p.phaseDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Etapa</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.stageId" name="stageId">
+                [(ngModel)]="filtersTable.stageId"
+                name="stageId"
+              >
                 <option [ngValue]="null">Todas las etapas</option>
                 <option *ngFor="let p of filtersData.stages" [ngValue]="p.stageId">
                   {{ p.stageDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Nivel</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.layerId" name="layerId">
+                [(ngModel)]="filtersTable.layerId"
+                name="layerId"
+              >
                 <option [ngValue]="null">Todos los niveles</option>
                 <option *ngFor="let p of filtersData.layers" [ngValue]="p.layerId">
                   {{ p.layerDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Subetapa</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.subStageId" name="subStageId">
+                [(ngModel)]="filtersTable.subStageId"
+                name="subStageId"
+              >
                 <option [ngValue]="null">Todas las subetapas</option>
                 <option *ngFor="let p of filtersData.subStages" [ngValue]="p.subStageId">
                   {{ p.subStageDescription }}
                 </option>
               </select>
             </div>
-    
+
             <div class="w-[240px]">
               <p class="w-[240px] text-[#64BC04] text-lg">Subespecialidad</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-                [(ngModel)]="filtersTable.subSpecialtyId" name="subSpecialtyId">
+                [(ngModel)]="filtersTable.subSpecialtyId"
+                name="subSpecialtyId"
+              >
                 <option [ngValue]="null">Todas las subespecialidades</option>
                 <option *ngFor="let p of filtersData.subSpecialties" [ngValue]="p.subSpecialtyId">
                   {{ p.subSpecialtyDescription }}
                 </option>
               </select>
             </div>
-    
-    
           </div>
         </div>
         <div class="flex justify-center items-start gap-[20px] flex-1">
-            <!--<button type="button" class="w-[120px] h-[45px] bg-[#64BC04] py-[1px] pl-[8px] pr-[4px] rounded-[10px] cursor-pointer">
+          <!--<button type="button" class="w-[120px] h-[45px] bg-[#64BC04] py-[1px] pl-[8px] pr-[4px] rounded-[10px] cursor-pointer">
               <div class="flex justify-center items-center">
                 <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path fill-rule="evenodd" clip-rule="evenodd"
@@ -128,22 +143,33 @@
                 <p class="text-[#ffffff] pl-[10px] text-lg leading-none">Búsqueda avanzada</p>
               </div>
             </button>-->
-          <button type="submit" class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer">
+          <button
+            type="submit"
+            class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer"
+          >
             <div class="flex justify-center items-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
                   d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z"
-                  fill="white" />
+                  fill="white"
+                />
               </svg>
               <p class="text-[#ffffff] pl-[10px] text-lg">Buscar</p>
             </div>
           </button>
         </div>
       </div>
-    
     </form>
 
-    <div class="w-full min-h-0 px rounded-lg overflow-y-scroll overflow-x-auto border border-[#D6DEE5]">
+    <div
+      class="w-full min-h-0 px rounded-lg overflow-y-scroll overflow-x-auto border border-[#D6DEE5]"
+    >
       <table class="table-fixed border-collapse min-w-[800px] w-full">
         <thead class="bg-[#E5F7D1] sticky top-0 z-20">
           <tr class="text-[#64BC04]">
@@ -191,81 +217,152 @@
                 </svg>
               </button>
             </td>-->
-            <td class="px-2 bg-[#f2f5f2] break-words cursor-pointer" (click)="openViewModal(item.lessonId, $event, 'general')">
+            <td
+              class="px-2 bg-[#f2f5f2] break-words cursor-pointer"
+              (click)="openViewModal(item.lessonId, $event, 'general')"
+            >
               <div class="flex items-center justify-start gap-2" title="Proyecto">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path
                     d="M12 7C12.5523 7 13 6.55228 13 6C13 5.44772 12.5523 5 12 5C11.4477 5 11 5.44772 11 6C11 6.55228 11.4477 7 12 7Z"
-                    fill="#64BC04" />
+                    fill="#64BC04"
+                  />
                   <path
                     d="M6 17H18V19H6V17ZM10 11.83L12.792 14.624L16.724 10.689L18 12V8H14L15.31 9.275L12.791 11.794L10 9L6 13L7.414 14.414L10 11.83Z"
-                    fill="#64BC04" />
+                    fill="#64BC04"
+                  />
                   <path
                     d="M19 3.00007H15.702C15.603 2.85282 15.4961 2.71096 15.382 2.57507L15.372 2.56307C14.637 1.70764 13.6034 1.16475 12.482 1.04507C12.1635 0.984977 11.8365 0.984977 11.518 1.04507C10.3966 1.16475 9.36298 1.70764 8.628 2.56307L8.618 2.57507C8.5039 2.71063 8.39708 2.85216 8.298 2.99907V3.00007H5C4.20459 3.00086 3.44199 3.31719 2.87956 3.87963C2.31712 4.44206 2.00079 5.20466 2 6.00007V20.0001C2.00079 20.7955 2.31712 21.5581 2.87956 22.1205C3.44199 22.6829 4.20459 22.9993 5 23.0001H19C19.7954 22.9993 20.558 22.6829 21.1204 22.1205C21.6829 21.5581 21.9992 20.7955 22 20.0001V6.00007C21.9992 5.20466 21.6829 4.44206 21.1204 3.87963C20.558 3.31719 19.7954 3.00086 19 3.00007ZM20 20.0001C20 20.2653 19.8946 20.5196 19.7071 20.7072C19.5196 20.8947 19.2652 21.0001 19 21.0001H5C4.73478 21.0001 4.48043 20.8947 4.29289 20.7072C4.10536 20.5196 4 20.2653 4 20.0001V6.00007C4 5.73485 4.10536 5.4805 4.29289 5.29296C4.48043 5.10543 4.73478 5.00007 5 5.00007H9.55C9.66476 4.43492 9.97136 3.92683 10.4179 3.56188C10.8644 3.19693 11.4233 2.99756 12 2.99756C12.5767 2.99756 13.1356 3.19693 13.5821 3.56188C14.0286 3.92683 14.3352 4.43492 14.45 5.00007H19C19.2652 5.00007 19.5196 5.10543 19.7071 5.29296C19.8946 5.4805 20 5.73485 20 6.00007V20.0001Z"
-                    fill="#64BC04" />
+                    fill="#64BC04"
+                  />
                 </svg>
                 <p class="">{{ item.projectDescription }}</p>
               </div>
               <div class="flex flex-col">
                 <div class="flex items-center justify-start gap-2" title="Periodo">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 2C17.523 2 22 6.477 22 12C22 17.523 17.523 22 12 22C6.477 22 2 17.523 2 12C2 6.477 6.477 2 12 2ZM12 4C9.87827 4 7.84344 4.84285 6.34315 6.34315C4.84285 7.84344 4 9.87827 4 12C4 14.1217 4.84285 16.1566 6.34315 17.6569C7.84344 19.1571 9.87827 20 12 20C14.1217 20 16.1566 19.1571 17.6569 17.6569C19.1571 16.1566 20 14.1217 20 12C20 9.87827 19.1571 7.84344 17.6569 6.34315C16.1566 4.84285 14.1217 4 12 4ZM12 6C12.2449 6.00003 12.4813 6.08996 12.6644 6.25272C12.8474 6.41547 12.9643 6.63975 12.993 6.883L13 7V11.586L15.707 14.293C15.8863 14.473 15.9905 14.7144 15.9982 14.9684C16.006 15.2223 15.9168 15.4697 15.7488 15.6603C15.5807 15.8508 15.3464 15.9703 15.0935 15.9944C14.8406 16.0185 14.588 15.9454 14.387 15.79L14.293 15.707L11.293 12.707C11.1376 12.5514 11.0378 12.349 11.009 12.131L11 12V7C11 6.73478 11.1054 6.48043 11.2929 6.29289C11.4804 6.10536 11.7348 6 12 6Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
-                
+
                   <p class="">{{ item.period.toUpperCase() }}</p>
                 </div>
-                
+
                 <div class="flex items-center justify-start gap-2" title="Area">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" clip-rule="evenodd"
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
                       d="M8.00091 2C7.20526 2 6.4422 2.31607 5.87959 2.87868C5.31698 3.44129 5.00091 4.20435 5.00091 5C5.00091 5.79565 5.31698 6.55871 5.87959 7.12132C6.4422 7.68393 7.20526 8 8.00091 8C8.79656 8 9.55962 7.68393 10.1222 7.12132C10.6848 6.55871 11.0009 5.79565 11.0009 5C11.0009 4.20435 10.6848 3.44129 10.1222 2.87868C9.55962 2.31607 8.79656 2 8.00091 2ZM7.00091 5C7.00091 4.73478 7.10627 4.48043 7.2938 4.29289C7.48134 4.10536 7.73569 4 8.00091 4C8.26613 4 8.52048 4.10536 8.70802 4.29289C8.89555 4.48043 9.00091 4.73478 9.00091 5C9.00091 5.26522 8.89555 5.51957 8.70802 5.70711C8.52048 5.89464 8.26613 6 8.00091 6C7.73569 6 7.48134 5.89464 7.2938 5.70711C7.10627 5.51957 7.00091 5.26522 7.00091 5ZM16.0009 2C15.2053 2 14.4422 2.31607 13.8796 2.87868C13.317 3.44129 13.0009 4.20435 13.0009 5C13.0009 5.79565 13.317 6.55871 13.8796 7.12132C14.4422 7.68393 15.2053 8 16.0009 8C16.7966 8 17.5596 7.68393 18.1222 7.12132C18.6848 6.55871 19.0009 5.79565 19.0009 5C19.0009 4.20435 18.6848 3.44129 18.1222 2.87868C17.5596 2.31607 16.7966 2 16.0009 2ZM15.0009 5C15.0009 4.73478 15.1063 4.48043 15.2938 4.29289C15.4813 4.10536 15.7357 4 16.0009 4C16.2661 4 16.5205 4.10536 16.708 4.29289C16.8956 4.48043 17.0009 4.73478 17.0009 5C17.0009 5.26522 16.8956 5.51957 16.708 5.70711C16.5205 5.89464 16.2661 6 16.0009 6C15.7357 6 15.4813 5.89464 15.2938 5.70711C15.1063 5.51957 15.0009 5.26522 15.0009 5ZM4.10391 11.181C4.07876 10.9042 4.11157 10.6252 4.20025 10.3618C4.28893 10.0985 4.43153 9.85643 4.61895 9.65122C4.80638 9.44601 5.03452 9.28212 5.28882 9.16999C5.54311 9.05787 5.81799 8.99997 6.09591 9H9.90591C10.1838 8.99997 10.4587 9.05787 10.713 9.16999C10.9673 9.28212 11.1954 9.44601 11.3829 9.65122C11.5703 9.85643 11.7129 10.0985 11.8016 10.3618C11.8903 10.6252 11.9231 10.9042 11.8979 11.181L10.9969 21.091C10.9742 21.3395 10.8595 21.5704 10.6752 21.7386C10.4909 21.9068 10.2504 22 10.0009 22H6.00091C5.75126 22 5.51064 21.9067 5.32634 21.7383C5.14203 21.5699 5.02738 21.3386 5.00491 21.09L4.10391 11.181ZM6.09591 11L6.91391 20H9.08791L9.90591 11H6.09591ZM14.8209 9C14.3586 9.00005 13.9105 9.16029 13.553 9.45346C13.1954 9.74663 12.9505 10.1546 12.8599 10.608L12.0199 14.804C11.9909 14.9491 11.9945 15.0988 12.0303 15.2424C12.0662 15.386 12.1335 15.5198 12.2273 15.6342C12.3212 15.7486 12.4392 15.8408 12.573 15.904C12.7068 15.9673 12.8529 16.0001 13.0009 16V21C13.0009 21.2652 13.1063 21.5196 13.2938 21.7071C13.4813 21.8946 13.7357 22 14.0009 22H18.0009C18.2661 22 18.5205 21.8946 18.708 21.7071C18.8956 21.5196 19.0009 21.2652 19.0009 21V16C19.1488 15.9999 19.2948 15.967 19.4285 15.9037C19.5621 15.8404 19.6801 15.7482 19.7738 15.6338C19.8675 15.5194 19.9347 15.3856 19.9705 15.2422C20.0064 15.0987 20.0099 14.949 19.9809 14.804L19.1429 10.608C19.0523 10.1544 18.8072 9.74633 18.4495 9.45314C18.0917 9.15995 17.6434 8.99982 17.1809 9H14.8209ZM15.0009 15C15.001 14.7721 14.9232 14.5509 14.7805 14.3733C14.6377 14.1956 14.4385 14.072 14.2159 14.023L14.8209 11H17.1809L17.7859 14.023C17.5633 14.072 17.3641 14.1956 17.2214 14.3733C17.0786 14.5509 17.0008 14.7721 17.0009 15V20H15.0009V15Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.areaDescription?.replace('ARQUITECTURA', 'ARQ.') }}</p>
                 </div>
                 <div class="flex items-center justify-start gap-2" title="Fase">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 6H13C13.2652 6 13.5196 5.89464 13.7071 5.70711C13.8946 5.51957 14 5.26522 14 5C14 4.73478 13.8946 4.48043 13.7071 4.29289C13.5196 4.10536 13.2652 4 13 4H12C11.7348 4 11.4804 4.10536 11.2929 4.29289C11.1054 4.48043 11 4.73478 11 5C11 5.26522 11.1054 5.51957 11.2929 5.70711C11.4804 5.89464 11.7348 6 12 6ZM12 10H13C13.2652 10 13.5196 9.89464 13.7071 9.70711C13.8946 9.51957 14 9.26522 14 9C14 8.73478 13.8946 8.48043 13.7071 8.29289C13.5196 8.10536 13.2652 8 13 8H12C11.7348 8 11.4804 8.10536 11.2929 8.29289C11.1054 8.48043 11 8.73478 11 9C11 9.26522 11.1054 9.51957 11.2929 9.70711C11.4804 9.89464 11.7348 10 12 10ZM7 6H8C8.26522 6 8.51957 5.89464 8.70711 5.70711C8.89464 5.51957 9 5.26522 9 5C9 4.73478 8.89464 4.48043 8.70711 4.29289C8.51957 4.10536 8.26522 4 8 4H7C6.73478 4 6.48043 4.10536 6.29289 4.29289C6.10536 4.48043 6 4.73478 6 5C6 5.26522 6.10536 5.51957 6.29289 5.70711C6.48043 5.89464 6.73478 6 7 6ZM7 10H8C8.26522 10 8.51957 9.89464 8.70711 9.70711C8.89464 9.51957 9 9.26522 9 9C9 8.73478 8.89464 8.48043 8.70711 8.29289C8.51957 8.10536 8.26522 8 8 8H7C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9C6 9.26522 6.10536 9.51957 6.29289 9.70711C6.48043 9.89464 6.73478 10 7 10ZM19 18H18V1C18 0.734784 17.8946 0.48043 17.7071 0.292893C17.5196 0.105357 17.2652 0 17 0H3C2.73478 0 2.48043 0.105357 2.29289 0.292893C2.10536 0.48043 2 0.734784 2 1V18H1C0.734784 18 0.48043 18.1054 0.292893 18.2929C0.105357 18.4804 0 18.7348 0 19C0 19.2652 0.105357 19.5196 0.292893 19.7071C0.48043 19.8946 0.734784 20 1 20H19C19.2652 20 19.5196 19.8946 19.7071 19.7071C19.8946 19.5196 20 19.2652 20 19C20 18.7348 19.8946 18.4804 19.7071 18.2929C19.5196 18.1054 19.2652 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.7348 12.8946 12.4804 12.7071 12.2929C12.5196 12.1054 12.2652 12 12 12H8C7.73478 12 7.48043 12.1054 7.29289 12.2929C7.10536 12.4804 7 12.7348 7 13V18H4V2H16V18Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.phaseDescription }}</p>
                 </div>
-            
+
                 <div class="flex items-center gap-2" title="Etapa">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 6H13C13.2652 6 13.5196 5.89464 13.7071 5.70711C13.8946 5.51957 14 5.26522 14 5C14 4.73478 13.8946 4.48043 13.7071 4.29289C13.5196 4.10536 13.2652 4 13 4H12C11.7348 4 11.4804 4.10536 11.2929 4.29289C11.1054 4.48043 11 4.73478 11 5C11 5.26522 11.1054 5.51957 11.2929 5.70711C11.4804 5.89464 11.7348 6 12 6ZM12 10H13C13.2652 10 13.5196 9.89464 13.7071 9.70711C13.8946 9.51957 14 9.26522 14 9C14 8.73478 13.8946 8.48043 13.7071 8.29289C13.5196 8.10536 13.2652 8 13 8H12C11.7348 8 11.4804 8.10536 11.2929 8.29289C11.1054 8.48043 11 8.73478 11 9C11 9.26522 11.1054 9.51957 11.2929 9.70711C11.4804 9.89464 11.7348 10 12 10ZM7 6H8C8.26522 6 8.51957 5.89464 8.70711 5.70711C8.89464 5.51957 9 5.26522 9 5C9 4.73478 8.89464 4.48043 8.70711 4.29289C8.51957 4.10536 8.26522 4 8 4H7C6.73478 4 6.48043 4.10536 6.29289 4.29289C6.10536 4.48043 6 4.73478 6 5C6 5.26522 6.10536 5.51957 6.29289 5.70711C6.48043 5.89464 6.73478 6 7 6ZM7 10H8C8.26522 10 8.51957 9.89464 8.70711 9.70711C8.89464 9.51957 9 9.26522 9 9C9 8.73478 8.89464 8.48043 8.70711 8.29289C8.51957 8.10536 8.26522 8 8 8H7C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9C6 9.26522 6.10536 9.51957 6.29289 9.70711C6.48043 9.89464 6.73478 10 7 10ZM19 18H18V1C18 0.734784 17.8946 0.48043 17.7071 0.292893C17.5196 0.105357 17.2652 0 17 0H3C2.73478 0 2.48043 0.105357 2.29289 0.292893C2.10536 0.48043 2 0.734784 2 1V18H1C0.734784 18 0.48043 18.1054 0.292893 18.2929C0.105357 18.4804 0 18.7348 0 19C0 19.2652 0.105357 19.5196 0.292893 19.7071C0.48043 19.8946 0.734784 20 1 20H19C19.2652 20 19.5196 19.8946 19.7071 19.7071C19.8946 19.5196 20 19.2652 20 19C20 18.7348 19.8946 18.4804 19.7071 18.2929C19.5196 18.1054 19.2652 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.7348 12.8946 12.4804 12.7071 12.2929C12.5196 12.1054 12.2652 12 12 12H8C7.73478 12 7.48043 12.1054 7.29289 12.2929C7.10536 12.4804 7 12.7348 7 13V18H4V2H16V18Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.stageDescription }}</p>
                 </div>
 
                 <div class="flex items-center gap-2" title="Nivel" *ngIf="item.layerDescription">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 6H13C13.2652 6 13.5196 5.89464 13.7071 5.70711C13.8946 5.51957 14 5.26522 14 5C14 4.73478 13.8946 4.48043 13.7071 4.29289C13.5196 4.10536 13.2652 4 13 4H12C11.7348 4 11.4804 4.10536 11.2929 4.29289C11.1054 4.48043 11 4.73478 11 5C11 5.26522 11.1054 5.51957 11.2929 5.70711C11.4804 5.89464 11.7348 6 12 6ZM12 10H13C13.2652 10 13.5196 9.89464 13.7071 9.70711C13.8946 9.51957 14 9.26522 14 9C14 8.73478 13.8946 8.48043 13.7071 8.29289C13.5196 8.10536 13.2652 8 13 8H12C11.7348 8 11.4804 8.10536 11.2929 8.29289C11.1054 8.48043 11 8.73478 11 9C11 9.26522 11.1054 9.51957 11.2929 9.70711C11.4804 9.89464 11.7348 10 12 10ZM7 6H8C8.26522 6 8.51957 5.89464 8.70711 5.70711C8.89464 5.51957 9 5.26522 9 5C9 4.73478 8.89464 4.48043 8.70711 4.29289C8.51957 4.10536 8.26522 4 8 4H7C6.73478 4 6.48043 4.10536 6.29289 4.29289C6.10536 4.48043 6 4.73478 6 5C6 5.26522 6.10536 5.51957 6.29289 5.70711C6.48043 5.89464 6.73478 6 7 6ZM7 10H8C8.26522 10 8.51957 9.89464 8.70711 9.70711C8.89464 9.51957 9 9.26522 9 9C9 8.73478 8.89464 8.48043 8.70711 8.29289C8.51957 8.10536 8.26522 8 8 8H7C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9C6 9.26522 6.10536 9.51957 6.29289 9.70711C6.48043 9.89464 6.73478 10 7 10ZM19 18H18V1C18 0.734784 17.8946 0.48043 17.7071 0.292893C17.5196 0.105357 17.2652 0 17 0H3C2.73478 0 2.48043 0.105357 2.29289 0.292893C2.10536 0.48043 2 0.734784 2 1V18H1C0.734784 18 0.48043 18.1054 0.292893 18.2929C0.105357 18.4804 0 18.7348 0 19C0 19.2652 0.105357 19.5196 0.292893 19.7071C0.48043 19.8946 0.734784 20 1 20H19C19.2652 20 19.5196 19.8946 19.7071 19.7071C19.8946 19.5196 20 19.2652 20 19C20 18.7348 19.8946 18.4804 19.7071 18.2929C19.5196 18.1054 19.2652 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.7348 12.8946 12.4804 12.7071 12.2929C12.5196 12.1054 12.2652 12 12 12H8C7.73478 12 7.48043 12.1054 7.29289 12.2929C7.10536 12.4804 7 12.7348 7 13V18H4V2H16V18Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.layerDescription }}</p>
                 </div>
-            
-                <div class="flex items-center gap-2" title="Subetapa" *ngIf="item.subStageDescription">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+                <div
+                  class="flex items-center gap-2"
+                  title="Subetapa"
+                  *ngIf="item.subStageDescription"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 6H13C13.2652 6 13.5196 5.89464 13.7071 5.70711C13.8946 5.51957 14 5.26522 14 5C14 4.73478 13.8946 4.48043 13.7071 4.29289C13.5196 4.10536 13.2652 4 13 4H12C11.7348 4 11.4804 4.10536 11.2929 4.29289C11.1054 4.48043 11 4.73478 11 5C11 5.26522 11.1054 5.51957 11.2929 5.70711C11.4804 5.89464 11.7348 6 12 6ZM12 10H13C13.2652 10 13.5196 9.89464 13.7071 9.70711C13.8946 9.51957 14 9.26522 14 9C14 8.73478 13.8946 8.48043 13.7071 8.29289C13.5196 8.10536 13.2652 8 13 8H12C11.7348 8 11.4804 8.10536 11.2929 8.29289C11.1054 8.48043 11 8.73478 11 9C11 9.26522 11.1054 9.51957 11.2929 9.70711C11.4804 9.89464 11.7348 10 12 10ZM7 6H8C8.26522 6 8.51957 5.89464 8.70711 5.70711C8.89464 5.51957 9 5.26522 9 5C9 4.73478 8.89464 4.48043 8.70711 4.29289C8.51957 4.10536 8.26522 4 8 4H7C6.73478 4 6.48043 4.10536 6.29289 4.29289C6.10536 4.48043 6 4.73478 6 5C6 5.26522 6.10536 5.51957 6.29289 5.70711C6.48043 5.89464 6.73478 6 7 6ZM7 10H8C8.26522 10 8.51957 9.89464 8.70711 9.70711C8.89464 9.51957 9 9.26522 9 9C9 8.73478 8.89464 8.48043 8.70711 8.29289C8.51957 8.10536 8.26522 8 8 8H7C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9C6 9.26522 6.10536 9.51957 6.29289 9.70711C6.48043 9.89464 6.73478 10 7 10ZM19 18H18V1C18 0.734784 17.8946 0.48043 17.7071 0.292893C17.5196 0.105357 17.2652 0 17 0H3C2.73478 0 2.48043 0.105357 2.29289 0.292893C2.10536 0.48043 2 0.734784 2 1V18H1C0.734784 18 0.48043 18.1054 0.292893 18.2929C0.105357 18.4804 0 18.7348 0 19C0 19.2652 0.105357 19.5196 0.292893 19.7071C0.48043 19.8946 0.734784 20 1 20H19C19.2652 20 19.5196 19.8946 19.7071 19.7071C19.8946 19.5196 20 19.2652 20 19C20 18.7348 19.8946 18.4804 19.7071 18.2929C19.5196 18.1054 19.2652 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.7348 12.8946 12.4804 12.7071 12.2929C12.5196 12.1054 12.2652 12 12 12H8C7.73478 12 7.48043 12.1054 7.29289 12.2929C7.10536 12.4804 7 12.7348 7 13V18H4V2H16V18Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.subStageDescription }}</p>
                 </div>
-            
-                <div class="flex items-center gap-2" title="Subespecialidad" *ngIf="item.subSpecialtyDescription">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+                <div
+                  class="flex items-center gap-2"
+                  title="Subespecialidad"
+                  *ngIf="item.subSpecialtyDescription"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M12 6H13C13.2652 6 13.5196 5.89464 13.7071 5.70711C13.8946 5.51957 14 5.26522 14 5C14 4.73478 13.8946 4.48043 13.7071 4.29289C13.5196 4.10536 13.2652 4 13 4H12C11.7348 4 11.4804 4.10536 11.2929 4.29289C11.1054 4.48043 11 4.73478 11 5C11 5.26522 11.1054 5.51957 11.2929 5.70711C11.4804 5.89464 11.7348 6 12 6ZM12 10H13C13.2652 10 13.5196 9.89464 13.7071 9.70711C13.8946 9.51957 14 9.26522 14 9C14 8.73478 13.8946 8.48043 13.7071 8.29289C13.5196 8.10536 13.2652 8 13 8H12C11.7348 8 11.4804 8.10536 11.2929 8.29289C11.1054 8.48043 11 8.73478 11 9C11 9.26522 11.1054 9.51957 11.2929 9.70711C11.4804 9.89464 11.7348 10 12 10ZM7 6H8C8.26522 6 8.51957 5.89464 8.70711 5.70711C8.89464 5.51957 9 5.26522 9 5C9 4.73478 8.89464 4.48043 8.70711 4.29289C8.51957 4.10536 8.26522 4 8 4H7C6.73478 4 6.48043 4.10536 6.29289 4.29289C6.10536 4.48043 6 4.73478 6 5C6 5.26522 6.10536 5.51957 6.29289 5.70711C6.48043 5.89464 6.73478 6 7 6ZM7 10H8C8.26522 10 8.51957 9.89464 8.70711 9.70711C8.89464 9.51957 9 9.26522 9 9C9 8.73478 8.89464 8.48043 8.70711 8.29289C8.51957 8.10536 8.26522 8 8 8H7C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9C6 9.26522 6.10536 9.51957 6.29289 9.70711C6.48043 9.89464 6.73478 10 7 10ZM19 18H18V1C18 0.734784 17.8946 0.48043 17.7071 0.292893C17.5196 0.105357 17.2652 0 17 0H3C2.73478 0 2.48043 0.105357 2.29289 0.292893C2.10536 0.48043 2 0.734784 2 1V18H1C0.734784 18 0.48043 18.1054 0.292893 18.2929C0.105357 18.4804 0 18.7348 0 19C0 19.2652 0.105357 19.5196 0.292893 19.7071C0.48043 19.8946 0.734784 20 1 20H19C19.2652 20 19.5196 19.8946 19.7071 19.7071C19.8946 19.5196 20 19.2652 20 19C20 18.7348 19.8946 18.4804 19.7071 18.2929C19.5196 18.1054 19.2652 18 19 18ZM11 18H9V14H11V18ZM16 18H13V13C13 12.7348 12.8946 12.4804 12.7071 12.2929C12.5196 12.1054 12.2652 12 12 12H8C7.73478 12 7.48043 12.1054 7.29289 12.2929C7.10536 12.4804 7 12.7348 7 13V18H4V2H16V18Z"
-                      fill="#64BC04" />
+                      fill="#64BC04"
+                    />
                   </svg>
                   <p class="">{{ item.subSpecialtyDescription }}</p>
                 </div>
@@ -289,7 +386,7 @@
               </button>
             </td>
             -->
-              <!--
+            <!--
               <td class="text-center">
                 <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]"
                   [ngClass]="{
@@ -323,25 +420,39 @@
               </span>
             </td>
 
-            <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
-                <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="apiUrl + getOpportunityImages(item.images)[0].imageUrl"
-                      class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
+            <td
+              class="text-center px-2 break-words"
+              (click)="openViewModal(item.lessonId, $event, 'images')"
+            >
+              <ng-container *ngIf="getOpportunityImages(item.images) as images">
+                <ng-container *ngIf="images.length > 0; else sinImagen">
+                  <img
+                    [src]="apiUrl + images[0].imageUrl"
+                    class="h-48 w-auto object-contain rounded mx-auto cursor-pointer"
+                  />
                 </ng-container>
-            
-                <ng-template #sinImagen>
-                    <span class="text-xs text-gray-400 italic">Sin imagen</span>
-                </ng-template>
+              </ng-container>
+
+              <ng-template #sinImagen>
+                <span class="text-xs text-gray-400 italic">Sin imagen</span>
+              </ng-template>
             </td>
-            <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
-                <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="apiUrl + getImprovementImages(item.images)[0].imageUrl"
-                      class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
+            <td
+              class="text-center px-2 break-words"
+              (click)="openViewModal(item.lessonId, $event, 'images')"
+            >
+              <ng-container *ngIf="getImprovementImages(item.images) as images">
+                <ng-container *ngIf="images.length > 0; else sinImagen">
+                  <img
+                    [src]="apiUrl + images[0].imageUrl"
+                    class="h-48 w-auto object-contain rounded mx-auto cursor-pointer"
+                  />
                 </ng-container>
-            
-                <ng-template #sinImagen>
-                    <span class="text-xs text-gray-400 italic">Sin imagen</span>
-                </ng-template>
+              </ng-container>
+
+              <ng-template #sinImagen>
+                <span class="text-xs text-gray-400 italic">Sin imagen</span>
+              </ng-template>
             </td>
             <!--<td class="text-center px-10">{{ item.createdDateTime ? (item.createdDateTime | date:'dd-MM-yyyy') : '-' }}</td>-->
           </tr>
@@ -349,22 +460,36 @@
       </table>
     </div>
     <div class="flex gap-2 mt-4 justify-around w-full border border-[#D6DEE5] rounded-lg h-[30px]">
-        <span># Registros: {{totalRecords}}</span>
-        <div class="flex gap-[10px] items-center">
-            <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">
-                «
-            </button>
-    
-            <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages"
-                (click)="goToPage(page)"
-                [ngClass]="{'bg-[#0086A5] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
-                {{ page }}
-            </button>
-    
-            <button class="cursor-pointer text-[#0086A5]" (click)="nextPage()" [disabled]="currentPage === totalPages">
-                »
-            </button>
-        </div>
+      <span># Registros: {{ totalRecords }}</span>
+      <div class="flex gap-[10px] items-center">
+        <button
+          class="cursor-pointer text-[#0086A5]"
+          (click)="prevPage()"
+          [disabled]="currentPage === 1"
+        >
+          «
+        </button>
+
+        <button
+          class="cursor-pointer py-1 px-2 rounded transition-colors"
+          *ngFor="let page of pages"
+          (click)="goToPage(page)"
+          [ngClass]="{
+            'bg-[#0086A5] text-white': page === currentPage,
+            'text-black hover:bg-gray-100': page !== currentPage,
+          }"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          class="cursor-pointer text-[#0086A5]"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages"
+        >
+          »
+        </button>
+      </div>
     </div>
   </div>
 
@@ -408,9 +533,7 @@
           </div>
 
           <div *ngIf="activeTab === 'general'">
-            <div *ngIf="detailLoading" class="p-6 text-center">
-              Cargando...
-            </div>
+            <div *ngIf="detailLoading" class="p-6 text-center">Cargando...</div>
             <div
               *ngIf="!detailLoading && selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
@@ -447,7 +570,11 @@
               -->
               <p class="text-[#64BC04] w-[50%]">
                 Fecha subida:
-                <span class="text-[#224051]">{{ selectedLesson.createdDateTime ? (selectedLesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span>
+                <span class="text-[#224051]">{{
+                  selectedLesson.createdDateTime
+                    ? (selectedLesson.createdDateTime | date: 'dd-MM-yyyy')
+                    : '-'
+                }}</span>
               </p>
               <p class="text-[#64BC04] w-[50%]">
                 Subespecialidad:
@@ -493,59 +620,113 @@
                 </div>
                 <div class="flex gap-5">
                   <!-- Columna de oportunidad -->
-                  <div class="flex flex-col gap-5">
-                    <div *ngFor="let image of opportunityImages"
-                      class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
-                      (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()">
-                      <img [src]="apiUrl + image.imageUrl" (wheel)="onWheelZoom($event, image.lessonImageId)"
-                        (mousedown)="onMouseDown($event, image.lessonImageId)" [style.transform]="
-                                          'scale(' +
-                                          (imageZoom[image.lessonImageId] || 1) +
-                                          ') translate(' +
-                                          (imagePos[image.lessonImageId]?.x || 0) +
-                                          'px,' +
-                                          (imagePos[image.lessonImageId]?.y || 0) +
-                                          'px)'
-                                        " class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
-                        draggable="false" alt="Imagen de la lección" />
-                    </div>
+                  <div class="w-1/2 flex flex-col gap-5">
+                    <!-- Si hay imágenes -->
+                    <ng-container *ngIf="(opportunityImages?.length ?? 0) > 0; else sinImagen">
+                      <div
+                        *ngFor="let image of opportunityImages"
+                        class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
+                        (mousemove)="onMouseMove($event)"
+                        (mouseup)="onMouseUp()"
+                        (mouseleave)="onMouseUp()"
+                      >
+                        <img
+                          [src]="apiUrl + image.imageUrl"
+                          (wheel)="onWheelZoom($event, image.lessonImageId)"
+                          (mousedown)="onMouseDown($event, image.lessonImageId)"
+                          [style.transform]="
+                            'scale(' +
+                            (imageZoom[image.lessonImageId] || 1) +
+                            ') translate(' +
+                            (imagePos[image.lessonImageId]?.x || 0) +
+                            'px,' +
+                            (imagePos[image.lessonImageId]?.y || 0) +
+                            'px)'
+                          "
+                          class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
+                          draggable="false"
+                          alt="Imagen de la lección"
+                        />
+                      </div>
+                    </ng-container>
+
+                    <!-- Si NO hay imágenes -->
+                    <ng-template #sinImagen>
+                      <div
+                        class="border border-[#E2E2E2] rounded flex justify-center items-center h-[500px] text-gray-400 text-lg"
+                      >
+                        Sin imagen
+                      </div>
+                    </ng-template>
                   </div>
-          
+
                   <!-- Columna de mejora -->
-                  <div class="flex flex-col gap-5">
-                    <div *ngFor="let image of improvementImages"
-                      class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
-                      (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()">
-                      <img [src]="apiUrl + image.imageUrl" (wheel)="onWheelZoom($event, image.lessonImageId)"
-                        (mousedown)="onMouseDown($event, image.lessonImageId)" [style.transform]="
-                                          'scale(' +
-                                          (imageZoom[image.lessonImageId] || 1) +
-                                          ') translate(' +
-                                          (imagePos[image.lessonImageId]?.x || 0) +
-                                          'px,' +
-                                          (imagePos[image.lessonImageId]?.y || 0) +
-                                          'px)'
-                                        " class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
-                        draggable="false" alt="Imagen de la lección" />
-                    </div>
+                  <div class="w-1/2 flex flex-col gap-5">
+                    <!-- Si hay imágenes -->
+                    <ng-container *ngIf="(improvementImages?.length ?? 0) > 0; else sinImagen">
+                      <div
+                        *ngFor="let image of improvementImages"
+                        class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
+                        (mousemove)="onMouseMove($event)"
+                        (mouseup)="onMouseUp()"
+                        (mouseleave)="onMouseUp()"
+                      >
+                        <img
+                          [src]="apiUrl + image.imageUrl"
+                          (wheel)="onWheelZoom($event, image.lessonImageId)"
+                          (mousedown)="onMouseDown($event, image.lessonImageId)"
+                          [style.transform]="
+                            'scale(' +
+                            (imageZoom[image.lessonImageId] || 1) +
+                            ') translate(' +
+                            (imagePos[image.lessonImageId]?.x || 0) +
+                            'px,' +
+                            (imagePos[image.lessonImageId]?.y || 0) +
+                            'px)'
+                          "
+                          class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
+                          draggable="false"
+                          alt="Imagen de la lección"
+                        />
+                      </div>
+                    </ng-container>
+
+                    <!-- Si NO hay imágenes -->
+                    <ng-template #sinImagen>
+                      <div
+                        class="border border-[#E2E2E2] rounded flex justify-center items-center h-[500px] text-gray-400 text-lg"
+                      >
+                        Sin imagen
+                      </div>
+                    </ng-template>
                   </div>
                 </div>
               </div>
             </ng-container>
-          
+
             <ng-template #noImages>
               <p class="text-center text-gray-400">No hay imágenes adjuntas.</p>
             </ng-template>
           </div>
         </div>
         <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20 20L4 4M20 4L4 20"
+              stroke="#64BC04"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
         </button>
       </div>
     </div>
-
   </div>
 
   <div
@@ -588,9 +769,7 @@
           </div>
 
           <div *ngIf="activeTab === 'general'">
-            <div *ngIf="detailLoading" class="p-6 text-center">
-              Cargando...
-            </div>
+            <div *ngIf="detailLoading" class="p-6 text-center">Cargando...</div>
             <div
               *ngIf="!detailLoading && selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
@@ -893,11 +1072,7 @@
                   <div class="flex flex-col w-full">
                     <p class="text-[#64BC04] w-1/2">Oportunidad:</p>
                     <div
-                      class="relative flex flex-col items-center justify-center w-full h-40
-                                                                                 border-2 border-dashed border-[#64BC04] rounded-xl
-                                                                                 bg-[#F7FBF3] cursor-pointer
-                                                                                 transition-all duration-200
-                                                                                 hover:bg-[#EEF7E6] hover:scale-[1.01]"
+                      class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#64BC04] rounded-xl bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
                       (click)="opFile.click()"
                       (dragover)="onDragOver($event)"
                       (dragleave)="onDragLeave($event)"
@@ -947,11 +1122,7 @@
                   <div class="flex flex-col w-full">
                     <p class="text-[#64BC04] w-1/2">Mejora:</p>
                     <div
-                      class="relative flex flex-col items-center justify-center w-full h-40
-                                                                             border-2 border-dashed border-[#64BC04] rounded-xl
-                                                                             bg-[#F7FBF3] cursor-pointer
-                                                                             transition-all duration-200
-                                                                             hover:bg-[#EEF7E6] hover:scale-[1.01]"
+                      class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#64BC04] rounded-xl bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
                       (click)="impFile.click()"
                       (dragover)="onDragOver($event)"
                       (dragleave)="onDragLeave($event)"
@@ -1011,8 +1182,19 @@
           </div>
         </div>
         <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20 20L4 4M20 4L4 20"
+              stroke="#64BC04"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
         </button>
       </div>

@@ -265,6 +265,7 @@ export class LeccionesAprendidas implements OnInit {
     this.selectedLesson = null;
     this.detailLoading = false;
     this.showCreateModal = false;
+    this.activeTab = 'general';
   }
 
   setSelectedLessonImages() {
@@ -490,24 +491,6 @@ export class LeccionesAprendidas implements OnInit {
 
     if (this.selectedSubSpecialtyId)
       form.append('SubSpecialtyId', String(this.selectedSubSpecialtyId));
-
-    if (!this.opportunityFiles || this.opportunityFiles.length === 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Campo requerido',
-        text: 'Por favor ingrese al menos una imagen de oportunidad.',
-      });
-      return;
-    }
-
-    if (!this.improvementFiles || this.improvementFiles.length === 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Campo requerido',
-        text: 'Por favor ingrese al menos una imagen de mejora.',
-      });
-      return;
-    }
 
     this.opportunityFiles.forEach((f) => {
       form.append('OpportunityImages', f);
