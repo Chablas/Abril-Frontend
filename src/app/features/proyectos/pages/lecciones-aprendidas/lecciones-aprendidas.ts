@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from "@angular/router";
 import Swal from 'sweetalert2';
 
 @Component({
@@ -86,6 +87,7 @@ export class LeccionesAprendidas implements OnInit {
     private lessonService: LessonService,
     private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService,
     private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -532,6 +534,20 @@ export class LeccionesAprendidas implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
+        if (err.status == 401) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Sesión expirada',
+            text: err.error?.message ?? '',
+          });
+          localStorage.clear();
+          this.loadingModal = false;
+          this.cdr.detectChanges();
+          this.saving = false;
+          this.router.navigate(['/auth/login']);
+          return;
+        }
+
         if (err.status >= 400 && err.status < 500) {
           Swal.fire({
             icon: 'error',
