@@ -7,6 +7,7 @@ import { Fases } from "./pages/fases/fases";
 import { Proyectos } from "./pages/proyectos/proyectos";
 import { Subetapas } from "./pages/subetapas/subetapas";
 import { Subespecialidades } from "./pages/subespecialidades/subespecialidades";
+import { Reminder } from "./pages/reminder/reminder";
 import { Layers } from "./pages/layers/layers";
 
 const routes: Routes = [
@@ -18,6 +19,7 @@ const routes: Routes = [
   { path: "sub-stages", component: Subetapas, data: { titulo: 'SUBETAPAS' } },
   { path: "sub-specialties", component: Subespecialidades, data: { titulo: 'SUBESPECIALIDADES' } },
   { path: "relations", component: ConfFaseEtapaSubetapa, data: { titulo: 'RELACIONES' } },
+  { path: "reminders", component: Reminder, data: { titulo: 'RECORDATORIOS DE LECCIONES' } },
   { path: '', redirectTo: 'projects', pathMatch: 'full' }
 ];
 

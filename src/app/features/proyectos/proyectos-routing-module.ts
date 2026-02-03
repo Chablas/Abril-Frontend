@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LeccionesAprendidas } from "./pages/lecciones-aprendidas/lecciones-aprendidas";
+import { LessonsDashboard } from "./pages/lessons-dashboard/lessons-dashboard";
 import { Layout } from "../../shared/components/layout/layout";
 
 const routes: Routes = [
@@ -8,6 +9,9 @@ const routes: Routes = [
     { path: '', redirectTo: 'lessons', pathMatch: 'full' },
     { path: "lessons", children: [
       { path: "", component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } }
+    ] },
+    { path: "dashboard", children: [
+      { path: "", component: LessonsDashboard, data: { titulo: 'DASHBOARD LECCIONES' } }
     ] },
     {
       path: "configuration", loadChildren: () => {

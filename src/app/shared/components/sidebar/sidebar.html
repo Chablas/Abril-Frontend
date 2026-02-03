@@ -47,6 +47,13 @@
         >
           Lecciones aprendidas
         </a>
+        <a
+          routerLink="/projects/dashboard"
+          class="block px-4 py-2 text-sm rounded-xl
+                       hover:bg-[#E5F7D1] font-sans"
+        >
+          Dashboard Lecciones
+        </a>
 
         <!-- ITEM CON SUBMENÚ -->
         <div class="relative" (click)="toggleConfig($event)">
@@ -138,6 +145,14 @@
                            hover:bg-[#E5F7D1] rounded-xl"
             >
               Config. Relaciones
+            </a>
+            <a
+              routerLink="/projects/configuration/reminders"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Recordatorios Lecciones
             </a>
           </div>
         </div>

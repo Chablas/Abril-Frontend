@@ -6,6 +6,7 @@ import { LessonDetailDTO } from '../models/lessonDetail.model';
 import { LessonFiltersDTO } from "../models/lessonFilters.model";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../environments/environment';
+import { DashboardDTO } from "../models/dashboard/DashboardDTO";
 
 @Injectable({
   providedIn: 'root'
@@ -52,5 +53,8 @@ export class LessonService {
   createLesson(form: FormData) {
     const token = localStorage.getItem('access_token');
     return this.http.post(`${this.apiUrl}`, form, {headers: {Authorization: `Bearer ${token}`}});
+  }
+  getDashboardData(): Observable<DashboardDTO> {
+    return this.http.get<DashboardDTO>(`${this.apiUrl}/dashboard`)
   }
 }
