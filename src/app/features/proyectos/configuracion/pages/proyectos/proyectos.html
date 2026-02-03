@@ -104,7 +104,7 @@
 
     <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto" (click)="closeModal()" >
         <div class="min-h-screen flex items-center justify-center py-10">
-            <div class="bg-white w-[500px] rounded-xl shadow-xl animate-modal-in" (click)="$event.stopPropagation()">
+            <div class="bg-white w-[500px] rounded-xl shadow-xl animate-modal-in relative" (click)="$event.stopPropagation()">
                 <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
                     <h1 class="text-2xl text-center">AGREGAR PROYECTO</h1>
                     <div class="flex justify-between w-full">
@@ -125,6 +125,11 @@
                         <p class="text-[#ffffff] text-lg">Guardar</p>
                     </button>
                 </div>
+                <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
