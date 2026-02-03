@@ -51,7 +51,6 @@ export class LessonService {
   }
   createLesson(form: FormData) {
     const token = localStorage.getItem('access_token');
-    console.log(token);
     return this.http.post(`${this.apiUrl}`, form, {headers: {Authorization: `Bearer ${token}`}});
   }
 }

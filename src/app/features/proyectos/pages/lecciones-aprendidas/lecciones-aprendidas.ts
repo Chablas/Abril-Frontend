@@ -10,6 +10,7 @@ import { LessonFiltersDTO } from "../../../../models/lessonFilters.model";
 import { FormsModule } from '@angular/forms';
 import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../../../environments/environment';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -20,7 +21,6 @@ import Swal from 'sweetalert2';
   styleUrl: './lecciones-aprendidas.css',
 })
 export class LeccionesAprendidas implements OnInit {
-
   // Todos
   currentPage = 1;
   totalPages = 0;
@@ -82,7 +82,11 @@ export class LeccionesAprendidas implements OnInit {
   lastX = 0;
   lastY = 0;
 
-  constructor(private lessonService: LessonService, private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService, private cdr: ChangeDetectorRef) { }
+  constructor(
+    private lessonService: LessonService,
+    private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.loadLessons();
@@ -92,9 +96,9 @@ export class LeccionesAprendidas implements OnInit {
     this.loadingLoadLessons = true;
 
     forkJoin({
-      lessons: this.lessonService.getLessonsUsingFilters({page: page}),
+      lessons: this.lessonService.getLessonsUsingFilters({ page: page }),
       filtersTable: this.phaseStageSubStageSubSpecialtyService.getFormData(),
-      filtersPSSSCreateModal: this.lessonService.getFiltersCreate()
+      filtersPSSSCreateModal: this.lessonService.getFiltersCreate(),
     }).subscribe({
       next: ({ lessons, filtersTable, filtersPSSSCreateModal }) => {
         this.lessons = lessons;
@@ -107,15 +111,15 @@ export class LeccionesAprendidas implements OnInit {
         this.loadingLoadLessons = false;
         this.cdr.detectChanges();
       },
-      error: err => {
+      error: (err) => {
         this.loadingLoadLessons = false;
         this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'Oops...',
-          text: err.error ?? 'Error al cargar lecciones'
+          text: err.error ?? 'Error al cargar lecciones',
         });
-      }
+      },
     });
   }
 
@@ -127,17 +131,19 @@ export class LeccionesAprendidas implements OnInit {
     this.selectedLesson = null;
 
     this.lessonService.getById(id).subscribe({
-      next: data => {
+      next: (data) => {
         this.selectedLesson = data;
-        this.opportunityImages = data.images ?.filter(img => img.imageTypeDescription === 'OPORTUNIDAD') || [];
-        this.improvementImages = data.images ?.filter(img => img.imageTypeDescription === 'MEJORA') || [];
+        this.opportunityImages =
+          data.images?.filter((img) => img.imageTypeDescription === 'OPORTUNIDAD') || [];
+        this.improvementImages =
+          data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
         this.detailLoading = false;
         this.cdr.detectChanges();
       },
-      error: err => {
+      error: (err) => {
         this.detailLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -147,7 +153,7 @@ export class LeccionesAprendidas implements OnInit {
     this.detailLoading = true;
 
     this.lessonService.getFiltersCreate().subscribe({
-      next: data => {
+      next: (data) => {
         this.filtersPSSSCreateModal = data;
         this.phases = data;
 
@@ -166,24 +172,22 @@ export class LeccionesAprendidas implements OnInit {
         this.detailLoading = false;
         this.cdr.detectChanges();
       },
-      error: err => {
+      error: (err) => {
         this.detailLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   onPhaseChange() {
-    const phase = this.filtersPSSSCreateModal.find(
-      p => p.phaseId === this.selectedPhaseId
-    );
-  
+    const phase = this.filtersPSSSCreateModal.find((p) => p.phaseId === this.selectedPhaseId);
+
     this.stages = phase?.stages ?? [];
-  
+
     this.layers = [];
     this.subStages = [];
     this.subSpecialties = [];
-  
+
     this.selectedStageId = undefined;
     this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
@@ -191,10 +195,10 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   onStageChange() {
-    const stage = this.stages.find(s => s.stageId === this.selectedStageId);
-  
+    const stage = this.stages.find((s) => s.stageId === this.selectedStageId);
+
     this.layers = stage?.layers ?? [];
-  
+
     if (this.layers.length === 0) {
       // Stage SIN Layer
       this.subStages = stage?.subStages ?? [];
@@ -202,27 +206,27 @@ export class LeccionesAprendidas implements OnInit {
       // Stage CON Layer
       this.subStages = [];
     }
-  
+
     this.subSpecialties = [];
-  
+
     this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   }
 
   onSubStageChange() {
-    const subStage = this.subStages.find(ss => ss.subStageId === this.selectedSubStageId);
-    this.subSpecialties = subStage ?.subSpecialties ?? [];
+    const subStage = this.subStages.find((ss) => ss.subStageId === this.selectedSubStageId);
+    this.subSpecialties = subStage?.subSpecialties ?? [];
 
     this.selectedSubSpecialtyId = undefined;
   }
 
   onLayerChange() {
-    const layer = this.layers.find(l => l.layerId === this.selectedLayerId);
-  
+    const layer = this.layers.find((l) => l.layerId === this.selectedLayerId);
+
     this.subStages = layer?.subStages ?? [];
     this.subSpecialties = [];
-  
+
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
   }
@@ -235,19 +239,21 @@ export class LeccionesAprendidas implements OnInit {
     this.selectedLesson = null;
 
     this.lessonService.getById(id).subscribe({
-      next: data => {
+      next: (data) => {
         this.selectedLesson = data;
-        this.opportunityImages = data.images ?.filter(img => img.imageTypeDescription === 'OPORTUNIDAD') || [];
-        this.improvementImages = data.images ?.filter(img => img.imageTypeDescription === 'MEJORA') || [];
+        this.opportunityImages =
+          data.images?.filter((img) => img.imageTypeDescription === 'OPORTUNIDAD') || [];
+        this.improvementImages =
+          data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
         this.detailLoading = false;
         this.cdr.detectChanges();
         console.log(this.selectedLesson);
       },
-      error: err => {
+      error: (err) => {
         console.error(err);
         this.detailLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -257,6 +263,22 @@ export class LeccionesAprendidas implements OnInit {
     this.selectedLesson = null;
     this.detailLoading = false;
     this.showCreateModal = false;
+  }
+
+  setSelectedLessonImages() {
+    if (!this.selectedLesson?.images) {
+      this.opportunityImages = [];
+      this.improvementImages = [];
+      return;
+    }
+
+    this.opportunityImages = this.selectedLesson.images.filter(
+      (img) => img.imageTypeDescription === 'OPORTUNIDAD',
+    );
+
+    this.improvementImages = this.selectedLesson.images.filter(
+      (img) => img.imageTypeDescription === 'MEJORA',
+    );
   }
 
   onWheelZoom(event: WheelEvent, imgId: number) {
@@ -314,7 +336,7 @@ export class LeccionesAprendidas implements OnInit {
     this.loadingLoadLessons = true;
 
     this.lessonService.getLessonsUsingFilters(this.filtersTable).subscribe({
-      next: data => {
+      next: (data) => {
         this.lessons = data;
         this.loadingLoadLessons = false;
         this.currentPage = data.page;
@@ -323,15 +345,15 @@ export class LeccionesAprendidas implements OnInit {
         this.totalRecords = data.totalRecords;
         this.cdr.detectChanges();
       },
-      error: err => {
+      error: (err) => {
         this.loadingLoadLessons = false;
         this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'Oops...',
-          text: err.error ?? 'Error al cargar lecciones'
+          text: err.error ?? 'Error al cargar lecciones',
         });
-      }
+      },
     });
   }
 
@@ -345,7 +367,7 @@ export class LeccionesAprendidas implements OnInit {
 
   onDrop(e: DragEvent, type: 'opportunity' | 'improvement') {
     e.preventDefault();
-    if (!e.dataTransfer ?.files) return;
+    if (!e.dataTransfer?.files) return;
     this.handleFiles(e.dataTransfer.files, type);
   }
 
@@ -356,7 +378,7 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   private handleFiles(fileList: FileList, type: 'opportunity' | 'improvement') {
-    Array.from(fileList).forEach(file => {
+    Array.from(fileList).forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (type === 'opportunity') {
@@ -373,12 +395,74 @@ export class LeccionesAprendidas implements OnInit {
     });
   }
 
+  getOpportunityImages(images: any[]): any[] {
+    return images?.filter((img) => img.imageTypeDescription === 'OPORTUNIDAD') ?? [];
+  }
+
+  getImprovementImages(images: any[]): any[] {
+    return images?.filter((img) => img.imageTypeDescription === 'MEJORA') ?? [];
+  }
+
   submitLesson() {
-    if (!this.filtersTable.areaId || !this.selectedPhaseId) {
+    if (!this.filtersTable.projectId) {
       Swal.fire({
         icon: 'error',
-        title: 'Oops...',
-        text: 'Seleccionar área y fase'
+        title: 'Campo requerido',
+        text: 'Seleccionar proyecto',
+      });
+      return;
+    }
+
+    if (!this.filtersTable.areaId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Seleccionar área',
+      });
+      return;
+    }
+
+    if (!this.selectedPhaseId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Seleccionar fase',
+      });
+      return;
+    }
+
+    if (!this.problemDescription) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese una descripción.',
+      });
+      return;
+    }
+
+    if (!this.reasonDescription) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese una causa.',
+      });
+      return;
+    }
+
+    if (!this.lessonDescription) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese una lección/propuesta.',
+      });
+      return;
+    }
+
+    if (!this.impactDescription) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese un impacto.',
       });
       return;
     }
@@ -391,30 +475,43 @@ export class LeccionesAprendidas implements OnInit {
     form.append('ImpactDescription', this.impactDescription ?? '');
 
     // ids
-    if (this.filtersTable.projectId)
-      form.append('ProjectId', String(this.filtersTable.projectId));
+    if (this.filtersTable.projectId) form.append('ProjectId', String(this.filtersTable.projectId));
 
     form.append('AreaId', String(this.filtersTable.areaId));
     form.append('PhaseId', String(this.selectedPhaseId));
 
-    if (this.selectedStageId)
-      form.append('StageId', String(this.selectedStageId));
+    if (this.selectedStageId) form.append('StageId', String(this.selectedStageId));
 
-    if (this.selectedLayerId)
-      form.append('LayerId', String(this.selectedLayerId));
+    if (this.selectedLayerId) form.append('LayerId', String(this.selectedLayerId));
 
-    if (this.selectedSubStageId)
-      form.append('SubStageId', String(this.selectedSubStageId));
+    if (this.selectedSubStageId) form.append('SubStageId', String(this.selectedSubStageId));
 
     if (this.selectedSubSpecialtyId)
       form.append('SubSpecialtyId', String(this.selectedSubSpecialtyId));
 
-    // imágenes
-    this.opportunityFiles.forEach(f => {
+    if (!this.opportunityFiles || this.opportunityFiles.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese al menos una imagen de oportunidad.',
+      });
+      return;
+    }
+
+    if (!this.improvementFiles || this.improvementFiles.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campo requerido',
+        text: 'Por favor ingrese al menos una imagen de mejora.',
+      });
+      return;
+    }
+
+    this.opportunityFiles.forEach((f) => {
       form.append('OpportunityImages', f);
     });
 
-    this.improvementFiles.forEach(f => {
+    this.improvementFiles.forEach((f) => {
       form.append('ImprovementImages', f);
     });
 
@@ -431,14 +528,34 @@ export class LeccionesAprendidas implements OnInit {
         Swal.fire({
           title: 'Lección creada exitosamente',
           icon: 'success',
-          draggable: true
+          draggable: true,
         });
       },
-      error: err => {
-        this.loadingModal = false;
-        this.cdr.detectChanges();
-        this.saving = false;
-      }
+      error: (err: HttpErrorResponse) => {
+        if (err.status >= 400 && err.status < 500) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de validación',
+            text: err.error?.message ?? 'Escoja una relación válida.',
+          });
+          this.loadingModal = false;
+          this.cdr.detectChanges();
+          this.saving = false;
+          return;
+        }
+
+        if (err.status >= 500) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error del servidor',
+            text: 'Ocurrió un problema en el servidor. Contacte al administrador del sistema o inténtelo más tarde.',
+          });
+          this.loadingModal = false;
+          this.cdr.detectChanges();
+          this.saving = false;
+          return;
+        }
+      },
     });
   }
 
@@ -447,7 +564,7 @@ export class LeccionesAprendidas implements OnInit {
     this.reasonDescription = '';
     this.lessonDescription = '';
     this.impactDescription = '';
-  
+
     this.filtersTable.projectId = null;
     this.filtersTable.areaId = null;
     this.selectedPhaseId = undefined;
@@ -455,7 +572,7 @@ export class LeccionesAprendidas implements OnInit {
     this.selectedLayerId = undefined;
     this.selectedSubStageId = undefined;
     this.selectedSubSpecialtyId = undefined;
-  
+
     this.opportunityFiles = [];
     this.improvementFiles = [];
     this.opportunityPreviews = [];
@@ -468,14 +585,14 @@ export class LeccionesAprendidas implements OnInit {
       this.cdr.detectChanges();
     }
   }
-  
+
   prevPage() {
     if (this.currentPage > 1) {
       this.loadLessons(this.currentPage - 1);
       this.cdr.detectChanges();
     }
   }
-  
+
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.loadLessons(page);
@@ -485,29 +602,29 @@ export class LeccionesAprendidas implements OnInit {
 
   get pages(): number[] {
     const maxButtons = 5;
-  
+
     if (this.totalPages <= maxButtons) {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     }
-  
+
     let start = this.currentPage - Math.floor(maxButtons / 2);
     let end = this.currentPage + Math.floor(maxButtons / 2);
-  
+
     if (start < 1) {
       start = 1;
       end = maxButtons;
     }
-  
+
     if (end > this.totalPages) {
       end = this.totalPages;
       start = this.totalPages - maxButtons + 1;
     }
-  
+
     const pages: number[] = [];
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-  
+
     return pages;
   }
 }

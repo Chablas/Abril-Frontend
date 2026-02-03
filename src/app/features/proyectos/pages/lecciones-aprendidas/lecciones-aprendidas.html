@@ -325,8 +325,8 @@
 
             <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
                 <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="apiUrl + item.images[0].imageUrl"
-                        class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
+                    <img [src]="apiUrl + getOpportunityImages(item.images)[0].imageUrl"
+                      class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
                 </ng-container>
             
                 <ng-template #sinImagen>
@@ -335,8 +335,8 @@
             </td>
             <td class="text-center px-2 break-words" (click)="openViewModal(item.lessonId, $event, 'images')">
                 <ng-container *ngIf="item.images?.[0]?.imageUrl; else sinImagen">
-                    <img [src]="apiUrl + item.images[1].imageUrl"
-                        class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
+                    <img [src]="apiUrl + getImprovementImages(item.images)[0].imageUrl"
+                      class="h-48 w-auto object-contain rounded mx-auto cursor-pointer" />
                 </ng-container>
             
                 <ng-template #sinImagen>
@@ -485,74 +485,74 @@
           </div>
 
           <div *ngIf="activeTab === 'images'" class="p-10">
-            <ng-container *ngIf="selectedLesson?.images?.length; else noImages">
-              <div class="flex flex-col space-y-6">
-                <div class="flex gap-5">
-                  <p class="text-[#64BC04] w-1/2">Oportunidad:</p>
-                  <p class="text-[#64BC04] w-1/2">Mejora:</p>
-                </div>
-                <div class="flex gap-5">
-                  <div
-                    *ngFor="let image of opportunityImages"
-                    class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
-                    (mousemove)="onMouseMove($event)"
-                    (mouseup)="onMouseUp()"
-                    (mouseleave)="onMouseUp()"
-                  >
-                    <img
-                      [src]="apiUrl + image.imageUrl"
-                      (wheel)="onWheelZoom($event, image.lessonImageId)"
-                      (mousedown)="onMouseDown($event, image.lessonImageId)"
-                      [style.transform]="
-                        'scale(' +
-                        (imageZoom[image.lessonImageId] || 1) +
-                        ') ' +
-                        'translate(' +
-                        (imagePos[image.lessonImageId]?.x || 0) +
-                        'px,' +
-                        (imagePos[image.lessonImageId]?.y || 0) +
-                        'px)'
-                      "
-                      class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
-                      draggable="false"
-                      alt="Imagen de la lección"
-                    />
-                  </div>
+  <ng-container *ngIf="selectedLesson?.images?.length; else noImages">
+    <div class="flex flex-col space-y-6">
+      <div class="flex gap-5">
+        <p class="text-[#64BC04] w-1/2">Oportunidad:</p>
+        <p class="text-[#64BC04] w-1/2">Mejora:</p>
+      </div>
+      <div class="flex gap-5">
+        <!-- Columna de oportunidad -->
+        <div
+          *ngFor="let image of opportunityImages"
+          class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
+          (mousemove)="onMouseMove($event)"
+          (mouseup)="onMouseUp()"
+          (mouseleave)="onMouseUp()"
+        >
+          <img
+            [src]="apiUrl + image.imageUrl"
+            (wheel)="onWheelZoom($event, image.lessonImageId)"
+            (mousedown)="onMouseDown($event, image.lessonImageId)"
+            [style.transform]="
+              'scale(' +
+              (imageZoom[image.lessonImageId] || 1) +
+              ') translate(' +
+              (imagePos[image.lessonImageId]?.x || 0) +
+              'px,' +
+              (imagePos[image.lessonImageId]?.y || 0) +
+              'px)'
+            "
+            class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
+            draggable="false"
+            alt="Imagen de la lección"
+          />
+        </div>
 
-                  <div
-                    *ngFor="let image of improvementImages"
-                    class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
-                    (mousemove)="onMouseMove($event)"
-                    (mouseup)="onMouseUp()"
-                    (mouseleave)="onMouseUp()"
-                  >
-                    <img
-                      [src]="apiUrl + image.imageUrl"
-                      (wheel)="onWheelZoom($event, image.lessonImageId)"
-                      (mousedown)="onMouseDown($event, image.lessonImageId)"
-                      [style.transform]="
-                        'scale(' +
-                        (imageZoom[image.lessonImageId] || 1) +
-                        ') ' +
-                        'translate(' +
-                        (imagePos[image.lessonImageId]?.x || 0) +
-                        'px,' +
-                        (imagePos[image.lessonImageId]?.y || 0) +
-                        'px)'
-                      "
-                      class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
-                      draggable="false"
-                      alt="Imagen de la lección"
-                    />
-                  </div>
-                </div>
-              </div>
-            </ng-container>
+        <!-- Columna de mejora -->
+        <div
+          *ngFor="let image of improvementImages"
+          class="overflow-hidden border border-[#E2E2E2] rounded flex justify-center items-center h-[500px]"
+          (mousemove)="onMouseMove($event)"
+          (mouseup)="onMouseUp()"
+          (mouseleave)="onMouseUp()"
+        >
+          <img
+            [src]="apiUrl + image.imageUrl"
+            (wheel)="onWheelZoom($event, image.lessonImageId)"
+            (mousedown)="onMouseDown($event, image.lessonImageId)"
+            [style.transform]="
+              'scale(' +
+              (imageZoom[image.lessonImageId] || 1) +
+              ') translate(' +
+              (imagePos[image.lessonImageId]?.x || 0) +
+              'px,' +
+              (imagePos[image.lessonImageId]?.y || 0) +
+              'px)'
+            "
+            class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none"
+            draggable="false"
+            alt="Imagen de la lección"
+          />
+        </div>
+      </div>
+    </div>
+  </ng-container>
 
-            <ng-template #noImages>
-              <p class="text-center text-gray-400">No hay imágenes adjuntas.</p>
-            </ng-template>
-          </div>
+  <ng-template #noImages>
+    <p class="text-center text-gray-400">No hay imágenes adjuntas.</p>
+  </ng-template>
+</div>
         </div>
       </div>
     </div>
@@ -917,8 +917,10 @@
                         #opFile
                         type="file"
                         multiple
+                        accept=".png,.jpg,.jpeg"
                         class="hidden"
                         (change)="onFilesSelected($event, 'opportunity')"
+                        required
                       />
 
                       <svg
@@ -969,8 +971,10 @@
                         #impFile
                         type="file"
                         multiple
+                        accept=".png,.jpg,.jpeg"
                         class="hidden"
                         (change)="onFilesSelected($event, 'improvement')"
+                        required
                       />
 
                       <svg
