@@ -4,7 +4,14 @@ export interface ChartItemDTO {
   value: number;
 }
 
+export interface PhaseStageChartDTO {
+  phaseId: number;
+  phaseLabel: string;
+  stages: ChartItemDTO[];
+}
+
 export interface DashboardDTO {
   lessonsByPhase: ChartItemDTO[];
   lessonsByProject: ChartItemDTO[];
+  lessonsByPhaseAndStage: PhaseStageChartDTO[];
 }

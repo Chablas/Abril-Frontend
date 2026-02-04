@@ -55,6 +55,7 @@ export class LessonService {
     return this.http.post(`${this.apiUrl}`, form, {headers: {Authorization: `Bearer ${token}`}});
   }
   getDashboardData(): Observable<DashboardDTO> {
-    return this.http.get<DashboardDTO>(`${this.apiUrl}/dashboard`)
+    const token = localStorage.getItem('access_token');
+    return this.http.get<DashboardDTO>(`${this.apiUrl}/dashboard`, {headers: {Authorization: `Bearer ${token}`}})
   }
 }
