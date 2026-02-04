@@ -4,6 +4,9 @@ import { Chart, registerables } from 'chart.js';
 import { DashboardDTO } from '../../../../models/dashboard/DashboardDTO';
 import { LessonService } from "../../../../services/lesson.service";
 import { PhaseStageChartDTO } from "../../../../models/dashboard/DashboardDTO";
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from "@angular/router";
+import Swal from 'sweetalert2';
 
 Chart.register(...registerables);
 
@@ -28,6 +31,7 @@ export class LessonsDashboard implements AfterViewInit {
   constructor(
     private dashboardService: LessonService,
     private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   loadDashboard() {
@@ -44,8 +48,18 @@ export class LessonsDashboard implements AfterViewInit {
           this.createPhaseStageCharts(this.phaseStageCharts);
         });
       },
-      error: (err) => {
-        console.error('Error cargando dashboard', err);
+      error: (err: HttpErrorResponse) => {
+        if (err.status == 401) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Sesión expirada',
+            text: err.error?.message ?? '',
+          });
+          localStorage.clear();
+          this.cdr.detectChanges();
+          this.router.navigate(['/auth/login']);
+          return;
+        }
       },
     });
   }
