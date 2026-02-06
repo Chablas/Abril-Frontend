@@ -1,6 +1,6 @@
 <div class="bg-white rounded-lg p-[20px] h-full flex flex-col">
   <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
-    <div class="flex w-full">
+    <div class="flex justify-between w-full">
       <button
         (click)="openCreateModal($event)"
         class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer"
@@ -20,6 +20,13 @@
           </svg>
           <p>Nuevo registro</p>
         </div>
+      </button>
+      <button class="group flex items-center cursor-pointer gap-[5px]">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="#0086A5" />
+          <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="#0086A5" />
+        </svg>
+        <p class="text-[#64BC04] group-hover:underline">Exportar a excel</p>
       </button>
     </div>
   </div>
@@ -61,7 +68,7 @@
               </select>
             </div>
 
-            <div class="w-[240px]">
+            <div class="w-[240px]" *ngIf="showFilters">
               <p class="w-[240px] text-[#64BC04] text-lg">Fase</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -75,7 +82,7 @@
               </select>
             </div>
 
-            <div class="w-[240px]">
+            <div class="w-[240px]" *ngIf="showFilters">
               <p class="w-[240px] text-[#64BC04] text-lg">Etapa</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -89,7 +96,7 @@
               </select>
             </div>
 
-            <div class="w-[240px]">
+            <div class="w-[240px]" *ngIf="showFilters">
               <p class="w-[240px] text-[#64BC04] text-lg">Nivel</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -103,7 +110,7 @@
               </select>
             </div>
 
-            <div class="w-[240px]">
+            <div class="w-[240px]" *ngIf="showFilters">
               <p class="w-[240px] text-[#64BC04] text-lg">Subetapa</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -117,7 +124,7 @@
               </select>
             </div>
 
-            <div class="w-[240px]">
+            <div class="w-[240px]" *ngIf="showFilters">
               <p class="w-[240px] text-[#64BC04] text-lg">Subespecialidad</p>
               <select
                 class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -133,16 +140,22 @@
           </div>
         </div>
         <div class="flex justify-center items-start gap-[20px] flex-1">
-          <!--<button type="button" class="w-[120px] h-[45px] bg-[#64BC04] py-[1px] pl-[8px] pr-[4px] rounded-[10px] cursor-pointer">
-              <div class="flex justify-center items-center">
-                <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M6.41691 0L6.41674 9.16687H5.50009V11.0002H6.41674L6.41695 14.6667H8.25026L8.25009 11.0002H9.16674V9.16687H8.25009L8.25026 0H6.41691ZM0.916652 0V3.6676H0V5.5H0.916652V14.6667H2.75V5.5H3.66665V3.6676H2.75V0H0.916652ZM11.9158 0.000171781V5.50017H10.9992L10.9997 7.33335H11.9164V14.6667H13.7506V7.33335H14.6673L14.6667 5.50017H13.7501L13.7506 0L11.9158 0.000171781Z"
-                    fill="white" />
-                </svg>
-                <p class="text-[#ffffff] pl-[10px] text-lg leading-none">Búsqueda avanzada</p>
-              </div>
-            </button>-->
+          <button
+            type="button"
+            (click)="viewFilters()"
+            class="mt-[38px] w-[160px] h-[45px] pl-[16px] bg-[#E5F7D1] py-[1px] rounded-[10px] cursor-pointer"
+          >
+            <div class="flex justify-center items-center">
+              <svg class="min-w-[20px] min-h-[20px]" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                  d="M6.41691 0L6.41674 9.16687H5.50009V11.0002H6.41674L6.41695 14.6667H8.25026L8.25009 11.0002H9.16674V9.16687H8.25009L8.25026 0H6.41691ZM0.916652 0V3.6676H0V5.5H0.916652V14.6667H2.75V5.5H3.66665V3.6676H2.75V0H0.916652ZM11.9158 0.000171781V5.50017H10.9992L10.9997 7.33335H11.9164V14.6667H13.7506V7.33335H14.6673L14.6667 5.50017H13.7501L13.7506 0L11.9158 0.000171781Z"
+                  fill="#64BC04" />
+              </svg>
+
+
+              <p class="text-[#64BC04] pl-[10px] text-lg leading-5">Búsqueda avanzada</p>
+            </div>
+          </button>
           <button
             type="submit"
             class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer"
@@ -222,7 +235,8 @@
               (click)="openViewModal(item.lessonId, $event, 'general')"
             >
               <div class="flex items-center justify-start gap-2" title="Proyecto">
-                <svg
+                <svg 
+                  class="min-w-[20px] min-h-[20px]"
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
@@ -242,11 +256,12 @@
                     fill="#64BC04"
                   />
                 </svg>
-                <p class="">{{ item.projectDescription }}</p>
+                <p [title]="item.projectDescription" class="line-clamp-1">{{ item.projectDescription }}</p>
               </div>
               <div class="flex flex-col">
                 <div class="flex items-center justify-start gap-2" title="Periodo">
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -259,11 +274,12 @@
                     />
                   </svg>
 
-                  <p class="">{{ item.period.toUpperCase() }}</p>
+                  <p [title]="item.period" class="line-clamp-1">{{ item.period.toUpperCase() }}</p>
                 </div>
 
                 <div class="flex items-center justify-start gap-2" title="Area">
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -277,10 +293,11 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.areaDescription?.replace('ARQUITECTURA', 'ARQ.') }}</p>
+                  <p [title]="item.areaDescription" class="line-clamp-1">{{ item.areaDescription?.replace('ARQUITECTURA', 'ARQ.') }}</p>
                 </div>
                 <div class="flex items-center justify-start gap-2" title="Fase">
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -292,11 +309,12 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.phaseDescription }}</p>
+                  <p [title]="item.phaseDescription" class="line-clamp-1">{{ item.phaseDescription }}</p>
                 </div>
 
                 <div class="flex items-center gap-2" title="Etapa">
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -308,11 +326,12 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.stageDescription }}</p>
+                  <p [title]="item.stageDescription" class="line-clamp-1">{{ item.stageDescription }}</p>
                 </div>
 
                 <div class="flex items-center gap-2" title="Nivel" *ngIf="item.layerDescription">
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -324,7 +343,7 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.layerDescription }}</p>
+                  <p [title]="item.layerDescription" class="line-clamp-1">{{ item.layerDescription }}</p>
                 </div>
 
                 <div
@@ -333,6 +352,7 @@
                   *ngIf="item.subStageDescription"
                 >
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -344,7 +364,7 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.subStageDescription }}</p>
+                  <p [title]="item.subStageDescription" class="line-clamp-1">{{ item.subStageDescription }}</p>
                 </div>
 
                 <div
@@ -353,6 +373,7 @@
                   *ngIf="item.subSpecialtyDescription"
                 >
                   <svg
+                    class="min-w-[20px] min-h-[20px]"
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -364,7 +385,7 @@
                       fill="#64BC04"
                     />
                   </svg>
-                  <p class="">{{ item.subSpecialtyDescription }}</p>
+                  <p [title]="item.subSpecialtyDescription" class="line-clamp-1">{{ item.subSpecialtyDescription }}</p>
                 </div>
               </div>
             </td>
@@ -399,23 +420,23 @@
               </td>
               -->
 
-            <td class="px-2 break-words">
-              <span class="block line-clamp-4 text-center">
+            <td class="px-2">
+              <span [title]="item.problemDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-center text-sm">
                 {{ item.problemDescription }}
               </span>
             </td>
-            <td class="px-2 break-words">
-              <span class="block line-clamp-4 text-center">
+            <td class="px-2">
+              <span [title]="item.reasonDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-center text-sm">
                 {{ item.reasonDescription }}
               </span>
             </td>
-            <td class="px-2 break-words">
-              <span class="block line-clamp-4 text-center">
+            <td class="px-2">
+              <span [title]="item.lessonDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-center text-sm">
                 {{ item.lessonDescription }}
               </span>
             </td>
-            <td class="px-2 break-words">
-              <span class="block line-clamp-4 text-center">
+            <td class="px-2">
+              <span [title]="item.impactDescription" class="block line-clamp-8 text-ellipsis overflow-hidden text-center text-sm">
                 {{ item.impactDescription }}
               </span>
             </td>

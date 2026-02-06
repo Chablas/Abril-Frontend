@@ -59,25 +59,11 @@
               </button>
             </td>
 
-            <td class="text-center">
-              {{ row.phaseDescription }}
-            </td>
-
-            <td class="text-center">
-              {{ row.stageDescription ?? '-' }}
-            </td>
-
-            <td class="text-center">
-              {{ row.layerDescription ?? '-' }}
-            </td>
-
-            <td class="text-center">
-              {{ row.subStageDescription ?? '-' }}
-            </td>
-
-            <td class="text-center">
-              {{ row.subSpecialtyDescription ?? '-' }}
-            </td>
+            <td><span [title]="row.phaseDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ row.phaseDescription }}</span></td>
+            <td><span [title]="row.stageDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ row.stageDescription ?? '-' }}</span></td>
+            <td><span [title]="row.layerDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ row.layerDescription ?? '-' }}</span></td>
+            <td><span [title]="row.subStageDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ row.subStageDescription ?? '-' }}</span></td>
+            <td><span [title]="row.subSpecialtyDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ row.subSpecialtyDescription ?? '-' }}</span></td>
           </tr>
         </tbody>
       </table>

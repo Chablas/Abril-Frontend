@@ -79,9 +79,9 @@
                     </td>
                     -->
 
-            <td class="text-center">{{ item.userFullName }}</td>
+            <td><span [title]="item.userFullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.userFullName }}</span></td>
 
-            <td class="text-center">{{ item.projectDescription }}</td>
+            <td><span [title]="item.projectDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.projectDescription }}</span></td>
 
             <td class="text-center">
               <span

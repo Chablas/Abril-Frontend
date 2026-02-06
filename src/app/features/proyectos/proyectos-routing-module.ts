@@ -11,7 +11,7 @@ const routes: Routes = [
       { path: "", component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } }
     ] },
     { path: "dashboard", children: [
-      { path: "", component: LessonsDashboard, data: { titulo: 'DASHBOARD LECCIONES' } }
+      { path: "", component: LessonsDashboard, data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS' } }
     ] },
     {
       path: "configuration", loadChildren: () => {

@@ -17,8 +17,15 @@ export class LessonService {
 
   constructor(private http: HttpClient) {}
 
-  getLessons(): Observable<LessonListDTO[]> {
-    return this.http.get<LessonListDTO[]>(`${this.apiUrl}`);
+  getLessons(filters: any): Observable<LessonListDTO[]> {
+    let params = new HttpParams();
+  
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
+        params = params.set(key, filters[key]);
+      }
+    });
+    return this.http.get<LessonListDTO[]>(`${this.apiUrl}/all`, { params });
   }
 
   getById(id: number | null): Observable<LessonDetailDTO> {
@@ -54,8 +61,8 @@ export class LessonService {
     const token = localStorage.getItem('access_token');
     return this.http.post(`${this.apiUrl}`, form, {headers: {Authorization: `Bearer ${token}`}});
   }
-  getDashboardData(): Observable<DashboardDTO> {
+  getDashboardData(ids: number[]): Observable<DashboardDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<DashboardDTO>(`${this.apiUrl}/dashboard`, {headers: {Authorization: `Bearer ${token}`}})
+    return this.http.post<DashboardDTO>(`${this.apiUrl}/dashboard`, ids, {headers: {Authorization: `Bearer ${token}`}})
   }
 }

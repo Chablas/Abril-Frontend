@@ -72,9 +72,9 @@
                           </td>
                           -->
 
-            <td class="text-center">{{ item.person.documentIdentityCode }}</td>
-            <td class="text-center">{{ item.person.fullName }}</td>
-            <td class="text-center">{{ item.person.email }}</td>
+            <td><span [title]="item.person.documentIdentityCode" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.documentIdentityCode }}</span></td>
+            <td><span [title]="item.person.fullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.fullName }}</span></td>
+            <td><span [title]="item.person.email" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.email }}</span></td>
 
             <td class="text-center">
               <span

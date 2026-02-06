@@ -1,14 +1,15 @@
 import { Component, AfterViewInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from "@angular/common";
+import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
 import { DashboardDTO } from '../../../../models/dashboard/DashboardDTO';
-import { LessonService } from "../../../../services/lesson.service";
-import { PhaseStageChartDTO } from "../../../../models/dashboard/DashboardDTO";
+import { LessonService } from '../../../../services/lesson.service';
+import { PhaseStageChartDTO } from '../../../../models/dashboard/DashboardDTO';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from "@angular/router";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
-Chart.register(...registerables);
+Chart.register(...registerables, ChartDataLabels);
 
 @Component({
   selector: 'app-lessons-dashboard',
@@ -20,10 +21,13 @@ Chart.register(...registerables);
 export class LessonsDashboard implements AfterViewInit {
   barChart?: Chart;
   pieChart?: Chart;
+  lineChart?: Chart;
   phaseStageCharts: PhaseStageChartDTO[] = [];
+  colors = ['#64BC04', '#A7E163', '#E5F7D1', '#2F855A', '#68D391', '#9AE6B4', '#38A169', '#C6F6D5'];
 
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsPieChart') lessonsPieChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lessonsLineChart') lessonsLineChartRef!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
     this.loadDashboard();
   }
@@ -31,14 +35,15 @@ export class LessonsDashboard implements AfterViewInit {
   constructor(
     private dashboardService: LessonService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
   ) {}
 
   loadDashboard() {
-    this.dashboardService.getDashboardData().subscribe({
+    this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47]).subscribe({
       next: (resp: DashboardDTO) => {
         this.createBarChart(resp);
         this.createPieChart(resp);
+        this.createLineChart(resp);
 
         this.phaseStageCharts = resp.lessonsByPhaseAndStage;
         this.cdr.detectChanges();
@@ -97,6 +102,27 @@ export class LessonsDashboard implements AfterViewInit {
         responsive: false,
         indexAxis: 'y', // barras horizontales
         maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            color: '#828282',
+            formatter: (value) => value,
+            font: {
+              weight: 'bold',
+              size: 12,
+            },
+          },
+          legend: {
+            position: 'bottom',
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              precision: 0,
+            },
+            beginAtZero: true,
+          },
+        },
       },
     });
 
@@ -136,30 +162,85 @@ export class LessonsDashboard implements AfterViewInit {
       options: {
         maintainAspectRatio: false,
         responsive: false,
+        plugins: {
+          datalabels: {
+            color: '#828282',
+            formatter: (value) => value,
+            font: {
+              weight: 'bold',
+              size: 12,
+            },
+          },
+          legend: {
+            position: 'bottom',
+          },
+        },
       },
     });
   }
 
   createPhaseStageCharts(data: PhaseStageChartDTO[]) {
+    //const colors = ['#2F855A', '#38A169', '#68D391', '#9AE6B4', '#C6F6D5', '#E5F7D1']; // verdes
+    const colors = [
+      '#D4F0C2', // verde claro
+      '#BEE7E8', // celeste pastel
+      '#C7CEEA', // lavanda
+      '#F9D8A6', // durazno
+      '#FFF1A8', // amarillo suave
+      '#F6C1CC', // rosa pastel
+    ];
+
     data.forEach((phase) => {
       const canvasId = `phaseChart-${phase.phaseId}`;
       const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 
       if (!canvas) return;
 
-      const labels = phase.stages.map((s) => s.label);
-      const values = phase.stages.map((s) => s.value);
+      const hasData = phase.stages.length > 0;
 
-      const colors = ['#2F855A', '#38A169', '#68D391', '#9AE6B4', '#C6F6D5', '#E5F7D1'];
+      // 🔹 Datos
+      const labels = hasData ? phase.stages.map((s) => s.label) : ['Sin datos'];
 
+      const values = hasData ? phase.stages.map((s) => s.value) : [1]; // valor dummy
+
+      const backgroundColors = hasData ? colors.slice(0, values.length) : ['rgba(0,0,0,0)'];
+
+      const borderColors = hasData ? colors.slice(0, values.length) : ['#CBD5E0'];
+
+      // 🔹 Plugin texto "Sin datos"
+      const emptyTextPlugin = {
+        id: 'emptyText',
+        afterDraw(chart: any) {
+          if (hasData) return;
+
+          const { ctx, width, height } = chart;
+          ctx.save();
+          ctx.font = 'bold 14px sans-serif';
+          ctx.fillStyle = '#718096';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Sin datos', width / 2, height / 2);
+          ctx.restore();
+        },
+      };
+
+      // 🧹 Destruir gráfico previo (MUY importante)
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) {
+        existingChart.destroy();
+      }
+
+      // 📊 Crear gráfico
       new Chart(canvas, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
           labels,
           datasets: [
             {
               data: values,
-              backgroundColor: colors.slice(0, values.length),
+              backgroundColor: backgroundColors,
+              borderColor: borderColors,
+              borderWidth: 2,
             },
           ],
         },
@@ -167,10 +248,80 @@ export class LessonsDashboard implements AfterViewInit {
           responsive: false,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' },
+            legend: {
+              display: hasData,
+              position: 'bottom',
+              maxWidth: 50,
+            },
+            datalabels: {
+              display: hasData,
+              color: '#828282',
+              formatter: (value: number, ctx: any) => {
+                const label = ctx.chart.data.labels?.[ctx.dataIndex];
+                return `${label}: ${value}`;
+              },
+              font: {
+                size: 11,
+                weight: 'bold',
+              },
+            },
           },
         },
+        plugins: hasData ? [] : [emptyTextPlugin],
       });
     });
+  }
+
+  createLineChart(data: DashboardDTO) {
+    // destruir gráfico anterior si existe
+    if (this.lineChart) {
+      this.lineChart.destroy();
+    }
+
+    // Mapear DTO → Chart.js
+    const sortedData = [...data.lessonsBySubStage].sort((a, b) => b.value - a.value);
+
+    const labels = sortedData.map((x) => x.label);
+    const values = sortedData.map((x) => x.value);
+
+    this.lineChart = new Chart(this.lessonsLineChartRef.nativeElement, {
+      type: 'line',
+
+      data: {
+        labels: labels,
+
+        datasets: [
+          {
+            label: 'Lecciones aprendidas',
+            data: values,
+            backgroundColor: '#E5F7D1',
+            borderColor: '#64BC04',
+            borderWidth: 2,
+          },
+        ],
+      },
+
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+          datalabels: {
+            display: false,
+          },
+        },
+        scales: {
+          y: {
+            ticks: {
+              precision: 0,
+            },
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+    this.cdr.detectChanges();
   }
 }

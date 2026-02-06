@@ -12,6 +12,7 @@ import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, S
 import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from "@angular/router";
+import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -71,6 +72,8 @@ export class LeccionesAprendidas implements OnInit {
   subSpecialties: SubSpecialtyFilterDTO[] = [];
   filtersPSSSCreateModal: PhaseStageSubStageSubSpecialtyDTO[] = [];
   saving = false;
+
+  showFilters = false;
 
   // Modal View or Create
   selectedLesson: LessonDetailDTO | null = null;
@@ -556,6 +559,53 @@ export class LeccionesAprendidas implements OnInit {
         }
       },
     });
+  }
+
+  viewFilters() {
+    this.showFilters = !this.showFilters;
+    this.cdr.detectChanges();
+  }
+
+  downloadExcel() {
+    this.lessonService.getLessons(this.filtersTable).subscribe({
+      next: (data) => {
+        if (!data || data.length === 0) {
+          console.warn('No hay datos para exportar');
+          return;
+        }
+
+        // 🔹 Mapeo: DTO → columnas de Excel
+        const excelData = data.map((x: any) => ({
+          Proyecto: x.projectDescription,
+          Área: x.areaDescription,
+          Fase: x.phaseDescription,
+          Etapa: x.stageDescription,
+          Subetapa: x.subStageDescription,
+          Especialidad: x.subSpecialtyDescription,
+          Problema: x.problemDescription,
+          Causa: x.reasonDescription,
+          'Lección aprendida': x.lessonDescription,
+          Impacto: x.impactDescription,
+          'Creado por': x.createdUserFullName,
+          'Fecha creación': new Date(x.createdDateTime).toLocaleDateString(),
+        }));
+
+        // 🔹 Crear worksheet
+        const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+
+        // 🔹 Crear workbook
+        const workbook: XLSX.WorkBook = {
+          Sheets: { Lecciones: worksheet },
+          SheetNames: ['Lecciones'],
+        };
+
+        // 🔹 Descargar
+        XLSX.writeFile(workbook, 'Lecciones_Aprendidas.xlsx');
+      },
+      error: () => {
+
+      }
+    })
   }
 
   private resetForm() {

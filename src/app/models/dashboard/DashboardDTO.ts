@@ -14,4 +14,5 @@ export interface DashboardDTO {
   lessonsByPhase: ChartItemDTO[];
   lessonsByProject: ChartItemDTO[];
   lessonsByPhaseAndStage: PhaseStageChartDTO[];
+  lessonsBySubStage: ChartItemDTO[];
 }

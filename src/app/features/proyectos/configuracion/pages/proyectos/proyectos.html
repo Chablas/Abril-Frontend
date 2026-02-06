@@ -70,7 +70,7 @@
                     </td>
                     -->
 
-                        <td class="text-center">{{ item.projectDescription }}</td>
+                        <td><span [title]="item.projectDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.projectDescription }}</span></td>
 
                         <td class="text-center">
                             <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{

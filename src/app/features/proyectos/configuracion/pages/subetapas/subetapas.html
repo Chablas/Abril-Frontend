@@ -54,7 +54,7 @@
               </button>
             </td>
 
-            <td class="text-center">{{ item.subStageDescription }}</td>
+            <td><span [title]="item.subStageDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.subStageDescription }}</span></td>
 
             <td class="text-center">
               <span
