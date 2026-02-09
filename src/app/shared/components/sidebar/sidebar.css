@@ -1,14 +1,15 @@
 @keyframes dropdown {
-    from {
-      opacity: 0;
-      transform: translateY(-5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
   }
-  
-  .animate-dropdown {
-    animation: dropdown 0.15s ease-out forwards;
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+.animate-dropdown {
+  animation: dropdown 0.15s ease-out forwards;
+}

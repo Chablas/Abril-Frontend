@@ -1,47 +1,80 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ProjectService } from '../../../../../services/project.service';
-import { ProjectPagedDTO } from '../../../../../models/projectPaged.model';
+import { ProjectPagedDTO } from '../../../../../models/project/projectPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProjectCreateDTO } from '../../../../../models/projectCreate.model';
+import { ProjectCreateDTO } from '../../../../../models/project/projectCreate.model';
+import { ProjectEditDTO } from '../../../../../models/project/projectEdit.model';
+import { ProjectGetDTO } from '../../../../../models/project/project.model';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { Router } from '@angular/router';
+import { ApiMessageDTO } from "../../../../../models/api/ApiMessage.model";
 
 @Component({
   selector: 'app-proyectos',
   imports: [CommonModule, FormsModule],
   templateUrl: './proyectos.html',
-  styleUrl: './proyectos.css'
+  styleUrl: './proyectos.css',
 })
 export class Proyectos implements OnInit {
-  projects!: ProjectPagedDTO;
-  loadingModal = false;
+  projects: ProjectPagedDTO = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: [],
+  };
+
   currentPage = 1;
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
-  loadingLoadProjects = false;
+
+  loader = false;
 
   showCreateModal = false;
+  showEditModal = false;
+
   createDto: ProjectCreateDTO = {
     projectDescription: '',
-    active: true
+    active: true,
   };
 
-  constructor(private projectService: ProjectService, private cdr: ChangeDetectorRef) {}
+  editDto: ProjectEditDTO = {
+    projectId: 0,
+    projectDescription: '',
+    active: true,
+  };
+
+  constructor(
+    private projectService: ProjectService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.loadProjects(1);
   }
 
-  createModal(event: MouseEvent) {
+  openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
   }
 
+  openEditModal(project: ProjectGetDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.showEditModal = true;
+    this.editDto.projectId = project.projectId;
+    this.editDto.projectDescription = project.projectDescription;
+    this.editDto.active = project.active;
+  }
+
   loadProjects(page: number = 1) {
-    this.loadingLoadProjects = true;
-  
+    this.loader = true;
+    this.cdr.detectChanges();
+
     this.projectService.getProjectPaged(page).subscribe({
       next: (response) => {
         this.projects = response;
@@ -49,20 +82,13 @@ export class Proyectos implements OnInit {
         this.totalPages = response.totalPages;
         this.pageSize = response.pageSize;
         this.totalRecords = response.totalRecords;
-  
-        this.loadingLoadProjects = false;
+
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: err => {
-        this.loadingLoadProjects = false;
-        this.cdr.detectChanges();
-  
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error ?? 'Error al cargar proyectos'
-        });
-      }
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
   }
 
@@ -72,14 +98,14 @@ export class Proyectos implements OnInit {
       this.cdr.detectChanges();
     }
   }
-  
+
   prevPage() {
     if (this.currentPage > 1) {
       this.loadProjects(this.currentPage - 1);
       this.cdr.detectChanges();
     }
   }
-  
+
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.loadProjects(page);
@@ -89,29 +115,29 @@ export class Proyectos implements OnInit {
 
   get pages(): number[] {
     const maxButtons = 5;
-  
+
     if (this.totalPages <= maxButtons) {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     }
-  
+
     let start = this.currentPage - Math.floor(maxButtons / 2);
     let end = this.currentPage + Math.floor(maxButtons / 2);
-  
+
     if (start < 1) {
       start = 1;
       end = maxButtons;
     }
-  
+
     if (end > this.totalPages) {
       end = this.totalPages;
       start = this.totalPages - maxButtons + 1;
     }
-  
+
     const pages: number[] = [];
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-  
+
     return pages;
   }
 
@@ -119,29 +145,48 @@ export class Proyectos implements OnInit {
     if (!this.createDto.projectDescription.trim()) {
       return;
     }
-    this.loadingModal = true;
+    this.loader = true;
     this.projectService.createProject(this.createDto).subscribe({
-      next: () => {
+      next: (response: ApiMessageDTO) => {
         this.showCreateModal = false;
         this.createDto = { projectDescription: '', active: true };
-        this.loadingModal = false;
+        this.loader = false;
         this.cdr.detectChanges();
         this.loadProjects();
         Swal.fire({
-          title: 'Proyecto creado exitosamente',
+          title: response.message ?? 'Proyecto creado exitosamente',
           icon: 'success',
-          draggable: true
+          draggable: true,
         });
       },
-      error: err => {
-        this.loadingModal = false;
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
+    });
+  }
+
+  editProject(event: MouseEvent) {
+    event.stopPropagation();
+    if (!this.editDto.projectDescription.trim()) {
+      return;
+    }
+    this.loader = true;
+    this.projectService.editProject(this.editDto).subscribe({
+      next: (response: ApiMessageDTO) => {
+        this.showEditModal = false;
+        this.editDto = { projectId: 0, projectDescription: '', active: true };
+        this.loader = false;
         this.cdr.detectChanges();
+        this.loadProjects();
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: err.error,
+          title: response.message ?? 'Proyecto actualizado exitosamente',
+          icon: 'success',
+          draggable: true,
         });
-      }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
   }
 
@@ -154,37 +199,68 @@ export class Proyectos implements OnInit {
       confirmButtonColor: '#64BC04',
       cancelButtonColor: '#d33',
       cancelButtonText: 'Cancelar',
-      confirmButtonText: '¡Sí, elimínalo!'
-    }).then(result => {
+      confirmButtonText: '¡Sí, elimínalo!',
+    }).then((result) => {
       if (result.isConfirmed) {
-        this.loadingModal = true;
+        this.loader = true;
         this.projectService.deleteProject(projectId, 1).subscribe({
-          next: () => {
+          next: (response: ApiMessageDTO) => {
             this.loadProjects();
-            this.loadingModal = false;
+            this.loader = false;
             this.cdr.detectChanges();
             Swal.fire({
               title: '¡Eliminado!',
-              text: 'El registro ha sido eliminado.',
+              text: response.message ?? 'El registro ha sido eliminado.',
               confirmButtonColor: '#64BC04',
-              icon: 'success'
+              icon: 'success',
             });
           },
-          error: (error) => {
-            this.loadingModal = false;
-            this.cdr.detectChanges();
-            Swal.fire({
-              title: 'Error',
-              text: error.error,
-              icon: 'error'
-            });
+          error: (err: HttpErrorResponse) => {
+            this.error(err);
           },
         });
       }
     });
   }
 
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+  }
+
   closeModal() {
     this.showCreateModal = false;
+    this.showEditModal = false;
   }
 }

@@ -1,4 +1,8 @@
-<div
+<button (click)="downloadPDF()" class="cursor-pointer">
+  Exportar a PDF
+</button>
+
+<div id="dashboard"
   class="flex flex-col h-full w-full justify-between overflow-y-auto overflow-x-hidden gap-[20px]"
 >
   <!-- Fila superior -->
@@ -33,4 +37,8 @@
     </h3>
     <canvas #lessonsLineChart class=""></canvas>
   </div>
+</div>
+
+<div *ngIf="loader" class="loader-overlay">
+  <div class="loader"></div>
 </div>

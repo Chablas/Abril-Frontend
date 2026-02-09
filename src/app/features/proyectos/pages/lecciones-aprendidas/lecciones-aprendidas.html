@@ -1196,7 +1196,6 @@
             <button
               class="mt-4 bg-[#64BC04] text-white rounded-lg py-2 px-6 w-[150px] self-center cursor-pointer"
               (click)="submitLesson()"
-              [disabled]="saving"
             >
               Guardar
             </button>
@@ -1223,5 +1222,6 @@
   </div>
 </div>
 
-<div *ngIf="loadingModal" class="loader"></div>
-<div *ngIf="loadingLoadLessons" class="loader"></div>
+<div *ngIf="loader" class="loader-overlay">
+  <div class="loader"></div>
+</div>

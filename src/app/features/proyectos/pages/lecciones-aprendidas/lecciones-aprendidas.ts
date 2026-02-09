@@ -28,8 +28,22 @@ export class LeccionesAprendidas implements OnInit {
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
-  lessons!: LessonListPagedDTO;
-  filtersData!: LessonFiltersDTO;
+  lessons: LessonListPagedDTO = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: []
+  };
+  filtersData: LessonFiltersDTO = {
+    projects: [],
+    areas: [],
+    phases: [],
+    stages: [],
+    layers: [],
+    subStages: [],
+    subSpecialties: []
+  };
   filtersTable = {
     projectId: null as number | null,
     areaId: null as number | null,
@@ -39,8 +53,7 @@ export class LeccionesAprendidas implements OnInit {
     subStageId: null as number | null,
     subSpecialtyId: null as number | null,
   };
-  loadingModal = false;
-  loadingLoadLessons = false;
+  loader = false;
   opportunityImages: LessonImageDTO[] = [];
   improvementImages: LessonImageDTO[] = [];
   apiUrl = environment.apiUrl;
@@ -71,7 +84,6 @@ export class LeccionesAprendidas implements OnInit {
   layers: LayerFilterDTO[] = [];
   subSpecialties: SubSpecialtyFilterDTO[] = [];
   filtersPSSSCreateModal: PhaseStageSubStageSubSpecialtyDTO[] = [];
-  saving = false;
 
   showFilters = false;
 
@@ -98,7 +110,8 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   loadLessons(page: number = 1): void {
-    this.loadingLoadLessons = true;
+    this.loader = true;
+    this.cdr.detectChanges();
 
     forkJoin({
       lessons: this.lessonService.getLessonsUsingFilters({ page: page }),
@@ -113,16 +126,16 @@ export class LeccionesAprendidas implements OnInit {
         this.pageSize = lessons.pageSize;
         this.totalRecords = lessons.totalRecords;
         this.filtersPSSSCreateModal = filtersPSSSCreateModal;
-        this.loadingLoadLessons = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.loadingLoadLessons = false;
+      error: (err: HttpErrorResponse) => {
+        this.loader = false;
         this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'Oops...',
-          text: err.error ?? 'Error al cargar lecciones',
+          text: err.error.message ?? 'Error al cargar lecciones',
         });
       },
     });
@@ -339,12 +352,12 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   onSearch(): void {
-    this.loadingLoadLessons = true;
-
+    this.loader = true;
+    this.cdr.detectChanges();
     this.lessonService.getLessonsUsingFilters(this.filtersTable).subscribe({
       next: (data) => {
         this.lessons = data;
-        this.loadingLoadLessons = false;
+        this.loader = false;
         this.currentPage = data.page;
         this.totalPages = data.totalPages;
         this.pageSize = data.pageSize;
@@ -352,7 +365,7 @@ export class LeccionesAprendidas implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.loadingLoadLessons = false;
+        this.loader = false;
         this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
@@ -410,7 +423,11 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   submitLesson() {
+    this.loader = true;
+    this.cdr.detectChanges();
     if (!this.filtersTable.projectId) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -420,6 +437,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.filtersTable.areaId) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -429,6 +448,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.selectedPhaseId) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -438,6 +459,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.problemDescription) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -447,6 +470,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.reasonDescription) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -456,6 +481,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.lessonDescription) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -465,6 +492,8 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     if (!this.impactDescription) {
+      this.loader = false;
+      this.cdr.detectChanges();
       Swal.fire({
         icon: 'error',
         title: 'Campo requerido',
@@ -503,13 +532,10 @@ export class LeccionesAprendidas implements OnInit {
       form.append('ImprovementImages', f);
     });
 
-    this.saving = true;
-    this.loadingModal = true;
     this.lessonService.createLesson(form).subscribe({
       next: () => {
-        this.saving = false;
         this.closeModal();
-        this.loadingModal = false;
+        this.loader = false;
         this.resetForm();
         this.cdr.detectChanges();
         this.loadLessons();
@@ -520,6 +546,8 @@ export class LeccionesAprendidas implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
+        this.loader = false;
+        this.cdr.detectChanges();
         if (err.status == 401) {
           Swal.fire({
             icon: 'error',
@@ -527,9 +555,6 @@ export class LeccionesAprendidas implements OnInit {
             text: err.error?.message ?? '',
           });
           localStorage.clear();
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          this.saving = false;
           this.router.navigate(['/auth/login']);
           return;
         }
@@ -540,9 +565,6 @@ export class LeccionesAprendidas implements OnInit {
             title: 'Error de validación',
             text: err.error?.message ?? 'Escoja una relación válida.',
           });
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          this.saving = false;
           return;
         }
 
@@ -552,9 +574,6 @@ export class LeccionesAprendidas implements OnInit {
             title: 'Error del servidor',
             text: 'Ocurrió un problema en el servidor. Contacte al administrador del sistema o inténtelo más tarde.',
           });
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          this.saving = false;
           return;
         }
       },
@@ -567,6 +586,8 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   downloadExcel() {
+    this.loader = true;
+    this.cdr.detectChanges();
     this.lessonService.getExcel(this.filtersTable).subscribe({
       next: (blob: Blob) => {
         const file = new Blob([blob], {
@@ -581,8 +602,39 @@ export class LeccionesAprendidas implements OnInit {
         a.click();
 
         window.URL.revokeObjectURL(url);
+        this.loader = false;
+        this.cdr.detectChanges();
       },
-      error: () => {},
+      error: (err: HttpErrorResponse) => {
+        this.loader = false;
+        this.cdr.detectChanges();
+        if (err.status == 401) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Sesión expirada',
+            text: err.error?.message ?? '',
+          });
+          localStorage.clear();
+          this.router.navigate(['/auth/login']);
+          return;
+        }
+        if (err.status >= 400 && err.status < 500) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.error?.message ?? 'Ocurrió un error.',
+          });
+          return;
+        }
+        if (err.status >= 500) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error del servidor',
+            text: 'Ocurrió un problema en el servidor. Contacte al administrador del sistema o inténtelo más tarde.',
+          });
+          return;
+        }
+      },
     });
   }
 

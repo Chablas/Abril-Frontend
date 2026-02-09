@@ -1,5 +1,5 @@
 import { AreaGetDTO } from "./area.model";
-import { ProjectGetDTO } from "./project.model";
+import { ProjectGetDTO } from "./project/project.model";
 import { PhaseGetDTO } from "./phase.model";
 import { StageGetDTO } from "./stage.model";
 import { LayerGetDTO } from "./layer.model";

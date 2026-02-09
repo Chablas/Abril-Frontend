@@ -8,6 +8,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -25,6 +27,9 @@ export class LessonsDashboard implements AfterViewInit {
   phaseStageCharts: PhaseStageChartDTO[] = [];
   colors = ['#64BC04', '#A7E163', '#E5F7D1', '#2F855A', '#68D391', '#9AE6B4', '#38A169', '#C6F6D5'];
 
+  loadingModal = false;
+  loader = true;
+
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsPieChart') lessonsPieChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsLineChart') lessonsLineChartRef!: ElementRef<HTMLCanvasElement>;
@@ -39,6 +44,7 @@ export class LessonsDashboard implements AfterViewInit {
   ) {}
 
   loadDashboard() {
+    this.loader = true;
     this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47]).subscribe({
       next: (resp: DashboardDTO) => {
         this.createBarChart(resp);
@@ -46,12 +52,14 @@ export class LessonsDashboard implements AfterViewInit {
         this.createLineChart(resp);
 
         this.phaseStageCharts = resp.lessonsByPhaseAndStage;
-        this.cdr.detectChanges();
+        
 
         // Esperar a que Angular pinte los canvas
         setTimeout(() => {
           this.createPhaseStageCharts(this.phaseStageCharts);
         });
+        this.loader = false;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         if (err.status == 401) {
@@ -61,10 +69,13 @@ export class LessonsDashboard implements AfterViewInit {
             text: err.error?.message ?? '',
           });
           localStorage.clear();
-          this.cdr.detectChanges();
           this.router.navigate(['/auth/login']);
+          this.loader = false;
+          this.cdr.detectChanges();
           return;
         }
+        this.loader = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -322,6 +333,58 @@ export class LessonsDashboard implements AfterViewInit {
         },
       },
     });
+    this.cdr.detectChanges();
+  }
+
+  downloadPDF() {
+    this.loader = true;
+    this.cdr.detectChanges();
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const pageWidth = 210;
+    let currentY = 10;
+
+    // 🔹 Título
+    pdf.setFontSize(16);
+    pdf.text('Dashboard de Lecciones Aprendidas', 105, currentY, { align: 'center' });
+    currentY += 10;
+
+    pdf.setFontSize(10);
+    pdf.text(`Generado: ${new Date().toLocaleDateString()}`, 105, currentY, { align: 'center' });
+    currentY += 15;
+
+    if (this.barChart) {
+      const img = this.barChart.toBase64Image();
+      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
+      currentY += 70;
+    }
+
+    if (this.pieChart) {
+      const img = this.pieChart.toBase64Image();
+      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
+      currentY += 70;
+    }
+
+    if (this.lineChart) {
+      const img = this.lineChart.toBase64Image();
+      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
+      currentY += 70;
+    }
+
+    // 🔹 Charts por fase
+    /*this.phaseStageCharts.forEach((chart, index) => {
+      if (currentY > 250) {
+        pdf.addPage();
+        currentY = 20;
+      }
+
+      const img = chart.toBase64Image();
+      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
+      currentY += 70;
+    });*/
+
+    pdf.save('Dashboard.pdf');
+    this.loader = false;
     this.cdr.detectChanges();
   }
 }
