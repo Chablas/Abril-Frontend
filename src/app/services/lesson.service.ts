@@ -9,18 +9,17 @@ import { environment } from '../../environments/environment';
 import { DashboardDTO } from "../models/dashboard/DashboardDTO";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LessonService {
-
   private readonly apiUrl = `${environment.apiUrl}api/v1/lesson`;
 
   constructor(private http: HttpClient) {}
 
   getLessons(filters: any): Observable<LessonListDTO[]> {
     let params = new HttpParams();
-  
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
         params = params.set(key, filters[key]);
       }
@@ -42,13 +41,13 @@ export class LessonService {
 
   getLessonsUsingFilters(filters: any) {
     let params = new HttpParams();
-  
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
         params = params.set(key, filters[key]);
       }
     });
-  
+
     return this.http.get<LessonListPagedDTO>(this.apiUrl, { params });
   }
 
@@ -59,10 +58,31 @@ export class LessonService {
   }
   createLesson(form: FormData) {
     const token = localStorage.getItem('access_token');
-    return this.http.post(`${this.apiUrl}`, form, {headers: {Authorization: `Bearer ${token}`}});
+    return this.http.post(`${this.apiUrl}`, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
   getDashboardData(ids: number[]): Observable<DashboardDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.post<DashboardDTO>(`${this.apiUrl}/dashboard`, ids, {headers: {Authorization: `Bearer ${token}`}})
+    return this.http.post<DashboardDTO>(`${this.apiUrl}/dashboard`, ids, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  getExcel(filters: any): Observable<Blob> {
+    const token = localStorage.getItem('access_token');
+    let params = new HttpParams();
+
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
+        params = params.set(key, filters[key]);
+      }
+    });
+    return this.http.get(`${this.apiUrl}/export-excel`, {
+      params,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      responseType: 'blob',
+    });
   }
 }

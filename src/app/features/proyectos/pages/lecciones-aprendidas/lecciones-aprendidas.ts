@@ -90,7 +90,7 @@ export class LeccionesAprendidas implements OnInit {
     private lessonService: LessonService,
     private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -567,45 +567,23 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   downloadExcel() {
-    this.lessonService.getLessons(this.filtersTable).subscribe({
-      next: (data) => {
-        if (!data || data.length === 0) {
-          console.warn('No hay datos para exportar');
-          return;
-        }
+    this.lessonService.getExcel(this.filtersTable).subscribe({
+      next: (blob: Blob) => {
+        const file = new Blob([blob], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
 
-        // 🔹 Mapeo: DTO → columnas de Excel
-        const excelData = data.map((x: any) => ({
-          Proyecto: x.projectDescription,
-          Área: x.areaDescription,
-          Fase: x.phaseDescription,
-          Etapa: x.stageDescription,
-          Subetapa: x.subStageDescription,
-          Especialidad: x.subSpecialtyDescription,
-          Problema: x.problemDescription,
-          Causa: x.reasonDescription,
-          'Lección aprendida': x.lessonDescription,
-          Impacto: x.impactDescription,
-          'Creado por': x.createdUserFullName,
-          'Fecha creación': new Date(x.createdDateTime).toLocaleDateString(),
-        }));
+        const url = window.URL.createObjectURL(file);
 
-        // 🔹 Crear worksheet
-        const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Lecciones_Aprendidas.xlsx';
+        a.click();
 
-        // 🔹 Crear workbook
-        const workbook: XLSX.WorkBook = {
-          Sheets: { Lecciones: worksheet },
-          SheetNames: ['Lecciones'],
-        };
-
-        // 🔹 Descargar
-        XLSX.writeFile(workbook, 'Lecciones_Aprendidas.xlsx');
+        window.URL.revokeObjectURL(url);
       },
-      error: () => {
-
-      }
-    })
+      error: () => {},
+    });
   }
 
   private resetForm() {
