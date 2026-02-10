@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserCreateDTO } from "../models/userCreate.model";
-import { PagedResponseDTO } from "../models/pagedResponse.model";
-import { UserDTO } from '../models/user.model';
+import { UserCreateDTO } from "../models/user/userCreate.model";
+import { PagedResponseDTO } from "../models/api/pagedResponse.model";
+import { UserDTO } from '../models/user/user.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({

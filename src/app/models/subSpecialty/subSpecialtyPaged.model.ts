@@ -1,4 +1,4 @@
-import { SubSpecialtyGetDTO } from "./subSpecialty.model";
+import { SubSpecialtyGetDTO } from "../subSpecialty/subSpecialty.model";
 
 export interface SubSpecialtyPagedDTO {
     page: number;

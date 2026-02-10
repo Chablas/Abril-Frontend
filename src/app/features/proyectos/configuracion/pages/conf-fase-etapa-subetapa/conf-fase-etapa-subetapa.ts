@@ -1,20 +1,21 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LessonService } from "../../../../../services/lesson.service";
-import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyFormData.model";
+import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFormData.model';
 import { forkJoin } from 'rxjs';
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { PhaseStageSubStageSubSpecialtyService } from "../../../../../services/phaseStageSubStageSubSpecialty.service";
-import { PhaseStageSubStageSubSpecialtyDTO } from "../../../../../models/phaseStageSubStageSubSpecialty.model";
-import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
-import { PhaseStageSubStageSubSpecialtyFlatDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
-import { PhaseGetDTO } from "../../../../../models/phase.model";
-import { StageGetDTO } from "../../../../../models/stage.model";
-import { LayerGetDTO } from "../../../../../models/layer.model";
-import { SubStageGetDTO } from "../../../../../models/subStage.model";
-import { SubSpecialtyGetDTO } from "../../../../../models/subSpecialty.model";
-import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../../../../../models/phaseStageSubStageSubSpecialtyCreate.model";
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { PhaseStageSubStageSubSpecialtyService } from '../../../../../services/phaseStageSubStageSubSpecialty.service';
+import { PhaseStageSubStageSubSpecialtyDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model';
+import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model';
+import { PhaseStageSubStageSubSpecialtyFlatDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model';
+import { PhaseGetDTO } from '../../../../../models/phase/phase.model';
+import { StageGetDTO } from '../../../../../models/stage/stage.model';
+import { LayerGetDTO } from '../../../../../models/layer/layer.model';
+import { SubStageGetDTO } from '../../../../../models/subStage/subStage.model';
+import { SubSpecialtyGetDTO } from '../../../../../models/subSpecialty/subSpecialty.model';
+import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyCreate.model';
 import Swal from 'sweetalert2';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-conf-fase-etapa-subetapa',
@@ -30,8 +31,9 @@ export class ConfFaseEtapaSubetapa {
   filtersRelations!: PhaseStageSubStageSubSpecialtyDTO[];
   relationsPaged!: PhaseStageSubStageSubSpecialtyFlatPagedDTO;
   relations: PhaseStageSubStageSubSpecialtyFlatDTO[] = [];
-  loadingModal = false;
-  loadingLoadPhaseStageSubStageSubSpecialties = false;
+
+  loader = false;
+
   createModalShowFormData: PhaseStageSubStageSubSpecialtyShowFormDataDTO = {
     areas: [],
     projects: [],
@@ -39,8 +41,8 @@ export class ConfFaseEtapaSubetapa {
     stages: [],
     layers: [],
     subStages: [],
-    subSpecialties: []
-  }
+    subSpecialties: [],
+  };
   createModalSendFormData: PhaseStageSubStageSubSpecialtySendFormDataDTO = {
     phaseId: 0,
     stageId: 0,
@@ -48,8 +50,8 @@ export class ConfFaseEtapaSubetapa {
     subStageId: 0,
     subSpecialtyId: 0,
     createdUserId: 0,
-    active: true
-  }
+    active: true,
+  };
   createModalSelectedPhase: PhaseGetDTO | null = null;
   createModalSelectedStage: StageGetDTO | null = null;
   createModalSelectedLayer: LayerGetDTO | null = null;
@@ -64,7 +66,11 @@ export class ConfFaseEtapaSubetapa {
     active: true
   };*/
 
-  constructor(private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService, private lessonService: LessonService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.loadfiltersRelations(1);
@@ -77,21 +83,38 @@ export class ConfFaseEtapaSubetapa {
     this.createModalSelectedStage = null;
     this.createModalSelectedSubStage = null;
     this.createModalSelectedSubSpecialty = null;
+
+    this.loader = true;
+    this.cdr.detectChanges();
+
     this.phaseStageSubStageSubSpecialtyService.getFormData().subscribe({
       next: (data) => {
         this.createModalShowFormData = data;
+        this.loader = false;
+        this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error(err);
-      }
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
   }
 
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showCreateModal = false;
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showCreateModal = false;
+    }
+  }
+
   loadfiltersRelations(page: number = 1) {
-    this.loadingLoadPhaseStageSubStageSubSpecialties = true;
+    this.loader = true;
+    this.cdr.detectChanges();
 
     this.phaseStageSubStageSubSpecialtyService.getPaged(page).subscribe({
-      next: res => {
+      next: (res) => {
         this.relationsPaged = res;
         this.relations = res.data;
 
@@ -100,22 +123,15 @@ export class ConfFaseEtapaSubetapa {
         this.pageSize = res.pageSize;
         this.totalRecords = res.totalRecords;
 
-        this.loadingLoadPhaseStageSubStageSubSpecialties = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: err => {
-        this.loadingLoadPhaseStageSubStageSubSpecialties = false;
-        this.cdr.detectChanges();
-
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error
-        });
-      }
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
   }
-  
+
   saveItem() {
     if (!this.createModalSelectedPhase) {
       // aquí puedes mostrar un error si la fase es obligatoria
@@ -123,42 +139,40 @@ export class ConfFaseEtapaSubetapa {
     }
 
     this.createModalSendFormData = {
-      phaseId: this.createModalSelectedPhase ?.phaseId ?? 0,
-      stageId: this.createModalSelectedStage ?.stageId ?? null,
-      layerId: this.createModalSelectedLayer ?.layerId ?? null,
-      subStageId: this.createModalSelectedSubStage ?.subStageId ?? null,
-      subSpecialtyId: this.createModalSelectedSubSpecialty ?.subSpecialtyId ?? null,
+      phaseId: this.createModalSelectedPhase?.phaseId ?? 0,
+      stageId: this.createModalSelectedStage?.stageId ?? null,
+      layerId: this.createModalSelectedLayer?.layerId ?? null,
+      subStageId: this.createModalSelectedSubStage?.subStageId ?? null,
+      subSpecialtyId: this.createModalSelectedSubSpecialty?.subSpecialtyId ?? null,
       createdUserId: 1,
       active: this.createModalSelectedActive ?? true,
     };
-
+    this.loader = true;
+    this.cdr.detectChanges();
     this.phaseStageSubStageSubSpecialtyService
       .createPhaseStageSubStageSubSpecialty(this.createModalSendFormData)
       .subscribe({
         next: () => {
           this.showCreateModal = false;
-          this.loadingModal = false;
+          this.loader = false;
           this.cdr.detectChanges();
           this.loadfiltersRelations();
           Swal.fire({
             title: 'Relación creada exitosamente',
             icon: 'success',
-            draggable: true
+            draggable: true,
           });
         },
-        error: err => {
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: err.error,
-          });
-        }
+        error: (err: HttpErrorResponse) => {
+          this.error(err);
+        },
       });
   }
 
-  deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, event: MouseEvent) {
+  deletePhaseStageSubStageSubSpecialty(
+    phaseStageSubStageSubSpecialtyId: number,
+    event: MouseEvent,
+  ) {
     event.stopPropagation();
     Swal.fire({
       title: '¿Estás seguro/a?',
@@ -167,32 +181,29 @@ export class ConfFaseEtapaSubetapa {
       confirmButtonColor: '#64BC04',
       cancelButtonColor: '#d33',
       cancelButtonText: 'Cancelar',
-      confirmButtonText: '¡Sí, elimínalo!'
-    }).then(result => {
+      confirmButtonText: '¡Sí, elimínalo!',
+    }).then((result) => {
       if (result.isConfirmed) {
-        this.loadingModal = true;
-        this.phaseStageSubStageSubSpecialtyService.deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId, 1).subscribe({
-          next: () => {
-            this.loadfiltersRelations();
-            this.loadingModal = false;
-            this.cdr.detectChanges();
-            Swal.fire({
-              title: '¡Eliminado!',
-              text: 'El registro ha sido eliminado.',
-              confirmButtonColor: '#64BC04',
-              icon: 'success'
-            });
-          },
-          error: (error) => {
-            this.loadingModal = false;
-            this.cdr.detectChanges();
-            Swal.fire({
-              title: 'Error',
-              text: error.error,
-              icon: 'error'
-            });
-          },
-        });
+        this.loader = true;
+        this.cdr.detectChanges();
+        this.phaseStageSubStageSubSpecialtyService
+          .deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId, 1)
+          .subscribe({
+            next: () => {
+              this.loader = false;
+              this.cdr.detectChanges();
+              this.loadfiltersRelations();
+              Swal.fire({
+                title: '¡Eliminado!',
+                text: 'El registro ha sido eliminado.',
+                confirmButtonColor: '#64BC04',
+                icon: 'success',
+              });
+            },
+            error: (err: HttpErrorResponse) => {
+              this.error(err);
+            },
+          });
       }
     });
   }
@@ -203,14 +214,14 @@ export class ConfFaseEtapaSubetapa {
       this.cdr.detectChanges();
     }
   }
-  
+
   prevPage() {
     if (this.currentPage > 1) {
       this.loadfiltersRelations(this.currentPage - 1);
       this.cdr.detectChanges();
     }
   }
-  
+
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.loadfiltersRelations(page);
@@ -220,33 +231,65 @@ export class ConfFaseEtapaSubetapa {
 
   get pages(): number[] {
     const maxButtons = 5;
-  
+
     if (this.totalPages <= maxButtons) {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     }
-  
+
     let start = this.currentPage - Math.floor(maxButtons / 2);
     let end = this.currentPage + Math.floor(maxButtons / 2);
-  
+
     if (start < 1) {
       start = 1;
       end = maxButtons;
     }
-  
+
     if (end > this.totalPages) {
       end = this.totalPages;
       start = this.totalPages - maxButtons + 1;
     }
-  
+
     const pages: number[] = [];
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-  
+
     return pages;
   }
 
-  closeModal() {
-    this.showCreateModal = false;
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
   }
 }

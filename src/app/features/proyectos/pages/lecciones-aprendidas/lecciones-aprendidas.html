@@ -514,11 +514,9 @@
     </div>
   </div>
 
-  <div
-    *ngIf="showViewModal"
-    class="fixed inset-0 bg-black/40 z-50 overflow-y-auto"
-    (click)="closeModal()"
-  >
+  <div *ngIf="showViewModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+    <div class="absolute inset-0" (click)="closeModal($event, 0)">
+    </div>
     <div class="min-h-screen flex items-center justify-center py-10">
       <div
         class="bg-white w-[1000px] rounded-xl shadow-xl animate-modal-in relative"
@@ -554,9 +552,8 @@
           </div>
 
           <div *ngIf="activeTab === 'general'">
-            <div *ngIf="detailLoading" class="p-6 text-center">Cargando...</div>
             <div
-              *ngIf="!detailLoading && selectedLesson"
+              *ngIf="selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
             >
               <p class="text-[#64BC04] w-[50%]">
@@ -730,7 +727,7 @@
             </ng-template>
           </div>
         </div>
-        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
+        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
           <svg
             width="24"
             height="24"
@@ -750,11 +747,9 @@
     </div>
   </div>
 
-  <div
-    *ngIf="showEditModal"
-    class="fixed inset-0 bg-black/40 z-50 overflow-y-auto"
-    (click)="closeModal()"
-  >
+  <div *ngIf="showEditModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+    <div class="absolute inset-0" (click)="closeModal($event, 0)">
+    </div>
     <div class="min-h-screen flex items-center justify-center py-10">
       <div
         class="bg-white w-[1000px] rounded-xl shadow-xl animate-modal-in"
@@ -790,9 +785,8 @@
           </div>
 
           <div *ngIf="activeTab === 'general'">
-            <div *ngIf="detailLoading" class="p-6 text-center">Cargando...</div>
             <div
-              *ngIf="!detailLoading && selectedLesson"
+              *ngIf="selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
             >
               <p class="text-[#64BC04] w-[50%]">
@@ -930,11 +924,9 @@
     </div>
   </div>
 
-  <div
-    *ngIf="showCreateModal"
-    class="fixed inset-0 bg-black/40 z-50 overflow-y-auto"
-    (click)="closeModal()"
-  >
+  <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+    <div class="absolute inset-0" (click)="closeModal($event, 0)">
+    </div>
     <div class="min-h-screen flex items-center justify-center py-10">
       <div
         class="bg-white w-[1000px] rounded-xl shadow-xl animate-modal-in"
@@ -1201,7 +1193,7 @@
             </button>
           </div>
         </div>
-        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
+        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
           <svg
             width="24"
             height="24"

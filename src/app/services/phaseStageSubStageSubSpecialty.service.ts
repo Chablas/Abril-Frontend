@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from "../models/phaseStageSubStageSubSpecialtyFormData.model";
-import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../models/phaseStageSubStageSubSpecialtyCreate.model";
-import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../models/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
+import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFormData.model";
+import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyCreate.model";
+import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
 import { environment } from '../../environments/environment';
 
 @Injectable({

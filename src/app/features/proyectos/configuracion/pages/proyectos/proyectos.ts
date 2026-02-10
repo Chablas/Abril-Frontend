@@ -26,6 +26,15 @@ export class Proyectos implements OnInit {
     totalPages: 0,
     data: [],
   };
+  createDto: ProjectCreateDTO = {
+    projectDescription: '',
+    active: true,
+  };
+  editDto: ProjectEditDTO = {
+    projectId: 0,
+    projectDescription: '',
+    active: true,
+  };
 
   currentPage = 1;
   totalPages = 0;
@@ -36,17 +45,6 @@ export class Proyectos implements OnInit {
 
   showCreateModal = false;
   showEditModal = false;
-
-  createDto: ProjectCreateDTO = {
-    projectDescription: '',
-    active: true,
-  };
-
-  editDto: ProjectEditDTO = {
-    projectId: 0,
-    projectDescription: '',
-    active: true,
-  };
 
   constructor(
     private projectService: ProjectService,
@@ -69,6 +67,18 @@ export class Proyectos implements OnInit {
     this.editDto.projectId = project.projectId;
     this.editDto.projectDescription = project.projectDescription;
     this.editDto.active = project.active;
+  }
+
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showCreateModal = false;
+      this.showEditModal = false;
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showCreateModal = false;
+      this.showEditModal = false;
+    }
   }
 
   loadProjects(page: number = 1) {
@@ -259,8 +269,4 @@ export class Proyectos implements OnInit {
     }
   }
 
-  closeModal() {
-    this.showCreateModal = false;
-    this.showEditModal = false;
-  }
 }

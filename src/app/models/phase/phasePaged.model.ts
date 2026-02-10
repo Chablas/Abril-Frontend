@@ -1,4 +1,4 @@
-import { PhaseGetDTO } from "./phase.model";
+import { PhaseGetDTO } from "../phase/phase.model";
 
 export interface PhasePagedDTO {
     page: number;

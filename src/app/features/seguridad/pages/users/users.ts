@@ -1,13 +1,15 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { UserService } from '../../../../services/user.service';
 import { PersonService } from '../../../../services/person.service';
-import { PagedResponseDTO } from '../../../../models/pagedResponse.model';
-import { UserDTO } from '../../../../models/user.model';
+import { PagedResponseDTO } from '../../../../models/api/pagedResponse.model';
+import { UserDTO } from '../../../../models/user/user.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserCreateDTO } from '../../../../models/userCreate.model';
+import { UserCreateDTO } from '../../../../models/user/userCreate.model';
 import Swal from 'sweetalert2';
+import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-users',
@@ -16,14 +18,13 @@ import Swal from 'sweetalert2';
   styleUrl: './users.css',
 })
 export class Users implements OnInit {
-  users!: PagedResponseDTO<UserDTO>;
-  loadingModal = false;
-  loadingLoad = false;
-  currentPage = 1;
-  totalPages = 0;
-  pageSize = 10;
-  totalRecords = 0;
-  showCreateModal = false;
+  users: PagedResponseDTO<UserDTO> = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: [],
+  };
   createDto: UserCreateDTO = {
     documentIdentityCode: '',
     firstNames: '',
@@ -35,10 +36,20 @@ export class Users implements OnInit {
     active: true,
   };
 
+  loader = false;
+
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
+
+  showCreateModal = false;
+
   constructor(
     private userService: UserService,
     private personService: PersonService,
     private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -50,6 +61,16 @@ export class Users implements OnInit {
     this.showCreateModal = true;
   }
 
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showCreateModal = false;
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showCreateModal = false;
+    }
+  }
+
   getPersonRENIEC() {
     const dni = this.createDto.documentIdentityCode?.trim();
 
@@ -58,26 +79,26 @@ export class Users implements OnInit {
       return;
     }
 
+    this.loader = true;
+    this.cdr.detectChanges();
     this.personService.getPersonRENIEC(dni).subscribe({
       next: (res) => {
         this.createDto.firstNames = res.first_name;
         this.createDto.firstLastName = res.first_last_name;
         this.createDto.secondLastName = res.second_last_name;
 
+        this.loader = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'No se encontró el DNI',
-          text: err.error,
-        });
+        this.error(err);
       },
     });
   }
 
   loadUsers(page: number = 1) {
-    this.loadingLoad = true;
+    this.loader = true;
+    this.cdr.detectChanges();
     forkJoin({
       users: this.userService.getUserPaged(page),
     }).subscribe({
@@ -87,27 +108,22 @@ export class Users implements OnInit {
         this.totalPages = users.totalPages;
         this.pageSize = users.pageSize;
         this.totalRecords = users.totalRecords;
-        this.loadingLoad = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.loadingLoad = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error,
-        });
+        this.error(err);
       },
     });
   }
 
   saveUser() {
-    this.loadingModal = true;
+    this.loader = true;
+    this.cdr.detectChanges();
     this.userService.createUser(this.createDto).subscribe({
       next: () => {
         this.showCreateModal = false;
-        this.loadingModal = false;
+        this.loader = false;
         this.cdr.detectChanges();
         this.loadUsers();
         Swal.fire({
@@ -115,16 +131,9 @@ export class Users implements OnInit {
           icon: 'success',
           draggable: true,
         });
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.loadingModal = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error,
-        });
+        this.error(err);
       },
     });
   }
@@ -178,7 +187,39 @@ export class Users implements OnInit {
     return pages;
   }
 
-  closeModal() {
-    this.showCreateModal = false;
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
   }
 }

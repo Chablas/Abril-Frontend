@@ -3,12 +3,12 @@ import { CommonModule } from "@angular/common";
 import { HttpClientModule } from '@angular/common/http';
 import { LessonService } from "../../../../services/lesson.service";
 import { PhaseStageSubStageSubSpecialtyService } from "../../../../services/phaseStageSubStageSubSpecialty.service";
-import { LessonListDTO, LessonListPagedDTO } from "../../../../models/lesson.model";
-import { LessonDetailDTO, LessonImageDTO } from "../../../../models/lessonDetail.model";
+import { LessonListDTO, LessonListPagedDTO } from "../../../../models/lesson/lesson.model";
+import { LessonDetailDTO, LessonImageDTO } from "../../../../models/lesson/lessonDetail.model";
 import { forkJoin } from 'rxjs';
-import { LessonFiltersDTO } from "../../../../models/lessonFilters.model";
+import { LessonFiltersDTO } from "../../../../models/lesson/lessonFilters.model";
 import { FormsModule } from '@angular/forms';
-import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty.model";
+import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from "@angular/router";
@@ -28,12 +28,13 @@ export class LeccionesAprendidas implements OnInit {
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
+
   lessons: LessonListPagedDTO = {
     page: 0,
     pageSize: 0,
     totalRecords: 0,
     totalPages: 0,
-    data: []
+    data: [],
   };
   filtersData: LessonFiltersDTO = {
     projects: [],
@@ -42,7 +43,7 @@ export class LeccionesAprendidas implements OnInit {
     stages: [],
     layers: [],
     subStages: [],
-    subSpecialties: []
+    subSpecialties: [],
   };
   filtersTable = {
     projectId: null as number | null,
@@ -61,7 +62,6 @@ export class LeccionesAprendidas implements OnInit {
   // Modal
   showViewModal = false;
   showEditModal = false;
-  detailLoading = false;
 
   // Modal Create
   showCreateModal = false;
@@ -130,13 +130,7 @@ export class LeccionesAprendidas implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loader = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error.message ?? 'Error al cargar lecciones',
-        });
+        this.error(err);
       },
     });
   }
@@ -145,8 +139,9 @@ export class LeccionesAprendidas implements OnInit {
     event.stopPropagation();
     this.activeTab = showActiveTab;
     this.showViewModal = true;
-    this.detailLoading = true;
+    this.loader = true;
     this.selectedLesson = null;
+    this.cdr.detectChanges();
 
     this.lessonService.getById(id).subscribe({
       next: (data) => {
@@ -155,12 +150,11 @@ export class LeccionesAprendidas implements OnInit {
           data.images?.filter((img) => img.imageTypeDescription === 'OPORTUNIDAD') || [];
         this.improvementImages =
           data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
-        this.detailLoading = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.detailLoading = false;
-        this.cdr.detectChanges();
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
       },
     });
   }
@@ -168,7 +162,7 @@ export class LeccionesAprendidas implements OnInit {
   openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
-    this.detailLoading = true;
+    this.loader = true;
 
     this.lessonService.getFiltersCreate().subscribe({
       next: (data) => {
@@ -187,14 +181,31 @@ export class LeccionesAprendidas implements OnInit {
         this.selectedSubSpecialtyId = undefined;
         this.selectedLayerId = undefined;
 
-        this.detailLoading = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.detailLoading = false;
-        this.cdr.detectChanges();
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
       },
     });
+  }
+
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showViewModal = false;
+      this.showCreateModal = false;
+      this.showEditModal = false;
+      this.selectedLesson = null;
+      this.activeTab = 'general';
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showViewModal = false;
+      this.showCreateModal = false;
+      this.showEditModal = false;
+      this.selectedLesson = null;
+      this.activeTab = 'general';
+    }
   }
 
   onPhaseChange() {
@@ -253,8 +264,9 @@ export class LeccionesAprendidas implements OnInit {
     event.stopPropagation();
     this.activeTab = 'general';
     this.showEditModal = true;
-    this.detailLoading = true;
+    this.loader = true;
     this.selectedLesson = null;
+    this.cdr.detectChanges();
 
     this.lessonService.getById(id).subscribe({
       next: (data) => {
@@ -263,25 +275,13 @@ export class LeccionesAprendidas implements OnInit {
           data.images?.filter((img) => img.imageTypeDescription === 'OPORTUNIDAD') || [];
         this.improvementImages =
           data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
-        this.detailLoading = false;
+        this.loader = false;
         this.cdr.detectChanges();
-        console.log(this.selectedLesson);
       },
-      error: (err) => {
-        console.error(err);
-        this.detailLoading = false;
-        this.cdr.detectChanges();
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
       },
     });
-  }
-
-  closeModal() {
-    this.showViewModal = false;
-    this.showEditModal = false;
-    this.selectedLesson = null;
-    this.detailLoading = false;
-    this.showCreateModal = false;
-    this.activeTab = 'general';
   }
 
   setSelectedLessonImages() {
@@ -364,14 +364,8 @@ export class LeccionesAprendidas implements OnInit {
         this.totalRecords = data.totalRecords;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.loader = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: err.error ?? 'Error al cargar lecciones',
-        });
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
       },
     });
   }
@@ -534,10 +528,10 @@ export class LeccionesAprendidas implements OnInit {
 
     this.lessonService.createLesson(form).subscribe({
       next: () => {
-        this.closeModal();
+        this.showCreateModal = false;
         this.loader = false;
-        this.resetForm();
         this.cdr.detectChanges();
+        this.resetForm();
         this.loadLessons();
         Swal.fire({
           title: 'Lección creada exitosamente',
@@ -546,36 +540,7 @@ export class LeccionesAprendidas implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
-        this.loader = false;
-        this.cdr.detectChanges();
-        if (err.status == 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión expirada',
-            text: err.error?.message ?? '',
-          });
-          localStorage.clear();
-          this.router.navigate(['/auth/login']);
-          return;
-        }
-
-        if (err.status >= 400 && err.status < 500) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error de validación',
-            text: err.error?.message ?? 'Escoja una relación válida.',
-          });
-          return;
-        }
-
-        if (err.status >= 500) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error del servidor',
-            text: 'Ocurrió un problema en el servidor. Contacte al administrador del sistema o inténtelo más tarde.',
-          });
-          return;
-        }
+        this.error(err);
       },
     });
   }
@@ -606,34 +571,7 @@ export class LeccionesAprendidas implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loader = false;
-        this.cdr.detectChanges();
-        if (err.status == 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión expirada',
-            text: err.error?.message ?? '',
-          });
-          localStorage.clear();
-          this.router.navigate(['/auth/login']);
-          return;
-        }
-        if (err.status >= 400 && err.status < 500) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err.error?.message ?? 'Ocurrió un error.',
-          });
-          return;
-        }
-        if (err.status >= 500) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error del servidor',
-            text: 'Ocurrió un problema en el servidor. Contacte al administrador del sistema o inténtelo más tarde.',
-          });
-          return;
-        }
+        this.error(err);
       },
     });
   }
@@ -705,5 +643,41 @@ export class LeccionesAprendidas implements OnInit {
     }
 
     return pages;
+  }
+
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
   }
 }

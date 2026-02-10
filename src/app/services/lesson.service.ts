@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LessonListDTO, LessonListPagedDTO } from '../models/lesson.model';
-import { LessonDetailDTO } from '../models/lessonDetail.model';
-import { LessonFiltersDTO } from "../models/lessonFilters.model";
-import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty.model";
+import { LessonListDTO, LessonListPagedDTO } from '../models/lesson/lesson.model';
+import { LessonDetailDTO } from '../models/lesson/lessonDetail.model';
+import { LessonFiltersDTO } from "../models/lesson/lessonFilters.model";
+import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../environments/environment';
 import { DashboardDTO } from "../models/dashboard/DashboardDTO";
 

@@ -1,4 +1,4 @@
-import { SubStageGetDTO } from "./subStage.model";
+import { SubStageGetDTO } from "../subStage/subStage.model";
 
 export interface SubStagePagedDTO {
     page: number;

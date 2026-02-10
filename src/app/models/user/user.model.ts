@@ -1,4 +1,4 @@
-import { PersonDTO } from "./person.model";
+import { PersonDTO } from "../person/person.model";
 
 export interface UserDTO {
   userId: number;

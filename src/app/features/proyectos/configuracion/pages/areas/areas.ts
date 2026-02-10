@@ -1,98 +1,202 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { AreaService } from "../../../../../services/area.service";
-import { AreaPagedDTO } from "../../../../../models/areaPaged.model";
+import { AreaService } from '../../../../../services/area.service';
+import { AreaPagedDTO } from '../../../../../models/area/areaPaged.model';
 import { forkJoin } from 'rxjs';
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { AreaCreateDTO } from "../../../../../models/areaCreate.model";
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AreaCreateDTO } from '../../../../../models/area/areaCreate.model';
+import { AreaEditDTO } from '../../../../../models/area/areaEdit.model';
+import { AreaGetDTO } from '../../../../../models/area/area.model';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { Router } from '@angular/router';
+import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
 
 @Component({
   selector: 'app-areas',
   imports: [CommonModule, FormsModule],
   templateUrl: './areas.html',
-  styleUrl: './areas.css'
+  styleUrl: './areas.css',
 })
 export class Areas implements OnInit {
-  areas!: AreaPagedDTO;
-  loadingModal = false;
+  areas: AreaPagedDTO = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: [],
+  };
+  createDto: AreaCreateDTO = {
+    areaDescription: '',
+    active: true,
+  };
+  editDto: AreaEditDTO = {
+    areaId: 0,
+    areaDescription: '',
+    active: true,
+  };
+
   currentPage = 1;
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
-  loadingLoadAreas = false;
+
+  loader = false;
 
   showCreateModal = false;
-  createDto: AreaCreateDTO = {
-    areaDescription: '',
-    active: true
-  };
+  showEditModal = false;
 
-  constructor(private areaService: AreaService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private areaService: AreaService,
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.loadAreas();
+    this.loadAreas(1);
   }
 
-  createModal(event: MouseEvent) {
+  openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
   }
 
-  loadAreas(page: number = 1) {
+  openEditModal(area: AreaGetDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.showEditModal = true;
+    this.editDto.areaId = area.areaId;
+    this.editDto.areaDescription = area.areaDescription;
+    this.editDto.active = area.active;
+  }
 
-    this.loadingLoadAreas = true;
-    forkJoin({
-      areas: this.areaService.getAreaPaged(page)
-    }).subscribe({
-      next: ({ areas }) => {
-        this.areas = areas;
-        this.currentPage = areas.page;
-        this.totalPages = areas.totalPages;
-        this.pageSize = areas.pageSize;
-        this.totalRecords = areas.totalRecords;
-        this.loadingLoadAreas = false;
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showCreateModal = false;
+      this.showEditModal = false;
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showCreateModal = false;
+      this.showEditModal = false;
+    }
+  }
+
+  loadAreas(page: number = 1) {
+    this.loader = true;
+    this.cdr.detectChanges();
+
+    this.areaService.getAreaPaged(page).subscribe({
+      next: (response) => {
+        this.areas = response;
+        this.currentPage = response.page;
+        this.totalPages = response.totalPages;
+        this.pageSize = response.pageSize;
+        this.totalRecords = response.totalRecords;
+
+        this.loader = false;
         this.cdr.detectChanges();
       },
-      error: err => {
-        this.loadingLoadAreas = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: err.error,
-        });
-      }
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.loadAreas(this.currentPage + 1);
+      this.cdr.detectChanges();
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.loadAreas(this.currentPage - 1);
+      this.cdr.detectChanges();
+    }
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.loadAreas(page);
+      this.cdr.detectChanges();
+    }
+  }
+
+  get pages(): number[] {
+    const maxButtons = 5;
+
+    if (this.totalPages <= maxButtons) {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+
+    let start = this.currentPage - Math.floor(maxButtons / 2);
+    let end = this.currentPage + Math.floor(maxButtons / 2);
+
+    if (start < 1) {
+      start = 1;
+      end = maxButtons;
+    }
+
+    if (end > this.totalPages) {
+      end = this.totalPages;
+      start = this.totalPages - maxButtons + 1;
+    }
+
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    return pages;
   }
 
   saveArea() {
     if (!this.createDto.areaDescription.trim()) {
       return;
     }
-    this.loadingModal = true;
+    this.loader = true;
     this.areaService.createArea(this.createDto).subscribe({
-      next: () => {
+      next: (response: ApiMessageDTO) => {
         this.showCreateModal = false;
         this.createDto = { areaDescription: '', active: true };
-        this.loadingModal = false;
+        this.loader = false;
         this.cdr.detectChanges();
         this.loadAreas();
         Swal.fire({
-          title: 'Area creada exitosamente',
+          title: response.message ?? 'Proyecto creado exitosamente',
           icon: 'success',
-          draggable: true
+          draggable: true,
         });
       },
-      error: err => {
-        this.loadingModal = false;
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
+    });
+  }
+
+  editArea(event: MouseEvent) {
+    event.stopPropagation();
+    if (!this.editDto.areaDescription.trim()) {
+      return;
+    }
+    this.loader = true;
+    this.areaService.editArea(this.editDto).subscribe({
+      next: (response: ApiMessageDTO) => {
+        this.showEditModal = false;
+        this.editDto = { areaId: 0, areaDescription: '', active: true };
+        this.loader = false;
         this.cdr.detectChanges();
+        this.loadAreas();
         Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: err.error,
+          title: response.message ?? 'Proyecto actualizado exitosamente',
+          icon: 'success',
+          draggable: true,
         });
-      }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
     });
   }
 
@@ -105,86 +209,64 @@ export class Areas implements OnInit {
       confirmButtonColor: '#64BC04',
       cancelButtonColor: '#d33',
       cancelButtonText: 'Cancelar',
-      confirmButtonText: '¡Sí, elimínalo!'
-    }).then(result => {
+      confirmButtonText: '¡Sí, elimínalo!',
+    }).then((result) => {
       if (result.isConfirmed) {
-        this.loadingModal = true;
+        this.loader = true;
         this.areaService.deleteArea(areaId, 1).subscribe({
-          next: () => {
+          next: (response: ApiMessageDTO) => {
             this.loadAreas();
-            this.loadingModal = false;
+            this.loader = false;
             this.cdr.detectChanges();
             Swal.fire({
               title: '¡Eliminado!',
-              text: 'El registro ha sido eliminado.',
+              text: response.message ?? 'El registro ha sido eliminado.',
               confirmButtonColor: '#64BC04',
-              icon: 'success'
+              icon: 'success',
             });
           },
-          error: (error) => {
-            this.loadingModal = false;
-            this.cdr.detectChanges();
-            Swal.fire({
-              title: 'Error',
-              text: error.error,
-              icon: 'error'
-            });
+          error: (err: HttpErrorResponse) => {
+            this.error(err);
           },
         });
       }
     });
   }
 
-  closeModal() {
-    this.showCreateModal = false;
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
   }
 
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.loadAreas(this.currentPage + 1);
-      this.cdr.detectChanges();
-    }
-  }
-  
-  prevPage() {
-    if (this.currentPage > 1) {
-      this.loadAreas(this.currentPage - 1);
-      this.cdr.detectChanges();
-    }
-  }
-  
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.loadAreas(page);
-      this.cdr.detectChanges();
-    }
-  }
-
-  get pages(): number[] {
-    const maxButtons = 5;
-  
-    if (this.totalPages <= maxButtons) {
-      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
-    }
-  
-    let start = this.currentPage - Math.floor(maxButtons / 2);
-    let end = this.currentPage + Math.floor(maxButtons / 2);
-  
-    if (start < 1) {
-      start = 1;
-      end = maxButtons;
-    }
-  
-    if (end > this.totalPages) {
-      end = this.totalPages;
-      start = this.totalPages - maxButtons + 1;
-    }
-  
-    const pages: number[] = [];
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-  
-    return pages;
-  }
 }

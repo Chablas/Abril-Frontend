@@ -125,11 +125,9 @@
     </div>
   </div>
 
-  <div
-    *ngIf="showCreateModal"
-    class="fixed inset-0 bg-black/40 z-50 overflow-y-auto"
-    (click)="closeModal()"
-  >
+  <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+    <div class="absolute inset-0" (click)="closeModal($event, 0)">
+    </div>
     <div class="min-h-screen flex items-center justify-center py-10">
       <div
         class="bg-white w-[1000px] rounded-xl shadow-xl animate-modal-in relative"
@@ -219,7 +217,7 @@
             <p class="text-[#ffffff] text-lg">Guardar</p>
           </button>
         </div>
-        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal()">
+        <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
           <svg
             width="24"
             height="24"
@@ -240,5 +238,6 @@
   </div>
 </div>
 
-<div *ngIf="loadingModal" class="loader"></div>
-<div *ngIf="loadingLoad" class="loader"></div>
+<div *ngIf="loader" class="loader-overlay">
+    <div class="loader"></div>
+</div>

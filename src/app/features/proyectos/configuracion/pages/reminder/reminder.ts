@@ -5,10 +5,10 @@ import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserProjectCreateDTO } from '../../../../../models/userProject/userProjectCreate.model';
-import { UserProjectCreateDataDTO } from "../../../../../models/userProject/userProjectCreateData.model";
+import { UserProjectCreateDataDTO } from '../../../../../models/userProject/userProjectCreateData.model';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from "@angular/router";
-import { ApiMessageDTO } from "../../../../../models/api/ApiMessage.model";
+import { Router } from '@angular/router';
+import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -16,22 +16,19 @@ import Swal from 'sweetalert2';
   imports: [CommonModule, FormsModule],
   templateUrl: './reminder.html',
   styleUrl: './reminder.css',
-  standalone: true
+  standalone: true,
 })
 export class Reminder implements OnInit {
-
-  userProjects!: UserProjectPagedDTO;
-  loadingModal = false;
-  currentPage = 1;
-  totalPages = 0;
-  pageSize = 10;
-  totalRecords = 0;
-  loadingLoadUserProjects = false;
-
-  showCreateModal = false;
+  userProjects: UserProjectPagedDTO = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: [],
+  };
   createData: UserProjectCreateDataDTO = {
     userPersons: [],
-    projects: []
+    projects: [],
   };
   createDto: UserProjectCreateDTO = {
     userId: 0,
@@ -39,10 +36,19 @@ export class Reminder implements OnInit {
     active: true,
   };
 
+  currentPage = 1;
+  totalPages = 0;
+  pageSize = 10;
+  totalRecords = 0;
+
+  loader = false;
+
+  showCreateModal = false;
+
   constructor(
     private userProjectService: UserProjectService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -55,8 +61,19 @@ export class Reminder implements OnInit {
     this.showCreateModal = true;
   }
 
+  closeModal(event: MouseEvent, number: number) {
+    if (number == 1) {
+      this.showCreateModal = false;
+      return;
+    }
+    if (event.target === event.currentTarget) {
+      this.showCreateModal = false;
+    }
+  }
+
   loadUserProjects(page: number = 1) {
-    this.loadingLoadUserProjects = true;
+    this.loader = true;
+    this.cdr.detectChanges();
     forkJoin({
       userProjects: this.userProjectService.getUserProjectPaged(page),
     }).subscribe({
@@ -66,72 +83,40 @@ export class Reminder implements OnInit {
         this.totalPages = userProjects.totalPages;
         this.pageSize = userProjects.pageSize;
         this.totalRecords = userProjects.totalRecords;
-        this.loadingLoadUserProjects = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        if (err.status == 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión expirada',
-            text: err.error?.message ?? 'Operación cancelada',
-          });
-          localStorage.clear();
-          this.loadingLoadUserProjects = false;
-          this.cdr.detectChanges();
-          this.router.navigate(['/auth/login']);
-          return;
-        }
+        this.error(err);
       },
     });
   }
 
   loadCreateData() {
-    this.loadingModal = true;
+    this.loader = true;
+    this.cdr.detectChanges();
     forkJoin({
       createData: this.userProjectService.getUserProjectCreateData(),
     }).subscribe({
-      next: ({createData}) => {
+      next: ({ createData }) => {
         this.createData = createData;
-        this.loadingModal = false;
+        this.loader = false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        if (err.status == 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión expirada',
-            text: err.error?.message ?? 'Operación cancelada',
-          });
-          localStorage.clear();
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          this.router.navigate(['/auth/login']);
-          return;
-        }
-        if (err.status == 500) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err.error?.message ?? 'Operación cancelada',
-          });
-          localStorage.clear();
-          this.loadingModal = false;
-          this.cdr.detectChanges();
-          this.router.navigate(['/auth/login']);
-          return;
-        }
-      }
-    })
+        this.error(err);
+      },
+    });
   }
 
   saveUserProject() {
-    this.loadingModal = true;
+    this.loader = true;
+    this.cdr.detectChanges();
     this.userProjectService.createUserProject(this.createDto).subscribe({
       next: (resp: ApiMessageDTO) => {
         this.showCreateModal = false;
         this.createDto = { userId: 0, projectId: 0, active: true };
-        this.loadingModal = false;
+        this.loader = false;
         this.cdr.detectChanges();
         this.loadUserProjects();
         Swal.fire({
@@ -141,13 +126,7 @@ export class Reminder implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
-        this.loadingModal = false;
-        this.cdr.detectChanges();
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.error?.message ?? 'Operación cancelada',
-        });
+        this.error(err);
       },
     });
   }
@@ -164,12 +143,13 @@ export class Reminder implements OnInit {
       confirmButtonText: '¡Sí, elimínalo!',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.loadingModal = true;
+        this.loader = true;
+        this.cdr.detectChanges();
         this.userProjectService.deleteUserProject(userProjectId).subscribe({
           next: (resp: ApiMessageDTO) => {
-            this.loadUserProjects();
-            this.loadingModal = false;
+            this.loader = false;
             this.cdr.detectChanges();
+            this.loadUserProjects();
             Swal.fire({
               title: '¡Eliminado!',
               text: resp?.message ?? 'Operación realizada correctamente',
@@ -178,13 +158,7 @@ export class Reminder implements OnInit {
             });
           },
           error: (err: HttpErrorResponse) => {
-            this.loadingModal = false;
-            this.cdr.detectChanges();
-            Swal.fire({
-              title: 'Error',
-              text: err.error?.message ?? 'Operación cancelada',
-              icon: 'error',
-            });
+            this.error(err);
           },
         });
       }
@@ -240,7 +214,39 @@ export class Reminder implements OnInit {
     return pages;
   }
 
-  closeModal() {
-    this.showCreateModal = false;
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: err.error?.message ?? '',
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: err.error?.message ?? 'Ocurrió un error.',
+      });
+      return;
+    }
   }
 }

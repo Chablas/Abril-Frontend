@@ -1,4 +1,4 @@
-import { DocumentIdentityTypeDTO } from "./documentIdentityType.model"
+import { DocumentIdentityTypeDTO } from "../documentIdentityType/documentIdentityType.model"
 
 export interface PersonDTO {
   personId: number;

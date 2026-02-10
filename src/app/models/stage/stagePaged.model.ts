@@ -1,4 +1,4 @@
-import { StageGetDTO } from "./stage.model";
+import { StageGetDTO } from "../stage/stage.model";
 
 export interface StagePagedDTO {
     page: number;
