@@ -12,7 +12,6 @@ import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, S
 import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from "@angular/router";
-import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 
 @Component({

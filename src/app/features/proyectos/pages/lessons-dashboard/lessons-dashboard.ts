@@ -337,51 +337,59 @@ export class LessonsDashboard implements AfterViewInit {
   }
 
   downloadPDF() {
+    
     this.loader = true;
     this.cdr.detectChanges();
     const pdf = new jsPDF('p', 'mm', 'a4');
 
+    const marginX = 10;
     const pageWidth = 210;
+    const usableWidth = pageWidth - marginX * 2;
+    const halfWidth = usableWidth / 2;
+    const chartHeight = 60;
     let currentY = 10;
 
     // 🔹 Título
     pdf.setFontSize(16);
-    pdf.text('Dashboard de Lecciones Aprendidas', 105, currentY, { align: 'center' });
-    currentY += 10;
-
+    pdf.addImage("../../images/abril-logo-removebg-preview.jpg", 'JPG', 3, 3, 35, 15);
+    pdf.text('DASHBOARD DE LECCIONES APRENDIDAS', 105, currentY, { align: 'center' });
+    currentY += 5;
+    pdf.text('UNIDAD DE PROYECTOS', 105, currentY, { align: 'center' });
+    currentY += 5;
     pdf.setFontSize(10);
-    pdf.text(`Generado: ${new Date().toLocaleDateString()}`, 105, currentY, { align: 'center' });
-    currentY += 15;
+    pdf.text(`Fecha Generación: ${new Date().toLocaleDateString()}`, 105, currentY, { align: 'center' });
+    currentY += 5;
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    currentY += 5;
+    pdf.text('LECCIONES APRENDIDAS POR PROYECTO', marginX + halfWidth / 2, currentY, {
+      align: 'center',
+    });
 
+    pdf.text('LECCIONES APRENDIDAS POR FASE', marginX + halfWidth + halfWidth / 2, currentY, {
+      align: 'center',
+    });
+    currentY += 2;
     if (this.barChart) {
       const img = this.barChart.toBase64Image();
-      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
-      currentY += 70;
+      pdf.addImage(img, 'PNG', marginX, currentY, halfWidth, chartHeight);
     }
 
     if (this.pieChart) {
       const img = this.pieChart.toBase64Image();
-      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
+      pdf.addImage(img, 'PNG', marginX + halfWidth, currentY, halfWidth, chartHeight);
       currentY += 70;
     }
 
+    pdf.text('LECCIONES APRENDIDAS POR SUBETAPA', 105, currentY, {
+      align: 'center',
+    });
+    currentY += 2;
     if (this.lineChart) {
       const img = this.lineChart.toBase64Image();
       pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
       currentY += 70;
     }
-
-    // 🔹 Charts por fase
-    /*this.phaseStageCharts.forEach((chart, index) => {
-      if (currentY > 250) {
-        pdf.addPage();
-        currentY = 20;
-      }
-
-      const img = chart.toBase64Image();
-      pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
-      currentY += 70;
-    });*/
 
     pdf.save('Dashboard.pdf');
     this.loader = false;

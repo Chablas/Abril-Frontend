@@ -1,0 +1,13 @@
+.pdf-container {
+  font-family: Arial, sans-serif;
+  color: #000;
+}
+
+.chart {
+  margin-bottom: 15mm;
+}
+
+.chart img {
+  width: 100%;
+  height: auto;
+}
