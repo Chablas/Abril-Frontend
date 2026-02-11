@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, QueryList, ViewChildren, ElementRef } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { HttpClientModule } from '@angular/common/http';
 import { LessonService } from "../../../../services/lesson.service";
@@ -89,6 +89,7 @@ export class LeccionesAprendidas implements OnInit {
   // Modal View or Create
   selectedLesson: LessonDetailDTO | null = null;
   activeTab: 'general' | 'images' = 'general';
+  @ViewChildren('autoTextarea') textareas!: QueryList<ElementRef<HTMLTextAreaElement>>;
 
   // Imágenes
   imageZoom: Record<number, number> = {};
@@ -150,6 +151,9 @@ export class LeccionesAprendidas implements OnInit {
         this.improvementImages =
           data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
         this.loader = false;
+        setTimeout(() => {
+          this.adjustTextareaHeight();
+        });
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -205,6 +209,16 @@ export class LeccionesAprendidas implements OnInit {
       this.selectedLesson = null;
       this.activeTab = 'general';
     }
+  }
+
+  adjustTextareaHeight() {
+    if (!this.textareas) return;
+
+    this.textareas.forEach((textareaRef) => {
+      const el = textareaRef.nativeElement;
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    });
   }
 
   onPhaseChange() {
