@@ -54,6 +54,13 @@
         >
           Dashboard Lecciones
         </a>
+        <a
+          routerLink="/projects/milestone-schedule"
+          class="block px-4 py-2 text-sm rounded-xl
+                       hover:bg-[#E5F7D1] font-sans"
+        >
+          Cronograma de Hitos
+        </a>
 
         <!-- ITEM CON SUBMENÚ -->
         <div class="relative" (click)="toggleConfig($event)">
@@ -153,6 +160,14 @@
                            hover:bg-[#E5F7D1] rounded-xl"
             >
               Recordatorios Lecciones
+            </a>
+            <a
+              routerLink="/projects/configuration/milestones"
+              (click)="closeAllMenus()"
+              class="block px-4 py-2 text-sm
+                           hover:bg-[#E5F7D1] rounded-xl"
+            >
+              Hitos
             </a>
           </div>
         </div>

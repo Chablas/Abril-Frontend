@@ -17,6 +17,7 @@ export class LessonService {
   constructor(private http: HttpClient) {}
 
   getLessons(filters: any): Observable<LessonListDTO[]> {
+    const token = localStorage.getItem('access_token');
     let params = new HttpParams();
 
     Object.keys(filters).forEach((key) => {
@@ -24,22 +25,26 @@ export class LessonService {
         params = params.set(key, filters[key]);
       }
     });
-    return this.http.get<LessonListDTO[]>(`${this.apiUrl}/all`, { params });
+    return this.http.get<LessonListDTO[]>(`${this.apiUrl}/all`, { params, headers: { Authorization: `Bearer ${token}` } });
   }
 
   getById(id: number | null): Observable<LessonDetailDTO> {
-    return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
   }
 
   getFiltersInitialLoad(): Observable<LessonFiltersDTO> {
-    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters/initialLoad`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters/initialLoad`, { headers: { Authorization: `Bearer ${token}` } });
   }
 
   getFiltersCreate(): Observable<PhaseStageSubStageSubSpecialtyDTO[]> {
-    return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`, { headers: { Authorization: `Bearer ${token}` } });
   }
 
   getLessonsUsingFilters(filters: any) {
+    const token = localStorage.getItem('access_token');
     let params = new HttpParams();
 
     Object.keys(filters).forEach((key) => {
@@ -48,11 +53,12 @@ export class LessonService {
       }
     });
 
-    return this.http.get<LessonListPagedDTO>(this.apiUrl, { params });
+    return this.http.get<LessonListPagedDTO>(this.apiUrl, { params, headers: { Authorization: `Bearer ${token}` } });
   }
 
   async getByIdFetch(id: number | null): Promise<LessonDetailDTO> {
-    const response = await fetch(`${this.apiUrl}/${id}`);
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`${this.apiUrl}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
     const datos = response.json();
     return datos;
   }

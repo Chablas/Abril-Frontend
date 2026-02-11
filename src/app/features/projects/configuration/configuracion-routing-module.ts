@@ -9,6 +9,7 @@ import { Subetapas } from "./pages/subetapas/subetapas";
 import { Subespecialidades } from "./pages/subespecialidades/subespecialidades";
 import { Reminder } from "./pages/reminder/reminder";
 import { Layers } from "./pages/layers/layers";
+import { Milestones } from "./pages/milestones/milestones";
 
 const routes: Routes = [
   { path: "projects", component: Proyectos, data: { titulo: 'PROYECTOS' } },
@@ -20,6 +21,7 @@ const routes: Routes = [
   { path: "sub-specialties", component: Subespecialidades, data: { titulo: 'SUBESPECIALIDADES' } },
   { path: "relations", component: ConfFaseEtapaSubetapa, data: { titulo: 'RELACIONES' } },
   { path: "reminders", component: Reminder, data: { titulo: 'RECORDATORIOS DE LECCIONES' } },
+  { path: "milestones", component: Milestones, data: { titulo: 'HITOS' } },
   { path: '', redirectTo: 'projects', pathMatch: 'full' }
 ];
 

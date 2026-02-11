@@ -25,7 +25,8 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "node_modules/dhtmlx-gantt/codebase/dhtmlxgantt.css"
             ],
             "server": "src/main.server.ts",
             "outputMode": "server",

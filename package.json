@@ -34,6 +34,7 @@
     "@angular/ssr": "^21.0.5",
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
+    "dhtmlx-gantt": "^9.1.1",
     "express": "^5.1.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.1.0",

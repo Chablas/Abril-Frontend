@@ -16,9 +16,11 @@ export class UserService {
   constructor(private http: HttpClient) {}
 
   getUserPaged(page: number): Observable<PagedResponseDTO<UserDTO>> {
-    return this.http.get<PagedResponseDTO<UserDTO>>(`${this.apiUrl}/paged?page=${page}`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<PagedResponseDTO<UserDTO>>(`${this.apiUrl}/paged?page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
   }
   createUser(dto: UserCreateDTO): Observable<any> {
-    return this.http.post(`${this.apiUrl}`, dto);
+    const token = localStorage.getItem('access_token');
+    return this.http.post(`${this.apiUrl}`, dto, { headers: { Authorization: `Bearer ${token}` } });
   }
 }

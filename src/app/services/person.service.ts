@@ -14,6 +14,7 @@ export class PersonService {
   constructor(private http: HttpClient) {}
 
   getPersonRENIEC(documentNumber: string): Observable<ReniecPersonDTO> {
-    return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/reniec/${documentNumber}`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/reniec/${documentNumber}`, { headers: { Authorization: `Bearer ${token}` } });
   }
 }

@@ -16,15 +16,19 @@ export class PhaseStageSubStageSubSpecialtyService {
   constructor(private http: HttpClient) {}
 
   getFormData(): Observable<PhaseStageSubStageSubSpecialtyShowFormDataDTO> {
-    return this.http.get<PhaseStageSubStageSubSpecialtyShowFormDataDTO>(`${this.apiUrl}/form-data`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<PhaseStageSubStageSubSpecialtyShowFormDataDTO>(`${this.apiUrl}/form-data`, { headers: { Authorization: `Bearer ${token}` } });
   }
   createPhaseStageSubStageSubSpecialty(form: PhaseStageSubStageSubSpecialtySendFormDataDTO) {
-    return this.http.post(`${this.apiUrl}`, form);
+    const token = localStorage.getItem('access_token');
+    return this.http.post(`${this.apiUrl}`, form, { headers: { Authorization: `Bearer ${token}` } });
   }
   deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, updatedUserId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${phaseStageSubStageSubSpecialtyId}`);
+    const token = localStorage.getItem('access_token');
+    return this.http.delete(`${this.apiUrl}/${phaseStageSubStageSubSpecialtyId}`, { headers: { Authorization: `Bearer ${token}` } });
   }
   getPaged(page: number): Observable<PhaseStageSubStageSubSpecialtyFlatPagedDTO> {
-    return this.http.get<PhaseStageSubStageSubSpecialtyFlatPagedDTO>(`${this.apiUrl}/paged?page=${page}`);
+    const token = localStorage.getItem('access_token');
+    return this.http.get<PhaseStageSubStageSubSpecialtyFlatPagedDTO>(`${this.apiUrl}/paged?page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
   }
 }

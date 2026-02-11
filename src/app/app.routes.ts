@@ -18,13 +18,13 @@ export const routes: Routes = [
       {
         path: 'security',
         loadChildren: () => {
-          return import('./features/seguridad/seguridad-module').then(x => x.SeguridadModule);
+          return import('./features/security/seguridad-module').then(x => x.SeguridadModule);
         }
       },
       {
         path: 'projects',
         loadChildren: () => {
-          return import('./features/proyectos/proyectos-module').then(x => x.ProyectosModule);
+          return import('./features/projects/proyectos-module').then(x => x.ProyectosModule);
         }
       }
     ]
