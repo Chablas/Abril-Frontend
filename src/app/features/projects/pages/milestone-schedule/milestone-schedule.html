@@ -122,7 +122,6 @@
             </button>
         </div>
     </div>
-
     
     <div *ngIf="showMilestoneScheduleHistory" class="fixed inset-0 bg-black/40 flex items-center justify-center"
         (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
@@ -130,11 +129,18 @@
             <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
                 <h1 class="text-2xl text-center">VER HISTORIAL DE CRONOGRAMA DE HITOS</h1>
                 <button class="cursor-pointer" (click)="openMilestoneSchedule()">Agregar nuevo cronograma</button>
+                <table>
+                    <thead></thead>
+                    <tbody>
+                        <!--<tr *ngFor="let item of milestoneScheduleHistory">
+                            
+                        </tr>-->
+                    </tbody>
+                </table>
                 <p>Version 1. Fecha: 08 de enero de 2026</p>
             </div>
         </div>
     </div>
-        
 </div>
 
 <div [hidden]="!showMilestoneSchedule" class="max-h-[500px]">

@@ -2,6 +2,7 @@ export interface MilestoneScheduleGetDTO {
     milestoneScheduleId: number;
     milestoneId: number;
     milestoneDescription: string;
+    milestoneScheduleHistoryId: number;
     plannedStartDate: string;
     plannedEndDate: string;
     createdDateTime: string;

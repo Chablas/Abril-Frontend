@@ -1,12 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  AfterViewInit,
-  OnDestroy,
-  ViewChild,
-  OnInit,
-  ChangeDetectorRef,
-} from '@angular/core';
+import { Component, ElementRef, AfterViewInit, OnDestroy, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { DatePipe, CommonModule } from "@angular/common";
 import { MilestoneScheduleService } from '../../../../services/milestoneSchedule.service';
 import { ScheduleService } from '../../../../services/schedule.service';
@@ -23,6 +15,8 @@ import { ScheduleCreateDTO } from '../../../../models/schedule/scheduleCreate.mo
 import { FormsModule } from "@angular/forms";
 import { ApiMessageDTO } from "../../../../models/api/ApiMessage.model";
 import { ScheduleFormData } from "../../../../models/schedule/scheduleFormData.model";
+import { MilestoneScheduleHistoryService } from '../../../../services/milestoneScheduleHistory.service';
+import { MilestoneScheduleHistoryGetDTO } from "../../../../models/milestoneScheduleHistory/milestoneScheduleHistory.model";
 
 @Component({
   selector: 'app-milestone-schedule',
@@ -64,17 +58,30 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     totalPages: 0,
     data: [],
   };
+  milestoneScheduleHistory: MilestoneScheduleHistoryGetDTO = {
+    milestoneScheduleHistoryId : 0,
+    scheduleId: 0,
+    createdDateTime: "",
+    createdUserId: 0,
+    updatedDateTime: "",
+    updatedUserId: 0,
+    active: true,
+  }
   createDto: ScheduleCreateDTO = {
     scheduleDescription: '',
     projectId: 0,
     active: true,
   };
-
+  filters = {
+    scheduleId: null as number | null
+  }
+  
   constructor(
     private milestoneScheduleService: MilestoneScheduleService,
     private scheduleService: ScheduleService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private milestoneScheduleHistoryService: MilestoneScheduleHistoryService
   ) {}
 
   ngOnInit(): void {
@@ -119,6 +126,16 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   openMilestoneScheduleHistory() {
     this.showMilestoneScheduleHistory = true;
+    this.loader = true;
+    this.cdr.detectChanges();
+    this.milestoneScheduleHistoryService.getAllMilestoneScheduleHistory(this.filters).subscribe({
+      next: (response) => {
+
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      }
+    })
   }
 
   openMilestoneSchedule() {
