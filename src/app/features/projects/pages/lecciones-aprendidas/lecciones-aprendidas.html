@@ -187,7 +187,6 @@
         <thead class="bg-[#E5F7D1] sticky top-0 z-20">
           <tr class="text-[#64BC04]">
             <!--<th class="w-[15px]"></th>-->
-            <!--<th class="w-[25px]"></th>-->
             <th class="w-[12.5%]">Datos generales</th>
             <!--<th class="w-[150px]">Estado</th>-->
             <th class="w-[12.5%]">Descripción</th>
@@ -551,7 +550,7 @@
             </p>
           </div>
 
-          <div *ngIf="activeTab === 'general'">
+          <div [hidden]="activeTab !== 'general'">
             <div
               *ngIf="selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
@@ -627,9 +626,12 @@
                 selectedLesson?.impactDescription
               }}</textarea>
             </div>
+            <div *ngIf="selectedLesson?.createdUserId === currentUserId" class="flex justify-end">
+              <button (click)="deleteLesson(selectedLesson?.lessonId, $event)" type="button" class="text-white bg-red-700 border rounded-[5px] px-[10px] py-[5px]">Eliminar</button>
+            </div>
           </div>
 
-          <div *ngIf="activeTab === 'images'" class="p-10">
+          <div [hidden]="activeTab !== 'images'" class="p-10">
             <ng-container *ngIf="selectedLesson?.images?.length; else noImages">
               <div class="flex flex-col space-y-6">
                 <div class="flex gap-5">
@@ -784,7 +786,7 @@
             </p>
           </div>
 
-          <div *ngIf="activeTab === 'general'">
+          <div [hidden]="activeTab !== 'general'">
             <div
               *ngIf="selectedLesson"
               class="flex flex-wrap mt-[15px] bg-[#E5F7D1] rounded-lg py-[15px] px-[25px]"
@@ -850,7 +852,7 @@
             </div>
           </div>
 
-          <div *ngIf="activeTab === 'images'" class="p-10">
+          <div [hidden]="activeTab !== 'images'" class="p-10">
             <ng-container *ngIf="selectedLesson?.images?.length; else noImages">
               <div class="flex flex-col space-y-6">
                 <div class="flex gap-5">
@@ -936,7 +938,7 @@
           <h1 class="text-2xl text-center">AGREGAR LECCIÓN</h1>
 
           <div
-            *ngIf="activeTab === 'general'"
+            [hidden]="activeTab !== 'general'"
             class="pt-[20px] flex flex-col justify-around gap-[10px]"
           >
             <div class="flex flex-start gap-[15px]">

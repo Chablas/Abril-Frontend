@@ -33,7 +33,7 @@ export class StageService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteStage(stageId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteStage(stageId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${stageId}`, {
       headers: { Authorization: `Bearer ${token}` },

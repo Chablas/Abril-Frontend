@@ -1,3 +1,160 @@
-<div class="max-h-[500px]">
+<div [hidden]="showMilestoneSchedule" class="bg-white rounded-lg p-[20px]">
+    <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+        <div class="flex w-full">
+            <button (click)="openCreateModal($event)"
+                class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                <div class="flex items-center gap-[10px]">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <p>Nuevo registro</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-col justify-center items-center px-[40px]">
+        <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+
+            <table class="w-full table-fixed">
+                <thead class="bg-[#E5F7D1]">
+                    <tr class="text-[#64BC04]">
+                        <th class="w-[50px]"></th>
+                        <th class="w-[150px]">Proyecto</th>
+                        <th class="w-[150px]">Descripción</th>
+                        <th class="w-[150px]">Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let item of schedules.data" class="border-b border-[#D6DEE5] h-[30px]">
+                        <td>
+                            <div class="flex justify-center">
+                                <button class="cursor-pointer" (click)="openMilestoneScheduleHistory()">
+                                    <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M13.75 7.75C13.75 8.54565 13.4339 9.30871 12.8713 9.87132C12.3087 10.4339 11.5456 10.75 10.75 10.75C9.95435 10.75 9.19129 10.4339 8.62868 9.87132C8.06607 9.30871 7.75 8.54565 7.75 7.75C7.75 6.95435 8.06607 6.19129 8.62868 5.62868C9.19129 5.06607 9.95435 4.75 10.75 4.75C11.5456 4.75 12.3087 5.06607 12.8713 5.62868C13.4339 6.19129 13.75 6.95435 13.75 7.75Z"
+                                            stroke="#64BC04" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path
+                                            d="M0.75 7.75C2.35 3.653 6.086 0.75 10.75 0.75C15.414 0.75 19.15 3.653 20.75 7.75C19.15 11.847 15.414 14.75 10.75 14.75C6.086 14.75 2.35 11.847 0.75 7.75Z"
+                                            stroke="#64BC04" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-center">{{item.projectDescription}}</td>
+                        <td><span [title]="item.scheduleDescription"
+                                class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
+                                item.scheduleDescription }}</span></td>
+
+                        <td class="text-center">
+                            <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
+                              'bg-[#D7FAF4] text-[#009C87]': item.active == true,
+                              'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
+                                {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex gap-2 mt-4 justify-around w-full border border-[#D6DEE5] rounded-lg h-[30px]">
+            <span># Registros: {{totalRecords}}</span>
+            <div class="flex gap-[10px] items-center">
+                <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">
+                    «
+                </button>
+
+                <button class="cursor-pointer py-1 px-2 rounded transition-colors" *ngFor="let page of pages"
+                    (click)="goToPage(page)"
+                    [ngClass]="{'bg-[#0086A5] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
+                    {{ page }}
+                </button>
+
+                <button class="cursor-pointer text-[#0086A5]" (click)="nextPage()"
+                    [disabled]="currentPage === totalPages">
+                    »
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div [hidden]="showMilestoneSchedule" *ngIf="showCreateModal"
+        class="fixed inset-0 bg-black/40 flex items-center justify-center" (mousedown)="onBackdropMouseDown($event)"
+        (click)="closeModal($event)">
+        <div class="bg-white p-6 rounded-lg w-[800px]" (mousedown)="$event.stopPropagation()">
+            <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                <h1 class="text-2xl text-center">AGREGAR CRONOGRAMA</h1>
+                <div class="flex justify-between w-full">
+                    <div class="flex flex-col">
+                        <p class="text-[#64BC04]">Descripción</p>
+                        <input type="text" [(ngModel)]="createDto.scheduleDescription"
+                            class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                    </div>
+                    <div class="flex flex-col jus">
+                        <p class="text-[#64BC04]">Proyectos</p>
+                        <select [(ngModel)]="createDto.projectId"
+                            class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                            <option [ngValue]="">Seleccionar proyecto</option>
+                            <option *ngFor="let item of formdata.projects" [ngValue]="item.projectId">
+                                {{item.projectDescription}}</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col jus">
+                        <p class="text-[#64BC04]">Estado</p>
+                        <select [(ngModel)]="createDto.active"
+                            class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                            <option [ngValue]="true">ACTIVO</option>
+                            <option [ngValue]="false">INACTIVO</option>
+                        </select>
+                    </div>
+                </div>
+                <button (click)="saveSchedule()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                    <p class="text-[#ffffff] text-lg">Guardar</p>
+                </button>
+            </div>
+            <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    
+    <div *ngIf="showMilestoneScheduleHistory" class="fixed inset-0 bg-black/40 flex items-center justify-center"
+        (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
+        <div class="bg-white p-6 rounded-lg w-[800px]" (mousedown)="$event.stopPropagation()">
+            <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+                <h1 class="text-2xl text-center">VER HISTORIAL DE CRONOGRAMA DE HITOS</h1>
+                <button class="cursor-pointer" (click)="openMilestoneSchedule()">Agregar nuevo cronograma</button>
+                <p>Version 1. Fecha: 08 de enero de 2026</p>
+            </div>
+        </div>
+    </div>
+        
+</div>
+
+<div [hidden]="!showMilestoneSchedule" class="max-h-[500px]">
     <div #ganttContainer class="gantt-container w-full h-[550px]"></div>
+</div>
+
+<div *ngIf="showDetailModal" class="fixed inset-0 bg-black/40 flex items-center justify-center"
+    (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
+    <div class="bg-white p-6 rounded-lg w-[400px]" (mousedown)="$event.stopPropagation()">
+        <h2 class="text-lg font-bold mb-2">{{ selectedTask.text }}</h2>
+
+        <p><b>Inicio:</b> {{ selectedTask.start_date | date:'dd-MM-yyyy' }}</p>
+        <p *ngIf="selectedTask.end_date">
+            <b>Fin:</b> {{ selectedTask.end_date | date:'dd-MM-yyyy' }}
+        </p>
+
+        <button (click)="showDetailModal = false">Cerrar</button>
+    </div>
+</div>
+
+<div *ngIf="loader" class="loader-overlay">
+  <div class="loader"></div>
 </div>

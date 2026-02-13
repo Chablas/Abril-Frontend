@@ -217,8 +217,6 @@ export class Reminder implements OnInit {
   error(err: HttpErrorResponse) {
     this.loader = false;
     this.cdr.detectChanges();
-    this.loader = false;
-    this.cdr.detectChanges();
 
     if (err.status == 401) {
       Swal.fire({

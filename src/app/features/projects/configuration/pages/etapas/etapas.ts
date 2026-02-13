@@ -213,7 +213,7 @@ export class Etapas implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.stageService.deleteStage(stageId, 1).subscribe({
+        this.stageService.deleteStage(stageId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadStages();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Etapas implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

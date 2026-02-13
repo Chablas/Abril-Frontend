@@ -23,7 +23,7 @@ export class PhaseStageSubStageSubSpecialtyService {
     const token = localStorage.getItem('access_token');
     return this.http.post(`${this.apiUrl}`, form, { headers: { Authorization: `Bearer ${token}` } });
   }
-  deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number, updatedUserId: number): Observable<any> {
+  deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId: number): Observable<any> {
     const token = localStorage.getItem('access_token');
     return this.http.delete(`${this.apiUrl}/${phaseStageSubStageSubSpecialtyId}`, { headers: { Authorization: `Bearer ${token}` } });
   }

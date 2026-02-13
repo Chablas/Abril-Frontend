@@ -33,7 +33,7 @@ export class SubSpecialtyService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteSubSpecialty(subSpecialtyId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteSubSpecialty(subSpecialtyId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${subSpecialtyId}`, {
       headers: { Authorization: `Bearer ${token}` },

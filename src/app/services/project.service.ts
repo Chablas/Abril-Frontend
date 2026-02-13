@@ -33,7 +33,7 @@ export class ProjectService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteProject(projectId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteProject(projectId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${projectId}`, {
       headers: { Authorization: `Bearer ${token}` },

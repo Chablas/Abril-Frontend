@@ -213,7 +213,7 @@ export class Subetapas implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.subStageService.deleteSubStage(subStageId, 1).subscribe({
+        this.subStageService.deleteSubStage(subStageId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadSubStages();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Subetapas implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

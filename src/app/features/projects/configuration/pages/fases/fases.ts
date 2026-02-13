@@ -213,7 +213,7 @@ export class Fases implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.phaseService.deletePhase(phaseId, 1).subscribe({
+        this.phaseService.deletePhase(phaseId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadPhases();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Fases implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

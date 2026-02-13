@@ -213,7 +213,7 @@ export class Layers implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.layerService.deleteLayer(layerId, 1).subscribe({
+        this.layerService.deleteLayer(layerId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadLayers();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Layers implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

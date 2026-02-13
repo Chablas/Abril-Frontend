@@ -33,7 +33,7 @@ export class AreaService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteArea(areaId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteArea(areaId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${areaId}`, {
       headers: { Authorization: `Bearer ${token}` },

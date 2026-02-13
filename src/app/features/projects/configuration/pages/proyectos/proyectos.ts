@@ -213,7 +213,7 @@ export class Proyectos implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.projectService.deleteProject(projectId, 1).subscribe({
+        this.projectService.deleteProject(projectId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadProjects();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Proyectos implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

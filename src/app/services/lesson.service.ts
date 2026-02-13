@@ -7,6 +7,7 @@ import { LessonFiltersDTO } from "../models/lesson/lessonFilters.model";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../environments/environment';
 import { DashboardDTO } from "../models/dashboard/DashboardDTO";
+import { ApiMessageDTO } from '../models/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',
@@ -25,22 +26,31 @@ export class LessonService {
         params = params.set(key, filters[key]);
       }
     });
-    return this.http.get<LessonListDTO[]>(`${this.apiUrl}/all`, { params, headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<LessonListDTO[]>(`${this.apiUrl}/all`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   getById(id: number | null): Observable<LessonDetailDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   getFiltersInitialLoad(): Observable<LessonFiltersDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters/initialLoad`, { headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters/initialLoad`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   getFiltersCreate(): Observable<PhaseStageSubStageSubSpecialtyDTO[]> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`, { headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   getLessonsUsingFilters(filters: any) {
@@ -53,18 +63,29 @@ export class LessonService {
       }
     });
 
-    return this.http.get<LessonListPagedDTO>(this.apiUrl, { params, headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<LessonListPagedDTO>(this.apiUrl, {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 
   async getByIdFetch(id: number | null): Promise<LessonDetailDTO> {
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`${this.apiUrl}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${this.apiUrl}/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const datos = response.json();
     return datos;
   }
   createLesson(form: FormData) {
     const token = localStorage.getItem('access_token');
     return this.http.post(`${this.apiUrl}`, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  deleteLesson(lessonId: number | undefined): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${lessonId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

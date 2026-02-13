@@ -187,7 +187,7 @@ export class ConfFaseEtapaSubetapa {
         this.loader = true;
         this.cdr.detectChanges();
         this.phaseStageSubStageSubSpecialtyService
-          .deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId, 1)
+          .deletePhaseStageSubStageSubSpecialty(phaseStageSubStageSubSpecialtyId)
           .subscribe({
             next: () => {
               this.loader = false;
@@ -258,8 +258,6 @@ export class ConfFaseEtapaSubetapa {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

@@ -213,7 +213,7 @@ export class Subespecialidades implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.subSpecialtyService.deleteSubSpecialty(subSpecialtyId, 1).subscribe({
+        this.subSpecialtyService.deleteSubSpecialty(subSpecialtyId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadSubSpecialties();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Subespecialidades implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

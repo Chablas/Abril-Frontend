@@ -33,7 +33,7 @@ export class PhaseService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deletePhase(phaseId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deletePhase(phaseId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${phaseId}`, {
       headers: { Authorization: `Bearer ${token}` },

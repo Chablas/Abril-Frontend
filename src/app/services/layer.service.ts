@@ -33,7 +33,7 @@ export class LayerService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteLayer(layerId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteLayer(layerId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${layerId}`, {
       headers: { Authorization: `Bearer ${token}` },

@@ -13,6 +13,8 @@ import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from "@angular/router";
 import Swal from 'sweetalert2';
+import { ApiMessageDTO } from "../../../../models/api/ApiMessage.model";
+import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-lecciones-aprendidas',
@@ -22,6 +24,7 @@ import Swal from 'sweetalert2';
   styleUrl: './lecciones-aprendidas.css',
 })
 export class LeccionesAprendidas implements OnInit {
+  currentUserId: number = 0;
   // Todos
   currentPage = 1;
   totalPages = 0;
@@ -106,6 +109,11 @@ export class LeccionesAprendidas implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      const decoded: any = jwtDecode(token);
+      this.currentUserId = Number(decoded.sub);
+    }
     this.loadLessons();
   }
 
@@ -152,7 +160,7 @@ export class LeccionesAprendidas implements OnInit {
           data.images?.filter((img) => img.imageTypeDescription === 'MEJORA') || [];
         this.loader = false;
         setTimeout(() => {
-          this.adjustTextareaHeight();
+          this.adjustTextAreaHeight();
         });
         this.cdr.detectChanges();
       },
@@ -211,7 +219,7 @@ export class LeccionesAprendidas implements OnInit {
     }
   }
 
-  adjustTextareaHeight() {
+  adjustTextAreaHeight() {
     if (!this.textareas) return;
 
     this.textareas.forEach((textareaRef) => {
@@ -558,6 +566,39 @@ export class LeccionesAprendidas implements OnInit {
     });
   }
 
+  deleteLesson(lessonId: number | undefined, event: MouseEvent) {
+    event.stopPropagation();
+    Swal.fire({
+      title: '¿Estás seguro/a?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: '¡Sí, elimínalo!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.loader = true;
+        this.lessonService.deleteLesson(lessonId).subscribe({
+          next: (response: ApiMessageDTO) => {
+            this.loadLessons();
+            this.loader = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: response.message ?? 'El registro ha sido eliminado.',
+              confirmButtonColor: '#64BC04',
+              icon: 'success',
+            });
+          },
+          error: (err: HttpErrorResponse) => {
+            this.error(err);
+          },
+        });
+      }
+    });
+  }
+
   viewFilters() {
     this.showFilters = !this.showFilters;
     this.cdr.detectChanges();
@@ -659,8 +700,6 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

@@ -213,7 +213,7 @@ export class Areas implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.areaService.deleteArea(areaId, 1).subscribe({
+        this.areaService.deleteArea(areaId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadAreas();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Areas implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

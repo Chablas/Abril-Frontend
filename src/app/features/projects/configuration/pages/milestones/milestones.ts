@@ -213,7 +213,7 @@ export class Milestones implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.loader = true;
-        this.milestoneService.deleteMilestone(milestoneId, 1).subscribe({
+        this.milestoneService.deleteMilestone(milestoneId).subscribe({
           next: (response: ApiMessageDTO) => {
             this.loadMilestones();
             this.loader = false;
@@ -234,8 +234,6 @@ export class Milestones implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
-    this.cdr.detectChanges();
     this.loader = false;
     this.cdr.detectChanges();
 

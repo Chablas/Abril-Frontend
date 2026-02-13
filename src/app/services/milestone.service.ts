@@ -16,6 +16,12 @@ export class MilestoneService {
 
   constructor(private http: HttpClient) {}
 
+  getAllMilestone(): Observable<MilestoneGetDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<MilestoneGetDTO[]>(`${this.apiUrl}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
   getMilestonePaged(page: number): Observable<PagedResponseDTO<MilestoneGetDTO>> {
     const token = localStorage.getItem('access_token');
     return this.http.get<PagedResponseDTO<MilestoneGetDTO>>(`${this.apiUrl}/paged?page=${page}`, {
@@ -34,7 +40,7 @@ export class MilestoneService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  deleteMilestone(milestoneId: number, updatedUserId: number): Observable<ApiMessageDTO> {
+  deleteMilestone(milestoneId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${milestoneId}`, {
       headers: { Authorization: `Bearer ${token}` },
