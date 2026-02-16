@@ -39,11 +39,9 @@ export class LessonService {
     });
   }
 
-  getFiltersInitialLoad(): Observable<LessonFiltersDTO> {
+  getFilters(): Observable<LessonFiltersDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters/initialLoad`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters`, { headers: { Authorization: `Bearer ${token}` } });
   }
 
   getFiltersCreate(): Observable<PhaseStageSubStageSubSpecialtyDTO[]> {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFormData.model";
+import { PhaseStageSubStageSubSpecialtyFiltersCreateDTO } from "../models/phaseStageSubStageSubSpecialty/PhaseStageSubStageSubSpecialtyFiltersCreateDTO.model";
 import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyCreate.model";
 import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
 import { environment } from '../../environments/environment';
@@ -15,9 +15,9 @@ export class PhaseStageSubStageSubSpecialtyService {
 
   constructor(private http: HttpClient) {}
 
-  getFormData(): Observable<PhaseStageSubStageSubSpecialtyShowFormDataDTO> {
+  getFiltersCreate(): Observable<PhaseStageSubStageSubSpecialtyFiltersCreateDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<PhaseStageSubStageSubSpecialtyShowFormDataDTO>(`${this.apiUrl}/form-data`, { headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get<PhaseStageSubStageSubSpecialtyFiltersCreateDTO>(`${this.apiUrl}/filters-create`, { headers: { Authorization: `Bearer ${token}` } });
   }
   createPhaseStageSubStageSubSpecialty(form: PhaseStageSubStageSubSpecialtySendFormDataDTO) {
     const token = localStorage.getItem('access_token');

@@ -1,6 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { PhaseStageSubStageSubSpecialtyShowFormDataDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFormData.model';
-import { forkJoin } from 'rxjs';
+import { PhaseStageSubStageSubSpecialtyFiltersCreateDTO } from '../../../../../models/phaseStageSubStageSubSpecialty/PhaseStageSubStageSubSpecialtyFiltersCreateDTO.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PhaseStageSubStageSubSpecialtyService } from '../../../../../services/phaseStageSubStageSubSpecialty.service';
@@ -34,9 +33,7 @@ export class ConfFaseEtapaSubetapa {
 
   loader = false;
 
-  createModalShowFormData: PhaseStageSubStageSubSpecialtyShowFormDataDTO = {
-    areas: [],
-    projects: [],
+  createModalShowFormData: PhaseStageSubStageSubSpecialtyFiltersCreateDTO = {
     phases: [],
     stages: [],
     layers: [],
@@ -87,7 +84,7 @@ export class ConfFaseEtapaSubetapa {
     this.loader = true;
     this.cdr.detectChanges();
 
-    this.phaseStageSubStageSubSpecialtyService.getFormData().subscribe({
+    this.phaseStageSubStageSubSpecialtyService.getFiltersCreate().subscribe({
       next: (data) => {
         this.createModalShowFormData = data;
         this.loader = false;

@@ -41,20 +41,25 @@ export class LeccionesAprendidas implements OnInit {
   filtersData: LessonFiltersDTO = {
     projects: [],
     areas: [],
+    periods: [],
     phases: [],
     stages: [],
     layers: [],
     subStages: [],
     subSpecialties: [],
+    users: []
   };
   filtersTable = {
     projectId: null as number | null,
     areaId: null as number | null,
+    periodDate: null as Date | null,
     phaseId: null as number | null,
     stageId: null as number | null,
     layerId: null as number | null,
     subStageId: null as number | null,
     subSpecialtyId: null as number | null,
+    userId: null as number | null,
+    page: null as number | null,
   };
   loader = false;
   opportunityImages: LessonImageDTO[] = [];
@@ -103,7 +108,6 @@ export class LeccionesAprendidas implements OnInit {
 
   constructor(
     private lessonService: LessonService,
-    private phaseStageSubStageSubSpecialtyService: PhaseStageSubStageSubSpecialtyService,
     private cdr: ChangeDetectorRef,
     private router: Router,
   ) {}
@@ -120,15 +124,16 @@ export class LeccionesAprendidas implements OnInit {
   loadLessons(page: number = 1): void {
     this.loader = true;
     this.cdr.detectChanges();
+    this.filtersTable.page = page;
 
     forkJoin({
-      lessons: this.lessonService.getLessonsUsingFilters({ page: page }),
-      filtersTable: this.phaseStageSubStageSubSpecialtyService.getFormData(),
+      lessons: this.lessonService.getLessonsUsingFilters(this.filtersTable),
+      filtersData: this.lessonService.getFilters(),
       filtersPSSSCreateModal: this.lessonService.getFiltersCreate(),
     }).subscribe({
-      next: ({ lessons, filtersTable, filtersPSSSCreateModal }) => {
+      next: ({ lessons, filtersData, filtersPSSSCreateModal }) => {
         this.lessons = lessons;
-        this.filtersData = filtersTable;
+        this.filtersData = filtersData;
         this.currentPage = lessons.page;
         this.totalPages = lessons.totalPages;
         this.pageSize = lessons.pageSize;
@@ -375,6 +380,7 @@ export class LeccionesAprendidas implements OnInit {
   onSearch(): void {
     this.loader = true;
     this.cdr.detectChanges();
+    this.filtersTable.page = 1;
     this.lessonService.getLessonsUsingFilters(this.filtersTable).subscribe({
       next: (data) => {
         this.lessons = data;
@@ -427,6 +433,18 @@ export class LeccionesAprendidas implements OnInit {
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  removeImage(index: number, type: 'opportunity' | 'improvement'): void {
+    if (type === 'opportunity') {
+      this.opportunityFiles.splice(index, 1);
+      this.opportunityPreviews.splice(index, 1);
+    } else {
+      this.improvementFiles.splice(index, 1);
+      this.improvementPreviews.splice(index, 1);
+    }
+
+    this.cdr.detectChanges();
   }
 
   getOpportunityImages(images: any[]): any[] {

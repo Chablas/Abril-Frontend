@@ -1,17 +1,21 @@
-import { AreaGetDTO } from "../area/area.model";
-import { ProjectGetDTO } from "../project/project.model";
-import { PhaseGetDTO } from "../phase/phase.model";
-import { StageGetDTO } from "../stage/stage.model";
-import { LayerGetDTO } from "../layer/layer.model";
-import { SubStageGetDTO } from "../subStage/subStage.model";
-import { SubSpecialtyGetDTO } from "../subSpecialty/subSpecialty.model";
+import { AreaSimpleDTO } from "../area/areaSimple.model";
+import { ProjectSimpleDTO } from "../project/projectSimple.model";
+import { LessonPeriodDTO } from "../lesson/lessonPeriodDTO.model";
+import { PhaseSimpleDTO } from "../phase/phaseSimple.model";
+import { StageSimpleDTO } from "../stage/stageSimple.model";
+import { LayerSimpleDTO } from "../layer/layerSimple.model";
+import { SubStageSimpleDTO } from "../subStage/subStageSimple.model";
+import { UserSimpleDTO } from "../user/userSimple.model";
+import { SubSpecialtySimpleDTO } from "../subSpecialty/subSpecialtySimple.model";
 
 export interface LessonFiltersDTO {
-    projects: ProjectGetDTO[];
-    areas: AreaGetDTO[];
-    phases: PhaseGetDTO[] | null | undefined;
-    stages: StageGetDTO[] | null | undefined;
-    layers: LayerGetDTO[] | null | undefined;
-    subStages: SubStageGetDTO[] | null | undefined;
-    subSpecialties: SubSpecialtyGetDTO[] | null | undefined;
+    projects: ProjectSimpleDTO[];
+    areas: AreaSimpleDTO[];
+    periods: LessonPeriodDTO[];
+    phases: PhaseSimpleDTO[] | null | undefined;
+    stages: StageSimpleDTO[] | null | undefined;
+    layers: LayerSimpleDTO[] | null | undefined;
+    subStages: SubStageSimpleDTO[] | null | undefined;
+    subSpecialties: SubSpecialtySimpleDTO[] | null | undefined;
+    users: UserSimpleDTO[];
 }
