@@ -23,6 +23,7 @@
                     <tr class="text-[#64BC04]">
                         <th class="w-[50px]"></th>
                         <th class="w-[150px]">Proyecto</th>
+                        <th class="w-[150px]">Residente</th>
                         <th class="w-[150px]">Descripción</th>
                         <th class="w-[150px]">Estado</th>
                     </tr>
@@ -45,6 +46,7 @@
                             </div>
                         </td>
                         <td class="text-center">{{item.projectDescription}}</td>
+                        <td class="text-center">Yo</td>
                         <td><span [title]="item.scheduleDescription"
                                 class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
                                 item.scheduleDescription }}</span></td>
@@ -199,6 +201,33 @@
     <div #ganttContainer class="gantt-container w-full h-[550px]"></div>
 </div>
 
+<div *ngIf="showEditModal" class="fixed inset-0 bg-black/40 flex items-center justify-center"
+    (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
+    <div class="bg-white p-6 rounded-lg w-[800px]" (mousedown)="$event.stopPropagation()">
+        <div class="flex flex-col gap-[15px] items-center">
+            <h1 class="text-2xl text-center">EDITAR HITO</h1>
+            <div class="flex justify-between w-full">
+                <div class="flex flex-col jus">
+                    <p class="text-[#64BC04]">Descripción</p>
+                    <p>{{editMilestoneScheduleItem.text}}</p>
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Fecha inicio</p>
+                    <input type="date" [(ngModel)]="editMilestoneScheduleItem.plannedStartDate" />
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Fecha fin</p>
+                    <input type="date" [(ngModel)]="editMilestoneScheduleItem.plannedEndDate" />
+                </div>
+                
+            </div>
+            <button (click)="saveEditTask()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                <p class="text-[#ffffff] text-lg">Guardar</p>
+            </button>
+        </div>
+    </div>
+</div>
+
 <div *ngIf="showDetailModal" class="fixed inset-0 bg-black/40 flex items-center justify-center"
     (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
     <div class="bg-white p-6 rounded-lg w-[700px] relative flex flex-col gap-[10px]" (mousedown)="$event.stopPropagation()">
@@ -220,7 +249,6 @@
                             <p *ngIf="selectedTask.end_date">{{ selectedTask.end_date | date:'dd-MM-yyyy' }}</p>
                         </td>
                     </tr>
-
                 </tbody>
             </table>
         </div>

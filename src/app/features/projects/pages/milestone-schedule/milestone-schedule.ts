@@ -42,6 +42,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   showMilestoneSchedule: boolean = false;
   showEditButton: boolean = false;
   showCreateMilestoneScheduleModal: boolean = false;
+  showEditModal: boolean = false;
 
   formdata: ScheduleFormData = {
     projects: [],
@@ -91,6 +92,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   milestoneScheduleHistoryCreateDTO: MilestoneScheduleHistoryCreateDTO = {
     scheduleId: 0,
     milestoneSchedules: [],
+  };
+  editMilestoneScheduleItem = {
+    id: 0,
+    milestoneId: 0,
+    text: '',
+    plannedStartDate: '',
+    plannedEndDate: '' as string | null,
   };
 
   constructor(
@@ -253,6 +261,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.detectChanges();
           },
         });
+    } else {
     }
   }
 
@@ -397,6 +406,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         return false;
       }
 
+      if (target?.closest('.edit-task')) {
+        this.editTask(Number(id));
+        return false;
+      }
+
       const task = gantt.getTask(id);
       this.openTaskDetail(task);
       return false;
@@ -436,20 +450,34 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     if (!readonly) {
       columns.push({
+        name: 'edit',
+        label: '',
+        width: 40,
+        align: 'center',
+        template: (task: any) => {
+          return `<div class="flex align-center"><button class="cursor-pointer edit-task" data-id="${task.id}">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z"
+                        fill="#64BC04" />
+                    </svg>
+                  </button></div>`;
+        },
+      });
+    }
+
+    if (!readonly) {
+      columns.push({
         name: 'delete',
         label: '',
         width: 40,
         align: 'center',
         template: (task: any) => {
           return `<button class="cursor-pointer delete-task" data-id="${task.id}">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
-                                            fill="#64BC04" />
-                                    </svg>
-                                </button>
-          `;
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                        fill="#64BC04" />
+                    </svg>
+                  </button>`;
         },
       });
     }
@@ -509,11 +537,27 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           (item) => item.milestoneId !== task['milestoneId'],
         );
 
-      // 🔄 recalcular orden
       this.recalculateOrder();
 
       console.log('DTO actualizado:', this.milestoneScheduleHistoryCreateDTO);
     });
+  }
+
+  private editTask(taskId: number) {
+    const task = gantt.getTask(taskId);
+    this.editMilestoneScheduleItem = {
+      id: Number(task.id),
+      milestoneId: task['milestoneId'],
+      text: task.text,
+      plannedStartDate: task.start_date ? this.formatDate(task.start_date) : '',
+      plannedEndDate:
+        task.type == 'milestone' ? null : task.end_date ? this.formatDate(task.end_date) : null,
+    };
+    this.showEditModal = true;
+  }
+
+  private formatDate(date: Date): string {
+    return date.toISOString().substring(0, 10);
   }
 
   private recalculateOrder() {
@@ -531,6 +575,37 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   private destroyGantt() {
     gantt.clearAll();
+  }
+
+  saveEditTask() {
+    const item = this.editMilestoneScheduleItem;
+    const task = gantt.getTask(item.id);
+
+    task.text = item.text;
+
+    task.start_date = this.parseLocalDate(item.plannedStartDate);
+    task.end_date = undefined;
+    if (this.editMilestoneScheduleItem.plannedEndDate != null) {
+      task.end_date = this.parseLocalDate(this.editMilestoneScheduleItem.plannedEndDate);
+    }
+    console.log(task.end_date);
+    task.type = item.plannedEndDate ? undefined : 'milestone';
+    task.duration = item.plannedEndDate ? undefined : 0;
+
+    gantt.updateTask(task.id);
+    gantt.render();
+
+    this.showEditModal = false;
+    this.cdr.detectChanges();
+
+    const dtoItem = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.find(
+      (x) => x.order === task['order'],
+    );
+
+    if (dtoItem) {
+      dtoItem.plannedStartDate = task.start_date;
+      dtoItem.plannedEndDate = task.end_date;
+    }
   }
 
   ngOnDestroy(): void {
@@ -558,6 +633,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       this.showCreateModal = false;
       this.showMilestoneScheduleHistory = false;
       this.showCreateMilestoneScheduleModal = false;
+      this.showEditModal = false;
     }
 
     this.mouseDownOnBackdrop = false;
