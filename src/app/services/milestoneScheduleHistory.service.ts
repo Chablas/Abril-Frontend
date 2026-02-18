@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { MilestoneScheduleHistoryGetDTO } from "../models/milestoneScheduleHistory/milestoneScheduleHistory.model";
+import { MilestoneScheduleHistoryCreateDTO } from '../models/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
+import { ApiMessageDTO } from '../models/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',
@@ -21,7 +23,14 @@ export class MilestoneScheduleHistoryService {
       }
     });
 
-    return this.http.get<MilestoneScheduleHistoryGetDTO[]>(`${this.apiUrl}`, { params,
+    return this.http.get<MilestoneScheduleHistoryGetDTO[]>(`${this.apiUrl}`, {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  createMilestoneScheduleHistory(dto: MilestoneScheduleHistoryCreateDTO): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, dto, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

@@ -721,11 +721,14 @@ export class LeccionesAprendidas implements OnInit {
     this.loader = false;
     this.cdr.detectChanges();
 
+    const validationError = err.error?.errors ? (Object.values(err.error.errors as Record<string, string[]>)[0]?.[0]) : null;
+    const message = validationError || err.error?.message || 'Ocurrió un error.';
+
     if (err.status == 401) {
       Swal.fire({
         icon: 'error',
         title: 'Sesión expirada',
-        text: err.error?.message ?? '',
+        text: message,
       });
       localStorage.clear();
       this.router.navigate(['/auth/login']);
@@ -736,7 +739,7 @@ export class LeccionesAprendidas implements OnInit {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: err.error?.message ?? 'Ocurrió un error.',
+        text: message,
       });
       return;
     }
@@ -745,7 +748,7 @@ export class LeccionesAprendidas implements OnInit {
       Swal.fire({
         icon: 'error',
         title: 'Error del servidor',
-        text: err.error?.message ?? 'Ocurrió un error.',
+        text: message,
       });
       return;
     }

@@ -74,3 +74,23 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.custom-task .gantt_task_content {
+  background-color: #64BC04;
+  border-color: #64BC04;
+  border-radius: 10px;
+}
+
+/* rombo milestone */
+.custom-milestone .gantt_task_content {
+  background-color: rgb(0, 134, 165);
+  border-color: rgb(0, 134, 165);
+  border-radius: 50px;
+  height: 25px;
+  width: 25px;
+}
+
+.gantt_task_line {
+  background: white !important;
+  
+}

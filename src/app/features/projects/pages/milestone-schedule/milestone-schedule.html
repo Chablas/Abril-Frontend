@@ -32,7 +32,7 @@
                     <tr *ngFor="let item of schedules.data" class="border-b border-[#D6DEE5] h-[30px]">
                         <td>
                             <div class="flex justify-center">
-                                <button class="cursor-pointer" (click)="openMilestoneScheduleHistory()">
+                                <button class="cursor-pointer" (click)="openMilestoneScheduleHistory(item.scheduleId)">
                                     <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M13.75 7.75C13.75 8.54565 13.4339 9.30871 12.8713 9.87132C12.3087 10.4339 11.5456 10.75 10.75 10.75C9.95435 10.75 9.19129 10.4339 8.62868 9.87132C8.06607 9.30871 7.75 8.54565 7.75 7.75C7.75 6.95435 8.06607 6.19129 8.62868 5.62868C9.19129 5.06607 9.95435 4.75 10.75 4.75C11.5456 4.75 12.3087 5.06607 12.8713 5.62868C13.4339 6.19129 13.75 6.95435 13.75 7.75Z"
@@ -126,38 +126,141 @@
     <div *ngIf="showMilestoneScheduleHistory" class="fixed inset-0 bg-black/40 flex items-center justify-center"
         (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
         <div class="bg-white p-6 rounded-lg w-[800px]" (mousedown)="$event.stopPropagation()">
-            <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
+            <div class="flex flex-col gap-[15px] items-center">
                 <h1 class="text-2xl text-center">VER HISTORIAL DE CRONOGRAMA DE HITOS</h1>
-                <button class="cursor-pointer" (click)="openMilestoneSchedule()">Agregar nuevo cronograma</button>
-                <table>
-                    <thead></thead>
-                    <tbody>
-                        <!--<tr *ngFor="let item of milestoneScheduleHistory">
-                            
-                        </tr>-->
-                    </tbody>
-                </table>
-                <p>Version 1. Fecha: 08 de enero de 2026</p>
+                <button (click)="openCreateMilestoneSchedule()"
+                    class="self-start bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                    <div class="flex items-center gap-[10px]">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                                fill="#64BC04" />
+                        </svg>
+                        <p>Agregar nueva versión de cronograma</p>
+                    </div>
+                </button>
+                <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+                    <table class="w-full table-fixed">
+                        <thead class="bg-[#E5F7D1]">
+                            <tr class="text-[#64BC04]">
+                                <th class="w-[50px]"></th>
+                                <th class="w-[50px]">N° Versión</th>
+                                <th class="w-[150px]">Fecha subida</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of milestoneScheduleHistoryTableData; let i = index" class="border-b border-[#D6DEE5] h-[30px]">
+                                <td class="text-center">
+                                    <div class="flex justify-center">
+                                        <button class="cursor-pointer" (click)="openViewMilestoneSchedule(item.milestoneScheduleHistoryId)">
+                                            <svg width="22" height="16" viewBox="0 0 22 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <path
+                                                    d="M13.75 7.75C13.75 8.54565 13.4339 9.30871 12.8713 9.87132C12.3087 10.4339 11.5456 10.75 10.75 10.75C9.95435 10.75 9.19129 10.4339 8.62868 9.87132C8.06607 9.30871 7.75 8.54565 7.75 7.75C7.75 6.95435 8.06607 6.19129 8.62868 5.62868C9.19129 5.06607 9.95435 4.75 10.75 4.75C11.5456 4.75 12.3087 5.06607 12.8713 5.62868C13.4339 6.19129 13.75 6.95435 13.75 7.75Z"
+                                                    stroke="#64BC04" stroke-width="1.5" stroke-linecap="round"
+                                                    stroke-linejoin="round" />
+                                                <path
+                                                    d="M0.75 7.75C2.35 3.653 6.086 0.75 10.75 0.75C15.414 0.75 19.15 3.653 20.75 7.75C19.15 11.847 15.414 14.75 10.75 14.75C6.086 14.75 2.35 11.847 0.75 7.75Z"
+                                                    stroke="#64BC04" stroke-width="1.5" stroke-linecap="round"
+                                                    stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ milestoneScheduleHistoryTableData.length - i }}</td>
+                                <td class="text-center">{{ item.createdDateTime | date: 'dd-MM-yyyy' }}</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div [hidden]="!showMilestoneSchedule" class="max-h-[500px]">
+<div [hidden]="!showMilestoneSchedule" class="flex flex-col gap-[10px] max-h-[500px]">
+    <div *ngIf="showEditButton" class="flex justify-end gap-[10px] bg-white rounded-lg p-[10px]">
+        <button  (click)="openCreateMilestoneScheduleModal()"
+            class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+            <div class="flex items-center gap-[10px]">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                        fill="#64BC04" />
+                </svg>
+                <p>Nuevo hito</p>
+            </div>
+        </button>
+        <button (click)="addMilestoneScheduleOnMilestoneScheduleHistory()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer hover:bg-[#4fa003] hover:shadow-lg hover:-translate-y-[1px]">
+            <p class="text-[#ffffff] text-lg">Guardar</p>
+        </button>
+    </div>
     <div #ganttContainer class="gantt-container w-full h-[550px]"></div>
 </div>
 
 <div *ngIf="showDetailModal" class="fixed inset-0 bg-black/40 flex items-center justify-center"
     (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
-    <div class="bg-white p-6 rounded-lg w-[400px]" (mousedown)="$event.stopPropagation()">
-        <h2 class="text-lg font-bold mb-2">{{ selectedTask.text }}</h2>
+    <div class="bg-white p-6 rounded-lg w-[700px] relative flex flex-col gap-[10px]" (mousedown)="$event.stopPropagation()">
+        <h1 class="text-2xl text-center">VER HITO</h1>
+        <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
+            <table class="w-full table-auto">
+                <thead class="bg-[#E5F7D1]">
+                    <tr class="text-[#64BC04]">
+                        <th class="">Descripción</th>
+                        <th class="">Fecha Inicio</th>
+                        <th class="">Fecha Fin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-[#D6DEE5] h-[30px]">
+                        <td class="max-w-[250px] text-center">{{ selectedTask.text }}</td>
+                        <td class="text-center">{{ selectedTask.start_date | date:'dd-MM-yyyy' }}</td>
+                        <td class="text-center">
+                            <p *ngIf="selectedTask.end_date">{{ selectedTask.end_date | date:'dd-MM-yyyy' }}</p>
+                        </td>
+                    </tr>
 
-        <p><b>Inicio:</b> {{ selectedTask.start_date | date:'dd-MM-yyyy' }}</p>
-        <p *ngIf="selectedTask.end_date">
-            <b>Fin:</b> {{ selectedTask.end_date | date:'dd-MM-yyyy' }}
-        </p>
+                </tbody>
+            </table>
+        </div>
+        <button class="absolute top-3 right-3 cursor-pointer" (click)="showDetailModal = false">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </button>
+    </div>
+</div>
 
-        <button (click)="showDetailModal = false">Cerrar</button>
+<div *ngIf="showCreateMilestoneScheduleModal" class="fixed inset-0 bg-black/40 flex items-center justify-center"
+    (mousedown)="onBackdropMouseDown($event)" (click)="closeModal($event)">
+    <div class="bg-white p-6 rounded-lg w-[800px]" (mousedown)="$event.stopPropagation()">
+        <div class="flex flex-col gap-[15px] items-center">
+            <h1 class="text-2xl text-center">AGREGAR HITO A CRONOGRAMA ACTUAL</h1>
+            <div class="flex justify-between w-full">
+                <div class="flex flex-col jus">
+                    <p class="text-[#64BC04]">Descripción</p>
+                    <select [(ngModel)]="addMilestoneScheduleItem.milestoneId"
+                        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+                        <option *ngFor="let item of milestones" [ngValue]="item.milestoneId">{{item.milestoneDescription}}</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Fecha inicio</p>
+                    <input type="date" [(ngModel)]="addMilestoneScheduleItem.plannedStartDate"
+                        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-[#64BC04]">Fecha fin</p>
+                    <input type="date" [(ngModel)]="addMilestoneScheduleItem.plannedEndDate"
+                        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                </div>
+                
+            </div>
+            <button (click)="addMilestoneSchedule()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                <p class="text-[#ffffff] text-lg">Guardar</p>
+            </button>
+        </div>
     </div>
 </div>
 
