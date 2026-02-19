@@ -262,6 +262,48 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           },
         });
     } else {
+      this.milestoneScheduleService.getFakeData().pipe(
+          map((items) =>
+            items
+              .map((m) => ({
+                id: m.milestoneId,
+                milestoneId: m.milestoneId,
+                text: m.milestoneDescription,
+                start_date: new Date(m.plannedStartDate),
+                order: m.order,
+                ...(m.plannedEndDate
+                  ? { end_date: new Date(m.plannedEndDate) }
+                  : { type: 'milestone', duration: 0 }),
+              })),
+          ),
+        )
+        .subscribe({
+          next: (data) => {
+            this.showMilestoneScheduleHistory = false;
+            this.showMilestoneSchedule = true;
+
+            this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = [];
+
+            data.forEach((task: any) => {
+              this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
+                milestoneId: task.milestoneId,
+                milestoneScheduleHistoryId:
+                  this.filtersMilestoneScheduleHistoryId.milestoneScheduleHistoryId!,
+                plannedStartDate: task.start_date,
+                plannedEndDate: task.end_date ?? null,
+                order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
+              });
+            });
+            this.milestoneScheduleHistoryCreateDTO.scheduleId =
+              this.filtersScheduleId.scheduleId ?? 0;
+            this.cdr.detectChanges();
+            this.initGantt(false);
+            gantt.parse({ data, links: [] });
+            this.loader = false;
+            this.showEditButton = true;
+            this.cdr.detectChanges();
+          },
+        });
     }
   }
 
@@ -416,12 +458,19 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       return false;
     });
 
-    gantt.attachEvent('onRowDragEnd', () => {
+    gantt.attachEvent('onRowDragEnd', (id: number, target: number) => {
+      const movedTask = gantt.getTask(id);// borrar despues
+
+      console.log('Task movido:', movedTask);
+      console.log('Nuevo índice destino:', target);
+
       const orderedIds: number[] = [];
 
       gantt.eachTask((task: any) => {
         orderedIds.push(task.id);
       });
+
+      console.log('Nuevo orden completo:', orderedIds);
 
       this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.forEach((item) => {
         const newOrder = orderedIds.indexOf(item.milestoneId) + 1;
@@ -430,6 +479,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           item.order = newOrder;
         }
       });
+      //dto a enviar
+      console.table(this.milestoneScheduleHistoryCreateDTO.milestoneSchedules);
     });
   }
 
@@ -588,7 +639,6 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     if (this.editMilestoneScheduleItem.plannedEndDate != null) {
       task.end_date = this.parseLocalDate(this.editMilestoneScheduleItem.plannedEndDate);
     }
-    console.log(task.end_date);
     task.type = item.plannedEndDate ? undefined : 'milestone';
     task.duration = item.plannedEndDate ? undefined : 0;
 
@@ -604,8 +654,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     if (dtoItem) {
       dtoItem.plannedStartDate = task.start_date;
-      dtoItem.plannedEndDate = task.end_date;
+      task.type == "milestone" ? dtoItem.plannedEndDate = null : dtoItem.plannedEndDate = task.end_date;
+      console.log(task.end_date);
+      console.log(dtoItem.plannedEndDate);
     }
+    
   }
 
   ngOnDestroy(): void {

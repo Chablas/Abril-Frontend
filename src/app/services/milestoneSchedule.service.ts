@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { MilestoneScheduleGetDTO } from "../models/milestoneSchedule/milestoneSchedule.model";
+import { MilestoneScheduleFakeDataDTO } from '../models/milestoneSchedule/milestoneScheduleFakeData.model';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +17,12 @@ export class MilestoneScheduleService {
     const token = localStorage.getItem('access_token');
     return this.http.get<MilestoneScheduleGetDTO[]>(`${this.apiUrl}`, {
       headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  getFakeData(): Observable<MilestoneScheduleFakeDataDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<MilestoneScheduleFakeDataDTO[]>(`${this.apiUrl}/fake-data`, {
+      headers: { Authorization: `Bearer ${token}`},
     });
   }
   getByMilestoneScheduleHistoryId(filters: any): Observable<MilestoneScheduleGetDTO[]> {
