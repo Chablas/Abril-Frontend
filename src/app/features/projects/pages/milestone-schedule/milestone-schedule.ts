@@ -171,6 +171,30 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  // si se obtiene '2026-11-11' (11 de noviembre de 2026) se obtendrá un Date que actue como 11 de noviembre de 2026
+  private parseStringToDate(value: string | null | undefined): Date | null {
+    if (!value) return null;
+
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (!match) return null;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+
+    return new Date(year, month, day);
+  }
+
+  // devuelve en formato "yyyy-mm-dd"
+  private parseDateToString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+
+    return `${y}-${m}-${d}`;
+  }
+
   openViewMilestoneSchedule(milestoneScheduleHistoryId: number) {
     this.loader = true;
     this.cdr.detectChanges();
@@ -184,9 +208,9 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             .map((m) => ({
               id: m.milestoneScheduleId,
               text: m.milestoneDescription,
-              start_date: new Date(m.plannedStartDate),
+              start_date: this.parseStringToDate(m.plannedStartDate),
               ...(m.plannedEndDate
-                ? { end_date: new Date(m.plannedEndDate) }
+                ? { end_date: this.parseStringToDate(m.plannedEndDate) }
                 : { type: 'milestone', duration: 0 }),
             })),
         ),
@@ -226,10 +250,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
                 id: m.milestoneId,
                 milestoneId: m.milestoneId,
                 text: m.milestoneDescription,
-                start_date: new Date(m.plannedStartDate),
+                start_date: this.parseStringToDate(m.plannedStartDate),
                 order: m.order,
                 ...(m.plannedEndDate
-                  ? { end_date: new Date(m.plannedEndDate) }
+                  ? { end_date: this.parseStringToDate(m.plannedEndDate) }
                   : { type: 'milestone', duration: 0 }),
               })),
           ),
@@ -242,12 +266,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = [];
 
             data.forEach((task: any) => {
+              if (task.type == "milestone") task.end_date == null;
               this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
                 milestoneId: task.milestoneId,
-                milestoneScheduleHistoryId:
-                  this.filtersMilestoneScheduleHistoryId.milestoneScheduleHistoryId!,
-                plannedStartDate: task.start_date,
-                plannedEndDate: task.end_date ?? null,
+                plannedStartDate: this.parseDateToString(task.start_date),
+                plannedEndDate: task.end_date,
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
@@ -262,19 +285,20 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           },
         });
     } else {
-      this.milestoneScheduleService.getFakeData().pipe(
+      this.milestoneScheduleService
+        .getFakeData()
+        .pipe(
           map((items) =>
-            items
-              .map((m) => ({
-                id: m.milestoneId,
-                milestoneId: m.milestoneId,
-                text: m.milestoneDescription,
-                start_date: new Date(m.plannedStartDate),
-                order: m.order,
-                ...(m.plannedEndDate
-                  ? { end_date: new Date(m.plannedEndDate) }
-                  : { type: 'milestone', duration: 0 }),
-              })),
+            items.map((m) => ({
+              id: m.milestoneId,
+              milestoneId: m.milestoneId,
+              text: m.milestoneDescription,
+              start_date: this.parseStringToDate(m.plannedStartDate),
+              order: m.order,
+              ...(m.plannedEndDate
+                ? { end_date: this.parseStringToDate(m.plannedEndDate) }
+                : { type: 'milestone', duration: 0 }),
+            })),
           ),
         )
         .subscribe({
@@ -285,12 +309,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = [];
 
             data.forEach((task: any) => {
+              if (task.type == "milestone") task.end_date == null;
               this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
                 milestoneId: task.milestoneId,
-                milestoneScheduleHistoryId:
-                  this.filtersMilestoneScheduleHistoryId.milestoneScheduleHistoryId!,
-                plannedStartDate: task.start_date,
-                plannedEndDate: task.end_date ?? null,
+                plannedStartDate: this.parseDateToString(task.start_date),
+                plannedEndDate: task.end_date,
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
@@ -337,17 +360,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const id = Date.now();
-
     const selectedMilestone = this.milestones.find((m) => m.milestoneId === milestoneId);
 
     const text = selectedMilestone?.milestoneDescription ?? 'Hito';
 
-    const startDate = this.parseLocalDate(this.addMilestoneScheduleItem.plannedStartDate);
-    let endDate = undefined;
-    if (this.addMilestoneScheduleItem.plannedEndDate != null) {
-      endDate = this.parseLocalDate(this.addMilestoneScheduleItem.plannedEndDate);
-    }
+    const startDate = this.parseStringToDate(this.addMilestoneScheduleItem.plannedStartDate);
+    const endDate = this.addMilestoneScheduleItem.plannedEndDate == "" ? null : this.parseStringToDate(this.addMilestoneScheduleItem.plannedEndDate);
 
     gantt.addTask({
       id: milestoneId,
@@ -355,17 +373,15 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       milestoneId,
       start_date: startDate,
       end_date: endDate,
-      type: endDate ? undefined : 'milestone',
+      type: endDate ? undefined : 'milestone', //aca undefined para dhtmlxGantt significa que será un task común/normal
       duration: endDate ? null : 0,
       order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
     });
 
     this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
       milestoneId,
-      milestoneScheduleHistoryId:
-        this.filtersMilestoneScheduleHistoryId.milestoneScheduleHistoryId!,
-      plannedStartDate: startDate,
-      plannedEndDate: endDate,
+      plannedStartDate: this.addMilestoneScheduleItem.plannedStartDate,
+      plannedEndDate: this.addMilestoneScheduleItem.plannedEndDate == "" ? null : this.addMilestoneScheduleItem.plannedEndDate,
       order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
     });
 
@@ -379,11 +395,6 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.showCreateMilestoneScheduleModal = false;
     gantt.render();
     this.cdr.detectChanges();
-  }
-
-  private parseLocalDate(dateString: string): Date {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
   }
 
   addMilestoneScheduleOnMilestoneScheduleHistory() {
@@ -458,19 +469,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       return false;
     });
 
-    gantt.attachEvent('onRowDragEnd', (id: number, target: number) => {
-      const movedTask = gantt.getTask(id);// borrar despues
-
-      console.log('Task movido:', movedTask);
-      console.log('Nuevo índice destino:', target);
+    gantt.attachEvent('onRowDragEnd', () => {
 
       const orderedIds: number[] = [];
 
       gantt.eachTask((task: any) => {
         orderedIds.push(task.id);
       });
-
-      console.log('Nuevo orden completo:', orderedIds);
 
       this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.forEach((item) => {
         const newOrder = orderedIds.indexOf(item.milestoneId) + 1;
@@ -479,8 +484,6 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           item.order = newOrder;
         }
       });
-      //dto a enviar
-      console.table(this.milestoneScheduleHistoryCreateDTO.milestoneSchedules);
     });
   }
 
@@ -600,15 +603,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       id: Number(task.id),
       milestoneId: task['milestoneId'],
       text: task.text,
-      plannedStartDate: task.start_date ? this.formatDate(task.start_date) : '',
-      plannedEndDate:
-        task.type == 'milestone' ? null : task.end_date ? this.formatDate(task.end_date) : null,
+      plannedStartDate: task.start_date ? this.parseDateToString(task.start_date) : '',
+      plannedEndDate: task.type == 'milestone' ? null : task.end_date ? this.parseDateToString(task.end_date) : null,
     };
     this.showEditModal = true;
-  }
-
-  private formatDate(date: Date): string {
-    return date.toISOString().substring(0, 10);
   }
 
   private recalculateOrder() {
@@ -634,11 +632,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     task.text = item.text;
 
-    task.start_date = this.parseLocalDate(item.plannedStartDate);
-    task.end_date = undefined;
-    if (this.editMilestoneScheduleItem.plannedEndDate != null) {
-      task.end_date = this.parseLocalDate(this.editMilestoneScheduleItem.plannedEndDate);
-    }
+    task.start_date = this.parseStringToDate(item.plannedStartDate) ?? undefined;
+    task.end_date = this.parseStringToDate(this.editMilestoneScheduleItem.plannedEndDate) ?? undefined;
     task.type = item.plannedEndDate ? undefined : 'milestone';
     task.duration = item.plannedEndDate ? undefined : 0;
 
@@ -649,16 +644,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
 
     const dtoItem = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.find(
-      (x) => x.order === task['order'],
+      (x) => x.milestoneId == task.id,
     );
 
     if (dtoItem) {
-      dtoItem.plannedStartDate = task.start_date;
-      task.type == "milestone" ? dtoItem.plannedEndDate = null : dtoItem.plannedEndDate = task.end_date;
-      console.log(task.end_date);
-      console.log(dtoItem.plannedEndDate);
+      dtoItem.plannedStartDate = task.start_date != undefined ? this.parseDateToString(task.start_date) : "";
+      task.type == 'milestone' ? (dtoItem.plannedEndDate = null) : (dtoItem.plannedEndDate = task.end_date != undefined ? this.parseDateToString(task.end_date): null);
     }
-    
   }
 
   ngOnDestroy(): void {

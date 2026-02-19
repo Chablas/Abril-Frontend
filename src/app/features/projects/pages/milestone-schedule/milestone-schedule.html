@@ -246,7 +246,13 @@
                         <td class="max-w-[250px] text-center">{{ selectedTask.text }}</td>
                         <td class="text-center">{{ selectedTask.start_date | date:'dd-MM-yyyy' }}</td>
                         <td class="text-center">
-                            <p *ngIf="selectedTask.end_date">{{ selectedTask.end_date | date:'dd-MM-yyyy' }}</p>
+                            <p>
+                                {{
+                                selectedTask?.type === 'milestone' || !selectedTask?.end_date
+                                ? '-'
+                                : (selectedTask.end_date | date:'dd-MM-yyyy')
+                                }}
+                            </p>
                         </td>
                     </tr>
                 </tbody>
