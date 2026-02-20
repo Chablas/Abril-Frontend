@@ -18,7 +18,6 @@ import { ScheduleFormData } from "../../../../models/schedule/scheduleFormData.m
 import { MilestoneScheduleHistoryService } from '../../../../services/milestoneScheduleHistory.service';
 import { MilestoneScheduleHistoryGetDTO } from "../../../../models/milestoneScheduleHistory/milestoneScheduleHistory.model";
 import { MilestoneScheduleGetDTO } from "../../../../models/milestoneSchedule/milestoneSchedule.model";
-import { MilestoneScheduleCreateDTO } from "../../../../models/milestoneSchedule/milestoneScheduleCreate.model";
 import { MilestoneService } from '../../../../services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from "../../../../models/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model";
 
