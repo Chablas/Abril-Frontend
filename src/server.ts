@@ -56,7 +56,6 @@ app.use(async (req, res, next) => {
     if (response) {
       writeResponseToNodeResponse(response, res);
     } else {
-      // 👇 fallback explícito para /
       res.sendFile(join(browserDistFolder, 'index.csr.html'));
     }
   } catch (err) {
