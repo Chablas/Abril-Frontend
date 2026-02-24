@@ -91,6 +91,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   milestoneScheduleHistoryCreateDTO: MilestoneScheduleHistoryCreateDTO = {
     scheduleId: 0,
     milestoneSchedules: [],
+    forceSave: false
   };
   editMilestoneScheduleItem = {
     id: 0,
@@ -269,7 +270,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
                 milestoneId: task.milestoneId,
                 plannedStartDate: this.parseDateToString(task.start_date),
-                plannedEndDate: task.end_date,
+                plannedEndDate: task.end_date != null ? this.parseDateToString(task.end_date) : task.end_date,
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
@@ -312,7 +313,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
                 milestoneId: task.milestoneId,
                 plannedStartDate: this.parseDateToString(task.start_date),
-                plannedEndDate: task.end_date,
+                plannedEndDate: task.end_date != null ? this.parseDateToString(task.end_date) : task.end_date,
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
@@ -399,6 +400,29 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   addMilestoneScheduleOnMilestoneScheduleHistory() {
     this.loader = true;
     this.cdr.detectChanges();
+    this.milestoneScheduleHistoryCreateDTO.forceSave = false;
+    this.milestoneScheduleHistoryService
+      .createMilestoneScheduleHistory(this.milestoneScheduleHistoryCreateDTO)
+      .subscribe({
+        next: (response) => {
+          Swal.fire({
+            title: response.message ?? 'Cronograma creado exitosamente',
+            icon: 'success',
+            draggable: true,
+          });
+          this.loader = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error(err);
+        },
+      });
+  }
+
+  forceAddMilestoneScheduleOnMilestoneScheduleHistory() {
+    this.loader = true;
+    this.cdr.detectChanges();
+    this.milestoneScheduleHistoryCreateDTO.forceSave = true;
     this.milestoneScheduleHistoryService
       .createMilestoneScheduleHistory(this.milestoneScheduleHistoryCreateDTO)
       .subscribe({
