@@ -110,4 +110,10 @@ export class LessonService {
       responseType: 'blob',
     });
   }
+  sendPDF(form: FormData) {
+    const token = localStorage.getItem('access_token');
+    return this.http.post(`${this.apiUrl}/send-pdf`, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -52,7 +53,6 @@ export class LessonsDashboard implements AfterViewInit {
         this.createLineChart(resp);
 
         this.phaseStageCharts = resp.lessonsByPhaseAndStage;
-        
 
         // Esperar a que Angular pinte los canvas
         setTimeout(() => {
@@ -336,8 +336,7 @@ export class LessonsDashboard implements AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  downloadPDF() {
-    
+  generatePDF() {
     this.loader = true;
     this.cdr.detectChanges();
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -347,17 +346,59 @@ export class LessonsDashboard implements AfterViewInit {
     const usableWidth = pageWidth - marginX * 2;
     const halfWidth = usableWidth / 2;
     const chartHeight = 60;
+    const startY = 10;
     let currentY = 10;
 
     // 🔹 Título
-    pdf.setFontSize(16);
-    pdf.addImage("../../images/abril-logo-removebg-preview.jpg", 'JPG', 3, 3, 35, 15);
-    pdf.text('DASHBOARD DE LECCIONES APRENDIDAS', 105, currentY, { align: 'center' });
-    currentY += 5;
-    pdf.text('UNIDAD DE PROYECTOS', 105, currentY, { align: 'center' });
-    currentY += 5;
-    pdf.setFontSize(10);
-    pdf.text(`Fecha Generación: ${new Date().toLocaleDateString()}`, 105, currentY, { align: 'center' });
+    autoTable(pdf, {
+      startY,
+      theme: 'grid',
+      styles: { halign: 'center', valign: 'middle', fontSize: 10 },
+      tableWidth: 190,
+      body: [
+        [
+          {
+            content: '', // logo
+            rowSpan: 5,
+            colSpan: 2,
+            styles: { cellWidth: 50 },
+          },
+          {
+            content: 'DASHBOARD DE LECCIONES APRENDIDAS\nUNIDAD DE PROYECTOS',
+            rowSpan: 5,
+            colSpan: 4,
+            styles: { fontSize: 14, fontStyle: 'bold', cellWidth: 80 },
+          },
+          { content: 'UDP-FO-19', colSpan: 3 },
+        ],
+        [{ content: "Versión: 01", colSpan: 3 }],
+        [{ content: 'Fecha: '+new Date().toLocaleDateString(), colSpan: 3 }],
+        [
+          { content: 'Elaborado', colSpan: 1 },
+          { content: 'Revisado', colSpan: 1 },
+          { content: 'Aprobado', colSpan: 1 },
+        ],
+        [
+          { content: 'RS', colSpan: 1 },
+          { content: 'GP', colSpan: 1 },
+          { content: 'GP', colSpan: 1 },
+        ],
+      ],
+      didDrawCell: (data) => {
+        // Insertar logo en la celda combinada
+        if (data.row.index === 0 && data.column.index === 0) {
+          pdf.addImage(
+            '../../images/abril-logo-removebg-preview.jpg',
+            'JPG',
+            data.cell.x + 2,
+            data.cell.y + 5,
+            46,
+            26,
+          );
+        }
+      },
+    });
+    currentY = (pdf as any).lastAutoTable.finalY + 5;
     currentY += 5;
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
@@ -390,9 +431,82 @@ export class LessonsDashboard implements AfterViewInit {
       pdf.addImage(img, 'PNG', 10, currentY, pageWidth - 20, 60);
       currentY += 70;
     }
+    this.loader = false;
+    this.cdr.detectChanges();
+    return pdf;
+  }
 
+  downloadPDF() {
+    const pdf = this.generatePDF();
+    this.loader = true;
+    this.cdr.detectChanges();
     pdf.save('Dashboard.pdf');
     this.loader = false;
     this.cdr.detectChanges();
+  }
+
+  sendPDF() {
+    const pdf = this.generatePDF();
+
+    const blob = pdf.output('blob');
+
+    const formData = new FormData();
+    formData.append('pdf', blob, 'reporte-lecciones.pdf');
+
+    this.loader = true;
+    this.cdr.detectChanges();
+
+    this.dashboardService.sendPDF(formData).subscribe({
+      next: () => {
+        this.loader = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+          title: 'PDF enviado exitosamente',
+          icon: 'success',
+          draggable: true,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
+    });
+  }
+  error(err: HttpErrorResponse) {
+    this.loader = false;
+    this.cdr.detectChanges();
+
+    const validationError = err.error?.errors
+      ? Object.values(err.error.errors as Record<string, string[]>)[0]?.[0]
+      : null;
+    const message = validationError || err.error?.message || 'Ocurrió un error.';
+
+    if (err.status == 401) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sesión expirada',
+        text: message,
+      });
+      localStorage.clear();
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status >= 400 && err.status < 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: message,
+      });
+      return;
+    }
+
+    if (err.status >= 500) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: message,
+      });
+      return;
+    }
   }
 }
