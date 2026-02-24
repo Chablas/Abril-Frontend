@@ -115,12 +115,16 @@ export class LessonsDashboard implements AfterViewInit {
         maintainAspectRatio: false,
         plugins: {
           datalabels: {
+            display: true,
             color: '#828282',
             formatter: (value) => value,
             font: {
               weight: 'bold',
               size: 12,
             },
+            anchor: 'end',
+            align: 'right',
+            offset: 4,
           },
           legend: {
             position: 'bottom',
@@ -320,7 +324,10 @@ export class LessonsDashboard implements AfterViewInit {
             position: 'bottom',
           },
           datalabels: {
-            display: false,
+            display: true,
+            anchor: 'end',
+            align: 'top',
+            offset: 3,
           },
         },
         scales: {
