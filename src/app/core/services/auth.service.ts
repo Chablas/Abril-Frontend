@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { LoginRequestDTO  } from "../models/auth/login-request.model";
-import { LoginResponseDTO   } from "../models/auth/login-response.model";
+import { LoginRequestDTO  } from "../dtos/auth/login-request.model";
+import { LoginResponseDTO   } from "../dtos/auth/login-response.model";
 import { tap } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 
 @Injectable({ providedIn: 'root' })

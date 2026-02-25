@@ -1,25 +1,25 @@
 import { Component, ElementRef, AfterViewInit, OnDestroy, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { DatePipe, CommonModule } from "@angular/common";
-import { MilestoneScheduleService } from '../../../../services/milestoneSchedule.service';
-import { ScheduleService } from '../../../../services/schedule.service';
+import { MilestoneScheduleService } from '../../../../core/services/milestoneSchedule.service';
+import { ScheduleService } from '../../../../core/services/schedule.service';
 import { HttpErrorResponse, HttpParameterCodec } from '@angular/common/http';
 import { forkJoin, map } from 'rxjs';
 import { gantt } from 'dhtmlx-gantt';
 import Swal from 'sweetalert2';
 import { Router } from "@angular/router";
-import { PagedResponseDTO } from '../../../../models/api/pagedResponse.model';
-import { MilestoneGetDTO } from '../../../../models/milestone/milestone.model';
-import { MilestoneScheduleFiltersDTO } from "../../../../models/milestone/milestone-schedule-filters.model";
-import { ScheduleGetDTO } from '../../../../models/schedule/schedule.model';
-import { ScheduleCreateDTO } from '../../../../models/schedule/scheduleCreate.model';
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { MilestoneGetDTO } from '../../../../core/dtos/milestone/milestone.model';
+import { MilestoneScheduleFiltersDTO } from "../../../../core/dtos/milestone/milestone-schedule-filters.model";
+import { ScheduleGetDTO } from '../../../../core/dtos/schedule/schedule.model';
+import { ScheduleCreateDTO } from '../../../../core/dtos/schedule/scheduleCreate.model';
 import { FormsModule } from "@angular/forms";
-import { ApiMessageDTO } from "../../../../models/api/ApiMessage.model";
-import { ScheduleFormData } from "../../../../models/schedule/scheduleFormData.model";
-import { MilestoneScheduleHistoryService } from '../../../../services/milestoneScheduleHistory.service';
-import { MilestoneScheduleHistoryGetDTO } from "../../../../models/milestoneScheduleHistory/milestoneScheduleHistory.model";
-import { MilestoneScheduleGetDTO } from "../../../../models/milestoneSchedule/milestoneSchedule.model";
-import { MilestoneService } from '../../../../services/milestone.service';
-import { MilestoneScheduleHistoryCreateDTO } from "../../../../models/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model";
+import { ApiMessageDTO } from "../../../../core/dtos/api/ApiMessage.model";
+import { ScheduleFormData } from "../../../../core/dtos/schedule/scheduleFormData.model";
+import { MilestoneScheduleHistoryService } from '../../../../core/services/milestoneScheduleHistory.service';
+import { MilestoneScheduleHistoryGetDTO } from "../../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistory.model";
+import { MilestoneScheduleGetDTO } from "../../../../core/dtos/milestoneSchedule/milestoneSchedule.model";
+import { MilestoneService } from '../../../../core/services/milestone.service';
+import { MilestoneScheduleHistoryCreateDTO } from "../../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model";
 
 @Component({
   selector: 'app-milestone-schedule',

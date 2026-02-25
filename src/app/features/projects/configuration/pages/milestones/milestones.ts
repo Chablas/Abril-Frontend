@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { MilestoneService } from '../../../../../services/milestone.service';
-import { PagedResponseDTO } from '../../../../../models/api/pagedResponse.model';
+import { MilestoneService } from '../../../../../core/services/milestone.service';
+import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MilestoneCreateDTO } from '../../../../../models/milestone/milestoneCreate.model';
-import { MilestoneEditDTO } from '../../../../../models/milestone/milestoneEdit.model';
-import { MilestoneGetDTO } from '../../../../../models/milestone/milestone.model';
+import { MilestoneCreateDTO } from '../../../../../core/dtos/milestone/milestoneCreate.model';
+import { MilestoneEditDTO } from '../../../../../core/dtos/milestone/milestoneEdit.model';
+import { MilestoneGetDTO } from '../../../../../core/dtos/milestone/milestone.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-milestones',

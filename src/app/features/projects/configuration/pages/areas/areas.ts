@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { AreaService } from '../../../../../services/area.service';
-import { AreaPagedDTO } from '../../../../../models/area/areaPaged.model';
+import { AreaService } from '../../../../../core/services/area.service';
+import { AreaPagedDTO } from '../../../../../core/dtos/area/areaPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaCreateDTO } from '../../../../../models/area/areaCreate.model';
-import { AreaEditDTO } from '../../../../../models/area/areaEdit.model';
-import { AreaGetDTO } from '../../../../../models/area/area.model';
+import { AreaCreateDTO } from '../../../../../core/dtos/area/areaCreate.model';
+import { AreaEditDTO } from '../../../../../core/dtos/area/areaEdit.model';
+import { AreaGetDTO } from '../../../../../core/dtos/area/area.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-areas',

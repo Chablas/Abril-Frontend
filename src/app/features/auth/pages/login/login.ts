@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, Validators, FormGroup, ReactiveFormsModule  } from '@angular/forms';
-import { AuthService } from "../../../../services/auth.service";
+import { AuthService } from "../../../../core/services/auth.service";
 import Swal from 'sweetalert2';
 import { HttpErrorResponse } from '@angular/common/http';
 

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserProjectPagedDTO } from '../models/userProject/userProjectPaged.model';
-import { UserProjectCreateDTO } from "../models/userProject/userProjectCreate.model";
-import { environment } from '../../environments/environment';
-import { UserProjectCreateDataDTO } from "../models/userProject/userProjectCreateData.model";
-import { ApiMessageDTO } from "../models/api/ApiMessage.model";
+import { UserProjectPagedDTO } from '../dtos/userProject/userProjectPaged.model';
+import { UserProjectCreateDTO } from "../dtos/userProject/userProjectCreate.model";
+import { environment } from '../../../environments/environment';
+import { UserProjectCreateDataDTO } from "../dtos/userProject/userProjectCreateData.model";
+import { ApiMessageDTO } from "../dtos/api/ApiMessage.model";
 
 @Injectable({
   providedIn: 'root'

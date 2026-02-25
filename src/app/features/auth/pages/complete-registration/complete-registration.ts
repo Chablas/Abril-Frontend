@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RedirectCommand } from '@angular/router';
 import { FormBuilder, Validators, FormGroup, ReactiveFormsModule  } from '@angular/forms';
-import { AuthService } from "../../../../services/auth.service";
+import { AuthService } from "../../../../core/services/auth.service";
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 

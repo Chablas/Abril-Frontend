@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PhaseStageSubStageSubSpecialtyFiltersCreateDTO } from "../models/phaseStageSubStageSubSpecialty/PhaseStageSubStageSubSpecialtyFiltersCreateDTO.model";
-import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyCreate.model";
-import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
-import { environment } from '../../environments/environment';
+import { PhaseStageSubStageSubSpecialtyFiltersCreateDTO } from "../dtos/phaseStageSubStageSubSpecialty/PhaseStageSubStageSubSpecialtyFiltersCreateDTO.model";
+import { PhaseStageSubStageSubSpecialtySendFormDataDTO } from "../dtos/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyCreate.model";
+import { PhaseStageSubStageSubSpecialtyFlatPagedDTO } from "../dtos/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialtyFlatPagedDTO.model";
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'

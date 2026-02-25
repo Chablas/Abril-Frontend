@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { MilestoneScheduleHistoryGetDTO } from "../models/milestoneScheduleHistory/milestoneScheduleHistory.model";
-import { MilestoneScheduleHistoryCreateDTO } from '../models/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { environment } from '../../../environments/environment';
+import { MilestoneScheduleHistoryGetDTO } from "../dtos/milestoneScheduleHistory/milestoneScheduleHistory.model";
+import { MilestoneScheduleHistoryCreateDTO } from '../dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

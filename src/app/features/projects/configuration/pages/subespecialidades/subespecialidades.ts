@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { SubSpecialtyService } from '../../../../../services/subspecialty.service';
-import { SubSpecialtyPagedDTO } from '../../../../../models/subSpecialty/subSpecialtyPaged.model';
+import { SubSpecialtyService } from '../../../../../core/services/subspecialty.service';
+import { SubSpecialtyPagedDTO } from '../../../../../core/dtos/subSpecialty/subSpecialtyPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { SubSpecialtyCreateDTO } from '../../../../../models/subSpecialty/subSpecialtyCreate.model';
-import { SubSpecialtyEditDTO } from '../../../../../models/subSpecialty/subSpecialtyEdit.model';
+import { SubSpecialtyCreateDTO } from '../../../../../core/dtos/subSpecialty/subSpecialtyCreate.model';
+import { SubSpecialtyEditDTO } from '../../../../../core/dtos/subSpecialty/subSpecialtyEdit.model';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { SubSpecialtyGetDTO } from '../../../../../models/subSpecialty/subSpecialty.model';
+import { SubSpecialtyGetDTO } from '../../../../../core/dtos/subSpecialty/subSpecialty.model';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-subespecialidades',

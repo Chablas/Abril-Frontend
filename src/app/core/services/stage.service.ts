@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { StagePagedDTO } from '../models/stage/stagePaged.model';
-import { StageCreateDTO } from '../models/stage/stageCreate.model';
-import { environment } from '../../environments/environment';
-import { StageEditDTO } from '../models/stage/stageEdit.model';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { StagePagedDTO } from '../dtos/stage/stagePaged.model';
+import { StageCreateDTO } from '../dtos/stage/stageCreate.model';
+import { environment } from '../../../environments/environment';
+import { StageEditDTO } from '../dtos/stage/stageEdit.model';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PagedResponseDTO } from '../models/api/pagedResponse.model';
-import { MilestoneGetDTO } from "../models/milestone/milestone.model";
-import { MilestoneCreateDTO } from '../models/milestone/milestoneCreate.model';
-import { MilestoneEditDTO } from '../models/milestone/milestoneEdit.model';
-import { environment } from '../../environments/environment';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { PagedResponseDTO } from '../dtos/api/pagedResponse.model';
+import { MilestoneGetDTO } from "../dtos/milestone/milestone.model";
+import { MilestoneCreateDTO } from '../dtos/milestone/milestoneCreate.model';
+import { MilestoneEditDTO } from '../dtos/milestone/milestoneEdit.model';
+import { environment } from '../../../environments/environment';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { ProjectService } from '../../../../../services/project.service';
-import { ProjectPagedDTO } from '../../../../../models/project/projectPaged.model';
+import { ProjectService } from '../../../../../core/services/project.service';
+import { ProjectPagedDTO } from '../../../../../core/dtos/project/projectPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProjectCreateDTO } from '../../../../../models/project/projectCreate.model';
-import { ProjectEditDTO } from '../../../../../models/project/projectEdit.model';
-import { ProjectGetDTO } from '../../../../../models/project/project.model';
+import { ProjectCreateDTO } from '../../../../../core/dtos/project/projectCreate.model';
+import { ProjectEditDTO } from '../../../../../core/dtos/project/projectEdit.model';
+import { ProjectGetDTO } from '../../../../../core/dtos/project/project.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from "../../../../../models/api/ApiMessage.model";
+import { ApiMessageDTO } from "../../../../../core/dtos/api/ApiMessage.model";
 
 @Component({
   selector: 'app-proyectos',

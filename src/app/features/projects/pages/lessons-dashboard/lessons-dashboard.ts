@@ -1,22 +1,27 @@
 import { Component, AfterViewInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
-import { DashboardDTO } from '../../../../models/dashboard/DashboardDTO';
-import { LessonService } from '../../../../services/lesson.service';
-import { PhaseStageChartDTO } from '../../../../models/dashboard/DashboardDTO';
+import { DashboardDTO } from '../../../../core/dtos/dashboard/DashboardDTO';
+import { LessonService } from '../../../../core/services/lesson.service';
+import { PhaseStageChartDTO } from '../../../../core/dtos/dashboard/DashboardDTO';
 import { HttpErrorResponse } from '@angular/common/http';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import html2canvas from 'html2canvas';
+import { Filters } from "../../../../core/models/filters.model";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { forkJoin } from 'rxjs';
+import { LessonFiltersDTO } from "../../../../core/dtos/lesson/lessonFilters.model";
+import { SelectedFilters } from "../../../../core/models/selectedFilters.model";
+import { SelectedDashboardOptions } from "../../../../core/models/lesson-dashboard/selectedOptions.model";
+import { FormsModule } from '@angular/forms';
 
 Chart.register(...registerables, ChartDataLabels);
 
 @Component({
   selector: 'app-lessons-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './lessons-dashboard.html',
   styleUrl: './lessons-dashboard.css',
   standalone: true,
@@ -28,14 +33,43 @@ export class LessonsDashboard implements AfterViewInit {
   phaseStageCharts: PhaseStageChartDTO[] = [];
   colors = ['#64BC04', '#A7E163', '#E5F7D1', '#2F855A', '#68D391', '#9AE6B4', '#38A169', '#C6F6D5'];
 
-  loadingModal = false;
   loader = true;
+  filters: Filters<LessonFiltersDTO> = {
+    options: {
+      projects: [],
+      areas: [],
+      periods: [],
+      phases: [],
+      stages: [],
+      layers: [],
+      subStages: [],
+      subSpecialties: [],
+      users: [],
+    },
+    optionsCreateModal: null,
+    optionsEditModal: null
+  }
+  selectedFilters: SelectedFilters<SelectedDashboardOptions> = {
+    selectedOptions: {
+      projectId: 0,
+      areaId: 0,
+      periodDate: null,
+      phaseId: 0,
+      stageId: 0,
+      layerId: 0,
+      subStageId: 0,
+      subSpecialtyId: 0,
+      userId: 0,
+    },
+    selectedOptionsCreateModal: null,
+    selectedOptionsEditModal: null
+  }
 
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsPieChart') lessonsPieChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsLineChart') lessonsLineChartRef!: ElementRef<HTMLCanvasElement>;
   ngAfterViewInit() {
-    this.loadDashboard();
+    this.loadInitialData();
   }
 
   constructor(
@@ -43,6 +77,34 @@ export class LessonsDashboard implements AfterViewInit {
     private cdr: ChangeDetectorRef,
     private router: Router,
   ) {}
+
+  loadInitialData() {
+    this.loader = true;
+
+    forkJoin({
+      dashboard: this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47]),
+      filters: this.dashboardService.getFilters(),
+    }).subscribe({
+      next: ({ dashboard, filters }) => {
+        this.createBarChart(dashboard);
+        this.createPieChart(dashboard);
+        this.createLineChart(dashboard);
+        this.phaseStageCharts = dashboard.lessonsByPhaseAndStage;
+
+        setTimeout(() => {
+          this.createPhaseStageCharts(this.phaseStageCharts);
+        });
+
+        this.filters.options = filters;
+
+        this.loader = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+      },
+    });
+  }
 
   loadDashboard() {
     this.loader = true;
@@ -54,7 +116,6 @@ export class LessonsDashboard implements AfterViewInit {
 
         this.phaseStageCharts = resp.lessonsByPhaseAndStage;
 
-        // Esperar a que Angular pinte los canvas
         setTimeout(() => {
           this.createPhaseStageCharts(this.phaseStageCharts);
         });
@@ -62,31 +123,16 @@ export class LessonsDashboard implements AfterViewInit {
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        if (err.status == 401) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Sesión expirada',
-            text: err.error?.message ?? '',
-          });
-          localStorage.clear();
-          this.router.navigate(['/auth/login']);
-          this.loader = false;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.loader = false;
-        this.cdr.detectChanges();
+        this.error(err);
       },
     });
   }
 
   createBarChart(data: DashboardDTO) {
-    // destruir gráfico anterior si existe
     if (this.barChart) {
       this.barChart.destroy();
     }
 
-    // Mapear DTO → Chart.js
     const sortedData = [...data.lessonsByProject].sort((a, b) => b.value - a.value);
 
     const labels = sortedData.map((x) => x.label);
@@ -378,8 +424,8 @@ export class LessonsDashboard implements AfterViewInit {
           },
           { content: 'UDP-FO-19', colSpan: 3 },
         ],
-        [{ content: "Versión: 01", colSpan: 3 }],
-        [{ content: 'Fecha: '+new Date().toLocaleDateString(), colSpan: 3 }],
+        [{ content: 'Versión: 01', colSpan: 3 }],
+        [{ content: 'Fecha: ' + new Date().toLocaleDateString(), colSpan: 3 }],
         [
           { content: 'Elaborado', colSpan: 1 },
           { content: 'Revisado', colSpan: 1 },

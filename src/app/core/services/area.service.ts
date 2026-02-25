@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AreaPagedDTO } from '../models/area/areaPaged.model';
-import { AreaCreateDTO } from '../models/area/areaCreate.model';
-import { AreaEditDTO } from '../models/area/areaEdit.model';
-import { environment } from '../../environments/environment';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { AreaPagedDTO } from '../dtos/area/areaPaged.model';
+import { AreaCreateDTO } from '../dtos/area/areaCreate.model';
+import { AreaEditDTO } from '../dtos/area/areaEdit.model';
+import { environment } from '../../../environments/environment';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

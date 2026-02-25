@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LayerService } from '../../../../../services/layer.service';
-import { LayerPagedDTO } from '../../../../../models/layer/layerPaged.model';
+import { LayerService } from '../../../../../core/services/layer.service';
+import { LayerPagedDTO } from '../../../../../core/dtos/layer/layerPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LayerCreateDTO } from '../../../../../models/layer/layerCreate.model';
-import { LayerEditDTO } from '../../../../../models/layer/layerEdit.model';
-import { LayerGetDTO } from '../../../../../models/layer/layer.model';
+import { LayerCreateDTO } from '../../../../../core/dtos/layer/layerCreate.model';
+import { LayerEditDTO } from '../../../../../core/dtos/layer/layerEdit.model';
+import { LayerGetDTO } from '../../../../../core/dtos/layer/layer.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-layers',

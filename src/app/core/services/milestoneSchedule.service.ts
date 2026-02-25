@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { MilestoneScheduleGetDTO } from "../models/milestoneSchedule/milestoneSchedule.model";
-import { MilestoneScheduleFakeDataDTO } from '../models/milestoneSchedule/milestoneScheduleFakeData.model';
+import { environment } from '../../../environments/environment';
+import { MilestoneScheduleGetDTO } from "../dtos/milestoneSchedule/milestoneSchedule.model";
+import { MilestoneScheduleFakeDataDTO } from '../dtos/milestoneSchedule/milestoneScheduleFakeData.model';
 
 @Injectable({
   providedIn: 'root',

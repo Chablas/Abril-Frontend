@@ -1,12 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { UserService } from '../../../../services/user.service';
-import { PersonService } from '../../../../services/person.service';
-import { PagedResponseDTO } from '../../../../models/api/pagedResponse.model';
-import { UserDTO } from '../../../../models/user/user.model';
+import { UserService } from '../../../../core/services/user.service';
+import { PersonService } from '../../../../core/services/person.service';
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { UserDTO } from '../../../../core/dtos/user/user.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserCreateDTO } from '../../../../models/user/userCreate.model';
+import { UserCreateDTO } from '../../../../core/dtos/user/userCreate.model';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';

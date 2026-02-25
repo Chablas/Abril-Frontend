@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { PhaseService } from '../../../../../services/phase.service';
-import { PhasePagedDTO } from '../../../../../models/phase/phasePaged.model';
+import { PhaseService } from '../../../../../core/services/phase.service';
+import { PhasePagedDTO } from '../../../../../core/dtos/phase/phasePaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PhaseCreateDTO } from '../../../../../models/phase/phaseCreate.model';
-import { PhaseEditDTO } from '../../../../../models/phase/phaseEdit.model';
-import { PhaseGetDTO } from '../../../../../models/phase/phase.model';
+import { PhaseCreateDTO } from '../../../../../core/dtos/phase/phaseCreate.model';
+import { PhaseEditDTO } from '../../../../../core/dtos/phase/phaseEdit.model';
+import { PhaseGetDTO } from '../../../../../core/dtos/phase/phase.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-fases',

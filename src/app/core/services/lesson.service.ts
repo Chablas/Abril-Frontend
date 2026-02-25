@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LessonListDTO, LessonListPagedDTO } from '../models/lesson/lesson.model';
-import { LessonDetailDTO } from '../models/lesson/lessonDetail.model';
-import { LessonFiltersDTO } from "../models/lesson/lessonFilters.model";
-import { PhaseStageSubStageSubSpecialtyDTO } from "../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
-import { environment } from '../../environments/environment';
-import { DashboardDTO } from "../models/dashboard/DashboardDTO";
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { LessonListDTO, LessonListPagedDTO } from '../dtos/lesson/lesson.model';
+import { LessonDetailDTO } from '../dtos/lesson/lessonDetail.model';
+import { LessonFiltersDTO } from "../dtos/lesson/lessonFilters.model";
+import { PhaseStageSubStageSubSpecialtyDTO } from "../dtos/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
+import { environment } from '../../../environments/environment';
+import { DashboardDTO } from "../dtos/dashboard/DashboardDTO";
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

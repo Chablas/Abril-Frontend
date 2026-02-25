@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { SubStageService } from '../../../../../services/subStage.service';
-import { SubStagePagedDTO } from '../../../../../models/subStage/subStagePaged.model';
+import { SubStageService } from '../../../../../core/services/subStage.service';
+import { SubStagePagedDTO } from '../../../../../core/dtos/subStage/subStagePaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { SubStageCreateDTO } from '../../../../../models/subStage/subStageCreate.model';
+import { SubStageCreateDTO } from '../../../../../core/dtos/subStage/subStageCreate.model';
 import { FormsModule } from '@angular/forms';
-import { SubStageEditDTO } from '../../../../../models/subStage/subStageEdit.model';
+import { SubStageEditDTO } from '../../../../../core/dtos/subStage/subStageEdit.model';
 import { HttpErrorResponse } from '@angular/common/http';
-import { SubStageGetDTO } from '../../../../../models/subStage/subStage.model';
+import { SubStageGetDTO } from '../../../../../core/dtos/subStage/subStage.model';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-subetapas',

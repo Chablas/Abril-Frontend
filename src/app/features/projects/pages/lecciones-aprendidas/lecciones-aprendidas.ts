@@ -1,19 +1,19 @@
 import { Component, OnInit, ChangeDetectorRef, QueryList, ViewChildren, ElementRef } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { HttpClientModule } from '@angular/common/http';
-import { LessonService } from "../../../../services/lesson.service";
-import { PhaseStageSubStageSubSpecialtyService } from "../../../../services/phaseStageSubStageSubSpecialty.service";
-import { LessonListDTO, LessonListPagedDTO } from "../../../../models/lesson/lesson.model";
-import { LessonDetailDTO, LessonImageDTO } from "../../../../models/lesson/lessonDetail.model";
+import { LessonService } from "../../../../core/services/lesson.service";
+import { PhaseStageSubStageSubSpecialtyService } from "../../../../core/services/phaseStageSubStageSubSpecialty.service";
+import { LessonListDTO, LessonListPagedDTO } from "../../../../core/dtos/lesson/lesson.model";
+import { LessonDetailDTO, LessonImageDTO } from "../../../../core/dtos/lesson/lessonDetail.model";
 import { forkJoin } from 'rxjs';
-import { LessonFiltersDTO } from "../../../../models/lesson/lessonFilters.model";
+import { LessonFiltersDTO } from "../../../../core/dtos/lesson/lessonFilters.model";
 import { FormsModule } from '@angular/forms';
-import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../models/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
+import { PhaseStageSubStageSubSpecialtyDTO, StageFilterDTO, SubStageFilterDTO, SubSpecialtyFilterDTO, LayerFilterDTO } from "../../../../core/dtos/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from "@angular/router";
 import Swal from 'sweetalert2';
-import { ApiMessageDTO } from "../../../../models/api/ApiMessage.model";
+import { ApiMessageDTO } from "../../../../core/dtos/api/ApiMessage.model";
 import { jwtDecode } from 'jwt-decode';
 
 @Component({
@@ -129,16 +129,14 @@ export class LeccionesAprendidas implements OnInit {
     forkJoin({
       lessons: this.lessonService.getLessonsUsingFilters(this.filtersTable),
       filtersData: this.lessonService.getFilters(),
-      filtersPSSSCreateModal: this.lessonService.getFiltersCreate(),
     }).subscribe({
-      next: ({ lessons, filtersData, filtersPSSSCreateModal }) => {
+      next: ({ lessons, filtersData }) => {
         this.lessons = lessons;
         this.filtersData = filtersData;
         this.currentPage = lessons.page;
         this.totalPages = lessons.totalPages;
         this.pageSize = lessons.pageSize;
         this.totalRecords = lessons.totalRecords;
-        this.filtersPSSSCreateModal = filtersPSSSCreateModal;
         this.loader = false;
         this.cdr.detectChanges();
       },

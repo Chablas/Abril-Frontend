@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SubSpecialtyPagedDTO } from '../models/subSpecialty/subSpecialtyPaged.model';
-import { SubSpecialtyCreateDTO } from '../models/subSpecialty/subSpecialtyCreate.model';
-import { environment } from '../../environments/environment';
-import { SubSpecialtyEditDTO } from '../models/subSpecialty/subSpecialtyEdit.model';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
+import { SubSpecialtyPagedDTO } from '../dtos/subSpecialty/subSpecialtyPaged.model';
+import { SubSpecialtyCreateDTO } from '../dtos/subSpecialty/subSpecialtyCreate.model';
+import { environment } from '../../../environments/environment';
+import { SubSpecialtyEditDTO } from '../dtos/subSpecialty/subSpecialtyEdit.model';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',

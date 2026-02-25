@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ScheduleGetDTO } from '../models/schedule/schedule.model';
-import { ScheduleCreateDTO } from '../models/schedule/scheduleCreate.model';
-import { environment } from '../../environments/environment';
-import { ApiMessageDTO } from '../models/api/ApiMessage.model';
-import { PagedResponseDTO } from '../models/api/pagedResponse.model';
-import { ProjectGetDTO } from '../models/project/project.model';
-import { ScheduleFormData } from "../models/schedule/scheduleFormData.model";
+import { ScheduleGetDTO } from '../dtos/schedule/schedule.model';
+import { ScheduleCreateDTO } from '../dtos/schedule/scheduleCreate.model';
+import { environment } from '../../../environments/environment';
+import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
+import { PagedResponseDTO } from '../dtos/api/pagedResponse.model';
+import { ProjectGetDTO } from '../dtos/project/project.model';
+import { ScheduleFormData } from "../dtos/schedule/scheduleFormData.model";
 
 @Injectable({
   providedIn: 'root',

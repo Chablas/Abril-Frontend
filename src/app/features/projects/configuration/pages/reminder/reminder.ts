@@ -1,14 +1,14 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { UserProjectService } from '../../../../../services/userProject.service';
-import { UserProjectPagedDTO } from '../../../../../models/userProject/userProjectPaged.model';
+import { UserProjectService } from '../../../../../core/services/userProject.service';
+import { UserProjectPagedDTO } from '../../../../../core/dtos/userProject/userProjectPaged.model';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserProjectCreateDTO } from '../../../../../models/userProject/userProjectCreate.model';
-import { UserProjectCreateDataDTO } from '../../../../../models/userProject/userProjectCreateData.model';
+import { UserProjectCreateDTO } from '../../../../../core/dtos/userProject/userProjectCreate.model';
+import { UserProjectCreateDataDTO } from '../../../../../core/dtos/userProject/userProjectCreateData.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import Swal from 'sweetalert2';
 
 @Component({

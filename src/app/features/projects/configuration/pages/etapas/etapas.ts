@@ -1,16 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { StageService } from '../../../../../services/stage.service';
+import { StageService } from '../../../../../core/services/stage.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { StagePagedDTO } from '../../../../../models/stage/stagePaged.model';
-import { StageCreateDTO } from '../../../../../models/stage/stageCreate.model';
-import { StageEditDTO } from '../../../../../models/stage/stageEdit.model';
-import { StageGetDTO } from '../../../../../models/stage/stage.model';
+import { StagePagedDTO } from '../../../../../core/dtos/stage/stagePaged.model';
+import { StageCreateDTO } from '../../../../../core/dtos/stage/stageCreate.model';
+import { StageEditDTO } from '../../../../../core/dtos/stage/stageEdit.model';
+import { StageGetDTO } from '../../../../../core/dtos/stage/stage.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
-import { ApiMessageDTO } from '../../../../../models/api/ApiMessage.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Component({
   selector: 'app-etapas',
