@@ -46,10 +46,8 @@
                             </div>
                         </td>
                         <td class="text-center">{{item.projectDescription}}</td>
-                        <td class="text-center">Yo</td>
-                        <td><span [title]="item.scheduleDescription"
-                                class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
-                                item.scheduleDescription }}</span></td>
+                        <td><span [title]="item.createdUserFullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.createdUserFullName }}</span></td>
+                        <td><span [title]="item.scheduleDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{item.scheduleDescription }}</span></td>
 
                         <td class="text-center">
                             <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
