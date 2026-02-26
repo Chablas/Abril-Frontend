@@ -4,10 +4,11 @@ import { FormBuilder, Validators, FormGroup, ReactiveFormsModule  } from '@angul
 import { AuthService } from "../../../../core/services/auth.service";
 import Swal from 'sweetalert2';
 import { HttpErrorResponse } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -33,6 +34,8 @@ export class Login implements OnInit {
   }
 
   submit() {
+    this.loader = true;
+    this.cdr.detectChanges();
     if (this.form.invalid) return;
 
     const email = this.form.value.email;
@@ -44,6 +47,8 @@ export class Login implements OnInit {
     };
     this.authService.login(payload).subscribe({
       next: () => {
+        this.loader = false;
+        this.cdr.detectChanges();
         this.router.navigate(['/']);
       },
       error: (err: HttpErrorResponse) => {
