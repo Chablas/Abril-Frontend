@@ -475,7 +475,7 @@
               <ng-container *ngIf="getOpportunityImages(item.images) as images">
                 <ng-container *ngIf="images.length > 0; else sinImagen">
                   <img
-                    [src]="apiUrl + images[0].imageUrl"
+                    [src]="images[0].imageUrl.startsWith('http') ? images[0].imageUrl : apiUrl + images[0].imageUrl"
                     class="h-48 w-auto object-contain rounded mx-auto cursor-pointer"
                   />
                 </ng-container>
@@ -492,7 +492,7 @@
               <ng-container *ngIf="getImprovementImages(item.images) as images">
                 <ng-container *ngIf="images.length > 0; else sinImagen">
                   <img
-                    [src]="apiUrl + images[0].imageUrl"
+                    [src]="images[0].imageUrl.startsWith('http') ? images[0].imageUrl : apiUrl + images[0].imageUrl"
                     class="h-48 w-auto object-contain rounded mx-auto cursor-pointer"
                   />
                 </ng-container>
@@ -679,7 +679,7 @@
                         (mouseleave)="onMouseUp()"
                       >
                         <img
-                          [src]="apiUrl + image.imageUrl"
+                          [src]="image.imageUrl.startsWith('http') ? image.imageUrl : apiUrl + image.imageUrl"
                           (wheel)="onWheelZoom($event, image.lessonImageId)"
                           (mousedown)="onMouseDown($event, image.lessonImageId)"
                           [style.transform]="
@@ -720,7 +720,7 @@
                         (mouseleave)="onMouseUp()"
                       >
                         <img
-                          [src]="apiUrl + image.imageUrl"
+                          [src]="image.imageUrl.startsWith('http') ? image.imageUrl : apiUrl + image.imageUrl"
                           (wheel)="onWheelZoom($event, image.lessonImageId)"
                           (mousedown)="onMouseDown($event, image.lessonImageId)"
                           [style.transform]="
@@ -896,7 +896,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="apiUrl + image.imageUrl"
+                      [src]="image.imageUrl.startsWith('http') ? image.imageUrl : apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
@@ -923,7 +923,7 @@
                     (mouseleave)="onMouseUp()"
                   >
                     <img
-                      [src]="apiUrl + image.imageUrl"
+                      [src]="image.imageUrl.startsWith('http') ? image.imageUrl : apiUrl + image.imageUrl"
                       (wheel)="onWheelZoom($event, image.lessonImageId)"
                       (mousedown)="onMouseDown($event, image.lessonImageId)"
                       [style.transform]="
@@ -1161,8 +1161,8 @@
                           class="cursor-pointer absolute top-0 right-0 bg-black/60 text-white text-xs w-5 h-5 flex items-center justify-center rounded-bl">
                           ✕
                         </button>
-                    
-                        <img [src]="img" class="w-full h-full object-cover" />
+
+                        <img [src]="img.startsWith('http') ? img : apiUrl + img" class="w-full h-full object-cover" />
                       </div>
                     </div>
                   </div>
@@ -1216,7 +1216,7 @@
                           ✕
                         </button>
                     
-                        <img [src]="img" class="w-full h-full object-cover" />
+                        <img [src]="img.startsWith('http') ? img : apiUrl + img" class="w-full h-full object-cover" />
                       </div>
                     </div>
                   </div>
