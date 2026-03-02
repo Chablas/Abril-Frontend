@@ -4,25 +4,50 @@ import { LeccionesAprendidas } from "./pages/lecciones-aprendidas/lecciones-apre
 import { LessonsDashboard } from "./pages/lessons-dashboard/lessons-dashboard";
 import { MilestoneSchedule } from "./pages/milestone-schedule/milestone-schedule";
 import { Layout } from "../../shared/components/layout/layout";
+import { IvtControl } from "../projects/pages/ivt-control/ivt-control";
 
 const routes: Routes = [
-  { path: "", component: Layout, children: [
-    { path: '', redirectTo: 'lessons', pathMatch: 'full' },
-    { path: "lessons", children: [
-      { path: "", component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } }
-    ] },
-    { path: "dashboard", children: [
-      { path: "", component: LessonsDashboard, data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS' } }
-    ] },
-    { path: "milestone-schedule", children: [
-      { path: "", component: MilestoneSchedule, data: { titulo: 'CRONOGRAMA DE HITOS' } }
-    ] },
-    {
-      path: "configuration", loadChildren: () => {
-        return import("./configuration/configuracion-module").then(x => x.ConfiguracionModule)
-      }
-    }
-  ] }
+  {
+    path: '',
+    component: Layout,
+    children: [
+      { path: '', redirectTo: 'lessons', pathMatch: 'full' },
+      {
+        path: 'lessons',
+        children: [
+          { path: '', component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } },
+        ],
+      },
+      {
+        path: 'dashboard',
+        children: [
+          {
+            path: '',
+            component: LessonsDashboard,
+            data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS' },
+          },
+        ],
+      },
+      {
+        path: 'milestone-schedule',
+        children: [
+          { path: '', component: MilestoneSchedule, data: { titulo: 'CRONOGRAMA DE HITOS' } },
+        ],
+      },
+      {
+        path: 'technical-inspection-visit',
+        children: [
+          { path: '', component: IvtControl, data: { titulo: 'CONTROL DE IVTS' } },
+        ],
+      },
+      {
+        path: 'configuration',
+        loadChildren: () => {
+          return import('./configuration/configuracion-module').then((x) => x.ConfiguracionModule);
+        },
+      },
+    ],
+  },
 ];
 
 @NgModule({

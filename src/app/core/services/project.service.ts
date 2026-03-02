@@ -6,6 +6,7 @@ import { ProjectCreateDTO } from "../dtos/project/projectCreate.model";
 import { ProjectEditDTO } from "../dtos/project/projectEdit.model";
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from "../dtos/api/ApiMessage.model";
+import { ProjectSimpleDTO } from '../dtos/project/projectSimple.model';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,12 @@ export class ProjectService {
   getProjectPaged(page: number): Observable<ProjectPagedDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged?page=${page}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  getWithResidentByUserId(): Observable<ProjectSimpleDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectSimpleDTO[]>(`${this.apiUrl}/with-resident-by-userId`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
