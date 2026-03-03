@@ -23,17 +23,17 @@
                     <thead class="bg-[#E5F7D1]">
                         <tr class="text-[#64BC04]">
                             <th class="w-[50px]"></th>
-                            <th class="w-[150px]">Descripción</th>
+                            <th class="w-[150px]">Nombre archivo</th>
                             <!--<th class="w-[150px]">Estado</th>-->
                         </tr>
                     </thead>
 
                     <tbody>
-                        <!--
-                        <tr *ngFor="let item of areas.data" class="border-b border-[#D6DEE5] h-[30px]">
+                        
+                        <tr *ngFor="let item of tableComponentData.tableData" class="border-b border-[#D6DEE5] h-[30px]">
                             <td class="text-center">
                                 <div class="flex items-center justify-center">
-                                    <button class="cursor-pointer" (click)="openEditModal(item, $event)">
+                                    <button class="cursor-pointer" (click)="showPdf($event, item.fileUrl)" >
                                         <svg width="22" height="16" viewBox="0 0 22 16" fill="none"
                                             xmlns="http://www.w3.org/2000/svg">
                                             <path
@@ -48,7 +48,7 @@
                                     </button>
                                 </div>
                             </td>
--->
+
                             <!-- Ver 
                     <td class="text-center">
                         <button class="cursor-pointer" (click)="openModal(item.lessonId, $event)">
@@ -66,19 +66,11 @@
                         </button>
                     </td>
                     -->
-<!--
-                            <td><span [title]="item.areaDescription"
+
+                            <td><span [title]="item.fileUrl"
                                     class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
-                                    item.areaDescription }}</span></td>
--->
-                            <!--<td class="text-center">
-                            <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
-                              'bg-[#D7FAF4] text-[#009C87]': item.active == true,
-                              'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
-                                {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
-                            </span>
-                        </td>
-                        </tr>-->
+                                    item.fileUrl }}</span></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -102,7 +94,7 @@
                 </div>
             </div>
         </div>
-        <iframe class="flex-2 h-full" src="https://abrilbackendstorage.blob.core.windows.net/control-de-ivts/INFORME%20TECNICO,%20EXP%202675-2025,%20CAMPITELLI%20INMIBILIARIA%20SAC,%20VISITA%20No%2025%20DE%2047,%20FECHA%2010.12.2025.pdf"></iframe>
+        <iframe class="flex-2 h-full" [src]="tableComponentData.iframeUrl"></iframe>
     </div>
 
     <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
@@ -114,15 +106,14 @@
                 <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
                     <h1 class="text-2xl text-center">AGREGAR IVT</h1>
                     <div class="flex justify-between w-full">
-                        <div class="flex flex-col">
+                        <div class="flex flex-col flex-1">
                             <p class="text-[#64BC04]">Archivo</p>
-                            <input type="file" [(ngModel)]="createModalData.createDto.pdf"
-                                class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+                            <input type="file" (change)="onFileSelected($event)" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <p class="text-[#64BC04]">Proyecto</p>
-                            <select [(ngModel)]="createModalData.createDto.scheduleId">
-                                <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.projectId">{{item.projectDescription}}</option>
+                            <select [(ngModel)]="createModalData.createDto.scheduleId" class="w-[100px] pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer">
+                                <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.scheduleId">{{item.projectDescription}}</option>
                             </select>
                         </div>
                     </div>

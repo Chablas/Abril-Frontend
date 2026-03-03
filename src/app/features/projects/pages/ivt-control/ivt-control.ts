@@ -1,15 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { IvtControlService } from "../../../../core/services/ivtControl.service";
-import { forkJoin } from 'rxjs';
+import { forkJoin, scheduled } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
-import { IvtControlCreateDTO } from "../../../../core/dtos/ivtControl/ivtControlCreate.model";
+import { TableComponentData } from "../../../../core/models/ivtControl/tableComponentData.model";
 import { ProjectService } from '../../../../core/services/project.service';
-import { CreateModalData } from "../../../../core/models/ivtControl.model";
+import { CreateModalData } from "../../../../core/models/ivtControl/createModalData.model";
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-ivt-control',
@@ -27,13 +28,18 @@ export class IvtControl {
     data: [],
   };*/
 
+  tableComponentData: TableComponentData = {
+    tableData: [],
+    iframeUrl: null,
+  };
+
   createModalData: CreateModalData = {
     projectOptions: [],
     createDto: {
       scheduleId: 0,
       pdf: null,
-    }
-  }
+    },
+  };
 
   currentPage = 1;
   totalPages = 0;
@@ -49,20 +55,25 @@ export class IvtControl {
     private ivtControlService: IvtControlService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
     this.loadInitialData();
   }
 
-  loadInitialData() {
-    //this.loader = true;
-    /*forkJoin({
-
+  loadInitialData(page: number = 1) {
+    this.loader = true;
+    forkJoin({
+      ivts: this.ivtControlService.getIvtControlPaged(page),
     }).subscribe({
-
-    })*/
+      next: ({ivts}) => {
+        this.tableComponentData.tableData = ivts.data
+        this.loader = false;
+        this.cdr.detectChanges();
+      }
+    })
   }
 
   loadCreateFilters() {
@@ -75,8 +86,8 @@ export class IvtControl {
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);
-      }
-    })
+      },
+    });
   }
 
   openCreateModal(event: MouseEvent) {
@@ -97,13 +108,13 @@ export class IvtControl {
     }
   }
 
-  /*loadIvtControls(page: number = 1) {
+  loadIvtControls(page: number = 1) {
     this.loader = true;
     this.cdr.detectChanges();
 
     this.ivtControlService.getIvtControlPaged(page).subscribe({
       next: (response) => {
-        this.ivtControls = response;
+        this.tableComponentData.tableData = response.data;
         this.currentPage = response.page;
         this.totalPages = response.totalPages;
         this.pageSize = response.pageSize;
@@ -116,27 +127,33 @@ export class IvtControl {
         this.error(err);
       },
     });
-  }*/
+  }
+
+  showPdf(event: MouseEvent, fileUrl: string) {
+    event.stopPropagation();
+    this.tableComponentData.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+    this.cdr.detectChanges();
+  }
 
   nextPage() {
-    /*if (this.currentPage < this.totalPages) {
+    if (this.currentPage < this.totalPages) {
       this.loadIvtControls(this.currentPage + 1);
       this.cdr.detectChanges();
-    }*/
+    }
   }
 
   prevPage() {
-    /*if (this.currentPage > 1) {
+    if (this.currentPage > 1) {
       this.loadIvtControls(this.currentPage - 1);
       this.cdr.detectChanges();
-    }*/
+    }
   }
 
   goToPage(page: number) {
-    /*if (page >= 1 && page <= this.totalPages) {
+    if (page >= 1 && page <= this.totalPages) {
       this.loadIvtControls(page);
       this.cdr.detectChanges();
-    }*/
+    }
   }
 
   get pages(): number[] {
@@ -167,15 +184,28 @@ export class IvtControl {
     return pages;
   }
 
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.createModalData.createDto.pdf = file;
+    }
+  }
+
   saveIvtControl() {
     this.loader = true;
-    this.ivtControlService.createIvtControl(this.createModalData.createDto).subscribe({
+    const formData = new FormData();
+    formData.append('scheduleId', this.createModalData.createDto.scheduleId.toString());
+    if (this.createModalData.createDto.pdf) {
+      formData.append('pdf', this.createModalData.createDto.pdf);
+    }
+    this.ivtControlService.createIvtControl(formData).subscribe({
       next: (response: ApiMessageDTO) => {
         this.showCreateModal = false;
         this.createModalData.createDto = { scheduleId: 0, pdf: null };
         this.loader = false;
         this.cdr.detectChanges();
-        //this.loadIvtControls();
+        this.loadIvtControls();
+        
         Swal.fire({
           title: response.message ?? 'Proyecto creado exitosamente',
           icon: 'success',

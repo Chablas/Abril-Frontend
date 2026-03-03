@@ -6,7 +6,7 @@ import { ProjectCreateDTO } from "../dtos/project/projectCreate.model";
 import { ProjectEditDTO } from "../dtos/project/projectEdit.model";
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from "../dtos/api/ApiMessage.model";
-import { ProjectSimpleDTO } from '../dtos/project/projectSimple.model';
+import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
 
 @Injectable({
   providedIn: 'root',
@@ -22,9 +22,9 @@ export class ProjectService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  getWithResidentByUserId(): Observable<ProjectSimpleDTO[]> {
+  getWithResidentByUserId(): Observable<ProjectScheduleSimpleDTO[]> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<ProjectSimpleDTO[]>(`${this.apiUrl}/with-resident-by-userId`, {
+    return this.http.get<ProjectScheduleSimpleDTO[]>(`${this.apiUrl}/with-resident-by-userId`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
