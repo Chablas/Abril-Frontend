@@ -87,9 +87,18 @@ export class LessonService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
-  getDashboardData(ids: number[]): Observable<DashboardDTO> {
+  getDashboardData(ids: number[], filters: any): Observable<DashboardDTO> {
     const token = localStorage.getItem('access_token');
+
+    let params = new HttpParams();
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined && filters[key] !== 0) {
+        params = params.set(key, filters[key]);
+      }
+    });
+
     return this.http.post<DashboardDTO>(`${this.apiUrl}/dashboard`, ids, {
+      params,
       headers: { Authorization: `Bearer ${token}` },
     });
   }

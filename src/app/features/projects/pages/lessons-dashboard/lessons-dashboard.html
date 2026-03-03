@@ -18,24 +18,24 @@
       <p class="text-[#64BC04] group-hover:underline">Exportar a PDF</p>
     </button>
   </div>
-  <!--
+  
   <div class="flex justify-between bg-white py-[10px] px-[20px] rounded-2xl">
     <div class="flex justify-start gap-[10px]">
       <div class="w-[240px]">
         <p class="w-[240px] text-[#64BC04] text-lg">Periodo</p>
-        <div *ngIf="selectedFilters.selectedOptions as selectedOptions">
+        <div *ngIf="selectedFilters as selectedOptions">
           <select
             class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-            [(ngModel)]="selectedOptions.periodDate" name="periodDate">
+            [(ngModel)]="selectedFilters.periodDate" name="periodDate">
             <option [ngValue]="null">Todos los periodos</option>
-            <option *ngFor="let item of filters.options?.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
+            <option *ngFor="let item of filters.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
               {{ item.periodDate | date:'MM-yyyy' }}
             </option>
           </select>
         </div>
   
       </div>
-      
+        <!--
         <div class="w-[240px]">
           <p class="w-[240px] text-[#64BC04] text-lg">Usuario</p>
           <select class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
@@ -46,12 +46,12 @@
             </option>
           </select>
         </div>
-        
+        -->
     </div>
   
     <div class="flex justify-end gap-[10px]">
   
-      <button type="button" class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer">
+      <button type="button" (click)="loadDashboard()" class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer">
         <div class="flex justify-center items-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -63,18 +63,21 @@
       </button>
     </div>
   </div>
-  -->
 
   <!-- Fila superior -->
   <div class="flex flex-wrap items-center gap-[20px]">
     <div class="flex-2 rounded-2xl border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR PROYECTO</h3>
-      <canvas #lessonsChart class="w-full"></canvas>
+      <div class="relative h-[400px]">
+        <canvas #lessonsChart class="absolute inset-0 w-full"></canvas>
+      </div>
     </div>
-
+  
     <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR FASE</h3>
-      <canvas #lessonsPieChart class="w-full"></canvas>
+      <div class="relative h-[400px]">
+        <canvas #lessonsPieChart class="absolute inset-0 w-full"></canvas>
+      </div>
     </div>
   </div>
 
@@ -116,7 +119,9 @@
     <h3 class="font-semibold text-gray-800 mb-2">
       LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD
     </h3>
-    <canvas #lessonsLineChart class=""></canvas>
+    <div class="relative h-[400px]">
+      <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
+    </div>
   </div>
 </div>
 

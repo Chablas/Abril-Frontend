@@ -31,56 +31,6 @@ export class LessonsDashboard implements AfterViewInit {
   pieChart?: Chart;
   lineChart?: Chart;
   phaseStageCharts: PhaseStageChartDTO[] = [];
-  /*colors = [
-    '#E5F7D1', // muy claro
-    '#C6F6D5',
-    '#9AE6B4',
-    '#A7E163',
-    '#68D391',
-    '#64BC04',
-    '#38A169',
-    '#2F855A', // más oscuro
-  ];*/
-  /*colors = [
-    '#E6FFFA', // teal muy claro
-    '#C6F6D5', // verde pastel
-    '#B2F5EA', // aqua claro
-    '#9AE6B4', // verde suave
-    '#76E4F7', // azul cielo
-    '#68D391', // verde medio
-    '#4FD1C5', // teal medio
-    '#38B2AC', // teal fuerte
-    '#4299E1', // azul profesional
-    '#3182CE', // azul intenso
-    '#2F855A', // verde oscuro
-    '#2C5282', // azul oscuro
-  ];*/
-  /*colors = [
-    '#EDFDFD',
-    '#D1FAE5',
-    '#A7F3D0',
-    '#6EE7B7',
-    '#34D399',
-    '#10B981',
-    '#059669',
-    '#0E7490',
-    '#0369A1',
-    '#1E40AF',
-    '#065F46',
-    '#1E3A8A',
-  ];*/
-  /*colors = [
-    '#E6F4F7', // fondo muy claro
-    '#CFE8EE',
-    '#A9D3DD',
-    '#7FBBCB',
-    '#4FA4BA',
-    '#0086A5', // color base
-    '#006F87',
-    '#005A6E',
-    '#004554',
-    '#00323E',
-  ];*/
   colors = [
     //'#f0f8e6',
     //'#e0f2cd',
@@ -103,35 +53,27 @@ export class LessonsDashboard implements AfterViewInit {
   ];
 
   loader = true;
-  filters: Filters<LessonFiltersDTO> = {
-    options: {
-      projects: [],
-      areas: [],
-      periods: [],
-      phases: [],
-      stages: [],
-      layers: [],
-      subStages: [],
-      subSpecialties: [],
-      users: [],
-    },
-    optionsCreateModal: null,
-    optionsEditModal: null,
+  filters: LessonFiltersDTO = {
+    projects: [],
+    areas: [],
+    periods: [],
+    phases: [],
+    stages: [],
+    layers: [],
+    subStages: [],
+    subSpecialties: [],
+    users: [],
   };
-  selectedFilters: SelectedFilters<SelectedDashboardOptions> = {
-    selectedOptions: {
-      projectId: 0,
-      areaId: 0,
-      periodDate: null,
-      phaseId: 0,
-      stageId: 0,
-      layerId: 0,
-      subStageId: 0,
-      subSpecialtyId: 0,
-      userId: 0,
-    },
-    selectedOptionsCreateModal: null,
-    selectedOptionsEditModal: null,
+  selectedFilters: SelectedDashboardOptions = {
+    projectId: 0,
+    areaId: 0,
+    periodDate: null,
+    phaseId: 0,
+    stageId: 0,
+    layerId: 0,
+    subStageId: 0,
+    subSpecialtyId: 0,
+    userId: 0,
   };
 
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
@@ -151,7 +93,7 @@ export class LessonsDashboard implements AfterViewInit {
     this.loader = true;
 
     forkJoin({
-      dashboard: this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47]),
+      dashboard: this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47], this.selectedFilters),
       filters: this.dashboardService.getFilters(),
     }).subscribe({
       next: ({ dashboard, filters }) => {
@@ -164,7 +106,7 @@ export class LessonsDashboard implements AfterViewInit {
           this.createPhaseStageCharts(this.phaseStageCharts);
         });
 
-        this.filters.options = filters;
+        this.filters = filters;
 
         this.loader = false;
         this.cdr.detectChanges();
@@ -177,7 +119,7 @@ export class LessonsDashboard implements AfterViewInit {
 
   loadDashboard() {
     this.loader = true;
-    this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47]).subscribe({
+    this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47], this.selectedFilters).subscribe({
       next: (resp: DashboardDTO) => {
         this.createBarChart(resp);
         this.createPieChart(resp);
@@ -225,7 +167,7 @@ export class LessonsDashboard implements AfterViewInit {
       },
 
       options: {
-        responsive: false,
+        responsive: true,
         indexAxis: 'y', // barras horizontales
         maintainAspectRatio: false,
         plugins: {
@@ -291,7 +233,7 @@ export class LessonsDashboard implements AfterViewInit {
       },
       options: {
         maintainAspectRatio: false,
-        responsive: false,
+        responsive: true,
         plugins: {
           datalabels: {
             color: '#828282',
@@ -371,7 +313,7 @@ export class LessonsDashboard implements AfterViewInit {
           ],
         },
         options: {
-          responsive: false,
+          responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: {
@@ -428,7 +370,7 @@ export class LessonsDashboard implements AfterViewInit {
       },
 
       options: {
-        responsive: false,
+        responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
