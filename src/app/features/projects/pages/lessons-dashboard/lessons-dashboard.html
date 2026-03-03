@@ -23,30 +23,26 @@
     <div class="flex justify-start gap-[10px]">
       <div class="w-[240px]">
         <p class="w-[240px] text-[#64BC04] text-lg">Periodo</p>
-        <div *ngIf="selectedFilters as selectedOptions">
-          <select
-            class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-            [(ngModel)]="selectedFilters.periodDate" name="periodDate">
-            <option [ngValue]="null">Todos los periodos</option>
-            <option *ngFor="let item of filters.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
-              {{ item.periodDate | date:'MM-yyyy' }}
-            </option>
-          </select>
-        </div>
-  
+        <select
+          class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
+          [(ngModel)]="selectedFilters.periodDate" name="periodDate">
+          <option [ngValue]="null">Todos los periodos</option>
+          <option *ngFor="let item of filters.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
+            {{ item.periodDate | date:'MM-yyyy' }}
+          </option>
+        </select>
       </div>
-        <!--
-        <div class="w-[240px]">
-          <p class="w-[240px] text-[#64BC04] text-lg">Usuario</p>
-          <select class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-            [(ngModel)]="filtersTable.userId" name="userId">
-            <option [ngValue]="null">Todos los usuarios</option>
-            <option *ngFor="let u of filtersData.users" [ngValue]="u.userId">
-              {{ u.fullName }}
-            </option>
-          </select>
-        </div>
-        -->
+      <div class="w-[240px]">
+        <p class="w-[240px] text-[#64BC04] text-lg">Usuario</p>
+        <select
+          class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
+          [(ngModel)]="selectedFilters.userId" name="periodDate">
+          <option [ngValue]="0">Todos los usuarios</option>
+          <option *ngFor="let item of filters.users" [ngValue]="item.userId">
+            {{ item.fullName }}
+          </option>
+        </select>
+      </div>
     </div>
   
     <div class="flex justify-end gap-[10px]">
