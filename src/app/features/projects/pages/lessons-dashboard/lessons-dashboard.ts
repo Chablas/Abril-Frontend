@@ -31,7 +31,76 @@ export class LessonsDashboard implements AfterViewInit {
   pieChart?: Chart;
   lineChart?: Chart;
   phaseStageCharts: PhaseStageChartDTO[] = [];
-  colors = ['#64BC04', '#A7E163', '#E5F7D1', '#2F855A', '#68D391', '#9AE6B4', '#38A169', '#C6F6D5'];
+  /*colors = [
+    '#E5F7D1', // muy claro
+    '#C6F6D5',
+    '#9AE6B4',
+    '#A7E163',
+    '#68D391',
+    '#64BC04',
+    '#38A169',
+    '#2F855A', // más oscuro
+  ];*/
+  /*colors = [
+    '#E6FFFA', // teal muy claro
+    '#C6F6D5', // verde pastel
+    '#B2F5EA', // aqua claro
+    '#9AE6B4', // verde suave
+    '#76E4F7', // azul cielo
+    '#68D391', // verde medio
+    '#4FD1C5', // teal medio
+    '#38B2AC', // teal fuerte
+    '#4299E1', // azul profesional
+    '#3182CE', // azul intenso
+    '#2F855A', // verde oscuro
+    '#2C5282', // azul oscuro
+  ];*/
+  /*colors = [
+    '#EDFDFD',
+    '#D1FAE5',
+    '#A7F3D0',
+    '#6EE7B7',
+    '#34D399',
+    '#10B981',
+    '#059669',
+    '#0E7490',
+    '#0369A1',
+    '#1E40AF',
+    '#065F46',
+    '#1E3A8A',
+  ];*/
+  /*colors = [
+    '#E6F4F7', // fondo muy claro
+    '#CFE8EE',
+    '#A9D3DD',
+    '#7FBBCB',
+    '#4FA4BA',
+    '#0086A5', // color base
+    '#006F87',
+    '#005A6E',
+    '#004554',
+    '#00323E',
+  ];*/
+  colors = [
+    //'#f0f8e6',
+    //'#e0f2cd',
+    '#d1ebb4',
+    '#c1e49b',
+    '#b2de82',
+    '#a2d768',
+    '#93d04f',
+    '#83c936',
+    '#74c31d',
+    '#5aa904',
+    '#509603',
+    '#468403',
+    '#3c7102',
+    '#325e02',
+    '#284b02',
+    '#1e3801',
+    '#142601',
+    '#0a1300',
+  ];
 
   loader = true;
   filters: Filters<LessonFiltersDTO> = {
@@ -47,8 +116,8 @@ export class LessonsDashboard implements AfterViewInit {
       users: [],
     },
     optionsCreateModal: null,
-    optionsEditModal: null
-  }
+    optionsEditModal: null,
+  };
   selectedFilters: SelectedFilters<SelectedDashboardOptions> = {
     selectedOptions: {
       projectId: 0,
@@ -62,8 +131,8 @@ export class LessonsDashboard implements AfterViewInit {
       userId: 0,
     },
     selectedOptionsCreateModal: null,
-    selectedOptionsEditModal: null
-  }
+    selectedOptionsEditModal: null,
+  };
 
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsPieChart') lessonsPieChartRef!: ElementRef<HTMLCanvasElement>;
@@ -194,7 +263,7 @@ export class LessonsDashboard implements AfterViewInit {
     if (this.pieChart) {
       this.pieChart.destroy();
     }
-    const colorPalette = [
+    /*const colorPalette = [
       '#64BC04',
       '#A7E163',
       '#E5F7D1',
@@ -203,7 +272,7 @@ export class LessonsDashboard implements AfterViewInit {
       '#9AE6B4',
       '#38A169',
       '#C6F6D5',
-    ];
+    ];*/
     const sortedData = [...data.lessonsByPhase].sort((a, b) => b.value - a.value);
 
     const labels = sortedData.map((x) => x.label);
@@ -216,7 +285,7 @@ export class LessonsDashboard implements AfterViewInit {
         datasets: [
           {
             data: values,
-            backgroundColor: colorPalette,
+            backgroundColor: this.colors,
           },
         ],
       },
@@ -259,16 +328,14 @@ export class LessonsDashboard implements AfterViewInit {
 
       const hasData = phase.stages.length > 0;
 
-      // 🔹 Datos
       const labels = hasData ? phase.stages.map((s) => s.label) : ['Sin datos'];
 
       const values = hasData ? phase.stages.map((s) => s.value) : [1]; // valor dummy
 
-      const backgroundColors = hasData ? colors.slice(0, values.length) : ['rgba(0,0,0,0)'];
+      const backgroundColors = hasData ? this.colors.slice(0, values.length) : ['rgba(0,0,0,0)'];
 
-      const borderColors = hasData ? colors.slice(0, values.length) : ['#CBD5E0'];
+      const borderColors = hasData ? this.colors.slice(0, values.length) : ['#CBD5E0'];
 
-      // 🔹 Plugin texto "Sin datos"
       const emptyTextPlugin = {
         id: 'emptyText',
         afterDraw(chart: any) {
@@ -285,13 +352,11 @@ export class LessonsDashboard implements AfterViewInit {
         },
       };
 
-      // 🧹 Destruir gráfico previo (MUY importante)
       const existingChart = Chart.getChart(canvas);
       if (existingChart) {
         existingChart.destroy();
       }
 
-      // 📊 Crear gráfico
       new Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -310,7 +375,7 @@ export class LessonsDashboard implements AfterViewInit {
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: hasData,
+              display: false,
               position: 'bottom',
               maxWidth: 50,
             },
