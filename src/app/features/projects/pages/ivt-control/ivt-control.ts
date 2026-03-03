@@ -39,6 +39,9 @@ export class IvtControl {
       scheduleId: 0,
       pdf: null,
     },
+    selectedFileName: null,
+    selectedFileSize: null,
+    showImageAdder: true,
   };
 
   currentPage = 1;
@@ -56,7 +59,7 @@ export class IvtControl {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private projectService: ProjectService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -68,12 +71,16 @@ export class IvtControl {
     forkJoin({
       ivts: this.ivtControlService.getIvtControlPaged(page),
     }).subscribe({
-      next: ({ivts}) => {
-        this.tableComponentData.tableData = ivts.data
+      next: ({ ivts }) => {
+        this.tableComponentData.tableData = ivts.data;
+        this.currentPage = ivts.page;
+        this.totalPages = ivts.totalPages;
+        this.pageSize = ivts.pageSize;
+        this.totalRecords = ivts.totalRecords;
         this.loader = false;
         this.cdr.detectChanges();
-      }
-    })
+      },
+    });
   }
 
   loadCreateFilters() {
@@ -100,11 +107,13 @@ export class IvtControl {
     if (number == 1) {
       this.showCreateModal = false;
       this.showEditModal = false;
+      this.createModalData.showImageAdder = true;
       return;
     }
     if (event.target === event.currentTarget) {
       this.showCreateModal = false;
       this.showEditModal = false;
+      this.createModalData.showImageAdder = true;
     }
   }
 
@@ -127,6 +136,56 @@ export class IvtControl {
         this.error(err);
       },
     });
+  }
+
+  onDragOver(e: DragEvent) {
+    e.preventDefault();
+  }
+
+  onDragLeave(e: DragEvent) {
+    e.preventDefault();
+  }
+
+  onDrop(e: DragEvent) {
+    e.preventDefault();
+    if (!e.dataTransfer?.files) return;
+    const file = e.dataTransfer.files[0];
+    if (file.type !== 'application/pdf') {
+      return;
+    }
+    this.assignFile(file);
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.assignFile(file);
+    }
+  }
+
+  removeFile() {
+    this.createModalData.createDto.pdf = null;
+    this.createModalData.selectedFileName = null;
+    this.createModalData.selectedFileSize = null;
+    this.createModalData.showImageAdder = true;
+    this.cdr.detectChanges();
+  }
+
+  private assignFile(file: File) {
+    if (file.type !== 'application/pdf') return;
+
+    this.createModalData.createDto.pdf = file;
+
+    this.createModalData.selectedFileName = file.name;
+    this.createModalData.selectedFileSize = this.formatFileSize(file.size);
+    this.createModalData.showImageAdder = false;
+    this.cdr.detectChanges();
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   }
 
   showPdf(event: MouseEvent, fileUrl: string) {
@@ -184,13 +243,6 @@ export class IvtControl {
     return pages;
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.createModalData.createDto.pdf = file;
-    }
-  }
-
   saveIvtControl() {
     this.loader = true;
     const formData = new FormData();
@@ -205,7 +257,7 @@ export class IvtControl {
         this.loader = false;
         this.cdr.detectChanges();
         this.loadIvtControls();
-        
+
         Swal.fire({
           title: response.message ?? 'Proyecto creado exitosamente',
           icon: 'success',
