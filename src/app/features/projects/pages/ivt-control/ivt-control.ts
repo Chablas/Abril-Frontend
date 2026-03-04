@@ -37,11 +37,12 @@ export class IvtControl {
     projectOptions: [],
     createDto: {
       scheduleId: 0,
-      pdf: null,
+      pdfs: [],
+      periodDate: '',
     },
-    selectedFileName: null,
-    selectedFileSize: null,
+    selectedFiles: [],
     showImageAdder: true,
+    periodOptions: [],
   };
 
   currentPage = 1;
@@ -64,6 +65,7 @@ export class IvtControl {
 
   ngOnInit(): void {
     this.loadInitialData();
+    this.generatePeriodOptions();
   }
 
   loadInitialData(page: number = 1) {
@@ -108,12 +110,20 @@ export class IvtControl {
       this.showCreateModal = false;
       this.showEditModal = false;
       this.createModalData.showImageAdder = true;
+      this.createModalData.selectedFiles = [];
+      this.createModalData.createDto.pdfs = [];
+      this.createModalData.createDto.periodDate = "";
+      this.createModalData.createDto.scheduleId = 0;
       return;
     }
     if (event.target === event.currentTarget) {
       this.showCreateModal = false;
       this.showEditModal = false;
       this.createModalData.showImageAdder = true;
+      this.createModalData.selectedFiles = [];
+      this.createModalData.createDto.pdfs = [];
+      this.createModalData.createDto.periodDate = "";
+      this.createModalData.createDto.scheduleId = 0;
     }
   }
 
@@ -163,22 +173,31 @@ export class IvtControl {
     }
   }
 
-  removeFile() {
-    this.createModalData.createDto.pdf = null;
-    this.createModalData.selectedFileName = null;
-    this.createModalData.selectedFileSize = null;
-    this.createModalData.showImageAdder = true;
+  removeFile(index: number) {
+    this.createModalData.createDto.pdfs.splice(index, 1);
+
+    this.createModalData.selectedFiles.splice(index, 1);
+
+    this.createModalData.showImageAdder = this.createModalData.selectedFiles.length < 4;
+
     this.cdr.detectChanges();
   }
 
   private assignFile(file: File) {
     if (file.type !== 'application/pdf') return;
 
-    this.createModalData.createDto.pdf = file;
+    if (this.createModalData.selectedFiles.length >= 4) return;
 
-    this.createModalData.selectedFileName = file.name;
-    this.createModalData.selectedFileSize = this.formatFileSize(file.size);
-    this.createModalData.showImageAdder = false;
+    this.createModalData.createDto.pdfs.push(file);
+
+    this.createModalData.selectedFiles.push({
+      name: file.name,
+      size: this.formatFileSize(file.size),
+      file: file,
+    });
+
+    this.createModalData.showImageAdder = this.createModalData.selectedFiles.length < 4;
+
     this.cdr.detectChanges();
   }
 
@@ -192,6 +211,37 @@ export class IvtControl {
     event.stopPropagation();
     this.tableComponentData.iframeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
     this.cdr.detectChanges();
+  }
+
+  private generatePeriodOptions() {
+    const now = new Date();
+
+    // Mes actual
+    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Mes anterior
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    this.createModalData.periodOptions = [
+      this.mapToOption(currentMonth),
+      this.mapToOption(previousMonth),
+    ];
+  }
+
+  private mapToOption(date: Date) {
+    const formatter = new Intl.DateTimeFormat('es-PE', {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const formatted = formatter.format(date);
+
+    const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+
+    return {
+      label: capitalized,
+      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`,
+    };
   }
 
   nextPage() {
@@ -247,16 +297,21 @@ export class IvtControl {
     this.loader = true;
     const formData = new FormData();
     formData.append('scheduleId', this.createModalData.createDto.scheduleId.toString());
-    if (this.createModalData.createDto.pdf) {
-      formData.append('pdf', this.createModalData.createDto.pdf);
+    formData.append('periodDate', this.createModalData.createDto.periodDate);
+    if (this.createModalData.createDto.pdfs) {
+      for (const file of this.createModalData.createDto.pdfs) {
+        formData.append('pdfs', file);
+      }
     }
+    console.log(formData.get('pdfs'));
     this.ivtControlService.createIvtControl(formData).subscribe({
       next: (response: ApiMessageDTO) => {
         this.showCreateModal = false;
-        this.createModalData.createDto = { scheduleId: 0, pdf: null };
+        this.createModalData.createDto = { scheduleId: 0, pdfs: [], periodDate: '' };
         this.loader = false;
         this.cdr.detectChanges();
         this.loadIvtControls();
+        this.createModalData.selectedFiles = [];
 
         Swal.fire({
           title: response.message ?? 'Proyecto creado exitosamente',
@@ -266,6 +321,7 @@ export class IvtControl {
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);
+        console.log();
       },
     });
   }

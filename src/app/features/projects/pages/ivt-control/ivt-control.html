@@ -122,7 +122,7 @@
                             <p class="text-[#64BC04]">Archivo</p>
                             <div *ngIf="createModalData.showImageAdder" class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#64BC04] rounded-xl bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
                                 (click)="opFile.click()">
-                                <input #opFile type="file" class="hidden" (change)="onFileSelected($event)" 
+                                <input #opFile type="file" accept="application/pdf" class="hidden" (change)="onFileSelected($event)" 
                                     (dragover)="onDragOver($event)"
                                     (dragleave)="onDragLeave($event)"
                                     (drop)="onDrop($event)"
@@ -139,10 +139,9 @@
                                 </p>
                                 <p class="text-xs text-gray-400 mt-1">PDF</p>
                             </div>
-                            <div *ngIf="createModalData.selectedFileName"
+                            <div *ngFor="let file of createModalData.selectedFiles; let i = index"
                                 class="w-full bg-white border border-[#64BC04] rounded-lg p-3 flex items-center justify-between shadow-sm"
-                                [ngClass]="{'mt-3': createModalData.showImageAdder}"
-                                >
+                                [ngClass]="{'mt-3': createModalData.showImageAdder}">
                             
                                 <div class="flex items-center gap-3">
                             
@@ -153,17 +152,18 @@
                             
                                     <div>
                                         <p class="text-sm font-semibold text-gray-700">
-                                            {{ createModalData.selectedFileName }}
+                                            {{ file.name }}
                                         </p>
                                         <p class="text-xs text-gray-400">
-                                            {{ createModalData.selectedFileSize }}
+                                            {{ file.size }}
                                         </p>
                                     </div>
                             
                                 </div>
                             
-                                <!-- Botón eliminar -->
-                                <button type="button" class="text-red-500 cursor-pointer hover:text-red-700 text-sm font-semibold" (click)="removeFile()">
+                                <!-- Botón eliminar individual -->
+                                <button type="button" class="text-red-500 cursor-pointer hover:text-red-700 text-sm font-semibold"
+                                    (click)="removeFile(i)">
                                     Quitar
                                 </button>
                             
@@ -175,7 +175,20 @@
                                 <option [ngValue]="0">Seleccionar</option>
                                 <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.scheduleId">{{item.projectDescription}}</option>
                             </select>
+                            <p class="text-[#64BC04]">Periodo</p>
+                            
+                            <select [(ngModel)]="createModalData.createDto.periodDate"
+                                class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer">
+                            
+                                <option [ngValue]="''">Seleccionar</option>
+                            
+                                <option *ngFor="let item of createModalData.periodOptions" [ngValue]="item.value">
+                                    {{ item.label }}
+                                </option>
+                            
+                            </select>
                         </div>
+
                     </div>
                     <button (click)="saveIvtControl()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
                         <p class="text-[#ffffff] text-lg">Guardar</p>

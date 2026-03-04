@@ -4,7 +4,13 @@ import { IvtControlCreateDTO } from "../../dtos/ivtControl/ivtControlCreate.mode
 export interface CreateModalData {
     projectOptions: ProjectScheduleSimpleDTO[];
     createDto: IvtControlCreateDTO;
-    selectedFileName: string | null;
-    selectedFileSize: string | null;
+    selectedFiles: SelectedFile[];
     showImageAdder: boolean;
+    periodOptions: { label: string; value: string }[];
+}
+
+interface SelectedFile {
+  name: string;
+  size: string;
+  file: File;
 }
