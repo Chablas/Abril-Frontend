@@ -31,6 +31,17 @@ export class IvtControl {
   tableComponentData: TableComponentData = {
     tableData: [],
     iframeUrl: null,
+    filters: {
+      projects: [],
+      residents: [],
+      periods: [],
+    },
+    selectedFilters: {
+      periodDate: "",
+      userId: 0,
+      projectId: 0,
+      page: 1
+    }
   };
 
   createModalData: CreateModalData = {
@@ -71,10 +82,12 @@ export class IvtControl {
   loadInitialData(page: number = 1) {
     this.loader = true;
     forkJoin({
-      ivts: this.ivtControlService.getIvtControlPaged(page),
+      ivts: this.ivtControlService.getIvtControlPaged(this.tableComponentData.selectedFilters),
+      filters: this.ivtControlService.getFiltersData(),
     }).subscribe({
-      next: ({ ivts }) => {
+      next: ({ ivts, filters }) => {
         this.tableComponentData.tableData = ivts.data;
+        this.tableComponentData.filters = filters;
         this.currentPage = ivts.page;
         this.totalPages = ivts.totalPages;
         this.pageSize = ivts.pageSize;
@@ -130,8 +143,8 @@ export class IvtControl {
   loadIvtControls(page: number = 1) {
     this.loader = true;
     this.cdr.detectChanges();
-
-    this.ivtControlService.getIvtControlPaged(page).subscribe({
+    this.tableComponentData.selectedFilters.page = page;
+    this.ivtControlService.getIvtControlPaged(this.tableComponentData.selectedFilters).subscribe({
       next: (response) => {
         this.tableComponentData.tableData = response.data;
         this.currentPage = response.page;
