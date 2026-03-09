@@ -1,4 +1,4 @@
-export interface IvtControlCreateDTO {
+export interface ConstructionLogbookControlCreateDTO {
     projectId: number;
     pdfs: File[];
     periodDate: string;

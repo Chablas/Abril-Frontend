@@ -19,7 +19,7 @@
                      name="periodDate">
                     <option [ngValue]="''">Todos los periodos</option>
                     <option *ngFor="let item of tableComponentData.filters.periods" [ngValue]="item">
-                        {{item}}
+                        {{item | date:"MMMM yyyy" | titlecase }}
                     </option>
                 </select>
             </div>
@@ -215,9 +215,9 @@
                         </div>
                         <div class="flex-1">
                             <p class="text-[#64BC04]">Proyecto</p>
-                            <select [(ngModel)]="createModalData.createDto.scheduleId" class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer">
+                            <select [(ngModel)]="createModalData.createDto.projectId" class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer">
                                 <option [ngValue]="0">Seleccionar</option>
-                                <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.scheduleId">{{item.projectDescription}}</option>
+                                <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.projectId">{{item.projectDescription}}</option>
                             </select>
                             <p class="text-[#64BC04]">Periodo</p>
                             

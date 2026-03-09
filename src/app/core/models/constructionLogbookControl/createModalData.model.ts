@@ -1,9 +1,9 @@
 import { ProjectSimpleDTO } from "../../dtos/project/projectSimple.model";
-import { IvtControlCreateDTO } from "../../dtos/ivtControl/ivtControlCreate.model";
+import { ConstructionLogbookControlCreateDTO } from "../../dtos/constructionLogbookControl/constructionLogbookControlCreate.model";
 
 export interface CreateModalData {
     projectOptions: ProjectSimpleDTO[];
-    createDto: IvtControlCreateDTO;
+    createDto: ConstructionLogbookControlCreateDTO;
     selectedFiles: SelectedFile[];
     showImageAdder: boolean;
     periodOptions: { label: string; value: string }[];

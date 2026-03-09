@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { TableComponentData } from "../../../../core/models/ivtControl/tableComponentData.model";
-import { ProjectService } from '../../../../core/services/project.service';
+import { ProjectResidentService } from '../../../../core/services/projectResident.service';
 import { CreateModalData } from "../../../../core/models/ivtControl/createModalData.model";
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -47,7 +47,7 @@ export class IvtControl {
   createModalData: CreateModalData = {
     projectOptions: [],
     createDto: {
-      scheduleId: 0,
+      projectId: 0,
       pdfs: [],
       periodDate: '',
     },
@@ -70,7 +70,7 @@ export class IvtControl {
     private ivtControlService: IvtControlService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private projectService: ProjectService,
+    private projectResidentService: ProjectResidentService,
     private sanitizer: DomSanitizer,
   ) {}
 
@@ -100,7 +100,7 @@ export class IvtControl {
 
   loadCreateFilters() {
     this.loader = true;
-    this.projectService.getWithResidentByUserId().subscribe({
+    this.projectResidentService.getWithResidentByUserId().subscribe({
       next: (data) => {
         this.createModalData.projectOptions = data;
         this.loader = false;
@@ -126,7 +126,7 @@ export class IvtControl {
       this.createModalData.selectedFiles = [];
       this.createModalData.createDto.pdfs = [];
       this.createModalData.createDto.periodDate = "";
-      this.createModalData.createDto.scheduleId = 0;
+      this.createModalData.createDto.projectId = 0;
       return;
     }
     if (event.target === event.currentTarget) {
@@ -136,7 +136,7 @@ export class IvtControl {
       this.createModalData.selectedFiles = [];
       this.createModalData.createDto.pdfs = [];
       this.createModalData.createDto.periodDate = "";
-      this.createModalData.createDto.scheduleId = 0;
+      this.createModalData.createDto.projectId = 0;
     }
   }
 
@@ -309,7 +309,7 @@ export class IvtControl {
   saveIvtControl() {
     this.loader = true;
     const formData = new FormData();
-    formData.append('scheduleId', this.createModalData.createDto.scheduleId.toString());
+    formData.append('projectId', this.createModalData.createDto.projectId.toString());
     formData.append('periodDate', this.createModalData.createDto.periodDate);
     if (this.createModalData.createDto.pdfs) {
       for (const file of this.createModalData.createDto.pdfs) {
@@ -320,7 +320,7 @@ export class IvtControl {
     this.ivtControlService.createIvtControl(formData).subscribe({
       next: (response: ApiMessageDTO) => {
         this.showCreateModal = false;
-        this.createModalData.createDto = { scheduleId: 0, pdfs: [], periodDate: '' };
+        this.createModalData.createDto = { projectId: 0, pdfs: [], periodDate: '' };
         this.loader = false;
         this.cdr.detectChanges();
         this.loadIvtControls();

@@ -5,6 +5,7 @@ import { LessonsDashboard } from "./pages/lessons-dashboard/lessons-dashboard";
 import { MilestoneSchedule } from "./pages/milestone-schedule/milestone-schedule";
 import { Layout } from "../../shared/components/layout/layout";
 import { IvtControl } from "../projects/pages/ivt-control/ivt-control";
+import { ConstructionLogbookControl } from "../projects/pages/construction-logbook-control/construction-logbook-control";
 
 const routes: Routes = [
   {
@@ -38,6 +39,12 @@ const routes: Routes = [
         path: 'technical-inspection-visit',
         children: [
           { path: '', component: IvtControl, data: { titulo: 'CONTROL DE IVTS' } },
+        ],
+      },
+      {
+        path: 'construction-logbook',
+        children: [
+          { path: '', component: ConstructionLogbookControl, data: { titulo: 'CONTROL DE CUADERNO DE OBRA' } },
         ],
       },
       {
