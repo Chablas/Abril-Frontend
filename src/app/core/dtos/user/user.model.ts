@@ -1,4 +1,5 @@
 import { PersonDTO } from "../person/person.model";
+import { RoleSimpleDTO } from "../role/RoleSimpleDTO.model";
 
 export interface UserDTO {
   userId: number;
@@ -8,4 +9,5 @@ export interface UserDTO {
   updatedDateTime?: string | null;
   updatedUserId?: number | null;
   active: boolean;
+  roles: RoleSimpleDTO[];
 }

@@ -10,6 +10,7 @@ import { UserCreateDTO } from '../../../../core/dtos/user/userCreate.model';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RoleSimpleDTO } from "../../../../core/dtos/role/RoleSimpleDTO.model"; 
 
 @Component({
   selector: 'app-users',
@@ -49,7 +50,7 @@ export class Users implements OnInit {
     private userService: UserService,
     private personService: PersonService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -94,6 +95,11 @@ export class Users implements OnInit {
         this.error(err);
       },
     });
+  }
+
+  getRolesText(roles: RoleSimpleDTO[]): string {
+    if (!roles) return '';
+    return roles.map((r) => r.roleDescription).join(', ');
   }
 
   loadUsers(page: number = 1) {

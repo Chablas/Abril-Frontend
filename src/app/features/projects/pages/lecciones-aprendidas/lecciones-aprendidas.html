@@ -1,5 +1,5 @@
 <div class="bg-white rounded-lg p-[20px] h-full flex flex-col">
-  <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+  <div class="">
     <div class="flex justify-between w-full">
       <button
         (click)="openCreateModal($event)"
@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <div class="flex flex-col h-full min-h-0 px px-[40px]">
+  <div class="flex flex-col h-full min-h-0">
     <form (ngSubmit)="onSearch()" class="w-full">
       <div class="flex">
         <div class="flex flex-col flex-5">
@@ -211,7 +211,7 @@
     <div
       class="w-full min-h-0 px rounded-lg overflow-y-scroll overflow-x-auto border border-[#D6DEE5]"
     >
-      <table class="table-fixed border-collapse min-w-[800px] w-full">
+      <table class="table-auto w-full">
         <thead class="bg-[#E5F7D1] sticky top-0 z-20">
           <tr class="text-[#64BC04]">
             <!--<th class="w-[15px]"></th>-->

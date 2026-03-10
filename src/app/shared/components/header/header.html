@@ -1,9 +1,9 @@
-<div class="flex h-[70px] items-center justify-center bg-[#f2f5f2] px-[20px]">
-    <a class="h-full" routerLink="/">
+<div class="hidden sm:block sm:flex sm:h-[70px] sm:items-center sm:justify-center sm:bg-[#f2f5f2] sm:px-[20px]">
+    <a class="hidden sm:block sm:h-full" routerLink="/">
         <img class="h-full" src="/images/abril-logo.png" alt="Logo" />
     </a>
-    <div class="flex-8 text-center text-2xl font-bold">{{titulo}}</div>
-    <div class="flex-1">
+    <div class="hidden sm:block sm:flex-8 sm:text-center sm:text-2xl sm:font-bold">{{titulo}}</div>
+    <div class="hidden sm:block">
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g clip-path="url(#clip0_1309_9960)">
                 <path
@@ -19,5 +19,34 @@
                 </clipPath>
             </defs>
         </svg>
+    </div>
+</div>
+<div class="sm:hidden">
+    <div class="p-[20px] flex items-center border border-gray-200">
+        <button (click)="menuOpen = !menuOpen">
+            <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 18V16H21V18H3ZM3 13V11H21V13H3ZM3 8V6H21V8H3Z" fill="#64BC04" />
+            </svg>
+            <svg *ngIf="menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </button>
+
+        <div class="flex-8 text-center font-bold">{{titulo}}</div>
+    </div>
+    <div [ngClass]="{'fixed top-17 inset-0 bg-black/40 z-50': menuOpen}">
+        <div class="fixed top-17 left-0 h-full w-[290px] bg-white z-50 shadow-lg transform transition-transform duration-300"
+            [class.-translate-x-full]="!menuOpen">
+    
+            <div class="p-4 flex justify-between items-center">
+                <span class="text-xs text-[#64BC04]">MENU</span>
+            </div>
+    
+            <nav class="flex flex-col p-4 gap-4">
+                <a routerLink="/" (click)="menuOpen=false" class="hover:text-[#64BC04]">
+                    Inicio
+                </a>
+            </nav>
+        </div>
     </div>
 </div>

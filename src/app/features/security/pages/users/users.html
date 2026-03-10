@@ -1,5 +1,5 @@
 <div class="bg-white rounded-lg p-[20px]">
-  <div class="px-[40px] pb-[20px] border-b border-[#E2E2E2]">
+  <div class="pb-[20px]">
     <div class="flex w-full">
       <button
         (click)="createModal($event)"
@@ -24,22 +24,21 @@
     </div>
   </div>
 
-  <div class="flex flex-col justify-center items-center px-[40px]">
-    <div class="w-full rounded-lg overflow-hidden border border-[#D6DEE5]">
-      <table class="w-full table-fixed">
+  <div class="flex flex-col justify-center items-center">
+    <div class="w-full rounded-lg overflow-y-scroll overflow-x-auto border border-[#D6DEE5]">
+      <table class="w-full table-auto">
         <thead class="bg-[#E5F7D1]">
           <tr class="text-[#64BC04]">
-            <th class="w-[50px]"></th>
-            <th class="w-[150px]">DNI</th>
-            <th class="w-[150px]">Nombre completo</th>
-            <th class="w-[150px]">Correo</th>
-            <th class="w-[150px]">Estado</th>
+            <th class="w-[20%]">DNI</th>
+            <th class="w-[20%]">Nombre completo</th>
+            <th class="w-[20%]">Rol</th>
+            <th class="w-[20%]">Correo</th>
+            <th class="w-[20%]">Estado</th>
           </tr>
         </thead>
 
         <tbody>
           <tr *ngFor="let item of users.data" class="border-b border-[#D6DEE5] h-[30px]">
-            <td></td>
 
             <!-- Ver 
                           <td class="text-center">
@@ -74,6 +73,11 @@
 
             <td><span [title]="item.person.documentIdentityCode" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.documentIdentityCode }}</span></td>
             <td><span [title]="item.person.fullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.fullName }}</span></td>
+            <td>
+              <span [title]="getRolesText(item.roles)" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">
+                {{ getRolesText(item.roles) }}
+              </span>
+            </td>
             <td><span [title]="item.person.email" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.email }}</span></td>
 
             <td class="text-center">
