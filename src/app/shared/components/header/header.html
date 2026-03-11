@@ -24,28 +24,141 @@
 <div class="sm:hidden">
     <div class="p-[20px] flex items-center border border-gray-200">
         <button (click)="menuOpen = !menuOpen">
-            <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 18V16H21V18H3ZM3 13V11H21V13H3ZM3 8V6H21V8H3Z" fill="#64BC04" />
             </svg>
-            <svg *ngIf="menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg *ngIf="menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
             </svg>
         </button>
 
         <div class="flex-8 text-center font-bold">{{titulo}}</div>
     </div>
-    <div [ngClass]="{'fixed top-17 inset-0 bg-black/40 z-50': menuOpen}">
-        <div class="fixed top-17 left-0 h-full w-[290px] bg-white z-50 shadow-lg transform transition-transform duration-300"
+    <div [ngClass]="{'fixed top-17 inset-0 bg-black/40 z-50': menuOpen}" class="">
+        <div class="fixed top-17 left-0 bottom-0 w-[290px] bg-white z-50 shadow-lg transform transition-transform duration-300 overflow-auto"
             [class.-translate-x-full]="!menuOpen">
-    
+
             <div class="p-4 flex justify-between items-center">
                 <span class="text-xs text-[#64BC04]">MENU</span>
             </div>
-    
-            <nav class="flex flex-col p-4 gap-4">
-                <a routerLink="/" (click)="menuOpen=false" class="hover:text-[#64BC04]">
-                    Inicio
-                </a>
+
+            <nav class="flex flex-col py-4 px-8 gap-4">
+                <div (click)="toggle('proyectos')" class="block flex items-center gap-[10px] hover:text-[#64BC04]">
+                    <svg width="28" height="28" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12.5007 7.29134C13.0759 7.29134 13.5423 6.82497 13.5423 6.24967C13.5423 5.67438 13.0759 5.20801 12.5007 5.20801C11.9254 5.20801 11.459 5.67438 11.459 6.24967C11.459 6.82497 11.9254 7.29134 12.5007 7.29134Z"
+                            fill="#64BC04" />
+                        <path
+                            d="M6.25 17.708H18.75V19.7913H6.25V17.708ZM10.4167 12.3226L13.325 15.233L17.4208 11.134L18.75 12.4997V8.33301H14.5833L15.9479 9.66113L13.324 12.2851L10.4167 9.37467L6.25 13.5413L7.72292 15.0143L10.4167 12.3226Z"
+                            fill="#64BC04" />
+                        <path
+                            d="M19.7923 3.1254H16.3569C16.2537 2.97202 16.1425 2.82424 16.0236 2.68269L16.0132 2.67019C15.2475 1.77912 14.1709 1.2136 13.0027 1.08894C12.6709 1.02634 12.3304 1.02634 11.9986 1.08894C10.8304 1.2136 9.75376 1.77912 8.98815 2.67019L8.97773 2.68269C8.85888 2.8239 8.74761 2.97133 8.6444 3.12436V3.1254H5.20898C4.38044 3.12622 3.58606 3.45573 3.00019 4.0416C2.41432 4.62747 2.08481 5.42185 2.08398 6.2504V20.8337C2.08481 21.6623 2.41432 22.4567 3.00019 23.0425C3.58606 23.6284 4.38044 23.9579 5.20898 23.9587H19.7923C20.6209 23.9579 21.4152 23.6284 22.0011 23.0425C22.587 22.4567 22.9165 21.6623 22.9173 20.8337V6.2504C22.9165 5.42185 22.587 4.62747 22.0011 4.0416C21.4152 3.45573 20.6209 3.12622 19.7923 3.1254ZM20.834 20.8337C20.834 21.11 20.7242 21.375 20.5289 21.5703C20.3335 21.7656 20.0686 21.8754 19.7923 21.8754H5.20898C4.93272 21.8754 4.66777 21.7656 4.47241 21.5703C4.27706 21.375 4.16732 21.11 4.16732 20.8337V6.2504C4.16732 5.97413 4.27706 5.70918 4.47241 5.51383C4.66777 5.31848 4.93272 5.20873 5.20898 5.20873H9.94857C10.0681 4.62004 10.3875 4.09077 10.8526 3.71062C11.3177 3.33046 11.8999 3.12279 12.5007 3.12279C13.1014 3.12279 13.6836 3.33046 14.1487 3.71062C14.6138 4.09077 14.9332 4.62004 15.0527 5.20873H19.7923C20.0686 5.20873 20.3335 5.31848 20.5289 5.51383C20.7242 5.70918 20.834 5.97413 20.834 6.2504V20.8337Z"
+                            fill="#64BC04" />
+                    </svg>
+                    
+                    <span class="text-sm">Proyectos</span>
+                    <svg *ngIf="!proyectosOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <svg *ngIf="proyectosOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M1.30763 9L0 7.66147L7.1266 0.37084C7.24079 0.253319 7.37658 0.160052 7.52616 0.0964085C7.67574 0.0327647 7.83614 0 7.99815 0C8.16015 0 8.32056 0.0327647 8.47014 0.0964085C8.61971 0.160052 8.75551 0.253319 8.8697 0.37084L16 7.66147L14.6924 8.99874L8 2.15597L1.30763 9Z"
+                            fill="#64BC04" />
+                    </svg>
+                </div>
+                <div *ngIf="proyectosOpen" class="flex flex-col gap-[10px] pl-[37px]">
+                    <a routerLink="/projects/lessons" (click)="menuOpen=false" class="block text-sm">
+                        Lecciones aprendidas
+                    </a>
+                    <a routerLink="/projects/dashboard" (click)="menuOpen=false" class="block text-sm">
+                        Dashboard Lecciones
+                    </a>
+                    <a routerLink="/projects/milestone-schedule" (click)="menuOpen=false" class="block text-sm">
+                        Cronograma de hitos
+                    </a>
+                    <a routerLink="/projects/technical-inspection-visit" (click)="menuOpen=false" class="block text-sm">
+                        Control de IVTs
+                    </a>
+                    <a routerLink="/projects/construction-logbook" (click)="menuOpen=false" class="block text-sm">
+                        Control de cuaderno de obra
+                    </a>
+                    <div (click)="toggle('proyectosConfiguracion')" class="block flex items-center text-sm">
+                        <span>Configuración</span>
+                        <svg *ngIf="!proyectosConfiguracionOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z"
+                                fill="#64BC04" />
+                        </svg>
+                        <svg *ngIf="proyectosConfiguracionOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M1.30763 9L0 7.66147L7.1266 0.37084C7.24079 0.253319 7.37658 0.160052 7.52616 0.0964085C7.67574 0.0327647 7.83614 0 7.99815 0C8.16015 0 8.32056 0.0327647 8.47014 0.0964085C8.61971 0.160052 8.75551 0.253319 8.8697 0.37084L16 7.66147L14.6924 8.99874L8 2.15597L1.30763 9Z"
+                                fill="#64BC04" />
+                        </svg>
+                    </div>
+                    <div *ngIf="proyectosConfiguracionOpen" class="flex flex-col gap-[10px] pl-[10px]">
+                        <a routerLink="/projects/configuration/projects" class="block text-sm">
+                            Proyectos
+                        </a>
+                        <a routerLink="/projects/configuration/areas" class="block text-sm">
+                            Áreas
+                        </a>
+                        <a routerLink="/projects/configuration/phases" class="block text-sm">
+                            Fases
+                        </a>
+                        <a routerLink="/projects/configuration/stages" class="block text-sm">
+                            Etapas
+                        </a>
+                        <a routerLink="/projects/configuration/layers" class="block text-sm">
+                            Niveles
+                        </a>
+                        <a routerLink="/projects/configuration/sub-stages" class="block text-sm">
+                            Subetapas
+                        </a>
+                        <a routerLink="/projects/configuration/sub-specialties" class="block text-sm">
+                            Subespecialidades
+                        </a>
+                        <a routerLink="/projects/configuration/relations" class="block text-sm">
+                            Config. Relaciones
+                        </a>
+                        <a routerLink="/projects/configuration/reminders" class="block text-sm">
+                            Recordatorios Lecciones
+                        </a>
+                        <a routerLink="/projects/configuration/milestones" class="block text-sm">
+                            Hitos
+                        </a>
+                    </div>
+                </div>
+                <div (click)="toggle('seguridad')" class="block flex items-center gap-[10px] hover:text-[#64BC04]">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 5C12.7956 5 13.5587 5.31607 14.1213 5.87868C14.6839 6.44129 15 7.20435 15 8C15 8.79565 14.6839 9.55871 14.1213 10.1213C13.5587 10.6839 12.7956 11 12 11C11.2044 11 10.4413 10.6839 9.87868 10.1213C9.31607 9.55871 9 8.79565 9 8C9 7.20435 9.31607 6.44129 9.87868 5.87868C10.4413 5.31607 11.2044 5 12 5ZM17.13 17C15.9178 18.8541 14.1074 20.2374 12 20.92C9.89255 20.2374 8.08222 18.8541 6.87 17C6.53 16.5 6.24 16 6 15.47C6 13.82 8.71 12.47 12 12.47C15.29 12.47 18 13.79 18 15.47C17.76 16 17.47 16.5 17.13 17Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <span class="text-sm">Seguridad</span>
+                    <svg *ngIf="!seguridadOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <svg *ngIf="seguridadOpen" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M1.30763 9L0 7.66147L7.1266 0.37084C7.24079 0.253319 7.37658 0.160052 7.52616 0.0964085C7.67574 0.0327647 7.83614 0 7.99815 0C8.16015 0 8.32056 0.0327647 8.47014 0.0964085C8.61971 0.160052 8.75551 0.253319 8.8697 0.37084L16 7.66147L14.6924 8.99874L8 2.15597L1.30763 9Z"
+                            fill="#64BC04" />
+                    </svg>
+                </div>
+                <div *ngIf="seguridadOpen" class="flex flex-col gap-[20px] pl-[37px]">
+                    <a routerLink="/security/users" (click)="menuOpen=false" class="block text-sm">
+                        Creación de usuarios
+                    </a>
+                </div>
             </nav>
         </div>
     </div>

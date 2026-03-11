@@ -11,21 +11,45 @@ import { RouterModule } from '@angular/router';
   styleUrl: './header.css',
 })
 export class Header {
-  titulo: string = "";
+  titulo: string = '';
   menuOpen = false;
+  proyectosOpen = false;
+  proyectosConfiguracionOpen = false;
+  seguridadOpen = false;
 
-  constructor(private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {
-    this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
-        let current = this.route;
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+  ) {
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      let current = this.route;
 
-        while (current.firstChild) {
-          current = current.firstChild;
-        }
-        
-        this.titulo = current.snapshot.data['titulo'] ?? '';
-        this.cdr.detectChanges();
-      });
+      while (current.firstChild) {
+        current = current.firstChild;
+      }
+
+      this.titulo = current.snapshot.data['titulo'] ?? '';
+      this.cdr.detectChanges();
+    });
+  }
+
+  toggle(menu: 'proyectos' | 'seguridad' | 'proyectosConfiguracion') {
+    if (menu === 'proyectos') {
+      this.proyectosOpen = !this.proyectosOpen;
+
+      this.seguridadOpen = false;
+    }
+
+    if (menu === 'seguridad') {
+      this.seguridadOpen = !this.seguridadOpen;
+
+      this.proyectosOpen = false;
+      this.proyectosConfiguracionOpen = false;
+    }
+
+    if (menu === 'proyectosConfiguracion') {
+      this.proyectosConfiguracionOpen = !this.proyectosConfiguracionOpen;
+    }
   }
 }
