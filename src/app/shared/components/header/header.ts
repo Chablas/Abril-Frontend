@@ -3,20 +3,18 @@ import { CommonModule } from "@angular/common";
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { RouterModule } from '@angular/router';
+import { SidebarMobile } from "../sidebar-mobile/sidebar-mobile";
 
 @Component({
   selector: 'app-header',
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, SidebarMobile],
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
 export class Header {
   titulo: string = '';
   menuOpen = false;
-  proyectosOpen = false;
-  proyectosConfiguracionOpen = false;
-  seguridadOpen = false;
-
+  
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -32,24 +30,5 @@ export class Header {
       this.titulo = current.snapshot.data['titulo'] ?? '';
       this.cdr.detectChanges();
     });
-  }
-
-  toggle(menu: 'proyectos' | 'seguridad' | 'proyectosConfiguracion') {
-    if (menu === 'proyectos') {
-      this.proyectosOpen = !this.proyectosOpen;
-
-      this.seguridadOpen = false;
-    }
-
-    if (menu === 'seguridad') {
-      this.seguridadOpen = !this.seguridadOpen;
-
-      this.proyectosOpen = false;
-      this.proyectosConfiguracionOpen = false;
-    }
-
-    if (menu === 'proyectosConfiguracion') {
-      this.proyectosConfiguracionOpen = !this.proyectosConfiguracionOpen;
-    }
   }
 }

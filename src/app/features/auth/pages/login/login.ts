@@ -5,6 +5,7 @@ import { AuthService } from "../../../../core/services/auth.service";
 import Swal from 'sweetalert2';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { LoaderService } from '../../../../core/services/loader.service';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,6 @@ import { CommonModule } from '@angular/common';
 })
 export class Login implements OnInit {
   token!: string;
-  loader: boolean = false;
   form!: FormGroup;
 
   constructor(
@@ -22,7 +22,8 @@ export class Login implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private loaderService: LoaderService
   ) { }
 
   ngOnInit(): void {
@@ -34,7 +35,7 @@ export class Login implements OnInit {
   }
 
   submit() {
-    this.loader = true;
+    this.loaderService.show();
     this.cdr.detectChanges();
     if (this.form.invalid) return;
 
@@ -47,7 +48,7 @@ export class Login implements OnInit {
     };
     this.authService.login(payload).subscribe({
       next: () => {
-        this.loader = false;
+        this.loaderService.hide();
         this.cdr.detectChanges();
         this.router.navigate(['/']);
       },
@@ -58,7 +59,7 @@ export class Login implements OnInit {
   }
 
   error(err: HttpErrorResponse) {
-    this.loader = false;
+    this.loaderService.hide();
     this.cdr.detectChanges();
 
     if (err.status == 401) {

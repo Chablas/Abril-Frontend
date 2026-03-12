@@ -6,6 +6,7 @@ import { MilestoneSchedule } from "./pages/milestone-schedule/milestone-schedule
 import { Layout } from "../../shared/components/layout/layout";
 import { IvtControl } from "../projects/pages/ivt-control/ivt-control";
 import { ConstructionLogbookControl } from "../projects/pages/construction-logbook-control/construction-logbook-control";
+import { ReportResponseControl } from './pages/report-response-control/report-response-control';
 
 const routes: Routes = [
   {
@@ -45,6 +46,12 @@ const routes: Routes = [
         path: 'construction-logbook',
         children: [
           { path: '', component: ConstructionLogbookControl, data: { titulo: 'CONTROL DE CUADERNO DE OBRA' } },
+        ],
+      },
+      {
+        path: 'report-response-control',
+        children: [
+          { path: '', component: ReportResponseControl, data: { titulo: 'CONTROL DE RESPUESTA DE INFORMES' } },
         ],
       },
       {
