@@ -1,5 +1,5 @@
-<div class="bg-white rounded-lg p-[20px]">
-    <div class="pb-[20px]">
+<div class="flex flex-col flex-1 min-h-0 gap-[20px] bg-white rounded-lg p-[20px]">
+    <div>
         <div class="flex w-full">
             <button (click)="openCreateModal($event)"
                 class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
@@ -15,17 +15,17 @@
         </div>
     </div>
 
-    <div class="flex flex-col justify-center items-stretch px-[40px]">
+    <app-report-response-control-create *ngIf="showCreateModal" (closeCreateModal)="showCreateModal = false">
+    </app-report-response-control-create>
 
-        <!--<app-area-list (pagedData)="updatePagination($event)">
-        </app-area-list>
+    <div class="flex flex-col flex-1 min-h-0">
+
+        <app-report-response-control-list class="flex-1 flex flex-col min-h-0" (pagedData)="updatePagination($event)">
+        </app-report-response-control-list>
 
         <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage" [totalPages]="totalPages"
             (pageChange)="changePage($event)">
-        </app-paginator>-->
+        </app-paginator>
     </div>
-
-    <app-report-response-control-create [showCreateModal]="showCreateModal" (closeCreateModal)="showCreateModal = false">
-    </app-report-response-control-create>
 
 </div>

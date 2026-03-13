@@ -1,10 +1,12 @@
-<div class="flex h-screen overflow-hidden">
+<div class="flex h-screen">
     <app-sidebar class="hidden sm:block"></app-sidebar>
-    <div class="w-full overflow-hidden bg-white h-full sm:py-[20px] sm:pr-[20px]">
-        <div class="w-full flex flex-col flex-1 overflow-hidden rounded rounded-lg h-full">
+    <div class="flex-1 shrink-0 overflow-hidden bg-white h-full sm:py-[20px] sm:pr-[20px]">
+        <div class="w-full flex flex-col overflow-hidden rounded rounded-lg h-full">
             <app-header></app-header>
-            <main class="w-full flex-1 bg-[#f2f5f2] p-[20px] overflow-hidden sm:pt-[0px]">
-                <router-outlet></router-outlet>
+            <main class="flex-1 flex flex-col min-h-0 bg-[#f2f5f2] p-[20px] overflow-auto sm:pt-[0px]">
+                <div class="flex-1 min-h-0 flex flex-col">
+                    <router-outlet></router-outlet>
+                </div>
             </main>
         </div>
     </div>

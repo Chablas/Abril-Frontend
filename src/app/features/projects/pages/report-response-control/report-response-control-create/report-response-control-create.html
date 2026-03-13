@@ -1,4 +1,4 @@
-<div *ngIf="showCreateModal" class="p-[20px] fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+<div class="p-[20px] fixed inset-0 bg-black/40 z-50 overflow-y-auto">
     <div class="absolute inset-0" (click)="closeModal($event, 0)">
     </div>
     <div class="min-h-screen flex items-center justify-center py-10">
@@ -6,6 +6,15 @@
             (click)="$event.stopPropagation()">
             <div class="p-[20px] flex flex-col gap-[20px] items-center">
                 <h1 class="text-2xl text-center">AGREGAR INCIDENCIA</h1>
+
+                <div class="w-full">
+                    <p class="text-[#64BC04] text-lg">Proyecto</p>
+                    <select [(ngModel)]="createDto.projectId"
+                        class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer">
+                        <option [ngValue]="0">Todos los proyectos</option>
+                        <option *ngFor="let item of projects" [ngValue]="item.projectId">{{item.projectDescription}}</option>
+                    </select>
+                </div>
 
                 <app-image-selector *ngIf="previews.length < maxImages" class="w-full" (imageSelected)="onImageSelected($event)">
                 </app-image-selector>
@@ -35,11 +44,11 @@
                 <div class="flex justify-between w-full">
                     <div class="flex flex-col w-full">
                         <p class="text-[#64BC04]">Descripción</p>
-                        <input type="text" [(ngModel)]="incidentDto.incidentDescription"
+                        <input type="text" [(ngModel)]="createDto.residentReportIncidenceDescription"
                             class="border border-[#E2E2E2] rounded-lg p-[10px]" />
                     </div>
                 </div>
-                <button (click)="saveArea()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+                <button (click)="saveResidentReportIncidence()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
                     <p class="text-[#ffffff] text-lg">Guardar</p>
                 </button>
             </div>

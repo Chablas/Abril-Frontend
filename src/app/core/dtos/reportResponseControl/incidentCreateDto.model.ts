@@ -1,4 +1,5 @@
-export interface IncidentCreateDto {
-    incidentDescription: string;
+export interface ResidentReportIncidenceCreateDTO {
+    residentReportIncidenceDescription: string;
+    projectId: number;
     images: File[];
 }

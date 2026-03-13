@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CameraMobile } from './camera-mobile';
+import { RespondReportModal } from './respond-report-modal';
 
-describe('CameraMobile', () => {
-  let component: CameraMobile;
-  let fixture: ComponentFixture<CameraMobile>;
+describe('RespondReportModal', () => {
+  let component: RespondReportModal;
+  let fixture: ComponentFixture<RespondReportModal>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CameraMobile]
+      imports: [RespondReportModal]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CameraMobile);
+    fixture = TestBed.createComponent(RespondReportModal);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
