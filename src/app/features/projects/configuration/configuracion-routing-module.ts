@@ -10,18 +10,19 @@ import { Subespecialidades } from "./pages/subespecialidades/subespecialidades";
 import { Reminder } from "./pages/reminder/reminder";
 import { Layers } from "./pages/layers/layers";
 import { Milestones } from "./pages/milestones/milestones";
+import { roleGuard } from '../../../core/guards/role.guard';
 
 const routes: Routes = [
-  { path: "projects", component: Proyectos, data: { titulo: 'PROYECTOS' } },
-  { path: "areas", component: Areas, data: { titulo: 'ÁREAS' } },
-  { path: "stages", component: Etapas, data: { titulo: 'ETAPAS' } },
-  { path: "layers", component: Layers, data: { titulo: 'NIVELES' } },
-  { path: "phases", component: Fases, data: { titulo: 'FASES' } },
-  { path: "sub-stages", component: Subetapas, data: { titulo: 'SUBETAPAS' } },
-  { path: "sub-specialties", component: Subespecialidades, data: { titulo: 'SUBESPECIALIDADES' } },
-  { path: "relations", component: ConfFaseEtapaSubetapa, data: { titulo: 'RELACIONES' } },
-  { path: "reminders", component: Reminder, data: { titulo: 'RECORDATORIOS DE LECCIONES' } },
-  { path: "milestones", component: Milestones, data: { titulo: 'HITOS' } },
+  { path: "projects", component: Proyectos, canActivate: [roleGuard], data: { titulo: 'PROYECTOS', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "areas", component: Areas, canActivate: [roleGuard], data: { titulo: 'ÁREAS', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "stages", component: Etapas, canActivate: [roleGuard], data: { titulo: 'ETAPAS', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "layers", component: Layers, canActivate: [roleGuard], data: { titulo: 'NIVELES', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "phases", component: Fases, canActivate: [roleGuard], data: { titulo: 'FASES', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "sub-stages", component: Subetapas, canActivate: [roleGuard], data: { titulo: 'SUBETAPAS', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "sub-specialties", component: Subespecialidades, canActivate: [roleGuard], data: { titulo: 'SUBESPECIALIDADES', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "relations", component: ConfFaseEtapaSubetapa, canActivate: [roleGuard], data: { titulo: 'RELACIONES', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "reminders", component: Reminder, canActivate: [roleGuard], data: { titulo: 'RECORDATORIOS DE LECCIONES', roles: ['ADMINISTRADOR DE UDP'] } },
+  { path: "milestones", component: Milestones, canActivate: [roleGuard], data: { titulo: 'HITOS', roles: ['ADMINISTRADOR DE RESIDENTES'] } },
   { path: '', redirectTo: 'projects', pathMatch: 'full' }
 ];
 

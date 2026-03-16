@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { LoginRequestDTO  } from "../dtos/auth/login-request.model";
-import { LoginResponseDTO   } from "../dtos/auth/login-response.model";
+import { LoginRequestDTO } from '../dtos/auth/login-request.model';
+import { LoginResponseDTO } from '../dtos/auth/login-response.model';
 import { tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
@@ -42,5 +42,26 @@ export class AuthService {
     } catch {
       return true;
     }
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  getRoles(): string[] {
+    const token = this.getToken();
+    if (!token) return [];
+
+    const decoded: any = jwtDecode(token);
+    
+    const roles = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+    if (!roles) return [];
+
+    return Array.isArray(roles) ? roles : [roles];
+  }
+
+  hasRole(role: string): boolean {
+    return this.getRoles().includes(role);
   }
 }

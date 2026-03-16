@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LeccionesAprendidas } from "./pages/lecciones-aprendidas/lecciones-aprendidas";
-import { LessonsDashboard } from "./pages/lessons-dashboard/lessons-dashboard";
-import { MilestoneSchedule } from "./pages/milestone-schedule/milestone-schedule";
-import { Layout } from "../../shared/components/layout/layout";
-import { IvtControl } from "../projects/pages/ivt-control/ivt-control";
-import { ConstructionLogbookControl } from "../projects/pages/construction-logbook-control/construction-logbook-control";
+import { LeccionesAprendidas } from './pages/lecciones-aprendidas/lecciones-aprendidas';
+import { LessonsDashboard } from './pages/lessons-dashboard/lessons-dashboard';
+import { MilestoneSchedule } from './pages/milestone-schedule/milestone-schedule';
+import { IvtControl } from '../projects/pages/ivt-control/ivt-control';
+import { ConstructionLogbookControl } from '../projects/pages/construction-logbook-control/construction-logbook-control';
 import { ReportResponseControl } from './pages/report-response-control/report-response-control';
+import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
   {
@@ -16,7 +16,15 @@ const routes: Routes = [
       {
         path: 'lessons',
         children: [
-          { path: '', component: LeccionesAprendidas, data: { titulo: 'LECCIONES APRENDIDAS' } },
+          {
+            path: '',
+            component: LeccionesAprendidas,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'LECCIONES APRENDIDAS',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+            },
+          },
         ],
       },
       {
@@ -25,32 +33,68 @@ const routes: Routes = [
           {
             path: '',
             component: LessonsDashboard,
-            data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS' },
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'DASHBOARD DE LECCIONES APRENDIDAS',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+            },
           },
         ],
       },
       {
         path: 'milestone-schedule',
         children: [
-          { path: '', component: MilestoneSchedule, data: { titulo: 'CRONOGRAMA DE HITOS' } },
+          {
+            path: '',
+            component: MilestoneSchedule,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'CRONOGRAMA DE HITOS',
+              roles: ['RESIDENTE', 'ADMINISTRADOR DE RESIDENTES'],
+            },
+          },
         ],
       },
       {
         path: 'technical-inspection-visit',
         children: [
-          { path: '', component: IvtControl, data: { titulo: 'CONTROL DE IVTS' } },
+          {
+            path: '',
+            canActivate: [roleGuard],
+            component: IvtControl,
+            data: {
+              titulo: 'CONTROL DE IVTS',
+              roles: ['RESIDENTE', 'ADMINISTRADOR DE RESIDENTES'],
+            },
+          },
         ],
       },
       {
         path: 'construction-logbook',
         children: [
-          { path: '', component: ConstructionLogbookControl, data: { titulo: 'CONTROL DE CUADERNO DE OBRA' } },
+          {
+            path: '',
+            canActivate: [roleGuard],
+            component: ConstructionLogbookControl,
+            data: {
+              titulo: 'CONTROL DE CUADERNO DE OBRA',
+              roles: ['RESIDENTE', 'ADMINISTRADOR DE RESIDENTES'],
+            },
+          },
         ],
       },
       {
         path: 'report-response-control',
         children: [
-          { path: '', component: ReportResponseControl, data: { titulo: 'CONTROL DE RESPUESTA DE INFORMES' } },
+          {
+            path: '',
+            component: ReportResponseControl,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'CONTROL DE RESPUESTA DE INFORMES',
+              roles: ['RESIDENTE', 'ADMINISTRADOR DE RESIDENTES'],
+            },
+          },
         ],
       },
       {
@@ -65,6 +109,6 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class ProyectosRoutingModule { }
+export class ProyectosRoutingModule {}

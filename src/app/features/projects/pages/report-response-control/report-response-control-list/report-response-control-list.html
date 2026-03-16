@@ -8,6 +8,7 @@
                 <th class="w-[150px]">Descripción incidencia</th>
                 <th class="w-[150px]">Imagen</th>
                 <th class="w-[150px]">Estado</th>
+                <th class="w-[150px]">Acciones</th>
             </tr>
         </thead>
 
@@ -42,7 +43,9 @@
 
                 <td><img [src]="item.images[0].imageUrl" class="h-48 w-auto object-contain rounded mx-auto" /></td>
 
-                <td><span [title]="item.stateDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{
+                <td class="text-center"><span [title]="item.stateDescription" class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
+                              'bg-[#D7FAF4] text-[#009C87]': item.stateDescription == 'LEVANTADO',
+                              'bg-[#FAD5D4] text-[#D30000]': item.stateDescription == 'NO LEVANTADO' }">{{
                         item.stateDescription }}</span></td>
             </tr>
         </tbody>
