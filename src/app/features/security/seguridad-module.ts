@@ -5,7 +5,7 @@ import { Layout } from "../../shared/components/layout/layout";
 import { Users } from "./pages/users/users";
 
 const routes: Routes = [
-  { path: "", component: Layout, children: [
+  { path: "", children: [
     { path: '', redirectTo: 'users', pathMatch: 'full' },
     { path: "users", children: [
       { path: "", component: Users, data: { titulo: 'USUARIOS' } }

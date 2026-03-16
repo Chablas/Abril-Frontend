@@ -18,7 +18,8 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
 
-    provideClientHydration(withEventReplay()),
+    //descomentar si se requiere ssr
+    //provideClientHydration(withEventReplay()),
 
     { provide: LOCALE_ID, useValue: 'es-PE' }
   ],

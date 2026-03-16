@@ -11,7 +11,6 @@ import { ReportResponseControl } from './pages/report-response-control/report-re
 const routes: Routes = [
   {
     path: '',
-    component: Layout,
     children: [
       { path: '', redirectTo: 'lessons', pathMatch: 'full' },
       {

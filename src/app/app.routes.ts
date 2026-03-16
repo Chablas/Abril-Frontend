@@ -6,29 +6,34 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () => {
-      return import('./features/auth/auth-module').then(x => x.AuthModule);
-    }
+    loadChildren: () =>
+      import('./features/auth/auth-module')
+      .then(m => m.AuthModule)
   },
+
   {
     path: '',
+    component: Layout,
     canActivateChild: [authGuard],
     children: [
-      { path: '', component: Layout, children: [{ path: '', component: Inicio }] },
+      { path: '', component: Inicio },
+
       {
         path: 'security',
-        loadChildren: () => {
-          return import('./features/security/seguridad-module').then(x => x.SeguridadModule);
-        }
+        loadChildren: () =>
+          import('./features/security/seguridad-module')
+          .then(m => m.SeguridadModule)
       },
+
       {
         path: 'projects',
-        loadChildren: () => {
-          return import('./features/projects/proyectos-module').then(x => x.ProyectosModule);
-        }
+        loadChildren: () =>
+          import('./features/projects/proyectos-module')
+          .then(m => m.ProyectosModule)
       }
     ]
   },
+
   {
     path: '**',
     redirectTo: 'auth/login'
