@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../dtos/api/pagedResponse.model';
 import { ResidentReportIncidenceDTO } from '../dtos/reportResponseControl/residentReportIncidence.model'; 
+import { ResidentReportResponseCreateDto } from '../dtos/reportResponseControl/responseCreateDto.model';
 
 @Injectable({
   providedIn: 'root',
@@ -26,5 +27,12 @@ export class ResidentReportIncidenceService {
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, form, {
       headers: { Authorization: `Bearer ${token}` },
     });
+  }
+
+  createResponse(dto: ResidentReportResponseCreateDto): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, dto, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
   }
 }

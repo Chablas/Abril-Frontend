@@ -34,6 +34,8 @@ export class ReportResponseControlCreate implements OnInit {
   };
 
   @Output() closeCreateModal = new EventEmitter<void>();
+  @Output() loadIncidences = new EventEmitter<void>();
+
 
   constructor(
     private projectResidentService: ProjectResidentService,
@@ -88,7 +90,9 @@ export class ReportResponseControlCreate implements OnInit {
     this.loaderService.show();
     this.residentReportIncidenceService.createResidentReportIncidence(formData).subscribe({
       next: (response) => {
+        this.loadIncidences.emit();
         this.loaderService.hide();
+        
         Swal.fire({
           title: response.message ?? 'Item creado exitosamente',
           icon: 'success',
@@ -109,7 +113,7 @@ export class ReportResponseControlCreate implements OnInit {
         this.createDto = { areaDescription: '', active: true };
         this.loaderService.hide();
         this.cdr.detectChanges();
-        this.loadAreas.emit();
+        
         Swal.fire({
           title: response.message ?? 'Proyecto creado exitosamente',
           icon: 'success',

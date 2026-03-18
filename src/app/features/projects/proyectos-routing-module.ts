@@ -7,6 +7,7 @@ import { IvtControl } from '../projects/pages/ivt-control/ivt-control';
 import { ConstructionLogbookControl } from '../projects/pages/construction-logbook-control/construction-logbook-control';
 import { ReportResponseControl } from './pages/report-response-control/report-response-control';
 import { roleGuard } from '../../core/guards/role.guard';
+import { ResidentMonitoringMeasurement } from './pages/resident-monitoring-measurement/resident-monitoring-measurement';
 
 const routes: Routes = [
   {
@@ -93,6 +94,20 @@ const routes: Routes = [
             data: {
               titulo: 'CONTROL DE RESPUESTA DE INFORMES',
               roles: ['RESIDENTE', 'ADMINISTRADOR DE RESIDENTES'],
+            },
+          },
+        ],
+      },
+      {
+        path: 'resident-monitoring-measurement',
+        children: [
+          {
+            path: '',
+            component: ResidentMonitoringMeasurement,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'SEGUIMIENTO Y MEDICIÓN DE RESIDENTES POR PROYECTO',
+              roles: ['ADMINISTRADOR DE RESIDENTES'],
             },
           },
         ],

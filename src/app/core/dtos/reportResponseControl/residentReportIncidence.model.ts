@@ -6,8 +6,13 @@ export interface ResidentReportIncidenceDTO {
     stateId: number;
     stateDescription: string;
     images: ResidentReportIncidenceImageDTO[];
+    residentReportResponseDescriptions: ResidentReportResponseDTO[];
 }
 
 interface ResidentReportIncidenceImageDTO {
     imageUrl: string;
+}
+
+interface ResidentReportResponseDTO {
+    residentReportResponseDescription: string;
 }

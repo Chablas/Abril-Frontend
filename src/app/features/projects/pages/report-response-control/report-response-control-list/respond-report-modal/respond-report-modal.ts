@@ -6,6 +6,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
+import { ResidentReportResponseCreateDto } from '../../../../../../core/dtos/reportResponseControl/responseCreateDto.model';
+import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
+import { ResidentReportIncidenceDTO } from '../../../../../../core/dtos/reportResponseControl/residentReportIncidence.model';
 
 @Component({
   selector: 'app-respond-report-modal',
@@ -14,14 +17,15 @@ import Swal from 'sweetalert2';
   styleUrl: './respond-report-modal.css',
 })
 export class RespondReportModal {
-  /*@Input() editDto: AreaEditDTO = {
-    areaId: 0,
-    areaDescription: '',
-    active: true,
-  };*/
+  @Input() selectedReportIncidenceId: number = 0;
+
+  createDto: ResidentReportResponseCreateDto = {
+    residentReportIncidenceId: 0,
+    residentResponseDescription: '',
+  };
 
   @Input() showEditModal: boolean = false;
-  @Output() closeEditModal = new EventEmitter<void>();
+  @Output() closeResponseModal = new EventEmitter<void>();
 
   @Output() loadAreas = new EventEmitter();
 
@@ -32,20 +36,21 @@ export class RespondReportModal {
     private loaderService: LoaderService,
   ) {}
 
-  /*respondArea(event: MouseEvent) {
+  createResponse(event: MouseEvent) {
     event.stopPropagation();
-    if (!this.editDto.areaDescription.trim()) {
+    if (!this.createDto.residentResponseDescription.trim()) {
       return;
     }
+    this.createDto.residentReportIncidenceId = this.selectedReportIncidenceId;
     this.loaderService.show();
-    this.projectResidentService.editArea(this.editDto).subscribe({
+    this.residentReportIncidenceService.createResponse(this.createDto).subscribe({
       next: (response: ApiMessageDTO) => {
-        this.closeEditModal.emit();
+        this.closeResponseModal.emit();
         this.loaderService.hide();
         this.cdr.detectChanges();
         this.loadAreas.emit();
         Swal.fire({
-          title: response.message ?? 'Proyecto actualizado exitosamente',
+          title: response.message ?? 'Item creado exitosamente',
           icon: 'success',
           draggable: true,
         });
@@ -54,15 +59,15 @@ export class RespondReportModal {
         this.errorService.handleError(err);
       },
     });
-  }*/
+  }
 
   closeModal(event: MouseEvent, number: number) {
     if (number == 1) {
-      this.closeEditModal.emit();
+      this.closeResponseModal.emit();
       return;
     }
     if (event.target === event.currentTarget) {
-      this.closeEditModal.emit();
+      this.closeResponseModal.emit();
     }
   }
 }

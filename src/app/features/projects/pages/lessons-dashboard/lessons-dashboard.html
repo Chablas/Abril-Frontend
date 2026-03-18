@@ -1,7 +1,7 @@
-<div id="dashboard"
-  class="flex flex-col h-full w-full justify-between overflow-y-auto overflow-x-hidden gap-[20px]"
->
-  <div class="flex justify-end gap-[10px] bg-white py-[10px] pr-[20px] rounded-2xl">
+<div id="dashboard" class="flex flex-col h-full w-full justify-between overflow-y-auto overflow-x-hidden gap-[20px]">
+
+  <!-- Barra superior: acciones -->
+  <div class="flex flex-wrap justify-center sm:justify-end gap-[10px] bg-white py-[10px] sm:px-[20px] rounded-2xl">
     <button (click)="sendPDF()" class="cursor-pointer group flex items-center gap-[5px]">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
@@ -18,107 +18,108 @@
       <p class="text-[#64BC04] group-hover:underline">Exportar a PDF</p>
     </button>
   </div>
-  
-  <div class="flex justify-between bg-white py-[10px] px-[20px] rounded-2xl">
-    <div class="flex justify-start gap-[10px]">
-      <div class="w-[240px]">
-        <p class="w-[240px] text-[#64BC04] text-lg">Periodo</p>
-        <select
-          class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-          [(ngModel)]="selectedFilters.periodDate" name="periodDate">
-          <option [ngValue]="null">Todos los periodos</option>
-          <option *ngFor="let item of filters.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
-            {{ item.periodDate | date:'MM-yyyy' }}
-          </option>
-        </select>
-      </div>
-      <div class="w-[240px]">
-        <p class="w-[240px] text-[#64BC04] text-lg">Usuario</p>
-        <select
-          class="w-full pl-[15px] pr-[25px] py-[6px] border border-[#D6DEE5] rounded-xl select-wrapper cursor-pointer"
-          [(ngModel)]="selectedFilters.userId" name="periodDate">
-          <option [ngValue]="0">Todos los usuarios</option>
-          <option *ngFor="let item of filters.users" [ngValue]="item.userId">
-            {{ item.fullName }}
-          </option>
-        </select>
-      </div>
+
+  <!-- Barra de filtros -->
+  <div class="flex flex-wrap items-center gap-3">
+
+    <!-- Filtro período -->
+    <div class="flex items-center gap-2 bg-white border border-stone-200 rounded-lg px-3 py-2">
+      <svg class="w-3.5 h-3.5 flex-shrink-0 text-[#64BC04]" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+      <select class="min-w-0 text-sm text-stone-700 bg-transparent outline-none cursor-pointer pr-1"
+        [(ngModel)]="selectedFilters.periodDate" name="periodDate">
+        <option [ngValue]="null">Todos los periodos</option>
+        <option *ngFor="let item of filters.periods" [ngValue]="item.periodDate | date:'yyyy-MM-dd'">
+          {{ item.periodDate | date:'MM-yyyy' }}
+        </option>
+      </select>
     </div>
-  
-    <div class="flex justify-end gap-[10px]">
-  
-      <button type="button" (click)="loadDashboard()" class="mt-[38px] w-[120px] h-[45px] bg-[#64BC04] py-[1px] rounded-[10px] cursor-pointer">
-        <div class="flex justify-center items-center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z"
-              fill="white" />
-          </svg>
-          <p class="text-[#ffffff] pl-[10px] text-lg">Buscar</p>
-        </div>
-      </button>
+
+    <!-- Filtro usuario -->
+    <div class="flex items-center gap-2 bg-white border border-stone-200 rounded-lg px-3 py-2">
+      <svg class="w-3.5 h-3.5 flex-shrink-0 text-[#64BC04]" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        stroke-width="2">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+      </svg>
+      <select class="min-w-0 text-sm text-stone-700 bg-transparent outline-none cursor-pointer pr-1"
+        [(ngModel)]="selectedFilters.userId" name="userId">
+        <option [ngValue]="0">Todos los usuarios</option>
+        <option *ngFor="let item of filters.users" [ngValue]="item.userId">
+          {{ item.fullName }}
+        </option>
+      </select>
     </div>
+
+    <div class="flex-1"></div>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="loadDashboard()"
+      class="w-full sm:w-[120px] h-[38px] bg-[#64BC04] rounded-[10px] cursor-pointer">
+      <div class="flex justify-center items-center h-full">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z"
+            fill="white" />
+        </svg>
+        <p class="text-white pl-2 text-lg">Buscar</p>
+      </div>
+    </button>
   </div>
 
-  <!-- Fila superior -->
-  <div class="flex flex-wrap items-center gap-[20px]">
-    <div class="flex-2 rounded-2xl border border-gray-200 bg-white p-5">
+  <!-- Fila superior: gráficos barras + pie -->
+  <div class="flex flex-col lg:flex-row gap-[20px]">
+    <div class="flex-[2] rounded-2xl border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR PROYECTO</h3>
-      <div class="relative h-[400px]">
+      <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsChart class="absolute inset-0 w-full"></canvas>
       </div>
     </div>
-  
+
     <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR FASE</h3>
-      <div class="relative h-[400px]">
+      <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsPieChart class="absolute inset-0 w-full"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Fila inferior -->
+  <!-- Fila inferior: gráficos por fase -->
   <div class="rounded-2xl border border-gray-200 bg-white p-5">
-    <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR ETAPA SEGÚN LA FASE</h3>
-    <div class="flex flex-wrap gap-[5px]">
-      <div *ngFor="let phase of phaseStageCharts" class="w-full max-w-[250px] 2xl:flex-1 2xl:w-auto 2xl:max-w-auto">
-  
+    <h3 class="font-semibold text-gray-800 mb-4">LECCIONES APRENDIDAS POR ETAPA SEGÚN LA FASE</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div *ngFor="let phase of phaseStageCharts">
         <h3 class="text-center text-xs text-gray-500 font-semibold mb-2">
           {{ phase.phaseLabel }}
         </h3>
-  
         <div class="flex flex-col items-center gap-[10px]">
-  
-          <!-- Área fija SOLO para el gráfico -->
           <div class="w-full h-[250px] relative">
-            <canvas [id]="'phaseChart-' + phase.phaseId" class="absolute inset-0 w-full h-full">
-            </canvas>
+            <canvas [id]="'phaseChart-' + phase.phaseId" class="absolute inset-0 w-full h-full"></canvas>
           </div>
-  
-          <!-- Leyenda separada -->
           <div class="flex flex-wrap justify-center gap-2 mt-3 min-h-[40px]">
             <div *ngFor="let stage of phase.stages; let i = index" class="flex items-center gap-1 text-xs">
-  
-              <span class="w-3 h-3 rounded-full" [style.backgroundColor]="colors[i]">
-              </span>
-  
+              <span class="w-3 h-3 rounded-full flex-shrink-0" [style.backgroundColor]="colors[i]"></span>
               {{ stage.label }}
             </div>
           </div>
-  
         </div>
       </div>
     </div>
   </div>
 
-  <div class="inline-flex flex flex-col w-1/2 rounded-2xl border border-gray-200 bg-white p-5">
+  <!-- Gráfico líneas -->
+  <div class="w-full lg:w-1/2 rounded-2xl border border-gray-200 bg-white p-5">
     <h3 class="font-semibold text-gray-800 mb-2">
       LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD
     </h3>
-    <div class="relative h-[400px]">
+    <div class="relative h-[300px] sm:h-[400px]">
       <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
     </div>
   </div>
+
 </div>
 
 <div *ngIf="loader" class="loader-overlay">

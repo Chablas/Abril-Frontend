@@ -7,15 +7,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
-import Swal from 'sweetalert2';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { RespondReportModal } from './respond-report-modal/respond-report-modal';
 
 @Component({
   selector: 'app-report-response-control-list',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RespondReportModal],
   templateUrl: './report-response-control-list.html',
   styleUrl: './report-response-control-list.css',
 })
 export class ReportResponseControlList implements OnInit {
+
+  showResponseModal = false;
+
+  selectedReportIncidenceId: number = 0;
 
   tableData: PagedResponseDTO<ResidentReportIncidenceDTO> = {
     page: 0,
@@ -30,7 +35,8 @@ export class ReportResponseControlList implements OnInit {
   constructor(
     private residentReportIncidenceService: ResidentReportIncidenceService,
     private loaderService: LoaderService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    public authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -48,5 +54,10 @@ export class ReportResponseControlList implements OnInit {
         this.errorService.handleError(err);
       }
     });
+  }
+  openResponseModal(item: ResidentReportIncidenceDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.showResponseModal = true;
+    this.selectedReportIncidenceId = item.residentReportIncidenceId;
   }
 }

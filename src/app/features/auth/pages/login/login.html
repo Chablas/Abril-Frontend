@@ -1,26 +1,35 @@
-<div class="flex w-full h-screen">
-    <div class="flex flex-1 justify-center items-center bg-gradient-to-t from-[#182233] to-[#2a3675]">
-        <img class="w-[600px]" src="/images/abril-logo-verde-letra-blanca.png" />
+<div class="flex flex-col md:flex-row w-full min-h-screen">
+
+    <!-- Panel logo -->
+    <div class="flex justify-center items-center bg-gradient-to-t from-[#182233] to-[#2a3675]
+              py-10 md:py-0 md:flex-1">
+        <img class="w-48 sm:w-72 md:w-96 lg:w-[480px]" src="/images/abril-logo-verde-letra-blanca.png" />
     </div>
-    <div class="flex-1 bg-[#f6f6f9] w-full h-full">
-        <form class="flex flex-col gap-[50px] justify-center items-center w-full h-full"
-            [formGroup]="form" (ngSubmit)="submit()">
-            <h2 class="text-[#1f2937] text-2xl font-bold">Iniciar sesión</h2>
-            <div class="flex flex-col gap-[5px]">
+
+    <!-- Panel formulario -->
+    <div class="flex-1 bg-[#f6f6f9] flex items-center justify-center px-6 py-12">
+        <form class="flex flex-col gap-8 w-full max-w-sm" [formGroup]="form" (ngSubmit)="submit()">
+
+            <h2 class="text-[#1f2937] text-2xl font-bold text-center">Iniciar sesión</h2>
+
+            <div class="flex flex-col gap-1.5">
                 <label>Correo</label>
-                <input placeholder="Escribe tu correo" class="border border-[#E2E2E2] rounded-lg p-[10px] w-[400px]"
-                    type="email" formControlName="email">
+                <input placeholder="Escribe tu correo" class="border border-[#E2E2E2] rounded-lg p-[10px] w-full"
+                    type="email" formControlName="email" />
             </div>
-            <div class="flex flex-col gap-[5px]">
+
+            <div class="flex flex-col gap-1.5">
                 <label>Contraseña</label>
-                <input placeholder="Escribe tu contraseña"
-                    class="border border-[#E2E2E2] rounded-lg p-[10px] w-[400px]" type="password"
-                    formControlName="password">
+                <input placeholder="Escribe tu contraseña" class="border border-[#E2E2E2] rounded-lg p-[10px] w-full"
+                    type="password" formControlName="password" />
             </div>
-            <button class="text-[#ffffff] w-[400px] bg-[#64BC04] py-[10px] rounded-[10px] cursor-pointer" type="submit"
+
+            <button class="text-white w-full bg-[#64BC04] py-[10px] rounded-[10px] cursor-pointer" type="submit"
                 [disabled]="form.invalid">
                 INICIAR SESIÓN
             </button>
+
         </form>
     </div>
+
 </div>

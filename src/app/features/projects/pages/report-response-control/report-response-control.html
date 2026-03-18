@@ -1,7 +1,7 @@
 <div class="flex flex-col flex-1 min-h-0 gap-[20px] bg-white rounded-lg p-[20px]">
     <div>
         <div class="flex w-full">
-            <button (click)="openCreateModal($event)"
+            <button *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')" (click)="openCreateModal($event)"
                 class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
                 <div class="flex items-center gap-[10px]">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,10 +13,7 @@
                 </div>
             </button>
         </div>
-    </div>
-
-    <app-report-response-control-create *ngIf="showCreateModal" (closeCreateModal)="showCreateModal = false">
-    </app-report-response-control-create>
+    </div>    
 
     <div class="flex flex-col flex-1 min-h-0">
 
@@ -29,3 +26,6 @@
     </div>
 
 </div>
+
+<app-report-response-control-create *ngIf="showCreateModal" (loadIncidences)="reloadReport()" (closeCreateModal)="showCreateModal = false">
+</app-report-response-control-create>

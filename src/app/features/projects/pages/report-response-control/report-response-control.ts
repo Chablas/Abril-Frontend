@@ -5,6 +5,7 @@ import { ReportResponseControlList } from './report-response-control-list/report
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ResidentReportIncidenceDTO } from '../../../../core/dtos/reportResponseControl/residentReportIncidence.model';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-report-response-control',
@@ -22,6 +23,10 @@ export class ReportResponseControl {
 
   @ViewChild(ReportResponseControlList) reportResponseControlList!: ReportResponseControlList;
 
+  constructor(
+    public authService: AuthService
+  ) {}
+
   openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
@@ -37,5 +42,9 @@ export class ReportResponseControl {
     this.totalPages = data.totalPages;
     this.pageSize = data.pageSize;
     this.totalRecords = data.totalRecords;
+  }
+
+  reloadReport() {
+    this.reportResponseControlList.loadResidentReports(this.currentPage);
   }
 }

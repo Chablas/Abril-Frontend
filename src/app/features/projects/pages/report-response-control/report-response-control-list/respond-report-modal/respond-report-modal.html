@@ -1,27 +1,19 @@
-<!--<div class="p-[20px] fixed inset-0 bg-black/40 z-50 overflow-y-auto">
+<div class="p-[20px] fixed inset-0 bg-black/40 z-50 overflow-y-auto">
     <div class="absolute inset-0" (click)="closeModal($event, 0)">
     </div>
     <div class="min-h-screen flex items-center justify-center py-10">
         <div class="bg-white w-[500px] rounded-xl shadow-xl animate-modal-in relative p-[20px]"
             (click)="$event.stopPropagation()">
             <div class="flex flex-col gap-[15px] items-center">
-                <h1 class="text-2xl text-center">EDITAR ÁREA</h1>
+                <h1 class="text-2xl text-center">RESPONDER INCIDENCIA</h1>
                 <div class="flex justify-between gap-[20px] w-full">
-                    <div class="flex flex-col max-w-[50%]">
+                    <div class="flex flex-col w-full">
                         <p class="text-[#64BC04]">Descripción</p>
-                        <input type="text" [(ngModel)]="editDto.areaDescription"
-                            class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                    </div>
-                    <div class="flex flex-col">
-                        <p class="text-[#64BC04]">Estado</p>
-                        <select [(ngModel)]="editDto.active"
-                            class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
-                            <option [ngValue]="true">ACTIVO</option>
-                            <option [ngValue]="false">INACTIVO</option>
-                        </select>
+                        <textarea [(ngModel)]="createDto.residentResponseDescription"
+                            class="border border-[#E2E2E2] rounded-lg p-[10px] w-full" ></textarea>
                     </div>
                 </div>
-                <button (click)="editArea($event)"
+                <button (click)="createResponse($event)"
                     class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
                     <p class="text-[#ffffff] text-lg">Guardar</p>
                 </button>
@@ -33,4 +25,4 @@
             </button>
         </div>
     </div>
-</div>-->
+</div>

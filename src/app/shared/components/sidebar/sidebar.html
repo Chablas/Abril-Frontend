@@ -88,6 +88,14 @@
         >
           Control de respuesta de informes
         </a>
+        <a
+          *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')"
+          routerLink="/projects/resident-monitoring-measurement"
+          class="block px-4 py-2 text-sm rounded-xl
+                       hover:bg-[#E5F7D1] font-sans"
+        >
+          Seguimiento y medición de residentes
+        </a>
 
         <!-- ITEM CON SUBMENÚ -->
         <div *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES') || authService.hasRole('ADMINISTRADOR DE UDP')"

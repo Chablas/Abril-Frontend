@@ -8,7 +8,8 @@
                 <th class="w-[150px]">Descripción incidencia</th>
                 <th class="w-[150px]">Imagen</th>
                 <th class="w-[150px]">Estado</th>
-                <th class="w-[150px]">Acciones</th>
+                <th class="w-[150px]">Respuesta</th>
+                <!--<th *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')" class="w-[150px]">Acciones</th>-->
             </tr>
         </thead>
 
@@ -47,7 +48,40 @@
                               'bg-[#D7FAF4] text-[#009C87]': item.stateDescription == 'LEVANTADO',
                               'bg-[#FAD5D4] text-[#D30000]': item.stateDescription == 'NO LEVANTADO' }">{{
                         item.stateDescription }}</span></td>
+
+                <td class="text-center">
+                    <p *ngIf="item.residentReportResponseDescriptions.length > 0">{{item.residentReportResponseDescriptions[0].residentReportResponseDescription}}</p>
+                    <button *ngIf="authService.hasRole('RESIDENTE') && item.residentReportResponseDescriptions.length == 0" (click)="openResponseModal(item, $event)"
+                        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer w-[180px]">
+                        <div class="flex items-center gap-[10px]">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22 12C22 17.523 17.523 22 12 22H2V12C2 6.477 6.477 2 12 2C17.523 2 22 6.477 22 12Z" stroke="#64BC04"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M7 13L10 16L16.5 9.5" stroke="#64BC04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p class="text-lg leading-5">Responder incidencia</p>
+                        </div>
+                    </button>
+                    <span *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES') && item.residentReportResponseDescriptions.length == 0" class="text-xs text-gray-400 italic">Sin respuesta</span>
+                </td>
+                <!--<td *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')" class="text-center">
+                    <button
+                        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer w-[180px]">
+                        <div class="flex items-center gap-[10px]">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M9.54961 17.9996L3.84961 12.2996L5.27461 10.8746L9.54961 15.1496L18.7246 5.97461L20.1496 7.39961L9.54961 17.9996Z"
+                                    fill="#64BC04" />
+                            </svg>
+
+                            <p class="text-lg leading-5">Levantar incidencia</p>
+                        </div>
+                    </button>
+                </td>-->
             </tr>
         </tbody>
     </table>
 </div>
+
+<app-respond-report-modal *ngIf="showResponseModal" [selectedReportIncidenceId]="selectedReportIncidenceId" (closeResponseModal)="showResponseModal = false" >
+</app-respond-report-modal>

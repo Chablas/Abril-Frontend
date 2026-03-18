@@ -20,6 +20,7 @@ import { MilestoneScheduleHistoryGetDTO } from "../../../../core/dtos/milestoneS
 import { MilestoneScheduleGetDTO } from "../../../../core/dtos/milestoneSchedule/milestoneSchedule.model";
 import { MilestoneService } from '../../../../core/services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from "../../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model";
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-milestone-schedule',
@@ -108,6 +109,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private milestoneScheduleHistoryService: MilestoneScheduleHistoryService,
     private milestoneService: MilestoneService,
+    public authService: AuthService
   ) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
   }
