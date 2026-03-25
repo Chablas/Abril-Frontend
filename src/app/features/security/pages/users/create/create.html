@@ -1,0 +1,65 @@
+<app-base-modal [title]="'AGREGAR USUARIO'" width="w-[1000px]" (closeModal)="closeModal.emit()">
+  <div class="flex justify-between flex-wrap w-full gap-[30px] mt-[15px]">
+    <div class="flex flex-col relative">
+      <p class="text-[#64BC04]">DNI</p>
+      <input
+        type="text"
+        [(ngModel)]="createDto.documentIdentityCode"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        placeholder="Escribe aquí"
+      />
+      <svg
+        (click)="getPersonRENIEC()"
+        class="absolute right-3 top-[47px] -translate-y-1/2 cursor-pointer"
+        width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z" fill="#64BC04"/>
+      </svg>
+    </div>
+    <div class="flex flex-1 flex-col">
+      <p class="text-[#64BC04]">Nombres</p>
+      <input type="text" [(ngModel)]="createDto.firstNames" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Primer apellido</p>
+      <input type="text" [(ngModel)]="createDto.firstLastName" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Segundo apellido</p>
+      <input type="text" [(ngModel)]="createDto.secondLastName" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+    <div class="flex flex-1 flex-col">
+      <p class="text-[#64BC04]">Correo</p>
+      <input type="email" [(ngModel)]="createDto.email" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Celular</p>
+      <input type="number" [(ngModel)]="createDto.phoneNumber" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Rol</p>
+      <select
+        [(ngModel)]="createDto.roleId"
+        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer"
+      >
+        <option [ngValue]="0" disabled>Selecciona un rol</option>
+        <option *ngFor="let role of roles" [ngValue]="role.roleId">{{ role.roleDescription }}</option>
+      </select>
+    </div>
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Estado</p>
+      <select
+        [(ngModel)]="createDto.active"
+        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer"
+      >
+        <option [ngValue]="true">ACTIVO</option>
+        <option [ngValue]="false">INACTIVO</option>
+      </select>
+    </div>
+  </div>
+  <div class="flex justify-center mt-[15px]">
+    <button (click)="saveUser()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+      <p class="text-[#ffffff] text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

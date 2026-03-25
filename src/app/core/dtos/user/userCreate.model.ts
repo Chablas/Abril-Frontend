@@ -1,5 +1,3 @@
-import { interceptors } from "undici-types";
-
 export interface UserCreateDTO {
     documentIdentityCode: string;
     firstNames: string;
@@ -9,4 +7,5 @@ export interface UserCreateDTO {
     phoneNumber: number;
     createdUserId: number;
     active: boolean;
+    roleId: number;
 }
