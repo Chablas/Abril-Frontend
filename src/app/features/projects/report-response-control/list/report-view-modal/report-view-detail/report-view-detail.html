@@ -1,0 +1,30 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-[20px] bg-[#E5F7D1] rounded-lg p-[20px]">
+    <p class="text-[#64BC04]">
+        Proyecto: <span class="text-[#224051]">{{ selectedIncidence.projectDescription }}</span>
+    </p>
+    <p class="text-[#64BC04]">
+        Estado de incidencia: <span class="text-[#224051]">{{ selectedIncidence.stateDescription }}</span>
+    </p>
+</div>
+
+<div class="mt-[20px] flex flex-col gap-[20px]">
+    <div>
+        <p class="text-[#64BC04]">Descripción de la incidencia</p>
+        <div class="w-full border border-[#E2E2E2] rounded-lg p-[20px] text-sm break-words">
+            {{ selectedIncidence.residentReportIncidenceDescription }}
+        </div>
+    </div>
+    <div>
+        <p class="text-[#64BC04]">Respuesta</p>
+        <div class="w-full border border-[#E2E2E2] rounded-lg p-[20px] text-sm break-words">
+            {{ selectedIncidence.residentReportResponseDescriptions[0] ?
+            selectedIncidence.residentReportResponseDescriptions[0].residentReportResponseDescription : 'Sin respuesta'
+            }}
+        </div>
+    </div>
+    <button (click)="updateIncidence()"
+        *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES') && selectedIncidence.stateDescription == 'NO LEVANTADO' && selectedIncidence.residentReportResponseDescriptions.length > 0"
+        class="w-full py-3 rounded-[10px] bg-[#64BC04] hover:bg-[#58a803] text-white font-medium text-sm cursor-pointer transition-colors">
+        Levantar incidencia
+    </button>
+</div>

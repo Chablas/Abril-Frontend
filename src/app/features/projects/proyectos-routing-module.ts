@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LeccionesAprendidas } from './pages/lecciones-aprendidas/lecciones-aprendidas';
-import { LessonsDashboard } from './pages/lessons-dashboard/lessons-dashboard';
-import { MilestoneSchedule } from './pages/milestone-schedule/milestone-schedule';
-import { IvtControl } from '../projects/pages/ivt-control/ivt-control';
-import { ConstructionLogbookControl } from '../projects/pages/construction-logbook-control/construction-logbook-control';
-import { ReportResponseControl } from './pages/report-response-control/report-response-control';
+import { LeccionesAprendidas } from './lecciones-aprendidas/lecciones-aprendidas';
+import { LessonsDashboard } from './lessons-dashboard/lessons-dashboard';
+import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
+import { IvtControl } from '../projects/ivt-control/ivt-control';
+import { ConstructionLogbookControl } from '../projects/construction-logbook-control/construction-logbook-control';
+import { ReportResponseControl } from './report-response-control/report-response-control';
 import { roleGuard } from '../../core/guards/role.guard';
-import { ResidentMonitoringMeasurement } from './pages/resident-monitoring-measurement/resident-monitoring-measurement';
+import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
 
 const routes: Routes = [
   {

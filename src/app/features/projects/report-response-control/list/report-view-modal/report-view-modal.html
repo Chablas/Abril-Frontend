@@ -1,0 +1,15 @@
+<app-base-modal [title]="'VER INFORME'" (closeModal)="closeReportViewModal.emit()">
+
+  <app-report-view-active-tab
+    [tabs]="[{ key: 'general', label: 'Datos generales' }, { key: 'images', label: 'Imágenes adjuntas' }]"
+    [activeTab]="activeTab"
+    (tabChange)="onModalTabChange($event)">
+  </app-report-view-active-tab>
+
+  <app-report-view-detail *ngIf="activeTab === 'general'" [selectedIncidence]="selectedIncidence">
+  </app-report-view-detail>
+
+  <app-report-view-images *ngIf="activeTab === 'images'" [selectedIncidence]="selectedIncidence">
+  </app-report-view-images>
+
+</app-base-modal>

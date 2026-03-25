@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TrackingFiltersDto, TrackingResultDto } from '../dtos/residentMonitoring/residentMonitoringDto.model';
-import { SelectedFilters } from '../../features/projects/pages/resident-monitoring-measurement/resident-monitoring-measurement';
+import { SelectedFilters } from '../../features/projects/resident-monitoring-measurement/resident-monitoring-measurement';
 
 @Injectable({
   providedIn: 'root',

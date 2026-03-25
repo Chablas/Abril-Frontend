@@ -1,0 +1,8 @@
+<div class="flex mt-[15px]">
+    <p *ngFor="let tab of tabs" (click)="tabChange.emit(tab.key)"
+        class="cursor-pointer border rounded-t-lg py-[10px] px-[15px] font-medium" [ngClass]="activeTab === tab.key
+       ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04]'
+       : 'border-t-[#E2E2E2] border-x-[#E2E2E2] border-b-[#64BC04] text-[#224051] bg-[#F8F8F8]'">
+        {{ tab.label }}
+    </p>
+</div>
