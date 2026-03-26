@@ -30,6 +30,12 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/projects/proyectos-module')
           .then(m => m.ProyectosModule)
+      },
+      {
+        path: 'costs',
+        loadChildren: () =>
+          import('./features/costs/costs-module')
+          .then(m => m.CostsModule)
       }
     ]
   },

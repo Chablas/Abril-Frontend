@@ -1,4 +1,5 @@
 <div [hidden]="showMilestoneSchedule" class="bg-white rounded-lg p-[20px]">
+    <!--
     <div class="pb-[20px]">
         <div class="flex w-full">
             <button (click)="openCreateModal($event)"
@@ -14,6 +15,7 @@
             </button>
         </div>
     </div>
+    -->
 
     <div class="flex flex-col justify-center items-center">
         <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5]">
@@ -24,8 +26,8 @@
                         <th class="w-[50px]"></th>
                         <th class="w-[150px]">Proyecto</th>
                         <th class="w-[150px]">Residente</th>
-                        <th class="w-[150px]">Datos del proyecto</th>
-                        <th class="w-[150px]">Estado</th>
+                        <th class="w-[150px]">Niveles</th>
+                        <!--<th class="w-[150px]">Estado</th>-->
                     </tr>
                 </thead>
 
@@ -33,7 +35,7 @@
                     <tr *ngFor="let item of schedules.data" class="border-b border-[#D6DEE5] h-[30px]">
                         <td>
                             <div class="flex justify-center">
-                                <button class="cursor-pointer" (click)="openMilestoneScheduleHistory(item.scheduleId)">
+                                <button class="cursor-pointer" (click)="openMilestoneScheduleHistory(item.projectId)">
                                     <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M13.75 7.75C13.75 8.54565 13.4339 9.30871 12.8713 9.87132C12.3087 10.4339 11.5456 10.75 10.75 10.75C9.95435 10.75 9.19129 10.4339 8.62868 9.87132C8.06607 9.30871 7.75 8.54565 7.75 7.75C7.75 6.95435 8.06607 6.19129 8.62868 5.62868C9.19129 5.06607 9.95435 4.75 10.75 4.75C11.5456 4.75 12.3087 5.06607 12.8713 5.62868C13.4339 6.19129 13.75 6.95435 13.75 7.75Z"
@@ -46,9 +48,9 @@
                             </div>
                         </td>
                         <td class="text-center">{{item.projectDescription}}</td>
-                        <td><span [title]="item.createdUserFullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.createdUserFullName }}</span></td>
-                        <td><span [title]="item.scheduleDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{item.scheduleDescription }}</span></td>
-
+                        <td><span [title]="item.residentFullNames[0]" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.residentFullNames[0] }}</span></td>
+                        <td><span [title]="item.levelDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{item.levelDescription }}</span></td>
+                        <!--
                         <td class="text-center">
                             <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
                               'bg-[#D7FAF4] text-[#009C87]': item.active == true,
@@ -56,6 +58,7 @@
                                 {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
                             </span>
                         </td>
+                        -->
                     </tr>
                 </tbody>
             </table>

@@ -22,6 +22,13 @@ export class ProjectService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+  getProjectPagedWithResidents(page: number): Observable<ProjectPagedDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged-with-residents?page=${page}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  
   getWithResidentByUserId(): Observable<ProjectScheduleSimpleDTO[]> {
     const token = localStorage.getItem('access_token');
     return this.http.get<ProjectScheduleSimpleDTO[]>(`${this.apiUrl}/with-resident-by-userId`, {

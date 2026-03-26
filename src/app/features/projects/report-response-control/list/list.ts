@@ -51,7 +51,7 @@ export class List implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadResidentReports();
+    setTimeout(() => this.loadResidentReports());
   }
   loadResidentReports(page: number = 1) {
     this.loaderService.show();

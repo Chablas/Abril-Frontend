@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { RouterModule } from '@angular/router';
 
@@ -13,6 +13,11 @@ export class SidebarMobile {
   proyectosConfiguracionOpen = false;
   seguridadOpen = false;
   @Input() menuOpen: boolean = false;
+  @Output() menuOpenChange = new EventEmitter<boolean>();
+
+  close() {
+    this.menuOpenChange.emit(false);
+  }
 
   toggle(menu: 'proyectos' | 'seguridad' | 'proyectosConfiguracion') {
     if (menu === 'proyectos') {

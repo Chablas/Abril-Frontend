@@ -21,6 +21,9 @@ import { MilestoneScheduleGetDTO } from "../../../core/dtos/milestoneSchedule/mi
 import { MilestoneService } from '../../../core/services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from "../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model";
 import { AuthService } from '../../../core/services/auth.service';
+import { ProjectService } from '../../../core/services/project.service';
+import { ProjectPagedDTO } from '../../../core/dtos/project/projectPaged.model';
+import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
 
 @Component({
   selector: 'app-milestone-schedule',
@@ -60,7 +63,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   private mouseDownOnBackdrop = false;
 
-  schedules: PagedResponseDTO<ScheduleGetDTO> = {
+  schedules: PagedResponseDTO<ProjectGetDTO> = {
     page: 0,
     pageSize: 0,
     totalRecords: 0,
@@ -83,14 +86,14 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   };
 
   filtersScheduleId = {
-    scheduleId: null as number | null,
+    projectId: null as number | null,
   };
   filtersMilestoneScheduleHistoryId = {
     milestoneScheduleHistoryId: null as number | null,
   };
   milestones: MilestoneGetDTO[] = [];
   milestoneScheduleHistoryCreateDTO: MilestoneScheduleHistoryCreateDTO = {
-    scheduleId: 0,
+    projectId: 0,
     milestoneSchedules: [],
     forceSave: false
   };
@@ -104,9 +107,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private milestoneScheduleService: MilestoneScheduleService,
-    private scheduleService: ScheduleService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private projectService: ProjectService,
+    private scheduleService: ScheduleService,
     private milestoneScheduleHistoryService: MilestoneScheduleHistoryService,
     private milestoneService: MilestoneService,
     public authService: AuthService
@@ -121,7 +125,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   loadSchedules(page: number = 1): void {
     this.loader = true;
     this.cdr.detectChanges();
-    this.scheduleService.getSchedulePaged(page).subscribe({
+    this.projectService.getProjectPagedWithResidents(page).subscribe({
       next: (response) => {
         this.schedules = response;
         this.currentPage = response.page;
@@ -137,7 +141,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  openCreateModal(event: MouseEvent) {
+  /*openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
     this.loader = true;
@@ -152,13 +156,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         this.error(err);
       },
     });
-  }
+  }*/
 
   openMilestoneScheduleHistory(scheduleId: number) {
     this.showMilestoneScheduleHistory = true;
     this.loader = true;
     this.cdr.detectChanges();
-    this.filtersScheduleId.scheduleId = scheduleId;
+    this.filtersScheduleId.projectId = scheduleId;
     this.milestoneScheduleHistoryService
       .getAllMilestoneScheduleHistory(this.filtersScheduleId)
       .subscribe({
@@ -276,8 +280,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
-            this.milestoneScheduleHistoryCreateDTO.scheduleId =
-              this.filtersScheduleId.scheduleId ?? 0;
+            this.milestoneScheduleHistoryCreateDTO.projectId =
+              this.filtersScheduleId.projectId ?? 0;
             this.cdr.detectChanges();
             this.initGantt(false);
             gantt.parse({ data, links: [] });
@@ -319,8 +323,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
               });
             });
-            this.milestoneScheduleHistoryCreateDTO.scheduleId =
-              this.filtersScheduleId.scheduleId ?? 0;
+            this.milestoneScheduleHistoryCreateDTO.projectId =
+              this.filtersScheduleId.projectId ?? 0;
             this.cdr.detectChanges();
             this.initGantt(false);
             gantt.parse({ data, links: [] });

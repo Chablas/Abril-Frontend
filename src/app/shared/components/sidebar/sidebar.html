@@ -209,6 +209,29 @@
         </div>
       </div>
     </div>
+    <div *ngIf="authService.hasRole('USUARIO DE COSTOS Y PRESUPUESTOS')" class="relative flex flex-col items-center w-full cursor-pointer
+                            hover:bg-[#E5F7D1] rounded-lg p-[5px]" (click)="toggleMenu('costos', $event)" [ngClass]="{
+                              'bg-[#E5F7D1]': isActiveModule('costos'),
+                              'hover:bg-[#E5F7D1]': !isActiveModule('costos')
+                            }">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M17 5H7V7H17V5ZM7 9H9V11H7V9ZM9 13H7V15H9V13ZM7 17H9V19H7V17ZM13 9H11V11H13V9ZM11 13H13V15H11V13ZM13 17H11V19H13V17ZM15 9H17V11H15V9ZM17 13H15V19H17V13Z"
+          fill="#64BC04" />
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M3 3C3 2.46957 3.21071 1.96086 3.58579 1.58579C3.96086 1.21071 4.46957 1 5 1H19C19.5304 1 20.0391 1.21071 20.4142 1.58579C20.7893 1.96086 21 2.46957 21 3V21C21 21.5304 20.7893 22.0391 20.4142 22.4142C20.0391 22.7893 19.5304 23 19 23H5C4.46957 23 3.96086 22.7893 3.58579 22.4142C3.21071 22.0391 3 21.5304 3 21V3ZM5 3H19V21H5V3Z"
+          fill="#64BC04" />
+      </svg>
+    
+      <p class="font-sans text-sm mt-1 text-center leading-4">Costos y Presupuestos</p>
+      <div *ngIf="activeMenu === 'costos'" class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50">
+        <!-- ITEM SIMPLE -->
+        <a *ngIf="authService.hasRole('ADMINISTRADOR DEL SISTEMA')" routerLink="/costs/adjudicaciones" class="block px-4 py-2 text-sm rounded-xl
+                                     hover:bg-[#E5F7D1] font-sans">
+          Adjudicaciones de SC
+        </a>
+      </div>
+    </div>
     <div *ngIf="authService.hasRole('ADMINISTRADOR DEL SISTEMA')"
       class="relative flex flex-col items-center w-full cursor-pointer
                     hover:bg-[#E5F7D1] rounded-lg p-[5px]" (click)="toggleMenu('seguridad', $event)"
@@ -217,17 +240,10 @@
                       'hover:bg-[#E5F7D1]': !isActiveModule('seguridad')
                     }"
     >
-      <svg
-        width="30"
-        height="30"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 5C12.7956 5 13.5587 5.31607 14.1213 5.87868C14.6839 6.44129 15 7.20435 15 8C15 8.79565 14.6839 9.55871 14.1213 10.1213C13.5587 10.6839 12.7956 11 12 11C11.2044 11 10.4413 10.6839 9.87868 10.1213C9.31607 9.55871 9 8.79565 9 8C9 7.20435 9.31607 6.44129 9.87868 5.87868C10.4413 5.31607 11.2044 5 12 5ZM17.13 17C15.9178 18.8541 14.1074 20.2374 12 20.92C9.89255 20.2374 8.08222 18.8541 6.87 17C6.53 16.5 6.24 16 6 15.47C6 13.82 8.71 12.47 12 12.47C15.29 12.47 18 13.79 18 15.47C17.76 16 17.47 16.5 17.13 17Z"
-          fill="#64BC04"
-        />
+          fill="#64BC04" />
       </svg>
       <p class="font-sans text-sm mt-1">Seguridad</p>
       <div *ngIf="activeMenu === 'seguridad'" class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50">

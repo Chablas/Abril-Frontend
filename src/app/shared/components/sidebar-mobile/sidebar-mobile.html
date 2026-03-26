@@ -35,25 +35,25 @@
                 </svg>
             </div>
             <div *ngIf="proyectosOpen" class="flex flex-col gap-[10px] pl-[37px]">
-                <a routerLink="/projects/lessons" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/lessons" (click)="close()" class="block text-sm">
                     Lecciones aprendidas
                 </a>
-                <a routerLink="/projects/dashboard" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/dashboard" (click)="close()" class="block text-sm">
                     Dashboard Lecciones
                 </a>
-                <a routerLink="/projects/milestone-schedule" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/milestone-schedule" (click)="close()" class="block text-sm">
                     Cronograma de hitos
                 </a>
-                <a routerLink="/projects/technical-inspection-visit" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/technical-inspection-visit" (click)="close()" class="block text-sm">
                     Control de IVTs
                 </a>
-                <a routerLink="/projects/construction-logbook" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/construction-logbook" (click)="close()" class="block text-sm">
                     Control de cuaderno de obra
                 </a>
-                <a routerLink="/projects/report-response-control" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/report-response-control" (click)="close()" class="block text-sm">
                     Control de respuesta de informes
                 </a>
-                <a routerLink="/projects/resident-monitoring-measurement" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/projects/resident-monitoring-measurement" (click)="close()" class="block text-sm">
                     Seguimiento y medición de residentes
                 </a>
                 <div (click)="toggle('proyectosConfiguracion')" class="block flex items-center text-sm">
@@ -72,34 +72,34 @@
                     </svg>
                 </div>
                 <div *ngIf="proyectosConfiguracionOpen" class="flex flex-col gap-[10px] pl-[10px]">
-                    <a routerLink="/projects/configuration/projects" class="block text-sm">
+                    <a routerLink="/projects/configuration/projects" (click)="close()" class="block text-sm">
                         Proyectos
                     </a>
-                    <a routerLink="/projects/configuration/areas" class="block text-sm">
+                    <a routerLink="/projects/configuration/areas" (click)="close()" class="block text-sm">
                         Áreas
                     </a>
-                    <a routerLink="/projects/configuration/phases" class="block text-sm">
+                    <a routerLink="/projects/configuration/phases" (click)="close()" class="block text-sm">
                         Fases
                     </a>
-                    <a routerLink="/projects/configuration/stages" class="block text-sm">
+                    <a routerLink="/projects/configuration/stages" (click)="close()" class="block text-sm">
                         Etapas
                     </a>
-                    <a routerLink="/projects/configuration/layers" class="block text-sm">
+                    <a routerLink="/projects/configuration/layers" (click)="close()" class="block text-sm">
                         Niveles
                     </a>
-                    <a routerLink="/projects/configuration/sub-stages" class="block text-sm">
+                    <a routerLink="/projects/configuration/sub-stages" (click)="close()" class="block text-sm">
                         Subetapas
                     </a>
-                    <a routerLink="/projects/configuration/sub-specialties" class="block text-sm">
+                    <a routerLink="/projects/configuration/sub-specialties" (click)="close()" class="block text-sm">
                         Subespecialidades
                     </a>
-                    <a routerLink="/projects/configuration/relations" class="block text-sm">
+                    <a routerLink="/projects/configuration/relations" (click)="close()" class="block text-sm">
                         Config. Relaciones
                     </a>
-                    <a routerLink="/projects/configuration/reminders" class="block text-sm">
+                    <a routerLink="/projects/configuration/reminders" (click)="close()" class="block text-sm">
                         Recordatorios Lecciones
                     </a>
-                    <a routerLink="/projects/configuration/milestones" class="block text-sm">
+                    <a routerLink="/projects/configuration/milestones" (click)="close()" class="block text-sm">
                         Hitos
                     </a>
                 </div>
@@ -125,7 +125,7 @@
                 </svg>
             </div>
             <div *ngIf="seguridadOpen" class="flex flex-col gap-[20px] pl-[37px]">
-                <a routerLink="/security/users" (click)="menuOpen=false" class="block text-sm">
+                <a routerLink="/security/users" (click)="close()" class="block text-sm">
                     Creación de usuarios
                 </a>
             </div>

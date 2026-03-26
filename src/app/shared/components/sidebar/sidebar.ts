@@ -11,7 +11,7 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
-  activeMenu: 'proyectos' | 'seguridad' | null = null;
+  activeMenu: 'proyectos' | 'seguridad' | 'costos' | null = null;
   configOpen = false;
 
   constructor(
@@ -19,11 +19,11 @@ export class Sidebar {
     public authService: AuthService
   ) {}
 
-  isActiveModule(module: 'proyectos' | 'seguridad'): boolean {
+  isActiveModule(module: 'proyectos' | 'seguridad' | 'costos'): boolean {
     return this.router.url.startsWith(`/${module}`);
   }
 
-  toggleMenu(menu: 'proyectos' | 'seguridad', event: MouseEvent) {
+  toggleMenu(menu: 'proyectos' | 'seguridad' | 'costos', event: MouseEvent) {
     event.stopPropagation();
 
     if (this.activeMenu === menu) {
