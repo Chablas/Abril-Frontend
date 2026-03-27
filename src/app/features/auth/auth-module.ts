@@ -5,7 +5,7 @@ import { CompleteRegistration } from "./pages/complete-registration/complete-reg
 import { Login } from "./pages/login/login";
 
 const routes: Routes = [
-  { path: "complete-registration", component: CompleteRegistration },
+  { path: "set-password", component: CompleteRegistration },
   { path: "login", component: Login },
 ]
 

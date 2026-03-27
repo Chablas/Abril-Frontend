@@ -8,13 +8,16 @@ import { jwtDecode } from 'jwt-decode';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly api = `${environment.apiUrl}api/v1/user`;
   private readonly apiUrl = `${environment.apiUrl}api/v1/auth`;
 
   constructor(private http: HttpClient) {}
 
-  completeRegistration(data: { token: string; password: string | null | undefined }) {
-    return this.http.post(`${this.api}/complete-registration`, data);
+  setPassword(data: { token: string; password: string | null | undefined }) {
+    return this.http.post(`${this.apiUrl}/set-password`, data);
+  }
+
+  forgotPassword(userId: number) {
+    return this.http.post(`${this.apiUrl}/forgot-password`, { userId });
   }
 
   login(data: LoginRequestDTO) {

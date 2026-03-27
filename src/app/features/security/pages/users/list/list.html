@@ -6,7 +6,8 @@
         <th class="w-[20%]">Nombre completo</th>
         <th class="w-[20%]">Rol</th>
         <th class="w-[20%]">Correo</th>
-        <th class="w-[20%]">Estado</th>
+        <th class="w-[10%]">Estado</th>
+        <th class="w-[10%]">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -29,6 +30,17 @@
           >
             {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
           </span>
+        </td>
+        <td class="text-center">
+          <div class="flex justify-center">
+            <button class="cursor-pointer" title="Reenviar correo de registro" (click)="resendEmail(item, $event)">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 12V4.5H2V19.5H12M22 17H15M22 17L19.5 14.5M22 17L19.5 19.5" stroke="#64BC04" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M2 4.5L12 12L22 4.5" stroke="#64BC04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
         </td>
       </tr>
     </tbody>
