@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Adjudicaciones } from './adjudicaciones/adjudicaciones';
+import { Adjudicaciones } from './adjudicaciones/components/adjudicaciones';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
