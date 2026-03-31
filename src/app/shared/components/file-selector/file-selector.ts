@@ -1,20 +1,24 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export interface SelectedImage {
+export interface SelectedFile {
   preview: string;
   file: File;
 }
 
 @Component({
-  selector: 'app-image-selector',
+  selector: 'app-file-selector',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './image-selector.html',
-  styleUrl: './image-selector.css',
+  templateUrl: './file-selector.html',
+  styleUrl: './file-selector.css',
 })
-export class ImageSelector {
-  @Output() imageSelected = new EventEmitter<SelectedImage>();
+export class FileSelector {
+  @Input() accept = '.png,.jpg,.jpeg';
+  @Input() label = 'Arrastra archivos aquí o';
+  @Input() hint = 'PNG, JPG, JPEG';
+
+  @Output() fileSelected = new EventEmitter<SelectedFile>();
 
   onDragOver(e: DragEvent) {
     e.preventDefault();
@@ -39,12 +43,8 @@ export class ImageSelector {
 
   private handleFiles(files: FileList) {
     Array.from(files).forEach((file) => {
-      if (!file.type.startsWith('image/')) return;
       const preview = URL.createObjectURL(file);
-      this.imageSelected.emit({
-        preview,
-        file,
-      });
+      this.fileSelected.emit({ preview, file });
     });
   }
 }

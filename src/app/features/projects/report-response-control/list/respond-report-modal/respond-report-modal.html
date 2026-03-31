@@ -2,8 +2,8 @@
 
     <div class="flex flex-col items-center gap-[20px] mt-[20px]">
 
-    <app-image-selector *ngIf="previews.length < maxImages" class="w-full" (imageSelected)="onImageSelected($event)">
-    </app-image-selector>
+    <app-file-selector *ngIf="previews.length < maxImages" class="w-full" (fileSelected)="onImageSelected($event)">
+    </app-file-selector>
 
     <p *ngIf="previews.length < maxImages">o</p>
 

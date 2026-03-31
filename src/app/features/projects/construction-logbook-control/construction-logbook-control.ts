@@ -11,10 +11,11 @@ import { TableComponentData } from '../../../core/models/constructionLogbookCont
 import { ProjectResidentService } from '../../../core/services/projectResident.service';
 import { CreateModalData } from '../../../core/models/constructionLogbookControl/createModalData.model';
 import { DomSanitizer } from '@angular/platform-browser';
+import { FilePreview } from '../../../shared/components/file-preview/file-preview';
 
 @Component({
   selector: 'app-construction-logbook-control',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FilePreview],
   standalone: true,
   templateUrl: './construction-logbook-control.html',
   styleUrl: './construction-logbook-control.css',

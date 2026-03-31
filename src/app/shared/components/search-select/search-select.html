@@ -1,0 +1,82 @@
+<div class="flex flex-col gap-[6px]">
+
+  <!-- Label opcional -->
+  <label *ngIf="showLabel && label" class="text-sm text-[#64BC04] font-medium">
+    {{ label }}
+  </label>
+
+  <!-- Contenedor relativo para el dropdown -->
+  <div class="relative">
+
+    <!-- Trigger -->
+    <button
+      type="button"
+      (click)="toggle($event)"
+      class="w-full flex items-center justify-between border rounded-xl pl-[12px] pr-[10px] py-[10px] text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
+      [ngClass]="isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30' : 'border-[#D6DEE5]'"
+    >
+      <span [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
+        {{ selectedLabel }}
+      </span>
+      <svg
+        class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+        [ngClass]="isOpen ? 'rotate-180' : ''"
+        width="16" height="16" viewBox="0 0 16 9" fill="none"
+      >
+        <path
+          d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z"
+          fill="currentColor"
+        />
+      </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <div
+      *ngIf="isOpen"
+      class="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-[#D6DEE5] rounded-xl shadow-lg z-50 overflow-hidden"
+    >
+      <!-- Buscador -->
+      <div *ngIf="options.length > 5" class="p-[8px] border-b border-[#F0F0F0]">
+        <div class="flex items-center gap-[8px] bg-[#F8F8F8] border border-[#E2E2E2] rounded-lg px-[10px] py-[6px]">
+          <svg class="flex-shrink-0 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 15A5.5 5.5 0 1 0 9.5 4a5.5 5.5 0 0 0 0 11Z" fill="currentColor"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="searchText"
+            placeholder="Buscar..."
+            class="w-full bg-transparent text-sm focus:outline-none text-gray-700 placeholder-gray-400"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+      </div>
+
+      <!-- Lista de opciones -->
+      <div class="overflow-y-auto max-h-[200px] overscroll-contain">
+
+        <!-- Sin resultados -->
+        <div
+          *ngIf="filteredOptions.length === 0"
+          class="px-[12px] py-[10px] text-sm text-gray-400 text-center"
+        >
+          Sin resultados
+        </div>
+
+        <!-- Opciones -->
+        <div
+          *ngFor="let option of filteredOptions"
+          (click)="select(option)"
+          class="px-[12px] py-[9px] text-sm cursor-pointer transition-colors"
+          [ngClass]="option[valueField] === value
+            ? 'bg-[#E5F7D1] text-[#64BC04] font-medium hover:bg-[#d4f0b8]'
+            : 'text-gray-700 hover:bg-[#F0F0F0]'"
+        >
+          {{ option[displayField] }}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

@@ -8,7 +8,7 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { CameraWeb } from '../../../../shared/components/camera-web/camera-web';
 import { CameraPhoto } from "../../../../shared/components/camera-web/camera-web";
 import { ImagePreview } from "../../../../shared/components/image-preview/image-preview";
-import { ImageSelector, SelectedImage } from "../../../../shared/components/image-selector/image-selector";
+import { FileSelector, SelectedFile } from "../../../../shared/components/file-selector/file-selector";
 import { ProjectResidentService } from '../../../../core/services/projectResident.service';
 import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { ResidentReportIncidenceService } from '../../../../core/services/residentReportIncidence.service';
@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 @Component({
   standalone: true,
   selector: 'app-report-response-control-create',
-  imports: [FormsModule, CommonModule, CameraWeb, ImagePreview, ImageSelector],
+  imports: [FormsModule, CommonModule, CameraWeb, ImagePreview, FileSelector],
   templateUrl: './report-response-control-create.html',
   styleUrl: './report-response-control-create.css',
 })
@@ -152,7 +152,7 @@ export class ReportResponseControlCreate implements OnInit {
     this.createDto.images.splice(index, 1);
   }
 
-  onImageSelected(image: SelectedImage) {
+  onImageSelected(image: SelectedFile) {
     if (!this.canAddImage()) {
       URL.revokeObjectURL(image.preview);
 

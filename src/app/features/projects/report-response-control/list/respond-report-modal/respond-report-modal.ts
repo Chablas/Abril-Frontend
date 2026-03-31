@@ -9,13 +9,13 @@ import Swal from 'sweetalert2';
 import { ResidentReportResponseCreateDto } from '../../../../../core/dtos/reportResponseControl/responseCreateDto.model';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { ImageSelector, SelectedImage } from '../../../../../shared/components/image-selector/image-selector';
+import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
 import { ImagePreview } from '../../../../../shared/components/image-preview/image-preview';
 import { CameraPhoto, CameraWeb } from '../../../../../shared/components/camera-web/camera-web';
 
 @Component({
   selector: 'app-respond-report-modal',
-  imports: [CommonModule, FormsModule, BaseModal, ImageSelector, ImagePreview, CameraWeb],
+  imports: [CommonModule, FormsModule, BaseModal, FileSelector, ImagePreview, CameraWeb],
   templateUrl: './respond-report-modal.html',
   styleUrl: './respond-report-modal.css',
 })
@@ -101,7 +101,7 @@ export class RespondReportModal {
     this.createDto.images.splice(index, 1);
   }
 
-  onImageSelected(image: SelectedImage) {
+  onImageSelected(image: SelectedFile) {
     if (!this.canAddImage()) {
       URL.revokeObjectURL(image.preview);
 
