@@ -115,6 +115,9 @@ export class Create implements OnInit {
     form.append('contractTypeId', this.createDto.contractTypeId.toString());
     form.append('contractOriginId', this.createDto.contractOriginId.toString());
     form.append('paymentMethodId', this.createDto.paymentMethodId.toString());
+    if (this.createDto.paymentMethodId === 2 && this.createDto.advancePercentage != null) {
+      form.append('advancePercentage', this.createDto.advancePercentage.toString());
+    }
     form.append('amount', this.createDto.amount.toString());
     form.append('currencyId', this.createDto.currencyId.toString());
     form.append('hasIgv', this.createDto.hasIgv.toString());
@@ -135,5 +138,19 @@ export class Create implements OnInit {
         this.errorService.handleError(err);
       }
     });
+  }
+
+  blockExtraDecimals(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const match = input.value.match(/^\d*\.?\d{0,2}/);
+    let clamped = match ? match[0] : '';
+    const numeric = parseFloat(clamped);
+    if (!isNaN(numeric) && numeric > 100) {
+      clamped = '100';
+    }
+    if (input.value !== clamped) {
+      input.value = clamped;
+    }
+    this.createDto.advancePercentage = clamped !== '' ? parseFloat(clamped) : undefined;
   }
 }

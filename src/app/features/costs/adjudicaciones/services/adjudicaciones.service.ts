@@ -4,10 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ProjectSubContractorFormDataDTO } from '../dtos/projectSubContractorFormDataDTO.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
-/*import { AreaPagedDTO } from '../dtos/area/areaPaged.model';
-import { AreaCreateDTO } from '../dtos/area/areaCreate.model';
-import { AreaEditDTO } from '../dtos/area/areaEdit.model';
-import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';*/
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { ProjectSubContractorDTO } from '../dtos/projectSubContractorDto.model';
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +25,21 @@ export class AdjudicacionesService {
   createAdjudicacion(form: FormData): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  getAdjudicacionPaged(filters: any): Observable<PagedResponseDTO<ProjectSubContractorDTO>> {
+    const token = localStorage.getItem('access_token');
+    let params = new HttpParams();
+
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined && filters[key] !== 0) {
+        params = params.set(key, filters[key]);
+      }
+    });
+    return this.http.get<PagedResponseDTO<ProjectSubContractorDTO>>(`${this.apiUrl}/paged`, {
+      params,
       headers: { Authorization: `Bearer ${token}` },
     });
   }

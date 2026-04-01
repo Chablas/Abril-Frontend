@@ -4,34 +4,44 @@
     Nueva adjudicación
   </button>
 
-  <input type="text" placeholder="Buscar razón social, servicio…"
+  <input type="text" [(ngModel)]="filters.search" placeholder="Buscar razón social, servicio…"
     class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-72 bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/40" />
 
-  <select class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-500 focus:outline-none cursor-pointer">
-    <option value="">Todos los proyectos</option>
-    <option>Amaranta</option>
-    <option>Bellavista</option>
-    <option>Cerros del Sur</option>
+  <select [(ngModel)]="filters.projectId" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-500 focus:outline-none cursor-pointer">
+    <option [ngValue]="0">Todos los proyectos</option>
   </select>
 
-  <select class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-500 focus:outline-none cursor-pointer">
-    <option value="">Todos los estados</option>
-    <option>Enviado</option>
-    <option>En revisión</option>
-    <option>Aprobado</option>
-    <option>Enviado al SC</option>
-    <option>Llegada a Of. Central</option>
-    <option>Proceso de firma</option>
-    <option>Escaneado</option>
-    <option>Enviado a obra</option>
-  </select>
+  <button (click)="load()" class="bg-[#64BC04] text-white text-sm px-4 py-2 rounded-lg cursor-pointer hover:bg-[#57a803] transition-colors">
+    Buscar
+  </button>
 
-  <span class="text-xs text-gray-400 ml-auto">6 registros</span>
+  <span class="text-xs text-gray-400 ml-auto">{{ totalRecords }} registros</span>
 </div>
 
-<app-card></app-card>
+<main class="pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+  <app-card
+    *ngFor="let item of items"
+    [item]="item"
+    (cardClick)="openDetail(item)">
+  </app-card>
+</main>
 
-<app-create 
+<app-paginator
+  [totalRecords]="totalRecords"
+  [currentPage]="currentPage"
+  [totalPages]="totalPages"
+  (pageChange)="load($event)">
+</app-paginator>
+
+<app-create
   *ngIf="showCreateModal"
-  (closeModal)="showCreateModal = false">
+  (closeModal)="showCreateModal = false"
+  (saved)="load(currentPage)">
 </app-create>
+
+<app-detail
+  *ngIf="selectedItem"
+  [item]="selectedItem"
+  (closeModal)="selectedItem = null"
+  (statusChanged)="load(currentPage)">
+</app-detail>
