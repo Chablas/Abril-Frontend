@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LeccionesAprendidas } from './lecciones-aprendidas/lecciones-aprendidas';
+import { LeccionesAprendidas } from './lecciones-aprendidas/components/lecciones-aprendidas';
 import { LessonsDashboard } from './lessons-dashboard/lessons-dashboard';
 import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
 import { IvtControl } from '../projects/ivt-control/ivt-control';
