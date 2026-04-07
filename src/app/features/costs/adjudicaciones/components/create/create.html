@@ -136,15 +136,31 @@
 
         <!-- Archivos de cotización -->
         <div class="flex flex-col gap-[8px]">
-          <label class="text-sm text-[#64BC04] font-medium">Archivos de cotización</label>
-          <app-file-selector *ngIf="quotationFileItems.length < maxFiles" (fileSelected)="onQuotationImageSelected($event)"></app-file-selector>
+          <label class="text-sm text-[#64BC04] font-medium">
+            Archivos de cotización
+            <span class="text-gray-400 font-normal">(máx. {{ maxQuotationFiles }})</span>
+          </label>
+          <app-file-selector
+            *ngIf="quotationFileItems.length < maxQuotationFiles"
+            accept="*"
+            hint="Cualquier archivo"
+            (fileSelected)="onQuotationImageSelected($event)">
+          </app-file-selector>
           <app-file-preview [files]="quotationFileItems" (remove)="removeQuotationFile($event)"></app-file-preview>
         </div>
 
         <!-- Archivos comparativos -->
         <div class="flex flex-col gap-[8px]">
-          <label class="text-sm text-[#64BC04] font-medium">Archivos comparativos</label>
-          <app-file-selector *ngIf="comparativeFileItems.length < maxFiles" (fileSelected)="onComparativeImageSelected($event)"></app-file-selector>
+          <label class="text-sm text-[#64BC04] font-medium">
+            Archivos comparativos
+            <span class="text-gray-400 font-normal">(máx. {{ maxComparativeFiles }})</span>
+          </label>
+          <app-file-selector
+            *ngIf="comparativeFileItems.length < maxComparativeFiles"
+            accept="*"
+            hint="Cualquier archivo"
+            (fileSelected)="onComparativeImageSelected($event)">
+          </app-file-selector>
           <app-file-preview [files]="comparativeFileItems" (remove)="removeComparativeFile($event)"></app-file-preview>
         </div>
 

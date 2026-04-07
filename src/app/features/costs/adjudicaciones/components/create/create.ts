@@ -51,7 +51,8 @@ export class Create implements OnInit {
 
   quotationFileItems: FilePreviewItem[] = [];
   comparativeFileItems: FilePreviewItem[] = [];
-  maxFiles = 1;
+  readonly maxQuotationFiles = 3;
+  readonly maxComparativeFiles = 1;
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();

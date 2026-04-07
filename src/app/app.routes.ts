@@ -31,6 +31,7 @@ export const routes: Routes = [
           import('./features/projects/proyectos-module')
           .then(m => m.ProyectosModule)
       },
+
       {
         path: 'costs',
         loadChildren: () =>
@@ -38,6 +39,13 @@ export const routes: Routes = [
           .then(m => m.CostsModule)
       }
     ]
+  },
+
+  {
+    path: 'contractors',
+    loadChildren: () =>
+      import('./features/contractors/contractors.routes')
+      .then(m => m.CONTRACTORS_ROUTES)
   },
 
   {
