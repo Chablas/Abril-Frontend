@@ -10,16 +10,15 @@ import { environment } from '../../../../../environments/environment';
   providedIn: 'root',
 })
 export class ContractorService {
-  private readonly apiUrl = `${environment.apiUrl}api/v1/company`;
-  private readonly personApiUrl = `${environment.apiUrl}api/v1/person`;
+  private readonly apiUrl = `${environment.apiUrl}api/v1/contractorRegistration`;
 
   constructor(private http: HttpClient) {}
 
   getCompanyBySunat(ruc: string): Observable<SunatCompanyDTO> {
-    return this.http.get<SunatCompanyDTO>(`${this.personApiUrl}/sunat/${ruc}`);
+    return this.http.get<SunatCompanyDTO>(`${this.apiUrl}/ruc/${ruc}`);
   }
 
   register(dto: CompanyRegisterDTO): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/register`, dto);
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, dto);
   }
 }

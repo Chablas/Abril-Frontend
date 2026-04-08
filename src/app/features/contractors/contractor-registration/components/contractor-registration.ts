@@ -23,9 +23,9 @@ export class ContractorRegistration {
   form: CompanyRegisterDTO = {
     companyRuc: '',
     companyName: '',
-    address: '',
-    economicActivityDescription: '',
-    emails: [''],
+    companyAddress: '',
+    companyEconomicActivityDescription: '',
+    companyEmails: [''],
   };
 
   constructor(
@@ -41,10 +41,10 @@ export class ContractorRegistration {
     this.contractorService.getCompanyBySunat(this.rucInput).subscribe({
       next: (data) => {
         this.sunatData = data;
-        this.form.companyRuc = data.numero_documento;
-        this.form.companyName = data.razon_social;
-        this.form.address = data.direccion;
-        this.form.economicActivityDescription = data.actividad_economica;
+        this.form.companyRuc = data.companyRuc;
+        this.form.companyName = data.companyName;
+        this.form.companyAddress = data.companyAddress;
+        this.form.companyEconomicActivityDescription = data.companyEconomicActivityDescription;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -58,12 +58,12 @@ export class ContractorRegistration {
   }
 
   addEmail() {
-    this.form.emails.push('');
+    this.form.companyEmails.push('');
   }
 
   removeEmail(index: number) {
-    if (this.form.emails.length > 1) {
-      this.form.emails.splice(index, 1);
+    if (this.form.companyEmails.length > 1) {
+      this.form.companyEmails.splice(index, 1);
     }
   }
 

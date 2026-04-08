@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { LessonService } from '../../../../core/services/lesson.service';
 import { LessonListDTO } from '../../../../core/dtos/lesson/lesson.model';
@@ -11,13 +10,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { CreateLesson } from './create/create';
 import { DetailLesson } from './detail/detail';
+import { LessonList } from './list/list';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { environment } from '../../../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-lecciones-aprendidas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson],
+  imports: [CommonModule, Paginator, CreateLesson, DetailLesson, LessonList, SearchSelect],
   templateUrl: './lecciones-aprendidas.html',
 })
 export class LeccionesAprendidas implements OnInit {
@@ -30,15 +31,27 @@ export class LeccionesAprendidas implements OnInit {
   totalPages = 0;
   totalRecords = 0;
 
-  // Filters
+  // Filters raw
   filtersData: LessonFiltersDTO = {
     projects: [], areas: [], periods: [], phases: [],
     stages: [], layers: [], subStages: [], subSpecialties: [], users: [],
   };
+
+  // Computed SearchSelect options (with null "Todos" prepended)
+  projectOptions: any[] = [];
+  areaOptions: any[] = [];
+  phaseOptions: any[] = [];
+  stageOptions: any[] = [];
+  layerOptions: any[] = [];
+  subStageOptions: any[] = [];
+  subSpecialtyOptions: any[] = [];
+  userOptions: any[] = [];
+  periodOptions: any[] = [];
+
   filtersTable = {
     projectId: null as number | null,
     areaId: null as number | null,
-    periodDate: null as Date | null,
+    periodDate: null as string | null,
     phaseId: null as number | null,
     stageId: null as number | null,
     layerId: null as number | null,
@@ -81,10 +94,39 @@ export class LeccionesAprendidas implements OnInit {
         this.currentPage = lessons.page;
         this.totalPages = lessons.totalPages;
         this.totalRecords = lessons.totalRecords;
+        this.buildFilterOptions(filtersData);
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  private buildFilterOptions(fd: LessonFiltersDTO): void {
+    this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
+    this.areaOptions = [{ areaId: null, areaDescription: 'Todas las areas' }, ...fd.areas];
+    this.phaseOptions = [{ phaseId: null, phaseDescription: 'Todas las fases' }, ...(fd.phases ?? [])];
+    this.stageOptions = [{ stageId: null, stageDescription: 'Todas las etapas' }, ...(fd.stages ?? [])];
+    this.layerOptions = [{ layerId: null, layerDescription: 'Todos los niveles' }, ...(fd.layers ?? [])];
+    this.subStageOptions = [{ subStageId: null, subStageDescription: 'Todas las subetapas' }, ...(fd.subStages ?? [])];
+    this.subSpecialtyOptions = [{ subSpecialtyId: null, subSpecialtyDescription: 'Todas' }, ...(fd.subSpecialties ?? [])];
+    this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
+    this.periodOptions = [
+      { periodDate: null, periodLabel: 'Todos los periodos' },
+      ...fd.periods.map(p => ({
+        periodDate: this.formatPeriodValue(p.periodDate),
+        periodLabel: this.formatPeriodLabel(p.periodDate),
+      })),
+    ];
+  }
+
+  private formatPeriodValue(date: Date): string {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  private formatPeriodLabel(date: Date): string {
+    const d = new Date(date);
+    return `${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
   }
 
   loadLessons(page: number = 1): void {
@@ -128,17 +170,8 @@ export class LeccionesAprendidas implements OnInit {
     this.showCreateModal = true;
   }
 
-  openDetail(lessonId: number, event: MouseEvent, tab: 'general' | 'images'): void {
-    event.stopPropagation();
-    this.selectedLessonId = lessonId;
-    this.selectedLessonTab = tab;
-  }
-
-  getOpportunityImages(images: any[]): any[] {
-    return images?.filter(img => img.imageTypeDescription === 'OPORTUNIDAD') ?? [];
-  }
-
-  getImprovementImages(images: any[]): any[] {
-    return images?.filter(img => img.imageTypeDescription === 'MEJORA') ?? [];
+  onViewDetail(ev: { lessonId: number; tab: 'general' | 'images' }): void {
+    this.selectedLessonId = ev.lessonId;
+    this.selectedLessonTab = ev.tab;
   }
 }

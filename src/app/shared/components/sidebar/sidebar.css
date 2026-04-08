@@ -1,3 +1,8 @@
+:host {
+  position: relative;
+  z-index: 30;
+}
+
 @keyframes dropdown {
   from {
     opacity: 0;

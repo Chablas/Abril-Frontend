@@ -20,194 +20,119 @@
 
   <!-- Filters -->
   <div class="flex flex-col h-full min-h-0">
-    <form (ngSubmit)="onSearch()" class="w-full">
-      <div class="flex flex-wrap gap-4 py-3 items-end">
+    <div class="flex flex-wrap gap-4 py-3 items-end">
+      
+      <app-search-select
+        label="Proyecto"
+        [options]="projectOptions"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filtersTable.projectId"
+        (valueChange)="filtersTable.projectId = $event">
+      </app-search-select>
 
-        <div class="w-[200px]">
-          <p class="text-sm text-[#64BC04] font-medium mb-1">Proyecto</p>
-          <select [(ngModel)]="filtersTable.projectId" name="projectId"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="null">Todos los proyectos</option>
-            <option *ngFor="let p of filtersData.projects" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-          </select>
-        </div>
+      <app-search-select
+        label="Area"
+        [options]="areaOptions"
+        valueField="areaId"
+        displayField="areaDescription"
+        [value]="filtersTable.areaId"
+        (valueChange)="filtersTable.areaId = $event">
+      </app-search-select>
 
-        <div class="w-[200px]">
-          <p class="text-sm text-[#64BC04] font-medium mb-1">Area</p>
-          <select [(ngModel)]="filtersTable.areaId" name="areaId"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="null">Todas las areas</option>
-            <option *ngFor="let a of filtersData.areas" [ngValue]="a.areaId">{{ a.areaDescription }}</option>
-          </select>
-        </div>
+      <!-- Advanced filters -->
+      <ng-container *ngIf="showFilters">
 
-        <!-- Advanced filters -->
-        <ng-container *ngIf="showFilters">
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Fase</p>
-            <select [(ngModel)]="filtersTable.phaseId" name="phaseId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todas las fases</option>
-              <option *ngFor="let p of filtersData.phases" [ngValue]="p.phaseId">{{ p.phaseDescription }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Fase"
+          [options]="phaseOptions"
+          valueField="phaseId"
+          displayField="phaseDescription"
+          [value]="filtersTable.phaseId"
+          (valueChange)="filtersTable.phaseId = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Etapa</p>
-            <select [(ngModel)]="filtersTable.stageId" name="stageId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todas las etapas</option>
-              <option *ngFor="let s of filtersData.stages" [ngValue]="s.stageId">{{ s.stageDescription }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Etapa"
+          [options]="stageOptions"
+          valueField="stageId"
+          displayField="stageDescription"
+          [value]="filtersTable.stageId"
+          (valueChange)="filtersTable.stageId = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Nivel</p>
-            <select [(ngModel)]="filtersTable.layerId" name="layerId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todos los niveles</option>
-              <option *ngFor="let l of filtersData.layers" [ngValue]="l.layerId">{{ l.layerDescription }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Nivel"
+          [options]="layerOptions"
+          valueField="layerId"
+          displayField="layerDescription"
+          [value]="filtersTable.layerId"
+          (valueChange)="filtersTable.layerId = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Subetapa</p>
-            <select [(ngModel)]="filtersTable.subStageId" name="subStageId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todas las subetapas</option>
-              <option *ngFor="let ss of filtersData.subStages" [ngValue]="ss.subStageId">{{ ss.subStageDescription }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Subetapa"
+          [options]="subStageOptions"
+          valueField="subStageId"
+          displayField="subStageDescription"
+          [value]="filtersTable.subStageId"
+          (valueChange)="filtersTable.subStageId = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Subespecialidad</p>
-            <select [(ngModel)]="filtersTable.subSpecialtyId" name="subSpecialtyId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todas</option>
-              <option *ngFor="let sp of filtersData.subSpecialties" [ngValue]="sp.subSpecialtyId">{{ sp.subSpecialtyDescription }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Subespecialidad"
+          [options]="subSpecialtyOptions"
+          valueField="subSpecialtyId"
+          displayField="subSpecialtyDescription"
+          [value]="filtersTable.subSpecialtyId"
+          (valueChange)="filtersTable.subSpecialtyId = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Periodo</p>
-            <select [(ngModel)]="filtersTable.periodDate" name="periodDate"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todos los periodos</option>
-              <option *ngFor="let p of filtersData.periods" [ngValue]="p.periodDate | date:'yyyy-MM-dd'">{{ p.periodDate | date:'MM-yyyy' }}</option>
-            </select>
-          </div>
+        <app-search-select
+          label="Periodo"
+          [options]="periodOptions"
+          valueField="periodDate"
+          displayField="periodLabel"
+          [value]="filtersTable.periodDate"
+          (valueChange)="filtersTable.periodDate = $event">
+        </app-search-select>
 
-          <div class="w-[200px]">
-            <p class="text-sm text-[#64BC04] font-medium mb-1">Usuario</p>
-            <select [(ngModel)]="filtersTable.userId" name="userId"
-              class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-              <option [ngValue]="null">Todos los usuarios</option>
-              <option *ngFor="let u of filtersData.users" [ngValue]="u.userId">{{ u.fullName }}</option>
-            </select>
-          </div>
-        </ng-container>
+        <app-search-select
+          label="Usuario"
+          [options]="userOptions"
+          valueField="userId"
+          displayField="fullName"
+          [value]="filtersTable.userId"
+          (valueChange)="filtersTable.userId = $event">
+        </app-search-select>
 
-        <button type="button" (click)="showFilters = !showFilters"
-          class="h-[38px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
-          <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
-            <path fill-rule="evenodd" clip-rule="evenodd"
-              d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
-              fill="#64BC04"/>
-          </svg>
-          {{ showFilters ? 'Ocultar filtros' : 'Busqueda avanzada' }}
-        </button>
+      </ng-container>
 
-        <button type="submit"
-          class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
-          </svg>
-          Buscar
-        </button>
-      </div>
-    </form>
+      <button type="button" (click)="showFilters = !showFilters"
+        class="h-[38px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+            fill="#64BC04"/>
+        </svg>
+        {{ showFilters ? 'Ocultar filtros' : 'Busqueda avanzada' }}
+      </button>
+
+      <button type="button" (click)="onSearch()"
+        class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+        </svg>
+        Buscar
+      </button>
+    </div>
 
     <!-- Table -->
-    <div class="w-full min-h-0 rounded-lg overflow-y-auto overflow-x-auto border border-gray-200">
-      <table class="table-auto w-full">
-        <thead class="bg-[#E5F7D1] sticky top-0 z-10">
-          <tr class="text-[#64BC04] text-sm">
-            <th class="py-2 px-3 text-left font-semibold">Datos generales</th>
-            <th class="py-2 px-3 text-center font-semibold">Descripcion</th>
-            <th class="py-2 px-3 text-center font-semibold">Causas</th>
-            <th class="py-2 px-3 text-center font-semibold">Leccion aprendida</th>
-            <th class="py-2 px-3 text-center font-semibold">Impacto en obra</th>
-            <th class="py-2 px-3 text-center font-semibold">Oportunidad</th>
-            <th class="py-2 px-3 text-center font-semibold">Mejora</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of lessons" class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-
-            <!-- Datos generales -->
-            <td class="px-3 py-2 bg-[#f9faf8] cursor-pointer min-w-[180px]"
-              (click)="openDetail(item.lessonId, $event, 'general')">
-              <div class="flex flex-col gap-0.5">
-                <span class="text-sm font-semibold text-gray-800 line-clamp-1" [title]="item.projectDescription">{{ item.projectDescription }}</span>
-                <span class="text-xs text-gray-500">{{ item.period?.toUpperCase() }} · {{ item.areaDescription }}</span>
-                <span class="text-xs text-[#64BC04] font-medium">{{ item.phaseDescription }}</span>
-                <span *ngIf="item.stageDescription" class="text-xs text-gray-500">{{ item.stageDescription }}</span>
-                <span *ngIf="item.layerDescription" class="text-xs text-gray-400">{{ item.layerDescription }}</span>
-                <span *ngIf="item.subStageDescription" class="text-xs text-gray-400">{{ item.subStageDescription }}</span>
-                <span *ngIf="item.subSpecialtyDescription" class="text-xs text-gray-400">{{ item.subSpecialtyDescription }}</span>
-              </div>
-            </td>
-
-            <!-- Descripcion -->
-            <td class="px-3 py-2 text-center">
-              <span [title]="item.problemDescription" class="block line-clamp-4 text-sm text-gray-700">{{ item.problemDescription }}</span>
-            </td>
-
-            <!-- Causas -->
-            <td class="px-3 py-2 text-center">
-              <span [title]="item.reasonDescription" class="block line-clamp-4 text-sm text-gray-700">{{ item.reasonDescription }}</span>
-            </td>
-
-            <!-- Leccion aprendida -->
-            <td class="px-3 py-2 text-center">
-              <span [title]="item.lessonDescription" class="block line-clamp-4 text-sm text-gray-700">{{ item.lessonDescription }}</span>
-            </td>
-
-            <!-- Impacto -->
-            <td class="px-3 py-2 text-center">
-              <span [title]="item.impactDescription" class="block line-clamp-4 text-sm text-gray-700">{{ item.impactDescription }}</span>
-            </td>
-
-            <!-- Oportunidad (thumbnail) -->
-            <td class="px-2 py-2 text-center cursor-pointer" (click)="openDetail(item.lessonId, $event, 'images')">
-              <ng-container *ngIf="getOpportunityImages(item.images) as imgs">
-                <ng-container *ngIf="imgs.length > 0; else sinImgOp">
-                  <img [src]="imgs[0].imageUrl.startsWith('http') ? imgs[0].imageUrl : apiUrl + imgs[0].imageUrl"
-                    class="h-24 w-auto object-contain rounded mx-auto" />
-                </ng-container>
-              </ng-container>
-              <ng-template #sinImgOp>
-                <span class="text-xs text-gray-400 italic">Sin imagen</span>
-              </ng-template>
-            </td>
-
-            <!-- Mejora (thumbnail) -->
-            <td class="px-2 py-2 text-center cursor-pointer" (click)="openDetail(item.lessonId, $event, 'images')">
-              <ng-container *ngIf="getImprovementImages(item.images) as imgs">
-                <ng-container *ngIf="imgs.length > 0; else sinImgMej">
-                  <img [src]="imgs[0].imageUrl.startsWith('http') ? imgs[0].imageUrl : apiUrl + imgs[0].imageUrl"
-                    class="h-24 w-auto object-contain rounded mx-auto" />
-                </ng-container>
-              </ng-container>
-              <ng-template #sinImgMej>
-                <span class="text-xs text-gray-400 italic">Sin imagen</span>
-              </ng-template>
-            </td>
-
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <app-lesson-list
+      [lessons]="lessons"
+      [apiUrl]="apiUrl"
+      (viewDetail)="onViewDetail($event)">
+    </app-lesson-list>
 
     <!-- Paginator -->
     <app-paginator

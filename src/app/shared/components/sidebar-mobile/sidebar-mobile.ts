@@ -1,40 +1,35 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from "@angular/common";
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { NavigationService } from '../../../core/navigation/navigation.service';
+import { NavIcon } from '../nav-icon/nav-icon';
 
 @Component({
   selector: 'app-sidebar-mobile',
-  imports: [RouterModule, CommonModule],
+  standalone: true,
+  imports: [RouterModule, CommonModule, NavIcon],
   templateUrl: './sidebar-mobile.html',
   styleUrl: './sidebar-mobile.css',
 })
 export class SidebarMobile {
-  proyectosOpen = false;
-  proyectosConfiguracionOpen = false;
-  seguridadOpen = false;
   @Input() menuOpen: boolean = false;
   @Output() menuOpenChange = new EventEmitter<boolean>();
 
-  close() {
+  openModule: string | null = null;
+  openGroup: string | null = null;
+
+  constructor(public navService: NavigationService) {}
+
+  close(): void {
     this.menuOpenChange.emit(false);
   }
 
-  toggle(menu: 'proyectos' | 'seguridad' | 'proyectosConfiguracion') {
-    if (menu === 'proyectos') {
-      this.proyectosOpen = !this.proyectosOpen;
+  toggleModule(key: string): void {
+    this.openModule = this.openModule === key ? null : key;
+    this.openGroup = null;
+  }
 
-      this.seguridadOpen = false;
-    }
-
-    if (menu === 'seguridad') {
-      this.seguridadOpen = !this.seguridadOpen;
-
-      this.proyectosOpen = false;
-      this.proyectosConfiguracionOpen = false;
-    }
-
-    if (menu === 'proyectosConfiguracion') {
-      this.proyectosConfiguracionOpen = !this.proyectosConfiguracionOpen;
-    }
+  toggleGroup(label: string): void {
+    this.openGroup = this.openGroup === label ? null : label;
   }
 }

@@ -1,0 +1,46 @@
+<div class="flex flex-col p-[20px] h-full">
+  <div>
+    <p class="font-sans text-3xl font-bold">Módulos</p>
+  </div>
+
+  <div class="flex flex-1 flex-wrap justify-start gap-[10px] mt-[50px]">
+
+    <div
+      *ngFor="let module of navService.getModules()"
+      [routerLink]="navService.filterItems(module.items)[0]?.route"
+      class="cursor-pointer flex justify-between rounded-[25px] bg-[#E5F7D1] w-[200px] h-[175px] p-[40px] border-2 border-transparent hover:border-2 hover:border-[#0086A5] hover:bg-white"
+    >
+      <div class="flex flex-col justify-between items-center">
+        <app-nav-icon [key]="module.iconKey" [size]="50" />
+        <p class="text-[#64BC04]">{{ module.label }}</p>
+      </div>
+
+      <!-- Dropdown de funcionalidades -->
+      <div class="relative h-[32px]">
+        <button
+          type="button"
+          class="p-1 rounded-full hover:bg-gray-200 cursor-pointer"
+          (click)="toggleMenu(module.key, $event)"
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M14.4004 24.4004C14.4004 23.87 14.6111 23.3612 14.9862 22.9862C15.3612 22.6111 15.87 22.4004 16.4004 22.4004C16.9308 22.4004 17.4395 22.6111 17.8146 22.9862C18.1897 23.3612 18.4004 23.87 18.4004 24.4004C18.4004 24.9308 18.1897 25.4395 17.8146 25.8146C17.4395 26.1897 16.9308 26.4004 16.4004 26.4004C15.87 26.4004 15.3612 26.1897 14.9862 25.8146C14.6111 25.4395 14.4004 24.9308 14.4004 24.4004ZM14.4004 16.4004C14.4004 15.87 14.6111 15.3612 14.9862 14.9862C15.3612 14.6111 15.87 14.4004 16.4004 14.4004C16.9308 14.4004 17.4395 14.6111 17.8146 14.9862C18.1897 15.3612 18.4004 15.87 18.4004 16.4004C18.4004 16.9308 18.1897 17.4395 17.8146 17.8146C17.4395 18.1897 16.9308 18.4004 16.4004 18.4004C15.87 18.4004 15.3612 18.1897 14.9862 17.8146C14.6111 17.4395 14.4004 16.9308 14.4004 16.4004ZM14.4004 8.40039C14.4004 7.86996 14.6111 7.36125 14.9862 6.98618C15.3612 6.6111 15.87 6.40039 16.4004 6.40039C16.9308 6.40039 17.4395 6.6111 17.8146 6.98618C18.1897 7.36125 18.4004 7.86996 18.4004 8.40039C18.4004 8.93082 18.1897 9.43953 17.8146 9.8146C17.4395 10.1897 16.9308 10.4004 16.4004 10.4004C15.87 10.4004 15.3612 10.1897 14.9862 9.8146C14.6111 9.43953 14.4004 8.93082 14.4004 8.40039Z" fill="black"/>
+          </svg>
+        </button>
+
+        <div
+          *ngIf="openMenu === module.key"
+          class="absolute left-0 top-full mt-2 p-2 w-60 bg-white rounded-xl shadow-lg z-50"
+        >
+          <a
+            *ngFor="let item of navService.filterItems(module.items)"
+            [routerLink]="item.route"
+            class="block w-full text-left px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl cursor-pointer"
+          >
+            {{ item.label }}
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

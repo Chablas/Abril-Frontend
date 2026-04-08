@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { Inicio } from './pages/inicio/inicio';
+import { Inicio } from './features/home/inicio';
 import { Layout } from './shared/components/layout/layout';
 import { authGuard } from './core/guards/auth.guard';
 

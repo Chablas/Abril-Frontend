@@ -1,53 +1,49 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/services/auth.service';
+import { NavigationService } from '../../../core/navigation/navigation.service';
+import { NavIcon } from '../nav-icon/nav-icon';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, NavIcon],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
-  activeMenu: 'proyectos' | 'seguridad' | 'costos' | null = null;
-  configOpen = false;
+  activeMenu: string | null = null;
+  activeGroup: string | null = null;
 
   constructor(
     private router: Router,
-    public authService: AuthService
+    public navService: NavigationService,
+    private elementRef: ElementRef,
   ) {}
 
-  isActiveModule(module: 'proyectos' | 'seguridad' | 'costos'): boolean {
-    return this.router.url.startsWith(`/${module}`);
+  isActiveModule(baseRoute: string): boolean {
+    return this.router.url.startsWith(baseRoute);
   }
 
-  toggleMenu(menu: 'proyectos' | 'seguridad' | 'costos', event: MouseEvent) {
-    event.stopPropagation();
+  toggleMenu(key: string): void {
+    this.activeMenu = this.activeMenu === key ? null : key;
+    this.activeGroup = null;
+  }
 
-    if (this.activeMenu === menu) {
+  toggleGroup(label: string): void {
+    this.activeGroup = this.activeGroup === label ? null : label;
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeAll(event: MouseEvent): void {
+    if (!this.elementRef.nativeElement.contains(event.target as Node)) {
       this.activeMenu = null;
-      this.configOpen = false;
-    } else {
-      this.activeMenu = menu;
-      this.configOpen = false;
+      this.activeGroup = null;
     }
   }
 
-  toggleConfig(event: MouseEvent) {
-    event.stopPropagation();
-    this.configOpen = !this.configOpen;
-  }
-
-  @HostListener('document:click')
-  closeAll() {
+  closeAllMenus(): void {
     this.activeMenu = null;
-    this.configOpen = false;
-  }
-
-  closeAllMenus() {
-    this.activeMenu = null;
-    this.configOpen = false;
+    this.activeGroup = null;
   }
 }
