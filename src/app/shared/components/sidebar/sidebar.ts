@@ -3,6 +3,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { NavIcon } from '../nav-icon/nav-icon';
+import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 
 @Component({
   selector: 'app-sidebar',
@@ -45,5 +46,17 @@ export class Sidebar {
   closeAllMenus(): void {
     this.activeMenu = null;
     this.activeGroup = null;
+  }
+
+  trackByModuleKey(_: number, module: NavModule): string {
+    return module.key;
+  }
+
+  trackByGroupLabel(_: number, group: NavGroup): string {
+    return group.label;
+  }
+
+  trackByItemRoute(_: number, item: NavItem): string {
+    return item.route;
   }
 }

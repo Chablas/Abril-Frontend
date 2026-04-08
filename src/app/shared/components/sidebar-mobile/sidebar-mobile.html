@@ -8,10 +8,10 @@
 
     <nav class="flex flex-col py-4 px-8 gap-4">
 
-      <ng-container *ngFor="let module of navService.getModules()">
+      <ng-container *ngFor="let module of navService.getModules(); trackBy: trackByModuleKey">
 
         <!-- Encabezado del módulo -->
-        <div (click)="toggleModule(module.key)" class="flex items-center gap-[10px] cursor-pointer hover:text-[#64BC04]">
+        <div (click)="toggleModule(module.key, $event)" class="flex items-center gap-[10px] cursor-pointer hover:text-[#64BC04]">
           <app-nav-icon [key]="module.iconKey" [size]="28" />
           <span class="text-sm">{{ module.label }}</span>
 
@@ -29,7 +29,7 @@
 
           <!-- Items directos -->
           <a
-            *ngFor="let item of navService.filterItems(module.items)"
+            *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
             [routerLink]="item.route"
             (click)="close()"
             class="block text-sm"
@@ -38,8 +38,8 @@
           </a>
 
           <!-- Grupos (ej. Configuración) -->
-          <ng-container *ngFor="let group of navService.filterGroups(module.groups)">
-            <div (click)="toggleGroup(group.label)" class="flex items-center text-sm cursor-pointer">
+          <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
+            <div (click)="toggleGroup(group.label, $event)" class="flex items-center text-sm cursor-pointer">
               <span>{{ group.label }}</span>
               <svg *ngIf="openGroup !== group.label" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none">
                 <path d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z" fill="#64BC04"/>
@@ -51,7 +51,7 @@
 
             <div *ngIf="openGroup === group.label" class="flex flex-col gap-[10px] pl-[10px]">
               <a
-                *ngFor="let item of group.items"
+                *ngFor="let item of group.items; trackBy: trackByItemRoute"
                 [routerLink]="item.route"
                 (click)="close()"
                 class="block text-sm"

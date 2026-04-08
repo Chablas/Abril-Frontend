@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { NavIcon } from '../nav-icon/nav-icon';
+import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 
 @Component({
   selector: 'app-sidebar-mobile',
@@ -24,12 +25,26 @@ export class SidebarMobile {
     this.menuOpenChange.emit(false);
   }
 
-  toggleModule(key: string): void {
+  toggleModule(key: string, event: MouseEvent): void {
+    event.stopPropagation();
     this.openModule = this.openModule === key ? null : key;
     this.openGroup = null;
   }
 
-  toggleGroup(label: string): void {
+  toggleGroup(label: string, event: MouseEvent): void {
+    event.stopPropagation();
     this.openGroup = this.openGroup === label ? null : label;
+  }
+
+  trackByModuleKey(_: number, module: NavModule): string {
+    return module.key;
+  }
+
+  trackByGroupLabel(_: number, group: NavGroup): string {
+    return group.label;
+  }
+
+  trackByItemRoute(_: number, item: NavItem): string {
+    return item.route;
   }
 }
