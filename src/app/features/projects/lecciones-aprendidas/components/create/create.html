@@ -18,50 +18,61 @@
     <div>
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Clasificacion</p>
       <div class="flex flex-wrap gap-4">
-        <div class="flex flex-col gap-1.5 min-w-[180px]">
-          <label class="text-sm text-[#64BC04] font-medium">Fase</label>
-          <select [(ngModel)]="selectedPhaseId" (ngModelChange)="onPhaseChange()"
-            class="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="undefined">Seleccionar</option>
-            <option *ngFor="let p of phases" [ngValue]="p.phaseId">{{ p.phaseDescription }}</option>
-          </select>
+
+        <div class="w-[220px]">
+          <app-search-select
+            label="Fase"
+            [options]="phases"
+            valueField="phaseId"
+            displayField="phaseDescription"
+            [value]="selectedPhaseId"
+            (valueChange)="selectedPhaseId = $event; onPhaseChange()">
+          </app-search-select>
         </div>
 
-        <div *ngIf="stages.length" class="flex flex-col gap-1.5 min-w-[180px]">
-          <label class="text-sm text-[#64BC04] font-medium">Etapa</label>
-          <select [(ngModel)]="selectedStageId" (ngModelChange)="onStageChange()"
-            class="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="undefined">Seleccionar</option>
-            <option *ngFor="let s of stages" [ngValue]="s.stageId">{{ s.stageDescription }}</option>
-          </select>
+        <div *ngIf="stages.length" class="w-[220px]">
+          <app-search-select
+            label="Etapa"
+            [options]="stages"
+            valueField="stageId"
+            displayField="stageDescription"
+            [value]="selectedStageId"
+            (valueChange)="selectedStageId = $event; onStageChange()">
+          </app-search-select>
         </div>
 
-        <div *ngIf="layers.length" class="flex flex-col gap-1.5 min-w-[180px]">
-          <label class="text-sm text-[#64BC04] font-medium">Nivel</label>
-          <select [(ngModel)]="selectedLayerId" (ngModelChange)="onLayerChange()"
-            class="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="undefined">Seleccionar</option>
-            <option *ngFor="let l of layers" [ngValue]="l.layerId">{{ l.layerDescription }}</option>
-          </select>
+        <div *ngIf="layers.length" class="w-[220px]">
+          <app-search-select
+            label="Nivel"
+            [options]="layers"
+            valueField="layerId"
+            displayField="layerDescription"
+            [value]="selectedLayerId"
+            (valueChange)="selectedLayerId = $event; onLayerChange()">
+          </app-search-select>
         </div>
 
-        <div *ngIf="subStages.length" class="flex flex-col gap-1.5 min-w-[180px]">
-          <label class="text-sm text-[#64BC04] font-medium">Subetapa</label>
-          <select [(ngModel)]="selectedSubStageId" (ngModelChange)="onSubStageChange()"
-            class="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="undefined">Seleccionar</option>
-            <option *ngFor="let ss of subStages" [ngValue]="ss.subStageId">{{ ss.subStageDescription }}</option>
-          </select>
+        <div *ngIf="subStages.length" class="w-[220px]">
+          <app-search-select
+            label="Subetapa"
+            [options]="subStages"
+            valueField="subStageId"
+            displayField="subStageDescription"
+            [value]="selectedSubStageId"
+            (valueChange)="selectedSubStageId = $event; onSubStageChange()">
+          </app-search-select>
         </div>
 
-        <div *ngIf="subSpecialties.length" class="flex flex-col gap-1.5 min-w-[180px]">
-          <label class="text-sm text-[#64BC04] font-medium">Subespecialidad</label>
-          <select [(ngModel)]="selectedSubSpecialtyId"
-            class="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 cursor-pointer">
-            <option [ngValue]="undefined">Seleccionar</option>
-            <option *ngFor="let sp of subSpecialties" [ngValue]="sp.subSpecialtyId">{{ sp.subSpecialtyDescription }}</option>
-          </select>
+        <div *ngIf="subSpecialties.length" class="w-[220px]">
+          <app-search-select
+            label="Subespecialidad"
+            [options]="subSpecialties"
+            valueField="subSpecialtyId"
+            displayField="subSpecialtyDescription"
+            [(value)]="selectedSubSpecialtyId">
+          </app-search-select>
         </div>
+
       </div>
     </div>
 

@@ -11,14 +11,17 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { CreateLesson } from './create/create';
 import { DetailLesson } from './detail/detail';
 import { LessonList } from './list/list';
+import { LessonCard } from './card/card';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { ViewToggle } from '../../../../shared/components/view-toggle/view-toggle';
+import { ViewToggleMode } from '../../../../shared/components/view-toggle/view-toggle.model';
 import { environment } from '../../../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-lecciones-aprendidas',
   standalone: true,
-  imports: [CommonModule, Paginator, CreateLesson, DetailLesson, LessonList, SearchSelect],
+  imports: [CommonModule, Paginator, CreateLesson, DetailLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
   templateUrl: './lecciones-aprendidas.html',
 })
 export class LeccionesAprendidas implements OnInit {
@@ -61,6 +64,21 @@ export class LeccionesAprendidas implements OnInit {
     page: 1 as number | null,
   };
   showFilters = false;
+
+  // View mode
+  viewMode = 'table';
+  viewModes: ViewToggleMode[] = [
+    {
+      value: 'table',
+      label: 'Tabla',
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>`,
+    },
+    {
+      value: 'card',
+      label: 'Tarjetas',
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
+    },
+  ];
 
   // Modals
   showCreateModal = false;
@@ -173,5 +191,10 @@ export class LeccionesAprendidas implements OnInit {
   onViewDetail(ev: { lessonId: number; tab: 'general' | 'images' }): void {
     this.selectedLessonId = ev.lessonId;
     this.selectedLessonTab = ev.tab;
+  }
+
+  onCardClick(lessonId: number): void {
+    this.selectedLessonId = lessonId;
+    this.selectedLessonTab = 'general';
   }
 }

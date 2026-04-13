@@ -9,102 +9,123 @@
       </svg>
       Nuevo registro
     </button>
-    <button class="group flex items-center cursor-pointer gap-1.5" (click)="downloadExcel()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="#0086A5"/>
-        <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="#0086A5"/>
-      </svg>
-      <span class="text-[#64BC04] group-hover:underline text-sm">Exportar a excel</span>
-    </button>
+    <div class="flex items-center gap-3">
+      <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
+      <button class="group flex items-center cursor-pointer gap-1.5" (click)="downloadExcel()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="#0086A5"/>
+          <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="#0086A5"/>
+        </svg>
+        <span class="text-[#64BC04] group-hover:underline text-sm">Exportar a excel</span>
+      </button>
+    </div>
   </div>
 
   <!-- Filters -->
   <div class="flex flex-col h-full min-h-0">
     <div class="flex flex-wrap gap-4 py-3 items-end">
       
-      <app-search-select
-        label="Proyecto"
-        [options]="projectOptions"
-        valueField="projectId"
-        displayField="projectDescription"
-        [value]="filtersTable.projectId"
-        (valueChange)="filtersTable.projectId = $event">
-      </app-search-select>
+      <div class="w-[220px]">
+        <app-search-select
+          label="Proyecto"
+          [options]="projectOptions"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="filtersTable.projectId"
+          (valueChange)="filtersTable.projectId = $event">
+        </app-search-select>
+      </div>
 
-      <app-search-select
-        label="Area"
-        [options]="areaOptions"
-        valueField="areaId"
-        displayField="areaDescription"
-        [value]="filtersTable.areaId"
-        (valueChange)="filtersTable.areaId = $event">
-      </app-search-select>
+      <div class="w-[220px]">
+        <app-search-select
+          label="Area"
+          [options]="areaOptions"
+          valueField="areaId"
+          displayField="areaDescription"
+          [value]="filtersTable.areaId"
+          (valueChange)="filtersTable.areaId = $event">
+        </app-search-select>
+      </div>
 
       <!-- Advanced filters -->
       <ng-container *ngIf="showFilters">
 
-        <app-search-select
-          label="Fase"
-          [options]="phaseOptions"
-          valueField="phaseId"
-          displayField="phaseDescription"
-          [value]="filtersTable.phaseId"
-          (valueChange)="filtersTable.phaseId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Fase"
+            [options]="phaseOptions"
+            valueField="phaseId"
+            displayField="phaseDescription"
+            [value]="filtersTable.phaseId"
+            (valueChange)="filtersTable.phaseId = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Etapa"
-          [options]="stageOptions"
-          valueField="stageId"
-          displayField="stageDescription"
-          [value]="filtersTable.stageId"
-          (valueChange)="filtersTable.stageId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Etapa"
+            [options]="stageOptions"
+            valueField="stageId"
+            displayField="stageDescription"
+            [value]="filtersTable.stageId"
+            (valueChange)="filtersTable.stageId = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Nivel"
-          [options]="layerOptions"
-          valueField="layerId"
-          displayField="layerDescription"
-          [value]="filtersTable.layerId"
-          (valueChange)="filtersTable.layerId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Nivel"
+            [options]="layerOptions"
+            valueField="layerId"
+            displayField="layerDescription"
+            [value]="filtersTable.layerId"
+            (valueChange)="filtersTable.layerId = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Subetapa"
-          [options]="subStageOptions"
-          valueField="subStageId"
-          displayField="subStageDescription"
-          [value]="filtersTable.subStageId"
-          (valueChange)="filtersTable.subStageId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Subetapa"
+            [options]="subStageOptions"
+            valueField="subStageId"
+            displayField="subStageDescription"
+            [value]="filtersTable.subStageId"
+            (valueChange)="filtersTable.subStageId = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Subespecialidad"
-          [options]="subSpecialtyOptions"
-          valueField="subSpecialtyId"
-          displayField="subSpecialtyDescription"
-          [value]="filtersTable.subSpecialtyId"
-          (valueChange)="filtersTable.subSpecialtyId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Subespecialidad"
+            [options]="subSpecialtyOptions"
+            valueField="subSpecialtyId"
+            displayField="subSpecialtyDescription"
+            [value]="filtersTable.subSpecialtyId"
+            (valueChange)="filtersTable.subSpecialtyId = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Periodo"
-          [options]="periodOptions"
-          valueField="periodDate"
-          displayField="periodLabel"
-          [value]="filtersTable.periodDate"
-          (valueChange)="filtersTable.periodDate = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Periodo"
+            [options]="periodOptions"
+            valueField="periodDate"
+            displayField="periodLabel"
+            [value]="filtersTable.periodDate"
+            (valueChange)="filtersTable.periodDate = $event">
+          </app-search-select>
+        </div>
 
-        <app-search-select
-          label="Usuario"
-          [options]="userOptions"
-          valueField="userId"
-          displayField="fullName"
-          [value]="filtersTable.userId"
-          (valueChange)="filtersTable.userId = $event">
-        </app-search-select>
+        <div class="w-[220px]">
+          <app-search-select
+            label="Usuario"
+            [options]="userOptions"
+            valueField="userId"
+            displayField="fullName"
+            [value]="filtersTable.userId"
+            (valueChange)="filtersTable.userId = $event">
+          </app-search-select>
+        </div>
 
       </ng-container>
 
@@ -127,12 +148,30 @@
       </button>
     </div>
 
-    <!-- Table -->
+    <!-- Tabla -->
     <app-lesson-list
+      *ngIf="viewMode === 'table'"
       [lessons]="lessons"
       [apiUrl]="apiUrl"
       (viewDetail)="onViewDetail($event)">
     </app-lesson-list>
+
+    <!-- Cards -->
+    <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-1">
+        <app-lesson-card
+          *ngFor="let item of lessons"
+          [item]="item"
+          [apiUrl]="apiUrl"
+          (cardClick)="onCardClick($event)">
+        </app-lesson-card>
+
+        <p *ngIf="lessons.length === 0"
+          class="sm:col-span-2 xl:col-span-3 text-center text-sm text-gray-400 italic py-10">
+          No hay lecciones aprendidas registradas.
+        </p>
+      </div>
+    </div>
 
     <!-- Paginator -->
     <app-paginator

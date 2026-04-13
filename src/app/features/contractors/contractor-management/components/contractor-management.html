@@ -1,0 +1,48 @@
+<div class="bg-white rounded-lg p-5 h-full flex flex-col gap-3">
+
+  <!-- ── TOGGLE DE VISTA ─────────────────────────────────────────── -->
+  <div class="flex justify-end">
+    <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
+  </div>
+
+  <!-- ── TABLA ────────────────────────────────────────────────────── -->
+  <app-contractor-management-list
+    *ngIf="viewMode === 'table'"
+    [contractors]="contractors"
+    (rowClick)="openDetail($event)"
+    class="flex flex-1 min-h-0 flex-col">
+  </app-contractor-management-list>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────  -->
+  <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+      <app-contractor-management-card
+        *ngFor="let item of contractors"
+        [item]="item"
+        (cardClick)="openDetail($event)">
+      </app-contractor-management-card>
+
+      <p *ngIf="contractors.length === 0"
+        class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+        No hay contratistas registrados.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
+</div>
+
+<!-- ── MODAL DETALLE ─────────────────────────────────────────────── -->
+<app-contractor-management-detail
+  *ngIf="selectedContractor"
+  [item]="selectedContractor"
+  (closeModal)="closeDetail()"
+  (actionCompleted)="load(currentPage)">
+</app-contractor-management-detail>

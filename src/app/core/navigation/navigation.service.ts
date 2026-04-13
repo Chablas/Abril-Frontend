@@ -76,8 +76,12 @@ export class NavigationService {
       roles: ['ADMINISTRADOR DE UDP'],
       items: [
         {
-          label: 'Registro de contratistas público',
+          label: 'Registro de contratistas',
           route: '/contractors/registro',
+        },
+        {
+          label: 'Gestión de contratistas',
+          route: '/contractors/management',
         },
       ],
     },

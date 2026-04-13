@@ -1,0 +1,102 @@
+<app-base-modal
+  [title]="'DETALLE DE CONTRATISTA'"
+  width="w-full sm:w-[680px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-6 mt-4">
+
+    <!-- Info principal -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+      <div>
+        <p class="text-xs text-gray-400 mb-1">Razón social</p>
+        <p class="text-sm font-semibold text-gray-800">{{ item.companyName }}</p>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400 mb-1">RUC</p>
+        <p class="text-sm font-semibold text-gray-800">{{ item.companyRuc }}</p>
+      </div>
+
+      <div class="sm:col-span-2">
+        <p class="text-xs text-gray-400 mb-1">Dirección</p>
+        <p class="text-sm text-gray-700">{{ item.companyAddress || '—' }}</p>
+      </div>
+
+      <div class="sm:col-span-2">
+        <p class="text-xs text-gray-400 mb-1">Actividad económica</p>
+        <p class="text-sm text-gray-700">{{ item.companyEconomicActivityDescription || '—' }}</p>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400 mb-1">Estado</p>
+        <span
+          class="inline-block rounded-lg px-3 py-1 text-xs font-medium"
+          [ngClass]="{
+            'bg-[#FEF3C7] text-[#92400E]': item.companyStateDescription === 'EN ESPERA',
+            'bg-[#D7FAF4] text-[#009C87]':  item.companyStateDescription === 'APROBADO',
+            'bg-[#FAD5D4] text-[#D30000]':  item.companyStateDescription === 'NO APROBADO'
+          }">
+          {{ item.companyStateDescription }}
+        </span>
+      </div>
+
+      <div>
+        <p class="text-xs text-gray-400 mb-1">Fecha de registro</p>
+        <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+
+    </div>
+
+    <!-- Correos -->
+    <div>
+      <p class="text-xs text-gray-400 mb-2">Correos de contacto</p>
+      <div class="flex flex-col gap-1.5">
+        <div
+          *ngFor="let email of item.emails"
+          class="flex items-center gap-2 text-sm text-gray-700">
+          <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ email }}
+        </div>
+        <p *ngIf="!item.emails || item.emails.length === 0"
+          class="text-sm text-gray-400 italic">
+          Sin correos registrados
+        </p>
+      </div>
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- Acciones -->
+    <div *ngIf="item.companyStateDescription === 'EN ESPERA'" class="flex flex-col sm:flex-row justify-end gap-3">
+
+      <!-- Rechazar -->
+      <button
+        type="button"
+        (click)="reject()"
+        class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-xl hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Rechazar solicitud
+      </button>
+
+      <!-- Aprobar -->
+      <button
+        type="button"
+        (click)="approve()"
+        class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-xl hover:bg-[#57a803] transition-colors cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar solicitud
+      </button>
+
+    </div>
+
+  </div>
+
+</app-base-modal>

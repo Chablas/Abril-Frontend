@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, Validators, FormGroup, ReactiveFormsModule  } from '@angular/forms';
 import { AuthService } from "../../../../core/services/auth.service";
+import { MicrosoftAuthService } from './services/microsoft-auth.service';
 import Swal from 'sweetalert2';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
@@ -22,6 +23,7 @@ export class Login implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private authService: AuthService,
+    private microsoftAuthService: MicrosoftAuthService,
     private cdr: ChangeDetectorRef,
     private loaderService: LoaderService
   ) { }
@@ -39,13 +41,7 @@ export class Login implements OnInit {
     this.cdr.detectChanges();
     if (this.form.invalid) return;
 
-    const email = this.form.value.email;
-    const password = this.form.value.password;
-
-    const payload = {
-      email: email,
-      password: password
-    };
+    const payload = { email: this.form.value.email, password: this.form.value.password };
     this.authService.login(payload).subscribe({
       next: () => {
         this.loaderService.hide();
@@ -56,6 +52,23 @@ export class Login implements OnInit {
         this.error(err);
       }
     });
+  }
+
+  async submitMicrosoft() {
+    this.loaderService.show();
+    this.cdr.detectChanges();
+    try {
+      await this.microsoftAuthService.login();
+      this.loaderService.hide();
+      this.cdr.detectChanges();
+      this.router.navigate(['/']);
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.cdr.detectChanges();
+      // El usuario cerró el popup — no mostrar error
+      if (['user_cancelled', 'popup_window_error', 'timed_out'].includes(err?.errorCode)) return;
+      Swal.fire({ icon: 'error', title: 'Error', text: err?.message ?? 'No se pudo iniciar sesión con Microsoft.' });
+    }
   }
 
   error(err: HttpErrorResponse) {
