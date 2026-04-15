@@ -17,6 +17,6 @@ export const CONTRACTORS_ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./contractor-management/components/contractor-management')
       .then(m => m.ContractorManagement),
-    data: { titulo: 'GESTIÓN DE CONTRATISTAS' },
+    data: { titulo: 'HOMOLOGACIÓN DE CONTRATISTAS' },
   }
 ];

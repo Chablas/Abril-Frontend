@@ -1,7 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Adjudicaciones } from './adjudicaciones/components/adjudicaciones';
+import { Adjudicaciones } from './features/adjudicaciones/components/adjudicaciones';
+import { StaffProjectEmail } from './features/configuration/staffProjectEmail/components/staff-project-email';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -20,12 +21,23 @@ const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'configuration',
+        children: [
+          {
+            path: 'staff-project-email',
+            component: StaffProjectEmail,
+            canActivate: [roleGuard],
+            data: { titulo: 'CORREOS POR PROYECTO', roles: ['ADMINISTRADOR DEL SISTEMA'] },
+          },
+        ],
+      },
     ],
   },
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes), CommonModule, Adjudicaciones],
+  imports: [RouterModule.forChild(routes), CommonModule],
   exports: [RouterModule],
 })
 export class CostsModule {}

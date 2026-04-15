@@ -1,4 +1,4 @@
-import { ProjectSimpleDTO } from "../../../../core/dtos/project/projectSimple.model";
+import { ProjectSimpleDTO } from "../../../../../core/dtos/project/projectSimple.model";
 import { CompanyFactoryDTO } from "./companyFactoryDTO.model";
 import { ContractOriginSimpleDTO } from "./contractOriginSimple.model";
 import { ContractSimpleDTO } from "./contractSimple.model";

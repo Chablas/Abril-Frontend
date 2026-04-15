@@ -1,17 +1,16 @@
 import { Component, EventEmitter, OnInit, Output, ChangeDetectorRef } from '@angular/core';
 import { ProjectSubContractorCreateDTO } from '../../dtos/projectSubContractorCreateDto.model';
-import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
-import { ImagePreview } from '../../../../../shared/components/image-preview/image-preview';
+import { FileSelector, SelectedFile } from '../../../../../../shared/components/file-selector/file-selector';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
-import { LoaderService } from '../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../core/services/error.service';
+import { LoaderService } from '../../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
-import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
-import { FilePreview, FilePreviewItem } from '../../../../../shared/components/file-preview/file-preview';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { FilePreview, FilePreviewItem } from '../../../../../../shared/components/file-preview/file-preview';
 import Swal from 'sweetalert2';
 
 @Component({

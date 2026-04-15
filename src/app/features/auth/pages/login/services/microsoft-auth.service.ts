@@ -10,7 +10,7 @@ import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.mode
 export class MicrosoftAuthService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
-  private readonly scopes: PopupRequest = { scopes: ['User.Read'] };
+  private readonly scopes: PopupRequest = { scopes: ['User.Read', 'Files.ReadWrite'] };
   private readonly apiUrl = `${environment.apiUrl}api/v1/microsoft`;
 
   private msalInstance: PublicClientApplication | null = null;
@@ -63,6 +63,7 @@ export class MicrosoftAuthService {
       localStorage.setItem('access_token', response.accessToken);
       localStorage.setItem('session_token', response.sessionToken);
       localStorage.setItem('token_expires_at', response.expiresAt);
+      localStorage.setItem('graph_access_token', microsoftToken);
       localStorage.setItem('user', JSON.stringify({
         displayName: response.displayName,
         givenName: response.givenName,

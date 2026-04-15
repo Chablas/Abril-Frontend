@@ -23,10 +23,14 @@ export class ContractorRegistration {
   form: CompanyRegisterDTO = {
     companyRuc: '',
     companyName: '',
-    companyAddress: '',
-    companyEconomicActivityDescription: '',
-    companyEmails: [''],
+    address: '',
+    economicActivityDescription: '',
+    emails: [''],
   };
+
+  brochureFile: File | null = null;
+  fichaRucFile: File | null = null;
+  referencesListFile: File | null = null;
 
   constructor(
     private contractorService: ContractorService,
@@ -43,8 +47,8 @@ export class ContractorRegistration {
         this.sunatData = data;
         this.form.companyRuc = data.companyRuc;
         this.form.companyName = data.companyName;
-        this.form.companyAddress = data.companyAddress;
-        this.form.companyEconomicActivityDescription = data.companyEconomicActivityDescription;
+        this.form.address = data.companyAddress;
+        this.form.economicActivityDescription = data.companyEconomicActivityDescription;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -58,12 +62,12 @@ export class ContractorRegistration {
   }
 
   addEmail() {
-    this.form.companyEmails.push('');
+    this.form.emails.push('');
   }
 
   removeEmail(index: number) {
-    if (this.form.companyEmails.length > 1) {
-      this.form.companyEmails.splice(index, 1);
+    if (this.form.emails.length > 1) {
+      this.form.emails.splice(index, 1);
     }
   }
 
@@ -71,9 +75,31 @@ export class ContractorRegistration {
     return index;
   }
 
+  onFileChange(event: Event, field: 'brochureFile' | 'fichaRucFile' | 'referencesListFile'): void {
+    const input = event.target as HTMLInputElement;
+    this[field] = input.files?.[0] ?? null;
+  }
+
+  clearFile(field: 'brochureFile' | 'fichaRucFile' | 'referencesListFile', inputEl: HTMLInputElement): void {
+    this[field] = null;
+    inputEl.value = '';
+  }
+
   submit() {
     this.loaderService.show();
-    this.contractorService.register(this.form).subscribe({
+
+    const formData = new FormData();
+    formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
+    formData.append('CompanyRuc', this.form.companyRuc);
+    formData.append('CompanyName', this.form.companyName);
+    if (this.form.address) formData.append('CompanyAddress', this.form.address);
+    if (this.form.economicActivityDescription) formData.append('CompanyEconomicActivityDescription', this.form.economicActivityDescription);
+    this.form.emails.forEach(email => formData.append('CompanyEmails', email));
+    if (this.brochureFile) formData.append('BrochureFile', this.brochureFile, this.brochureFile.name);
+    if (this.fichaRucFile) formData.append('FichaRucFile', this.fichaRucFile, this.fichaRucFile.name);
+    if (this.referencesListFile) formData.append('ReferencesListFile', this.referencesListFile, this.referencesListFile.name);
+
+    this.contractorService.register(formData).subscribe({
       next: (response) => {
         this.loaderService.hide();
         Swal.fire({

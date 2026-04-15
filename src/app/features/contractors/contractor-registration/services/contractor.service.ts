@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SunatCompanyDTO } from '../dtos/sunatCompany.model';
-import { CompanyRegisterDTO } from '../dtos/companyRegister.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../environments/environment';
 
@@ -18,7 +17,7 @@ export class ContractorService {
     return this.http.get<SunatCompanyDTO>(`${this.apiUrl}/ruc/${ruc}`);
   }
 
-  register(dto: CompanyRegisterDTO): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, dto);
+  register(formData: FormData): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, formData);
   }
 }

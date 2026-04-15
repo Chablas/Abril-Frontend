@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '../../../../../../environments/environment';
 import { ProjectSubContractorFormDataDTO } from '../dtos/projectSubContractorFormDataDTO.model';
-import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
-import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
+import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { ProjectSubContractorDTO } from '../dtos/projectSubContractorDto.model';
 
 @Injectable({
@@ -40,6 +40,20 @@ export class AdjudicacionesService {
     });
     return this.http.get<PagedResponseDTO<ProjectSubContractorDTO>>(`${this.apiUrl}/paged`, {
       params,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  sendNotification(dto: { projectSubContractorId: number; graphAccessToken: string }): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/send-notification`, dto, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  updateStatus(projectSubContractorId: number, projectSubContractorStatusId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/status`, { projectSubContractorStatusId }, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

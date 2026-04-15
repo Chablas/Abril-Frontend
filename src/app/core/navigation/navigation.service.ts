@@ -80,7 +80,7 @@ export class NavigationService {
           route: '/contractors/registro',
         },
         {
-          label: 'Gestión de contratistas',
+          label: 'Homologación de contratistas',
           route: '/contractors/management',
         },
       ],
@@ -95,6 +95,15 @@ export class NavigationService {
         {
           label: 'Adjudicaciones',
           route: '/costs/adjudicaciones',
+        },
+      ],
+      groups: [
+        {
+          label: 'Configuración',
+          roles: ['ADMINISTRADOR DEL SISTEMA'],
+          items: [
+            { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email' },
+          ],
         },
       ],
     },

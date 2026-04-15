@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { ProjectSubContractorDTO } from '../../dtos/projectSubContractorDto.model';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
-import { LoaderService } from '../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../core/services/error.service';
+import { LoaderService } from '../../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-detail',
@@ -40,6 +41,13 @@ export class Detail {
     return this.item.projectSubContractorStatusId;
   }
 
+  get forwardLabel(): string {
+    switch (this.currentStep) {
+      case 1: return 'Enviar notificación';
+      default: return 'Siguiente paso';
+    }
+  }
+
   canGoBack(): boolean {
     return this.currentStep > 1;
   }
@@ -48,15 +56,35 @@ export class Detail {
     return this.currentStep < 8;
   }
 
-  goBack() {
+  goBack(): void {
     this.changeStatus(this.currentStep - 1);
   }
 
-  goForward() {
-    this.changeStatus(this.currentStep + 1);
+  goForward(): void {
+    if (this.currentStep === 1) {
+      this.sendNotification();
+    } else {
+      this.changeStatus(this.currentStep + 1);
+    }
   }
 
-  private changeStatus(newStatusId: number) {
+  private sendNotification(): void {
+    const graphToken = localStorage.getItem('graph_access_token') ?? '';
+    this.loaderService.show();
+    this.adjudicacionesService.sendNotification({
+      projectSubContractorId: this.item.projectSubContractorId,
+      graphAccessToken: graphToken,
+    }).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Notificación enviada exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private changeStatus(newStatusId: number): void {
     //this.loaderService.show();
     /*this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, newStatusId).subscribe({
       next: () => {
