@@ -20,6 +20,8 @@ export interface ProjectSubContractorDTO {
   contractorEmail: string;
   workItemId: number;
   workItemDescription: string;
+  workItemCategoryId: number;
+  workItemCategoryDescription: string;
   createdDateTime: string;
   quotationFileUrls: string[];
   comparativeFileUrls: string[];

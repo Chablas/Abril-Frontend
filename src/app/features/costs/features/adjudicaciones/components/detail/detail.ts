@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { ProjectSubContractorDTO } from '../../dtos/projectSubContractorDto.model';
@@ -15,7 +15,7 @@ import Swal from 'sweetalert2';
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })
-export class Detail {
+export class Detail implements OnInit {
   @Input() item!: ProjectSubContractorDTO;
   @Output() closeModal = new EventEmitter<void>();
   @Output() statusChanged = new EventEmitter<void>();
@@ -31,40 +31,52 @@ export class Detail {
     'Enviado a obra',
   ];
 
+  /** Paso que se está mostrando en pantalla (navegable). */
+  viewStep = 1;
+
   constructor(
     private adjudicacionesService: AdjudicacionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
-  get currentStep(): number {
+  ngOnInit(): void {
+    this.viewStep = this.item.projectSubContractorStatusId;
+  }
+
+  /** Estado real del item en el backend. */
+  get actualStatus(): number {
     return this.item.projectSubContractorStatusId;
   }
 
   get forwardLabel(): string {
-    switch (this.currentStep) {
-      case 1: return 'Enviar notificación';
-      default: return 'Siguiente paso';
-    }
+    // Solo muestra "Enviar correos" cuando el estado real es 1,
+    // sin importar qué paso se esté visualizando.
+    return this.actualStatus === 1 ? 'Enviar correos' : 'Siguiente paso';
   }
 
   canGoBack(): boolean {
-    return this.currentStep > 1;
+    return this.viewStep > 1;
   }
 
   canGoForward(): boolean {
-    return this.currentStep < 8;
+    // Si el estado real es 1: el botón siempre está habilitado (acción de enviar correos).
+    // Si el estado real es > 1: solo se puede avanzar hasta el paso actual real.
+    if (this.actualStatus === 1) return true;
+    return this.viewStep < this.actualStatus;
   }
 
   goBack(): void {
-    this.changeStatus(this.currentStep - 1);
+    if (this.viewStep > 1) this.viewStep--;
   }
 
   goForward(): void {
-    if (this.currentStep === 1) {
+    if (this.actualStatus === 1) {
+      // Solo aquí se envían correos: cuando el estado REAL es 1.
       this.sendNotification();
     } else {
-      this.changeStatus(this.currentStep + 1);
+      // Navegación de revisión: avanza el paso visualizado hasta el estado real.
+      if (this.viewStep < this.actualStatus) this.viewStep++;
     }
   }
 
@@ -82,19 +94,5 @@ export class Detail {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
-  }
-
-  private changeStatus(newStatusId: number): void {
-    //this.loaderService.show();
-    /*this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, newStatusId).subscribe({
-      next: () => {
-        this.item = { ...this.item, projectSubContractorStatusId: newStatusId, projectSubContractorStatusDescription: this.steps[newStatusId - 1] };
-        this.loaderService.hide();
-        this.statusChanged.emit();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
-    });*/
   }
 }

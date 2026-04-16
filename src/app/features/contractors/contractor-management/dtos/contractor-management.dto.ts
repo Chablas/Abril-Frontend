@@ -8,4 +8,7 @@ export interface ContractorManagementDTO {
   companyStateDescription: string;
   createdDateTime: string;
   emails: string[];
+  brochureFileUrl?: string | null;
+  fichaRucFileUrl?: string | null;
+  referencesListFileUrl?: string | null;
 }

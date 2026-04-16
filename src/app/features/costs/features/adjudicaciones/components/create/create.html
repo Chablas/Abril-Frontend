@@ -15,6 +15,10 @@
         <app-search-select label="Empresa / Subcontratista" [options]="createFormData.companies" valueField="companyId"
           displayField="companyName" [value]="createDto.companyId" (valueChange)="onCompanyChange($event)" />
 
+        <app-search-select label="Partida de control" [options]="createFormData.workItemCategories"
+          valueField="workItemCategoryId" displayField="workItemCategoryDescription"
+          [(value)]="createDto.workItemCategoryId" />
+
         <app-search-select label="Partida" [options]="createFormData.workItems" valueField="workItemId"
           displayField="workItemDescription" [(value)]="createDto.workItemId" />
 

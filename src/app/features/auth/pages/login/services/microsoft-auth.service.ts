@@ -10,7 +10,7 @@ import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.mode
 export class MicrosoftAuthService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
-  private readonly scopes: PopupRequest = { scopes: ['User.Read', 'Files.ReadWrite'] };
+  private readonly scopes: PopupRequest = { scopes: ['User.Read', 'Files.ReadWrite', 'Mail.Send'] };
   private readonly apiUrl = `${environment.apiUrl}api/v1/microsoft`;
 
   private msalInstance: PublicClientApplication | null = null;

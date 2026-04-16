@@ -48,6 +48,34 @@
 
     </div>
 
+    <!-- Documentos -->
+    <div *ngIf="item.brochureFileUrl || item.fichaRucFileUrl || item.referencesListFileUrl">
+      <p class="text-xs text-gray-400 mb-2">Documentos adjuntos</p>
+      <div class="flex flex-col gap-2">
+        <a *ngIf="item.brochureFileUrl" [href]="item.brochureFileUrl" target="_blank"
+          class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+          <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+          </svg>
+          Brochure
+        </a>
+        <a *ngIf="item.fichaRucFileUrl" [href]="item.fichaRucFileUrl" target="_blank"
+          class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+          <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+          </svg>
+          Ficha RUC
+        </a>
+        <a *ngIf="item.referencesListFileUrl" [href]="item.referencesListFileUrl" target="_blank"
+          class="flex items-center gap-2 text-sm text-[#64BC04] hover:underline break-all">
+          <svg class="w-4 h-4 shrink-0 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+          </svg>
+          Lista de referencias
+        </a>
+      </div>
+    </div>
+
     <!-- Correos -->
     <div>
       <p class="text-xs text-gray-400 mb-2">Correos de contacto</p>

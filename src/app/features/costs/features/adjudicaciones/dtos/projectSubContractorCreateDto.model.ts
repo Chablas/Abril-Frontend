@@ -11,6 +11,7 @@ export interface ProjectSubContractorCreateDTO {
   hasIgv: boolean;
   contractorEmail: string;
   workItemId: number;
+  workItemCategoryId: number;
   quotationFiles?: File[];
   comparativeFiles?: File[];
 }
