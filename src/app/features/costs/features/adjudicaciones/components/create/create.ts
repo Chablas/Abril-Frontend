@@ -35,7 +35,7 @@ export class Create implements OnInit {
 
   createDto: ProjectSubContractorCreateDTO = {
     projectId: 0,
-    companyId: 0,
+    contractorId: 0,
     contractId: 0,
     contractTypeId: 0,
     contractOriginId: 0,
@@ -104,10 +104,10 @@ export class Create implements OnInit {
     return this.createFormData.currencies.find(c => c.currencyId === this.createDto.currencyId)?.currencyCode ?? '';
   }
 
-  onCompanyChange(companyId: number): void {
-    this.createDto.companyId = companyId;
-    const company = this.createFormData.companies.find(c => c.companyId === companyId);
-    this.emailOptions = (company?.emails ?? []).map(e => ({ email: e }));
+  onCompanyChange(contractorId: number): void {
+    this.createDto.contractorId = contractorId;
+    const contractor = this.createFormData.companies.find(c => c.contractorId === contractorId);
+    this.emailOptions = (contractor?.emails ?? []).map(e => ({ email: e }));
     this.createDto.contractorEmail = this.emailOptions[0]?.email ?? '';
   }
 
@@ -127,7 +127,7 @@ export class Create implements OnInit {
   save() {
     const form = new FormData();
     form.append('projectId', this.createDto.projectId.toString());
-    form.append('companyId', this.createDto.companyId.toString());
+    form.append('contractorId', this.createDto.contractorId.toString());
     form.append('contractId', this.createDto.contractId.toString());
     form.append('contractTypeId', this.createDto.contractTypeId.toString());
     form.append('contractOriginId', this.createDto.contractOriginId.toString());

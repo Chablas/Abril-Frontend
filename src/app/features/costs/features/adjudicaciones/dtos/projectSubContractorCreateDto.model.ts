@@ -1,6 +1,6 @@
 export interface ProjectSubContractorCreateDTO {
   projectId: number;
-  companyId: number;
+  contractorId: number;
   contractId: number;
   contractTypeId: number;
   contractOriginId: number;

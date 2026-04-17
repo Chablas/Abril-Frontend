@@ -7,11 +7,11 @@
     <span
       class="inline-block rounded-full px-3 py-0.5 text-[11px] font-semibold border"
       [ngClass]="{
-        'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30': item.companyStateDescription === 'EN ESPERA',
-        'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30': item.companyStateDescription === 'APROBADO',
-        'bg-[#FAD5D4] text-[#D30000] border-[#D30000]/30': item.companyStateDescription === 'NO APROBADO'
+        'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30': item.contractorStateDescription === 'EN ESPERA',
+        'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30': item.contractorStateDescription === 'APROBADO',
+        'bg-[#FAD5D4] text-[#D30000] border-[#D30000]/30': item.contractorStateDescription === 'NO APROBADO'
       }">
-      {{ item.companyStateDescription }}
+      {{ item.contractorStateDescription }}
     </span>
     <span class="text-[11px] text-gray-400 shrink-0">
       {{ item.createdDateTime | date:'dd/MM/yyyy' }}

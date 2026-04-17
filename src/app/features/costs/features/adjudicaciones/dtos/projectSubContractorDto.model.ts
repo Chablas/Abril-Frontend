@@ -1,7 +1,13 @@
+export interface ProjectSubContractorFileDTO {
+  fileUrl: string;
+  originalFileName?: string;
+}
+
 export interface ProjectSubContractorDTO {
   projectSubContractorId: number;
   projectId: number;
   projectDescription: string;
+  contractorId: number;
   companyId: number;
   companyName: string;
   contractId: number;
@@ -23,8 +29,8 @@ export interface ProjectSubContractorDTO {
   workItemCategoryId: number;
   workItemCategoryDescription: string;
   createdDateTime: string;
-  quotationFileUrls: string[];
-  comparativeFileUrls: string[];
+  quotationFiles: ProjectSubContractorFileDTO[];
+  comparativeFiles: ProjectSubContractorFileDTO[];
   projectSubContractorStatusId: number;
   projectSubContractorStatusDescription: string;
 }

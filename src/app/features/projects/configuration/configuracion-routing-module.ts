@@ -4,7 +4,6 @@ import { Areas } from "./pages/areas/areas";
 import { ConfFaseEtapaSubetapa } from "./pages/conf-fase-etapa-subetapa/conf-fase-etapa-subetapa";
 import { Etapas } from "./pages/etapas/etapas";
 import { Fases } from "./pages/fases/fases";
-import { Proyectos } from "./pages/proyectos/proyectos";
 import { Subetapas } from "./pages/subetapas/subetapas";
 import { Subespecialidades } from "./pages/subespecialidades/subespecialidades";
 import { Reminder } from "./pages/reminder/reminder";
@@ -13,7 +12,6 @@ import { Milestones } from "./pages/milestones/milestones";
 import { roleGuard } from '../../../core/guards/role.guard';
 
 const routes: Routes = [
-  { path: "projects", component: Proyectos, canActivate: [roleGuard], data: { titulo: 'PROYECTOS', roles: ['ADMINISTRADOR DE UDP'] } },
   { path: "areas", component: Areas, canActivate: [roleGuard], data: { titulo: 'ÁREAS', roles: ['ADMINISTRADOR DE UDP'] } },
   { path: "stages", component: Etapas, canActivate: [roleGuard], data: { titulo: 'ETAPAS', roles: ['ADMINISTRADOR DE UDP'] } },
   { path: "layers", component: Layers, canActivate: [roleGuard], data: { titulo: 'NIVELES', roles: ['ADMINISTRADOR DE UDP'] } },
@@ -23,7 +21,7 @@ const routes: Routes = [
   { path: "relations", component: ConfFaseEtapaSubetapa, canActivate: [roleGuard], data: { titulo: 'RELACIONES', roles: ['ADMINISTRADOR DE UDP'] } },
   { path: "reminders", component: Reminder, canActivate: [roleGuard], data: { titulo: 'RECORDATORIOS DE LECCIONES', roles: ['ADMINISTRADOR DE UDP'] } },
   { path: "milestones", component: Milestones, canActivate: [roleGuard], data: { titulo: 'HITOS', roles: ['ADMINISTRADOR DE RESIDENTES'] } },
-  { path: '', redirectTo: 'projects', pathMatch: 'full' }
+  { path: '', redirectTo: 'areas', pathMatch: 'full' }
 ];
 
 @NgModule({

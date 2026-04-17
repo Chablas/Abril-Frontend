@@ -57,11 +57,11 @@
           <span
             class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium"
             [ngClass]="{
-              'bg-[#FEF3C7] text-[#92400E]': item.companyStateDescription === 'EN ESPERA',
-              'bg-[#D7FAF4] text-[#009C87]':  item.companyStateDescription === 'APROBADO',
-              'bg-[#FAD5D4] text-[#D30000]':  item.companyStateDescription === 'NO APROBADO'
+              'bg-[#FEF3C7] text-[#92400E]': item.contractorStateDescription === 'EN ESPERA',
+              'bg-[#D7FAF4] text-[#009C87]':  item.contractorStateDescription === 'APROBADO',
+              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO'
             }">
-            {{ item.companyStateDescription }}
+            {{ item.contractorStateDescription }}
           </span>
         </td>
 

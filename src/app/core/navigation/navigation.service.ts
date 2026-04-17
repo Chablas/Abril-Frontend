@@ -54,7 +54,6 @@ export class NavigationService {
           label: 'Configuración',
           roles: ['ADMINISTRADOR DE RESIDENTES', 'ADMINISTRADOR DE UDP'],
           items: [
-            { label: 'Proyectos', route: '/projects/configuration/projects', roles: ['ADMINISTRADOR DE UDP'] },
             { label: 'Áreas', route: '/projects/configuration/areas', roles: ['ADMINISTRADOR DE UDP'] },
             { label: 'Fases', route: '/projects/configuration/phases', roles: ['ADMINISTRADOR DE UDP'] },
             { label: 'Etapas', route: '/projects/configuration/stages', roles: ['ADMINISTRADOR DE UDP'] },
@@ -103,6 +102,8 @@ export class NavigationService {
           roles: ['ADMINISTRADOR DEL SISTEMA'],
           items: [
             { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email' },
+            { label: 'Partidas de control', route: '/costs/configuration/work-item-category' },
+            { label: 'Partidas', route: '/costs/configuration/work-item' },
           ],
         },
       ],
@@ -117,6 +118,20 @@ export class NavigationService {
         {
           label: 'Creación de usuarios',
           route: '/security/users',
+        },
+      ],
+    },
+    {
+      key: 'configuracion',
+      label: 'Configuración',
+      iconKey: 'settings',
+      baseRoute: '/configuracion',
+      roles: ['ADMINISTRADOR DE UDP'],
+      items: [
+        {
+          label: 'Proyectos',
+          route: '/configuracion/proyectos',
+          roles: ['ADMINISTRADOR DE UDP'],
         },
       ],
     },

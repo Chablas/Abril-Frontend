@@ -27,7 +27,7 @@ export class ContractorManagementDetail {
 
   approve(): void {
     this.loaderService.show();
-    this.service.approve(this.item.companyId).subscribe({
+    this.service.approve(this.item.contractorId).subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Aprobado', text: res.message ?? 'El contratista fue aprobado correctamente.' });
@@ -52,7 +52,7 @@ export class ContractorManagementDetail {
     }).then((result) => {
       if (!result.isConfirmed) return;
       this.loaderService.show();
-      this.service.reject(this.item.companyId).subscribe({
+      this.service.reject(this.item.contractorId).subscribe({
         next: (res) => {
           this.loaderService.hide();
           Swal.fire({ icon: 'success', title: 'Rechazado', text: res.message ?? 'El contratista fue rechazado.' });

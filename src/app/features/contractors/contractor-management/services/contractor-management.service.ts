@@ -22,19 +22,19 @@ export class ContractorManagementService {
     );
   }
 
-  approve(companyId: number): Observable<ApiMessageDTO> {
+  approve(contractorId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(
-      `${this.apiUrl}/${companyId}/approve`,
+      `${this.apiUrl}/${contractorId}/approve`,
       {},
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
 
-  reject(companyId: number): Observable<ApiMessageDTO> {
+  reject(contractorId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(
-      `${this.apiUrl}/${companyId}/reject`,
+      `${this.apiUrl}/${contractorId}/reject`,
       {},
       { headers: { Authorization: `Bearer ${token}` } },
     );
