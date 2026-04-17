@@ -50,22 +50,13 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "outputHashing": "all"
-            },
-            "ssr": {
+              "outputHashing": "all",
               "server": "src/main.server.ts",
               "outputMode": "server",
               "ssr": {
                 "entry": "src/server.ts"
-              },
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.ssr.ts"
-                }
-              ]
+              }
             },
-
             "development": {
               "optimization": false,
               "extractLicenses": false,
