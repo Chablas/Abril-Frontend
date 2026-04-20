@@ -33,4 +33,14 @@ export interface ProjectSubContractorDTO {
   comparativeFiles: ProjectSubContractorFileDTO[];
   projectSubContractorStatusId: number;
   projectSubContractorStatusDescription: string;
+  signingDate?: string;
+  startDate?: string;
+  endDate?: string;
+  // Documentos del contrato (paso 3)
+  contract?: ProjectSubContractorFileDTO;
+  summarySheet?: ProjectSubContractorFileDTO;
+  budget?: ProjectSubContractorFileDTO;
+  schedule?: ProjectSubContractorFileDTO;
+  attachedQuotation?: ProjectSubContractorFileDTO;
+  serviceOrder?: ProjectSubContractorFileDTO;
 }

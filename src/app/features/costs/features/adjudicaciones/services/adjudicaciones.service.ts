@@ -57,4 +57,38 @@ export class AdjudicacionesService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  saveDates(projectSubContractorId: number, dto: { signingDate: string; startDate: string; endDate: string }): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/dates`, dto, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  generateDocument(
+    projectSubContractorId: number,
+    documentType: string,
+  ): Observable<{ fileUrl: string; originalFileName: string }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<{ fileUrl: string; originalFileName: string }>(
+      `${this.apiUrl}/${projectSubContractorId}/generate/${documentType}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  uploadDocument(
+    projectSubContractorId: number,
+    documentType: string,
+    file: File,
+  ): Observable<{ fileUrl: string; originalFileName: string }> {
+    const token = localStorage.getItem('access_token');
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ fileUrl: string; originalFileName: string }>(
+      `${this.apiUrl}/${projectSubContractorId}/documents/${documentType}`,
+      form,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

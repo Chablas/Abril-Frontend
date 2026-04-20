@@ -48,6 +48,37 @@ export class MicrosoftAuthService {
     await msal.handleRedirectPromise();
   }
 
+  /**
+   * Devuelve un access token de Graph fresco.
+   * Intenta renovación silenciosa primero; si falla abre un popup.
+   * Actualiza 'graph_access_token' en localStorage.
+   */
+  async getGraphToken(): Promise<string> {
+    const msal = await this.getMsalInstance();
+    const accounts = msal.getAllAccounts();
+
+    if (accounts.length === 0) {
+      throw new Error('No hay sesión de Microsoft activa. Por favor inicie sesión nuevamente.');
+    }
+
+    try {
+      const result = await msal.acquireTokenSilent({
+        scopes: this.scopes.scopes as string[],
+        account: accounts[0],
+      });
+      localStorage.setItem('graph_access_token', result.accessToken);
+      return result.accessToken;
+    } catch {
+      // El token no se pudo renovar en silencio → abrir popup
+      const result = await msal.acquireTokenPopup({
+        scopes: this.scopes.scopes as string[],
+        account: accounts[0],
+      });
+      localStorage.setItem('graph_access_token', result.accessToken);
+      return result.accessToken;
+    }
+  }
+
   async login(): Promise<void> {
     const msal = await this.getMsalInstance();
     try {
