@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
@@ -48,7 +48,10 @@ export class Actividades implements OnInit {
 
   seleccionadas = new Set<number>();
 
-  constructor(private service: ArquitecturaComercialService) {}
+  constructor(
+    private service: ArquitecturaComercialService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.loadProyectos();
@@ -57,14 +60,20 @@ export class Actividades implements OnInit {
 
   loadProyectos(): void {
     this.service.getProyectosConActividades().subscribe({
-      next: data => (this.proyectos = data),
+      next: data => {
+        this.proyectos = data;
+        this.cdr.detectChanges();
+      },
       error: () => this.showError('No se pudieron cargar los proyectos'),
     });
   }
 
   loadSupervisores(): void {
     this.service.getSupervisoresAc().subscribe({
-      next: data => (this.supervisores = data),
+      next: data => {
+        this.supervisores = data;
+        this.cdr.detectChanges();
+      },
       error: () => this.showError('No se pudieron cargar los supervisores'),
     });
   }
@@ -104,9 +113,11 @@ export class Actividades implements OnInit {
           this.deriveEtapas();
           this.rebuildGroups();
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.loading = false;
+          this.cdr.detectChanges();
           this.showError('No se pudieron cargar las actividades');
         },
       });
@@ -163,6 +174,7 @@ export class Actividades implements OnInit {
         if (this.selectedProyecto) {
           this.refreshSelectedProyectoCounts();
         }
+        this.cdr.detectChanges();
       },
       error: err => {
         const msg = err?.error?.message ?? 'No se pudo guardar el cambio';
@@ -245,6 +257,7 @@ export class Actividades implements OnInit {
             timer: 2000,
           });
           this.loadActividades();
+          this.cdr.detectChanges();
         },
         error: () => this.showError('No se pudo reasignar el encargado'),
       });
@@ -272,6 +285,7 @@ export class Actividades implements OnInit {
           });
           this.loadProyectos();
           if (this.selectedProyectoId === proyecto.id) this.loadActividades();
+          this.cdr.detectChanges();
         },
         error: err => {
           const msg = err?.error?.message ?? 'No se pudieron generar las actividades';
