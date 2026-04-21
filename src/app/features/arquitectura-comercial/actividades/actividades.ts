@@ -37,6 +37,7 @@ export class Actividades implements OnInit {
   }
 
   actividades: ActividadListItemDTO[] = [];
+  etapasConActividades: EtapaGroup[] = [];
   total = 0;
   loading = false;
 
@@ -101,6 +102,7 @@ export class Actividades implements OnInit {
           this.actividades = data.items;
           this.total = data.total;
           this.deriveEtapas();
+          this.rebuildGroups();
           this.loading = false;
         },
         error: () => {
@@ -120,6 +122,21 @@ export class Actividades implements OnInit {
     this.etapasDisponibles = Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
   }
 
+  private rebuildGroups(): void {
+    const groups = new Map<string, ActividadListItemDTO[]>();
+    for (const a of this.actividades) {
+      const key = a.etapaNombre || 'SIN ETAPA';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(a);
+    }
+    this.etapasConActividades = Array.from(groups.entries()).map(([nombre, items]) => ({
+      nombre,
+      items,
+      total: items.length,
+      activas: items.filter(i => i.activo).length,
+    }));
+  }
+
   setTipo(t: TipoFiltro): void {
     this.tipoFiltro = t;
     this.loadActividades();
@@ -133,28 +150,16 @@ export class Actividades implements OnInit {
     this.loadActividades();
   }
 
-  get etapasConActividades(): EtapaGroup[] {
-    const groups = new Map<string, ActividadListItemDTO[]>();
-    for (const a of this.actividades) {
-      const key = a.etapaNombre || 'SIN ETAPA';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(a);
-    }
-    return Array.from(groups.entries()).map(([nombre, items]) => ({
-      nombre,
-      items,
-      total: items.length,
-      activas: items.filter(i => i.activo).length,
-    }));
-  }
-
   patchField(id: number, field: keyof ActividadPatchBody, value: any): void {
     const body: ActividadPatchBody = {};
     (body as any)[field] = value === '' ? null : value;
     this.service.patchActividad(id, body).subscribe({
       next: updated => {
         const idx = this.actividades.findIndex(a => a.id === id);
-        if (idx >= 0) this.actividades[idx] = updated;
+        if (idx >= 0) {
+          this.actividades[idx] = updated;
+          this.rebuildGroups();
+        }
         if (this.selectedProyecto) {
           this.refreshSelectedProyectoCounts();
         }
@@ -164,6 +169,26 @@ export class Actividades implements OnInit {
         this.showError(msg);
       },
     });
+  }
+
+  trackByProyecto(_: number, p: ProyectoConActividadesDTO): number {
+    return p.id;
+  }
+
+  trackByActividad(_: number, a: ActividadListItemDTO): number {
+    return a.id;
+  }
+
+  trackByEtapaGroup(_: number, g: EtapaGroup): string {
+    return g.nombre;
+  }
+
+  trackBySupervisor(_: number, s: SupervisorAcDTO): number {
+    return s.id;
+  }
+
+  trackByEtapaDisponible(_: number, e: { id: number; nombre: string }): number {
+    return e.id;
   }
 
   private refreshSelectedProyectoCounts(): void {
