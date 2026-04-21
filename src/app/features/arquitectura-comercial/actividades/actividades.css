@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+table thead th {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+tbody tr td {
+  vertical-align: middle;
+}
