@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, LOCALE_ID } from '@angular/core';
-import { provideRouter, withRouterConfig } from '@angular/router';
+import { provideRouter, withRouterConfig, withPreloading, PreloadAllModules } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
@@ -16,6 +16,7 @@ export const appConfig: ApplicationConfig = {
       withRouterConfig({
         onSameUrlNavigation: 'reload',
       }),
+      withPreloading(PreloadAllModules),
     ),
 
     //descomentar si se requiere ssr
