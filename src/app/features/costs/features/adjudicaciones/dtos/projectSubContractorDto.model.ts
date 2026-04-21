@@ -1,6 +1,9 @@
 export interface ProjectSubContractorFileDTO {
   fileUrl: string;
   originalFileName?: string;
+  statusId?: number | null;
+  statusDescription?: string | null;
+  observation?: string | null;
 }
 
 export interface ProjectSubContractorDTO {
@@ -8,8 +11,8 @@ export interface ProjectSubContractorDTO {
   projectId: number;
   projectDescription: string;
   contractorId: number;
-  companyId: number;
-  companyName: string;
+  contributorId: number;
+  contributorName: string;
   contractId: number;
   contractDescription: string;
   contractTypeId: number;

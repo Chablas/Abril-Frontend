@@ -89,7 +89,7 @@ export class NavigationService {
       label: 'Costos y Presupuesto',
       iconKey: 'costs',
       baseRoute: '/costs',
-      roles: ['ADMINISTRADOR DEL SISTEMA'],
+      roles: ['USUARIO DE COSTOS Y PRESUPUESTOS'],
       items: [
         {
           label: 'Adjudicaciones',
@@ -99,7 +99,7 @@ export class NavigationService {
       groups: [
         {
           label: 'Configuración',
-          roles: ['ADMINISTRADOR DEL SISTEMA'],
+          roles: ['USUARIO DE COSTOS Y PRESUPUESTOS'],
           items: [
             { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email' },
             { label: 'Partidas de control', route: '/costs/configuration/work-item-category' },

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SunatCompanyDTO } from '../dtos/sunatCompany.model';
+import { SunatContributorDTO } from '../dtos/sunatCompany.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../environments/environment';
 
@@ -13,8 +13,8 @@ export class ContractorService {
 
   constructor(private http: HttpClient) {}
 
-  getCompanyBySunat(ruc: string): Observable<SunatCompanyDTO> {
-    return this.http.get<SunatCompanyDTO>(`${this.apiUrl}/ruc/${ruc}`);
+  getCompanyBySunat(ruc: string): Observable<SunatContributorDTO> {
+    return this.http.get<SunatContributorDTO>(`${this.apiUrl}/ruc/${ruc}`);
   }
 
   register(formData: FormData): Observable<ApiMessageDTO> {

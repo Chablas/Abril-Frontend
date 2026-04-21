@@ -19,23 +19,23 @@
         (click)="rowClick.emit(item)"
         class="border-b border-[#D6DEE5] hover:bg-[#f7fbf3] cursor-pointer transition-colors">
 
-        <td class="py-3 px-4 text-sm text-gray-700">{{ item.companyRuc }}</td>
+        <td class="py-3 px-4 text-sm text-gray-700">{{ item.contributorRuc }}</td>
 
         <td class="py-3 px-4">
-          <span [title]="item.companyName" class="block text-sm text-gray-800 line-clamp-2">
-            {{ item.companyName }}
+          <span [title]="item.contributorName" class="block text-sm text-gray-800 line-clamp-2">
+            {{ item.contributorName }}
           </span>
         </td>
 
         <td class="py-3 px-4">
-          <span [title]="item.companyAddress" class="block text-sm text-gray-600 line-clamp-2">
-            {{ item.companyAddress || '—' }}
+          <span [title]="item.contributorAddress" class="block text-sm text-gray-600 line-clamp-2">
+            {{ item.contributorAddress || '—' }}
           </span>
         </td>
 
         <td class="py-3 px-4">
-          <span [title]="item.companyEconomicActivityDescription" class="block text-sm text-gray-600 line-clamp-2">
-            {{ item.companyEconomicActivityDescription || '—' }}
+          <span [title]="item.contributorEconomicActivityDescription" class="block text-sm text-gray-600 line-clamp-2">
+            {{ item.contributorEconomicActivityDescription || '—' }}
           </span>
         </td>
 

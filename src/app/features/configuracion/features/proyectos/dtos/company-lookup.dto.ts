@@ -1,6 +1,6 @@
-export interface CompanyLookupDto {
-  companyId: number;
-  companyRuc: string;
-  companyName: string;
-  companyAddress: string;
+export interface ContributorLookupDto {
+  contributorId: number;
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress: string;
 }

@@ -1,6 +1,6 @@
-export interface CompanyRegisterDTO {
-  companyRuc: string;
-  companyName: string;
+export interface ContributorRegisterDTO {
+  contributorRuc: string;
+  contributorName: string;
   address?: string;
   economicActivityDescription?: string;
   emails: string[];

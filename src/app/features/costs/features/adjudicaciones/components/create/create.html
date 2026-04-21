@@ -12,8 +12,8 @@
         <app-search-select label="Proyecto" [options]="createFormData.projects" valueField="projectId"
           displayField="projectDescription" [(value)]="createDto.projectId" />
 
-        <app-search-select label="Empresa / Subcontratista" [options]="createFormData.companies" valueField="contractorId"
-          displayField="companyName" [value]="createDto.contractorId" (valueChange)="onCompanyChange($event)" />
+        <app-search-select label="Empresa / Subcontratista" [options]="createFormData.contributors" valueField="contractorId"
+          displayField="contributorName" [value]="createDto.contractorId" (valueChange)="onCompanyChange($event)" />
 
         <app-search-select label="Partida de control" [options]="createFormData.workItemCategories"
           valueField="workItemCategoryId" displayField="workItemCategoryDescription"

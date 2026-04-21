@@ -1,10 +1,10 @@
 export interface ContractorManagementDTO {
   contractorId: number;
-  companyId: number;
-  companyRuc: string;
-  companyName: string;
-  companyAddress: string;
-  companyEconomicActivityDescription: string;
+  contributorId: number;
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress: string;
+  contributorEconomicActivityDescription: string;
   contractorStateId: number;
   contractorStateDescription: string;
   createdDateTime: string;

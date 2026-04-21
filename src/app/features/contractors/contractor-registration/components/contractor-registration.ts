@@ -5,8 +5,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ContractorService } from '../services/contractor.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
-import { SunatCompanyDTO } from '../dtos/sunatCompany.model';
-import { CompanyRegisterDTO } from '../dtos/companyRegister.model';
+import { SunatContributorDTO } from '../dtos/sunatCompany.model';
+import { ContributorRegisterDTO } from '../dtos/companyRegister.model';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -18,11 +18,11 @@ import Swal from 'sweetalert2';
 export class ContractorRegistration {
   readonly currentYear = new Date().getFullYear();
   rucInput = '';
-  sunatData: SunatCompanyDTO | null = null;
+  sunatData: SunatContributorDTO | null = null;
 
-  form: CompanyRegisterDTO = {
-    companyRuc: '',
-    companyName: '',
+  form: ContributorRegisterDTO = {
+    contributorRuc: '',
+    contributorName: '',
     address: '',
     economicActivityDescription: '',
     emails: [''],
@@ -45,10 +45,10 @@ export class ContractorRegistration {
     this.contractorService.getCompanyBySunat(this.rucInput).subscribe({
       next: (data) => {
         this.sunatData = data;
-        this.form.companyRuc = data.companyRuc;
-        this.form.companyName = data.companyName;
-        this.form.address = data.companyAddress;
-        this.form.economicActivityDescription = data.companyEconomicActivityDescription;
+        this.form.contributorRuc = data.contributorRuc;
+        this.form.contributorName = data.contributorName;
+        this.form.address = data.contributorAddress;
+        this.form.economicActivityDescription = data.contributorEconomicActivityDescription;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -90,11 +90,11 @@ export class ContractorRegistration {
 
     const formData = new FormData();
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
-    formData.append('CompanyRuc', this.form.companyRuc);
-    formData.append('CompanyName', this.form.companyName);
-    if (this.form.address) formData.append('CompanyAddress', this.form.address);
-    if (this.form.economicActivityDescription) formData.append('CompanyEconomicActivityDescription', this.form.economicActivityDescription);
-    this.form.emails.forEach(email => formData.append('CompanyEmails', email));
+    formData.append('ContributorRuc', this.form.contributorRuc);
+    formData.append('ContributorName', this.form.contributorName);
+    if (this.form.address) formData.append('ContributorAddress', this.form.address);
+    if (this.form.economicActivityDescription) formData.append('ContributorEconomicActivityDescription', this.form.economicActivityDescription);
+    this.form.emails.forEach(email => formData.append('ContributorEmails', email));
     if (this.brochureFile) formData.append('BrochureFile', this.brochureFile, this.brochureFile.name);
     if (this.fichaRucFile) formData.append('FichaRucFile', this.fichaRucFile, this.fichaRucFile.name);
     if (this.referencesListFile) formData.append('ReferencesListFile', this.referencesListFile, this.referencesListFile.name);

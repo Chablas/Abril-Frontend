@@ -1,7 +1,7 @@
-export interface CompanyFactoryDTO {
+export interface ContributorFactoryDTO {
     contractorId: number;
-    companyId: number;
-    companyName: string;
-    companyRuc: string;
+    contributorId: number;
+    contributorName: string;
+    contributorRuc: string;
     emails: string[];
 }

@@ -58,6 +58,19 @@ export class Detail implements OnInit {
   currentDocType: string | null = null;
   uploadingDoc: string | null = null;
   generatingDoc: string | null = null;
+  updatingStatusDoc: string | null = null;
+
+  /** Opciones fijas de estado para los documentos. */
+  readonly fileStatuses = [
+    { id: 1, label: 'Falta' },
+    { id: 2, label: 'Observado' },
+    { id: 3, label: 'No aplica' },
+    { id: 4, label: 'Aprobado' },
+    { id: 5, label: 'Enviado' },
+  ] as const;
+
+  /** Formulario local de estado/observación por clave de documento. */
+  docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
   private readonly generableKeys = new Set(['SummarySheet', 'Contract']);
@@ -74,6 +87,17 @@ export class Detail implements OnInit {
     if (this.item.signingDate) this.step2Form.signingDate = this.item.signingDate.substring(0, 10);
     if (this.item.startDate)   this.step2Form.startDate   = this.item.startDate.substring(0, 10);
     if (this.item.endDate)     this.step2Form.endDate     = this.item.endDate.substring(0, 10);
+    this.initDocForms();
+  }
+
+  private initDocForms(): void {
+    for (const doc of this.documents) {
+      const file = this.getDocFile(doc.key);
+      this.docForms[doc.key] = {
+        statusId:    file?.statusId    ?? null,
+        observation: file?.observation ?? '',
+      };
+    }
   }
 
   /** Estado real del item en el backend. */
@@ -203,6 +227,38 @@ export class Detail implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.uploadingDoc = null;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  onStatusChange(docKey: string): void {
+    this.saveDocStatus(docKey);
+  }
+
+  onObservationBlur(docKey: string): void {
+    this.saveDocStatus(docKey);
+  }
+
+  private saveDocStatus(docKey: string): void {
+    const form = this.docForms[docKey];
+    this.updatingStatusDoc = docKey;
+    this.adjudicacionesService.updateDocumentStatus(
+      this.item.projectSubContractorId,
+      docKey,
+      { statusId: form.statusId, observation: form.observation || null },
+    ).subscribe({
+      next: () => {
+        this.updatingStatusDoc = null;
+        // Actualizar el item local para mantener coherencia
+        const file = this.getDocFile(docKey);
+        if (file) {
+          file.statusId    = form.statusId;
+          file.observation = form.observation || null;
+        }
+      },
+      error: (err) => {
+        this.updatingStatusDoc = null;
         this.errorService.handleError(err);
       },
     });

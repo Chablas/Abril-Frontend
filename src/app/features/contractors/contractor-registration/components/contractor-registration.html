@@ -86,7 +86,7 @@
               <label class="text-sm text-[#64BC04] font-medium">RUC <span class="text-red-400">*</span></label>
               <input
                 type="text"
-                [(ngModel)]="form.companyRuc"
+                [(ngModel)]="form.contributorRuc"
                 maxlength="11"
                 placeholder="20XXXXXXXXX"
                 [readonly]="!!sunatData"
@@ -99,7 +99,7 @@
               <label class="text-sm text-[#64BC04] font-medium">Razón social <span class="text-red-400">*</span></label>
               <input
                 type="text"
-                [(ngModel)]="form.companyName"
+                [(ngModel)]="form.contributorName"
                 placeholder="Nombre de tu empresa"
                 class="border border-[#D6DEE5] rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
               />
@@ -265,9 +265,9 @@
         <button
           type="button"
           (click)="submit()"
-          [disabled]="!form.companyRuc || !form.companyName || !form.emails[0]"
+          [disabled]="!form.contributorRuc || !form.contributorName || !form.emails[0]"
           class="w-full sm:w-auto sm:min-w-[220px] flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-semibold transition-all"
-          [ngClass]="form.companyRuc && form.companyName && form.emails[0]
+          [ngClass]="form.contributorRuc && form.contributorName && form.emails[0]
             ? 'bg-[#64BC04] text-white hover:bg-[#57a803] shadow-md hover:shadow-lg cursor-pointer'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

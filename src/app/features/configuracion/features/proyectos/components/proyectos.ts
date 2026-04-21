@@ -10,13 +10,13 @@ import { ProyectoService } from '../services/proyecto.service';
 import { ProjectDto } from '../dtos/project.dto';
 import { ProjectCreateDto } from '../dtos/project-create.dto';
 import { ProjectEditDto } from '../dtos/project-edit.dto';
-import { CompanyLookupDto } from '../dtos/company-lookup.dto';
+import { ContributorLookupDto } from '../dtos/company-lookup.dto';
 
 interface ProjectFormModel {
   projectDescription: string;
   levelDescription: string;
   rucInput: string;
-  company: CompanyLookupDto | null;
+  contributor: ContributorLookupDto | null;
   district: string;
   location: string;
   active: boolean;
@@ -73,14 +73,14 @@ export class Proyectos implements OnInit {
     this.editForm = {
       projectDescription: project.projectDescription,
       levelDescription: project.levelDescription ?? '',
-      rucInput: project.companyRuc ?? '',
-      company:
-        project.companyId != null && project.companyRuc
+      rucInput: project.contributorRuc ?? '',
+      contributor:
+        project.contributorId != null && project.contributorRuc
           ? {
-              companyId: project.companyId,
-              companyRuc: project.companyRuc,
-              companyName: project.companyName ?? '',
-              companyAddress: project.companyAddress ?? '',
+              contributorId: project.contributorId,
+              contributorRuc: project.contributorRuc,
+              contributorName: project.contributorName ?? '',
+              contributorAddress: project.contributorAddress ?? '',
             }
           : null,
       district: project.district ?? '',
@@ -130,9 +130,9 @@ export class Proyectos implements OnInit {
     this.cdr.detectChanges();
 
     this.proyectoService.getCompanyByRuc(ruc).subscribe({
-      next: (company) => {
-        form.company = company;
-        form.rucInput = company.companyRuc;
+      next: (contributor) => {
+        form.contributor = contributor;
+        form.rucInput = contributor.contributorRuc;
         this.rucLookupLoading = false;
         this.cdr.detectChanges();
       },
@@ -148,8 +148,8 @@ export class Proyectos implements OnInit {
     });
   }
 
-  clearCompany(form: ProjectFormModel): void {
-    form.company = null;
+  clearContributor(form: ProjectFormModel): void {
+    form.contributor = null;
     form.rucInput = '';
   }
 
@@ -188,7 +188,7 @@ export class Proyectos implements OnInit {
     const dto: ProjectCreateDto = {
       projectDescription: this.createForm.projectDescription.trim(),
       levelDescription: this.createForm.levelDescription.trim() || undefined,
-      companyId: this.createForm.company?.companyId,
+      contributorId: this.createForm.contributor?.contributorId,
       district: this.createForm.district.trim() || undefined,
       location: this.createForm.location.trim() || undefined,
       active: this.createForm.active,
@@ -216,7 +216,7 @@ export class Proyectos implements OnInit {
       projectId: this.editingProjectId,
       projectDescription: this.editForm.projectDescription.trim(),
       levelDescription: this.editForm.levelDescription.trim() || undefined,
-      companyId: this.editForm.company?.companyId,
+      contributorId: this.editForm.contributor?.contributorId,
       district: this.editForm.district.trim() || undefined,
       location: this.editForm.location.trim() || undefined,
       active: this.editForm.active,
@@ -272,7 +272,7 @@ export class Proyectos implements OnInit {
       projectDescription: '',
       levelDescription: '',
       rucInput: '',
-      company: null,
+      contributor: null,
       district: '',
       location: '',
       active: true,

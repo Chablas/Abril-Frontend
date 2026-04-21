@@ -29,7 +29,7 @@ export class Create implements OnInit {
     paymentMethods: [],
     currencies: [],
     workItems: [],
-    companies: [],
+    contributors: [],
     workItemCategories: []
   }
 
@@ -106,7 +106,7 @@ export class Create implements OnInit {
 
   onCompanyChange(contractorId: number): void {
     this.createDto.contractorId = contractorId;
-    const contractor = this.createFormData.companies.find(c => c.contractorId === contractorId);
+    const contractor = this.createFormData.contributors.find(c => c.contractorId === contractorId);
     this.emailOptions = (contractor?.emails ?? []).map(e => ({ email: e }));
     this.createDto.contractorEmail = this.emailOptions[0]?.email ?? '';
   }

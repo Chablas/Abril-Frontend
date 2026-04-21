@@ -2,10 +2,10 @@ export interface ProjectDto {
   projectId: number;
   projectDescription: string;
   levelDescription?: string;
-  companyId?: number;
-  companyRuc?: string;
-  companyName?: string;
-  companyAddress?: string;
+  contributorId?: number;
+  contributorRuc?: string;
+  contributorName?: string;
+  contributorAddress?: string;
   district?: string;
   location?: string;
   active: boolean;

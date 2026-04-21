@@ -77,6 +77,19 @@ export class AdjudicacionesService {
     );
   }
 
+  updateDocumentStatus(
+    projectSubContractorId: number,
+    documentType: string,
+    dto: { statusId: number | null; observation: string | null },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/documents/${documentType}/status`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   uploadDocument(
     projectSubContractorId: number,
     documentType: string,

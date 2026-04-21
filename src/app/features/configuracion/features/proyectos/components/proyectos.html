@@ -55,8 +55,8 @@
 
                         <td><span [title]="item.projectDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.projectDescription }}</span></td>
                         <td><span [title]="item.levelDescription ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.levelDescription || '-' }}</span></td>
-                        <td><span [title]="item.companyRuc ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.companyRuc || '-' }}</span></td>
-                        <td><span [title]="item.companyName ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.companyName || '-' }}</span></td>
+                        <td><span [title]="item.contributorRuc ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.contributorRuc || '-' }}</span></td>
+                        <td><span [title]="item.contributorName ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.contributorName || '-' }}</span></td>
                         <td><span [title]="item.district ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.district || '-' }}</span></td>
                         <td><span [title]="item.location ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.location || '-' }}</span></td>
 
@@ -124,20 +124,20 @@
                             <div class="flex gap-[10px]">
                                 <input type="text" [(ngModel)]="createForm.rucInput" maxlength="11" placeholder="Ej: 20123456789"
                                     class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
-                                    [disabled]="createForm.company !== null" />
-                                <button *ngIf="createForm.company === null" type="button" (click)="lookupRuc(createForm)"
+                                    [disabled]="createForm.contributor !== null" />
+                                <button *ngIf="createForm.contributor === null" type="button" (click)="lookupRuc(createForm)"
                                     [disabled]="rucLookupLoading"
                                     class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
                                     {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
                                 </button>
-                                <button *ngIf="createForm.company !== null" type="button" (click)="clearCompany(createForm)"
+                                <button *ngIf="createForm.contributor !== null" type="button" (click)="clearContributor(createForm)"
                                     class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
                                     Limpiar
                                 </button>
                             </div>
-                            <div *ngIf="createForm.company" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
-                                <p><strong>Razón social:</strong> {{ createForm.company.companyName }}</p>
-                                <p><strong>Domicilio fiscal:</strong> {{ createForm.company.companyAddress }}</p>
+                            <div *ngIf="createForm.contributor" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
+                                <p><strong>Razón social:</strong> {{ createForm.contributor.contributorName }}</p>
+                                <p><strong>Domicilio fiscal:</strong> {{ createForm.contributor.contributorAddress }}</p>
                             </div>
                         </div>
 
@@ -200,20 +200,20 @@
                             <div class="flex gap-[10px]">
                                 <input type="text" [(ngModel)]="editForm.rucInput" maxlength="11" placeholder="Ej: 20123456789"
                                     class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
-                                    [disabled]="editForm.company !== null" />
-                                <button *ngIf="editForm.company === null" type="button" (click)="lookupRuc(editForm)"
+                                    [disabled]="editForm.contributor !== null" />
+                                <button *ngIf="editForm.contributor === null" type="button" (click)="lookupRuc(editForm)"
                                     [disabled]="rucLookupLoading"
                                     class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
                                     {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
                                 </button>
-                                <button *ngIf="editForm.company !== null" type="button" (click)="clearCompany(editForm)"
+                                <button *ngIf="editForm.contributor !== null" type="button" (click)="clearContributor(editForm)"
                                     class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
                                     Limpiar
                                 </button>
                             </div>
-                            <div *ngIf="editForm.company" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
-                                <p><strong>Razón social:</strong> {{ editForm.company.companyName }}</p>
-                                <p><strong>Domicilio fiscal:</strong> {{ editForm.company.companyAddress }}</p>
+                            <div *ngIf="editForm.contributor" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
+                                <p><strong>Razón social:</strong> {{ editForm.contributor.contributorName }}</p>
+                                <p><strong>Domicilio fiscal:</strong> {{ editForm.contributor.contributorAddress }}</p>
                             </div>
                         </div>
 

@@ -1,6 +1,6 @@
-export interface SunatCompanyDTO {
-  companyRuc: string;
-  companyName: string;
-  companyAddress: string;
-  companyEconomicActivityDescription: string;
+export interface SunatContributorDTO {
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress: string;
+  contributorEconomicActivityDescription: string;
 }

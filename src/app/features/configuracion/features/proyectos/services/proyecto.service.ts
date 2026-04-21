@@ -8,7 +8,7 @@ import { ProjectDto } from '../dtos/project.dto';
 import { ProjectCreateDto } from '../dtos/project-create.dto';
 import { ProjectEditDto } from '../dtos/project-edit.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
-import { CompanyLookupDto } from '../dtos/company-lookup.dto';
+import { ContributorLookupDto } from '../dtos/company-lookup.dto';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectoService {
@@ -43,8 +43,8 @@ export class ProyectoService {
     });
   }
 
-  getCompanyByRuc(ruc: string): Observable<CompanyLookupDto> {
-    return this.http.get<CompanyLookupDto>(`${this.apiUrl}/company-lookup/${ruc}`, {
+  getCompanyByRuc(ruc: string): Observable<ContributorLookupDto> {
+    return this.http.get<ContributorLookupDto>(`${this.apiUrl}/company-lookup/${ruc}`, {
       headers: this.headers,
     });
   }
