@@ -223,10 +223,11 @@ export class Actividades implements OnInit {
     const proyecto = this.selectedProyecto;
     if (!proyecto) return;
 
-    const nuevo = (event.target as HTMLSelectElement).value || null;
+    const raw = (event.target as HTMLSelectElement).value;
+    const nuevoId = raw === '' ? null : Number(raw);
     const proyectoId = this.selectedProyectoId;
 
-    this.service.patchProyecto(proyectoId, { responsableArqCom: nuevo }).subscribe({
+    this.service.patchProyecto(proyectoId, { responsableArqComId: nuevoId }).subscribe({
       next: updated => {
         const idx = this.proyectos.findIndex(p => p.id === proyectoId);
         if (idx >= 0) this.proyectos[idx] = updated;
@@ -234,9 +235,7 @@ export class Actividades implements OnInit {
         this.service.reasignarEncargado(proyectoId).subscribe({
           next: res => {
             if (res.workerNoEncontrado) {
-              this.showWarning(
-                `No se encontró un worker con nombre "${updated.responsableArqCom}". Verifica que exista en la tabla workers.`,
-              );
+              this.showWarning('No se pudo reasignar: el worker asignado no existe.');
               return;
             }
             Swal.fire({
@@ -251,7 +250,10 @@ export class Actividades implements OnInit {
           error: () => this.showError('No se pudo reasignar el encargado'),
         });
       },
-      error: () => this.showError('No se pudo guardar el encargado'),
+      error: err => {
+        const msg = err?.error?.message ?? 'No se pudo guardar el encargado';
+        this.showError(msg);
+      },
     });
   }
 

@@ -2,6 +2,7 @@ export interface ProyectoConActividadesDTO {
   id: number;
   nombre: string;
   estado: string;
+  responsableArqComId: number | null;
   responsableArqCom: string | null;
   totalActividades: number;
   activas: number;
@@ -67,7 +68,7 @@ export interface ReasignarEncargadoResultDTO {
 }
 
 export interface PatchProyectoBody {
-  responsableArqCom: string | null;
+  responsableArqComId: number | null;
 }
 
 export interface GenerarActividadesResultDTO {

@@ -74,11 +74,11 @@
 
           <div class="flex items-center gap-2">
             <label class="text-sm text-gray-600">Encargado 1:</label>
-            <select [value]="selectedProyecto.responsableArqCom || ''"
+            <select [value]="selectedProyecto.responsableArqComId ?? ''"
                     (change)="onEncargadoChange($event)"
                     class="text-sm px-3 py-1.5 border border-gray-300 rounded bg-white">
               <option value="">—</option>
-              <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [value]="s.apellidoNombre">
+              <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [value]="s.id">
                 {{ s.apellidoNombre }}
               </option>
             </select>
