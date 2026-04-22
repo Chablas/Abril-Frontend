@@ -12,7 +12,7 @@ import {
   AcEtapaDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
 
-type TipoFiltro = '' | 'Hito' | 'Entregable' | 'Consulta';
+type TipoFiltro = '' | 'HITO' | 'ENTREGABLE' | 'CONSULTA';
 type ActivoFiltro = 'todos' | 'activas' | 'inactivas';
 
 @Component({
@@ -173,9 +173,9 @@ export class Plantilla implements OnInit {
 
   tipoClass(tipo: string | null): string {
     switch (tipo) {
-      case 'Hito': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
-      case 'Entregable': return 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]';
-      case 'Consulta': return 'bg-[#EDE9FE] text-[#5B21B6] border-[#DDD6FE]';
+      case 'HITO': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
+      case 'ENTREGABLE': return 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]';
+      case 'CONSULTA': return 'bg-[#EDE9FE] text-[#5B21B6] border-[#DDD6FE]';
       default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
   }

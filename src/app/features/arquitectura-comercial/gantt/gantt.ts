@@ -9,7 +9,7 @@ import {
   ProyectoConActividadesDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
 
-type TipoFiltro = '' | 'Hito' | 'Entregable';
+type TipoFiltro = '' | 'HITO' | 'ENTREGABLE';
 
 const QUICKCHART_GET_LIMIT = 16000;
 const QUICKCHART_BASE = 'https://quickchart.io/chart';
