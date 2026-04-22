@@ -62,7 +62,12 @@ export class Actividades implements OnInit {
   loadProyectos(): void {
     this.service.getProyectosConActividades().subscribe({
       next: data => {
-        this.proyectos = data;
+        this.proyectos = [...data].sort((a, b) => {
+          const aHas = a.totalActividades > 0 ? 0 : 1;
+          const bHas = b.totalActividades > 0 ? 0 : 1;
+          if (aHas !== bHas) return aHas - bHas;
+          return a.nombre.localeCompare(b.nombre);
+        });
         this.cdr.detectChanges();
       },
       error: () => this.showError('No se pudieron cargar los proyectos'),
@@ -163,6 +168,7 @@ export class Actividades implements OnInit {
     (body as any)[field] = value === '' ? null : value;
     this.service.patchActividad(id, body).subscribe({
       next: updated => {
+        updated.retraso = this.computeRetraso(updated);
         const idx = this.actividades.findIndex(a => a.id === id);
         if (idx >= 0) {
           this.actividades[idx] = updated;
@@ -178,6 +184,30 @@ export class Actividades implements OnInit {
         this.showError(msg);
       },
     });
+  }
+
+  private computeRetraso(a: ActividadListItemDTO): number | null {
+    if (!a.finProgramado) return null;
+    const finProg = this.parseDate(a.finProgramado);
+    if (a.finEfectivo) {
+      const finEf = this.parseDate(a.finEfectivo);
+      return this.daysBetween(finProg, finEf);
+    }
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (finProg < hoy) return this.daysBetween(finProg, hoy);
+    return null;
+  }
+
+  private parseDate(iso: string): Date {
+    const d = new Date(iso);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private daysBetween(from: Date, to: Date): number {
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
   }
 
   trackByProyecto(_: number, p: ProyectoConActividadesDTO): number {
