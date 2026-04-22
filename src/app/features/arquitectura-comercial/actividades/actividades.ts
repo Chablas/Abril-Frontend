@@ -294,30 +294,35 @@ export class Actividades implements OnInit {
 
   estadoClass(estado: string): string {
     switch (estado) {
-      case 'CULMINADO': return 'bg-green-100 text-green-800';
-      case 'EN PROCESO': return 'bg-blue-100 text-blue-800';
-      case 'VENCIDO': return 'bg-red-100 text-red-800';
-      case 'PENDIENTE': return 'bg-yellow-100 text-yellow-800';
-      case 'VACIO': return 'bg-gray-100 text-gray-500';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'CULMINADO': return 'bg-[#D1FAE5] text-[#065F46] border-[#A7F3D0]';
+      case 'EN PROCESO': return 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]';
+      case 'VENCIDO': return 'bg-[#FEE2E2] text-[#991B1B] border-[#FECACA]';
+      case 'PENDIENTE': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
+      case 'VACIO': return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
+      default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
   }
 
   etapaClass(etapa: string | null): string {
     switch (etapa) {
-      case 'PREVENTA': return 'bg-purple-100 text-purple-800';
-      case 'OBRA': return 'bg-orange-100 text-orange-800';
-      case 'EDIFICIO ENTREGADO': return 'bg-teal-100 text-teal-800';
-      case 'POST VENTA Y EXPERIENCIA': return 'bg-pink-100 text-pink-800';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'PREVENTA': return 'bg-[#EDE9FE] text-[#5B21B6] border-[#DDD6FE]';
+      case 'OBRA': return 'bg-[#DBEAFE] text-[#1E3A8A] border-[#BFDBFE]';
+      case 'EDIFICIO ENTREGADO': return 'bg-[#CCFBF1] text-[#115E59] border-[#99F6E4]';
+      case 'POST VENTA Y EXPERIENCIA': return 'bg-[#FCE7F3] text-[#9D174D] border-[#FBCFE8]';
+      default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
   }
 
   proyectoRowClass(p: ProyectoConActividadesDTO): string {
     const base: string[] = [];
-    if (this.selectedProyectoId === p.id) base.push('bg-[#E5F7D1] border-l-4 border-[#64BC04]');
-    else base.push('hover:bg-gray-100');
-    if (p.sinActividades) base.push('text-red-600');
+    if (this.selectedProyectoId === p.id) {
+      base.push('bg-[#F0FDF4] border-l-[3px] border-[#1D9E75]');
+    } else {
+      base.push('border-l-[3px] border-transparent hover:bg-gray-50');
+    }
+    if (p.sinActividades && this.selectedProyectoId !== p.id) {
+      base.push('bg-red-50 border-l-[3px] border-red-400');
+    }
     if (p.estado !== 'ACTIVO') base.push('opacity-60');
     return base.join(' ');
   }
