@@ -135,6 +135,31 @@ export class NavigationService {
         },
       ],
     },
+    {
+      key: 'arquitectura-comercial',
+      label: 'Arquitectura Comercial',
+      iconKey: 'projects',
+      baseRoute: '/arquitectura-comercial',
+      roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+      items: [
+        {
+          label: 'Dashboard',
+          route: '/arquitectura-comercial/dashboard',
+        },
+        {
+          label: 'Actividades',
+          route: '/arquitectura-comercial/actividades',
+        },
+        {
+          label: 'Gantt',
+          route: '/arquitectura-comercial/gantt',
+        },
+        {
+          label: 'Plantilla',
+          route: '/arquitectura-comercial/plantilla',
+        },
+      ],
+    },
   ];
 
   constructor(private authService: AuthService) {}

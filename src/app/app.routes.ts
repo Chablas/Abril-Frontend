@@ -51,6 +51,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/contractors/contractors.routes')
           .then(m => m.CONTRACTORS_ADMIN_ROUTES)
+      },
+
+      {
+        path: 'arquitectura-comercial',
+        loadChildren: () =>
+          import('./features/arquitectura-comercial/arquitectura-comercial-module')
+          .then(m => m.ArquitecturaComercialModule)
       }
     ]
   },

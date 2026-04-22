@@ -35,6 +35,7 @@ export class AuthService {
   }
 
   isTokenExpired(): boolean {
+    if (typeof localStorage === 'undefined') return true;
     const token = localStorage.getItem('access_token');
     if (!token) return true;
 
@@ -48,6 +49,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem('access_token');
   }
 
