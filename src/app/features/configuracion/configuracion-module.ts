@@ -13,7 +13,7 @@ const routes: Routes = [
         path: 'proyectos',
         component: Proyectos,
         canActivate: [roleGuard],
-        data: { titulo: 'PROYECTOS', roles: ['ADMINISTRADOR DE UDP'] },
+        data: { titulo: 'PROYECTOS', roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'] },
       },
     ],
   },

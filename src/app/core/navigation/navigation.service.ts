@@ -126,12 +126,12 @@ export class NavigationService {
       label: 'Configuración',
       iconKey: 'settings',
       baseRoute: '/configuracion',
-      roles: ['ADMINISTRADOR DE UDP'],
+      roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
       items: [
         {
           label: 'Proyectos',
           route: '/configuracion/proyectos',
-          roles: ['ADMINISTRADOR DE UDP'],
+          roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
         },
       ],
     },
