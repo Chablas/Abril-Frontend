@@ -259,24 +259,7 @@ export class Actividades implements OnInit {
       next: updated => {
         const idx = this.proyectos.findIndex(p => p.id === proyectoId);
         if (idx >= 0) this.proyectos[idx] = updated;
-
-        this.service.reasignarEncargado(proyectoId).subscribe({
-          next: res => {
-            if (res.workerNoEncontrado) {
-              this.showWarning('No se pudo reasignar: el worker asignado no existe.');
-              return;
-            }
-            Swal.fire({
-              icon: 'success',
-              title: 'Listo',
-              text: `${res.actualizadas} actividades actualizadas.`,
-              timer: 1500,
-            });
-            this.loadActividades();
-            this.cdr.detectChanges();
-          },
-          error: () => this.showError('No se pudo reasignar el encargado'),
-        });
+        this.cdr.detectChanges();
       },
       error: err => {
         const msg = err?.error?.message ?? 'No se pudo guardar el encargado';
