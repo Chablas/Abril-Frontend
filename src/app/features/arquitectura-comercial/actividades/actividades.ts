@@ -27,9 +27,10 @@ interface EtapaGroup {
   styleUrl: './actividades.css',
 })
 export class Actividades implements OnInit {
+  readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA'];
+
   proyectos: ProyectoConActividadesDTO[] = [];
   supervisores: SupervisorAcDTO[] = [];
-  etapasDisponibles: { id: number; nombre: string }[] = [];
 
   selectedProyectoId: number | null = null;
   get selectedProyecto(): ProyectoConActividadesDTO | null {
@@ -42,7 +43,7 @@ export class Actividades implements OnInit {
   loading = false;
 
   tipoFiltro: TipoFiltro = '';
-  etapaIdFiltro: number | null = null;
+  etapaNombreFiltro: string | null = null;
   searchQuery = '';
   soloActivas = false;
 
@@ -88,7 +89,7 @@ export class Actividades implements OnInit {
 
   resetFilters(): void {
     this.tipoFiltro = '';
-    this.etapaIdFiltro = null;
+    this.etapaNombreFiltro = null;
     this.searchQuery = '';
     this.soloActivas = false;
   }
@@ -100,7 +101,7 @@ export class Actividades implements OnInit {
       .getActividades({
         proyectoId: this.selectedProyectoId,
         tipo: this.tipoFiltro || null,
-        etapaId: this.etapaIdFiltro,
+        etapaId: null,
         search: this.searchQuery || null,
         soloActivas: this.soloActivas || null,
         pagina: 1,
@@ -110,7 +111,6 @@ export class Actividades implements OnInit {
         next: data => {
           this.actividades = data.items;
           this.total = data.total;
-          this.deriveEtapas();
           this.rebuildGroups();
           this.loading = false;
           this.cdr.detectChanges();
@@ -123,19 +123,12 @@ export class Actividades implements OnInit {
       });
   }
 
-  private deriveEtapas(): void {
-    const map = new Map<number, string>();
-    for (const a of this.actividades) {
-      if (a.etapaId != null && a.etapaNombre && !map.has(a.etapaId)) {
-        map.set(a.etapaId, a.etapaNombre);
-      }
-    }
-    this.etapasDisponibles = Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
-  }
-
   private rebuildGroups(): void {
+    const filtered = this.etapaNombreFiltro
+      ? this.actividades.filter(a => a.etapaNombre === this.etapaNombreFiltro)
+      : this.actividades;
     const groups = new Map<string, ActividadListItemDTO[]>();
-    for (const a of this.actividades) {
+    for (const a of filtered) {
       const key = a.etapaNombre || 'SIN ETAPA';
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(a);
@@ -159,6 +152,10 @@ export class Actividades implements OnInit {
 
   onFiltroChange(): void {
     this.loadActividades();
+  }
+
+  onEtapaFiltroChange(): void {
+    this.rebuildGroups();
   }
 
   patchField(id: number, field: keyof ActividadPatchBody, value: any): void {
@@ -199,10 +196,6 @@ export class Actividades implements OnInit {
     return s.id;
   }
 
-  trackByEtapaDisponible(_: number, e: { id: number; nombre: string }): number {
-    return e.id;
-  }
-
   private refreshSelectedProyectoCounts(): void {
     if (!this.selectedProyecto) return;
     const activas = this.actividades.filter(a => a.activo).length;
@@ -225,42 +218,32 @@ export class Actividades implements OnInit {
     this.patchField(id, 'observaciones', value || null);
   }
 
-  aplicarEncargadoATodos(): void {
+  onEncargadoChange(event: Event): void {
     if (!this.selectedProyectoId) return;
     const proyecto = this.selectedProyecto;
-    if (!proyecto?.responsableArqCom) {
-      this.showInfo('Este proyecto no tiene Encargado 1 definido en la tabla projects.');
-      return;
-    }
+    if (!proyecto) return;
 
-    Swal.fire({
-      title: '¿Aplicar encargado a todas las actividades?',
-      text: `Se asignará "${proyecto.responsableArqCom}" como responsable en todas las actividades de ${proyecto.nombre}.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, aplicar',
-      cancelButtonText: 'Cancelar',
-    }).then(result => {
-      if (!result.isConfirmed) return;
-      this.service.reasignarEncargado(this.selectedProyectoId!).subscribe({
-        next: res => {
-          if (res.workerNoEncontrado) {
-            this.showWarning(
-              `No se encontró un worker con nombre "${proyecto.responsableArqCom}". Verifica que exista en la tabla workers.`,
-            );
-            return;
-          }
-          Swal.fire({
-            icon: 'success',
-            title: 'Listo',
-            text: `${res.actualizadas} actividades actualizadas.`,
-            timer: 2000,
-          });
-          this.loadActividades();
-          this.cdr.detectChanges();
-        },
-        error: () => this.showError('No se pudo reasignar el encargado'),
-      });
+    const nuevo = (event.target as HTMLSelectElement).value || null;
+    proyecto.responsableArqCom = nuevo;
+
+    this.service.reasignarEncargado(this.selectedProyectoId).subscribe({
+      next: res => {
+        if (res.workerNoEncontrado) {
+          this.showWarning(
+            `No se encontró un worker con nombre "${proyecto.responsableArqCom}". Verifica que exista en la tabla workers.`,
+          );
+          return;
+        }
+        Swal.fire({
+          icon: 'success',
+          title: 'Listo',
+          text: `${res.actualizadas} actividades actualizadas.`,
+          timer: 1500,
+        });
+        this.loadActividades();
+        this.cdr.detectChanges();
+      },
+      error: () => this.showError('No se pudo reasignar el encargado'),
     });
   }
 

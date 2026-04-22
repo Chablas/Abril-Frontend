@@ -74,14 +74,14 @@
 
           <div class="flex items-center gap-2">
             <label class="text-sm text-gray-600">Encargado 1:</label>
-            <span class="text-sm px-3 py-1.5 border border-gray-300 rounded bg-gray-50">
-              {{ selectedProyecto.responsableArqCom || '—' }}
-            </span>
-            <button (click)="aplicarEncargadoATodos()"
-                    class="bg-[#0086A5] text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-[#006d85]"
-                    [disabled]="!selectedProyecto.responsableArqCom">
-              Aplicar a todos
-            </button>
+            <select [value]="selectedProyecto.responsableArqCom || ''"
+                    (change)="onEncargadoChange($event)"
+                    class="text-sm px-3 py-1.5 border border-gray-300 rounded bg-white">
+              <option value="">—</option>
+              <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [value]="s.apellidoNombre">
+                {{ s.apellidoNombre }}
+              </option>
+            </select>
           </div>
         </div>
       </div>
@@ -109,10 +109,10 @@
         </div>
 
         <!-- Dropdown etapa -->
-        <select [(ngModel)]="etapaIdFiltro" (change)="onFiltroChange()"
+        <select [(ngModel)]="etapaNombreFiltro" (change)="onEtapaFiltroChange()"
                 class="text-sm border border-gray-300 rounded px-2 py-1 bg-white">
           <option [ngValue]="null">Todas las etapas</option>
-          <option *ngFor="let e of etapasDisponibles; trackBy: trackByEtapaDisponible" [ngValue]="e.id">{{ e.nombre }}</option>
+          <option *ngFor="let e of etapasFijas" [ngValue]="e">{{ e }}</option>
         </select>
 
         <!-- Search -->
