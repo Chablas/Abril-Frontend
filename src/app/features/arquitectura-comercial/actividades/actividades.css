@@ -19,3 +19,7 @@ table thead th {
 tbody tr td {
   vertical-align: middle;
 }
+
+tbody tr {
+  height: 44px;
+}

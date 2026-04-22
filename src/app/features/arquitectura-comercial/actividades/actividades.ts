@@ -36,6 +36,12 @@ export class Actividades implements OnInit {
   get selectedProyecto(): ProyectoConActividadesDTO | null {
     return this.proyectos.find(p => p.id === this.selectedProyectoId) ?? null;
   }
+  get proyectosConActividades(): ProyectoConActividadesDTO[] {
+    return this.proyectos.filter(p => !p.sinActividades);
+  }
+  get proyectosSinActividades(): ProyectoConActividadesDTO[] {
+    return this.proyectos.filter(p => p.sinActividades);
+  }
 
   actividades: ActividadListItemDTO[] = [];
   etapasConActividades: EtapaGroup[] = [];
@@ -329,12 +335,9 @@ export class Actividades implements OnInit {
   proyectoRowClass(p: ProyectoConActividadesDTO): string {
     const base: string[] = [];
     if (this.selectedProyectoId === p.id) {
-      base.push('bg-[#F0FDF4] border-l-[3px] border-[#1D9E75]');
+      base.push('bg-[#DCFCE7] border-l-[3px] border-[#16A34A] text-[#15803D]');
     } else {
-      base.push('border-l-[3px] border-transparent hover:bg-gray-50');
-    }
-    if (p.sinActividades && this.selectedProyectoId !== p.id) {
-      base.push('bg-red-50 border-l-[3px] border-red-400');
+      base.push('border-l-[3px] border-transparent hover:bg-gray-100');
     }
     if (p.estado !== 'ACTIVO') base.push('opacity-60');
     return base.join(' ');
