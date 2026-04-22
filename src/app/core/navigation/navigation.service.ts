@@ -140,7 +140,7 @@ export class NavigationService {
       label: 'Arquitectura Comercial',
       iconKey: 'projects',
       baseRoute: '/arquitectura-comercial',
-      roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+      roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
       items: [
         {
           label: 'Dashboard',

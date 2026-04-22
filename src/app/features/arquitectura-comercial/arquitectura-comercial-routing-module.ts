@@ -18,7 +18,7 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - DASHBOARD',
-          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
         },
       },
       {
@@ -27,7 +27,7 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - ACTIVIDADES',
-          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
         },
       },
       {
@@ -36,7 +36,7 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - ENTREGABLES',
-          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
         },
       },
       {
@@ -45,7 +45,7 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - GANTT',
-          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
         },
       },
       {
@@ -54,7 +54,7 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA',
-          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
         },
       },
     ],
