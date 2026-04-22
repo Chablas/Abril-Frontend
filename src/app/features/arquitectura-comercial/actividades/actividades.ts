@@ -207,10 +207,8 @@ export class Actividades implements OnInit {
     this.patchField(id, field, value || null);
   }
 
-  onUserIdChange(id: number, event: Event): void {
-    const raw = (event.target as HTMLSelectElement).value;
-    const value = raw === '' || raw === 'null' ? null : Number(raw);
-    this.patchField(id, 'userId', value);
+  onResponsableChange(a: ActividadListItemDTO, userId: number | null): void {
+    this.patchField(a.id, 'userId', userId);
   }
 
   onObservacionesBlur(id: number, event: Event): void {
