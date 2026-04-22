@@ -127,12 +127,12 @@ export class NavigationService {
           route: '/arquitectura-comercial/actividades',
         },
         {
-          label: 'Entregables',
-          route: '/arquitectura-comercial/entregables',
-        },
-        {
           label: 'Gantt',
           route: '/arquitectura-comercial/gantt',
+        },
+        {
+          label: 'Plantilla',
+          route: '/arquitectura-comercial/plantilla',
         },
       ],
     },
