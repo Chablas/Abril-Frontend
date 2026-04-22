@@ -260,127 +260,134 @@
       <input #fileInput type="file" class="hidden" (change)="onFileSelected($event)" />
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-        <div *ngFor="let doc of documents"
+        <div *ngFor="let doc of documents; trackBy: trackByDocKey"
           class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px]">
 
-          <!-- Encabezado: ícono + etiqueta -->
-          <div class="flex items-center gap-[8px]">
-            <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
-              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
+          <!-- Variable local: archivo actual del documento -->
+          <ng-container *ngIf="{ file: getDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
+
+            <!-- Encabezado: ícono + etiqueta -->
+            <div class="flex items-center gap-[8px]">
+              <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <span class="text-sm font-semibold text-gray-700">{{ doc.label }}</span>
             </div>
-            <span class="text-sm font-semibold text-gray-700">{{ doc.label }}</span>
-          </div>
 
-          <!-- Estado del archivo -->
-          <div class="text-xs min-h-[18px]">
-            <a *ngIf="getDocFile(doc.key) as docFile"
-              [href]="docFile.fileUrl" target="_blank"
-              class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
-              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-              </svg>
-              {{ docFile.originalFileName ?? 'Ver archivo' }}
-            </a>
-            <span *ngIf="!getDocFile(doc.key)" class="italic text-gray-300">Sin archivo</span>
-          </div>
+            <!-- Estado del archivo -->
+            <div class="text-xs min-h-[18px]">
+              <a *ngIf="ctx.file; else noFile"
+                [href]="ctx.file.fileUrl" target="_blank"
+                class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                {{ ctx.file.originalFileName ?? 'Ver archivo' }}
+              </a>
+              <ng-template #noFile>
+                <span class="italic text-gray-300">Sin archivo</span>
+              </ng-template>
+            </div>
 
-          <!-- Estado y observación (solo si existe registro del documento) -->
-          <ng-container *ngIf="getDocFile(doc.key)">
+            <!-- Estado y observación (solo si existe registro del documento) -->
+            <ng-container *ngIf="ctx.file">
 
-            <!-- Desplegable de estado -->
-            <div class="flex items-center gap-[6px]">
-              <select
-                [(ngModel)]="docForms[doc.key].statusId"
-                (change)="onStatusChange(doc.key)"
+              <!-- Desplegable de estado -->
+              <div class="flex items-center gap-[6px]">
+                <select
+                  [(ngModel)]="docForms[doc.key].statusId"
+                  (change)="onStatusChange(doc.key)"
+                  [disabled]="updatingStatusDoc === doc.key"
+                  class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+                  <option [ngValue]="null">— Estado —</option>
+                  <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
+                </select>
+                <!-- spinner mientras guarda el estado -->
+                <svg *ngIf="updatingStatusDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+              </div>
+
+              <!-- Observación -->
+              <textarea
+                [(ngModel)]="docForms[doc.key].observation"
+                (blur)="onObservationBlur(doc.key)"
                 [disabled]="updatingStatusDoc === doc.key"
-                class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-                <option [ngValue]="null">— Estado —</option>
-                <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
-              </select>
-              <!-- spinner mientras guarda el estado -->
-              <svg *ngIf="updatingStatusDoc === doc.key"
-                class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-            </div>
+                placeholder="Observación..."
+                rows="2"
+                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+              </textarea>
 
-            <!-- Observación -->
-            <textarea
-              [(ngModel)]="docForms[doc.key].observation"
-              (blur)="onObservationBlur(doc.key)"
-              [disabled]="updatingStatusDoc === doc.key"
-              placeholder="Observación..."
-              rows="2"
-              class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-            </textarea>
+            </ng-container>
+
+            <!-- Botones -->
+            <div class="flex gap-[8px] mt-auto">
+
+              <!-- Subir -->
+              <button (click)="triggerUpload(doc.key)"
+                [disabled]="uploadingDoc !== null"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.cursor-wait]="uploadingDoc === doc.key">
+
+                <!-- spinner mientras sube este doc -->
+                <svg *ngIf="uploadingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10"
+                    stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <!-- ícono upload en reposo -->
+                <svg *ngIf="uploadingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+
+                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.file ? 'Reemplazar' : 'Subir') }}</span>
+              </button>
+
+              <!-- Generar -->
+              <button
+                (click)="ctx.generable && generateDoc(doc.key)"
+                [disabled]="!ctx.generable || generatingDoc !== null || uploadingDoc !== null"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border transition-colors"
+                [ngClass]="{
+                  'border-blue-400 text-blue-500 hover:bg-blue-50 cursor-pointer':
+                    ctx.generable && generatingDoc === null && uploadingDoc === null,
+                  'border-gray-200 text-gray-300 cursor-not-allowed':
+                    !ctx.generable || (generatingDoc !== null && generatingDoc !== doc.key),
+                  'border-blue-300 text-blue-300 opacity-60 cursor-wait': generatingDoc === doc.key
+                }"
+                [title]="ctx.generable ? 'Generar documento' : 'Próximamente'">
+
+                <!-- spinner mientras genera este doc -->
+                <svg *ngIf="generatingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10"
+                    stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <!-- ícono generar en reposo -->
+                <svg *ngIf="generatingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.858 3.858 0 01-1.196.82l-.25.102a3.89 3.89 0 00-2.3 3.58V16"/>
+                </svg>
+
+                <span>{{ generatingDoc === doc.key ? 'Generando…' : 'Generar' }}</span>
+              </button>
+
+            </div>
 
           </ng-container>
-
-          <!-- Botones -->
-          <div class="flex gap-[8px] mt-auto">
-
-            <!-- Subir -->
-            <button (click)="triggerUpload(doc.key)"
-              [disabled]="uploadingDoc !== null"
-              class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              [class.cursor-wait]="uploadingDoc === doc.key">
-
-              <!-- spinner mientras sube este doc -->
-              <svg *ngIf="uploadingDoc === doc.key"
-                class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10"
-                  stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-              <!-- ícono upload en reposo -->
-              <svg *ngIf="uploadingDoc !== doc.key"
-                class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-              </svg>
-
-              <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (getDocFile(doc.key) ? 'Reemplazar' : 'Subir') }}</span>
-            </button>
-
-            <!-- Generar -->
-            <button
-              (click)="canGenerate(doc.key) && generateDoc(doc.key)"
-              [disabled]="!canGenerate(doc.key) || generatingDoc !== null || uploadingDoc !== null"
-              class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border transition-colors"
-              [ngClass]="{
-                'border-blue-400 text-blue-500 hover:bg-blue-50 cursor-pointer':
-                  canGenerate(doc.key) && generatingDoc === null && uploadingDoc === null,
-                'border-gray-200 text-gray-300 cursor-not-allowed':
-                  !canGenerate(doc.key) || (generatingDoc !== null && generatingDoc !== doc.key),
-                'border-blue-300 text-blue-300 opacity-60 cursor-wait': generatingDoc === doc.key
-              }"
-              [title]="canGenerate(doc.key) ? 'Generar documento' : 'Próximamente'">
-
-              <!-- spinner mientras genera este doc -->
-              <svg *ngIf="generatingDoc === doc.key"
-                class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10"
-                  stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-              <!-- ícono generar en reposo -->
-              <svg *ngIf="generatingDoc !== doc.key"
-                class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.858 3.858 0 01-1.196.82l-.25.102a3.89 3.89 0 00-2.3 3.58V16"/>
-              </svg>
-
-              <span>{{ generatingDoc === doc.key ? 'Generando…' : 'Generar' }}</span>
-            </button>
-
-          </div>
         </div>
       </div>
     </div>

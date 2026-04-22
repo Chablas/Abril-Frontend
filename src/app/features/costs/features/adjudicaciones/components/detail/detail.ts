@@ -45,8 +45,14 @@ export class Detail implements OnInit {
   /** Formulario del paso 2. */
   step2Form = { signingDate: '', startDate: '', endDate: '' };
 
-  /** Documentos del paso 3. El Pagaré solo aparece si el método de pago es "Contrato con adelanto" (id 2). */
-  get documents(): { key: string; label: string }[] {
+  /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
+  documents: { key: string; label: string }[] = [];
+
+  trackByDocKey(_: number, doc: { key: string }): string {
+    return doc.key;
+  }
+
+  private buildDocuments(): { key: string; label: string }[] {
     const base = [
       { key: 'Contract',          label: 'Contrato' },
       { key: 'SummarySheet',      label: 'Hoja Resumen' },
@@ -93,6 +99,7 @@ export class Detail implements OnInit {
     if (this.item.signingDate) this.step2Form.signingDate = this.item.signingDate.substring(0, 10);
     if (this.item.startDate)   this.step2Form.startDate   = this.item.startDate.substring(0, 10);
     if (this.item.endDate)     this.step2Form.endDate     = this.item.endDate.substring(0, 10);
+    this.documents = this.buildDocuments();
     this.initDocForms();
   }
 
