@@ -66,6 +66,10 @@ export interface ReasignarEncargadoResultDTO {
   workerNoEncontrado: boolean;
 }
 
+export interface PatchProyectoBody {
+  responsableArqCom: string | null;
+}
+
 export interface GenerarActividadesResultDTO {
   generadas: number;
 }

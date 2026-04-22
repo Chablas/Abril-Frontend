@@ -16,6 +16,7 @@ import {
   ActividadPatchBody,
   ReasignarEncargadoResultDTO,
   GenerarActividadesResultDTO,
+  PatchProyectoBody,
 } from '../dtos/arquitectura-comercial/actividades.model';
 
 @Injectable({ providedIn: 'root' })
@@ -98,5 +99,11 @@ export class ArquitecturaComercialService {
       { proyectoId },
       { headers: this.authHeaders() },
     );
+  }
+
+  patchProyecto(id: number, body: PatchProyectoBody): Observable<ProyectoConActividadesDTO> {
+    return this.http.patch<ProyectoConActividadesDTO>(`${this.apiUrl}/proyectos/${id}`, body, {
+      headers: this.authHeaders(),
+    });
   }
 }
