@@ -96,3 +96,52 @@ export interface GanttQueryParams {
   etapa?: string | null;
   soloActivas?: boolean | null;
 }
+
+export interface PlantillaActividadDTO {
+  id: number;
+  orden: number | null;
+  nombre: string;
+  tipo: string | null;
+  etapaId: number | null;
+  etapaNombre: string | null;
+  categoriaId: number | null;
+  categoriaNombre: string | null;
+  especialidadId: number | null;
+  especialidadNombre: string | null;
+  activo: boolean;
+}
+
+export interface CreatePlantillaBody {
+  nombre: string;
+  tipo?: string | null;
+  etapaId?: number | null;
+  categoriaId?: number | null;
+  especialidadId?: number | null;
+  orden?: number | null;
+  activo?: boolean;
+}
+
+export interface PatchPlantillaBody {
+  nombre?: string;
+  tipo?: string | null;
+  etapaId?: number | null;
+  categoriaId?: number | null;
+  especialidadId?: number | null;
+  orden?: number | null;
+  activo?: boolean;
+}
+
+export interface AcCategoriaDTO {
+  id: number;
+  nombre: string;
+}
+
+export interface AcEspecialidadDTO {
+  id: number;
+  nombre: string;
+}
+
+export interface AcEtapaDTO {
+  id: number;
+  nombre: string;
+}

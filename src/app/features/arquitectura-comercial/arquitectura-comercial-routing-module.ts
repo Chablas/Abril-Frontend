@@ -5,6 +5,7 @@ import { Dashboard } from './dashboard/dashboard';
 import { Actividades } from './actividades/actividades';
 import { Entregables } from './entregables/entregables';
 import { Gantt } from './gantt/gantt';
+import { Plantilla } from './plantilla/plantilla';
 
 const routes: Routes = [
   {
@@ -44,6 +45,15 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: {
           titulo: 'ARQUITECTURA COMERCIAL - GANTT',
+          roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+        },
+      },
+      {
+        path: 'plantilla',
+        component: Plantilla,
+        canActivate: [roleGuard],
+        data: {
+          titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA',
           roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
         },
       },

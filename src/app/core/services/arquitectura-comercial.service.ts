@@ -19,6 +19,12 @@ import {
   PatchProyectoBody,
   GanttActividadDTO,
   GanttQueryParams,
+  PlantillaActividadDTO,
+  CreatePlantillaBody,
+  PatchPlantillaBody,
+  AcCategoriaDTO,
+  AcEspecialidadDTO,
+  AcEtapaDTO,
 } from '../dtos/arquitectura-comercial/actividades.model';
 
 @Injectable({ providedIn: 'root' })
@@ -105,6 +111,42 @@ export class ArquitecturaComercialService {
 
   patchProyecto(id: number, body: PatchProyectoBody): Observable<ProyectoConActividadesDTO> {
     return this.http.patch<ProyectoConActividadesDTO>(`${this.apiUrl}/proyectos/${id}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getPlantilla(): Observable<PlantillaActividadDTO[]> {
+    return this.http.get<PlantillaActividadDTO[]>(`${this.apiUrl}/plantilla`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  createPlantilla(body: CreatePlantillaBody): Observable<PlantillaActividadDTO> {
+    return this.http.post<PlantillaActividadDTO>(`${this.apiUrl}/plantilla`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  patchPlantilla(id: number, body: PatchPlantillaBody): Observable<PlantillaActividadDTO> {
+    return this.http.patch<PlantillaActividadDTO>(`${this.apiUrl}/plantilla/${id}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getCategorias(): Observable<AcCategoriaDTO[]> {
+    return this.http.get<AcCategoriaDTO[]>(`${this.apiUrl}/categorias`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getEspecialidades(): Observable<AcEspecialidadDTO[]> {
+    return this.http.get<AcEspecialidadDTO[]>(`${this.apiUrl}/especialidades`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getEtapas(): Observable<AcEtapaDTO[]> {
+    return this.http.get<AcEtapaDTO[]>(`${this.apiUrl}/etapas`, {
       headers: this.authHeaders(),
     });
   }

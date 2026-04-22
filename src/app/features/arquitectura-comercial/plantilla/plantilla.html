@@ -1,0 +1,200 @@
+<div class="flex flex-col h-full w-full bg-[#F5F7FA]">
+
+  <!-- Header -->
+  <div class="px-6 py-4 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] relative z-20 flex items-center justify-between">
+    <div>
+      <h1 class="text-[18px] font-bold text-gray-800">Plantilla de Actividades</h1>
+      <div class="flex gap-2 mt-1.5">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          {{ plantilla.length }} actividades base
+        </span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DCFCE7] text-[#15803D]">
+          {{ filteredPlantilla.length }} en vista
+        </span>
+      </div>
+    </div>
+    <button (click)="openModal()"
+            class="bg-[#1a4731] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#143524]">
+      + Nueva actividad
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="px-5 py-3 border-b border-[#E5E7EB] bg-[#F8FAFC] flex flex-wrap items-center gap-3">
+    <div class="flex gap-1.5">
+      <button (click)="setTipo('')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+        Todos
+      </button>
+      <button (click)="setTipo('Hito')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'Hito' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+        Hito
+      </button>
+      <button (click)="setTipo('Entregable')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'Entregable' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+        Entregable
+      </button>
+      <button (click)="setTipo('Consulta')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'Consulta' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+        Consulta
+      </button>
+    </div>
+
+    <select [(ngModel)]="etapaIdFiltro"
+            class="text-sm border border-[#D1D5DB] rounded-lg px-3 py-1.5 bg-white">
+      <option [ngValue]="null">Todas las etapas</option>
+      <option *ngFor="let e of etapas" [ngValue]="e.id">{{ e.nombre }}</option>
+    </select>
+
+    <select [(ngModel)]="activoFiltro"
+            class="text-sm border border-[#D1D5DB] rounded-lg px-3 py-1.5 bg-white">
+      <option value="todos">Activas e inactivas</option>
+      <option value="activas">Solo activas</option>
+      <option value="inactivas">Solo inactivas</option>
+    </select>
+
+    <span *ngIf="loading" class="text-xs text-gray-500 ml-auto">Cargando...</span>
+  </div>
+
+  <!-- Tabla -->
+  <div class="flex-1 overflow-auto">
+    <table class="w-full text-xs">
+      <thead class="bg-[#1a4731] sticky top-0 z-10">
+        <tr class="text-left text-white uppercase tracking-wide text-[11px]">
+          <th class="p-2 w-16">Orden</th>
+          <th class="p-2 min-w-[260px]">Nombre</th>
+          <th class="p-2 w-32">Tipo</th>
+          <th class="p-2 w-40">Etapa</th>
+          <th class="p-2 min-w-[160px]">Categoría</th>
+          <th class="p-2 min-w-[160px]">Especialidad</th>
+          <th class="p-2 w-24">Activa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of filteredPlantilla; let i = index; trackBy: trackByRow"
+            [class]="'border-b border-[#E5E7EB] ' + (i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]') + ' hover:bg-[#F0FDF4]'">
+          <td class="px-2 py-1.5">
+            <input type="number"
+                   [value]="p.orden ?? ''"
+                   (blur)="onOrdenBlur(p, $event)"
+                   class="w-14 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1" />
+          </td>
+          <td class="px-2 py-1.5 text-gray-800">
+            <input type="text"
+                   [value]="p.nombre"
+                   (blur)="onNombreBlur(p, $event)"
+                   class="w-full text-[12px] border border-transparent hover:border-[#D1D5DB] focus:border-[#1a4731] rounded-[6px] px-2 py-1 bg-transparent focus:bg-white" />
+          </td>
+          <td class="px-2 py-1.5">
+            <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + tipoClass(p.tipo)">
+              {{ p.tipo || '—' }}
+            </span>
+          </td>
+          <td class="px-2 py-1.5">
+            <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + etapaClass(p.etapaNombre)">
+              {{ p.etapaNombre || '—' }}
+            </span>
+          </td>
+          <td class="px-2 py-1.5 text-gray-700 truncate" [title]="p.categoriaNombre || ''">
+            {{ p.categoriaNombre || '—' }}
+          </td>
+          <td class="px-2 py-1.5 text-gray-700 truncate" [title]="p.especialidadNombre || ''">
+            {{ p.especialidadNombre || '—' }}
+          </td>
+          <td class="px-2 py-1.5">
+            <button (click)="onActivoToggle(p)"
+                    [class]="p.activo ? 'inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-[#D1FAE5] text-[#065F46] border-[#A7F3D0]' : 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E5E7EB] text-[#6B7280]'">
+              {{ p.activo ? 'SÍ' : 'NO' }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="!loading && filteredPlantilla.length === 0">
+          <td colspan="7" class="text-center py-8 text-gray-400">
+            No hay actividades con los filtros aplicados.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Nueva Actividad -->
+  <div *ngIf="showModal"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+       (click)="closeModal()">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+         (click)="$event.stopPropagation()">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">Nueva actividad de plantilla</h2>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+          <input type="text" [(ngModel)]="form.nombre"
+                 class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+            <select [(ngModel)]="form.tipo"
+                    class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
+              <option [ngValue]="null">—</option>
+              <option value="Hito">Hito</option>
+              <option value="Entregable">Entregable</option>
+              <option value="Consulta">Consulta</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Orden</label>
+            <input type="number" [(ngModel)]="form.orden"
+                   class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Etapa</label>
+          <select [(ngModel)]="form.etapaId"
+                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let e of etapas" [ngValue]="e.id">{{ e.nombre }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
+          <select [(ngModel)]="form.categoriaId"
+                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Especialidad</label>
+          <select [(ngModel)]="form.especialidadId"
+                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let s of especialidades" [ngValue]="s.id">{{ s.nombre }}</option>
+          </select>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="form.activo" class="rounded border-gray-300" />
+          Activa
+        </label>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-6">
+        <button (click)="closeModal()"
+                class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+          Cancelar
+        </button>
+        <button (click)="submitForm()"
+                class="bg-[#1a4731] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#143524]">
+          Crear
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
