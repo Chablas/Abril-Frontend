@@ -10,7 +10,7 @@ import {
   ActividadPatchBody,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
 
-type TipoFiltro = '' | 'Entregable' | 'Hito' | 'Consulta';
+type TipoFiltro = '' | 'ENTREGABLE' | 'HITO' | 'CONSULTA';
 
 interface EtapaGroup {
   nombre: string;
