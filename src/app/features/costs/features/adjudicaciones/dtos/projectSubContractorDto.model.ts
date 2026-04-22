@@ -46,4 +46,5 @@ export interface ProjectSubContractorDTO {
   schedule?: ProjectSubContractorFileDTO;
   attachedQuotation?: ProjectSubContractorFileDTO;
   serviceOrder?: ProjectSubContractorFileDTO;
+  promissoryNote?: ProjectSubContractorFileDTO;  // solo si paymentMethodId === 2
 }

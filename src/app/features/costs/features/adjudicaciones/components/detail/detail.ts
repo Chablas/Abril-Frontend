@@ -45,15 +45,21 @@ export class Detail implements OnInit {
   /** Formulario del paso 2. */
   step2Form = { signingDate: '', startDate: '', endDate: '' };
 
-  /** Documentos del paso 3. */
-  readonly documents = [
-    { key: 'Contract',          label: 'Contrato' },
-    { key: 'SummarySheet',      label: 'Hoja Resumen' },
-    { key: 'Budget',            label: 'Presupuesto' },
-    { key: 'Schedule',          label: 'Cronograma' },
-    { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
-    { key: 'ServiceOrder',      label: 'Orden de Servicio' },
-  ] as const;
+  /** Documentos del paso 3. El Pagaré solo aparece si el método de pago es "Contrato con adelanto" (id 2). */
+  get documents(): { key: string; label: string }[] {
+    const base = [
+      { key: 'Contract',          label: 'Contrato' },
+      { key: 'SummarySheet',      label: 'Hoja Resumen' },
+      { key: 'Budget',            label: 'Presupuesto' },
+      { key: 'Schedule',          label: 'Cronograma' },
+      { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
+      { key: 'ServiceOrder',      label: 'Orden de Servicio' },
+    ];
+    if (this.item.paymentMethodId === 2) {
+      return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
+    }
+    return base;
+  }
 
   currentDocType: string | null = null;
   uploadingDoc: string | null = null;
@@ -73,7 +79,7 @@ export class Detail implements OnInit {
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,
@@ -160,6 +166,7 @@ export class Detail implements OnInit {
       case 'Schedule':          return this.item.schedule          ?? undefined;
       case 'AttachedQuotation': return this.item.attachedQuotation ?? undefined;
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
+      case 'PromissoryNote':    return this.item.promissoryNote    ?? undefined;
       default: return undefined;
     }
   }
@@ -183,6 +190,7 @@ export class Detail implements OnInit {
           case 'Schedule':          this.item.schedule          = generated; break;
           case 'AttachedQuotation': this.item.attachedQuotation = generated; break;
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
+          case 'PromissoryNote':    this.item.promissoryNote    = generated; break;
         }
         Swal.fire({ icon: 'success', title: 'Documento generado exitosamente', draggable: true });
       },
@@ -221,6 +229,7 @@ export class Detail implements OnInit {
           case 'Schedule':          this.item.schedule          = uploaded; break;
           case 'AttachedQuotation': this.item.attachedQuotation = uploaded; break;
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
+          case 'PromissoryNote':    this.item.promissoryNote    = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
       },

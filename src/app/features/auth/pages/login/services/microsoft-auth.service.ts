@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
-import { PublicClientApplication, PopupRequest } from '@azure/msal-browser';
+import { PublicClientApplication, PopupRequest, BrowserCacheLocation } from '@azure/msal-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.model';
@@ -17,15 +17,14 @@ export class MicrosoftAuthService {
 
   private async getMsalInstance(): Promise<PublicClientApplication> {
     if (!this.msalInstance) {
-      Object.keys(sessionStorage)
-        .filter(k => k.startsWith('msal.'))
-        .forEach(k => sessionStorage.removeItem(k));
-
       this.msalInstance = new PublicClientApplication({
         auth: {
           clientId: environment.azure.clientId,
           authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
           redirectUri: `${this.document.location.origin}/auth-redirect.html`
+        },
+        cache: {
+          cacheLocation: BrowserCacheLocation.LocalStorage  // sobrevive recargas de página
         },
         system: {
           popupBridgeTimeout: 9000  // ms antes de lanzar timed_out si el popup se cierra sin responder

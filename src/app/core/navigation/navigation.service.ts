@@ -72,7 +72,7 @@ export class NavigationService {
       label: 'Contratistas',
       iconKey: 'contractors',
       baseRoute: '/contractors',
-      roles: ['ADMINISTRADOR DE UDP'],
+      roles: ['USUARIO DE COSTOS Y PRESUPUESTOS'],
       items: [
         {
           label: 'Registro de contratistas',
