@@ -264,7 +264,17 @@ export class Actividades implements OnInit {
     this.service.patchProyecto(proyectoId, { responsableArqComId: nuevoId }).subscribe({
       next: updated => {
         const idx = this.proyectos.findIndex(p => p.id === proyectoId);
-        if (idx >= 0) this.proyectos[idx] = updated;
+        if (idx !== -1) {
+          this.proyectos[idx] = updated;
+          this.proyectos = [...this.proyectos];
+        }
+
+        const nombre = updated.responsableArqCom ?? null;
+        this.actividades = this.actividades.map(a => ({
+          ...a,
+          encargado1: nombre,
+        }));
+        this.rebuildGroups();
         this.cdr.detectChanges();
       },
       error: err => {
