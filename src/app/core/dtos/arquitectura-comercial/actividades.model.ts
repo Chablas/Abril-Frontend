@@ -74,3 +74,25 @@ export interface PatchProyectoBody {
 export interface GenerarActividadesResultDTO {
   generadas: number;
 }
+
+export interface GanttActividadDTO {
+  id: number;
+  projectId: number;
+  indice: number | null;
+  nombre: string;
+  tipo: string | null;
+  etapaId: number | null;
+  etapaNombre: string | null;
+  activo: boolean;
+  inicioProgramado: string | null;
+  finProgramado: string | null;
+  inicioEfectivo: string | null;
+  finEfectivo: string | null;
+}
+
+export interface GanttQueryParams {
+  proyectoId?: number | null;
+  tipo?: string | null;
+  etapa?: string | null;
+  soloActivas?: boolean | null;
+}

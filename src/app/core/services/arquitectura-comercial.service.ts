@@ -17,6 +17,8 @@ import {
   ReasignarEncargadoResultDTO,
   GenerarActividadesResultDTO,
   PatchProyectoBody,
+  GanttActividadDTO,
+  GanttQueryParams,
 } from '../dtos/arquitectura-comercial/actividades.model';
 
 @Injectable({ providedIn: 'root' })
@@ -103,6 +105,18 @@ export class ArquitecturaComercialService {
 
   patchProyecto(id: number, body: PatchProyectoBody): Observable<ProyectoConActividadesDTO> {
     return this.http.patch<ProyectoConActividadesDTO>(`${this.apiUrl}/proyectos/${id}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getGantt(q: GanttQueryParams): Observable<GanttActividadDTO[]> {
+    let params = new HttpParams();
+    if (q.proyectoId != null) params = params.set('proyectoId', q.proyectoId);
+    if (q.tipo) params = params.set('tipo', q.tipo);
+    if (q.etapa) params = params.set('etapa', q.etapa);
+    if (q.soloActivas != null) params = params.set('soloActivas', q.soloActivas);
+    return this.http.get<GanttActividadDTO[]>(`${this.apiUrl}/gantt`, {
+      params,
       headers: this.authHeaders(),
     });
   }
