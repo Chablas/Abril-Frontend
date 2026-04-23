@@ -93,6 +93,19 @@ export class MicrosoftAuthService {
     }
   }
 
+  async logout(): Promise<void> {
+    // Limpiar cache de MSAL del localStorage (claves propias de la librería)
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('msal.') || k.includes(environment.azure.clientId))
+      .forEach(k => localStorage.removeItem(k));
+
+    // Limpiar claves de la app
+    ['access_token', 'session_token', 'token_expires_at', 'graph_access_token', 'user']
+      .forEach(key => localStorage.removeItem(key));
+
+    this.msalInstance = null;
+  }
+
   async login(): Promise<void> {
     const msal = await this.getMsalInstance();
     try {
