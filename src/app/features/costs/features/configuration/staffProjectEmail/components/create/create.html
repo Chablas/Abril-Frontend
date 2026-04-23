@@ -13,6 +13,19 @@
       </app-search-select>
     </div>
 
+    <!-- Tipo de correo -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm text-[#64BC04] font-medium">Tipo de correo</label>
+      <app-search-select
+        [options]="formData.types"
+        valueField="staffProjectEmailTypeId"
+        displayField="description"
+        placeholder="— Selecciona un tipo —"
+        [showLabel]="false"
+        [(value)]="dto.staffProjectEmailTypeId">
+      </app-search-select>
+    </div>
+
     <!-- Email -->
     <div class="flex flex-col gap-1.5">
       <label class="text-sm text-[#64BC04] font-medium">Correo electrónico</label>

@@ -5,6 +5,7 @@
         <th class="py-2 px-2 w-[64px]"></th>
         <th class="py-2 px-3 text-left font-semibold">Proyecto</th>
         <th class="py-2 px-3 text-left font-semibold">Correo electrónico</th>
+        <th class="py-2 px-3 text-left font-semibold whitespace-nowrap">Tipo</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Fecha creación</th>
       </tr>
@@ -45,6 +46,14 @@
           </span>
         </td>
 
+        <!-- Tipo -->
+        <td class="px-3 py-2">
+          <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+            [ngClass]="typeBadgeClass(item.staffProjectEmailTypeId)">
+            {{ item.staffProjectEmailTypeDescription }}
+          </span>
+        </td>
+
         <!-- Estado -->
         <td class="px-3 py-2 text-center">
           <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
@@ -64,7 +73,7 @@
       </tr>
 
       <tr *ngIf="items.length === 0">
-        <td colspan="5" class="text-center text-sm text-gray-400 italic py-8">
+        <td colspan="6" class="text-center text-sm text-gray-400 italic py-8">
           No hay registros.
         </td>
       </tr>
@@ -75,6 +84,7 @@
 <app-staff-project-email-edit
   *ngIf="showEditModal"
   [dto]="editDto"
+  [formData]="formData"
   (closeModal)="showEditModal = false"
   (saved)="load(1)">
 </app-staff-project-email-edit>

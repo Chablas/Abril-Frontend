@@ -3,6 +3,8 @@ export interface StaffProjectEmailDto {
   projectId: number;
   projectName: string;
   email: string;
+  staffProjectEmailTypeId: number;
+  staffProjectEmailTypeDescription: string;
   createdDateTime: string;
   createdUserId: number;
   updatedDateTime?: string;

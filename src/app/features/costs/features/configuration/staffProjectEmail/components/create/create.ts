@@ -18,11 +18,11 @@ import Swal from 'sweetalert2';
   templateUrl: './create.html',
 })
 export class StaffProjectEmailCreate {
-  @Input() formData: StaffProjectEmailFormDataDto = { projects: [] };
+  @Input() formData: StaffProjectEmailFormDataDto = { projects: [], types: [] };
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  dto: StaffProjectEmailCreateDto = { projectId: 0, email: '' };
+  dto: StaffProjectEmailCreateDto = { projectId: 0, email: '', staffProjectEmailTypeId: 0 };
 
   constructor(
     private service: StaffProjectEmailService,
@@ -37,6 +37,10 @@ export class StaffProjectEmailCreate {
     }
     if (!this.dto.email.trim()) {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingresa un correo electrónico.' });
+      return;
+    }
+    if (!this.dto.staffProjectEmailTypeId) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Selecciona el tipo de correo.' });
       return;
     }
 

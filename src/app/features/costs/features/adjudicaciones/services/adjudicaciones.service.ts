@@ -90,6 +90,27 @@ export class AdjudicacionesService {
     );
   }
 
+  sendStep8Notification(projectSubContractorId: number, graphAccessToken: string): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-step8-notification`,
+      { graphAccessToken },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  sendScNotification(projectSubContractorId: number, file: File, graphAccessToken: string): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    const form = new FormData();
+    form.append('file', file);
+    form.append('graphAccessToken', graphAccessToken);
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-sc-notification`,
+      form,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   uploadDocument(
     projectSubContractorId: number,
     documentType: string,

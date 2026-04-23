@@ -47,4 +47,8 @@ export interface ProjectSubContractorDTO {
   attachedQuotation?: ProjectSubContractorFileDTO;
   serviceOrder?: ProjectSubContractorFileDTO;
   promissoryNote?: ProjectSubContractorFileDTO;  // solo si paymentMethodId === 2
+  // Documentos escaneados (paso 7)
+  scannedDoc1?: ProjectSubContractorFileDTO;
+  scannedDoc2?: ProjectSubContractorFileDTO;
+  scannedDoc3?: ProjectSubContractorFileDTO;
 }

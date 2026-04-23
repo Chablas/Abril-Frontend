@@ -49,32 +49,47 @@ export class MicrosoftAuthService {
 
   /**
    * Devuelve un access token de Graph fresco.
-   * Intenta renovación silenciosa primero; si falla abre un popup.
-   * Actualiza 'graph_access_token' en localStorage.
+   * 1. Si hay cuenta cacheada → intenta renovación silenciosa.
+   * 2. Si el silent falla o no hay cuenta → abre popup de Microsoft.
+   * 3. Si el usuario cierra el popup → lanza un error descriptivo.
    */
   async getGraphToken(): Promise<string> {
-    const msal = await this.getMsalInstance();
+    const msal     = await this.getMsalInstance();
     const accounts = msal.getAllAccounts();
 
-    if (accounts.length === 0) {
-      throw new Error('No hay sesión de Microsoft activa. Por favor inicie sesión nuevamente.');
+    // Paso 1: intentar adquisición silenciosa si hay cuenta en caché.
+    if (accounts.length > 0) {
+      try {
+        const result = await msal.acquireTokenSilent({
+          scopes:  this.scopes.scopes as string[],
+          account: accounts[0],
+        });
+        localStorage.setItem('graph_access_token', result.accessToken);
+        return result.accessToken;
+      } catch {
+        // Silent falló (token expirado sin refresh válido) → caer al popup.
+      }
     }
 
+    // Paso 2: popup interactivo (cubre token expirado Y sesión perdida).
     try {
-      const result = await msal.acquireTokenSilent({
-        scopes: this.scopes.scopes as string[],
-        account: accounts[0],
-      });
+      const popupRequest: PopupRequest = { scopes: this.scopes.scopes as string[] };
+      if (accounts.length > 0) popupRequest.account = accounts[0];
+
+      const result = await msal.acquireTokenPopup(popupRequest);
       localStorage.setItem('graph_access_token', result.accessToken);
       return result.accessToken;
-    } catch {
-      // El token no se pudo renovar en silencio → abrir popup
-      const result = await msal.acquireTokenPopup({
-        scopes: this.scopes.scopes as string[],
-        account: accounts[0],
-      });
-      localStorage.setItem('graph_access_token', result.accessToken);
-      return result.accessToken;
+    } catch (err: any) {
+      // El usuario cerró el popup u ocurrió un error de MSAL.
+      const isCancelled = err?.errorCode === 'user_cancelled'
+        || err?.errorCode === 'popup_window_error'
+        || err?.message?.includes('user_cancelled');
+
+      throw new Error(
+        isCancelled
+          ? 'Inicio de sesión cancelado. Por favor inténtelo de nuevo.'
+          : (err?.message ?? 'No se pudo autenticar con Microsoft. Por favor inténtelo de nuevo.')
+      );
     }
   }
 

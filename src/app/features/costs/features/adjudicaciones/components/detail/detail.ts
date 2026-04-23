@@ -22,19 +22,20 @@ export class Detail implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() statusChanged = new EventEmitter<void>();
 
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput')       fileInput!:       ElementRef<HTMLInputElement>;
+  @ViewChild('fileInputStep4')  fileInputStep4!:  ElementRef<HTMLInputElement>;
+  @ViewChild('fileInputStep7')  fileInputStep7!:  ElementRef<HTMLInputElement>;
 
   readonly steps = [
-    'Enviado',
+    'Por notificar',
     'Datos del contrato',
     'Preparación de documentos',
-    'En revisión',
-    'Aprobado',
-    'Enviado al SC',
+    'Por enviar al SC',
     'Llegada a Of. Central',
     'Procesos de firma',
-    'Escaneado',
-    'Enviado a obra',
+    'Por escanear',
+    'Envío a obra',
+    'Completado',
   ];
 
   readonly totalSteps = this.steps.length;
@@ -47,6 +48,13 @@ export class Detail implements OnInit {
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
+
+  /** Documentos del paso 7 (siempre 3 slots). */
+  readonly scannedDocuments: { key: string; label: string }[] = [
+    { key: 'ScannedDoc1', label: 'Documento escaneado 1' },
+    { key: 'ScannedDoc2', label: 'Documento escaneado 2' },
+    { key: 'ScannedDoc3', label: 'Documento escaneado 3' },
+  ];
 
   trackByDocKey(_: number, doc: { key: string }): string {
     return doc.key;
@@ -67,6 +75,20 @@ export class Detail implements OnInit {
     return base;
   }
 
+  /** Paso 4 — archivo en memoria hasta que se envía */
+  step4File: File | null = null;
+
+  /** Paso 7 — clave de doc de escaneados siendo subido en este momento */
+  currentScannedDocType: string | null = null;
+
+  /** Paso 5 — confirmación de recepción en oficina central */
+  step5Confirmed = false;
+
+  /** Paso 6 — confirmación de firmas */
+  step6ConfirmedOriundo = false;
+  step6ConfirmedToratto = false;
+  get step6AllConfirmed(): boolean { return this.step6ConfirmedOriundo && this.step6ConfirmedToratto; }
+
   currentDocType: string | null = null;
   uploadingDoc: string | null = null;
   generatingDoc: string | null = null;
@@ -74,11 +96,10 @@ export class Detail implements OnInit {
 
   /** Opciones fijas de estado para los documentos. */
   readonly fileStatuses = [
-    { id: 1, label: 'Falta' },
-    { id: 2, label: 'Observado' },
-    { id: 3, label: 'No aplica' },
+    { id: 1, label: 'No aplica' },
+    { id: 2, label: 'En revisión por Ofic. Centr.' },
+    { id: 3, label: 'Con observaciones' },
     { id: 4, label: 'Aprobado' },
-    { id: 5, label: 'Enviado' },
   ] as const;
 
   /** Formulario local de estado/observación por clave de documento. */
@@ -101,6 +122,9 @@ export class Detail implements OnInit {
     if (this.item.endDate)     this.step2Form.endDate     = this.item.endDate.substring(0, 10);
     this.documents = this.buildDocuments();
     this.initDocForms();
+    this.step5Confirmed          = this.item.projectSubContractorStatusId > 5;
+    this.step6ConfirmedOriundo   = this.item.projectSubContractorStatusId > 6;
+    this.step6ConfirmedToratto   = this.item.projectSubContractorStatusId > 6;
   }
 
   private initDocForms(): void {
@@ -132,9 +156,27 @@ export class Detail implements OnInit {
     return Math.round(diff / (1000 * 60 * 60 * 24));
   }
 
+  /** True cuando al menos un documento escaneado ha sido subido. */
+  get hasAnyScannedDoc(): boolean {
+    return this.scannedDocuments.some(doc => !!this.getDocFile(doc.key));
+  }
+
+  /** True cuando todos los documentos que tienen archivo subido tienen statusId === 4 (Aprobado). */
+  get allDocsApproved(): boolean {
+    const docsWithFile = this.documents.filter(doc => !!this.getDocFile(doc.key));
+    return docsWithFile.length > 0 &&
+           docsWithFile.every(doc => this.docForms[doc.key]?.statusId === 4);
+  }
+
   get forwardLabel(): string {
     if (this.actualStatus === 1) return 'Enviar correos';
     if (this.actualStatus === 2 && this.viewStep === 2) return 'Guardar y continuar';
+    if (this.actualStatus === 3 && this.viewStep === 3) return 'Marcar como aprobado';
+    if (this.actualStatus === 4 && this.viewStep === 4) return 'Enviar al SC';
+    if (this.actualStatus === 5 && this.viewStep === 5) return 'Confirmar recepción';
+    if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar firmas';
+    if (this.actualStatus === 7 && this.viewStep === 7) return 'Marcar como escaneado';
+    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Oficina Técnica';
     return 'Siguiente paso';
   }
 
@@ -147,7 +189,29 @@ export class Detail implements OnInit {
     if (this.actualStatus === 2 && this.viewStep === 2) {
       return !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate);
     }
+    if (this.actualStatus === 3 && this.viewStep === 3) {
+      return this.allDocsApproved;
+    }
+    if (this.actualStatus === 4 && this.viewStep === 4) {
+      return this.step4File !== null;
+    }
+    if (this.actualStatus === 5 && this.viewStep === 5) {
+      return this.step5Confirmed;
+    }
+    if (this.actualStatus === 6 && this.viewStep === 6) {
+      return this.step6AllConfirmed;
+    }
+    if (this.actualStatus === 7 && this.viewStep === 7) {
+      return this.hasAnyScannedDoc;
+    }
+    if (this.actualStatus === 8 && this.viewStep === 8) {
+      return true;
+    }
     return this.viewStep < this.actualStatus;
+  }
+
+  goToStep(step: number): void {
+    if (step <= this.actualStatus) this.viewStep = step;
   }
 
   goBack(): void {
@@ -159,6 +223,18 @@ export class Detail implements OnInit {
       this.sendNotification();
     } else if (this.actualStatus === 2 && this.viewStep === 2) {
       this.saveStep2Dates();
+    } else if (this.actualStatus === 3 && this.viewStep === 3) {
+      this.advanceToApproved();
+    } else if (this.actualStatus === 4 && this.viewStep === 4) {
+      this.sendScNotification();
+    } else if (this.actualStatus === 5 && this.viewStep === 5) {
+      this.confirmStep5();
+    } else if (this.actualStatus === 6 && this.viewStep === 6) {
+      this.confirmStep6();
+    } else if (this.actualStatus === 7 && this.viewStep === 7) {
+      this.advanceFromStep7();
+    } else if (this.actualStatus === 8 && this.viewStep === 8) {
+      this.sendStep8Notification();
     } else {
       if (this.viewStep < this.actualStatus) this.viewStep++;
     }
@@ -174,6 +250,9 @@ export class Detail implements OnInit {
       case 'AttachedQuotation': return this.item.attachedQuotation ?? undefined;
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
       case 'PromissoryNote':    return this.item.promissoryNote    ?? undefined;
+      case 'ScannedDoc1':       return this.item.scannedDoc1       ?? undefined;
+      case 'ScannedDoc2':       return this.item.scannedDoc2       ?? undefined;
+      case 'ScannedDoc3':       return this.item.scannedDoc3       ?? undefined;
       default: return undefined;
     }
   }
@@ -198,6 +277,9 @@ export class Detail implements OnInit {
           case 'AttachedQuotation': this.item.attachedQuotation = generated; break;
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
           case 'PromissoryNote':    this.item.promissoryNote    = generated; break;
+          case 'ScannedDoc1':       this.item.scannedDoc1       = generated; break;
+          case 'ScannedDoc2':       this.item.scannedDoc2       = generated; break;
+          case 'ScannedDoc3':       this.item.scannedDoc3       = generated; break;
         }
         Swal.fire({ icon: 'success', title: 'Documento generado exitosamente', draggable: true });
       },
@@ -237,6 +319,9 @@ export class Detail implements OnInit {
           case 'AttachedQuotation': this.item.attachedQuotation = uploaded; break;
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
           case 'PromissoryNote':    this.item.promissoryNote    = uploaded; break;
+          case 'ScannedDoc1':       this.item.scannedDoc1       = uploaded; break;
+          case 'ScannedDoc2':       this.item.scannedDoc2       = uploaded; break;
+          case 'ScannedDoc3':       this.item.scannedDoc3       = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
       },
@@ -259,12 +344,14 @@ export class Detail implements OnInit {
   private saveDocStatus(docKey: string): void {
     const form = this.docForms[docKey];
     this.updatingStatusDoc = docKey;
+    this.loaderService.show();
     this.adjudicacionesService.updateDocumentStatus(
       this.item.projectSubContractorId,
       docKey,
       { statusId: form.statusId, observation: form.observation || null },
     ).subscribe({
       next: () => {
+        this.loaderService.hide();
         this.updatingStatusDoc = null;
         // Actualizar el item local para mantener coherencia
         const file = this.getDocFile(docKey);
@@ -274,7 +361,52 @@ export class Detail implements OnInit {
         }
       },
       error: (err) => {
+        this.loaderService.hide();
         this.updatingStatusDoc = null;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  onStep4FileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    this.step4File = input.files[0];
+  }
+
+  private async sendScNotification(): Promise<void> {
+    if (!this.step4File) return;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.sendScNotification(
+      this.item.projectSubContractorId,
+      this.step4File,
+      graphToken,
+    ).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 5;
+        this.viewStep = 5;
+        this.step4File = null;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado al subcontratista', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
         this.errorService.handleError(err);
       },
     });
@@ -305,6 +437,122 @@ export class Detail implements OnInit {
         this.loaderService.hide();
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Notificación enviada exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private confirmStep6(): void {
+    this.loaderService.show();
+    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 7).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 7;
+        this.viewStep = 7;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Firmas confirmadas exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private confirmStep5(): void {
+    this.loaderService.show();
+    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 6).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 6;
+        this.viewStep = 6;
+        this.step5Confirmed = false;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Recepción confirmada exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private advanceToApproved(): void {
+    this.loaderService.show();
+    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 4).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 4;
+        this.viewStep = 4;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Adjudicación aprobada exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  triggerUploadScanned(docKey: string): void {
+    this.currentScannedDocType = docKey;
+    this.fileInputStep7.nativeElement.value = '';
+    this.fileInputStep7.nativeElement.click();
+  }
+
+  onFileSelectedScanned(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length || !this.currentScannedDocType) return;
+    this.uploadDoc(this.currentScannedDocType, input.files[0]);
+  }
+
+  private async sendStep8Notification(): Promise<void> {
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.sendStep8Notification(
+      this.item.projectSubContractorId,
+      graphToken,
+    ).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 9;
+        this.viewStep = 9;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Oficina Técnica', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private advanceFromStep7(): void {
+    this.loaderService.show();
+    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 8).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 8;
+        this.viewStep = 8;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Documentos escaneados confirmados', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

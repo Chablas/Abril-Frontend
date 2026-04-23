@@ -22,7 +22,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 export class StaffProjectEmail implements OnInit {
   @ViewChild(StaffProjectEmailList) list!: StaffProjectEmailList;
 
-  formData: StaffProjectEmailFormDataDto = { projects: [] };
+  formData: StaffProjectEmailFormDataDto = { projects: [], types: [] };
   projectOptions: any[] = [];
 
   filters: StaffProjectEmailFilterDto = { projectId: null, email: null, page: 1 };

@@ -5,6 +5,7 @@ import { StaffProjectEmailService } from '../../services/staff-project-email.ser
 import { StaffProjectEmailDto } from '../../dtos/staff-project-email.dto';
 import { StaffProjectEmailEditDto } from '../../dtos/staff-project-email-edit.dto';
 import { StaffProjectEmailFilterDto } from '../../dtos/staff-project-email-filter.dto';
+import { StaffProjectEmailFormDataDto } from '../../dtos/staff-project-email-form-data.dto';
 import { StaffProjectEmailEdit } from './edit/edit';
 import { PagedResponseDTO } from '../../../../../../../core/dtos/api/pagedResponse.model';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
@@ -19,11 +20,12 @@ import Swal from 'sweetalert2';
 })
 export class StaffProjectEmailList implements OnInit {
   @Input() filters: StaffProjectEmailFilterDto = { page: 1 };
+  @Input() formData: StaffProjectEmailFormDataDto = { projects: [], types: [] };
   @Output() pagedData = new EventEmitter<PagedResponseDTO<StaffProjectEmailDto>>();
 
   items: StaffProjectEmailDto[] = [];
   showEditModal = false;
-  editDto: StaffProjectEmailEditDto = { staffProjectEmailId: 0, email: '', active: true };
+  editDto: StaffProjectEmailEditDto = { staffProjectEmailId: 0, email: '', staffProjectEmailTypeId: 0, active: true };
 
   constructor(
     private service: StaffProjectEmailService,
@@ -50,11 +52,21 @@ export class StaffProjectEmailList implements OnInit {
   openEdit(item: StaffProjectEmailDto, event: MouseEvent): void {
     event.stopPropagation();
     this.editDto = {
-      staffProjectEmailId: item.staffProjectEmailId,
-      email: item.email,
-      active: item.active,
+      staffProjectEmailId:     item.staffProjectEmailId,
+      email:                   item.email,
+      staffProjectEmailTypeId: item.staffProjectEmailTypeId,
+      active:                  item.active,
     };
     this.showEditModal = true;
+  }
+
+  typeBadgeClass(typeId: number): string {
+    const map: Record<number, string> = {
+      1: 'bg-blue-50   text-blue-600',
+      2: 'bg-purple-50 text-purple-600',
+      3: 'bg-orange-50 text-orange-600',
+    };
+    return map[typeId] ?? 'bg-gray-100 text-gray-500';
   }
 
   delete(id: number, event: MouseEvent): void {

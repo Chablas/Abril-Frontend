@@ -9,7 +9,6 @@ export interface ProjectSubContractorCreateDTO {
   amount: number;
   currencyId: number;
   hasIgv: boolean;
-  contractorEmail: string;
   workItemId: number;
   workItemCategoryId: number;
   quotationFiles?: File[];

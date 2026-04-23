@@ -43,14 +43,13 @@ export class Create implements OnInit {
     amount: 0,
     currencyId: 0,
     hasIgv: false,
-    contractorEmail: '',
     workItemId: 0,
     workItemCategoryId: 0,
     quotationFiles: [],
     comparativeFiles: [],
   };
 
-  emailOptions: { email: string }[] = [];
+  contractorEmails: string[] = [];
   advanceAmount: number | undefined = undefined;
 
   quotationFileItems: FilePreviewItem[] = [];
@@ -107,8 +106,7 @@ export class Create implements OnInit {
   onCompanyChange(contractorId: number): void {
     this.createDto.contractorId = contractorId;
     const contractor = this.createFormData.contributors.find(c => c.contractorId === contractorId);
-    this.emailOptions = (contractor?.emails ?? []).map(e => ({ email: e }));
-    this.createDto.contractorEmail = this.emailOptions[0]?.email ?? '';
+    this.contractorEmails = contractor?.emails ?? [];
   }
 
   getFormData() {
@@ -138,7 +136,6 @@ export class Create implements OnInit {
     form.append('amount', this.createDto.amount.toString());
     form.append('currencyId', this.createDto.currencyId.toString());
     form.append('hasIgv', this.createDto.hasIgv.toString());
-    form.append('contractorEmail', this.createDto.contractorEmail);
     form.append('workItemId', this.createDto.workItemId.toString());
     form.append('workItemCategoryId', this.createDto.workItemCategoryId.toString());
     this.createDto.quotationFiles?.forEach(f => form.append('quotationFiles', f));

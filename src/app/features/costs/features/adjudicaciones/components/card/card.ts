@@ -13,7 +13,23 @@ export class Card {
   @Input() item!: ProjectSubContractorDTO;
   @Output() cardClick = new EventEmitter<number>();
 
-  readonly stepDots = Array(8);
+  readonly stepDots = Array(9);
+
+  readonly stepLabels = [
+    'Por notificar',
+    'Datos del contrato',
+    'Preparación de documentos',
+    'Por enviar al SC',
+    'Llegada a Of. Central',
+    'Procesos de firma',
+    'Por escanear',
+    'Envío a obra',
+    'Completado',
+  ];
+
+  get stepLabel(): string {
+    return this.stepLabels[this.item.projectSubContractorStatusId - 1] ?? this.item.projectSubContractorStatusDescription;
+  }
 
   private readonly stepStyles: Record<number, string> = {
     1: 'bg-blue-50 text-blue-500 border-blue-200',
@@ -24,6 +40,7 @@ export class Card {
     6: 'bg-purple-50 text-purple-600 border-purple-200',
     7: 'bg-pink-50 text-pink-600 border-pink-200',
     8: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    9: 'bg-teal-50 text-teal-700 border-teal-200',
   };
 
   stepBadgeClass(): string {

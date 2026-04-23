@@ -13,8 +13,11 @@
             [ngClass]="{
               'bg-[#64BC04] border-[#64BC04] text-white': i + 1 < viewStep,
               'bg-white border-[#64BC04] text-[#64BC04] ring-4 ring-[#64BC04]/20': i + 1 === viewStep,
-              'bg-white border-gray-200 text-gray-400': i + 1 > viewStep
-            }">
+              'bg-white border-gray-200 text-gray-400': i + 1 > viewStep,
+              'cursor-pointer hover:opacity-80': i + 1 <= actualStatus,
+              'cursor-default': i + 1 > actualStatus
+            }"
+            (click)="goToStep(i + 1)">
             <svg *ngIf="i + 1 < viewStep" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
@@ -41,7 +44,13 @@
         <div class="flex gap-1.5">
           <div *ngFor="let step of steps; let i = index"
             class="w-2 h-2 rounded-full transition-colors"
-            [ngClass]="i + 1 <= viewStep ? 'bg-[#64BC04]' : 'bg-gray-200'">
+            [ngClass]="{
+              'bg-[#64BC04]': i + 1 <= viewStep,
+              'bg-gray-200': i + 1 > viewStep,
+              'cursor-pointer': i + 1 <= actualStatus,
+              'cursor-default': i + 1 > actualStatus
+            }"
+            (click)="goToStep(i + 1)">
           </div>
         </div>
         <span class="text-xs font-semibold text-[#64BC04]">
@@ -314,15 +323,29 @@
                 </svg>
               </div>
 
-              <!-- Observación -->
-              <textarea
-                [(ngModel)]="docForms[doc.key].observation"
-                (blur)="onObservationBlur(doc.key)"
-                [disabled]="updatingStatusDoc === doc.key"
-                placeholder="Observación..."
-                rows="2"
-                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-              </textarea>
+              <!-- Observación + correo (solo cuando estado = Con observaciones) -->
+              <ng-container *ngIf="docForms[doc.key].statusId === 3">
+
+                <textarea
+                  [(ngModel)]="docForms[doc.key].observation"
+                  (blur)="onObservationBlur(doc.key)"
+                  [disabled]="updatingStatusDoc === doc.key"
+                  placeholder="Observación..."
+                  rows="2"
+                  class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+                </textarea>
+
+                <button
+                  [disabled]="updatingStatusDoc === doc.key"
+                  class="w-full flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                  Enviar correo con observaciones
+                </button>
+
+              </ng-container>
 
             </ng-container>
 
@@ -392,14 +415,282 @@
       </div>
     </div>
 
-    <!-- PASOS 4–9: genérico (se irá reemplazando paso a paso con data real) -->
-    <div *ngIf="viewStep > 3" class="flex flex-col items-center justify-center py-[28px] gap-[12px] text-center">
-      <div class="w-14 h-14 rounded-full bg-[#E5F7D1] flex items-center justify-center">
-        <span class="text-2xl font-bold text-[#64BC04]">{{ viewStep }}</span>
+    <!-- PASO 4: Por enviar al SC -->
+    <div *ngIf="viewStep === 4">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Envío al subcontratista
+      </p>
+
+      <input #fileInputStep4 type="file" class="hidden" (change)="onStep4FileSelected($event)" />
+
+      <div class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px] max-w-sm">
+
+        <!-- Encabezado -->
+        <div class="flex items-center gap-[8px]">
+          <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-gray-700">Contrato completo</span>
+        </div>
+
+        <!-- Archivo seleccionado -->
+        <div class="text-xs min-h-[18px]">
+          <span *ngIf="step4File; else noStep4File"
+            class="text-[#64BC04] flex items-center gap-1 break-all">
+            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            {{ step4File.name }}
+          </span>
+          <ng-template #noStep4File>
+            <span class="italic text-gray-300">Sin archivo seleccionado</span>
+          </ng-template>
+        </div>
+
+        <!-- Botón seleccionar -->
+        <button (click)="fileInputStep4.click()"
+          [disabled]="actualStatus !== 4"
+          class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          {{ step4File ? 'Cambiar archivo' : 'Seleccionar archivo' }}
+        </button>
+
+        <!-- Nota informativa -->
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Al hacer clic en <strong>"Enviar al SC"</strong> se adjuntará este archivo al correo que se enviará a todos los correos del contratista.
+        </p>
+
       </div>
-      <p class="text-base font-semibold text-gray-700">{{ steps[viewStep - 1] }}</p>
+    </div>
+
+    <!-- PASO 5: Llegada a Of. Central -->
+    <div *ngIf="viewStep === 5">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Llegada a oficina central
+      </p>
+
+      <div class="flex flex-col gap-[20px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Confirma que los documentos físicos enviados por el contratista han sido recibidos en oficina central.
+        </p>
+
+        <!-- Checkbox de confirmación -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 5">
+          <div class="relative mt-[2px] shrink-0">
+            <input
+              type="checkbox"
+              class="sr-only"
+              [(ngModel)]="step5Confirmed"
+              [disabled]="actualStatus !== 5" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step5Confirmed
+                ? 'bg-[#64BC04] border-[#64BC04]'
+                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+              <svg *ngIf="step5Confirmed" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step5Confirmed ? 'text-[#64BC04]' : 'text-gray-600'">
+            Confirmo que los documentos han llegado a oficina central
+          </span>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- PASO 6: Procesos de firma -->
+    <div *ngIf="viewStep === 6">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Procesos de firma
+      </p>
+
+      <div class="flex flex-col gap-[20px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Confirma que los documentos han sido firmados por los siguientes responsables.
+        </p>
+
+        <!-- Checkbox Ing. Carlos Oriundo -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedOriundo"
+              [disabled]="actualStatus !== 6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedOriundo
+                ? 'bg-[#64BC04] border-[#64BC04]'
+                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+              <svg *ngIf="step6ConfirmedOriundo" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedOriundo ? 'text-[#64BC04]' : 'text-gray-600'">
+            Firmado por el Ing. Carlos Oriundo
+          </span>
+        </label>
+
+        <!-- Checkbox Sr. Toratto -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedToratto"
+              [disabled]="actualStatus !== 6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedToratto
+                ? 'bg-[#64BC04] border-[#64BC04]'
+                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+              <svg *ngIf="step6ConfirmedToratto" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedToratto ? 'text-[#64BC04]' : 'text-gray-600'">
+            Firmado por el Sr. Toratto
+          </span>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- PASO 7: Por escanear -->
+    <div *ngIf="viewStep === 7">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Documentos escaneados
+      </p>
+
+      <!-- Input oculto compartido para los 3 slots del paso 7 -->
+      <input #fileInputStep7 type="file" class="hidden" (change)="onFileSelectedScanned($event)" />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+        <div *ngFor="let doc of scannedDocuments; trackBy: trackByDocKey"
+          class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px]">
+
+          <ng-container *ngIf="{ file: getDocFile(doc.key) } as ctx">
+
+            <!-- Encabezado -->
+            <div class="flex items-center gap-[8px]">
+              <div class="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <span class="text-sm font-semibold text-gray-700">{{ doc.label }}</span>
+            </div>
+
+            <!-- Estado del archivo -->
+            <div class="text-xs min-h-[18px]">
+              <a *ngIf="ctx.file; else noScannedFile"
+                [href]="ctx.file.fileUrl" target="_blank"
+                class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                {{ ctx.file.originalFileName ?? 'Ver archivo' }}
+              </a>
+              <ng-template #noScannedFile>
+                <span class="italic text-gray-300">Sin archivo</span>
+              </ng-template>
+            </div>
+
+            <!-- Botón subir (sin estado ni observación) -->
+            <div class="flex gap-[8px] mt-auto">
+              <button (click)="triggerUploadScanned(doc.key)"
+                [disabled]="uploadingDoc !== null"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.cursor-wait]="uploadingDoc === doc.key">
+
+                <svg *ngIf="uploadingDoc === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <svg *ngIf="uploadingDoc !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+
+                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.file ? 'Reemplazar' : 'Subir') }}</span>
+              </button>
+            </div>
+
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 8: Envío a obra -->
+    <div *ngIf="viewStep === 8">
+
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
+        Envío a obra
+      </p>
+
+      <div class="flex flex-col gap-[16px] max-w-sm">
+
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Al confirmar se enviará un correo a los contactos de <strong>Oficina Técnica</strong> del proyecto
+          con los documentos escaneados del paso anterior como adjuntos.
+        </p>
+
+        <!-- Documentos que se adjuntarán -->
+        <div class="flex flex-col gap-[8px]">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Documentos a adjuntar</p>
+          <ng-container *ngFor="let doc of scannedDocuments">
+            <ng-container *ngIf="getDocFile(doc.key) as file">
+              <a [href]="file.fileUrl" target="_blank"
+                class="flex items-center gap-1.5 text-xs text-[#64BC04] hover:underline break-all">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                {{ file.originalFileName ?? doc.label }}
+              </a>
+            </ng-container>
+          </ng-container>
+          <p *ngIf="!getDocFile('ScannedDoc1') && !getDocFile('ScannedDoc2') && !getDocFile('ScannedDoc3')"
+            class="text-xs italic text-gray-300">
+            No hay documentos escaneados registrados.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PASO 9: Completado (genérico) -->
+    <div *ngIf="viewStep > 8" class="flex flex-col items-center justify-center py-[28px] gap-[12px] text-center">
+      <div class="w-14 h-14 rounded-full bg-[#E5F7D1] flex items-center justify-center">
+        <svg class="w-7 h-7 text-[#64BC04]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <p class="text-base font-semibold text-gray-700">Adjudicación completada</p>
       <p class="text-sm text-gray-400 max-w-[320px]">
-        El contenido específico de este paso estará disponible próximamente.
+        El proceso de adjudicación ha sido completado exitosamente.
       </p>
     </div>
 

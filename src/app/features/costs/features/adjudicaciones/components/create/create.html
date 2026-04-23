@@ -22,15 +22,26 @@
         <app-search-select label="Partida" [options]="createFormData.workItems" valueField="workItemId"
           displayField="workItemDescription" [(value)]="createDto.workItemId" />
 
-        <app-search-select
-          label="Correo del contratista"
-          [options]="emailOptions"
-          valueField="email"
-          displayField="email"
-          placeholder="Selecciona una empresa primero"
-          [(value)]="createDto.contractorEmail" />
-
       </div>
+
+      <!-- Correos del contratista -->
+      <div *ngIf="createDto.contractorId" class="mt-[16px] flex flex-col gap-[8px]">
+        <p class="text-sm text-[#64BC04] font-medium">Correos de contacto del contratista</p>
+        <div *ngIf="contractorEmails.length > 0; else noEmails" class="flex flex-wrap gap-[8px]">
+          <span
+            *ngFor="let email of contractorEmails"
+            class="inline-flex items-center gap-[6px] bg-[#E5F7D1] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
+            </svg>
+            {{ email }}
+          </span>
+        </div>
+        <ng-template #noEmails>
+          <p class="text-xs text-gray-400 italic">Este contratista no tiene correos registrados.</p>
+        </ng-template>
+      </div>
+
     </div>
 
     <div class="border-t border-[#F0F0F0]"></div>
