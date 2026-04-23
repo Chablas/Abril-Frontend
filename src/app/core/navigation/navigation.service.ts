@@ -136,6 +136,32 @@ export class NavigationService {
         },
       ],
     },
+    {
+      key: 'ssoma',
+      label: 'SSOMA',
+      iconKey: 'ssoma',
+      baseRoute: '/ssoma',
+      roles: [
+        'ADMINISTRADOR DEL SISTEMA',
+        'ADMINISTRADOR DE UDP',
+        'USUARIO DE UDP',
+        'ADMINISTRADOR DE RESIDENTES',
+        'RESIDENTE',
+      ],
+      items: [],
+      groups: [
+        {
+          label: 'Salud Ocupacional',
+          items: [
+            { label: 'Dashboard', route: '/ssoma/salud-ocupacional/dashboard' },
+            { label: 'EMOs', route: '/ssoma/salud-ocupacional/emos' },
+            { label: 'Programaciones', route: '/ssoma/salud-ocupacional/programaciones' },
+            { label: 'Interconsultas', route: '/ssoma/salud-ocupacional/interconsultas' },
+            { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones' },
+          ],
+        },
+      ],
+    },
   ];
 
   constructor(private authService: AuthService) {}

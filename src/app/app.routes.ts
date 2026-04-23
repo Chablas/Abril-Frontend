@@ -51,6 +51,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/arquitectura-comercial/arquitectura-comercial-module')
           .then(m => m.ArquitecturaComercialModule)
+      },
+
+      {
+        path: 'ssoma',
+        loadChildren: () =>
+          import('./features/ssoma/ssoma.routes')
+          .then(m => m.SSOMA_ROUTES)
       }
     ]
   },

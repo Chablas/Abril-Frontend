@@ -1,0 +1,197 @@
+<app-base-modal title="Detalle EMO" width="w-[900px]" (closeModal)="close()">
+  <div *ngIf="loading && !emo" class="state-msg">Cargando EMO…</div>
+
+  <ng-container *ngIf="emo">
+    <!-- Header -->
+    <header class="detail-header">
+      <div>
+        <h3 class="worker-name">{{ emo.workerNombre }}</h3>
+        <div class="worker-meta">
+          <span>DNI {{ emo.workerDni }}</span>
+          <span class="sep">·</span>
+          <span>{{ emo.empresa }}</span>
+          <span class="sep">·</span>
+          <span>{{ emo.tipoEmo }}</span>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge border" [ngClass]="aptitudClass(emo.aptitud)">{{ emo.aptitud }}</span>
+        <span class="badge border" [ngClass]="diasClass(emo.diasParaVencer)">{{ diasLabel(emo.diasParaVencer) }}</span>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button type="button" [class.active]="activeTab === 'datos'" (click)="setTab('datos')">Datos</button>
+      <button type="button" [class.active]="activeTab === 'examenes'" (click)="setTab('examenes')">
+        Exámenes <small>({{ emo.examenes?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'restricciones'" (click)="setTab('restricciones')">
+        Restricciones <small>({{ emo.restricciones?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'convalidaciones'" (click)="setTab('convalidaciones')">
+        Convalidaciones <small>({{ emo.convalidaciones?.length || 0 }})</small>
+      </button>
+      <button type="button" [class.active]="activeTab === 'historial'" (click)="setTab('historial')">
+        Historial
+      </button>
+    </nav>
+
+    <!-- Tab: Datos -->
+    <section *ngIf="activeTab === 'datos'" class="tab-panel">
+      <dl class="info-grid">
+        <div>
+          <dt>Fecha EMO</dt>
+          <dd>{{ emo.fechaEmo | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+        <div>
+          <dt>Vencimiento</dt>
+          <dd>{{ emo.fechaVencimiento | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+        <div>
+          <dt>Estado</dt>
+          <dd>{{ emo.estado }}</dd>
+        </div>
+        <div>
+          <dt>Requiere interconsulta</dt>
+          <dd>{{ emo.requiereInterconsulta ? 'Sí' : 'No' }}</dd>
+        </div>
+        <div>
+          <dt>Clínica</dt>
+          <dd>{{ emo.clinica || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Médico</dt>
+          <dd>{{ emo.medico || '—' }}</dd>
+        </div>
+        <div>
+          <dt>N° Informe</dt>
+          <dd>{{ emo.numeroInforme || '—' }}</dd>
+        </div>
+        <div>
+          <dt>URL Resultado</dt>
+          <dd>
+            <a *ngIf="emo.urlResultado" [href]="emo.urlResultado" target="_blank" rel="noopener" class="link">
+              Abrir archivo
+            </a>
+            <span *ngIf="!emo.urlResultado">—</span>
+          </dd>
+        </div>
+        <div class="col-span-2">
+          <dt>Notas</dt>
+          <dd>{{ emo.notas || '—' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Tab: Exámenes -->
+    <section *ngIf="activeTab === 'examenes'" class="tab-panel">
+      <div *ngIf="!emo.examenes?.length" class="empty">Sin exámenes registrados.</div>
+      <div *ngIf="emo.examenes?.length" class="sub-table-wrapper">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>Examen</th>
+              <th>Resultado</th>
+              <th>Valor</th>
+              <th>Unidad</th>
+              <th>Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ex of emo.examenes">
+              <td class="cell-title">{{ ex.examenTipo }}</td>
+              <td>{{ ex.resultado || '—' }}</td>
+              <td>{{ ex.valor || '—' }}</td>
+              <td>{{ ex.unidad || '—' }}</td>
+              <td>{{ ex.observacion || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab: Restricciones -->
+    <section *ngIf="activeTab === 'restricciones'" class="tab-panel">
+      <div *ngIf="!emo.restricciones?.length" class="empty">Sin restricciones.</div>
+      <ul *ngIf="emo.restricciones?.length" class="restriction-list">
+        <li *ngFor="let r of emo.restricciones" [class.inactive]="!r.vigente">
+          <div>
+            <div class="r-title">{{ r.restriccionTipo || r.descripcionLibre || 'Restricción' }}</div>
+            <div *ngIf="r.restriccionTipo && r.descripcionLibre" class="r-sub">{{ r.descripcionLibre }}</div>
+          </div>
+          <span class="r-status" [class.on]="r.vigente">{{ r.vigente ? 'Vigente' : 'Inactiva' }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Tab: Convalidaciones -->
+    <section *ngIf="activeTab === 'convalidaciones'" class="tab-panel">
+      <div *ngIf="!emo.convalidaciones?.length" class="empty">Sin convalidaciones registradas.</div>
+      <div *ngIf="emo.convalidaciones?.length" class="sub-table-wrapper">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>Empresa Destino</th>
+              <th>Fecha</th>
+              <th>Vencimiento</th>
+              <th>Resultado</th>
+              <th class="text-right">Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of emo.convalidaciones">
+              <td class="cell-title">{{ c.empresaDestino }}</td>
+              <td>{{ c.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ c.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ c.resultado }}</td>
+              <td class="text-right">
+                <span class="badge border" [ngClass]="diasClass(c.diasParaVencer)">
+                  {{ diasLabel(c.diasParaVencer) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab: Historial -->
+    <section *ngIf="activeTab === 'historial'" class="tab-panel">
+      <div *ngIf="historialLoading" class="state-msg">Cargando historial…</div>
+
+      <ng-container *ngIf="historial && !historialLoading">
+        <div class="historial-summary">
+          <div>
+            <b>{{ historial.vinculaciones?.length || 0 }}</b> vinculaciones registradas
+          </div>
+          <button type="button" class="btn-link" (click)="irAHistorialCompleto()">
+            Ver historial completo →
+          </button>
+        </div>
+
+        <ul class="historial-mini">
+          <li *ngFor="let v of historial.vinculaciones">
+            <div class="hm-head">
+              <span class="hm-empresa">{{ v.empresaNombre }}</span>
+              <span class="hm-range">
+                {{ v.fechaInicio | date: 'dd/MM/yyyy' }} —
+                {{ v.fechaFin ? (v.fechaFin | date: 'dd/MM/yyyy') : 'Actual' }}
+              </span>
+            </div>
+            <ul class="hm-emos">
+              <li *ngFor="let e of v.emos || []">
+                <span>{{ e.fechaEmo | date: 'dd/MM/yyyy' }} · {{ e.tipoEmo }}</span>
+                <span class="badge border" [ngClass]="aptitudClass(e.aptitud)">{{ e.aptitud }}</span>
+              </li>
+              <li *ngIf="!v.emos?.length" class="hm-empty">Sin EMOs en esta vinculación.</li>
+            </ul>
+          </li>
+          <li *ngIf="!historial.vinculaciones?.length" class="hm-empty">
+            Sin vinculaciones registradas.
+          </li>
+        </ul>
+      </ng-container>
+    </section>
+  </ng-container>
+</app-base-modal>
