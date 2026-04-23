@@ -106,3 +106,29 @@ export interface EmoQueryParams {
   page?: number;
   pageSize?: number;
 }
+
+export interface EmoPorTrabajadorDto {
+  workerId: number;
+  nombreCompleto: string;
+  dni: string;
+  empresaId?: number;
+  empresa?: string;
+  tipoContrata?: string;
+  tieneEmo: boolean;
+  emoId?: number;
+  tipoEmo?: string;
+  fechaEmo?: string;
+  fechaVencimiento?: string;
+  aptitud?: AptitudEmo;
+  estado?: EstadoEmo;
+  diasRestantes?: number;
+}
+
+export interface EmoPorTrabajadorQuery {
+  search?: string;
+  aptitud?: string;
+  estado?: string;
+  empresaId?: number;
+  page?: number;
+  pageSize?: number;
+}

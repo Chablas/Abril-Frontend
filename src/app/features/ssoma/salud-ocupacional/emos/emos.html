@@ -98,39 +98,66 @@
         <tbody>
           <tr
             *ngFor="let item of items"
-            class="row-clickable"
-            (click)="openDetail(item)"
+            [class.row-clickable]="item.tieneEmo"
+            (click)="onRowClick(item)"
           >
             <td>
               <div class="worker-cell">
-                <span class="worker-name">{{ item.workerNombre }}</span>
-                <span class="worker-dni">DNI · {{ item.workerDni }}</span>
+                <span class="worker-name">{{ item.nombreCompleto }}</span>
+                <span class="worker-dni">DNI · {{ item.dni }}</span>
               </div>
             </td>
-            <td>{{ item.tipoEmo }}</td>
-            <td class="text-gray-600">{{ item.empresa }}</td>
-            <td>{{ item.fechaEmo | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ item.tieneEmo ? item.tipoEmo : '—' }}</td>
+            <td class="text-gray-600">{{ item.empresa || '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaEmo | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</td>
             <td>
-              <span class="badge border" [ngClass]="aptitudClass(item.aptitud)">
+              <span
+                *ngIf="item.tieneEmo; else dashAptitud"
+                class="badge border"
+                [ngClass]="aptitudClass(item.aptitud)"
+              >
                 {{ item.aptitud }}
               </span>
+              <ng-template #dashAptitud><span class="text-gray-400">—</span></ng-template>
             </td>
             <td>
-              <span class="badge border" [ngClass]="estadoClass(item.estado)">
-                {{ item.estado }}
+              <span class="badge border" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
+                {{ estadoLabel(item) }}
               </span>
             </td>
             <td class="text-right">
-              <span class="badge border" [ngClass]="diasClass(item.diasParaVencer)">
-                {{ diasLabel(item.diasParaVencer) }}
+              <span
+                *ngIf="item.tieneEmo; else dashDias"
+                class="badge border"
+                [ngClass]="diasClass(item.diasRestantes)"
+              >
+                {{ diasLabel(item.diasRestantes) }}
               </span>
+              <ng-template #dashDias><span class="text-gray-400">—</span></ng-template>
             </td>
             <td class="text-right">
-              <button type="button" class="row-action" (click)="verHistorial(item, $event)" title="Ver historial">
+              <button
+                *ngIf="item.tieneEmo"
+                type="button"
+                class="row-action"
+                (click)="verHistorial(item, $event)"
+                title="Ver historial"
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M12 6v6l4 2"/>
+                </svg>
+              </button>
+              <button
+                *ngIf="!item.tieneEmo"
+                type="button"
+                class="row-action"
+                (click)="registrarEmoPara(item, $event)"
+                title="Registrar EMO"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M12 5v14M5 12h14"/>
                 </svg>
               </button>
             </td>

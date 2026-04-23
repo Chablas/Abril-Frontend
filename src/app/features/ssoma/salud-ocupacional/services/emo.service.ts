@@ -7,6 +7,8 @@ import {
   EmoCreateDto,
   EmoDetalleDto,
   EmoListItemDto,
+  EmoPorTrabajadorDto,
+  EmoPorTrabajadorQuery,
   EmoQueryParams,
   WorkerEmoHistorialDto,
 } from '../dtos/emo.model';
@@ -20,6 +22,13 @@ export class EmoService {
 
   getEmos(query: EmoQueryParams = {}): Observable<PagedResponseDTO<EmoListItemDto>> {
     return this.http.get<PagedResponseDTO<EmoListItemDto>>(this.apiUrl, {
+      params: buildParams(query as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getEmosPorTrabajador(query: EmoPorTrabajadorQuery = {}): Observable<PagedResponseDTO<EmoPorTrabajadorDto>> {
+    return this.http.get<PagedResponseDTO<EmoPorTrabajadorDto>>(`${this.apiUrl}/por-trabajador`, {
       params: buildParams(query as Record<string, unknown>),
       headers: buildAuthHeaders(),
     });

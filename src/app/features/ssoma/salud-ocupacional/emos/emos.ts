@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { EmoService } from '../services/emo.service';
 import { CatalogosSaludService } from '../services/catalogos-salud.service';
-import { EmoListItemDto, EmoQueryParams } from '../dtos/emo.model';
+import { EmoPorTrabajadorDto, EmoPorTrabajadorQuery } from '../dtos/emo.model';
 import { EmpresaSimpleDto } from '../dtos/catalogos.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -36,7 +36,7 @@ interface FilterOption {
   styleUrl: './emos.css',
 })
 export class Emos implements OnInit, OnDestroy {
-  readonly pageSize = 15;
+  readonly pageSize = 50;
 
   filters = {
     search: '',
@@ -55,12 +55,14 @@ export class Emos implements OnInit, OnDestroy {
     { id: 'Vigente', nombre: 'Vigente' },
     { id: 'Por Vencer', nombre: 'Por Vencer' },
     { id: 'Vencido', nombre: 'Vencido' },
+    { id: 'Convalidado', nombre: 'Convalidado' },
     { id: 'Anulado', nombre: 'Anulado' },
+    { id: 'Sin EMO', nombre: 'Sin EMO' },
   ];
 
   empresaOptions: Array<EmpresaSimpleDto & { idAsString?: string }> = [];
 
-  items: EmoListItemDto[] = [];
+  items: EmoPorTrabajadorDto[] = [];
   totalRecords = 0;
   totalPages = 1;
   currentPage = 1;
@@ -113,7 +115,7 @@ export class Emos implements OnInit, OnDestroy {
   load(page: number): void {
     this.loading = true;
     this.loaderService.show();
-    const query: EmoQueryParams = {
+    const query: EmoPorTrabajadorQuery = {
       page,
       pageSize: this.pageSize,
       search: this.filters.search?.trim() || undefined,
@@ -121,7 +123,7 @@ export class Emos implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
     };
-    this.service.getEmos(query).subscribe({
+    this.service.getEmosPorTrabajador(query).subscribe({
       next: (res) => {
         this.items = res.data ?? [];
         this.currentPage = res.page;
@@ -161,6 +163,11 @@ export class Emos implements OnInit, OnDestroy {
     this.createOpen = true;
   }
 
+  registrarEmoPara(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.createOpen = true;
+  }
+
   closeCreate(): void {
     this.createOpen = false;
   }
@@ -170,8 +177,10 @@ export class Emos implements OnInit, OnDestroy {
     this.load(this.currentPage);
   }
 
-  openDetail(item: EmoListItemDto): void {
-    this.selectedEmoId = item.id;
+  onRowClick(item: EmoPorTrabajadorDto): void {
+    if (item.tieneEmo && item.emoId != null) {
+      this.selectedEmoId = item.emoId;
+    }
   }
 
   closeDetail(): void {
@@ -182,24 +191,27 @@ export class Emos implements OnInit, OnDestroy {
     this.load(this.currentPage);
   }
 
-  verHistorial(item: EmoListItemDto, event: MouseEvent): void {
+  verHistorial(item: EmoPorTrabajadorDto, event: MouseEvent): void {
     event.stopPropagation();
     this.router.navigate(['/ssoma/salud-ocupacional/emos', item.workerId, 'historial']);
   }
 
-  aptitudClass(aptitud: string): string {
-    return aptitudBadgeClass(aptitud);
+  aptitudClass(aptitud?: string): string {
+    return aptitud ? aptitudBadgeClass(aptitud) : 'bg-gray-100 text-gray-500 border-gray-200';
   }
 
-  diasClass(dias: number): string {
+  diasClass(dias?: number): string {
+    if (dias == null) return 'bg-gray-100 text-gray-500 border-gray-200';
     return diasVencerBadgeClass(dias);
   }
 
-  diasLabel(dias: number): string {
+  diasLabel(dias?: number): string {
+    if (dias == null) return '—';
     return diasVencerStyle(dias).label;
   }
 
-  estadoClass(estado: string): string {
+  estadoClass(estado?: string, tieneEmo?: boolean): string {
+    if (!tieneEmo) return 'bg-red-50 text-red-700 border-red-200';
     switch (estado) {
       case 'Vigente':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -207,11 +219,17 @@ export class Emos implements OnInit, OnDestroy {
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Vencido':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'Convalidado':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Anulado':
         return 'bg-gray-100 text-gray-600 border-gray-200';
       default:
         return 'bg-gray-100 text-gray-600 border-gray-200';
     }
+  }
+
+  estadoLabel(item: EmoPorTrabajadorDto): string {
+    return item.tieneEmo ? item.estado ?? '—' : 'Sin EMO';
   }
 
   get hasActiveFilters(): boolean {
