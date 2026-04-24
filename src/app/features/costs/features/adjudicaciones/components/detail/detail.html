@@ -206,6 +206,13 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Número de contrato <span class="text-red-400">*</span></label>
+            <input type="number" [(ngModel)]="step2Form.contractNumber"
+              min="0" max="2147483647" step="1"
+class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
           <!-- Plazo calculado automáticamente -->
           <div *ngIf="plazoEnDias !== null" class="sm:col-span-2">
             <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
@@ -251,6 +258,11 @@
             <p class="text-sm font-semibold text-[#64BC04]">
               {{ storedPlazoEnDias }} {{ storedPlazoEnDias === 1 ? 'día' : 'días' }}
             </p>
+          </div>
+
+          <div *ngIf="item.contractNumber != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Número de contrato</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.contractNumber }}</p>
           </div>
 
         </div>
@@ -477,36 +489,96 @@
         Llegada a oficina central
       </p>
 
-      <div class="flex flex-col gap-[20px] max-w-sm">
+      <div class="flex flex-col gap-[16px] max-w-sm">
 
         <p class="text-sm text-gray-600 leading-relaxed">
-          Confirma que los documentos físicos enviados por el contratista han sido recibidos en oficina central.
+          Indica el estado en que llegaron los documentos físicos del contratista.
         </p>
 
-        <!-- Checkbox de confirmación -->
-        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+        <!-- Opción: Llegó completo -->
+        <label class="flex items-center gap-[10px] cursor-pointer select-none group"
           [class.opacity-50]="actualStatus !== 5">
-          <div class="relative mt-[2px] shrink-0">
-            <input
-              type="checkbox"
-              class="sr-only"
-              [(ngModel)]="step5Confirmed"
-              [disabled]="actualStatus !== 5" />
-            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-              [ngClass]="step5Confirmed
-                ? 'bg-[#64BC04] border-[#64BC04]'
-                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
-              <svg *ngIf="step5Confirmed" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
-                stroke-width="3" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
+          <div class="relative shrink-0">
+            <input type="radio" class="sr-only"
+              [disabled]="actualStatus !== 5"
+              [checked]="step5ArrivalOption === 'complete'"
+              (change)="onArrivalOptionChange('complete')" />
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step5ArrivalOption === 'complete'
+                ? 'border-[#64BC04]'
+                : 'border-gray-300 group-hover:border-[#64BC04]'">
+              <div *ngIf="step5ArrivalOption === 'complete'"
+                class="w-2.5 h-2.5 rounded-full bg-[#64BC04]"></div>
             </div>
           </div>
           <span class="text-sm font-medium"
-            [ngClass]="step5Confirmed ? 'text-[#64BC04]' : 'text-gray-600'">
-            Confirmo que los documentos han llegado a oficina central
+            [ngClass]="step5ArrivalOption === 'complete' ? 'text-[#64BC04]' : 'text-gray-600'">
+            Llegó completo
           </span>
         </label>
+
+        <!-- Opción: Llegó con observaciones -->
+        <label class="flex items-center gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 5">
+          <div class="relative shrink-0">
+            <input type="radio" class="sr-only"
+              [disabled]="actualStatus !== 5"
+              [checked]="step5ArrivalOption === 'with_observations'"
+              (change)="onArrivalOptionChange('with_observations')" />
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step5ArrivalOption === 'with_observations'
+                ? 'border-orange-400'
+                : 'border-gray-300 group-hover:border-orange-400'">
+              <div *ngIf="step5ArrivalOption === 'with_observations'"
+                class="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step5ArrivalOption === 'with_observations' ? 'text-orange-500' : 'text-gray-600'">
+            Llegó con observaciones
+          </span>
+        </label>
+
+        <!-- Checkbox de subsanación (solo si eligió "con observaciones") -->
+        <div *ngIf="step5ArrivalOption === 'with_observations'"
+          class="ml-[30px] p-[12px] bg-orange-50 border border-orange-200 rounded-xl flex flex-col gap-[10px]">
+          <p class="text-xs text-orange-600 leading-relaxed">
+            No podrá continuar hasta confirmar que las observaciones han sido subsanadas.
+          </p>
+          <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+            [class.opacity-50]="actualStatus !== 5">
+            <div class="relative mt-[2px] shrink-0">
+              <input type="checkbox" class="sr-only"
+                [(ngModel)]="step5ObservationsResolved"
+                [disabled]="actualStatus !== 5" />
+              <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                [ngClass]="step5ObservationsResolved
+                  ? 'bg-[#64BC04] border-[#64BC04]'
+                  : 'bg-white border-orange-300 group-hover:border-[#64BC04]'">
+                <svg *ngIf="step5ObservationsResolved" class="w-3 h-3 text-white" fill="none"
+                  stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+            <span class="text-sm font-medium"
+              [ngClass]="step5ObservationsResolved ? 'text-[#64BC04]' : 'text-orange-600'">
+              Confirmo que las observaciones han sido subsanadas
+            </span>
+          </label>
+        </div>
+
+        <!-- Modo lectura (cuando ya se pasó el paso 5) -->
+        <div *ngIf="actualStatus > 5 && step5ArrivalOption"
+          class="flex items-center gap-2 text-xs px-[10px] py-[6px] rounded-full w-fit"
+          [ngClass]="step5ArrivalOption === 'complete'
+            ? 'bg-[#E5F7D1] text-[#64BC04]'
+            : 'bg-orange-50 text-orange-500'">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ step5ArrivalOption === 'complete' ? 'Llegó completo' : 'Llegó con observaciones (subsanadas)' }}
+        </div>
 
       </div>
     </div>
@@ -522,6 +594,7 @@
 
         <p class="text-sm text-gray-600 leading-relaxed">
           Confirma que los documentos han sido firmados por los siguientes responsables.
+          Al confirmar se enviará un correo de notificación a <strong>costos y presupuestos</strong> y al <strong>staff de obra</strong> del proyecto.
         </p>
 
         <!-- Checkbox Ing. Carlos Oriundo -->
@@ -672,7 +745,7 @@
               </a>
             </ng-container>
           </ng-container>
-          <p *ngIf="!getDocFile('ScannedDoc1') && !getDocFile('ScannedDoc2') && !getDocFile('ScannedDoc3')"
+          <p *ngIf="!getDocFile('ScannedDoc1')"
             class="text-xs italic text-gray-300">
             No hay documentos escaneados registrados.
           </p>

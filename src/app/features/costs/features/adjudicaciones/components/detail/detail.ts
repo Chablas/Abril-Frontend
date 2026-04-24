@@ -44,16 +44,14 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '' };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
 
-  /** Documentos del paso 7 (siempre 3 slots). */
+  /** Documentos del paso 7 (1 slot). */
   readonly scannedDocuments: { key: string; label: string }[] = [
-    { key: 'ScannedDoc1', label: 'Documento escaneado 1' },
-    { key: 'ScannedDoc2', label: 'Documento escaneado 2' },
-    { key: 'ScannedDoc3', label: 'Documento escaneado 3' },
+    { key: 'ScannedDoc1', label: 'Documento escaneado' },
   ];
 
   trackByDocKey(_: number, doc: { key: string }): string {
@@ -81,8 +79,9 @@ export class Detail implements OnInit {
   /** Paso 7 — clave de doc de escaneados siendo subido en este momento */
   currentScannedDocType: string | null = null;
 
-  /** Paso 5 — confirmación de recepción en oficina central */
-  step5Confirmed = false;
+  /** Paso 5 — opción de llegada y subsanación */
+  step5ArrivalOption: 'complete' | 'with_observations' | null = null;
+  step5ObservationsResolved = false;
 
   /** Paso 6 — confirmación de firmas */
   step6ConfirmedOriundo = false;
@@ -117,12 +116,15 @@ export class Detail implements OnInit {
 
   ngOnInit(): void {
     this.viewStep = this.item.projectSubContractorStatusId;
-    if (this.item.signingDate) this.step2Form.signingDate = this.item.signingDate.substring(0, 10);
-    if (this.item.startDate)   this.step2Form.startDate   = this.item.startDate.substring(0, 10);
-    if (this.item.endDate)     this.step2Form.endDate     = this.item.endDate.substring(0, 10);
+    if (this.item.signingDate)    this.step2Form.signingDate    = this.item.signingDate.substring(0, 10);
+    if (this.item.startDate)      this.step2Form.startDate      = this.item.startDate.substring(0, 10);
+    if (this.item.endDate)        this.step2Form.endDate        = this.item.endDate.substring(0, 10);
+    if (this.item.contractNumber) this.step2Form.contractNumber = this.item.contractNumber;
     this.documents = this.buildDocuments();
     this.initDocForms();
-    this.step5Confirmed          = this.item.projectSubContractorStatusId > 5;
+    if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
+      this.step5ArrivalOption = this.item.arrivedWithObservations ? 'with_observations' : 'complete';
+    }
     this.step6ConfirmedOriundo   = this.item.projectSubContractorStatusId > 6;
     this.step6ConfirmedToratto   = this.item.projectSubContractorStatusId > 6;
   }
@@ -174,7 +176,7 @@ export class Detail implements OnInit {
     if (this.actualStatus === 3 && this.viewStep === 3) return 'Marcar como aprobado';
     if (this.actualStatus === 4 && this.viewStep === 4) return 'Enviar al SC';
     if (this.actualStatus === 5 && this.viewStep === 5) return 'Confirmar recepción';
-    if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar firmas';
+    if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar y enviar correo';
     if (this.actualStatus === 7 && this.viewStep === 7) return 'Marcar como escaneado';
     if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Oficina Técnica';
     return 'Siguiente paso';
@@ -187,7 +189,7 @@ export class Detail implements OnInit {
   canGoForward(): boolean {
     if (this.actualStatus === 1) return true;
     if (this.actualStatus === 2 && this.viewStep === 2) {
-      return !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate);
+      return !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate && this.step2Form.contractNumber != null && (this.step2Form.contractNumber as any) !== '');
     }
     if (this.actualStatus === 3 && this.viewStep === 3) {
       return this.allDocsApproved;
@@ -196,7 +198,9 @@ export class Detail implements OnInit {
       return this.step4File !== null;
     }
     if (this.actualStatus === 5 && this.viewStep === 5) {
-      return this.step5Confirmed;
+      if (this.step5ArrivalOption === 'complete') return true;
+      if (this.step5ArrivalOption === 'with_observations') return this.step5ObservationsResolved;
+      return false;
     }
     if (this.actualStatus === 6 && this.viewStep === 6) {
       return this.step6AllConfirmed;
@@ -230,7 +234,7 @@ export class Detail implements OnInit {
     } else if (this.actualStatus === 5 && this.viewStep === 5) {
       this.confirmStep5();
     } else if (this.actualStatus === 6 && this.viewStep === 6) {
-      this.confirmStep6();
+      this.sendStep6Notification();
     } else if (this.actualStatus === 7 && this.viewStep === 7) {
       this.advanceFromStep7();
     } else if (this.actualStatus === 8 && this.viewStep === 8) {
@@ -251,8 +255,6 @@ export class Detail implements OnInit {
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
       case 'PromissoryNote':    return this.item.promissoryNote    ?? undefined;
       case 'ScannedDoc1':       return this.item.scannedDoc1       ?? undefined;
-      case 'ScannedDoc2':       return this.item.scannedDoc2       ?? undefined;
-      case 'ScannedDoc3':       return this.item.scannedDoc3       ?? undefined;
       default: return undefined;
     }
   }
@@ -278,8 +280,6 @@ export class Detail implements OnInit {
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
           case 'PromissoryNote':    this.item.promissoryNote    = generated; break;
           case 'ScannedDoc1':       this.item.scannedDoc1       = generated; break;
-          case 'ScannedDoc2':       this.item.scannedDoc2       = generated; break;
-          case 'ScannedDoc3':       this.item.scannedDoc3       = generated; break;
         }
         Swal.fire({ icon: 'success', title: 'Documento generado exitosamente', draggable: true });
       },
@@ -320,8 +320,6 @@ export class Detail implements OnInit {
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
           case 'PromissoryNote':    this.item.promissoryNote    = uploaded; break;
           case 'ScannedDoc1':       this.item.scannedDoc1       = uploaded; break;
-          case 'ScannedDoc2':       this.item.scannedDoc2       = uploaded; break;
-          case 'ScannedDoc3':       this.item.scannedDoc3       = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
       },
@@ -445,15 +443,33 @@ export class Detail implements OnInit {
     });
   }
 
-  private confirmStep6(): void {
+  private async sendStep6Notification(): Promise<void> {
     this.loaderService.show();
-    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 7).subscribe({
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.sendStep6Notification(
+      this.item.projectSubContractorId,
+      graphToken,
+    ).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 7;
         this.viewStep = 7;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Firmas confirmadas exitosamente', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo de proceso de firma enviado', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -462,14 +478,28 @@ export class Detail implements OnInit {
     });
   }
 
+  onArrivalOptionChange(option: 'complete' | 'with_observations'): void {
+    this.step5ArrivalOption = option;
+    this.step5ObservationsResolved = false;
+    this.adjudicacionesService.setArrivalOption(this.item.projectSubContractorId, option === 'with_observations').subscribe({
+      next: () => {
+        this.item.arrivedWithObservations = option === 'with_observations';
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   private confirmStep5(): void {
+    const arrivedWithObservations = this.step5ArrivalOption === 'with_observations';
     this.loaderService.show();
-    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 6).subscribe({
+    this.adjudicacionesService.confirmStep5(this.item.projectSubContractorId, arrivedWithObservations).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 6;
+        this.item.arrivedWithObservations = arrivedWithObservations;
         this.viewStep = 6;
-        this.step5Confirmed = false;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Recepción confirmada exitosamente', draggable: true });
       },
@@ -562,11 +592,36 @@ export class Detail implements OnInit {
   }
 
   private saveStep2Dates(): void {
+    // Coerce: el input[type=number] puede entregar string vacío; convertir a null o número entero
+    const rawNum = this.step2Form.contractNumber;
+    const contractNumber: number | null =
+      rawNum === null || rawNum === undefined || (rawNum as any) === ''
+        ? null
+        : Math.trunc(Number(rawNum));
+
+    // Validar obligatorio
+    if (contractNumber === null) {
+      Swal.fire({ icon: 'warning', title: 'El número de contrato es obligatorio.', draggable: true });
+      return;
+    }
+
+    // Validar rango int32
+    if (contractNumber < 0 || contractNumber > 2_147_483_647) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Número de contrato inválido',
+        text: 'El número de contrato debe ser un entero positivo menor a 2,147,483,647.',
+        draggable: true,
+      });
+      return;
+    }
+
     this.loaderService.show();
     this.adjudicacionesService.saveDates(this.item.projectSubContractorId, {
-      signingDate: this.step2Form.signingDate,
-      startDate:   this.step2Form.startDate,
-      endDate:     this.step2Form.endDate,
+      signingDate:    this.step2Form.signingDate,
+      startDate:      this.step2Form.startDate,
+      endDate:        this.step2Form.endDate,
+      contractNumber,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();

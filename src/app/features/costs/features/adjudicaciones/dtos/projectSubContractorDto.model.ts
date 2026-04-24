@@ -39,6 +39,8 @@ export interface ProjectSubContractorDTO {
   signingDate?: string;
   startDate?: string;
   endDate?: string;
+  contractNumber?: number | null;
+  arrivedWithObservations?: boolean | null;
   // Documentos del contrato (paso 3)
   contract?: ProjectSubContractorFileDTO;
   summarySheet?: ProjectSubContractorFileDTO;
