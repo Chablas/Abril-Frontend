@@ -24,6 +24,9 @@ export class ContractorRegistration {
     contributorRuc: '',
     contributorName: '',
     address: '',
+    contributorDistrict: null,
+    contributorProvince: null,
+    contributorDepartment: null,
     economicActivityDescription: '',
     emails: [''],
   };
@@ -48,6 +51,9 @@ export class ContractorRegistration {
         this.form.contributorRuc = data.contributorRuc;
         this.form.contributorName = data.contributorName;
         this.form.address = data.contributorAddress;
+        this.form.contributorDistrict   = data.contributorDistrict   ?? null;
+        this.form.contributorProvince   = data.contributorProvince   ?? null;
+        this.form.contributorDepartment = data.contributorDepartment ?? null;
         this.form.economicActivityDescription = data.contributorEconomicActivityDescription;
         this.loaderService.hide();
       },
@@ -93,6 +99,9 @@ export class ContractorRegistration {
     formData.append('ContributorRuc', this.form.contributorRuc);
     formData.append('ContributorName', this.form.contributorName);
     if (this.form.address) formData.append('ContributorAddress', this.form.address);
+    if (this.form.contributorDistrict)   formData.append('ContributorDistrict',   this.form.contributorDistrict);
+    if (this.form.contributorProvince)   formData.append('ContributorProvince',   this.form.contributorProvince);
+    if (this.form.contributorDepartment) formData.append('ContributorDepartment', this.form.contributorDepartment);
     if (this.form.economicActivityDescription) formData.append('ContributorEconomicActivityDescription', this.form.economicActivityDescription);
     this.form.emails.forEach(email => formData.append('ContributorEmails', email));
     if (this.brochureFile) formData.append('BrochureFile', this.brochureFile, this.brochureFile.name);

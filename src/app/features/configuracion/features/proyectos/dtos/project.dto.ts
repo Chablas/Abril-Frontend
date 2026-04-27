@@ -6,7 +6,12 @@ export interface ProjectDto {
   contributorRuc?: string;
   contributorName?: string;
   contributorAddress?: string;
-  district?: string;
-  location?: string;
+  contributorDistrict?: string;
+  contributorProvince?: string;
+  contributorDepartment?: string;
+  projectDistrict?: string;
+  projectProvince?: string;
+  projectDepartment?: string;
+  projectLocation?: string;
   active: boolean;
 }

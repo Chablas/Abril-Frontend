@@ -1,0 +1,88 @@
+<app-base-modal
+  [title]="'EDITAR PROYECTO'"
+  width="w-full sm:w-[640px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[12px] mt-4">
+
+    <div class="flex gap-[16px]">
+      <div class="flex flex-col flex-1">
+        <p class="text-[#64BC04]">Descripción</p>
+        <input type="text" [(ngModel)]="form.projectDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Estado</p>
+        <select [(ngModel)]="form.active"
+          class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
+          <option [ngValue]="true">ACTIVO</option>
+          <option [ngValue]="false">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
+      <input type="text" [(ngModel)]="form.levelDescription" placeholder="Ej: Sótano + 10 pisos"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">RUC <span class="text-gray-400 text-sm">(opcional)</span></p>
+      <div class="flex gap-[10px]">
+        <input type="text" [(ngModel)]="form.rucInput" maxlength="11" placeholder="Ej: 20123456789"
+          class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
+          [disabled]="form.contributor !== null" />
+        <button *ngIf="form.contributor === null" type="button" (click)="lookupRuc()"
+          [disabled]="rucLookupLoading"
+          class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
+          {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
+        </button>
+        <button *ngIf="form.contributor !== null" type="button" (click)="clearContributor()"
+          class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
+          Limpiar
+        </button>
+      </div>
+      <div *ngIf="form.contributor"
+        class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm flex flex-col gap-0.5">
+        <p><strong>Razón social:</strong> {{ form.contributor.contributorName }}</p>
+        <p><strong>Domicilio fiscal:</strong> {{ form.contributor.contributorAddress }}</p>
+        <p *ngIf="form.contributor.contributorDistrict"><strong>Distrito fiscal:</strong> {{ form.contributor.contributorDistrict }}</p>
+        <p *ngIf="form.contributor.contributorProvince"><strong>Provincia fiscal:</strong> {{ form.contributor.contributorProvince }}</p>
+        <p *ngIf="form.contributor.contributorDepartment"><strong>Departamento fiscal:</strong> {{ form.contributor.contributorDepartment }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Distrito <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Provincia <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Departamento <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Ubicación <span class="text-gray-400 text-sm">(opcional)</span></p>
+      <input type="text" [(ngModel)]="form.projectLocation" placeholder="Ej: Av. Principal 123, Lima"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    </div>
+
+    <div class="flex justify-center mt-2">
+      <button (click)="save()" [disabled]="saving"
+        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer disabled:opacity-60">
+        <p class="text-white text-lg">{{ saving ? 'Guardando...' : 'Guardar' }}</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

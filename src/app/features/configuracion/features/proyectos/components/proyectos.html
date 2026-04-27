@@ -57,8 +57,8 @@
                         <td><span [title]="item.levelDescription ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.levelDescription || '-' }}</span></td>
                         <td><span [title]="item.contributorRuc ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.contributorRuc || '-' }}</span></td>
                         <td><span [title]="item.contributorName ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.contributorName || '-' }}</span></td>
-                        <td><span [title]="item.district ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.district || '-' }}</span></td>
-                        <td><span [title]="item.location ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.location || '-' }}</span></td>
+                        <td><span [title]="item.projectDistrict ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.projectDistrict || '-' }}</span></td>
+                        <td><span [title]="item.projectLocation ?? ''" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.projectLocation || '-' }}</span></td>
 
                         <td class="text-center">
                             <span class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]" [ngClass]="{
@@ -89,159 +89,20 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Crear -->
-    <div *ngIf="showCreateModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
-        <div class="absolute inset-0" (click)="closeModal($event, 0)"></div>
-        <div class="min-h-screen flex items-center justify-center py-10">
-            <div class="bg-white w-[600px] rounded-xl shadow-xl animate-modal-in relative" (click)="$event.stopPropagation()">
-                <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
-                    <h1 class="text-2xl text-center">AGREGAR PROYECTO</h1>
-                    <div class="flex flex-col gap-[12px] w-full">
-
-                        <div class="flex gap-[16px]">
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Descripción</p>
-                                <input type="text" [(ngModel)]="createForm.projectDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                            <div class="flex flex-col">
-                                <p class="text-[#64BC04]">Estado</p>
-                                <select [(ngModel)]="createForm.active"
-                                    class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
-                                    <option [ngValue]="true">ACTIVO</option>
-                                    <option [ngValue]="false">INACTIVO</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col">
-                            <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
-                            <input type="text" [(ngModel)]="createForm.levelDescription" placeholder="Ej: Sótano + 10 pisos" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                        </div>
-
-                        <div class="flex flex-col">
-                            <p class="text-[#64BC04]">RUC <span class="text-gray-400 text-sm">(opcional)</span></p>
-                            <div class="flex gap-[10px]">
-                                <input type="text" [(ngModel)]="createForm.rucInput" maxlength="11" placeholder="Ej: 20123456789"
-                                    class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
-                                    [disabled]="createForm.contributor !== null" />
-                                <button *ngIf="createForm.contributor === null" type="button" (click)="lookupRuc(createForm)"
-                                    [disabled]="rucLookupLoading"
-                                    class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
-                                    {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
-                                </button>
-                                <button *ngIf="createForm.contributor !== null" type="button" (click)="clearContributor(createForm)"
-                                    class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
-                                    Limpiar
-                                </button>
-                            </div>
-                            <div *ngIf="createForm.contributor" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
-                                <p><strong>Razón social:</strong> {{ createForm.contributor.contributorName }}</p>
-                                <p><strong>Domicilio fiscal:</strong> {{ createForm.contributor.contributorAddress }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-[16px]">
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Distrito <span class="text-gray-400 text-sm">(opcional)</span></p>
-                                <input type="text" [(ngModel)]="createForm.district" placeholder="Ej: Miraflores" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Ubicación <span class="text-gray-400 text-sm">(opcional)</span></p>
-                                <input type="text" [(ngModel)]="createForm.location" placeholder="Ej: Av. Principal 123, Lima" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                        </div>
-
-                    </div>
-                    <button (click)="saveProject()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
-                        <p class="text-[#ffffff] text-lg">Guardar</p>
-                    </button>
-                </div>
-                <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Editar -->
-    <div *ngIf="showEditModal" class="fixed inset-0 bg-black/40 z-50 overflow-y-auto">
-        <div class="absolute inset-0" (click)="closeModal($event, 0)"></div>
-        <div class="min-h-screen flex items-center justify-center py-10">
-            <div class="bg-white w-[600px] rounded-xl shadow-xl animate-modal-in relative" (click)="$event.stopPropagation()">
-                <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
-                    <h1 class="text-2xl text-center">EDITAR PROYECTO</h1>
-                    <div class="flex flex-col gap-[12px] w-full">
-
-                        <div class="flex gap-[16px]">
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Descripción</p>
-                                <input type="text" [(ngModel)]="editForm.projectDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                            <div class="flex flex-col">
-                                <p class="text-[#64BC04]">Estado</p>
-                                <select [(ngModel)]="editForm.active"
-                                    class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer">
-                                    <option [ngValue]="true">ACTIVO</option>
-                                    <option [ngValue]="false">INACTIVO</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col">
-                            <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
-                            <input type="text" [(ngModel)]="editForm.levelDescription" placeholder="Ej: Sótano + 10 pisos" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                        </div>
-
-                        <div class="flex flex-col">
-                            <p class="text-[#64BC04]">RUC <span class="text-gray-400 text-sm">(opcional)</span></p>
-                            <div class="flex gap-[10px]">
-                                <input type="text" [(ngModel)]="editForm.rucInput" maxlength="11" placeholder="Ej: 20123456789"
-                                    class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
-                                    [disabled]="editForm.contributor !== null" />
-                                <button *ngIf="editForm.contributor === null" type="button" (click)="lookupRuc(editForm)"
-                                    [disabled]="rucLookupLoading"
-                                    class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
-                                    {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
-                                </button>
-                                <button *ngIf="editForm.contributor !== null" type="button" (click)="clearContributor(editForm)"
-                                    class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
-                                    Limpiar
-                                </button>
-                            </div>
-                            <div *ngIf="editForm.contributor" class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm">
-                                <p><strong>Razón social:</strong> {{ editForm.contributor.contributorName }}</p>
-                                <p><strong>Domicilio fiscal:</strong> {{ editForm.contributor.contributorAddress }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-[16px]">
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Distrito <span class="text-gray-400 text-sm">(opcional)</span></p>
-                                <input type="text" [(ngModel)]="editForm.district" placeholder="Ej: Miraflores" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                            <div class="flex flex-col flex-1">
-                                <p class="text-[#64BC04]">Ubicación <span class="text-gray-400 text-sm">(opcional)</span></p>
-                                <input type="text" [(ngModel)]="editForm.location" placeholder="Ej: Av. Principal 123, Lima" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                            </div>
-                        </div>
-
-                    </div>
-                    <button (click)="editProject($event)" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
-                        <p class="text-[#ffffff] text-lg">Guardar</p>
-                    </button>
-                </div>
-                <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
+
+<app-proyecto-create
+  *ngIf="showCreateModal"
+  (closeModal)="onModalClosed()"
+  (saved)="onModalSaved()">
+</app-proyecto-create>
+
+<app-proyecto-edit
+  *ngIf="showEditModal && selectedProject"
+  [project]="selectedProject!"
+  (closeModal)="onModalClosed()"
+  (saved)="onModalSaved()">
+</app-proyecto-edit>
 
 <div *ngIf="loader" class="loader-overlay">
   <div class="loader"></div>

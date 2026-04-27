@@ -4,6 +4,9 @@ export interface ContractorManagementDTO {
   contributorRuc: string;
   contributorName: string;
   contributorAddress: string;
+  contributorDistrict?: string | null;
+  contributorProvince?: string | null;
+  contributorDepartment?: string | null;
   contributorEconomicActivityDescription: string;
   contractorStateId: number;
   contractorStateDescription: string;
