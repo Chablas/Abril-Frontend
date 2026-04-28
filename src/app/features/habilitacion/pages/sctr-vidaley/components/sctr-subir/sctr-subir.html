@@ -1,0 +1,138 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[820px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Tipo *</label>
+        <select class="field-input" [(ngModel)]="model.tipo">
+          <option value="SCTR">SCTR</option>
+          <option value="VIDA_LEY">Vida Ley</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Proyecto *</label>
+        <select class="field-input" [(ngModel)]="model.proyectoId">
+          <option [ngValue]="null">— Seleccionar —</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Mes *</label>
+        <select class="field-input" [(ngModel)]="model.mes">
+          <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Año *</label>
+        <input type="number" class="field-input" [(ngModel)]="model.anio" min="2020" max="2100" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Póliza Salud (archivo principal) *</label>
+        <div class="adjuntar-row">
+          <div class="adjuntar-info">
+            <span *ngIf="!model.archivoUrl" class="text-muted">Sin archivo seleccionado</span>
+            <span *ngIf="model.archivoUrl">📎 {{ model.archivoNombre }} (pendiente subir)</span>
+          </div>
+          <div class="adjuntar-actions">
+            <button type="button" class="btn-link" (click)="triggerFile1()">
+              {{ model.archivoUrl ? 'Cambiar' : 'Adjuntar' }}
+            </button>
+            <button
+              type="button"
+              class="btn-ghost btn-x"
+              *ngIf="model.archivoUrl"
+              (click)="clearFile1()"
+            >
+              ✕
+            </button>
+            <input #fileInput1 type="file" hidden (change)="onFile1Selected($event)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="col-span-2" *ngIf="model.tipo === 'SCTR'">
+        <label class="field-label">Póliza Pensión (opcional)</label>
+        <div class="adjuntar-row">
+          <div class="adjuntar-info">
+            <span *ngIf="!model.archivoUrl2" class="text-muted">Sin archivo seleccionado</span>
+            <span *ngIf="model.archivoUrl2">📎 {{ model.archivoNombre2 }} (pendiente subir)</span>
+          </div>
+          <div class="adjuntar-actions">
+            <button type="button" class="btn-link" (click)="triggerFile2()">
+              {{ model.archivoUrl2 ? 'Cambiar' : 'Adjuntar' }}
+            </button>
+            <button
+              type="button"
+              class="btn-ghost btn-x"
+              *ngIf="model.archivoUrl2"
+              (click)="clearFile2()"
+            >
+              ✕
+            </button>
+            <input #fileInput2 type="file" hidden (change)="onFile2Selected($event)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="subsection-title">Trabajadores cubiertos *</h4>
+
+    <input
+      type="text"
+      class="field-input"
+      placeholder="Buscar por nombre o DNI…"
+      [(ngModel)]="workersSearch"
+      (input)="onWorkersSearchChange()"
+    />
+
+    <div class="workers-search-box">
+      <div *ngIf="loadingWorkers" class="muted-line">Buscando…</div>
+      <div *ngIf="!loadingWorkers && workersSearch && workersResultados.length === 0" class="muted-line">
+        Sin resultados.
+      </div>
+      <div
+        *ngFor="let w of workersResultados"
+        class="worker-row"
+        (click)="toggleWorker(w)"
+      >
+        <input
+          type="checkbox"
+          [checked]="isWorkerSelected(w.workerId)"
+          (click)="$event.stopPropagation()"
+          (change)="toggleWorker(w)"
+        />
+        <div class="worker-info">
+          <strong>{{ w.apellidoNombre }}</strong>
+          <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="seleccionados-box" *ngIf="workersSeleccionados.length > 0">
+      <div class="seleccionados-header">
+        Seleccionados ({{ workersSeleccionados.length }})
+      </div>
+      <div class="seleccionados-list">
+        <span *ngFor="let w of workersSeleccionados" class="worker-chip">
+          {{ w.apellidoNombre }}
+          <button
+            type="button"
+            class="chip-remove"
+            (click)="removeWorker(w.workerId)"
+          >
+            ✕
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Crear documento' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

@@ -608,3 +608,155 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 - Base modal: `shared/components/base-modal/base-modal.ts`
 - Paginator: `shared/components/paginator/paginator.ts`
 - Search-select: `shared/components/search-select/search-select.ts`
+
+---
+
+## 12. Módulo Habilitación SSOMA
+
+### Ubicación
+`features/habilitacion/` — standalone routes (igual que `configuracion/`).
+- `iconKey: 'habilitacion'` (escudo o documento, agregar en `nav-icon.html`).
+- Roles: `ADMINISTRADOR SSOMA`, `ADMINISTRADOR DE UDP`, `CONTRATISTA`.
+
+### Sub-rutas
+```
+/habilitacion                          → redirect 'trabajadores'
+/habilitacion/trabajadores             → Plataforma Trabajadores
+/habilitacion/empresa                  → Plataforma Empresa
+/habilitacion/equipos                  → Equipos y Máquinas
+/habilitacion/bandeja                  → Bandeja de Aprobaciones
+/habilitacion/sctr-vidaley             → SCTR y Vida Ley
+/habilitacion/inducciones              → Programar Inducción
+/habilitacion/registros-modelo         → Registros Modelo
+/habilitacion/evaluacion-supervisores  → Evaluación Supervisores
+/habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
+/habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
+```
+
+### Auth contratistas
+- Login en `/auth/login` con selector empresa (dropdown) + password.
+- JWT contratista trae claim `role='CONTRATISTA'` y claim `empresaId`.
+- Contratistas ven **solo** sus trabajadores y su empresa.
+- Contratistas **NO** pueden aprobar documentos — solo dejan en estado `Enviado`.
+- Usar `AuthService` existente para verificar rol `CONTRATISTA`.
+
+### Base URL backend
+```ts
+HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
+```
+
+### Endpoints disponibles
+| Método | Endpoint |
+|--------|----------|
+| GET/POST/PUT | `/empresas` |
+| GET | `/empresas/{id}/proyectos` |
+| POST/DELETE | `/empresas/{id}/proyectos/{proyectoId}` |
+| GET | `/catalogos/items-trabajador` |
+| GET | `/catalogos/items-empresa` |
+| GET | `/catalogos/items-equipo` |
+| GET | `/catalogos/criterios` |
+| POST | `/auth/login` (contratista) |
+| GET | `/auth/empresas` (dropdown login) |
+| GET | `/trabajadores` (paginado) |
+| GET | `/trabajadores/{id}/entregables` |
+| PUT | `/trabajadores/entregables/{id}` |
+| GET | `/trabajadores/entregables/{id}/versiones` |
+| PATCH | `/trabajadores/{id}/cambiar-obra` |
+| PATCH | `/trabajadores/{id}/reingreso` |
+| GET | `/bandeja` (paginado + cursor) |
+| PATCH | `/bandeja/trabajador/{id}` |
+| PATCH | `/bandeja/empresa/{id}` |
+| PATCH | `/bandeja/equipo/{id}` |
+| GET | `/empresas/{id}/entregables` |
+| PUT | `/empresas/{id}/entregables/{itemId}` |
+| GET/POST | `/sctr-vidaley` |
+| GET | `/sctr-vidaley/{id}` |
+| PATCH | `/sctr-vidaley/{id}/aprobar` |
+| GET | `/sctr-vidaley/por-trabajador/{workerId}` |
+| GET | `/sctr-vidaley/proximos-vencer` |
+| GET/POST/PUT | `/equipos` |
+| GET | `/equipos/{id}/entregables` |
+| PUT | `/equipos/entregables/{id}` |
+| GET/POST | `/inducciones` |
+| GET/POST/PUT/DELETE | `/reglas` |
+| GET | `/auditoria` |
+| GET | `/archivos/ver?url={encodedUrl}` |
+| GET | `/archivos/descargar?url={encodedUrl}` |
+
+### Estados de entregables
+`Falta` → `Enviado` → `Aprobado` / `Rechazado` / `No Aplica`
+
+Colores:
+- `Falta` = rojo
+- `Enviado` = amarillo / naranja
+- `Aprobado` = verde
+- `Rechazado` = rojo oscuro
+- `No Aplica` = gris
+
+### SCTR / Vida Ley — estados especiales
+`Aprobado`, `Rechazado`, `Parcial`, `Falta`, `Enviado`.
+
+### Estado habilitación worker
+- `Habilitado` = chip verde
+- `No Autorizado` = chip rojo
+
+### Notas importantes
+- **EMO es read-only** — viene del módulo SSOMA, no se puede subir.
+- **SCTR/Vida Ley flujo masivo** — un doc cubre múltiples workers.
+- Contratista no puede ver workers de otra empresa (`403` del backend).
+- Versiones de documentos disponibles por entregable.
+- Auditoría implementada en backend — pantalla solo para admins.
+
+### Auth contratistas — flujo completo
+
+Endpoints (`api/v1/habilitacion/auth/...`):
+- `POST /login` — body `{ email, password }` → `ContratistaTokenDto { token, empresaId, razonSocial, tipo }`. Token guardado en `localStorage.access_token` (mismo key que login Abril).
+- `POST /activar` — body `{ token, password }` → `ContratistaTokenDto`. **Auto-login**: persiste el token retornado y redirige a `/habilitacion/trabajadores`.
+- `POST /reset-password` — body `{ token, nuevaPassword }` → `void`. Tras éxito redirige a `/auth/login` (no auto-login).
+- `POST /solicitar-reset` — body `{ email }` → `void`. La UI siempre muestra "Si el correo está registrado, recibirás un enlace en breve." en `next` y `error` (no revelar existencia).
+- `PATCH /cambiar-password` — body `{ passwordActual, passwordNuevo }` → `void`. Requiere JWT.
+
+Métodos en `core/services/auth.service.ts`: `loginContratista(email, password)`, `activarCuenta({token, password})`, `resetPassword({token, nuevaPassword})`, `solicitarReset(email)`, `isContratista()`. La persistencia del token contratista vive en el helper privado `persistContratistaToken()`.
+
+`getRoles()` lee `decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? decoded.role` para soportar tanto el JWT Microsoft (Abril) como el JWT contratista (`role` plano).
+
+Detección de cuenta no activada en login: el handler matchea `err.error?.message` con `/no\s+(ha\s+)?(sido\s+)?activad[ao]/i` y muestra un Swal especial con CTA "Reenviar activación" → `/auth/recuperar-contratista`.
+
+### Rutas públicas (FUERA del Layout autenticado)
+
+En `src/app/app.routes.ts`:
+```
+/habilitacion/registro-empresa     → registro-empresa (RegistroEmpresa)
+/auth/activar-contratista          → activar-contratista (ActivarContratista) — query: ?token=…&tipo=activacion-contratista|reset-contratista
+/auth/recuperar-contratista        → recuperar-contratista (RecuperarContratista)
+/registros-modelo                  → registros-modelo (dual-mount, data: { publicMode: true })
+```
+
+`registros-modelo` está **dual-montado**: en `/registros-modelo` (público, con header propio) y en `/habilitacion/registros-modelo` (dentro del Layout). El componente lee `route.snapshot.data['publicMode']` para decidir si renderiza el `<header>` con logo Abril.
+
+### Subida de archivos a SharePoint
+
+`features/habilitacion/services/sharepoint-upload.service.ts` expone `subirArchivo(file, contexto)` → POST `multipart/form-data` a `/api/v1/habilitacion/archivos/subir`.
+
+**Patrón fallback**: las páginas Trabajadores / Empresa / Equipos llaman al servicio en `onFileSelected()` y, si el endpoint retorna error (404 mientras no exista, 500, etc.), guardan `panelArchivoUrl = 'pending-upload://' + file.name` para que el flujo de UI siga funcionando. Mientras sube se muestra `📎 Subiendo {{ panelArchivoNombre }}…` controlado por `uploadingFile: boolean`.
+
+Contextos usados:
+- Trabajadores: `habilitacion/trabajadores/{workerId}`
+- Empresa: `habilitacion/empresas/{empresaId}`
+- Equipos: `habilitacion/equipos/{equipoId}`
+
+> **Backend pendiente**: `POST /archivos/subir` aún no existe (TODO marcado en `sharepoint-upload.service.ts`). El fallback `pending-upload://` permite testear el flujo end-to-end sin backend.
+
+### Componentes nuevos
+
+- `shared/components/password-strength/` (standalone, `app-password-strength`) — input `password: string`, calcula débil/media/fuerte por longitud (≥8) + presencia de mayús/dígito/símbolo. Usado en `activar-contratista` y `cambiar-password`.
+
+### Estado actual
+- Sprints 1-8 completados.
+- Auth contratistas: login email+password, activación, reset, cambio password.
+- Páginas completadas: Trabajadores, Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
+
+### Pendiente
+- Deploy a producción.
+- Crear primer usuario admin.
+- Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).

@@ -175,6 +175,41 @@ export class NavigationService {
         { label: 'Lista de Trabajadores', route: '/configuracion/workers' },
       ],
     },
+    {
+      key: 'habilitacion',
+      label: 'Habilitación',
+      iconKey: 'habilitacion',
+      baseRoute: '/habilitacion',
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      items: [],
+      groups: [
+        {
+          label: 'Gestión',
+          items: [
+            { label: 'Trabajadores', route: '/habilitacion/trabajadores' },
+            { label: 'Empresa', route: '/habilitacion/empresa' },
+            { label: 'Equipos y Máquinas', route: '/habilitacion/equipos' },
+            { label: 'SCTR y Vida Ley', route: '/habilitacion/sctr-vidaley' },
+          ],
+        },
+        {
+          label: 'Operaciones',
+          items: [
+            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja' },
+            { label: 'Inducciones', route: '/habilitacion/inducciones' },
+            { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
+            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores' },
+          ],
+        },
+        {
+          label: 'Administración',
+          items: [
+            { label: 'Reglas de Entregables', route: '/habilitacion/reglas' },
+            { label: 'Auditoría', route: '/habilitacion/auditoria' },
+          ],
+        },
+      ],
+    },
   ];
 
   constructor(private authService: AuthService) {}

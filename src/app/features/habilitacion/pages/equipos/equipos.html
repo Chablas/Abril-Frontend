@@ -1,0 +1,215 @@
+<div class="equipos-layout">
+  <div class="section-bar">
+    <div>
+      <h2 class="section-title">EQUIPOS Y MÁQUINAS</h2>
+      <p class="section-sub">Habilitación documental por equipo</p>
+    </div>
+    <button type="button" class="btn-primary" *ngIf="isAdmin()" (click)="abrirNuevoEquipo()">
+      + Nuevo equipo / máquina
+    </button>
+  </div>
+
+  <div class="equipos-columns">
+    <div class="col-equipos card">
+      <div class="filters-card">
+        <input
+          type="text"
+          class="field-input"
+          placeholder="Buscar tipo, marca, modelo…"
+          [(ngModel)]="filtroSearch"
+          (input)="onSearch()"
+        />
+      </div>
+
+      <div class="equipos-list">
+        <div
+          *ngFor="let eq of equipos"
+          class="equipo-card"
+          [class.selected]="selectedEquipo?.id === eq.id"
+          (click)="selectEquipo(eq)"
+        >
+          <div class="equipo-header">
+            <div class="equipo-tipo">{{ eq.tipo }}</div>
+            <button
+              *ngIf="isAdmin()"
+              type="button"
+              class="btn-icon"
+              title="Editar"
+              (click)="abrirEditarEquipo(eq, $event)"
+            >
+              ✎
+            </button>
+          </div>
+          <div class="equipo-meta">
+            {{ eq.marca ?? '' }} {{ eq.modelo ?? '' }}
+          </div>
+          <div class="equipo-serie" *ngIf="eq.nSerie">N° {{ eq.nSerie }}</div>
+          <div class="equipo-footer">
+            <span class="equipo-empresa">
+              {{ eq.propietarioEmpresaNombre ?? '—' }}
+            </span>
+            <span class="btn-chip" [class]="getEstadoHabClass(eq.estadoHabilitacion)">
+              {{ eq.estadoHabilitacion }}
+            </span>
+          </div>
+          <div class="equipo-proyecto">{{ eq.proyectoNombre }}</div>
+        </div>
+        <div *ngIf="!loading && equipos.length === 0" class="empty-list">
+          No hay equipos registrados.
+        </div>
+      </div>
+
+      <div class="paginator-wrapper" *ngIf="totalPages > 1">
+        <app-paginator
+          [totalRecords]="totalRecords"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="onPageChange($event)"
+        />
+      </div>
+    </div>
+
+    <ng-container *ngIf="selectedEquipo; else noEquipo">
+      <div class="col-entregables-eq card">
+        <div class="col-header">
+          <div>
+            <span class="section-title">
+              {{ selectedEquipo.tipo }} — {{ selectedEquipo.marca ?? '' }}
+              {{ selectedEquipo.modelo ?? '' }}
+            </span>
+            <div class="section-sub-detail">
+              <span *ngIf="selectedEquipo.nSerie">N° Serie: {{ selectedEquipo.nSerie }}</span>
+              <span *ngIf="selectedEquipo.nSerie"> | </span>
+              <span>{{ selectedEquipo.proyectoNombre }}</span>
+            </div>
+          </div>
+          <span class="btn-chip" [class]="getEstadoHabClass(selectedEquipo.estadoHabilitacion)">
+            {{ selectedEquipo.estadoHabilitacion }}
+          </span>
+        </div>
+
+        <div *ngIf="loadingEntregables" class="loading-text">Cargando entregables…</div>
+
+        <div *ngIf="!loadingEntregables" class="entregables-list">
+          <div *ngIf="entregables.length === 0" class="empty-line">
+            Sin entregables para este equipo.
+          </div>
+          <div
+            *ngFor="let e of entregables"
+            class="entregable-row"
+            [class.selected]="selectedEntregable?.id === e.id"
+            (click)="selectEntregable(e)"
+          >
+            <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+            <span class="entregable-nombre">{{ e.nombreItem }}</span>
+            <span class="btn-chip" [class]="getChipEstado(e.estado)">
+              {{ e.estado }}
+            </span>
+            <span class="vigencia-text" *ngIf="e.vigencia">
+              {{ e.vigencia | date: 'dd/MM/yyyy' }}
+            </span>
+            <button
+              *ngIf="e.archivoUrl"
+              type="button"
+              class="btn-icon"
+              title="Ver documento"
+              (click)="$event.stopPropagation(); verArchivo(e.archivoUrl!)"
+            >
+              📄
+            </button>
+            <button
+              type="button"
+              class="btn-icon"
+              title="Adjuntar"
+              (click)="$event.stopPropagation(); selectEntregable(e)"
+            >
+              📎
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section" *ngIf="selectedEntregable">
+          <div *ngIf="selectedEntregable.requiereVigencia">
+            <label class="field-label">Vigencia</label>
+            <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          </div>
+
+          <div>
+            <label class="field-label">Datos adjuntos</label>
+            <div class="adjuntar-box">
+              <div *ngIf="uploadingFile" class="adjuntar-placeholder">
+                <span>📎 Subiendo {{ panelArchivoNombre }}…</span>
+              </div>
+              <div *ngIf="!uploadingFile && !panelArchivoUrl" class="adjuntar-placeholder">
+                <span>No hay nada adjunto.</span>
+                <button type="button" class="btn-link" (click)="triggerFileInput()">
+                  📎 Adjuntar archivo
+                </button>
+                <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+              </div>
+              <div *ngIf="!uploadingFile && panelArchivoUrl" class="adjuntar-file">
+                <a
+                  *ngIf="!panelArchivoUrl.startsWith('pending-upload://')"
+                  [href]="getViewUrl(panelArchivoUrl)"
+                  target="_blank"
+                  rel="noopener"
+                  class="btn-link"
+                >
+                  Ver documento
+                </a>
+                <span
+                  *ngIf="panelArchivoUrl.startsWith('pending-upload://')"
+                  class="adjuntar-pending"
+                >
+                  📎 {{ panelArchivoNombre }} (pendiente subir)
+                </span>
+                <button type="button" class="btn-ghost btn-x" (click)="clearArchivo()">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-actions">
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="!panelArchivoUrl && !panelVigencia"
+              (click)="enviarDocumento()"
+            >
+              ENVIAR
+            </button>
+            <ng-container
+              *ngIf="isAdmin() && selectedEntregable.estado === 'Enviado'"
+            >
+              <button type="button" class="btn-chip chip-green btn-pill" (click)="aprobarEntregable()">
+                ✓ Aprobar
+              </button>
+              <button type="button" class="btn-chip btn-pill chip-red" (click)="rechazarEntregable()">
+                ✕ Rechazar
+              </button>
+            </ng-container>
+          </div>
+
+          <div class="obs-section" *ngIf="isAdmin()">
+            <label class="field-label">Observaciones</label>
+            <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"></textarea>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noEquipo>
+      <div class="col-entregables-eq card empty-panel">
+        <p>Selecciona un equipo para ver sus entregables</p>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<app-equipo-form
+  [open]="modalNuevoOpen"
+  [equipo]="modalEditarEquipo"
+  (closed)="closeNuevoEquipo()"
+  (saved)="onEquipoSaved()"
+/>

@@ -1,0 +1,50 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[640px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Obra antigua</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          [value]="worker?.proyectoActual ?? '—'"
+          readonly
+        />
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Nueva obra *</label>
+        <select class="field-input" [(ngModel)]="model.proyectoId">
+          <option [ngValue]="null">— Seleccionar proyecto —</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Razón social / Empresa</label>
+        <select class="field-input" [(ngModel)]="model.empresaId">
+          <option [ngValue]="null">— Mantener actual —</option>
+          <option *ngFor="let e of empresas" [ngValue]="e.id">
+            {{ e.razonSocial }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Staff / Oficina</label>
+        <select class="field-input" [(ngModel)]="model.staffOficina">
+          <option *ngFor="let o of staffOficinaOptions" [value]="o.id">{{ o.nombre }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Fecha de cambio *</label>
+        <input type="date" class="field-input" [(ngModel)]="model.fechaCambio" />
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

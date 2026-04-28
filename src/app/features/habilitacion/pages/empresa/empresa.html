@@ -1,0 +1,246 @@
+<div class="empresa-layout">
+  <div class="filters-card">
+    <div class="filters-grid">
+      <ng-container *ngIf="isAdmin()">
+        <select class="field-input" [(ngModel)]="empresaId" (change)="onEmpresaChange()">
+          <option [ngValue]="null">— Seleccionar empresa —</option>
+          <option *ngFor="let e of empresas" [ngValue]="e.id">
+            {{ e.razonSocial }}
+          </option>
+        </select>
+      </ng-container>
+
+      <select
+        class="field-input"
+        [(ngModel)]="proyectoId"
+        (change)="loadEntregables()"
+        [disabled]="!empresaId"
+      >
+        <option [ngValue]="null">— Seleccionar proyecto —</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.proyectoId">
+          {{ p.proyectoNombre }}
+        </option>
+      </select>
+
+      <select class="field-input" [(ngModel)]="mes" (change)="loadEntregables()">
+        <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+      </select>
+
+      <input
+        type="number"
+        class="field-input"
+        [(ngModel)]="anio"
+        (change)="loadEntregables()"
+        placeholder="Año"
+        min="2020"
+        max="2100"
+      />
+    </div>
+  </div>
+
+  <div class="empresa-columns" *ngIf="empresaId && proyectoId">
+    <div class="col-entregables card">
+      <div class="grupo-header">SSOMA</div>
+      <div class="entregables-list">
+        <div
+          *ngFor="let e of getEntregablesPorResponsable('SSOMA')"
+          class="entregable-row"
+          [class.selected]="selectedEntregable?.id === e.id"
+          (click)="selectEntregable(e)"
+        >
+          <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+          <span class="entregable-nombre">{{ e.nombreItem }}</span>
+          <span class="btn-chip" [class]="getChipEstado(e.estado)">
+            {{ e.estado }}
+          </span>
+          <span class="vigencia-text" *ngIf="e.vigencia">
+            {{ e.vigencia | date: 'dd/MM/yyyy' }}
+          </span>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="$event.stopPropagation(); selectEntregable(e)"
+            title="Adjuntar"
+          >
+            📎
+          </button>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="$event.stopPropagation(); selectEntregable(e)"
+            title="Observaciones"
+          >
+            💬
+          </button>
+        </div>
+        <div
+          *ngIf="getEntregablesPorResponsable('SSOMA').length === 0 && !loading"
+          class="empty-line"
+        >
+          Sin entregables SSOMA.
+        </div>
+      </div>
+
+      <div class="grupo-header">ADMINISTRACIÓN</div>
+      <div class="entregables-list">
+        <div
+          *ngFor="let e of getEntregablesPorResponsable('ADMINISTRACION')"
+          class="entregable-row"
+          [class.selected]="selectedEntregable?.id === e.id"
+          (click)="selectEntregable(e)"
+        >
+          <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+          <span class="entregable-nombre">{{ e.nombreItem }}</span>
+          <span class="btn-chip" [class]="getChipEstado(e.estado)">
+            {{ e.estado }}
+          </span>
+          <span class="vigencia-text" *ngIf="e.vigencia">
+            {{ e.vigencia | date: 'dd/MM/yyyy' }}
+          </span>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="$event.stopPropagation(); selectEntregable(e)"
+            title="Adjuntar"
+          >
+            📎
+          </button>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="$event.stopPropagation(); selectEntregable(e)"
+            title="Observaciones"
+          >
+            💬
+          </button>
+        </div>
+        <div
+          *ngIf="getEntregablesPorResponsable('ADMINISTRACION').length === 0 && !loading"
+          class="empty-line"
+        >
+          Sin entregables de Administración.
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="selectedEntregable; else noEntregable">
+      <div class="col-panel card">
+        <div class="col-header">
+          <span class="section-title">{{ selectedEntregable.nombreItem }}</span>
+          <span class="btn-chip" [class]="getChipEstado(selectedEntregable.estado)">
+            {{ selectedEntregable.estado }}
+          </span>
+        </div>
+
+        <div class="panel-scroll">
+          <div class="panel-section">
+            <div *ngIf="selectedEntregable.requiereVigencia">
+              <label class="field-label">Vigencia</label>
+              <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+            </div>
+
+            <div>
+              <label class="field-label">Datos adjuntos</label>
+              <div class="adjuntar-box">
+                <div *ngIf="uploadingFile" class="adjuntar-placeholder">
+                  <span>📎 Subiendo {{ panelArchivoNombre }}…</span>
+                </div>
+                <div *ngIf="!uploadingFile && !panelArchivoUrl" class="adjuntar-placeholder">
+                  <span>No hay nada adjunto.</span>
+                  <button type="button" class="btn-link" (click)="triggerFileInput()">
+                    📎 Adjuntar un archivo
+                  </button>
+                  <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+                </div>
+                <div *ngIf="!uploadingFile && panelArchivoUrl" class="adjuntar-file">
+                  <a
+                    *ngIf="!panelArchivoUrl.startsWith('pending-upload://')"
+                    [href]="getViewUrl(panelArchivoUrl)"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn-link"
+                  >
+                    Ver documento
+                  </a>
+                  <span
+                    *ngIf="panelArchivoUrl.startsWith('pending-upload://')"
+                    class="adjuntar-pending"
+                  >
+                    📎 {{ panelArchivoNombre }} (pendiente subir)
+                  </span>
+                  <button type="button" class="btn-ghost btn-x" (click)="clearArchivo()">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="!panelArchivoUrl && !panelVigencia"
+              (click)="enviarDocumento()"
+            >
+              ENVIAR DOCUMENTO
+            </button>
+          </div>
+
+          <div class="panel-section" *ngIf="isAdmin()">
+            <div>
+              <label class="field-label">Observaciones Abril</label>
+              <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"></textarea>
+            </div>
+            <div>
+              <label class="field-label">Observaciones contratista</label>
+              <textarea
+                class="field-input field-readonly"
+                rows="3"
+                readonly
+                [value]="panelObsContratista"
+              ></textarea>
+            </div>
+            <div class="panel-actions" *ngIf="selectedEntregable.estado === 'Enviado'">
+              <button type="button" class="btn-primary" (click)="aprobarEntregable()">
+                ✓ APROBAR
+              </button>
+              <button type="button" class="btn-ghost btn-reject" (click)="rechazarEntregable()">
+                ✕ RECHAZAR
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section" *ngIf="isContratista()">
+            <div>
+              <label class="field-label">Observaciones (contratista)</label>
+              <textarea
+                class="field-input"
+                rows="3"
+                [(ngModel)]="panelObsContratista"
+                placeholder="Notas que verá Abril…"
+              ></textarea>
+            </div>
+            <div *ngIf="selectedEntregable.obsAbril">
+              <label class="field-label">Observaciones de Abril</label>
+              <textarea
+                class="field-input field-readonly"
+                rows="3"
+                readonly
+                [value]="selectedEntregable.obsAbril"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noEntregable>
+      <div class="col-panel card empty-panel">
+        <p>Selecciona un entregable</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="empty-state card" *ngIf="!empresaId || !proyectoId">
+    <p>Selecciona una empresa y un proyecto para ver los entregables.</p>
+  </div>
+</div>

@@ -31,13 +31,15 @@ The package manager is pinned via `packageManager: npm@11.7.0`. Prettier config 
 
 ### Auth + role-based navigation
 - `AuthService` (`core/services/auth.service.ts`) logs in against `${apiUrl}api/v1/auth`, stores `access_token` + `user` in `localStorage`, and decodes JWT claims (roles come from the Microsoft claim URI `http://schemas.microsoft.com/ws/2008/06/identity/claims/role`).
-- `authGuard` short-circuits to `true` under SSR (keep this — it prevents refresh failures) and redirects expired/missing tokens to `/auth/login`.
+- Microsoft SSO is handled separately by `MicrosoftAuthService` (`features/auth/`) via `@azure/msal-browser` + `@azure/msal-angular`. The `msal-redirect` route in the auth module completes the OAuth callback. Tenant/client IDs come from `environment.ts`.
+- `authGuard` short-circuits to `true` under SSR (keep this — it prevents refresh failures) and redirects expired/missing tokens to `/auth/login`. There is **no token auto-refresh** — expiry immediately redirects to login.
 - `roleGuard` reads `route.data.roles` and intersects against JWT roles; missing access redirects to `/`.
 - `NavigationService` (`core/navigation/navigation.service.ts`) is the **single source of truth for the sidebar**. Each `NavModule` declares `roles`, `items`, and optional `groups` — the sidebar filters by role at render time. Adding a feature to the UI means wiring both the routing module AND this config.
 - Known role strings: `ADMINISTRADOR DEL SISTEMA`, `ADMINISTRADOR DE UDP`, `USUARIO DE UDP`, `ADMINISTRADOR DE RESIDENTES`, `RESIDENTE`. Role matching is string-exact — keep uppercase and Spanish spelling.
 
 ### HTTP conventions
-- There is **no `HttpInterceptor`**. Each service that needs auth builds its own `Authorization: Bearer <token>` header — see the `authHeaders()` pattern in `ArquitecturaComercialService` (and most other services). When adding a new service, follow that pattern and read `localStorage.getItem('access_token')` defensively (`typeof localStorage !== 'undefined'`) so SSR doesn't break.
+- There is **no `HttpInterceptor`**. Each service that needs auth builds its own `Authorization: Bearer <token>` header — see the `authHeaders()` pattern in `ArquitecturaComercialService` (and most other services). When adding a new service, follow that pattern and read `localStorage.getItem('access_token')` defensively (`typeof localStorage !== 'undefined'`) so SSR doesn't break. All services use `providedIn: 'root'` — no module-level DI needed.
+- Paginated list endpoints return `PagedResponseDTO<T>` (`core/dtos/api/`), which carries `page`, `pageSize`, `totalRecords`, `totalPages`, and `data: T[]`. Pass this into the shared `Paginator` component via `pageChange` EventEmitter.
 - `ErrorService.handleError(err)` centralizes HTTP error UX via SweetAlert2: 401 clears storage and bounces to login; 4xx/5xx show generic modals. Call it from service subscriber `error` branches rather than reinventing alert UI.
 - `LoaderService` exposes a global `loader$` `BehaviorSubject<boolean>` that the root `App` component subscribes to. Use `loaderService.show()` / `hide()` around long requests.
 
@@ -55,4 +57,5 @@ The app is configured for Angular SSR (`@angular/ssr`, `outputMode: 'server'`, p
 - Prettier: `printWidth: 100`, `singleQuote: true`. Angular HTML templates use the Angular parser.
 - DTOs live under `core/dtos/<domain>/` and are grouped per backend resource; keep that grouping when adding new endpoints.
 - Page components are often standalone (`imports: [CommonModule, FormsModule, ...]`) and imported directly into NgModule-based routing modules — this mixed style is intentional; don't "convert" one to match the other.
+- Standard CRUD flow: list component calls `loaderService.show()`, fetches data, calls `loaderService.hide()` in both success and error. Confirmations use `Swal.fire({ icon: 'question', showCancelButton: true })`. Errors go through `ErrorService.handleError()`. Edit/create forms live in separate modal components that emit a result event to the parent list.
 - Spanish is the primary UI language; titles in route `data.titulo` are uppercase.
