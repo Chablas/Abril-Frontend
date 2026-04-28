@@ -8,7 +8,7 @@
 
     <div class="grid-2">
       <div>
-        <label class="field-label">RUC</label>
+        <label class="field-label">RUC *</label>
         <input
           type="text"
           class="field-input"
@@ -49,6 +49,40 @@
       <div class="col-span-2">
         <label class="field-label">Email SSOMA</label>
         <input type="email" class="field-input" [(ngModel)]="model.emailSsoma" />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Logo de empresa</label>
+        <div class="file-row">
+          <label class="file-btn" [class.file-btn--disabled]="uploadingFile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Seleccionar imagen
+            <input
+              type="file"
+              accept=".jpg,.jpeg,.png"
+              [disabled]="uploadingFile"
+              (change)="onFileSelected($event)"
+              hidden
+            />
+          </label>
+          <span class="file-uploading" *ngIf="uploadingFile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+            Subiendo logo…
+          </span>
+          <span class="file-success" *ngIf="logoUrl && !uploadingFile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {{ logoNombre }}
+          </span>
+          <span class="file-hint" *ngIf="!logoNombre && !uploadingFile">JPG o PNG · máx. 2 MB</span>
+        </div>
       </div>
 
       <div>

@@ -187,25 +187,25 @@ export class NavigationService {
           label: 'Gestión',
           items: [
             { label: 'Trabajadores', route: '/habilitacion/trabajadores' },
-            { label: 'Empresa', route: '/habilitacion/empresa' },
-            { label: 'Equipos y Máquinas', route: '/habilitacion/equipos' },
-            { label: 'SCTR y Vida Ley', route: '/habilitacion/sctr-vidaley' },
+            { label: 'Empresa', route: '/habilitacion/empresa', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+            { label: 'Equipos y Máquinas', route: '/habilitacion/equipos', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+            { label: 'SCTR y Vida Ley', route: '/habilitacion/sctr-vidaley', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
           ],
         },
         {
           label: 'Operaciones',
           items: [
-            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja' },
+            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
             { label: 'Inducciones', route: '/habilitacion/inducciones' },
             { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
-            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores' },
+            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
           ],
         },
         {
           label: 'Administración',
           items: [
-            { label: 'Reglas de Entregables', route: '/habilitacion/reglas' },
-            { label: 'Auditoría', route: '/habilitacion/auditoria' },
+            { label: 'Reglas de Entregables', route: '/habilitacion/reglas', roles: ['ADMINISTRADOR SSOMA'] },
+            { label: 'Auditoría', route: '/habilitacion/auditoria', roles: ['ADMINISTRADOR SSOMA'] },
           ],
         },
       ],

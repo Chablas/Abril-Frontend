@@ -342,7 +342,10 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | POST | `/api/v1/auth/login` | `AuthService.login` |
 | POST | `/api/v1/auth/set-password` | `AuthService.setPassword` |
 | POST | `/api/v1/auth/forgot-password` | `AuthService.forgotPassword` |
-| GET/POST/PUT/DELETE | `/api/v1/user` | `UserService` |
+| GET (paged) | `/api/v1/user/paged?page=N` | `UserService.getUserPaged` |
+| POST | `/api/v1/user` | `UserService.createUser` |
+| PUT | `/api/v1/user/{id}` | `UserService.updateUser` |
+| PATCH | `/api/v1/user/{id}/toggle` | `UserService.toggleUser` |
 | GET | `/api/v1/role` | `RoleService` |
 | GET | `/api/v1/person` | `PersonService` |
 | POST | `/api/v1/microsoft` | `MicrosoftAuthService` (login MS) |
@@ -459,8 +462,14 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 ### `features/home/` — ✅ Completo
 - Página Inicio simple post-login.
 
-### `features/security/` — ⚠️ Mínimo
-- Solo `/security/users` (creación de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
+### `features/security/` — ✅ CRUD completo
+- `/security/users` (gestión de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
+- **Lista paginada** con búsqueda client-side por nombre (filtra sobre la página recibida).
+- **Crear** usuario: modal inline con POST `/api/v1/user`.
+- **Editar** usuario: modal `UserEditForm` en `features/security/users/components/user-edit-form/` con PUT `/api/v1/user/{id}`.
+- **Toggle activo/inactivo**: chip color-coded + confirmación Swal + PATCH `/api/v1/user/{id}/toggle`.
+- **Reenviar credenciales**: botón `chip-gray` presente en UI, sin acción backend aún.
+- Ver §13 para detalles de implementación.
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
 Sub-features:
@@ -541,6 +550,11 @@ Standalone routes (no NgModule). Posición: **último item** del sidebar (despu�
 - Vitest reemplazó Karma — usar `npx ng test --include <spec>` para correr uno solo.
 - `npm start` corre en puerto 4200; backend default `localhost:5236` (configurable en `environment.ts`).
 - En Windows + Git Bash, paths con espacios deben quotearse. El working dir habitual está en `C:\Users\<user>\Abril-Frontend`.
+
+### Backend pitfalls (ASP.NET / PostgreSQL)
+- **`AuditoriaInterceptor` debe ser Singleton** (no Scoped). Al usar `IDbContextFactory<>` el interceptor se instancia por factory y no por request HTTP — si está registrado como Scoped arroja `ObjectDisposedException`. Registrar con `services.AddSingleton<AuditoriaInterceptor>()`.
+- **Columnas `datos_anteriores` / `datos_nuevos`** en la entidad `AuditoriaCambio` requieren `.HasColumnType("jsonb")` en `OnModelCreating`. Sin eso EF Core las mapea como `text` y PostgreSQL rechaza la inserción directa de objetos JSON serializados.
+- **Swagger** solo funciona con `--launch-profile Development`. El bloque `if (app.Environment.IsDevelopment())` que envuelve `app.UseSwagger()` exige que `ASPNETCORE_ENVIRONMENT=Development`; garantizar que `launchSettings.json` tenga ese perfil con la variable seteada.
 
 ### Catálogos SSOMA — específico
 - `EmoTipoDto` y `MedicoSimpleDto`/`ClinicaSimpleDto` se extendieron con campos opcionales (`activo?`, `descripcion?`, `email?`, etc.) para soportar el admin sin romper los dropdowns que ya consumían estos DTOs en `programacion-create`/`emo-create`. **No quitar los `?` ni cambiar nombres de campos.**
@@ -632,6 +646,11 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
 ```
+
+### Restricciones del rol CONTRATISTA
+- **Navegación** (`navigation.service.ts`): los items del módulo Habilitación llevan `roles` por item. CONTRATISTA solo ve: Trabajadores, Inducciones, Registros Modelo. No ve: Empresa, Equipos, SCTR/Vida Ley, Bandeja, Evaluación Supervisores, Reglas, Auditoría.
+- **Rutas** (`habilitacion.routes.ts`): cada ruta tiene `roleGuard` con `data.roles`. CONTRATISTA solo tiene acceso a `/trabajadores`, `/inducciones`, `/registros-modelo`, `/cambiar-password`.
+- **Filtro server-side por empresaId**: el backend (`HabTrabajadorController.GetWorkers`) detecta el rol CONTRATISTA en el JWT y filtra por el claim `empresaId` automáticamente. El frontend **nunca envía `empresaId`** en los query params para CONTRATISTA (`filtroEmpresaId: null → undefined → omitido por buildHabParams`).
 
 ### Auth contratistas
 - Login en `/auth/login` con selector empresa (dropdown) + password.
@@ -744,6 +763,9 @@ Contextos usados:
 - Trabajadores: `habilitacion/trabajadores/{workerId}`
 - Empresa: `habilitacion/empresas/{empresaId}`
 - Equipos: `habilitacion/equipos/{equipoId}`
+- Logos de empresa (registro público): `habilitacion/logos`
+
+**Logo en registro-empresa** (`pages/registro-empresa/`): campo opcional "Logo de empresa" (JPG/PNG ≤ 2 MB). Llama a `SharepointUploadService.subirArchivo` durante el registro público. Mientras sube, el botón "Registrar Empresa" queda deshabilitado (`uploadingFile = true`). Si falla, muestra `Swal.fire` directo (NO `ErrorService.handleError`, que redirige a login en 401 — la página es pública). El campo `logoUrl` se incluye en el payload `EmpresaContratistaCreateDto`.
 
 > **Backend pendiente**: `POST /archivos/subir` aún no existe (TODO marcado en `sharepoint-upload.service.ts`). El fallback `pending-upload://` permite testear el flujo end-to-end sin backend.
 
@@ -751,12 +773,83 @@ Contextos usados:
 
 - `shared/components/password-strength/` (standalone, `app-password-strength`) — input `password: string`, calcula débil/media/fuerte por longitud (≥8) + presencia de mayús/dígito/símbolo. Usado en `activar-contratista` y `cambiar-password`.
 
+### Diseño enterprise de Trabajadores
+`pages/trabajadores/trabajadores.html` y `.css` rediseñados completamente (layout 3 columnas, sin tocar `.ts`):
+- **Panel izquierdo** (300px): buscador con icono lupa, lista de worker-cards con indicador `border-left: 3px solid #64bc04` al seleccionar, chips de estado, acciones admin (cambiar obra, reingreso).
+- **Panel central** (flex): barra de nombre/estado del worker seleccionado; tabla `<table>` con columnas DOCUMENTO / ESTADO / VIGENCIA / ACCIONES; estado vacío con SVG inline.
+- **Panel derecho** (360px): modo Filtros (radio pills Tipo + select Estado) cuando no hay entregable activo; modo Documento (upload zone dashed + vigencia + aprobar/rechazar/observaciones) cuando hay entregable seleccionado y es accionable.
+- Stats bar superior (solo admin): total de trabajadores + botón Actualizar.
+- Toda la lógica TypeScript intacta — no se modificó `.ts`.
+
 ### Estado actual
 - Sprints 1-8 completados.
 - Auth contratistas: login email+password, activación, reset, cambio password.
-- Páginas completadas: Trabajadores, Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
+- Páginas completadas: Trabajadores (rediseño enterprise), Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público, con logo upload), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
+- Restricciones CONTRATISTA implementadas en rutas y navegación.
 
 ### Pendiente
 - Deploy a producción.
 - Crear primer usuario admin.
 - Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).
+
+---
+
+## 13. Módulo Seguridad — Usuarios
+
+### Ubicación
+`features/security/` — NgModule (`SeguridadModule`). Ruta: `/security/users`. Rol: `ADMINISTRADOR DEL SISTEMA`.
+
+### Archivos clave
+```
+features/security/
+├── seguridad-module.ts
+├── seguridad-routing-module.ts
+└── pages/
+    └── users/
+        ├── users.ts / .html               # contenedor: orquesta lista + modal
+        ├── list/
+        │   ├── list.ts / .html / .css     # tabla paginada + búsqueda + acciones
+        └── components/
+            └── user-edit-form/
+                ├── user-edit-form.ts / .html / .css  # modal edición
+```
+
+### Flujo completo
+1. `users.ts` es el shell: renderiza `<app-user-list>` y `<app-user-edit-form>`.
+2. `list.ts` carga usuarios paginados (`UserService.getUserPaged(page)`), filtra client-side por `searchTerm` sobre `apellidoNombre`/`fullName`.
+3. Editar: `list` emite `(editUser)="openEditForm($event)"` → `users.ts` abre el modal con el `UserDTO` seleccionado.
+4. Toggle: `list.ts` llama `userService.toggleUser(id)` con confirmación Swal + `cdr.detectChanges()`.
+5. Al guardar en el modal: `users.ts` recibe `(saved)="onEditSaved()"` → cierra modal y fuerza reload.
+
+### Endpoints
+| Método | Endpoint | Acción |
+|--------|----------|--------|
+| GET | `/api/v1/user/paged?page=N` | Lista paginada |
+| POST | `/api/v1/user` | Crear usuario |
+| PUT | `/api/v1/user/{id}` | Editar usuario |
+| PATCH | `/api/v1/user/{id}/toggle` | Activar / desactivar |
+
+### DTOs relevantes
+- `core/dtos/user/user.model.ts` → `UserDTO { userId, person: PersonDTO, role, active, ... }`
+- `core/dtos/user/userCreate.model.ts` → `UserCreateDTO`
+- `core/dtos/user/userUpdate.model.ts` → `UserUpdateDTO { firstNames, firstLastName, secondLastName, email, phoneNumber, roleId }`
+- `PersonDTO` solo expone `fullName` (nombre completo combinado). Los campos individuales (`firstNames`, etc.) los rellena el usuario en el modal de edición.
+
+### UserEditForm — detalles
+- Patrón modal canónico: `@Input() open`, `@Input() initial: UserDTO | null`, `@Output() closed`, `@Output() saved`.
+- `ngOnChanges` resetea el formulario cuando `open` cambia a `true`.
+- Barra de referencia (`ref-bar`) muestra `initial.person.fullName` + DNI como solo-lectura; los campos de nombre se dejan vacíos para que el admin los complete.
+- `canSubmit` valida: `firstNames`, `firstLastName`, `email` no vacíos + `roleId > 0`.
+
+### UserService — `buildAuthHeaders`
+`core/services/user.service.ts` usa la función local `buildAuthHeaders()` (mismo patrón que `http-base.ts` de SSOMA):
+```ts
+function buildAuthHeaders(): Record<string, string> {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+```
+Nunca envía `Bearer null` — retorna `{}` si no hay token.
+
+### Búsqueda client-side
+`list.ts` tiene `searchTerm = ''` y getter `filteredData: UserDTO[]` que filtra `fullName.toLowerCase().includes(searchTerm.toLowerCase())`. La paginación sigue siendo server-side; el filtro solo afecta la página actual mostrada.

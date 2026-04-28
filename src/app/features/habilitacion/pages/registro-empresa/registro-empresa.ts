@@ -7,7 +7,11 @@ import Swal from 'sweetalert2';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { EmpresaContratistaCreateDto } from '../../dtos/empresa.model';
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+const LOGO_CONTEXTO = 'habilitacion/logos';
 
 @Component({
   selector: 'app-hab-registro-empresa',
@@ -21,8 +25,13 @@ export class RegistroEmpresa {
   passwordConfirm = '';
   saving = false;
 
+  uploadingFile = false;
+  logoUrl: string | null = null;
+  logoNombre: string | null = null;
+
   constructor(
     private empresaService: EmpresaContratistaService,
+    private uploadService: SharepointUploadService,
     private router: Router,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -44,12 +53,13 @@ export class RegistroEmpresa {
   }
 
   get canSubmit(): boolean {
-    if (this.saving) return false;
+    if (this.saving || this.uploadingFile) return false;
+    if (!this.model.ruc?.trim() || !/^\d{11}$/.test(this.model.ruc.trim())) return false;
     if (!this.model.razonSocial?.trim()) return false;
     if (!this.model.emailAdmin?.trim()) return false;
     if (!this.model.password || this.model.password.length < 6) return false;
+    if (!this.passwordConfirm) return false;
     if (this.model.password !== this.passwordConfirm) return false;
-    if (this.model.ruc && !/^\d{11}$/.test(this.model.ruc.trim())) return false;
     return true;
   }
 
@@ -59,6 +69,43 @@ export class RegistroEmpresa {
 
   get rucInvalido(): boolean {
     return !!this.model.ruc.trim() && !/^\d{11}$/.test(this.model.ruc.trim());
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_LOGO_BYTES) {
+      Swal.fire({ icon: 'warning', title: 'Archivo muy grande', text: 'El logo no debe superar 2 MB.' });
+      input.value = '';
+      return;
+    }
+
+    this.uploadingFile = true;
+    this.logoUrl = null;
+    this.logoNombre = file.name;
+    this.cdr.detectChanges();
+
+    this.uploadService.subirArchivo(file, LOGO_CONTEXTO).subscribe({
+      next: (result) => {
+        this.logoUrl = result.url;
+        this.uploadingFile = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.uploadingFile = false;
+        this.logoUrl = null;
+        this.logoNombre = null;
+        input.value = '';
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al subir el logo',
+          text: 'No se pudo subir la imagen. Puedes continuar el registro sin logo.',
+        });
+      },
+    });
   }
 
   submit(): void {
@@ -81,6 +128,7 @@ export class RegistroEmpresa {
       emailGerente: this.model.emailGerente?.trim() || undefined,
       emailAdmin: this.model.emailAdmin.trim(),
       emailSsoma: this.model.emailSsoma?.trim() || undefined,
+      logoUrl: this.logoUrl || undefined,
       tipo: 'CONTRATISTA',
       activo: false,
     };

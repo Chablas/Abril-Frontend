@@ -20,7 +20,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - EMPRESA',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
     },
   },
   {
@@ -29,7 +29,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - EQUIPOS Y MÁQUINAS',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
     },
   },
   {
@@ -48,7 +48,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - SCTR Y VIDA LEY',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
     },
   },
   {
@@ -58,7 +58,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - INDUCCIONES',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
     },
   },
   {
