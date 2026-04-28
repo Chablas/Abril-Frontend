@@ -22,6 +22,8 @@ export interface ProjectSubContractorDTO {
   paymentMethodId: number;
   paymentMethodDescription: string;
   advancePercentage?: number;
+  advanceAmount?: number | null;
+  termDays?: number | null;
   amount: number;
   currencyId: number;
   currencyCode: string;

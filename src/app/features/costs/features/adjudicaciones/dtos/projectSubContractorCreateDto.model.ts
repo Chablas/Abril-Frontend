@@ -6,6 +6,7 @@ export interface ProjectSubContractorCreateDTO {
   contractOriginId: number;
   paymentMethodId: number;
   advancePercentage?: number;
+  advanceAmount?: number;
   amount: number;
   currencyId: number;
   hasIgv: boolean;

@@ -7,6 +7,9 @@ export interface ContractorManagementDTO {
   contributorDistrict?: string | null;
   contributorProvince?: string | null;
   contributorDepartment?: string | null;
+  legalRepresentativeDni?: string | null;
+  legalRepresentativeFullName?: string | null;
+  legalEntityRegistryNumber?: string | null;
   contributorEconomicActivityDescription: string;
   contractorStateId: number;
   contractorStateDescription: string;

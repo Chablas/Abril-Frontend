@@ -6,6 +6,9 @@ export interface ContributorRegisterDTO {
   contributorProvince?: string | null;
   contributorDepartment?: string | null;
   economicActivityDescription?: string;
+  legalRepresentativeDni?: string | null;
+  legalRepresentativeFullName?: string | null;
+  legalEntityRegistryNumber?: string | null;
   emails: string[];
   graphAccessToken?: string;
   brochureFile?: File | null;

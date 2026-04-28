@@ -132,6 +132,9 @@ export class Create implements OnInit {
     form.append('paymentMethodId', this.createDto.paymentMethodId.toString());
     if (this.createDto.paymentMethodId === 2 && this.createDto.advancePercentage != null) {
       form.append('advancePercentage', this.createDto.advancePercentage.toString());
+      if (this.advanceAmount != null) {
+        form.append('advanceAmount', this.advanceAmount.toString());
+      }
     }
     form.append('amount', this.createDto.amount.toString());
     form.append('currencyId', this.createDto.currencyId.toString());

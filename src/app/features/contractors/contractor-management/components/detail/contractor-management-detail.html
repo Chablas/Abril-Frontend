@@ -63,6 +63,29 @@
 
     </div>
 
+    <!-- Representante legal -->
+    <div *ngIf="item.legalRepresentativeDni || item.legalRepresentativeFullName || item.legalEntityRegistryNumber">
+      <p class="text-xs text-gray-400 mb-3">Representante legal</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+
+        <div *ngIf="item.legalRepresentativeDni">
+          <p class="text-xs text-gray-400 mb-1">DNI</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeDni }}</p>
+        </div>
+
+        <div *ngIf="item.legalRepresentativeFullName">
+          <p class="text-xs text-gray-400 mb-1">Nombre completo</p>
+          <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeFullName }}</p>
+        </div>
+
+        <div *ngIf="item.legalEntityRegistryNumber" class="sm:col-span-2">
+          <p class="text-xs text-gray-400 mb-1">N° de partida registral</p>
+          <p class="text-sm text-gray-700">{{ item.legalEntityRegistryNumber }}</p>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Documentos -->
     <div *ngIf="item.brochureFileUrl || item.fichaRucFileUrl || item.referencesListFileUrl">
       <p class="text-xs text-gray-400 mb-2">Documentos adjuntos</p>
