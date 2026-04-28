@@ -107,12 +107,17 @@ export interface EmoQueryParams {
   pageSize?: number;
 }
 
+export type WorkerEstado = 'ACTIVO' | 'RETIRADO' | string;
+
 export interface EmoPorTrabajadorDto {
   workerId: number;
   nombreCompleto: string;
   dni: string;
+  estadoWorker?: WorkerEstado;
   empresaId?: number;
   empresa?: string;
+  proyectoId?: number;
+  proyecto?: string;
   tipoContrata?: string;
   tieneEmo: boolean;
   emoId?: number;
@@ -122,6 +127,37 @@ export interface EmoPorTrabajadorDto {
   aptitud?: AptitudEmo;
   estado?: EstadoEmo;
   diasRestantes?: number;
+  // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
+  // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
+  celular?: string;
+  emailPersonal?: string;
+  categoria?: string;
+  ocupacion?: string;
+  area?: string;
+  subarea?: string;
+  contrataCasa?: string;
+  obraOficina?: string;
+  jefatura?: string;
+  sctr?: boolean;
+  habilitadoObra?: boolean;
+  notas?: string;
+}
+
+export interface WorkerUpsertDto {
+  apellidoNombre: string;
+  dni?: string;
+  celular?: string | null;
+  emailPersonal?: string | null;
+  categoria?: string | null;
+  ocupacion?: string | null;
+  area?: string | null;
+  subarea?: string | null;
+  contrataCasa?: string | null;
+  obraOficina?: string | null;
+  jefatura?: string | null;
+  sctr?: boolean;
+  habilitadoObra?: boolean;
+  notas?: string | null;
 }
 
 export interface EmoPorTrabajadorQuery {

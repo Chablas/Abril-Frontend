@@ -11,10 +11,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { ApiMessageDTO } from "../../../../../core/dtos/api/ApiMessage.model";
+import { ProjectEmailsForm } from './components/project-emails-form/project-emails-form';
 
 @Component({
   selector: 'app-proyectos',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ProjectEmailsForm],
   templateUrl: './proyectos.html',
   styleUrl: './proyectos.css',
 })
@@ -45,6 +46,9 @@ export class Proyectos implements OnInit {
 
   showCreateModal = false;
   showEditModal = false;
+  showEmailsModal = false;
+  emailsProjectId = 0;
+  emailsProjectDescription = '';
 
   constructor(
     private projectService: ProjectService,
@@ -67,6 +71,23 @@ export class Proyectos implements OnInit {
     this.editDto.projectId = project.projectId;
     this.editDto.projectDescription = project.projectDescription;
     this.editDto.active = project.active;
+  }
+
+  openEmailsModal(project: ProjectGetDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.emailsProjectId = project.projectId;
+    this.emailsProjectDescription = project.projectDescription;
+    this.showEmailsModal = true;
+  }
+
+  closeEmailsModal() {
+    this.showEmailsModal = false;
+    this.emailsProjectId = 0;
+    this.emailsProjectDescription = '';
+  }
+
+  onEmailsSaved() {
+    this.closeEmailsModal();
   }
 
   closeModal(event: MouseEvent, number: number) {

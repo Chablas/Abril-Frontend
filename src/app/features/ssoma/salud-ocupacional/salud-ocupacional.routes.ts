@@ -5,6 +5,7 @@ import { EmoHistorial } from './emos/components/emo-historial/emo-historial';
 import { Programaciones } from './programaciones/programaciones';
 import { Interconsultas } from './interconsultas/interconsultas';
 import { Convalidaciones } from './convalidaciones/convalidaciones';
+import { Catalogos } from './catalogos/catalogos';
 
 export const SALUD_OCUPACIONAL_ROUTES: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -37,5 +38,10 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
     path: 'convalidaciones',
     component: Convalidaciones,
     data: { titulo: 'SALUD OCUPACIONAL - CONVALIDACIONES' },
+  },
+  {
+    path: 'catalogos',
+    component: Catalogos,
+    data: { titulo: 'SALUD OCUPACIONAL - CATÁLOGOS' },
   },
 ];

@@ -7,6 +7,8 @@ import { ProjectEditDTO } from "../dtos/project/projectEdit.model";
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from "../dtos/api/ApiMessage.model";
 import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
+import { ProjectEmailsDTO } from '../dtos/project/projectEmails.model';
+import { ProjectQueryParams } from '../dtos/project/projectQuery.model';
 
 @Injectable({
   providedIn: 'root',
@@ -20,6 +22,19 @@ export class ProjectService {
     const token = localStorage.getItem('access_token');
     return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged?page=${page}`, {
       headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  getProjectsPaged(query: ProjectQueryParams = {}): Observable<ProjectPagedDTO> {
+    const token = localStorage.getItem('access_token');
+    let params = new HttpParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+    return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
     });
   }
   getProjectPagedWithResidents(page: number): Observable<ProjectPagedDTO> {
@@ -50,6 +65,18 @@ export class ProjectService {
   deleteProject(projectId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  getProjectEmails(projectId: number): Observable<ProjectEmailsDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectEmailsDTO>(`${this.apiUrl}/${projectId}/emails`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+  patchProjectEmails(projectId: number, dto: ProjectEmailsDTO): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectId}/emails`, dto, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

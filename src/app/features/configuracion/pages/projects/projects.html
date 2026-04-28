@@ -1,0 +1,156 @@
+<section class="p-6 space-y-4">
+  <header class="section-bar">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800">Proyectos</h2>
+      <p class="text-sm text-gray-500">Gestión completa de proyectos y emails SSOMA.</p>
+    </div>
+  </header>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar por nombre</label>
+        <div class="search-input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Nombre del proyecto"
+            [ngModel]="filters.search"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="filter-label">Empresa</label>
+        <app-search-select
+          [options]="empresaOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.companyId"
+          [showLabel]="false"
+          placeholder="Todas"
+          (valueChange)="filters.companyId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.estado"
+          [showLabel]="false"
+          placeholder="Todos"
+          (valueChange)="filters.estado = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Empresa</th>
+            <th>Estado</th>
+            <th>Responsable</th>
+            <th>Email Residente</th>
+            <th>Email Responsable</th>
+            <th>Email RRHH</th>
+            <th>Email Coord. SSOMA</th>
+            <th>Email Coord. Admin</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th>Área m²</th>
+            <th>Activo</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td class="font-semibold text-gray-800">{{ item.projectDescription }}</td>
+            <td class="text-gray-600">{{ item.projectCode || '—' }}</td>
+            <td class="text-gray-600">{{ item.companyName || '—' }}</td>
+            <td>
+              <span class="badge border" [ngClass]="estadoBadgeClass(item.estado)">
+                {{ item.estado || '—' }}
+              </span>
+            </td>
+            <td class="text-gray-600">{{ item.responsable || '—' }}</td>
+            <td class="text-gray-600 cell-email">{{ item.emailResidente || '—' }}</td>
+            <td class="text-gray-600 cell-email">{{ item.emailResponsable || '—' }}</td>
+            <td class="text-gray-600 cell-email">{{ item.emailRrhh || '—' }}</td>
+            <td class="text-gray-600 cell-email">{{ item.emailCoordSsoma || '—' }}</td>
+            <td class="text-gray-600 cell-email">{{ item.emailCoordAdmin || '—' }}</td>
+            <td class="text-gray-600">{{ formatDate(item.fechaInicio) }}</td>
+            <td class="text-gray-600">{{ formatDate(item.fechaFin) }}</td>
+            <td class="text-gray-600 text-right">
+              {{ item.areaM2 != null ? (item.areaM2 | number: '1.0-2') : '—' }}
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="item.active ? 'chip-green' : 'chip-gray'">
+                {{ item.active ? 'Sí' : 'No' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEditModal(item)">
+                  Editar
+                </button>
+                <button type="button" class="btn-chip chip-green" (click)="openEmailsModal(item)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  Emails SSOMA
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="15" class="empty-row">Sin proyectos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</section>
+
+<app-project-emails-form
+  *ngIf="emailsModalOpen"
+  [open]="emailsModalOpen"
+  [projectId]="emailsProjectId"
+  [projectDescription]="emailsProjectDescription"
+  (closed)="closeEmailsModal()"
+  (saved)="onEmailsSaved()"
+></app-project-emails-form>
+
+<app-project-edit-form
+  *ngIf="editModalOpen"
+  [open]="editModalOpen"
+  [project]="editProject"
+  [empresas]="empresas"
+  (closed)="closeEditModal()"
+  (saved)="onEditSaved()"
+></app-project-edit-form>

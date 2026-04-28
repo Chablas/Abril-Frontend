@@ -158,8 +158,21 @@ export class NavigationService {
             { label: 'Programaciones', route: '/ssoma/salud-ocupacional/programaciones' },
             { label: 'Interconsultas', route: '/ssoma/salud-ocupacional/interconsultas' },
             { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones' },
+            { label: 'Catálogos', route: '/ssoma/salud-ocupacional/catalogos' },
           ],
         },
+      ],
+    },
+    {
+      key: 'configuracion',
+      label: 'Configuración',
+      iconKey: 'config',
+      baseRoute: '/configuracion',
+      roles: ['ADMINISTRADOR DEL SISTEMA', 'ADMINISTRADOR DE UDP'],
+      items: [
+        { label: 'Razones Sociales', route: '/configuracion/companies' },
+        { label: 'Proyectos', route: '/configuracion/projects' },
+        { label: 'Lista de Trabajadores', route: '/configuracion/workers' },
       ],
     },
   ];

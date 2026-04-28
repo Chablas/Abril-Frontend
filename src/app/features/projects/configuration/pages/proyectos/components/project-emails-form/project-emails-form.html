@@ -1,0 +1,37 @@
+<app-base-modal *ngIf="open" title="Emails SSOMA" width="w-[640px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <p class="project-line">
+      Proyecto: <span>{{ projectDescription }}</span>
+    </p>
+
+    <div class="form-grid">
+      <div>
+        <label class="field-label">Email Residente</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailResidente" />
+      </div>
+      <div>
+        <label class="field-label">Email Responsable</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailResponsable" />
+      </div>
+      <div>
+        <label class="field-label">Email RRHH</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailRrhh" />
+      </div>
+      <div>
+        <label class="field-label">Email Coord. SSOMA</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailCoordSsoma" />
+      </div>
+      <div>
+        <label class="field-label">Email Coord. Admin</label>
+        <input type="email" class="field-input" [(ngModel)]="model.emailCoordAdmin" />
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="saving" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

@@ -24,6 +24,7 @@
                         <th class="w-[50px]"></th>
                         <th class="w-[150px]">Descripción</th>
                         <th class="w-[150px]">Estado</th>
+                        <th class="w-[160px]">Emails SSOMA</th>
                     </tr>
                 </thead>
 
@@ -74,6 +75,17 @@
                               'bg-[#FAD5D4] text-[#D30000]': item.active == false }">
                                 {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
                             </span>
+                        </td>
+                        <td class="text-center">
+                            <button type="button"
+                                class="inline-flex items-center gap-[6px] bg-[#E5F7D1] py-[4px] px-[12px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer text-sm"
+                                (click)="openEmailsModal(item, $event)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64BC04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                    <polyline points="22,6 12,13 2,6" />
+                                </svg>
+                                Emails SSOMA
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -166,6 +178,15 @@
         </div>
     </div>
 </div>
+
+<app-project-emails-form
+    *ngIf="showEmailsModal"
+    [open]="showEmailsModal"
+    [projectId]="emailsProjectId"
+    [projectDescription]="emailsProjectDescription"
+    (closed)="closeEmailsModal()"
+    (saved)="onEmailsSaved()"
+></app-project-emails-form>
 
 <div *ngIf="loader" class="loader-overlay">
   <div class="loader"></div>

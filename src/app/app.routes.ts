@@ -58,6 +58,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/ssoma/ssoma.routes')
           .then(m => m.SSOMA_ROUTES)
+      },
+
+      {
+        path: 'configuracion',
+        loadChildren: () =>
+          import('./features/configuracion/configuracion.routes')
+          .then(m => m.CONFIGURACION_ROUTES)
       }
     ]
   },
