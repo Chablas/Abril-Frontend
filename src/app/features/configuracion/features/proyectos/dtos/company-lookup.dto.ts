@@ -6,4 +6,5 @@ export interface ContributorLookupDto {
   contributorDistrict?: string | null;
   contributorProvince?: string | null;
   contributorDepartment?: string | null;
+  legalEntityRegistryNumber?: string | null;
 }

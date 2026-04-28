@@ -50,6 +50,11 @@
         <p *ngIf="form.contributor.contributorProvince"><strong>Provincia fiscal:</strong> {{ form.contributor.contributorProvince }}</p>
         <p *ngIf="form.contributor.contributorDepartment"><strong>Departamento fiscal:</strong> {{ form.contributor.contributorDepartment }}</p>
       </div>
+      <div *ngIf="form.contributor" class="flex flex-col mt-[8px]">
+        <p class="text-[#64BC04]">N° Registro Persona Jurídica <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.legalEntityRegistryNumber" placeholder="Ej: 11234567"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
     </div>
 
     <div class="grid grid-cols-3 gap-[12px]">

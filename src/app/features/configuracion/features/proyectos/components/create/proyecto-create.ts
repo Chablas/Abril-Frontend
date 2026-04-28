@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,12 +8,14 @@ import { ProyectoService } from '../../services/proyecto.service';
 import { ProjectCreateDto } from '../../dtos/project-create.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { LoaderService } from '../../../../../../core/services/loader.service';
 
 interface ProjectFormModel {
   projectDescription: string;
   levelDescription: string;
   rucInput: string;
   contributor: ContributorLookupDto | null;
+  legalEntityRegistryNumber: string;
   projectDistrict: string;
   projectProvince: string;
   projectDepartment: string;
@@ -38,6 +40,8 @@ export class ProyectoCreate {
   constructor(
     private proyectoService: ProyectoService,
     private router: Router,
+    private loaderService: LoaderService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   lookupRuc(): void {
@@ -47,14 +51,18 @@ export class ProyectoCreate {
       return;
     }
     this.rucLookupLoading = true;
+    this.loaderService.show();
     this.proyectoService.getCompanyByRuc(ruc).subscribe({
       next: (contributor) => {
         this.form.contributor = contributor;
         this.form.rucInput = contributor.contributorRuc;
         this.rucLookupLoading = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.rucLookupLoading = false;
+        this.loaderService.hide();
         if (err.status === 404) {
           Swal.fire({ icon: 'error', title: 'RUC no encontrado', text: 'No se encontró información para el RUC ingresado.' });
           return;
@@ -67,6 +75,7 @@ export class ProyectoCreate {
   clearContributor(): void {
     this.form.contributor = null;
     this.form.rucInput = '';
+    this.form.legalEntityRegistryNumber = '';
   }
 
   save(): void {
@@ -77,6 +86,9 @@ export class ProyectoCreate {
       projectDescription: this.form.projectDescription.trim(),
       levelDescription: this.form.levelDescription.trim() || undefined,
       contributorId: this.form.contributor?.contributorId,
+      legalEntityRegistryNumber: this.form.contributor
+        ? this.form.legalEntityRegistryNumber.trim() || undefined
+        : undefined,
       projectDistrict: this.form.projectDistrict.trim() || undefined,
       projectProvince: this.form.projectProvince.trim() || undefined,
       projectDepartment: this.form.projectDepartment.trim() || undefined,
@@ -103,6 +115,7 @@ export class ProyectoCreate {
       levelDescription: '',
       rucInput: '',
       contributor: null,
+      legalEntityRegistryNumber: '',
       projectDistrict: '',
       projectProvince: '',
       projectDepartment: '',

@@ -210,7 +210,14 @@
             <label class="text-xs text-[#64BC04] mb-[4px]">Número de contrato <span class="text-red-400">*</span></label>
             <input type="number" [(ngModel)]="step2Form.contractNumber"
               min="0" max="2147483647" step="1"
-class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
+          <div *ngIf="item.paymentMethodId === 2" class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Número de pagaré <span class="text-red-400">*</span></label>
+            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber"
+              min="0" max="2147483647" step="1"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
           <!-- Plazo calculado automáticamente -->
@@ -263,6 +270,11 @@ class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none foc
           <div *ngIf="item.contractNumber != null">
             <p class="text-xs text-gray-400 mb-[2px]">Número de contrato</p>
             <p class="text-sm font-semibold text-gray-800">{{ item.contractNumber }}</p>
+          </div>
+
+          <div *ngIf="item.paymentMethodId === 2 && item.promissoryNoteNumber != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Número de pagaré</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.promissoryNoteNumber }}</p>
           </div>
 
         </div>

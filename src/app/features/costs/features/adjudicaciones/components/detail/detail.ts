@@ -44,7 +44,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -119,7 +119,8 @@ export class Detail implements OnInit {
     if (this.item.signingDate)    this.step2Form.signingDate    = this.item.signingDate.substring(0, 10);
     if (this.item.startDate)      this.step2Form.startDate      = this.item.startDate.substring(0, 10);
     if (this.item.endDate)        this.step2Form.endDate        = this.item.endDate.substring(0, 10);
-    if (this.item.contractNumber) this.step2Form.contractNumber = this.item.contractNumber;
+    if (this.item.contractNumber)        this.step2Form.contractNumber        = this.item.contractNumber;
+    if (this.item.promissoryNoteNumber)  this.step2Form.promissoryNoteNumber  = this.item.promissoryNoteNumber;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -189,7 +190,12 @@ export class Detail implements OnInit {
   canGoForward(): boolean {
     if (this.actualStatus === 1) return true;
     if (this.actualStatus === 2 && this.viewStep === 2) {
-      return !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate && this.step2Form.contractNumber != null && (this.step2Form.contractNumber as any) !== '');
+      const baseOk = !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate && this.step2Form.contractNumber != null && (this.step2Form.contractNumber as any) !== '');
+      if (!baseOk) return false;
+      if (this.item.paymentMethodId === 2) {
+        return this.step2Form.promissoryNoteNumber != null && (this.step2Form.promissoryNoteNumber as any) !== '';
+      }
+      return true;
     }
     if (this.actualStatus === 3 && this.viewStep === 3) {
       return this.allDocsApproved;
@@ -433,6 +439,8 @@ export class Detail implements OnInit {
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 2;
+        this.viewStep = 2;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Notificación enviada exitosamente', draggable: true });
       },
@@ -599,6 +607,12 @@ export class Detail implements OnInit {
         ? null
         : Math.trunc(Number(rawNum));
 
+    const rawPn = this.step2Form.promissoryNoteNumber;
+    const promissoryNoteNumber: number | null =
+      rawPn === null || rawPn === undefined || (rawPn as any) === ''
+        ? null
+        : Math.trunc(Number(rawPn));
+
     // Validar obligatorio
     if (contractNumber === null) {
       Swal.fire({ icon: 'warning', title: 'El número de contrato es obligatorio.', draggable: true });
@@ -616,15 +630,38 @@ export class Detail implements OnInit {
       return;
     }
 
+    if (this.item.paymentMethodId === 2 && promissoryNoteNumber === null) {
+      Swal.fire({ icon: 'warning', title: 'El número de pagaré es obligatorio.', draggable: true });
+      return;
+    }
+
+    if (promissoryNoteNumber !== null && (promissoryNoteNumber < 0 || promissoryNoteNumber > 2_147_483_647)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Número de pagaré inválido',
+        text: 'El número de pagaré debe ser un entero positivo menor a 2,147,483,647.',
+        draggable: true,
+      });
+      return;
+    }
+
     this.loaderService.show();
     this.adjudicacionesService.saveDates(this.item.projectSubContractorId, {
       signingDate:    this.step2Form.signingDate,
       startDate:      this.step2Form.startDate,
       endDate:        this.step2Form.endDate,
       contractNumber,
+      promissoryNoteNumber,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
+        this.item.projectSubContractorStatusId = 3;
+        this.item.signingDate          = this.step2Form.signingDate;
+        this.item.startDate            = this.step2Form.startDate;
+        this.item.endDate              = this.step2Form.endDate;
+        this.item.contractNumber       = contractNumber;
+        this.item.promissoryNoteNumber = promissoryNoteNumber;
+        this.viewStep = 3;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });
       },

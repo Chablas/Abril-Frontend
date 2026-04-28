@@ -9,6 +9,7 @@ export interface ProjectDto {
   contributorDistrict?: string;
   contributorProvince?: string;
   contributorDepartment?: string;
+  contributorLegalEntityRegistryNumber?: string;
   projectDistrict?: string;
   projectProvince?: string;
   projectDepartment?: string;

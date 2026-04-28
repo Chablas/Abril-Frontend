@@ -42,6 +42,7 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "jwt-decode": "^4.0.0",
+    "lightningcss": "^1.32.0",
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.26.17",
     "tslib": "^2.3.0",

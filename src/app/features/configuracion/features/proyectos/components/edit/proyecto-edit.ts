@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,12 +9,14 @@ import { ProjectDto } from '../../dtos/project.dto';
 import { ProjectEditDto } from '../../dtos/project-edit.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { LoaderService } from '../../../../../../core/services/loader.service';
 
 interface ProjectFormModel {
   projectDescription: string;
   levelDescription: string;
   rucInput: string;
   contributor: ContributorLookupDto | null;
+  legalEntityRegistryNumber: string;
   projectDistrict: string;
   projectProvince: string;
   projectDepartment: string;
@@ -40,6 +42,8 @@ export class ProyectoEdit implements OnInit {
   constructor(
     private proyectoService: ProyectoService,
     private router: Router,
+    private loaderService: LoaderService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -57,8 +61,10 @@ export class ProyectoEdit implements OnInit {
               contributorDistrict: this.project.contributorDistrict ?? null,
               contributorProvince: this.project.contributorProvince ?? null,
               contributorDepartment: this.project.contributorDepartment ?? null,
+              legalEntityRegistryNumber: this.project.contributorLegalEntityRegistryNumber ?? null,
             }
           : null,
+      legalEntityRegistryNumber: this.project.contributorLegalEntityRegistryNumber ?? '',
       projectDistrict: this.project.projectDistrict ?? '',
       projectProvince: this.project.projectProvince ?? '',
       projectDepartment: this.project.projectDepartment ?? '',
@@ -74,14 +80,18 @@ export class ProyectoEdit implements OnInit {
       return;
     }
     this.rucLookupLoading = true;
+    this.loaderService.show();
     this.proyectoService.getCompanyByRuc(ruc).subscribe({
       next: (contributor) => {
         this.form.contributor = contributor;
         this.form.rucInput = contributor.contributorRuc;
         this.rucLookupLoading = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.rucLookupLoading = false;
+        this.loaderService.hide();
         if (err.status === 404) {
           Swal.fire({ icon: 'error', title: 'RUC no encontrado', text: 'No se encontró información para el RUC ingresado.' });
           return;
@@ -94,6 +104,7 @@ export class ProyectoEdit implements OnInit {
   clearContributor(): void {
     this.form.contributor = null;
     this.form.rucInput = '';
+    this.form.legalEntityRegistryNumber = '';
   }
 
   save(): void {
@@ -105,6 +116,9 @@ export class ProyectoEdit implements OnInit {
       projectDescription: this.form.projectDescription.trim(),
       levelDescription: this.form.levelDescription.trim() || undefined,
       contributorId: this.form.contributor?.contributorId,
+      legalEntityRegistryNumber: this.form.contributor
+        ? this.form.legalEntityRegistryNumber.trim() || undefined
+        : undefined,
       projectDistrict: this.form.projectDistrict.trim() || undefined,
       projectProvince: this.form.projectProvince.trim() || undefined,
       projectDepartment: this.form.projectDepartment.trim() || undefined,
@@ -131,6 +145,7 @@ export class ProyectoEdit implements OnInit {
       levelDescription: '',
       rucInput: '',
       contributor: null,
+      legalEntityRegistryNumber: '',
       projectDistrict: '',
       projectProvince: '',
       projectDepartment: '',
