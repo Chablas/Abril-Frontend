@@ -609,7 +609,30 @@
           Al confirmar se enviará un correo de notificación a <strong>costos y presupuestos</strong> y al <strong>staff de obra</strong> del proyecto.
         </p>
 
-        <!-- Checkbox Ing. Carlos Oriundo -->
+        <!-- Checkbox Costos y Presupuestos -->
+        <label class="flex items-start gap-[10px] cursor-pointer select-none group"
+          [class.opacity-50]="actualStatus !== 6">
+          <div class="relative mt-[2px] shrink-0">
+            <input type="checkbox" class="sr-only"
+              [(ngModel)]="step6ConfirmedCostos"
+              [disabled]="actualStatus !== 6" />
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+              [ngClass]="step6ConfirmedCostos
+                ? 'bg-[#64BC04] border-[#64BC04]'
+                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+              <svg *ngIf="step6ConfirmedCostos" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                stroke-width="3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm font-medium"
+            [ngClass]="step6ConfirmedCostos ? 'text-[#64BC04]' : 'text-gray-600'">
+            Firmado por Costos y Presupuestos
+          </span>
+        </label>
+
+        <!-- Checkbox Gerente Inmobiliario -->
         <label class="flex items-start gap-[10px] cursor-pointer select-none group"
           [class.opacity-50]="actualStatus !== 6">
           <div class="relative mt-[2px] shrink-0">
@@ -628,11 +651,11 @@
           </div>
           <span class="text-sm font-medium"
             [ngClass]="step6ConfirmedOriundo ? 'text-[#64BC04]' : 'text-gray-600'">
-            Firmado por el Ing. Carlos Oriundo
+            Firmado por el Gerente Inmobiliario
           </span>
         </label>
 
-        <!-- Checkbox Sr. Toratto -->
+        <!-- Checkbox Gerente General -->
         <label class="flex items-start gap-[10px] cursor-pointer select-none group"
           [class.opacity-50]="actualStatus !== 6">
           <div class="relative mt-[2px] shrink-0">
@@ -651,7 +674,7 @@
           </div>
           <span class="text-sm font-medium"
             [ngClass]="step6ConfirmedToratto ? 'text-[#64BC04]' : 'text-gray-600'">
-            Firmado por el Sr. Toratto
+            Firmado por el Gerente General
           </span>
         </label>
 

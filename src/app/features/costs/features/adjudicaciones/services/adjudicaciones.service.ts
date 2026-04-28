@@ -51,6 +51,13 @@ export class AdjudicacionesService {
     });
   }
 
+  advanceToStep4(projectSubContractorId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/advance-to-step4`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
   updateStatus(projectSubContractorId: number, projectSubContractorStatusId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/status`, { projectSubContractorStatusId }, {

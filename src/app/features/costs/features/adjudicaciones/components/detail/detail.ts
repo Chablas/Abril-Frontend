@@ -86,7 +86,8 @@ export class Detail implements OnInit {
   /** Paso 6 — confirmación de firmas */
   step6ConfirmedOriundo = false;
   step6ConfirmedToratto = false;
-  get step6AllConfirmed(): boolean { return this.step6ConfirmedOriundo && this.step6ConfirmedToratto; }
+  step6ConfirmedCostos  = false;
+  get step6AllConfirmed(): boolean { return this.step6ConfirmedOriundo && this.step6ConfirmedToratto && this.step6ConfirmedCostos; }
 
   currentDocType: string | null = null;
   uploadingDoc: string | null = null;
@@ -126,8 +127,9 @@ export class Detail implements OnInit {
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
       this.step5ArrivalOption = this.item.arrivedWithObservations ? 'with_observations' : 'complete';
     }
-    this.step6ConfirmedOriundo   = this.item.projectSubContractorStatusId > 6;
-    this.step6ConfirmedToratto   = this.item.projectSubContractorStatusId > 6;
+    this.step6ConfirmedOriundo  = this.item.projectSubContractorStatusId > 6;
+    this.step6ConfirmedToratto  = this.item.projectSubContractorStatusId > 6;
+    this.step6ConfirmedCostos   = this.item.projectSubContractorStatusId > 6;
   }
 
   private initDocForms(): void {
@@ -520,7 +522,7 @@ export class Detail implements OnInit {
 
   private advanceToApproved(): void {
     this.loaderService.show();
-    this.adjudicacionesService.updateStatus(this.item.projectSubContractorId, 4).subscribe({
+    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 4;
