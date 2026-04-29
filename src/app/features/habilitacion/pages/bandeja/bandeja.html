@@ -1,0 +1,108 @@
+<div class="card">
+  <div class="contadores-bar">
+    <div class="contador-item">
+      <span class="contador-num">{{ totalRecords }}</span>
+      <span class="contador-label">Total pendientes</span>
+    </div>
+    <div class="contador-item contador-blue">
+      <span class="contador-num">{{ getTotal('TRABAJADOR') }}</span>
+      <span class="contador-label">Trabajadores (página)</span>
+    </div>
+    <div class="contador-item contador-green">
+      <span class="contador-num">{{ getTotal('EMPRESA') }}</span>
+      <span class="contador-label">Empresas (página)</span>
+    </div>
+    <div class="contador-item contador-gray">
+      <span class="contador-num">{{ getTotal('EQUIPO') }}</span>
+      <span class="contador-label">Equipos (página)</span>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <select class="field-input" [(ngModel)]="filtroTipo" (change)="onFilter()">
+        <option value="">Todos los tipos</option>
+        <option value="TRABAJADOR">Trabajadores</option>
+        <option value="EMPRESA">Empresas</option>
+        <option value="EQUIPO">Equipos</option>
+      </select>
+      <select class="field-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
+        <option value="">Todos los responsables</option>
+        <option value="SSOMA">SSOMA</option>
+        <option value="ADMINISTRACION">Administración</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Entregable</th>
+          <th>Entidad</th>
+          <th>Empresa</th>
+          <th>Proyecto</th>
+          <th>Vigencia prop.</th>
+          <th>Responsable</th>
+          <th>Fecha envío</th>
+          <th>Archivo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>
+            <span class="btn-chip" [class]="getTipoClass(item.tipo)">
+              {{ item.tipo }}
+            </span>
+          </td>
+          <td>{{ item.nombreEntregable }}</td>
+          <td>{{ item.entidadNombre }}</td>
+          <td>{{ item.empresaNombre ?? '—' }}</td>
+          <td>{{ item.proyectoNombre ?? '—' }}</td>
+          <td>{{ item.vigencia ? (item.vigencia | date: 'dd/MM/yyyy') : '—' }}</td>
+          <td>{{ item.responsable }}</td>
+          <td>
+            {{ item.fechaEnvio ? (item.fechaEnvio | date: 'dd/MM/yyyy HH:mm') : '—' }}
+          </td>
+          <td>
+            <button
+              type="button"
+              class="btn-link"
+              *ngIf="item.archivoUrl"
+              (click)="verArchivo(item)"
+            >
+              Ver 📄
+            </button>
+            <span *ngIf="!item.archivoUrl" class="text-muted">—</span>
+          </td>
+          <td>
+            <div class="acciones-cell">
+              <button type="button" class="btn-chip chip-green" (click)="aprobar(item)">
+                ✓ Aprobar
+              </button>
+              <button type="button" class="btn-chip chip-red" (click)="rechazar(item)">
+                ✕ Rechazar
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && items.length === 0">
+          <td colspan="10" class="empty-row">
+            No hay documentos pendientes de aprobación.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="paginator-wrapper" *ngIf="totalPages > 1">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    />
+  </div>
+</div>

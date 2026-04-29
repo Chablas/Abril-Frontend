@@ -1,0 +1,207 @@
+<section class="p-6 space-y-4">
+  <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800">Programaciones</h2>
+      <p class="text-sm text-gray-500">
+        Citas médicas y exámenes programados por trabajador.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <app-view-toggle
+        [modes]="viewModes"
+        [value]="viewMode"
+        (valueChange)="onViewModeChange($event)"
+      ></app-view-toggle>
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Nueva programación
+      </button>
+    </div>
+  </header>
+
+  <!-- Vista Lista -->
+  <ng-container *ngIf="viewMode === 'list'">
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-search">
+          <label class="filter-label">Buscar</label>
+          <div class="search-input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M21 21l-4.3-4.3"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Nombre o DNI"
+              [ngModel]="filters.search"
+              (ngModelChange)="onSearchChange($event)"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="filter-label">Estado</label>
+          <app-search-select
+            [options]="estadoOptions"
+            valueField="id"
+            displayField="nombre"
+            [value]="filters.estado"
+            [showLabel]="false"
+            placeholder="Todos"
+            (valueChange)="filters.estado = $event; onFilterChange()"
+          ></app-search-select>
+        </div>
+
+        <div>
+          <label class="filter-label">Desde</label>
+          <input
+            type="date"
+            class="field-input"
+            [(ngModel)]="filters.desde"
+            (change)="onFilterChange()"
+          />
+        </div>
+
+        <div>
+          <label class="filter-label">Hasta</label>
+          <input
+            type="date"
+            class="field-input"
+            [(ngModel)]="filters.hasta"
+            (change)="onFilterChange()"
+          />
+        </div>
+      </div>
+
+      <div *ngIf="hasActiveFilters" class="pt-2">
+        <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>Tipo EMO</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Clínica</th>
+              <th>Médico</th>
+              <th>Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items">
+              <td>
+                <div class="worker-cell">
+                  <span class="worker-name">{{ item.workerNombre }}</span>
+                  <span class="worker-dni">DNI · {{ item.workerDni }}</span>
+                </div>
+              </td>
+              <td>{{ item.tipoEmo }}</td>
+              <td>{{ formatFecha(item.fecha) }}</td>
+              <td>{{ item.hora || '—' }}</td>
+              <td class="text-gray-600">{{ item.clinica || '—' }}</td>
+              <td class="text-gray-600">{{ item.medico || '—' }}</td>
+              <td>
+                <span class="badge border" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+              </td>
+              <td class="text-right">
+                <div class="row-actions">
+                  <button
+                    *ngIf="puedeConfirmar(item)"
+                    type="button"
+                    class="btn-chip chip-green"
+                    title="Confirmar"
+                    (click)="cambiarEstado(item, 'Confirmada')"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    *ngIf="puedeMarcarNoPresento(item)"
+                    type="button"
+                    class="btn-chip chip-orange"
+                    title="No se presentó"
+                    (click)="cambiarEstado(item, 'No se presentó')"
+                  >
+                    No presentó
+                  </button>
+                  <button
+                    *ngIf="puedeCancelar(item)"
+                    type="button"
+                    class="btn-chip chip-gray"
+                    title="Cancelar"
+                    (click)="cambiarEstado(item, 'Cancelada')"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="!loading && items.length === 0">
+              <td colspan="8" class="empty-row">Sin programaciones.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+        <app-paginator
+          [totalRecords]="totalRecords"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="onPageChange($event)"
+        ></app-paginator>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Vista Calendario -->
+  <ng-container *ngIf="viewMode === 'calendar'">
+    <div class="calendar-card">
+      <div class="calendar-header">
+        <button type="button" class="btn-ghost" (click)="prevSemana()">← Anterior</button>
+        <div class="calendar-title">
+          <span>{{ semanaLabel }}</span>
+          <button type="button" class="btn-link" (click)="hoySemana()">Hoy</button>
+        </div>
+        <button type="button" class="btn-ghost" (click)="nextSemana()">Siguiente →</button>
+      </div>
+
+      <div class="calendar-grid">
+        <div *ngFor="let dia of calendarioDias" class="calendar-day">
+          <div class="day-head">
+            <span class="day-name">
+              {{ dia.fecha | date: 'EEEE' }}
+            </span>
+            <span class="day-date">{{ dia.fecha | date: 'dd/MM' }}</span>
+          </div>
+          <div class="day-body">
+            <div *ngIf="dia.items.length === 0" class="day-empty">—</div>
+            <div *ngFor="let p of dia.items" class="event-chip">
+              <div class="event-time">{{ p.hora || '--' }}</div>
+              <div class="event-body">
+                <div class="event-name">{{ p.workerNombre }}</div>
+                <div class="event-sub">{{ p.tipoEmo }}<span *ngIf="p.clinica"> · {{ p.clinica }}</span></div>
+                <span class="badge border mt-1" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</section>
+
+<app-programacion-create
+  *ngIf="createOpen"
+  [open]="createOpen"
+  (closed)="closeCreate()"
+  (saved)="onCreated()"
+></app-programacion-create>

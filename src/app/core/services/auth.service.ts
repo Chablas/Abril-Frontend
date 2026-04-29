@@ -2,15 +2,53 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequestDTO } from '../dtos/auth/login-request.model';
 import { LoginResponseDTO } from '../dtos/auth/login-response.model';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
+import { ContratistaTokenDto, EmpresaSimpleDto } from '../../features/habilitacion/dtos/empresa.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/auth`;
+  private readonly habAuthUrl = `${environment.apiUrl}api/v1/habilitacion/auth`;
 
   constructor(private http: HttpClient) {}
+
+  loginContratista(email: string, password: string): Observable<ContratistaTokenDto> {
+    return this.http
+      .post<ContratistaTokenDto>(`${this.habAuthUrl}/login`, { email, password })
+      .pipe(tap((res) => this.persistContratistaToken(res)));
+  }
+
+  activarCuenta(dto: { token: string; password: string }): Observable<ContratistaTokenDto> {
+    return this.http
+      .post<ContratistaTokenDto>(`${this.habAuthUrl}/activar`, dto)
+      .pipe(tap((res) => this.persistContratistaToken(res)));
+  }
+
+  resetPassword(dto: { token: string; nuevaPassword: string }): Observable<void> {
+    return this.http.post<void>(`${this.habAuthUrl}/reset-password`, dto);
+  }
+
+  solicitarReset(email: string): Observable<void> {
+    return this.http.post<void>(`${this.habAuthUrl}/solicitar-reset`, { email });
+  }
+
+  getEmpresasContratistas(): Observable<EmpresaSimpleDto[]> {
+    return this.http.get<EmpresaSimpleDto[]>(`${this.habAuthUrl}/empresas`);
+  }
+
+  private persistContratistaToken(res: ContratistaTokenDto): void {
+    localStorage.setItem('access_token', res.token);
+    localStorage.setItem(
+      'user',
+      JSON.stringify({
+        empresaId: res.empresaId,
+        razonSocial: res.razonSocial,
+        tipo: res.tipo,
+      }),
+    );
+  }
 
   setPassword(data: { token: string; password: string | null | undefined }) {
     return this.http.post(`${this.apiUrl}/set-password`, data);
@@ -58,8 +96,9 @@ export class AuthService {
     if (!token) return [];
 
     const decoded: any = jwtDecode(token);
-    
-    const roles = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+    let roles =
+      decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? decoded.role;
 
     if (!roles) return [];
 
@@ -68,5 +107,9 @@ export class AuthService {
 
   hasRole(role: string): boolean {
     return this.getRoles().includes(role);
+  }
+
+  isContratista(): boolean {
+    return this.hasRole('CONTRATISTA');
   }
 }

@@ -16,7 +16,12 @@
   </div>
 
   <div class="flex flex-col justify-center items-center">
-    <app-user-list class="w-full" (pagedData)="updatePagination($event)"></app-user-list>
+    <app-user-list
+      class="w-full"
+      (pagedData)="updatePagination($event)"
+      (editUser)="openEditForm($event)"
+      (userToggled)="reloadUsers()"
+    ></app-user-list>
     <app-paginator
       class="w-full"
       [totalRecords]="totalRecords"
@@ -32,3 +37,11 @@
   (closeModal)="showCreateModal = false"
   (userCreated)="reloadUsers()"
 ></app-user-create>
+
+<app-user-edit-form
+  *ngIf="formOpen"
+  [open]="formOpen"
+  [initial]="formUser"
+  (closed)="formOpen = false"
+  (saved)="onEditSaved()"
+></app-user-edit-form>

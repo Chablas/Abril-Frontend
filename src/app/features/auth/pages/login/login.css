@@ -1,0 +1,52 @@
+.login-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #6b7280;
+  border: 0;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+
+.login-tab:hover {
+  color: #111827;
+}
+
+.login-tab.active {
+  color: #64bc04;
+  border-bottom-color: #64bc04;
+  font-weight: 600;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: #64bc04;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+}
+
+.password-toggle:hover {
+  text-decoration: underline;
+}

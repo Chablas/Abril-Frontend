@@ -13,14 +13,37 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 
 interface ProjectFormModel {
   projectDescription: string;
+  codigo: string;
   levelDescription: string;
+  estado: string;
+
   rucInput: string;
   contributor: ContributorLookupDto | null;
   legalEntityRegistryNumber: string;
+
   projectDistrict: string;
   projectProvince: string;
   projectDepartment: string;
   projectLocation: string;
+
+  responsableArqCom: string;
+  responsableArqComId: number | null;
+
+  fechaInicio: string;
+  fechaFin: string;
+  inicioObra: string;
+  finObra: string;
+
+  numNiveles: string;
+  numSotanos: string;
+  pisos: string;
+  tiempoConstruccion: number | null;
+  areaM2: number | null;
+  areaTechadaM2: number | null;
+  hhTotalCasa: number | null;
+  cantTrabajadoresCasa: string;
+
+  tieneArquitecturaComercial: boolean;
   active: boolean;
 }
 
@@ -49,7 +72,10 @@ export class ProyectoEdit implements OnInit {
   ngOnInit(): void {
     this.form = {
       projectDescription: this.project.projectDescription,
+      codigo: this.project.codigo ?? '',
       levelDescription: this.project.levelDescription ?? '',
+      estado: this.project.estado ?? '',
+
       rucInput: this.project.contributorRuc ?? '',
       contributor:
         this.project.contributorId != null && this.project.contributorRuc
@@ -65,10 +91,30 @@ export class ProyectoEdit implements OnInit {
             }
           : null,
       legalEntityRegistryNumber: this.project.contributorLegalEntityRegistryNumber ?? '',
-      projectDistrict: this.project.projectDistrict ?? '',
-      projectProvince: this.project.projectProvince ?? '',
+
+      projectDistrict:   this.project.projectDistrict   ?? '',
+      projectProvince:   this.project.projectProvince   ?? '',
       projectDepartment: this.project.projectDepartment ?? '',
-      projectLocation: this.project.projectLocation ?? '',
+      projectLocation:   this.project.projectLocation   ?? '',
+
+      responsableArqCom:   this.project.responsableArqCom   ?? '',
+      responsableArqComId: this.project.responsableArqComId ?? null,
+
+      fechaInicio: this.project.fechaInicio ? this.project.fechaInicio.substring(0, 10) : '',
+      fechaFin:    this.project.fechaFin    ? this.project.fechaFin.substring(0, 10)    : '',
+      inicioObra:  this.project.inicioObra  ? this.project.inicioObra.substring(0, 10)  : '',
+      finObra:     this.project.finObra     ? this.project.finObra.substring(0, 10)     : '',
+
+      numNiveles:           this.project.numNiveles           ?? '',
+      numSotanos:           this.project.numSotanos           ?? '',
+      pisos:                this.project.pisos                ?? '',
+      tiempoConstruccion:   this.project.tiempoConstruccion   ?? null,
+      areaM2:               this.project.areaM2               ?? null,
+      areaTechadaM2:        this.project.areaTechadaM2        ?? null,
+      hhTotalCasa:          this.project.hhTotalCasa          ?? null,
+      cantTrabajadoresCasa: this.project.cantTrabajadoresCasa ?? '',
+
+      tieneArquitecturaComercial: this.project.tieneArquitecturaComercial ?? false,
       active: this.project.active,
     };
   }
@@ -114,15 +160,38 @@ export class ProyectoEdit implements OnInit {
     const dto: ProjectEditDto = {
       projectId: this.project.projectId,
       projectDescription: this.form.projectDescription.trim(),
-      levelDescription: this.form.levelDescription.trim() || undefined,
+      codigo:             this.form.codigo.trim() || undefined,
+      levelDescription:   this.form.levelDescription.trim() || undefined,
+      estado:             this.form.estado.trim() || undefined,
+
       contributorId: this.form.contributor?.contributorId,
       legalEntityRegistryNumber: this.form.contributor
         ? this.form.legalEntityRegistryNumber.trim() || undefined
         : undefined,
-      projectDistrict: this.form.projectDistrict.trim() || undefined,
-      projectProvince: this.form.projectProvince.trim() || undefined,
+
+      projectDistrict:   this.form.projectDistrict.trim()   || undefined,
+      projectProvince:   this.form.projectProvince.trim()   || undefined,
       projectDepartment: this.form.projectDepartment.trim() || undefined,
-      projectLocation: this.form.projectLocation.trim() || undefined,
+      projectLocation:   this.form.projectLocation.trim()   || undefined,
+
+      responsableArqCom:   this.form.responsableArqCom.trim() || undefined,
+      responsableArqComId: this.form.responsableArqComId ?? undefined,
+
+      fechaInicio: this.form.fechaInicio || undefined,
+      fechaFin:    this.form.fechaFin    || undefined,
+      inicioObra:  this.form.inicioObra  || undefined,
+      finObra:     this.form.finObra     || undefined,
+
+      numNiveles:           this.form.numNiveles.trim()           || undefined,
+      numSotanos:           this.form.numSotanos.trim()           || undefined,
+      pisos:                this.form.pisos.trim()                || undefined,
+      tiempoConstruccion:   this.form.tiempoConstruccion ?? undefined,
+      areaM2:               this.form.areaM2              ?? undefined,
+      areaTechadaM2:        this.form.areaTechadaM2       ?? undefined,
+      hhTotalCasa:          this.form.hhTotalCasa         ?? undefined,
+      cantTrabajadoresCasa: this.form.cantTrabajadoresCasa.trim() || undefined,
+
+      tieneArquitecturaComercial: this.form.tieneArquitecturaComercial,
       active: this.form.active,
     };
 
@@ -142,14 +211,37 @@ export class ProyectoEdit implements OnInit {
   private emptyForm(): ProjectFormModel {
     return {
       projectDescription: '',
+      codigo: '',
       levelDescription: '',
+      estado: '',
+
       rucInput: '',
       contributor: null,
       legalEntityRegistryNumber: '',
+
       projectDistrict: '',
       projectProvince: '',
       projectDepartment: '',
       projectLocation: '',
+
+      responsableArqCom: '',
+      responsableArqComId: null,
+
+      fechaInicio: '',
+      fechaFin: '',
+      inicioObra: '',
+      finObra: '',
+
+      numNiveles: '',
+      numSotanos: '',
+      pisos: '',
+      tiempoConstruccion: null,
+      areaM2: null,
+      areaTechadaM2: null,
+      hhTotalCasa: null,
+      cantTrabajadoresCasa: '',
+
+      tieneArquitecturaComercial: false,
       active: true,
     };
   }

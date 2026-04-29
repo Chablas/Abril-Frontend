@@ -1,0 +1,137 @@
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { LoaderService } from '../../../../core/services/loader.service';
+import { ErrorService } from '../../../../core/services/error.service';
+import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { CompanyEditForm } from './components/company-edit-form/company-edit-form';
+
+@Component({
+  selector: 'app-config-companies',
+  standalone: true,
+  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm],
+  templateUrl: './companies.html',
+  styleUrl: './companies.css',
+})
+export class Companies implements OnInit, OnDestroy {
+  readonly pageSize = 15;
+
+  filters = { search: '', estado: '' as '' | 'activo' | 'inactivo' };
+
+  all: EmpresaSimpleDto[] = [];
+  filtered: EmpresaSimpleDto[] = [];
+  pageItems: EmpresaSimpleDto[] = [];
+
+  totalRecords = 0;
+  totalPages = 1;
+  currentPage = 1;
+  loading = false;
+
+  editModalOpen = false;
+  editCompany: EmpresaSimpleDto | null = null;
+
+  private searchChange$ = new Subject<string>();
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private service: CatalogosSaludService,
+    private loaderService: LoaderService,
+    private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
+  ) {}
+
+  ngOnInit(): void {
+    this.searchChange$
+      .pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(() => this.applyFilters(1));
+    this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  load(): void {
+    this.loading = true;
+    this.loaderService.show();
+    this.service.invalidateCache();
+    this.service.getEmpresas().subscribe({
+      next: (res) => {
+        this.all = res ?? [];
+        this.applyFilters(1);
+        this.loading = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  applyFilters(page: number): void {
+    const q = this.filters.search.trim().toLowerCase();
+    const estado = this.filters.estado;
+    this.filtered = this.all.filter((e) => {
+      const activo = e.activo ?? true;
+      if (estado === 'activo' && !activo) return false;
+      if (estado === 'inactivo' && activo) return false;
+      if (!q) return true;
+      return (
+        e.nombre.toLowerCase().includes(q) ||
+        (e.ruc ?? '').toLowerCase().includes(q) ||
+        (e.direccion ?? '').toLowerCase().includes(q) ||
+        (e.partidaRegistral ?? '').toLowerCase().includes(q) ||
+        (e.tipoActividad ?? '').toLowerCase().includes(q)
+      );
+    });
+    this.totalRecords = this.filtered.length;
+    this.totalPages = Math.max(Math.ceil(this.totalRecords / this.pageSize), 1);
+    this.currentPage = Math.min(Math.max(page, 1), this.totalPages);
+    const start = (this.currentPage - 1) * this.pageSize;
+    this.pageItems = this.filtered.slice(start, start + this.pageSize);
+  }
+
+  onSearchChange(value: string): void {
+    this.filters.search = value;
+    this.searchChange$.next(value);
+  }
+
+  onFilterChange(): void {
+    this.applyFilters(1);
+  }
+
+  clearFilters(): void {
+    this.filters = { search: '', estado: '' };
+    this.applyFilters(1);
+  }
+
+  onPageChange(page: number): void {
+    this.applyFilters(page);
+  }
+
+  openEditModal(company: EmpresaSimpleDto): void {
+    this.editCompany = company;
+    this.editModalOpen = true;
+  }
+
+  closeEditModal(): void {
+    this.editModalOpen = false;
+    this.editCompany = null;
+  }
+
+  onEditSaved(): void {
+    this.closeEditModal();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.filters.search || this.filters.estado);
+  }
+}

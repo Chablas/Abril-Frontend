@@ -1,0 +1,404 @@
+<div class="page-root">
+
+  <!-- STATS BAR — admin only -->
+  <div class="stats-bar" *ngIf="isAdmin()">
+    <div class="stats-left">
+      <div class="stat-block">
+        <span class="stat-num">{{ totalRecords }}</span>
+        <span class="stat-lbl">Trabajadores</span>
+      </div>
+    </div>
+    <div class="stats-right">
+      <button class="btn-ghost-sm" (click)="loadWorkers(currentPage)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
+        </svg>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- 3-COLUMN GRID -->
+  <div class="hab-layout">
+
+    <!-- ── LEFT COLUMN: worker list ── -->
+    <aside class="col-workers">
+
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar nombre o DNI..."
+          [(ngModel)]="search"
+          (input)="onSearch()"
+        />
+      </div>
+
+      <div class="workers-list">
+        <div *ngIf="loading" class="list-msg">Cargando…</div>
+        <div *ngIf="!loading && workers.length === 0" class="list-msg">
+          Sin trabajadores con los filtros aplicados.
+        </div>
+
+        <div
+          *ngFor="let w of workers"
+          class="worker-card"
+          [class.worker-card--sel]="selectedWorker?.workerId === w.workerId"
+          (click)="selectWorker(w)"
+        >
+          <div class="wc-top">
+            <span class="wc-name">{{ w.apellidoNombre }}</span>
+            <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
+          </div>
+          <div class="wc-meta">
+            <span class="wc-dni">{{ w.dni }}</span>
+            <span class="wc-empresa" *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
+          </div>
+          <div class="wc-foot">
+            <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
+            <div class="wc-actions" *ngIf="isAdmin()">
+              <button
+                class="icon-btn"
+                title="Cambiar obra"
+                (click)="$event.stopPropagation(); abrirCambiarObra(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
+                  <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                  <path d="M12 8v8m-3-3 3 3 3-3"/>
+                </svg>
+              </button>
+              <button
+                *ngIf="w.estadoWorker === 'RETIRADO'"
+                class="icon-btn"
+                title="Reingreso"
+                (click)="$event.stopPropagation(); abrirReingreso(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M9 14 4 9l5-5"/>
+                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="paginator-wrap" *ngIf="totalPages > 1">
+        <app-paginator
+          [totalRecords]="totalRecords"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="onPageChange($event)"
+        />
+      </div>
+    </aside>
+
+    <!-- ── CENTER COLUMN: entregables ── -->
+    <main class="col-entregables">
+      <ng-container *ngIf="selectedWorker; else noWorkerTpl">
+
+        <div class="worker-hdr">
+          <div class="worker-hdr-left">
+            <h2 class="worker-hdr-name">{{ selectedWorker.apellidoNombre }}</h2>
+            <span [class]="getEstadoClass(selectedWorker.estadoHabilitacion)">
+              {{ selectedWorker.estadoHabilitacion }}
+            </span>
+          </div>
+          <div class="worker-hdr-right">
+            <span class="obra-lbl">OBRA</span>
+            <span class="obra-val">{{ selectedWorker.proyectoActual ?? '—' }}</span>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <div *ngIf="loadingEntregables" class="list-msg">Cargando entregables…</div>
+
+          <table *ngIf="!loadingEntregables" class="ent-table">
+            <thead>
+              <tr>
+                <th class="th-doc">DOCUMENTO</th>
+                <th class="th-estado">ESTADO</th>
+                <th class="th-vig">VIGENCIA</th>
+                <th class="th-act"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="entregables.length === 0">
+                <td colspan="4" class="ent-empty">Sin entregables para este trabajador.</td>
+              </tr>
+              <tr
+                *ngFor="let e of entregables"
+                class="ent-row"
+                [class.ent-row--sel]="selectedEntregable?.id === e.id"
+                (click)="selectEntregable(e)"
+              >
+                <td class="td-doc">
+                  <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+                  <span class="doc-nombre">{{ e.nombreItem }}</span>
+                </td>
+                <td class="td-estado">
+                  <a
+                    *ngIf="esSctrVidaley(e)"
+                    routerLink="/habilitacion/sctr-vidaley"
+                    class="btn-chip chip-blue"
+                    (click)="$event.stopPropagation()"
+                  >SCTR / Vida Ley</a>
+                  <span
+                    *ngIf="!esSctrVidaley(e) && esSoloLectura(e)"
+                    class="btn-chip chip-gray"
+                  >Solo lectura</span>
+                  <span
+                    *ngIf="!esSctrVidaley(e) && !esSoloLectura(e)"
+                    [class]="'btn-chip ' + getChipEstado(e.estado)"
+                  >{{ e.estado }}</span>
+                </td>
+                <td class="td-vig">
+                  <span class="vig-date" *ngIf="e.vigencia">{{ e.vigencia | date: 'dd/MM/yyyy' }}</span>
+                  <span class="no-data" *ngIf="!e.vigencia">—</span>
+                </td>
+                <td class="td-act">
+                  <button
+                    *ngIf="!esSctrVidaley(e) && !esSoloLectura(e)"
+                    class="icon-btn-circle"
+                    title="Gestionar entregable"
+                    (click)="$event.stopPropagation(); selectEntregable(e)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+      <ng-template #noWorkerTpl>
+        <div class="center-empty">
+          <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
+            <rect x="14" y="6" width="40" height="56" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5"/>
+            <line x1="24" y1="24" x2="44" y2="24" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="24" y1="32" x2="44" y2="32" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="24" y1="40" x2="36" y2="40" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <p class="center-empty-text">Selecciona un trabajador para ver sus entregables.</p>
+        </div>
+      </ng-template>
+    </main>
+
+    <!-- ── RIGHT COLUMN: filters or document panel ── -->
+    <aside class="col-panel">
+
+      <!-- FILTERS MODE -->
+      <ng-container *ngIf="!selectedEntregable || esSoloLectura(selectedEntregable) || esSctrVidaley(selectedEntregable)">
+        <div class="panel-hdr">
+          <span class="panel-title">Filtros</span>
+          <button
+            class="btn-ghost-xs"
+            (click)="filtroEstado = ''; filtroContratistaCasa = ''; onFilterChange()"
+          >Limpiar</button>
+        </div>
+
+        <div class="panel-body">
+          <div class="filter-grp" *ngIf="isAdmin()">
+            <span class="filter-lbl">TIPO</span>
+            <div class="radio-pills">
+              <button
+                class="radio-pill"
+                [class.radio-pill--on]="filtroContratistaCasa === ''"
+                (click)="filtroContratistaCasa = ''; onFilterChange()"
+              >Todos</button>
+              <button
+                class="radio-pill"
+                [class.radio-pill--on]="filtroContratistaCasa === 'Contratista'"
+                (click)="filtroContratistaCasa = 'Contratista'; onFilterChange()"
+              >Contratistas</button>
+              <button
+                class="radio-pill"
+                [class.radio-pill--on]="filtroContratistaCasa === 'Casa'"
+                (click)="filtroContratistaCasa = 'Casa'; onFilterChange()"
+              >Casa</button>
+            </div>
+          </div>
+
+          <div class="filter-grp">
+            <label class="filter-lbl" for="filtro-estado">ESTADO</label>
+            <select id="filtro-estado" class="field-input" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
+              <option value="">Todos los estados</option>
+              <option value="Habilitado">Habilitado</option>
+              <option value="No Autorizado">No Autorizado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel-note" *ngIf="selectedEntregable && esSctrVidaley(selectedEntregable)">
+          Este entregable se gestiona en la pantalla <strong>SCTR / Vida Ley</strong>.
+        </div>
+        <div class="panel-note" *ngIf="selectedEntregable && esSoloLectura(selectedEntregable)">
+          Entregable de solo lectura — gestionado por el módulo SSOMA.
+        </div>
+        <div class="panel-note panel-note--hint" *ngIf="!selectedEntregable">
+          Selecciona un entregable de la tabla para gestionarlo.
+        </div>
+      </ng-container>
+
+      <!-- DOCUMENT MODE -->
+      <ng-container *ngIf="selectedEntregable && !esSoloLectura(selectedEntregable) && !esSctrVidaley(selectedEntregable)">
+        <!-- Always-present hidden input so @ViewChild always resolves -->
+        <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+
+        <div class="panel-hdr panel-hdr--doc">
+          <span class="panel-ent-name">{{ selectedEntregable.nombreItem }}</span>
+          <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
+            {{ selectedEntregable.estado }}
+          </span>
+        </div>
+
+        <div class="panel-body">
+
+          <!-- Vigencia -->
+          <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
+            <label class="field-lbl">VIGENCIA</label>
+            <input
+              type="date"
+              class="field-input"
+              [(ngModel)]="panelVigencia"
+              [readonly]="isContratista() && selectedEntregable.estado !== 'Falta' && selectedEntregable.estado !== 'Rechazado'"
+            />
+          </div>
+
+          <!-- Upload zone -->
+          <div class="field-grp">
+            <label class="field-lbl">DOCUMENTO</label>
+            <div class="upload-zone" [class.upload-zone--active]="!uploadingFile && !panelArchivoUrl">
+
+              <div *ngIf="uploadingFile" class="upload-state">
+                <span class="upload-spinner"></span>
+                <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
+              </div>
+
+              <div
+                *ngIf="!uploadingFile && !panelArchivoUrl"
+                class="upload-empty"
+                (click)="triggerFileInput()"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
+              </div>
+
+              <div *ngIf="!uploadingFile && panelArchivoUrl" class="upload-file">
+                <ng-container *ngIf="!panelArchivoUrl.startsWith('pending-upload://')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <a
+                    [href]="getViewUrl(panelArchivoUrl)"
+                    target="_blank"
+                    rel="noopener"
+                    class="upload-filename"
+                    (click)="$event.stopPropagation()"
+                  >Ver documento</a>
+                </ng-container>
+                <span *ngIf="panelArchivoUrl.startsWith('pending-upload://')" class="upload-pending">
+                  {{ panelArchivoNombre }} (pendiente)
+                </span>
+                <button
+                  type="button"
+                  class="btn-remove"
+                  title="Quitar archivo"
+                  (click)="$event.stopPropagation(); clearArchivo()"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="!panelArchivoUrl && !panelVigencia"
+            (click)="enviarDocumento()"
+          >ENVIAR DOCUMENTO</button>
+
+          <!-- Admin section -->
+          <ng-container *ngIf="isAdmin()">
+            <div class="panel-sep"></div>
+            <div class="field-grp">
+              <label class="field-lbl">OBS. ABRIL</label>
+              <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"></textarea>
+            </div>
+            <div class="field-grp">
+              <label class="field-lbl">OBS. CONTRATISTA</label>
+              <textarea
+                class="field-input field-readonly"
+                rows="3"
+                readonly
+                [value]="selectedEntregable.obsContratista ?? ''"
+              ></textarea>
+            </div>
+            <div class="panel-actions" *ngIf="selectedEntregable.estado === 'Enviado'">
+              <button type="button" class="btn-approve" (click)="aprobarEntregable()">✓ Aprobar</button>
+              <button type="button" class="btn-reject-act" (click)="rechazarEntregable()">✕ Rechazar</button>
+            </div>
+            <button type="button" class="btn-link" (click)="verVersiones()">Ver historial de versiones</button>
+          </ng-container>
+
+          <!-- Contratista section -->
+          <ng-container *ngIf="isContratista()">
+            <div class="panel-sep"></div>
+            <div class="field-grp">
+              <label class="field-lbl">TUS OBSERVACIONES</label>
+              <textarea
+                class="field-input"
+                rows="3"
+                [(ngModel)]="panelObsAbril"
+                placeholder="Notas que verá Abril…"
+              ></textarea>
+            </div>
+            <div class="field-grp" *ngIf="selectedEntregable.obsAbril">
+              <label class="field-lbl">OBS. DE ABRIL</label>
+              <textarea
+                class="field-input field-readonly"
+                rows="3"
+                readonly
+                [value]="selectedEntregable.obsAbril"
+              ></textarea>
+            </div>
+            <button type="button" class="btn-link" (click)="verVersiones()">Ver historial de versiones</button>
+          </ng-container>
+
+        </div>
+      </ng-container>
+    </aside>
+
+  </div>
+</div>
+
+<!-- Modals -->
+<app-hab-cambiar-obra
+  [open]="modalCambiarObraOpen"
+  [worker]="workerParaAccion"
+  (closed)="closeCambiarObra()"
+  (saved)="onCambiarObraSaved()"
+/>
+<app-hab-versiones-doc
+  [open]="modalVersionesOpen"
+  [entregableId]="selectedEntregable?.id"
+  (closed)="closeVersiones()"
+/>

@@ -9,10 +9,11 @@ import { ProyectoService } from '../services/proyecto.service';
 import { ProjectDto } from '../dtos/project.dto';
 import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
+import { ProyectoEmails } from './emails/proyecto-emails';
 
 @Component({
   selector: 'app-proyectos-config',
-  imports: [CommonModule, ProyectoCreate, ProyectoEdit],
+  imports: [CommonModule, ProyectoCreate, ProyectoEdit, ProyectoEmails],
   templateUrl: './proyectos.html',
   styleUrl: './proyectos.css',
 })
@@ -33,7 +34,9 @@ export class Proyectos implements OnInit {
   loader = false;
   showCreateModal = false;
   showEditModal = false;
+  showEmailsModal = false;
   selectedProject: ProjectDto | null = null;
+  selectedEmailsProject: ProjectDto | null = null;
 
   constructor(
     private proyectoService: ProyectoService,
@@ -56,16 +59,26 @@ export class Proyectos implements OnInit {
     this.showEditModal = true;
   }
 
+  openEmailsModal(project: ProjectDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedEmailsProject = project;
+    this.showEmailsModal = true;
+  }
+
   onModalClosed(): void {
     this.showCreateModal = false;
     this.showEditModal = false;
+    this.showEmailsModal = false;
     this.selectedProject = null;
+    this.selectedEmailsProject = null;
   }
 
   onModalSaved(): void {
     this.showCreateModal = false;
     this.showEditModal = false;
+    this.showEmailsModal = false;
     this.selectedProject = null;
+    this.selectedEmailsProject = null;
     this.load(this.currentPage);
   }
 

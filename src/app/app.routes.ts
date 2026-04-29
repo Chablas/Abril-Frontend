@@ -58,6 +58,20 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/arquitectura-comercial/arquitectura-comercial-module')
           .then(m => m.ArquitecturaComercialModule)
+      },
+
+      {
+        path: 'ssoma',
+        loadChildren: () =>
+          import('./features/ssoma/ssoma.routes')
+          .then(m => m.SSOMA_ROUTES)
+      },
+
+      {
+        path: 'habilitacion',
+        loadChildren: () =>
+          import('./features/habilitacion/habilitacion.routes')
+          .then(m => m.HABILITACION_ROUTES)
       }
     ]
   },
@@ -67,6 +81,35 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/contractors/contractors.routes')
       .then(m => m.CONTRACTORS_ROUTES)
+  },
+
+  {
+    path: 'habilitacion/registro-empresa',
+    loadComponent: () =>
+      import('./features/habilitacion/pages/registro-empresa/registro-empresa')
+      .then(m => m.RegistroEmpresa)
+  },
+
+  {
+    path: 'auth/activar-contratista',
+    loadComponent: () =>
+      import('./features/auth/pages/activar-contratista/activar-contratista')
+      .then(m => m.ActivarContratista)
+  },
+
+  {
+    path: 'auth/recuperar-contratista',
+    loadComponent: () =>
+      import('./features/auth/pages/recuperar-contratista/recuperar-contratista')
+      .then(m => m.RecuperarContratista)
+  },
+
+  {
+    path: 'registros-modelo',
+    loadComponent: () =>
+      import('./features/habilitacion/pages/registros-modelo/registros-modelo')
+      .then(m => m.RegistrosModelo),
+    data: { publicMode: true }
   },
 
   {

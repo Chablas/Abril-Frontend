@@ -109,33 +109,6 @@ export class NavigationService {
       ],
     },
     {
-      key: 'seguridad',
-      label: 'Seguridad',
-      iconKey: 'security',
-      baseRoute: '/security',
-      roles: ['ADMINISTRADOR DEL SISTEMA'],
-      items: [
-        {
-          label: 'Creación de usuarios',
-          route: '/security/users',
-        },
-      ],
-    },
-    {
-      key: 'configuracion',
-      label: 'Configuración',
-      iconKey: 'settings',
-      baseRoute: '/configuracion',
-      roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
-      items: [
-        {
-          label: 'Proyectos',
-          route: '/configuracion/proyectos',
-          roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
-        },
-      ],
-    },
-    {
       key: 'arquitectura-comercial',
       label: 'Arquitectura Comercial',
       iconKey: 'projects',
@@ -157,6 +130,105 @@ export class NavigationService {
         {
           label: 'Plantilla',
           route: '/arquitectura-comercial/plantilla',
+        },
+      ],
+    },
+    {
+      key: 'ssoma',
+      label: 'SSOMA',
+      iconKey: 'ssoma',
+      baseRoute: '/ssoma',
+      roles: [
+        'ADMINISTRADOR DEL SISTEMA',
+        'ADMINISTRADOR DE UDP',
+        'USUARIO DE UDP',
+        'ADMINISTRADOR DE RESIDENTES',
+        'RESIDENTE',
+      ],
+      items: [],
+      groups: [
+        {
+          label: 'Salud Ocupacional',
+          items: [
+            { label: 'Dashboard', route: '/ssoma/salud-ocupacional/dashboard' },
+            { label: 'EMOs', route: '/ssoma/salud-ocupacional/emos' },
+            { label: 'Programaciones', route: '/ssoma/salud-ocupacional/programaciones' },
+            { label: 'Interconsultas', route: '/ssoma/salud-ocupacional/interconsultas' },
+            { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones' },
+            { label: 'Catálogos', route: '/ssoma/salud-ocupacional/catalogos' },
+          ],
+        },
+      ],
+    },
+    {
+      key: 'habilitacion',
+      label: 'Habilitación',
+      iconKey: 'habilitacion',
+      baseRoute: '/habilitacion',
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      items: [],
+      groups: [
+        {
+          label: 'Gestión',
+          items: [
+            { label: 'Trabajadores', route: '/habilitacion/trabajadores' },
+            { label: 'Empresa', route: '/habilitacion/empresa', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+            { label: 'Equipos y Máquinas', route: '/habilitacion/equipos', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+            { label: 'SCTR y Vida Ley', route: '/habilitacion/sctr-vidaley', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+          ],
+        },
+        {
+          label: 'Operaciones',
+          items: [
+            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+            { label: 'Inducciones', route: '/habilitacion/inducciones' },
+            { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
+            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
+          ],
+        },
+        {
+          label: 'Administración',
+          items: [
+            { label: 'Reglas de Entregables', route: '/habilitacion/reglas', roles: ['ADMINISTRADOR SSOMA'] },
+            { label: 'Auditoría', route: '/habilitacion/auditoria', roles: ['ADMINISTRADOR SSOMA'] },
+          ],
+        },
+      ],
+    },
+    {
+      key: 'seguridad',
+      label: 'Seguridad',
+      iconKey: 'security',
+      baseRoute: '/security',
+      roles: ['ADMINISTRADOR DEL SISTEMA'],
+      items: [
+        {
+          label: 'Creación de usuarios',
+          route: '/security/users',
+        },
+      ],
+    },
+    {
+      key: 'configuracion',
+      label: 'Configuración',
+      iconKey: 'settings',
+      baseRoute: '/configuracion',
+      roles: ['ADMINISTRADOR DEL SISTEMA', 'ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
+      items: [
+        {
+          label: 'Proyectos',
+          route: '/configuracion/proyectos',
+          roles: ['ADMINISTRADOR DE UDP', 'USUARIO DE COSTOS Y PRESUPUESTOS'],
+        },
+        {
+          label: 'Razones Sociales',
+          route: '/configuracion/companies',
+          roles: ['ADMINISTRADOR DEL SISTEMA', 'ADMINISTRADOR DE UDP'],
+        },
+        {
+          label: 'Lista de Trabajadores',
+          route: '/configuracion/workers',
+          roles: ['ADMINISTRADOR DEL SISTEMA', 'ADMINISTRADOR DE UDP'],
         },
       ],
     },

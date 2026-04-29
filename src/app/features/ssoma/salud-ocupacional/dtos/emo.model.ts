@@ -1,0 +1,170 @@
+import { ConvalidacionListDto } from './convalidacion.model';
+
+export type AptitudEmo =
+  | 'Apto'
+  | 'Apto con Restricciones'
+  | 'No Apto'
+  | 'Observado'
+  | 'Pendiente'
+  | string;
+
+export type EstadoEmo = 'Vigente' | 'Por Vencer' | 'Vencido' | 'Anulado' | string;
+
+export interface EmoListItemDto {
+  id: number;
+  workerId: number;
+  workerNombre: string;
+  workerDni: string;
+  tipoEmo: string;
+  empresa: string;
+  fechaEmo: string;
+  fechaVencimiento: string;
+  aptitud: AptitudEmo;
+  estado: EstadoEmo;
+  diasParaVencer: number;
+}
+
+export interface EmoDetalleDto extends EmoListItemDto {
+  clinica?: string;
+  medico?: string;
+  numeroInforme?: string;
+  urlResultado?: string;
+  requiereInterconsulta: boolean;
+  notas?: string;
+  examenes?: EmoExamenDetalleDto[];
+  restricciones?: EmoRestriccionDto[];
+  convalidaciones?: ConvalidacionListDto[];
+}
+
+export interface EmoExamenDetalleDto {
+  id: number;
+  examenTipo: string;
+  resultado?: string;
+  valor?: string;
+  unidad?: string;
+  observacion?: string;
+}
+
+export interface EmoRestriccionDto {
+  id: number;
+  restriccionTipo?: string;
+  descripcionLibre?: string;
+  vigente: boolean;
+}
+
+export interface EmoCreateDto {
+  workerId: number;
+  tipoEmoId: number;
+  empresaOrigenId: number;
+  fechaEmo: string;
+  clinicaId?: number;
+  medicoId?: number;
+  aptitud: AptitudEmo;
+  requiereInterconsulta: boolean;
+  numeroInforme?: string;
+  urlResultado?: string;
+  notas?: string;
+  examenes: EmoExamenCreateDto[];
+  restricciones: EmoRestriccionCreateDto[];
+}
+
+export interface EmoExamenCreateDto {
+  examenTipoId: number;
+  resultado?: string;
+  valor?: string;
+  unidad?: string;
+  observacion?: string;
+}
+
+export interface EmoRestriccionCreateDto {
+  restriccionTipoId?: number;
+  descripcionLibre?: string;
+}
+
+export interface WorkerEmoHistorialDto {
+  workerId: number;
+  workerNombre: string;
+  workerDni: string;
+  ocupacion?: string;
+  empresa?: string;
+  vinculaciones?: VinculacionConEmosDto[];
+}
+
+export interface VinculacionConEmosDto {
+  empresaNombre: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  emos?: EmoListItemDto[];
+}
+
+export interface EmoQueryParams {
+  workerId?: number;
+  estado?: string;
+  aptitud?: string;
+  empresaId?: number;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export type WorkerEstado = 'ACTIVO' | 'RETIRADO' | string;
+
+export interface EmoPorTrabajadorDto {
+  workerId: number;
+  nombreCompleto: string;
+  dni: string;
+  estadoWorker?: WorkerEstado;
+  empresaId?: number;
+  empresa?: string;
+  proyectoId?: number;
+  proyecto?: string;
+  tipoContrata?: string;
+  tieneEmo: boolean;
+  emoId?: number;
+  tipoEmo?: string;
+  fechaEmo?: string;
+  fechaVencimiento?: string;
+  aptitud?: AptitudEmo;
+  estado?: EstadoEmo;
+  diasRestantes?: number;
+  // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
+  // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
+  celular?: string;
+  emailPersonal?: string;
+  categoria?: string;
+  ocupacion?: string;
+  area?: string;
+  subarea?: string;
+  contrataCasa?: string;
+  obraOficina?: string;
+  jefatura?: string;
+  sctr?: boolean;
+  habilitadoObra?: boolean;
+  notas?: string;
+}
+
+export interface WorkerUpsertDto {
+  apellidoNombre: string;
+  dni?: string;
+  celular?: string | null;
+  emailPersonal?: string | null;
+  categoria?: string | null;
+  ocupacion?: string | null;
+  area?: string | null;
+  subarea?: string | null;
+  contrataCasa?: string | null;
+  obraOficina?: string | null;
+  jefatura?: string | null;
+  sctr?: boolean;
+  habilitadoObra?: boolean;
+  notas?: string | null;
+}
+
+export interface EmoPorTrabajadorQuery {
+  search?: string;
+  aptitud?: string;
+  estado?: string;
+  empresaId?: number;
+  page?: number;
+  pageSize?: number;
+}

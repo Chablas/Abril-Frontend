@@ -1,48 +1,65 @@
-<div class="w-full rounded-lg overflow-y-scroll overflow-x-auto border border-[#D6DEE5]">
-  <table class="w-full table-auto">
-    <thead class="bg-[#E5F7D1]">
-      <tr class="text-[#64BC04]">
-        <th class="w-[20%]">DNI</th>
-        <th class="w-[20%]">Nombre completo</th>
-        <th class="w-[20%]">Rol</th>
-        <th class="w-[20%]">Correo</th>
-        <th class="w-[10%]">Estado</th>
-        <th class="w-[10%]">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of tableData.data" class="border-b border-[#D6DEE5] h-[30px]">
-        <td><span [title]="item.person.documentIdentityCode" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.documentIdentityCode }}</span></td>
-        <td><span [title]="item.person.fullName" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.fullName }}</span></td>
-        <td>
-          <span [title]="getRolesText(item.roles)" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">
-            {{ getRolesText(item.roles) }}
-          </span>
-        </td>
-        <td><span [title]="item.person.email" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">{{ item.person.email }}</span></td>
-        <td class="text-center">
-          <span
-            class="inline-block rounded-lg px-[8px] py-[2px] my-[4px]"
-            [ngClass]="{
-              'bg-[#D7FAF4] text-[#009C87]': item.active == true,
-              'bg-[#FAD5D4] text-[#D30000]': item.active == false,
-            }"
-          >
-            {{ item.active ? 'ACTIVO' : 'INACTIVO' }}
-          </span>
-        </td>
-        <td class="text-center">
-          <div class="flex justify-center">
-            <button class="cursor-pointer" title="Reenviar correo de registro" (click)="resendEmail(item, $event)">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 12V4.5H2V19.5H12M22 17H15M22 17L19.5 14.5M22 17L19.5 19.5" stroke="#64BC04" stroke-width="2"
-                  stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M2 4.5L12 12L22 4.5" stroke="#64BC04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+<div class="space-y-3">
+  <div class="filters-card">
+    <div>
+      <label class="filter-label">Buscar por nombre</label>
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input type="text" placeholder="Nombre completo" [(ngModel)]="searchTerm" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>DNI</th>
+            <th>Nombre completo</th>
+            <th>Rol</th>
+            <th>Correo</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredData">
+            <td>{{ item.person.documentIdentityCode }}</td>
+            <td class="font-semibold">{{ item.person.fullName }}</td>
+            <td>{{ getRolesText(item.roles) }}</td>
+            <td>{{ item.person.email }}</td>
+            <td>
+              <span class="badge border" [ngClass]="item.active ? 'chip-green' : 'chip-gray'">
+                {{ item.active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEdit(item, $event)">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="btn-chip"
+                  [ngClass]="item.active ? 'chip-orange' : 'chip-green'"
+                  (click)="toggleUser(item, $event)"
+                >
+                  {{ item.active ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="btn-chip chip-gray" title="Reenviar correo de registro" (click)="resendEmail(item, $event)">
+                  Reenviar
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredData.length === 0">
+            <td colspan="6" class="empty-row">Sin usuarios registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

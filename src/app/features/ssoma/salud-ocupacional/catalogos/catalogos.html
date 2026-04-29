@@ -1,0 +1,26 @@
+<section class="p-6 space-y-4">
+  <header>
+    <h2 class="text-xl font-semibold text-gray-800">Catálogos</h2>
+    <p class="text-sm text-gray-500">
+      Maestros de Clínicas, Médicos Ocupacionales y Tipos de EMO.
+    </p>
+  </header>
+
+  <nav class="tabs">
+    <button type="button" [class.active]="activeTab === 'clinicas'" (click)="setTab('clinicas')">
+      Clínicas
+    </button>
+    <button type="button" [class.active]="activeTab === 'medicos'" (click)="setTab('medicos')">
+      Médicos
+    </button>
+    <button type="button" [class.active]="activeTab === 'emo-tipos'" (click)="setTab('emo-tipos')">
+      Tipos de EMO
+    </button>
+  </nav>
+
+  <div class="tab-panel">
+    <app-catalogo-clinicas *ngIf="activeTab === 'clinicas'"></app-catalogo-clinicas>
+    <app-catalogo-medicos *ngIf="activeTab === 'medicos'"></app-catalogo-medicos>
+    <app-catalogo-emo-tipos *ngIf="activeTab === 'emo-tipos'"></app-catalogo-emo-tipos>
+  </div>
+</section>

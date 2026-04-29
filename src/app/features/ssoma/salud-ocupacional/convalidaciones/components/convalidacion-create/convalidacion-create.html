@@ -1,0 +1,99 @@
+<app-base-modal *ngIf="open" title="Nueva convalidación" width="w-[800px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <h4 class="section-title">Trabajador</h4>
+    <app-worker-search-input [selected]="worker" (selectedChange)="onWorkerSelected($event)"></app-worker-search-input>
+
+    <ng-container *ngIf="worker">
+      <h4 class="section-title mt-6">EMO origen *</h4>
+      <div *ngIf="loadingEmos" class="hint">Cargando EMOs del trabajador…</div>
+
+      <div *ngIf="!loadingEmos && emosDisponibles.length === 0" class="hint text-red-600">
+        Este trabajador no tiene EMOs vigentes que puedan convalidarse.
+      </div>
+
+      <div *ngIf="!loadingEmos && emosDisponibles.length > 0">
+        <app-search-select
+          [options]="emoOrigenOptions"
+          valueField="id"
+          displayField="display"
+          [value]="emoOrigenId"
+          [showLabel]="false"
+          placeholder="Selecciona EMO origen"
+          (valueChange)="emoOrigenId = $event"
+        ></app-search-select>
+
+        <div *ngIf="selectedEmo" class="emo-preview">
+          <div>
+            <div class="ep-title">{{ selectedEmo.tipoEmo }} · {{ selectedEmo.empresa }}</div>
+            <div class="ep-meta">
+              Fecha EMO: {{ selectedEmo.fechaEmo | date: 'dd/MM/yyyy' }}
+              · Vence: {{ selectedEmo.fechaVencimiento | date: 'dd/MM/yyyy' }}
+            </div>
+          </div>
+          <span class="badge border" [ngClass]="aptitudClass(selectedEmo.aptitud)">
+            {{ selectedEmo.aptitud }}
+          </span>
+        </div>
+      </div>
+    </ng-container>
+
+    <h4 class="section-title mt-6">Datos de la convalidación</h4>
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Empresa destino *</label>
+        <app-search-select
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="empresaDestinoId"
+          [showLabel]="false"
+          placeholder="Selecciona empresa"
+          (valueChange)="empresaDestinoId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Fecha convalidación *</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaConvalidacion" />
+      </div>
+      <div>
+        <label class="field-label">Fecha vencimiento *</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
+      </div>
+      <div>
+        <label class="field-label">Médico</label>
+        <app-search-select
+          [options]="medicos"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="medicoId"
+          [showLabel]="false"
+          placeholder="Selecciona médico"
+          (valueChange)="medicoId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Resultado *</label>
+        <app-search-select
+          [options]="resultadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="resultado"
+          [showLabel]="false"
+          placeholder="Selecciona resultado"
+          (valueChange)="resultado = $event"
+        ></app-search-select>
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Notas</label>
+        <textarea rows="2" class="field-input" [(ngModel)]="notas"></textarea>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Registrar convalidación' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

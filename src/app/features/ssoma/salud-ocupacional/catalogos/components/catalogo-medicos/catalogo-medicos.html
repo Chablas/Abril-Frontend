@@ -1,0 +1,131 @@
+<div class="space-y-4">
+  <header class="section-bar">
+    <div>
+      <h3 class="section-title">Médicos ocupacionales</h3>
+      <p class="section-sub">Profesionales asignados a clínicas para EMOs e interconsultas.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openCreate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Nuevo médico
+    </button>
+  </header>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <div class="search-input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Nombre, CMP, especialidad o email"
+            [ngModel]="filters.search"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="filter-label">Clínica</label>
+        <app-search-select
+          [options]="clinicaOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.clinicaId"
+          [showLabel]="false"
+          placeholder="Todas"
+          (valueChange)="filters.clinicaId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <select class="field-input" [(ngModel)]="filters.estado" (change)="onFilterChange()">
+          <option value="">Todos</option>
+          <option value="activo">Activos</option>
+          <option value="inactivo">Inactivos</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>CMP</th>
+            <th>Especialidad</th>
+            <th>Clínica</th>
+            <th>Email</th>
+            <th>Celular</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pageItems">
+            <td class="font-semibold text-gray-800">{{ item.apellidoNombre }}</td>
+            <td class="text-gray-600">{{ item.cmp || '—' }}</td>
+            <td class="text-gray-600">{{ item.especialidad || '—' }}</td>
+            <td class="text-gray-600">{{ item.clinicaNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.email || '—' }}</td>
+            <td class="text-gray-600">{{ item.celular || '—' }}</td>
+            <td>
+              <span class="badge border" [ngClass]="item.activo ? 'chip-green' : 'chip-gray'">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEdit(item)">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="btn-chip"
+                  [ngClass]="item.activo ? 'chip-orange' : 'chip-green'"
+                  (click)="toggleActivo(item)"
+                >
+                  {{ item.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && pageItems.length === 0">
+            <td colspan="8" class="empty-row">Sin médicos registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</div>
+
+<app-medico-form
+  *ngIf="formOpen"
+  [open]="formOpen"
+  [mode]="formMode"
+  [initial]="formInitial"
+  [clinicas]="clinicas"
+  (closed)="closeForm()"
+  (saved)="onSaved()"
+></app-medico-form>

@@ -1,0 +1,45 @@
+<app-base-modal *ngIf="open" [title]="title" width="w-[700px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div *ngIf="initial" class="ref-bar">
+      <span class="ref-name">{{ initial.person.fullName }}</span>
+      <span class="ref-sub">DNI: {{ initial.person.documentIdentityCode }}</span>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Nombres *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.firstNames" placeholder="Nombres" />
+      </div>
+      <div>
+        <label class="field-label">Primer apellido *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.firstLastName" placeholder="Primer apellido" />
+      </div>
+      <div>
+        <label class="field-label">Segundo apellido</label>
+        <input type="text" class="field-input" [(ngModel)]="model.secondLastName" placeholder="Segundo apellido" />
+      </div>
+      <div>
+        <label class="field-label">Celular</label>
+        <input type="number" class="field-input" [(ngModel)]="model.phoneNumber" />
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Correo *</label>
+        <input type="email" class="field-input" [(ngModel)]="model.email" />
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Rol *</label>
+        <select class="field-input" [(ngModel)]="model.roleId">
+          <option [ngValue]="0" disabled>Selecciona un rol</option>
+          <option *ngFor="let role of roles" [ngValue]="role.roleId">{{ role.roleDescription }}</option>
+        </select>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>
