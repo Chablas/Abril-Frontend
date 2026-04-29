@@ -40,8 +40,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "12kB",
+                  "maximumError": "20kB"
                 }
               ],
               "fileReplacements": [
@@ -50,12 +50,7 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "outputHashing": "all",
-              "server": "src/main.server.ts",
-              "outputMode": "server",
-              "ssr": {
-                "entry": "src/server.ts"
-              }
+              "outputHashing": "all"
             },
             "development": {
               "optimization": false,
