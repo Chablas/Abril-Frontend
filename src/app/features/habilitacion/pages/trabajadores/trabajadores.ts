@@ -17,8 +17,13 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ProjectService } from '../../../../core/services/project.service';
+import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
+import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import {
   WorkerEntregableDto,
   WorkerEntregableUpdateDto,
@@ -29,11 +34,13 @@ import { DocumentViewer } from '../../../../shared/components/document-viewer/do
 import { CambiarObra } from './components/cambiar-obra/cambiar-obra';
 import { VersionesDoc } from './components/versiones-doc/versiones-doc';
 import { EditarPerfil } from './components/editar-perfil/editar-perfil';
+import { ReingresoForm } from './components/reingreso-form/reingreso-form';
+import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, SearchSelect],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -57,6 +64,11 @@ export class Trabajadores implements OnInit, OnDestroy {
   filtroEstado = '';
   filtroContratistaCasa = '';
   filtroEmpresaId: number | null = null;
+  filtroProyectoId: number | null = null;
+  soloRetirados = false;
+
+  catalogoProyectos: ProjectGetDTO[] = [];
+  catalogoEmpresas: EmpresaSimpleDto[] = [];
 
   panelVigencia = '';
   panelArchivoUrl = '';
@@ -68,10 +80,16 @@ export class Trabajadores implements OnInit, OnDestroy {
   drawerOpen = false;
   visorArchivoUrl = '';
   visorNombre = '';
+  selectedIds: number[] = [];
+  todosSeleccionados = false;
   modalCambiarObraOpen = false;
   modalVersionesOpen = false;
   modalEditarPerfilOpen = false;
+  mostrarReingreso = false;
+  mostrarHistorial = false;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
+  workerParaReingreso: WorkerHabilitacionListDto | null = null;
+  workerParaHistorial: WorkerHabilitacionListDto | null = null;
 
   private searchChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -82,6 +100,8 @@ export class Trabajadores implements OnInit, OnDestroy {
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private projectService: ProjectService,
+    private catalogosService: CatalogosSaludService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -90,6 +110,24 @@ export class Trabajadores implements OnInit, OnDestroy {
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.loadWorkers(1));
     this.loadWorkers(1);
+    this.loadCatalogos();
+  }
+
+  private loadCatalogos(): void {
+    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.catalogoProyectos = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.catalogoProyectos = []; },
+    });
+    this.catalogosService.getEmpresas().subscribe({
+      next: (res) => {
+        this.catalogoEmpresas = res ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.catalogoEmpresas = []; },
+    });
   }
 
   ngOnDestroy(): void {
@@ -98,15 +136,18 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   loadWorkers(page: number = this.currentPage): void {
+    this.limpiarSeleccion();
     this.loading = true;
     this.loaderService.show();
     const params: Record<string, unknown> = {
       page,
       pageSize: this.pageSize,
       search: this.search.trim() || undefined,
-      estado: this.filtroEstado || undefined,
+      estadoHabilitacion: this.filtroEstado || undefined,
       contratistaCasa: this.filtroContratistaCasa || undefined,
       empresaId: this.filtroEmpresaId ?? undefined,
+      proyectoId: this.filtroProyectoId ?? undefined,
+      soloRetirados: this.soloRetirados || undefined,
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
@@ -549,6 +590,104 @@ export class Trabajadores implements OnInit, OnDestroy {
     });
   }
 
+  get haySeleccionados(): boolean {
+    return this.selectedIds.length > 0;
+  }
+
+  limpiarSeleccion(): void {
+    this.selectedIds = [];
+    this.todosSeleccionados = false;
+  }
+
+  toggleSeleccion(id: number): void {
+    if (this.selectedIds.includes(id)) {
+      this.selectedIds = this.selectedIds.filter((x) => x !== id);
+    } else {
+      this.selectedIds = [...this.selectedIds, id];
+    }
+    const activos = this.workers.filter((w) => w.estadoWorker !== 'RETIRADO');
+    this.todosSeleccionados =
+      activos.length > 0 && activos.every((w) => this.selectedIds.includes(w.workerId));
+    this.cdr.detectChanges();
+  }
+
+  toggleTodos(): void {
+    const activos = this.workers.filter((w) => w.estadoWorker !== 'RETIRADO');
+    if (this.todosSeleccionados) {
+      this.selectedIds = [];
+      this.todosSeleccionados = false;
+    } else {
+      this.selectedIds = activos.map((w) => w.workerId);
+      this.todosSeleccionados = true;
+    }
+    this.cdr.detectChanges();
+  }
+
+  retirar(worker: WorkerHabilitacionListDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Dar de baja?',
+      text: `Se dará de baja a ${worker.apellidoNombre}. Puede revertirse con Reingreso.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, dar de baja',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      this.trabajadorHabService.retirarWorker(worker.workerId).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Trabajador dado de baja',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.loadWorkers(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  retirarMasivo(): void {
+    const n = this.selectedIds.length;
+    Swal.fire({
+      icon: 'warning',
+      title: `¿Dar de baja a ${n} trabajador${n !== 1 ? 'es' : ''}?`,
+      text: 'Esta acción puede revertirse individualmente con Reingreso.',
+      showCancelButton: true,
+      confirmButtonText: `Sí, dar de baja${n !== 1 ? ' a todos' : ''}`,
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      this.trabajadorHabService.retirarWorkerMasivo([...this.selectedIds]).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: `${n} trabajador${n !== 1 ? 'es' : ''} dado${n !== 1 ? 's' : ''} de baja`,
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.loadWorkers(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
   verVersiones(): void {
     if (!this.selectedEntregable) return;
     this.modalVersionesOpen = true;
@@ -560,45 +699,19 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   abrirReingreso(worker: WorkerHabilitacionListDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Reingresar trabajador?',
-      text: `Reingresar a ${worker.apellidoNombre} en ${worker.proyectoActual ?? 'el proyecto actual'}.`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, reingresar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      if (!worker.proyectoActualId || !worker.empresaId) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Datos faltantes',
-          text: 'No se conoce el proyecto o empresa del trabajador.',
-        });
-        return;
-      }
-      this.loaderService.show();
-      this.trabajadorHabService
-        .reingreso(worker.workerId, worker.proyectoActualId, worker.empresaId)
-        .subscribe({
-          next: () => {
-            this.loaderService.hide();
-            Swal.fire({
-              icon: 'success',
-              title: 'Trabajador reingresado',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            this.loadWorkers(this.currentPage);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-    });
+    this.workerParaReingreso = worker;
+    this.mostrarReingreso = true;
+  }
+
+  onReingresoSaved(): void {
+    this.mostrarReingreso = false;
+    this.workerParaReingreso = null;
+    this.loadWorkers(this.currentPage);
+  }
+
+  abrirHistorial(worker: WorkerHabilitacionListDto): void {
+    this.workerParaHistorial = worker;
+    this.mostrarHistorial = true;
   }
 
   onCambiarObraSaved(): void {

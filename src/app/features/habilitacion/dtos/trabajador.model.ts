@@ -70,3 +70,21 @@ export interface WorkerEditDto {
   subarea?: string;
   jefatura?: string;
 }
+
+export interface WorkerReingresoDto {
+  nuevoProyectoId?: number;
+  nuevaEmpresaId?: number;
+  fechaReingreso?: string;
+}
+
+export interface WorkerEventoDto {
+  id: number;
+  tipoEvento: string;
+  descripcion?: string;
+  proyectoAnterior?: string;
+  proyectoNuevo?: string;
+  empresaAnterior?: string;
+  empresaNueva?: string;
+  datos?: string;
+  createdAt: string;
+}

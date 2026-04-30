@@ -23,9 +23,9 @@
             <td>{{ v.subidoPorEmpresaId ? 'Empresa #' + v.subidoPorEmpresaId : v.subidoPorUserId ? 'Usuario #' + v.subidoPorUserId : '—' }}</td>
             <td>{{ v.estadoAlSubir ?? '—' }}</td>
             <td class="row-actions">
-              <a class="btn-link" [href]="getViewUrl(v.archivoUrl)" target="_blank" rel="noopener">
+              <button type="button" class="btn-link" (click)="abrirVisor(v.archivoUrl)">
                 Ver
-              </a>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -37,3 +37,9 @@
     </footer>
   </div>
 </app-base-modal>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="visorUrl = ''"
+/>

@@ -8,7 +8,9 @@ import {
   WorkerEditDto,
   WorkerEntregableDto,
   WorkerEntregableUpdateDto,
+  WorkerEventoDto,
   WorkerHabilitacionListDto,
+  WorkerReingresoDto,
 } from '../dtos/trabajador.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
@@ -71,6 +73,34 @@ export class TrabajadorHabService {
     return this.http.patch<void>(
       `${this.base}/${workerId}/reingreso`,
       { proyectoId, empresaId },
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  reingresar(id: number, dto: WorkerReingresoDto): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/reingreso`, dto, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  getEventos(workerId: number): Observable<WorkerEventoDto[]> {
+    return this.http.get<WorkerEventoDto[]>(`${this.base}/${workerId}/eventos`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  retirarWorker(id: number, fechaRetiro?: string): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/${id}/baja`,
+      { fechaRetiro },
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  retirarWorkerMasivo(ids: number[], fechaRetiro?: string): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/baja-masiva`,
+      { ids, fechaRetiro },
       { headers: buildHabHeaders() },
     );
   }

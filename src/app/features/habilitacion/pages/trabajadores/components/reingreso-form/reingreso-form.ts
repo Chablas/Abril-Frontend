@@ -20,40 +20,32 @@ import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
 import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
-import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
+import { WorkerHabilitacionListDto, WorkerReingresoDto } from '../../../../dtos/trabajador.model';
 
-interface CambiarObraForm {
-  proyectoId: number | null;
-  empresaId: number | null;
-  staffOficina: string;
-  fechaCambio: string;
+interface ReingresoFormData {
+  fechaReingreso: string;
+  nuevoProyectoId: number | null;
+  nuevaEmpresaId: number | null;
 }
 
 @Component({
-  selector: 'app-hab-cambiar-obra',
+  selector: 'app-reingreso-form',
   standalone: true,
   imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
-  templateUrl: './cambiar-obra.html',
-  styleUrl: './cambiar-obra.css',
+  templateUrl: './reingreso-form.html',
+  styleUrl: './reingreso-form.css',
 })
-export class CambiarObra implements OnChanges {
+export class ReingresoForm implements OnChanges {
   @Input() open = false;
-  @Input() worker: WorkerHabilitacionListDto | null = null;
+  @Input() initial: WorkerHabilitacionListDto | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   proyectos: ProjectGetDTO[] = [];
   empresas: EmpresaSimpleDto[] = [];
-
-  model: CambiarObraForm = this.empty();
+  model: ReingresoFormData = this.empty();
   saving = false;
   loadingCatalogos = false;
-
-  staffOficinaOptions = [
-    { id: 'Obra', nombre: 'Obra' },
-    { id: 'Staff', nombre: 'Staff' },
-    { id: 'Oficina Central', nombre: 'Oficina Central' },
-  ];
 
   constructor(
     private trabajadorHabService: TrabajadorHabService,
@@ -71,12 +63,11 @@ export class CambiarObra implements OnChanges {
     }
   }
 
-  private empty(): CambiarObraForm {
+  private empty(): ReingresoFormData {
     return {
-      proyectoId: null,
-      empresaId: null,
-      staffOficina: 'Obra',
-      fechaCambio: new Date().toISOString().substring(0, 10),
+      fechaReingreso: new Date().toISOString().substring(0, 10),
+      nuevoProyectoId: null,
+      nuevaEmpresaId: null,
     };
   }
 
@@ -106,45 +97,51 @@ export class CambiarObra implements OnChanges {
     });
   }
 
-  get title(): string {
-    return 'Cambiar obra';
+  get esCasa(): boolean {
+    return this.initial?.contrataCasa === 'Casa';
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.model.proyectoId && !!this.model.fechaCambio;
+    return !this.saving;
   }
 
   submit(): void {
-    if (!this.canSubmit || !this.worker) return;
+    if (!this.canSubmit || !this.initial) return;
 
-    const payload = {
-      nuevoProyectoId: this.model.proyectoId,
-      nuevaEmpresaId: this.model.empresaId ?? undefined,
-      staffOficina: this.model.staffOficina,
-      fechaCambio: this.model.fechaCambio,
-    };
+    Swal.fire({
+      icon: 'question',
+      title: '¿Reingresar trabajador?',
+      text: `¿Reingresar a ${this.initial.apellidoNombre}? Se notificará por correo a los responsables.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, reingresar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((result) => {
+      if (!result.isConfirmed || !this.initial) return;
 
-    this.saving = true;
-    this.loaderService.show();
+      const dto: WorkerReingresoDto = {};
+      if (this.model.nuevoProyectoId) dto.nuevoProyectoId = this.model.nuevoProyectoId;
+      if (this.model.nuevaEmpresaId) dto.nuevaEmpresaId = this.model.nuevaEmpresaId;
+      if (this.model.fechaReingreso) dto.fechaReingreso = this.model.fechaReingreso;
 
-    this.trabajadorHabService.cambiarObra(this.worker.workerId, payload).subscribe({
-      next: () => {
-        this.saving = false;
-        this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'Cambio de obra registrado',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        this.saved.emit();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving = false;
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
+      this.saving = true;
+      this.loaderService.show();
+
+      this.trabajadorHabService.reingresar(this.initial.workerId, dto).subscribe({
+        next: () => {
+          this.saving = false;
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Trabajador reingresado', timer: 1500, showConfirmButton: false });
+          this.saved.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.saving = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
     });
   }
 

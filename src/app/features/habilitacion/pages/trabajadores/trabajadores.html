@@ -21,6 +21,25 @@
     </div>
   </div>
 
+  <!-- SELECTION BAR — visible cuando hay seleccionados -->
+  <div class="selection-bar" *ngIf="isAdmin() && haySeleccionados && !soloRetirados">
+    <span class="sel-count">
+      {{ selectedIds.length }} trabajador{{ selectedIds.length !== 1 ? 'es' : '' }} seleccionado{{ selectedIds.length !== 1 ? 's' : '' }}
+    </span>
+    <div class="sel-actions">
+      <button type="button" class="btn-danger-sm" (click)="retirarMasivo()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Dar de baja seleccionados
+      </button>
+      <button type="button" class="btn-ghost-sm" (click)="limpiarSeleccion()">Limpiar selección</button>
+    </div>
+  </div>
+
   <!-- 3-COLUMN GRID -->
   <div class="hab-layout">
 
@@ -55,6 +74,51 @@
           <option value="Habilitado">Habilitado</option>
           <option value="No Autorizado">No Autorizado</option>
         </select>
+        <div class="wf-search-wrap">
+          <app-search-select
+            [options]="catalogoProyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="filtroProyectoId"
+            [showLabel]="false"
+            placeholder="Todos los proyectos"
+            [allowClear]="true"
+            (valueChange)="filtroProyectoId = $event; onFilterChange()"
+          />
+        </div>
+        <div class="wf-search-wrap" *ngIf="filtroContratistaCasa !== 'Contratista'">
+          <app-search-select
+            [options]="catalogoEmpresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="filtroEmpresaId"
+            [showLabel]="false"
+            placeholder="Todas las razones sociales"
+            [allowClear]="true"
+            (valueChange)="filtroEmpresaId = $event; onFilterChange()"
+          />
+        </div>
+        <label class="wf-toggle">
+          <input
+            type="checkbox"
+            [(ngModel)]="soloRetirados"
+            (change)="onFilterChange()"
+          />
+          <span>Ver retirados</span>
+        </label>
+      </div>
+
+      <!-- Fila "Seleccionar todos" — solo admin -->
+      <div class="select-all-row" *ngIf="isAdmin() && !loading && workers.length > 0 && !soloRetirados">
+        <label class="sel-all-label" (click)="$event.stopPropagation()">
+          <input
+            type="checkbox"
+            class="wc-checkbox"
+            [checked]="todosSeleccionados"
+            (change)="toggleTodos()"
+          />
+          <span>Seleccionar todos</span>
+        </label>
       </div>
 
       <div class="workers-list">
@@ -67,8 +131,23 @@
           *ngFor="let w of workers"
           class="worker-card"
           [class.worker-card--sel]="selectedWorker?.workerId === w.workerId"
+          [class.worker-card--checked]="selectedIds.includes(w.workerId)"
           (click)="selectWorker(w)"
         >
+          <!-- Checkbox selección (solo activos, solo admin) -->
+          <div
+            *ngIf="isAdmin() && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
+            class="wc-check"
+            (click)="$event.stopPropagation()"
+          >
+            <input
+              type="checkbox"
+              class="wc-checkbox"
+              [checked]="selectedIds.includes(w.workerId)"
+              (change)="toggleSeleccion(w.workerId)"
+            />
+          </div>
+
           <div class="wc-top">
             <span class="wc-name">{{ w.apellidoNombre }}</span>
             <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
@@ -79,27 +158,51 @@
           </div>
           <div class="wc-foot">
             <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
-            <div class="wc-actions" *ngIf="isAdmin()">
+            <div class="wc-actions">
+              <ng-container *ngIf="isAdmin()">
+                <button
+                  *ngIf="!soloRetirados && w.estadoWorker !== 'RETIRADO'"
+                  class="icon-btn icon-btn--danger"
+                  title="Dar de baja"
+                  (click)="$event.stopPropagation(); retirar(w)"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                  </svg>
+                </button>
+                <button
+                  class="icon-btn"
+                  title="Cambiar obra"
+                  (click)="$event.stopPropagation(); abrirCambiarObra(w)"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
+                    <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                    <path d="M12 8v8m-3-3 3 3 3-3"/>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="w.estadoWorker === 'RETIRADO'"
+                  class="icon-btn"
+                  title="Reingreso"
+                  (click)="$event.stopPropagation(); abrirReingreso(w)"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 14 4 9l5-5"/>
+                    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                  </svg>
+                </button>
+              </ng-container>
               <button
                 class="icon-btn"
-                title="Cambiar obra"
-                (click)="$event.stopPropagation(); abrirCambiarObra(w)"
+                title="Ver historial"
+                (click)="$event.stopPropagation(); abrirHistorial(w)"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
-                  <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
-                  <path d="M12 8v8m-3-3 3 3 3-3"/>
-                </svg>
-              </button>
-              <button
-                *ngIf="w.estadoWorker === 'RETIRADO'"
-                class="icon-btn"
-                title="Reingreso"
-                (click)="$event.stopPropagation(); abrirReingreso(w)"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M9 14 4 9l5-5"/>
-                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </button>
             </div>
@@ -488,4 +591,15 @@
   [worker]="workerParaAccion"
   (closed)="closeEditarPerfil()"
   (saved)="onEditarPerfilSaved()"
+/>
+<app-reingreso-form
+  [open]="mostrarReingreso"
+  [initial]="workerParaReingreso"
+  (closed)="mostrarReingreso = false"
+  (saved)="onReingresoSaved()"
+/>
+<app-historial-eventos
+  [open]="mostrarHistorial"
+  [workerId]="workerParaHistorial?.workerId ?? null"
+  (closed)="mostrarHistorial = false; workerParaHistorial = null"
 />
