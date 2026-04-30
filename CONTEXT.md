@@ -555,6 +555,8 @@ Standalone routes (no NgModule). Posición: **último item** del sidebar (despu�
 - **`AuditoriaInterceptor` debe ser Singleton** (no Scoped). Al usar `IDbContextFactory<>` el interceptor se instancia por factory y no por request HTTP — si está registrado como Scoped arroja `ObjectDisposedException`. Registrar con `services.AddSingleton<AuditoriaInterceptor>()`.
 - **Columnas `datos_anteriores` / `datos_nuevos`** en la entidad `AuditoriaCambio` requieren `.HasColumnType("jsonb")` en `OnModelCreating`. Sin eso EF Core las mapea como `text` y PostgreSQL rechaza la inserción directa de objetos JSON serializados.
 - **Swagger** solo funciona con `--launch-profile Development`. El bloque `if (app.Environment.IsDevelopment())` que envuelve `app.UseSwagger()` exige que `ASPNETCORE_ENVIRONMENT=Development`; garantizar que `launchSettings.json` tenga ese perfil con la variable seteada.
+- **Snapshot EF desfasado de la BD**: `AppDbContextModelSnapshot.cs` puede divergir del estado real cuando se hacen cambios manuales en BD o se renombran entidades sin migración. Cuando esto pasa, `dotnet ef migrations add` genera operaciones espurias (drops/creates de tablas que ya están sincronizadas) además del cambio real que querés. Síntoma: la migración generada tiene 30+ operaciones cuando esperabas 5. **Antes de aplicar**, leé el `Up()` operación por operación y borrá las que no querés. Para drops de tablas con FKs externas no listadas en el snapshot, usar `migrationBuilder.Sql("DROP TABLE x CASCADE")` con `IF EXISTS` en vez del helper `DropTable` (que se queja si encuentra FKs huérfanas no declaradas).
+- **`@microsoft.graph.downloadUrl` y `Content-Disposition`**: el endpoint `GET /habilitacion/archivos/url` devuelve URLs temporales (~1h) de Microsoft Graph. Esas URLs vienen con header `Content-Disposition: attachment; filename="…"`, lo que hace que el browser fuerce descarga al ponerlas en `<iframe src>` o `<img src>`. Por eso el frontend usa fetch-as-blob (`document-viewer.ts:cargarComoBlob`) — no cambies eso a un binding directo sin entender la implicancia.
 
 ### Catálogos SSOMA — específico
 - `EmoTipoDto` y `MedicoSimpleDto`/`ClinicaSimpleDto` se extendieron con campos opcionales (`activo?`, `descripcion?`, `email?`, etc.) para soportar el admin sin romper los dropdowns que ya consumían estos DTOs en `programacion-create`/`emo-create`. **No quitar los `?` ni cambiar nombres de campos.**
@@ -674,9 +676,13 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/catalogos/items-empresa` |
 | GET | `/catalogos/items-equipo` |
 | GET | `/catalogos/criterios` |
+| GET | `/catalogos/areas` (lista de áreas, cacheado client-side) |
+| GET | `/catalogos/subareas?area={area}` (subáreas filtradas, incluye `jefatura`) |
 | POST | `/auth/login` (contratista) |
 | GET | `/auth/empresas` (dropdown login) |
 | GET | `/trabajadores` (paginado) |
+| GET | `/trabajadores/{id}` (detalle para edición de perfil) |
+| PUT | `/trabajadores/{id}` (editar perfil) |
 | GET | `/trabajadores/{id}/entregables` |
 | PUT | `/trabajadores/entregables/{id}` |
 | GET | `/trabajadores/entregables/{id}/versiones` |
@@ -781,13 +787,65 @@ Contextos usados:
 - Stats bar superior (solo admin): total de trabajadores + botón Actualizar.
 - Toda la lógica TypeScript intacta — no se modificó `.ts`.
 
+### Modal "Editar perfil" del trabajador
+`pages/trabajadores/components/editar-perfil/` — standalone, abre desde un botón ✏️ en `worker-hdr` (visible sólo para `!isContratista()`).
+
+Campos editables:
+- `apellidoNombre` (texto, requerido)
+- `celular` (texto)
+- `fechaNacimiento`, `fechaRetiro` (date inputs, ISO substring 0-10)
+- `sctr` (dropdown Sí/No, mapea a `boolean | null`) — **visible sólo para `obraOficina === 'Oficina Central'`**
+- `area`, `subarea`, `jefatura` — **visibles sólo para `obraOficina === 'Staff' || 'Oficina Central'`**
+
+Cascada área → subárea → jefatura:
+- Cambio de área dispara `getSubareas(area)` y limpia `subarea` + `jefatura`.
+- Cambio de subárea autocompleta `jefatura` desde el item encontrado en `subareas[]`.
+- `jefatura` siempre es readonly (`field-readonly`), nunca lo edita el usuario.
+
+DTOs (en `dtos/catalogos.model.ts`):
+```ts
+AreaCatDto    { area: string }
+SubareaCatDto { id?: number; subarea: string; area: string; jefatura: string }
+```
+**Importante**: el shape backend usa `area` y `subarea` como nombres de campo (no `nombre`). Los `<app-search-select>` se configuran con `valueField="area"`/`displayField="area"` para áreas y `valueField="subarea"`/`displayField="subarea"` para subáreas.
+
+DTOs trabajador (en `dtos/trabajador.model.ts`):
+- `WorkerDetalleDto` (respuesta de `GET /trabajadores/{id}`) — incluye `obraOficina`, `area`, `subarea`, `jefatura`, `sctr: boolean`, `celular`, `fechaNacimiento`, `fechaRetiro`.
+- `WorkerEditDto` (payload de `PUT /trabajadores/{id}`) — mismos campos optional. En el submit usar `?? undefined` (no `||`) para preservar `false` en `sctr`.
+- `WorkerHabilitacionListDto` también lleva `obraOficina?: string` para que el filtro Staff/Oficina Central funcione antes de que llegue el detalle.
+
+### Auto-marcar entregable como "Enviado" tras upload
+`Trabajadores.onFileSelected()` (`pages/trabajadores/trabajadores.ts`): tras un upload exitoso a SharePoint, el método `autoMarcarEnviado()` dispara automáticamente un `PUT /trabajadores/entregables/{id}` con `estado: 'Enviado'` + el `archivoUrl` recién subido. Aplica para **cualquier estado actual** (Falta, Rechazado, Aprobado, Vencido, etc.) y se reinicia a Enviado al subir un archivo nuevo. La UI refleja el cambio inmediatamente vía `actualizarEntregableLocal()` (chip de tabla central + chip del header del drawer). El botón "ENVIAR DOCUMENTO" sigue existiendo para re-enviar tras editar observación/vigencia sin subir archivo.
+
+### Visor de documentos PDF — fetch como blob
+`shared/components/document-viewer/document-viewer.ts`: el endpoint `GET /habilitacion/archivos/url` devuelve `@microsoft.graph.downloadUrl` que viene con header `Content-Disposition: attachment`. Si pasás esa URL directo al `<iframe src>` o `<img src>`, el browser dispara descarga en vez de previsualizar.
+
+Solución: para tipos `pdf` e `img`, el componente hace `fetch(res.url)` → `.blob()` → `URL.createObjectURL(blob)` y bindea ese object URL al iframe/img. Los blob URLs no llevan `Content-Disposition` así que se renderizan inline. El object URL se trackea en `this.blobUrl` y se libera con `URL.revokeObjectURL` en `reset()` (al cerrar el visor o destruir el componente). Para Office sigue usando `view.officeapps.live.com/op/embed.aspx?src=` porque ese viewer hace fetch server-side de Microsoft a Microsoft.
+
+El botón "Descargar" sigue usando la URL Graph original (`tempUrl`), donde sí queremos el `Content-Disposition: attachment`.
+
+### SearchSelect — botón X clearable
+`shared/components/search-select/search-select.ts`: agregado `@Input() allowClear: boolean = true` (opt-out). Cuando hay valor seleccionado y `allowClear` es true, aparece un ícono X dentro del trigger junto al chevron. Click en la X dispara `clear($event)` que `stopPropagation`, setea `value = null` y emite `valueChange.emit(null)` sin abrir el dropdown. Accesible por teclado (`tabindex="0"`, `keydown.enter`).
+
+### Empresas en cambiar-obra → tabla legacy `companies` (vía `contributor`)
+`cambiar-obra.ts`: el dropdown "Razón social" usa `CatalogosSaludService.getEmpresas()` (endpoint `GET /api/v1/ssoma/salud-ocupacional/catalogos/empresas`), **no** `EmpresaContratistaService` (que hablaba con `ss_empresa_contratista`). Esto es porque la FK `worker_vinculaciones.empresa_id` en backend referencia la tabla legacy (`fk_worker_vinculaciones_companies_empresa_id` → ahora `contributor` tras la consolidación). Si se enviara un id de `ss_empresa_contratista`, EF rompería con FK violation. El template usa `displayField="nombre"` sobre `EmpresaSimpleDto` (campos `id`, `nombre`, `esAbril`).
+
+Fix de UX en el mismo modal: dropdowns "Nueva obra" y "Razón social" usan `<app-search-select>` para filtrado en vivo. Opciones de Staff/Oficina son `Obra | Staff | Oficina Central` (ya no existe "Ninguno").
+
 ### Estado actual
 - Sprints 1-8 completados.
 - Auth contratistas: login email+password, activación, reset, cambio password.
-- Páginas completadas: Trabajadores (rediseño enterprise), Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público, con logo upload), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
+- Páginas completadas: Trabajadores (rediseño enterprise + modal Editar perfil), Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público, con logo upload), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
 - Restricciones CONTRATISTA implementadas en rutas y navegación.
+- Modal Editar perfil con cascada áreas/subareas/jefatura, SCTR Sí/No (Oficina Central), área/subárea (Staff/Oficina Central), endpoints `GET/PUT /trabajadores/{id}` y `GET /catalogos/areas|subareas`.
+- Auto-marcar entregable a "Enviado" tras upload de archivo (en cualquier estado previo).
+- Visor PDF inline funcionando con blob workaround para `@microsoft.graph.downloadUrl`.
+- Migración backend Project (legacy, tabla `project`) vs Projects (nueva, tabla `projects`): consolidada en **`project` legacy**. Se dropeó `projects` con CASCADE y se recablearon 10 FKs (`worker_vinculaciones`, `ss_empresa_contratista`, `ss_empresa_proyecto`, `ss_equipo`, `ss_eval_supervisor`, `ss_hab_empresa`, `ss_induccion`, `ss_sctr_vidaley`, `resident_report_incidence`, `project_sub_contractor`). Migración: `20260430053121_SwitchProyectoFkToProjectLegacy`.
 
 ### Pendiente
+- Validar end-to-end el modal Editar perfil contra backend real (esp. cómo viene `sctr` — boolean vs string, y casing exacto de `obraOficina`).
+- Verificar `EsAbril` en `CatalogosRepository.ListEmpresas` (criterio actual: `ContributorName.ToUpper().Contains("ABRIL")`) — viene `false` para todos en BD actual.
+- PRs a `master` (frontend + backend coordinados; backend debe deployarse antes que el frontend en master, sino los endpoints `/trabajadores/{id}` GET+PUT, `/catalogos/areas`, `/catalogos/subareas` no existirán).
 - Deploy a producción.
 - Crear primer usuario admin.
 - Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).
