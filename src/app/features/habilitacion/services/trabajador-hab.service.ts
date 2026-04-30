@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
 import {
   DocumentoVersionDto,
+  WorkerDetalleDto,
+  WorkerEditDto,
   WorkerEntregableDto,
   WorkerEntregableUpdateDto,
   WorkerHabilitacionListDto,
@@ -22,6 +24,18 @@ export class TrabajadorHabService {
     return this.http.get<PagedResponseDTO<WorkerHabilitacionListDto>>(this.base, {
       headers: buildHabHeaders(),
       params: buildHabParams(params),
+    });
+  }
+
+  getWorker(workerId: number): Observable<WorkerDetalleDto> {
+    return this.http.get<WorkerDetalleDto>(`${this.base}/${workerId}`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  updateWorker(workerId: number, dto: WorkerEditDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/${workerId}`, dto, {
+      headers: buildHabHeaders(),
     });
   }
 

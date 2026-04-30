@@ -287,9 +287,40 @@
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.worker-hdr-name-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.icon-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.icon-btn-edit:hover {
+  background: #f3f4f6;
+  color: #64bc04;
 }
 
 .worker-hdr-sub {

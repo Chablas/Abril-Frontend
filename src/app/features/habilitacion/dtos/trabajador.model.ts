@@ -11,6 +11,7 @@ export interface WorkerHabilitacionListDto {
   ocupacion?: string;
   estadoWorker: string;
   contrataCasa?: string;
+  obraOficina?: string;
 }
 
 export interface WorkerEntregableDto {
@@ -43,4 +44,29 @@ export interface DocumentoVersionDto {
   subidoPorEmpresaId?: number;
   estadoAlSubir?: string;
   createdAt: string;
+}
+
+export interface WorkerDetalleDto {
+  workerId: number;
+  apellidoNombre: string;
+  dni?: string;
+  celular?: string;
+  fechaNacimiento?: string;
+  fechaRetiro?: string;
+  sctr?: boolean;
+  area?: string;
+  subarea?: string;
+  jefatura?: string;
+  obraOficina?: string;
+}
+
+export interface WorkerEditDto {
+  apellidoNombre: string;
+  celular?: string;
+  fechaNacimiento?: string;
+  fechaRetiro?: string;
+  sctr?: boolean;
+  area?: string;
+  subarea?: string;
+  jefatura?: string;
 }

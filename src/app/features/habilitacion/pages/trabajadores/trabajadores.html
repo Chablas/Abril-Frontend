@@ -123,7 +123,21 @@
 
         <div class="worker-hdr">
           <div class="worker-hdr-left">
-            <h2 class="worker-hdr-name">{{ selectedWorker.apellidoNombre }}</h2>
+            <h2 class="worker-hdr-name">
+              <span class="worker-hdr-name-text">{{ selectedWorker.apellidoNombre }}</span>
+              <button
+                *ngIf="!isContratista()"
+                type="button"
+                class="icon-btn-edit"
+                title="Editar perfil"
+                (click)="abrirEditarPerfil(selectedWorker)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                </svg>
+              </button>
+            </h2>
             <span
               class="worker-hdr-sub"
               *ngIf="selectedWorker.categoria || selectedWorker.ocupacion"
@@ -468,4 +482,10 @@
   [open]="modalVersionesOpen"
   [entregableId]="selectedEntregable?.id"
   (closed)="closeVersiones()"
+/>
+<app-hab-editar-perfil
+  [open]="modalEditarPerfilOpen"
+  [worker]="workerParaAccion"
+  (closed)="closeEditarPerfil()"
+  (saved)="onEditarPerfilSaved()"
 />

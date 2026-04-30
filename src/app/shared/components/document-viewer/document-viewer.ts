@@ -39,6 +39,7 @@ export class DocumentViewer implements OnChanges, OnDestroy {
   imgUrl = '';
   tempUrl = '';
   nombreDisplay = '';
+  private blobUrl = '';
 
   constructor(
     private sharepointService: SharepointUploadService,
@@ -91,16 +92,20 @@ export class DocumentViewer implements OnChanges, OnDestroy {
     this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
       next: (res) => {
         this.tempUrl = res.url;
-        if (this.tipo === 'pdf') {
-          this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url);
-        } else if (this.tipo === 'img') {
-          this.imgUrl = res.url;
+        if (this.tipo === 'pdf' || this.tipo === 'img') {
+          // @microsoft.graph.downloadUrl trae Content-Disposition: attachment, lo que
+          // fuerza al browser a descargar en vez de renderizar dentro del iframe/img.
+          // Lo descargamos como blob y creamos un object URL sin ese header.
+          this.cargarComoBlob(res.url);
         } else if (this.tipo === 'office') {
           const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(res.url)}`;
           this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(officeUrl);
+          this.loading = false;
+          this.cdr.detectChanges();
+        } else {
+          this.loading = false;
+          this.cdr.detectChanges();
         }
-        this.loading = false;
-        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
@@ -112,6 +117,42 @@ export class DocumentViewer implements OnChanges, OnDestroy {
     });
   }
 
+  private cargarComoBlob(url: string): void {
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.blob();
+      })
+      .then((blob) => {
+        this.revokeBlobUrl();
+        this.blobUrl = URL.createObjectURL(blob);
+        if (this.tipo === 'pdf') {
+          this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.blobUrl);
+        } else if (this.tipo === 'img') {
+          this.imgUrl = this.blobUrl;
+        }
+        this.loading = false;
+        this.cdr.detectChanges();
+      })
+      .catch(() => {
+        // Fallback: usa la URL directa aunque el browser fuerce descarga.
+        if (this.tipo === 'pdf') {
+          this.safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.tempUrl);
+        } else if (this.tipo === 'img') {
+          this.imgUrl = this.tempUrl;
+        }
+        this.loading = false;
+        this.cdr.detectChanges();
+      });
+  }
+
+  private revokeBlobUrl(): void {
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl);
+      this.blobUrl = '';
+    }
+  }
+
   private reset(): void {
     this.isOpen = false;
     this.loading = false;
@@ -119,6 +160,7 @@ export class DocumentViewer implements OnChanges, OnDestroy {
     this.safeUrl = null;
     this.imgUrl = '';
     this.tempUrl = '';
+    this.revokeBlobUrl();
   }
 
   private detectarTipo(ext: string): VisorTipo {

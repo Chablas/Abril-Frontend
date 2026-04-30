@@ -12,14 +12,15 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
-import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
+import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
-import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 
 interface CambiarObraForm {
   proyectoId: number | null;
@@ -31,7 +32,7 @@ interface CambiarObraForm {
 @Component({
   selector: 'app-hab-cambiar-obra',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './cambiar-obra.html',
   styleUrl: './cambiar-obra.css',
 })
@@ -42,7 +43,7 @@ export class CambiarObra implements OnChanges {
   @Output() saved = new EventEmitter<void>();
 
   proyectos: ProjectGetDTO[] = [];
-  empresas: EmpresaContratistaListDto[] = [];
+  empresas: EmpresaSimpleDto[] = [];
 
   model: CambiarObraForm = this.empty();
   saving = false;
@@ -50,14 +51,14 @@ export class CambiarObra implements OnChanges {
 
   staffOficinaOptions = [
     { id: 'Obra', nombre: 'Obra' },
+    { id: 'Staff', nombre: 'Staff' },
     { id: 'Oficina Central', nombre: 'Oficina Central' },
-    { id: 'Ninguno', nombre: 'Ninguno' },
   ];
 
   constructor(
     private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
-    private empresaService: EmpresaContratistaService,
+    private catalogosService: CatalogosSaludService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -81,24 +82,27 @@ export class CambiarObra implements OnChanges {
 
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
-    this.projectService.getProjectPaged(1).subscribe({
+    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
         this.proyectos = res.data ?? [];
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
         this.proyectos = [];
+        this.errorService.handleError(err);
       },
     });
-    this.empresaService.getEmpresas({ pageSize: 200 }).subscribe({
+    this.catalogosService.getEmpresas().subscribe({
       next: (res) => {
-        this.empresas = res.data ?? [];
+        console.log('Empresas raw:', res);
+        this.empresas = (res ?? []).filter((e) => e.esAbril);
         this.loadingCatalogos = false;
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
         this.empresas = [];
         this.loadingCatalogos = false;
+        this.errorService.handleError(err);
       },
     });
   }

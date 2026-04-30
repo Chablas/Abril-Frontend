@@ -28,11 +28,12 @@ import { environment } from '../../../../../environments/environment';
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { CambiarObra } from './components/cambiar-obra/cambiar-obra';
 import { VersionesDoc } from './components/versiones-doc/versiones-doc';
+import { EditarPerfil } from './components/editar-perfil/editar-perfil';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -69,6 +70,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   visorNombre = '';
   modalCambiarObraOpen = false;
   modalVersionesOpen = false;
+  modalEditarPerfilOpen = false;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
 
   private searchChange$ = new Subject<void>();
@@ -331,17 +333,19 @@ export class Trabajadores implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) return;
+    if (!this.selectedEntregable || !this.selectedWorker) return;
 
     this.panelArchivoNombre = file.name;
     this.uploadingFile = true;
     this.cdr.detectChanges();
 
-    const contexto = `habilitacion/trabajadores/${this.selectedWorker?.workerId ?? 'sin-worker'}`;
+    const contexto = `habilitacion/trabajadores/${this.selectedWorker.workerId}`;
     this.sharepointService.subirArchivo(file, contexto).subscribe({
       next: (res) => {
         this.panelArchivoUrl = res.url;
         this.uploadingFile = false;
         input.value = '';
+        this.autoMarcarEnviado();
         this.cdr.detectChanges();
       },
       error: () => {
@@ -349,7 +353,33 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.panelArchivoUrl = `pending-upload://${file.name}`;
         this.uploadingFile = false;
         input.value = '';
+        this.autoMarcarEnviado();
         this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private autoMarcarEnviado(): void {
+    if (!this.selectedEntregable || !this.selectedWorker) return;
+
+    const payload: WorkerEntregableUpdateDto = {
+      estado: 'Enviado',
+      archivoUrl: this.panelArchivoUrl || undefined,
+      vigencia: this.panelVigencia || undefined,
+      obsContratista: this.isContratista() ? this.panelObsAbril || undefined : undefined,
+      obsAbril: !this.isContratista() ? this.panelObsAbril || undefined : undefined,
+    };
+
+    this.trabajadorHabService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
+      next: () => {
+        this.actualizarEntregableLocal({
+          estado: 'Enviado',
+          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+        });
+        this.panelEstado = 'Enviado';
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
       },
     });
   }
@@ -584,5 +614,26 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   closeVersiones(): void {
     this.modalVersionesOpen = false;
+  }
+
+  abrirEditarPerfil(worker: WorkerHabilitacionListDto): void {
+    this.workerParaAccion = worker;
+    this.modalEditarPerfilOpen = true;
+  }
+
+  closeEditarPerfil(): void {
+    this.modalEditarPerfilOpen = false;
+    this.workerParaAccion = null;
+  }
+
+  onEditarPerfilSaved(): void {
+    this.modalEditarPerfilOpen = false;
+    this.workerParaAccion = null;
+    this.loadWorkers(this.currentPage);
+    if (this.selectedWorker) {
+      const id = this.selectedWorker.workerId;
+      const updated = this.workers.find((w) => w.workerId === id);
+      if (updated) this.selectedWorker = updated;
+    }
   }
 }

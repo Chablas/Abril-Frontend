@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-search-select',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './search-select.html',
   styleUrl: './search-select.css',
@@ -17,6 +18,7 @@ export class SearchSelect {
   @Input() label: string = '';
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'Selecciona';
+  @Input() allowClear: boolean = true;
 
   isOpen = false;
   searchText = '';
@@ -59,6 +61,13 @@ export class SearchSelect {
     this.value = option[this.valueField];
     this.valueChange.emit(this.value);
     this.isOpen = false;
+    this.searchText = '';
+  }
+
+  clear(event: MouseEvent) {
+    event.stopPropagation();
+    this.value = null;
+    this.valueChange.emit(null);
     this.searchText = '';
   }
 
