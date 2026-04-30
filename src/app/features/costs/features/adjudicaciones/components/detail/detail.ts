@@ -106,7 +106,7 @@ export class Detail implements OnInit {
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,

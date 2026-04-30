@@ -28,7 +28,7 @@ export interface ProjectSubContractorDTO {
   currencyId: number;
   currencyCode: string;
   amountHasIgv: boolean;
-  contractorEmail: string;
+  contractorEmails: string[];
   workItemId: number;
   workItemDescription: string;
   workItemCategoryId: number;

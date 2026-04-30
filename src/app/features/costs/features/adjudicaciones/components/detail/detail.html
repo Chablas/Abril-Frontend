@@ -133,8 +133,13 @@
         </div>
 
         <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Correo del contratista</p>
-          <p class="text-sm text-gray-700 break-all">{{ item.contractorEmail }}</p>
+          <p class="text-xs text-gray-400 mb-[2px]">Correos del contratista</p>
+          <div *ngIf="item.contractorEmails?.length; else noEmails" class="flex flex-col gap-[2px]">
+            <p *ngFor="let email of item.contractorEmails" class="text-sm text-gray-700 break-all">{{ email }}</p>
+          </div>
+          <ng-template #noEmails>
+            <p class="text-sm text-gray-400 italic">Sin correos registrados</p>
+          </ng-template>
         </div>
 
         <div>
