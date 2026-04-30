@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -24,13 +25,14 @@ import {
   WorkerHabilitacionListDto,
 } from '../../dtos/trabajador.model';
 import { environment } from '../../../../../environments/environment';
+import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { CambiarObra } from './components/cambiar-obra/cambiar-obra';
 import { VersionesDoc } from './components/versiones-doc/versiones-doc';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, CambiarObra, VersionesDoc],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -59,8 +61,12 @@ export class Trabajadores implements OnInit, OnDestroy {
   panelArchivoUrl = '';
   panelArchivoNombre = '';
   panelObsAbril = '';
+  panelEstado = '';
   uploadingFile = false;
 
+  drawerOpen = false;
+  visorArchivoUrl = '';
+  visorNombre = '';
   modalCambiarObraOpen = false;
   modalVersionesOpen = false;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
@@ -147,6 +153,14 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.panelArchivoUrl = e.archivoUrl ?? '';
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
     this.panelObsAbril = e.obsAbril ?? '';
+    this.panelEstado = e.estado;
+    this.drawerOpen = true;
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen = false;
+    this.selectedEntregable = null;
+    this.resetPanel();
   }
 
   private extractFileName(url: string): string {
@@ -163,6 +177,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.panelArchivoUrl = '';
     this.panelArchivoNombre = '';
     this.panelObsAbril = '';
+    this.panelEstado = '';
   }
 
   onSearch(): void {
@@ -184,8 +199,17 @@ export class Trabajadores implements OnInit, OnDestroy {
   isAdmin(): boolean {
     return (
       this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
+      this.authService.hasRole('ADMINISTRADOR DE UDP') ||
+      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION')
     );
+  }
+
+  isSSoma(): boolean {
+    return this.authService.hasRole('ADMINISTRADOR SSOMA');
+  }
+
+  isAdministracion(): boolean {
+    return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION');
   }
 
   esSoloLectura(e: WorkerEntregableDto | null): boolean {
@@ -197,12 +221,30 @@ export class Trabajadores implements OnInit, OnDestroy {
     return !!e?.esSctrVidaley;
   }
 
+  esEmo(e: WorkerEntregableDto): boolean {
+    return e.nombreItem.toLowerCase().includes('emo');
+  }
+
+  workerEsCasa(): boolean {
+    return this.selectedWorker?.contrataCasa === 'Casa';
+  }
+
+  esSoloLecturaPanel(e: WorkerEntregableDto): boolean {
+    return this.esSctrVidaley(e) || this.esSoloLectura(e) || (this.esEmo(e) && this.workerEsCasa());
+  }
+
+  puedeEditar(_e: WorkerEntregableDto): boolean {
+    return !this.isContratista();
+  }
+
   getEstadoClass(estado: string): string {
     switch (estado) {
       case 'Habilitado':
         return 'btn-chip chip-green';
-      case 'No Autorizado':
+      case 'Autorizado Temporalmente':
         return 'btn-chip chip-orange';
+      case 'No Autorizado':
+        return 'btn-chip chip-red';
       default:
         return 'btn-chip chip-gray';
     }
@@ -233,8 +275,52 @@ export class Trabajadores implements OnInit, OnDestroy {
     return 'dot-no-aplica';
   }
 
-  getViewUrl(archivoUrl: string): string {
-    return `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(archivoUrl)}`;
+  nombreArchivo(url: string): string {
+    return url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.visorArchivoUrl) this.onVisorClosed();
+    else if (this.drawerOpen) this.closeDrawer();
+  }
+
+  abrirVisor(archivoUrl: string): void {
+    this.visorNombre = this.nombreArchivo(archivoUrl);
+    this.visorArchivoUrl = archivoUrl;
+  }
+
+  onVisorClosed(): void {
+    this.visorArchivoUrl = '';
+  }
+
+  abrirDocumento(archivoUrl: string): void {
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => window.open(res.url, '_blank', 'noopener'),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  descargarDocumento(archivoUrl: string): void {
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => {
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.download = this.nombreArchivo(archivoUrl);
+        a.click();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private actualizarEntregableLocal(updates: Partial<WorkerEntregableDto>): void {
+    if (!this.selectedEntregable) return;
+    const idx = this.entregables.findIndex((e) => e.id === this.selectedEntregable!.id);
+    if (idx !== -1) {
+      this.entregables[idx] = { ...this.entregables[idx], ...updates };
+      this.selectedEntregable = this.entregables[idx];
+    }
+    this.cdr.detectChanges();
   }
 
   triggerFileInput(): void {
@@ -303,13 +389,52 @@ export class Trabajadores implements OnInit, OnDestroy {
             timer: 1500,
             showConfirmButton: false,
           });
-          if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
+          this.actualizarEntregableLocal({
+            estado: 'Enviado',
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
           this.errorService.handleError(err);
         },
       });
+  }
+
+  guardarEntregable(): void {
+    if (!this.selectedEntregable || !this.selectedWorker) return;
+
+    const vigencia = !this.selectedEntregable.requiereVigencia
+      ? '2040-12-31'
+      : this.panelVigencia || undefined;
+
+    const payload: WorkerEntregableUpdateDto = {
+      estado: this.panelEstado,
+      vigencia,
+      archivoUrl: this.panelArchivoUrl || undefined,
+      obsAbril: this.panelObsAbril || undefined,
+    };
+
+    this.loaderService.show();
+    this.trabajadorHabService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
+        const vigencia = !this.selectedEntregable?.requiereVigencia
+          ? '2040-12-31'
+          : this.panelVigencia || undefined;
+        this.actualizarEntregableLocal({
+          estado: this.panelEstado,
+          vigencia,
+          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          obsAbril: this.panelObsAbril || undefined,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   aprobarEntregable(): void {

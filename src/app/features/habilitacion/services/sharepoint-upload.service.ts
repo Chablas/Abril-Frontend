@@ -23,4 +23,11 @@ export class SharepointUploadService {
       headers: buildHabHeaders(),
     });
   }
+
+  getArchivoUrl(path: string): Observable<UploadResultDto> {
+    return this.http.get<UploadResultDto>(`${HABILITACION_BASE}/archivos/url`, {
+      headers: buildHabHeaders(),
+      params: { path },
+    });
+  }
 }

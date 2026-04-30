@@ -10,6 +10,7 @@ export interface WorkerHabilitacionListDto {
   categoria?: string;
   ocupacion?: string;
   estadoWorker: string;
+  contrataCasa?: string;
 }
 
 export interface WorkerEntregableDto {
