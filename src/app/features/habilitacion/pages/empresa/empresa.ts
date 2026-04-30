@@ -178,6 +178,8 @@ export class Empresa implements OnInit {
       this.habEmpresaService.getEntregables(eid, p.id).subscribe({
         next: (items) => {
           const list = items ?? [];
+          console.log('proyecto:', p.nombre, 'entregables:', list);
+          console.log('total:', list.length, 'aprobados:', list.filter((e) => e.estado === 'Aprobado').length);
           this.progresoPorProyecto.set(p.id, {
             total: list.length,
             aprobados: list.filter((e) => e.estado === 'Aprobado').length,
