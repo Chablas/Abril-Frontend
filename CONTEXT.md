@@ -219,6 +219,30 @@ this.service.foo().subscribe({
 - Paginación: `core/dtos/api/pagedResponse.model.ts` → `PagedResponseDTO<T> { page, pageSize, totalRecords, totalPages, data }`.
 - Mensajes: `core/dtos/api/ApiMessage.model.ts` → `ApiMessageDTO { message }`.
 
+### Selectores de empresa — regla de fuente de datos
+- **SIEMPRE** usar `CatalogosSaludService.getEmpresas()` → endpoint `GET /ssoma/salud-ocupacional/catalogos/empresas` → tabla `contributor`. `EmpresaSimpleDto { id, nombre, esAbril }`, `displayField="nombre"`.
+- **NUNCA** usar `EmpresaContratistaService.getEmpresas()` para selectores de razón social en el módulo Habilitación — esa tabla es `ss_empresa_contratista` y su FK rompe con `worker_vinculaciones.empresa_id` que referencia `contributor`.
+- **NO filtrar por `esAbril`** — el campo viene `false` para todos en BD actual (criterio `ContributorName.Contains("ABRIL")` no matchea). Mostrar todas las empresas.
+
+### Patrón modal canónico (Habilitación)
+```ts
+@Input() open = false;
+@Input() initial: XxxDto | null = null;
+@Output() closed = new EventEmitter<void>();
+@Output() saved  = new EventEmitter<void>();
+
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['open'] && this.open) this.resetAndLoad();
+}
+```
+Template: `<app-base-modal *ngIf="open" ... (closeModal)="close()">`. El `*ngIf="open"` monta/desmonta el modal (no `[open]` binding — `BaseModal` no tiene ese @Input).
+
+### `soloRetirados` — modo exclusivo
+- `soloRetirados = false` (default) → backend filtra `Estado != 'RETIRADO'` (solo activos).
+- `soloRetirados = true` → backend filtra `Estado == 'RETIRADO'` (solo retirados).
+- No hay modo "todos" — es exclusivo.
+- Cuando `soloRetirados = true`: ocultar checkboxes, barra de baja masiva y botón "Dar de baja"; mostrar botón "Reingreso".
+
 ### Estilos
 - **Tailwind utilities** + **CSS por componente** (no global). Mezcla intencional.
 - Cada feature/page maneja su propio `.css`.
@@ -841,6 +865,26 @@ Fix de UX en el mismo modal: dropdowns "Nueva obra" y "Razón social" usan `<app
 - Auto-marcar entregable a "Enviado" tras upload de archivo (en cualquier estado previo).
 - Visor PDF inline funcionando con blob workaround para `@microsoft.graph.downloadUrl`.
 - Migración backend Project (legacy, tabla `project`) vs Projects (nueva, tabla `projects`): consolidada en **`project` legacy**. Se dropeó `projects` con CASCADE y se recablearon 10 FKs (`worker_vinculaciones`, `ss_empresa_contratista`, `ss_empresa_proyecto`, `ss_equipo`, `ss_eval_supervisor`, `ss_hab_empresa`, `ss_induccion`, `ss_sctr_vidaley`, `resident_report_incidence`, `project_sub_contractor`). Migración: `20260430053121_SwitchProyectoFkToProjectLegacy`.
+
+**Trabajado el 2026-04-30:**
+- **Baja individual y masiva** en `pages/trabajadores/`:
+  - Checkboxes por fila (`worker-card--checked`) + barra de selección masiva (`selection-bar`) con conteo y botón "Dar de baja seleccionados" (`bajaMasiva`).
+  - Botón "Dar de baja" por fila solo para activos (`estadoWorker !== 'RETIRADO'`), solo admin.
+  - Backend: `PATCH /trabajadores/{id}/retirar` y `PATCH /trabajadores/baja-masiva` con `{ workerIds }`.
+- **Toggle `soloRetirados`** — modo exclusivo: `false` (default) excluye RETIRADO; `true` muestra solo RETIRADO. Renombrado desde `incluirRetirados` en frontend y backend (`HabTrabajadorController`). Cuando activo: oculta checkboxes/barra baja, muestra botón "Reingreso".
+- **Modal `reingreso-form`** (`components/reingreso-form/`) — campos: fecha reingreso, nuevo proyecto (SearchSelect, placeholder dinámico con proyecto actual), nueva razón social (SearchSelect, solo visible si `contrataCasa === 'Casa'`). Panel izquierdo readonly con datos actuales (trabajador, proyecto actual, razón social actual). Swal confirm antes de `PATCH /trabajadores/{id}/reingreso`. DTOs: `WorkerReingresoDto { nuevoProyectoId?, nuevaEmpresaId?, fechaReingreso? }`.
+- **Historial de eventos** (`components/historial-eventos/`) — timeline visual GET `/trabajadores/{workerId}/eventos`. Colores por tipo: BAJA (rojo), REINGRESO (verde), CAMBIO_OBRA (azul), CAMBIO_EMPRESA (naranja), ENTREGABLE_RESETEADO (gris). Botón reloj visible para todos los roles, independiente de `soloRetirados`. DTO: `WorkerEventoDto { id, tipoEvento, descripcion?, proyectoAnterior?, proyectoNuevo?, empresaAnterior?, empresaNueva?, datos?, createdAt }`.
+- **Fix historial de versiones** (`components/versiones-doc/`) — botón "Ver" anterior navegaba directo a la URL sin JWT → 401. Fix: `abrirVisor(archivoUrl)` pasa el path relativo a `DocumentViewer` que llama `getArchivoUrl` internamente. Eliminada doble llamada que causaba 400. Eliminados imports `SharepointUploadService` y `HttpErrorResponse` del componente.
+- **Filtros adicionales** en `pages/trabajadores/`: `proyectoId` (SearchSelect) y `empresaId` / razón social (SearchSelect, oculto si `filtroContratistaCasa === 'Contratista'`). Catálogos cargados en `loadCatalogos()` via `ProjectService` y `CatalogosSaludService`. Fix bug: parámetro renombrado de `estado` a `estadoHabilitacion` en query params.
+- **Módulo Habilitación Empresa rediseñado** (`pages/empresa/`):
+  - Vista tarjetas de proyectos activos con progreso (N/total aprobados), badge estado (Habilitado / En proceso / Con rechazos), colores borde verde/amber/rojo.
+  - Progreso calculado con N llamadas paralelas `getEntregables(empresaId, proyectoId)` (una por proyecto activo), resultado cacheado en `progresoPorProyecto: Map<number, ProgresoProyecto>`.
+  - Modal `proyectos-empresa` (`components/proyectos-empresa/`): lista proyectos activos + disponibles, botones Activar/Desactivar con Swal confirm. Endpoints: `GET /proyectos-disponibles`, `POST /activar-proyecto`, `DELETE /desactivar-proyecto`.
+  - Eliminados filtros mes/año (legacy PowerApps) de todos los llamados al servicio.
+  - Admin usa `CatalogosSaludService.getEmpresas()` (tabla `contributor`) con `displayField="nombre"`. Eliminado `EmpresaContratistaService` del componente.
+  - Drawer lateral para entregables: contratista (upload + obs), admin (ver doc + obs + Guardar + Aprobar/Rechazar).
+- **Fix `EmpresaNombre` en lista trabajadores**: usaba `ss_empresa_contratista`; corregido para usar `contributor` vía `CatalogosSaludService`.
+- **Fix dropdown razón social en `cambiar-obra`**: quitado filtro `esAbril` que vaciaba la lista (el campo `esAbril` viene `false` para todos en BD actual). Se muestran todas las empresas sin filtrar.
 
 ### Pendiente
 - Validar end-to-end el modal Editar perfil contra backend real (esp. cómo viene `sctr` — boolean vs string, y casing exacto de `obraOficina`).

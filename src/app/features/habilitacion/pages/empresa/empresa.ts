@@ -15,19 +15,28 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
-import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
+import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empresa';
+import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import {
-  EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
-  EmpresaProyectoDto,
+  ProyectoDisponibleDto,
 } from '../../dtos/empresa.model';
-import { environment } from '../../../../../environments/environment';
+
+interface ProgresoProyecto {
+  total: number;
+  aprobados: number;
+  rechazados: number;
+  entregables: EmpresaEntregableDto[];
+}
 
 @Component({
   selector: 'app-hab-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer, ProyectosEmpresa],
   templateUrl: './empresa.html',
   styleUrl: './empresa.css',
 })
@@ -35,16 +44,20 @@ export class Empresa implements OnInit {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   empresaId: number | null = null;
-  proyectoId: number | null = null;
-  mes: number = new Date().getMonth() + 1;
-  anio: number = new Date().getFullYear();
+  empresas: EmpresaSimpleDto[] = [];
 
-  empresas: EmpresaContratistaListDto[] = [];
-  proyectos: EmpresaProyectoDto[] = [];
+  proyectosActivos: ProyectoDisponibleDto[] = [];
+  loadingProyectos = false;
 
+  selectedProyecto: ProyectoDisponibleDto | null = null;
   entregables: EmpresaEntregableDto[] = [];
+  loadingEntregables = false;
+
   selectedEntregable: EmpresaEntregableDto | null = null;
-  loading = false;
+  drawerOpen = false;
+
+  progresoPorProyecto = new Map<number, ProgresoProyecto>();
+  loadingProgreso = new Set<number>();
 
   panelArchivoUrl = '';
   panelArchivoNombre = '';
@@ -53,24 +66,14 @@ export class Empresa implements OnInit {
   panelObsContratista = '';
   uploadingFile = false;
 
-  meses = [
-    { num: 1, label: 'Enero' },
-    { num: 2, label: 'Febrero' },
-    { num: 3, label: 'Marzo' },
-    { num: 4, label: 'Abril' },
-    { num: 5, label: 'Mayo' },
-    { num: 6, label: 'Junio' },
-    { num: 7, label: 'Julio' },
-    { num: 8, label: 'Agosto' },
-    { num: 9, label: 'Septiembre' },
-    { num: 10, label: 'Octubre' },
-    { num: 11, label: 'Noviembre' },
-    { num: 12, label: 'Diciembre' },
-  ];
+  visorArchivoUrl = '';
+  visorNombre = '';
+
+  mostrarProyectos = false;
 
   constructor(
     private habEmpresaService: HabEmpresaService,
-    private empresaContratistaService: EmpresaContratistaService,
+    private catalogosService: CatalogosSaludService,
     private sharepointService: SharepointUploadService,
     private authService: AuthService,
     private loaderService: LoaderService,
@@ -80,14 +83,25 @@ export class Empresa implements OnInit {
 
   ngOnInit(): void {
     if (this.isContratista()) {
-      const empresaIdJwt = this.readEmpresaIdFromJwt();
-      if (empresaIdJwt) {
-        this.empresaId = empresaIdJwt;
-        this.loadProyectosDeEmpresa(empresaIdJwt);
+      const id = this.readEmpresaIdFromJwt();
+      if (id) {
+        this.empresaId = id;
+        this.loadProyectos();
       }
     } else if (this.isAdmin()) {
       this.loadEmpresasAdmin();
     }
+  }
+
+  isContratista(): boolean {
+    return this.authService.hasRole('CONTRATISTA');
+  }
+
+  isAdmin(): boolean {
+    return (
+      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+      this.authService.hasRole('ADMINISTRADOR DE UDP')
+    );
   }
 
   private readEmpresaIdFromJwt(): number | null {
@@ -104,21 +118,10 @@ export class Empresa implements OnInit {
     }
   }
 
-  isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
-  }
-
-  isAdmin(): boolean {
-    return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
-    );
-  }
-
   private loadEmpresasAdmin(): void {
-    this.empresaContratistaService.getEmpresas({ pageSize: 200 }).subscribe({
+    this.catalogosService.getEmpresas().subscribe({
       next: (res) => {
-        this.empresas = res.data ?? [];
+        this.empresas = res ?? [];
         this.cdr.detectChanges();
       },
       error: () => {
@@ -127,55 +130,145 @@ export class Empresa implements OnInit {
     });
   }
 
-  private loadProyectosDeEmpresa(empresaId: number): void {
-    this.proyectos = [];
-    this.proyectoId = null;
+  onEmpresaChange(id: number | null): void {
+    this.empresaId = id;
+    this.resetAll();
+    if (id) this.loadProyectos();
+  }
+
+  private resetAll(): void {
+    this.proyectosActivos = [];
+    this.selectedProyecto = null;
     this.entregables = [];
     this.selectedEntregable = null;
-    this.habEmpresaService.getProyectos(empresaId).subscribe({
+    this.drawerOpen = false;
+    this.progresoPorProyecto.clear();
+    this.loadingProgreso.clear();
+    this.cdr.detectChanges();
+  }
+
+  loadProyectos(): void {
+    if (!this.empresaId) return;
+    this.loadingProyectos = true;
+    this.proyectosActivos = [];
+    this.selectedProyecto = null;
+    this.entregables = [];
+    this.selectedEntregable = null;
+    this.drawerOpen = false;
+    this.progresoPorProyecto.clear();
+    this.habEmpresaService.getProyectosDisponibles(this.empresaId).subscribe({
       next: (res) => {
-        this.proyectos = res ?? [];
+        this.proyectosActivos = (res ?? []).filter((p) => p.estaActiva);
+        this.loadingProyectos = false;
         this.cdr.detectChanges();
+        this.loadProgresoBatch(this.proyectosActivos);
       },
-      error: () => {
-        this.proyectos = [];
+      error: (err) => {
+        this.loadingProyectos = false;
+        this.errorService.handleError(err);
       },
     });
   }
 
-  onEmpresaChange(): void {
-    if (!this.empresaId) {
-      this.proyectos = [];
-      this.proyectoId = null;
-      this.entregables = [];
-      this.selectedEntregable = null;
-      return;
-    }
-    this.loadProyectosDeEmpresa(this.empresaId);
-  }
-
-  loadEntregables(): void {
-    if (!this.empresaId || !this.proyectoId) return;
-    this.loading = true;
-    this.loaderService.show();
-    this.entregables = [];
-    this.selectedEntregable = null;
-    this.resetPanel();
-    this.habEmpresaService
-      .getEntregables(this.empresaId, this.proyectoId, this.mes, this.anio)
-      .subscribe({
-        next: (res) => {
-          this.entregables = res ?? [];
-          this.loading = false;
-          this.loaderService.hide();
+  private loadProgresoBatch(proyectos: ProyectoDisponibleDto[]): void {
+    if (!this.empresaId || proyectos.length === 0) return;
+    const eid = this.empresaId;
+    for (const p of proyectos) {
+      this.loadingProgreso.add(p.id);
+      this.habEmpresaService.getEntregables(eid, p.id).subscribe({
+        next: (items) => {
+          const list = items ?? [];
+          this.progresoPorProyecto.set(p.id, {
+            total: list.length,
+            aprobados: list.filter((e) => e.estado === 'Aprobado').length,
+            rechazados: list.filter((e) => e.estado === 'Rechazado').length,
+            entregables: list,
+          });
+          this.loadingProgreso.delete(p.id);
           this.cdr.detectChanges();
         },
-        error: (err: HttpErrorResponse) => {
-          this.loading = false;
-          this.loaderService.hide();
-          this.errorService.handleError(err);
+        error: () => {
+          this.loadingProgreso.delete(p.id);
+          this.cdr.detectChanges();
         },
       });
+    }
+  }
+
+  getProgreso(proyectoId: number): ProgresoProyecto | null {
+    return this.progresoPorProyecto.get(proyectoId) ?? null;
+  }
+
+  isLoadingProgreso(proyectoId: number): boolean {
+    return this.loadingProgreso.has(proyectoId);
+  }
+
+  getCardBorderClass(proyectoId: number): string {
+    const p = this.progresoPorProyecto.get(proyectoId);
+    if (!p) return '';
+    if (p.rechazados > 0) return 'proj-card--red';
+    if (p.aprobados === p.total && p.total > 0) return 'proj-card--green';
+    return 'proj-card--amber';
+  }
+
+  getEstadoBadge(proyectoId: number): string {
+    const p = this.progresoPorProyecto.get(proyectoId);
+    if (!p) return '';
+    if (p.rechazados > 0) return 'Con rechazos';
+    if (p.aprobados === p.total && p.total > 0) return 'Habilitado';
+    return 'En proceso';
+  }
+
+  getEstadoBadgeClass(proyectoId: number): string {
+    const p = this.progresoPorProyecto.get(proyectoId);
+    if (!p) return 'chip-gray';
+    if (p.rechazados > 0) return 'chip-red';
+    if (p.aprobados === p.total && p.total > 0) return 'chip-green';
+    return 'chip-orange';
+  }
+
+  selectProyecto(p: ProyectoDisponibleDto): void {
+    this.selectedProyecto = p;
+    this.selectedEntregable = null;
+    this.drawerOpen = false;
+    const cached = this.progresoPorProyecto.get(p.id);
+    if (cached) {
+      this.entregables = cached.entregables;
+      this.loadingEntregables = false;
+      this.cdr.detectChanges();
+    } else {
+      this.loadEntregablesForProyecto(p.id);
+    }
+  }
+
+  volverAProyectos(): void {
+    this.selectedProyecto = null;
+    this.entregables = [];
+    this.selectedEntregable = null;
+    this.drawerOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  private loadEntregablesForProyecto(proyectoId: number): void {
+    if (!this.empresaId) return;
+    this.loadingEntregables = true;
+    this.habEmpresaService.getEntregables(this.empresaId, proyectoId).subscribe({
+      next: (res) => {
+        this.entregables = res ?? [];
+        this.loadingEntregables = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingEntregables = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  getEntregablesPorResponsable(responsable: string): EmpresaEntregableDto[] {
+    return this.entregables.filter(
+      (e) => (e.responsable || '').toUpperCase() === responsable.toUpperCase(),
+    );
   }
 
   selectEntregable(e: EmpresaEntregableDto): void {
@@ -185,6 +278,13 @@ export class Empresa implements OnInit {
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
     this.panelObsAbril = e.obsAbril ?? '';
     this.panelObsContratista = e.obsContratista ?? '';
+    this.drawerOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen = false;
+    this.selectedEntregable = null;
   }
 
   private extractFileName(url: string): string {
@@ -192,45 +292,26 @@ export class Empresa implements OnInit {
     return parts[parts.length - 1] || url;
   }
 
-  private resetPanel(): void {
-    this.panelArchivoUrl = '';
-    this.panelArchivoNombre = '';
-    this.panelVigencia = '';
-    this.panelObsAbril = '';
-    this.panelObsContratista = '';
-  }
-
-  getEntregablesPorResponsable(responsable: string): EmpresaEntregableDto[] {
-    return this.entregables.filter(
-      (e) => (e.responsable || '').toUpperCase() === responsable.toUpperCase(),
-    );
+  nombreArchivo(url: string): string {
+    return this.extractFileName(url).replace(/^\d{8}_/, '');
   }
 
   getDotClass(estado: string): string {
     const norm = (estado ?? '').toLowerCase();
     if (norm === 'aprobado') return 'dot-aprobado';
-    if (norm === 'falta' || norm === 'rechazado') return 'dot-falta';
+    if (norm === 'rechazado') return 'dot-falta';
     if (norm === 'enviado') return 'dot-enviado';
-    if (norm === 'no aplica') return 'dot-no-aplica';
     return 'dot-no-aplica';
   }
 
   getChipEstado(estado: string): string {
     switch (estado) {
-      case 'Aprobado':
-        return 'chip-green';
-      case 'Enviado':
-      case 'Rechazado':
-        return 'chip-orange';
-      case 'No Aplica':
-        return 'chip-gray';
-      default:
-        return 'chip-gray';
+      case 'Aprobado': return 'chip-green';
+      case 'Enviado': return 'chip-orange';
+      case 'Rechazado': return 'chip-red';
+      case 'No Aplica': return 'chip-gray';
+      default: return 'chip-gray';
     }
-  }
-
-  getViewUrl(url: string): string {
-    return `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(url)}`;
   }
 
   triggerFileInput(): void {
@@ -241,11 +322,9 @@ export class Empresa implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) return;
-
     this.panelArchivoNombre = file.name;
     this.uploadingFile = true;
     this.cdr.detectChanges();
-
     const contexto = `habilitacion/empresas/${this.empresaId ?? 'sin-empresa'}`;
     this.sharepointService.subirArchivo(file, contexto).subscribe({
       next: (res) => {
@@ -268,36 +347,56 @@ export class Empresa implements OnInit {
     this.panelArchivoNombre = '';
   }
 
+  abrirVisor(url: string): void {
+    this.visorArchivoUrl = url;
+    this.visorNombre = this.nombreArchivo(url);
+    this.cdr.detectChanges();
+  }
+
+  onVisorClosed(): void {
+    this.visorArchivoUrl = '';
+    this.visorNombre = '';
+  }
+
   enviarDocumento(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
-
-    let nuevoEstado = this.selectedEntregable.estado;
-    if (this.isContratista()) {
-      nuevoEstado = 'Enviado';
-    } else if (this.isAdmin() && this.selectedEntregable.estado === 'Falta') {
-      nuevoEstado = 'Enviado';
-    }
-
     const payload: EmpresaEntregableUpdateDto = {
-      estado: nuevoEstado,
+      estado: 'Enviado',
       vigencia: this.panelVigencia || undefined,
       archivoUrl: this.panelArchivoUrl || undefined,
-      obsContratista: this.isContratista() ? this.panelObsContratista : undefined,
+      obsContratista: this.panelObsContratista || undefined,
     };
-
     this.loaderService.show();
     this.habEmpresaService
       .updateEntregable(this.empresaId, this.selectedEntregable.id, payload)
       .subscribe({
         next: () => {
           this.loaderService.hide();
-          Swal.fire({
-            icon: 'success',
-            title: 'Enviado',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          this.loadEntregables();
+          Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
+          this.closeDrawer();
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  guardarAdmin(): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    this.loaderService.show();
+    this.habEmpresaService
+      .updateEntregable(this.empresaId, this.selectedEntregable.id, {
+        estado: this.selectedEntregable.estado,
+        vigencia: this.panelVigencia || undefined,
+        obsAbril: this.panelObsAbril || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
@@ -328,13 +427,9 @@ export class Empresa implements OnInit {
         .subscribe({
           next: () => {
             this.loaderService.hide();
-            Swal.fire({
-              icon: 'success',
-              title: 'Aprobado',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            this.loadEntregables();
+            Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1500, showConfirmButton: false });
+            this.closeDrawer();
+            this.recargarEntregables();
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
@@ -368,13 +463,9 @@ export class Empresa implements OnInit {
         .subscribe({
           next: () => {
             this.loaderService.hide();
-            Swal.fire({
-              icon: 'success',
-              title: 'Rechazado',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            this.loadEntregables();
+            Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1500, showConfirmButton: false });
+            this.closeDrawer();
+            this.recargarEntregables();
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
@@ -382,5 +473,33 @@ export class Empresa implements OnInit {
           },
         });
     });
+  }
+
+  private recargarEntregables(): void {
+    if (!this.selectedProyecto || !this.empresaId) return;
+    const pid = this.selectedProyecto.id;
+    const eid = this.empresaId;
+    this.habEmpresaService.getEntregables(eid, pid).subscribe({
+      next: (items) => {
+        const list = items ?? [];
+        this.entregables = list;
+        this.progresoPorProyecto.set(pid, {
+          total: list.length,
+          aprobados: list.filter((e) => e.estado === 'Aprobado').length,
+          rechazados: list.filter((e) => e.estado === 'Rechazado').length,
+          entregables: list,
+        });
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  abrirProyectos(): void {
+    this.mostrarProyectos = true;
+  }
+
+  onProyectosChanged(): void {
+    this.loadProyectos();
   }
 }

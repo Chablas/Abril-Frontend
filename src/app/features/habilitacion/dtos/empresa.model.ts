@@ -85,3 +85,10 @@ export interface EmpresaProyectoDto {
   proyectoId: number;
   proyectoNombre: string;
 }
+
+export interface ProyectoDisponibleDto {
+  id: number;
+  nombre: string;
+  estaActiva: boolean;
+  fechaInicio?: string;
+}
