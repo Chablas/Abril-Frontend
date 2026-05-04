@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../../../../environments/environment';
 import { ProjectSubContractorFormDataDTO } from '../dtos/projectSubContractorFormDataDTO.model';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
@@ -142,6 +143,29 @@ export class AdjudicacionesService {
       `${this.apiUrl}/${projectSubContractorId}/send-sc-notification`,
       form,
       { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  generateContractPackage(projectSubContractorId: number): Observable<{
+    bytes: ArrayBuffer;
+    fileUrl: string;
+    originalFileName: string;
+  }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post(
+      `${this.apiUrl}/${projectSubContractorId}/generate-contract-package`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'arraybuffer',
+        observe: 'response',
+      },
+    ).pipe(
+      map((response) => ({
+        bytes: response.body as ArrayBuffer,
+        fileUrl: response.headers.get('X-Package-Url') || '',
+        originalFileName: decodeURIComponent(response.headers.get('X-Package-Filename') || 'package.pdf'),
+      })),
     );
   }
 

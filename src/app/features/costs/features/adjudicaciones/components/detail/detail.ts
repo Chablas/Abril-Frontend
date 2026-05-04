@@ -76,6 +76,9 @@ export class Detail implements OnInit {
   /** Paso 4 — archivo en memoria hasta que se envía */
   step4File: File | null = null;
 
+  /** Paso 4 — indica que el paquete PDF se está generando */
+  generatingPackage = false;
+
   /** Paso 7 — clave de doc de escaneados siendo subido en este momento */
   currentScannedDocType: string | null = null;
 
@@ -369,6 +372,42 @@ export class Detail implements OnInit {
       error: (err) => {
         this.loaderService.hide();
         this.updatingStatusDoc = null;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  generatePackage(): void {
+    this.generatingPackage = true;
+    this.loaderService.show();
+    this.adjudicacionesService.generateContractPackage(this.item.projectSubContractorId).subscribe({
+      next: (response) => {
+        this.loaderService.hide();
+        this.generatingPackage = false;
+
+        // Unpack the response: bytes, fileUrl, and originalFileName
+        const { bytes, fileUrl, originalFileName } = response;
+
+        // Create the File object for local usage (in-memory until sent to SC)
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        this.step4File = new File([blob], originalFileName, { type: 'application/pdf' });
+
+        // Store the package info with the SharePoint URL so the template shows the clickable link
+        this.item.package = {
+          fileUrl,
+          originalFileName,
+        };
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Paquete generado',
+          text: 'El PDF combinado está listo. Haz clic en "Enviar al SC" para enviarlo.',
+          draggable: true,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.generatingPackage = false;
         this.errorService.handleError(err);
       },
     });
