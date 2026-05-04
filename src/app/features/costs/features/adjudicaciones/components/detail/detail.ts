@@ -206,7 +206,7 @@ export class Detail implements OnInit {
       return this.allDocsApproved;
     }
     if (this.actualStatus === 4 && this.viewStep === 4) {
-      return this.step4File !== null;
+      return this.step4File !== null || !!this.item.package;
     }
     if (this.actualStatus === 5 && this.viewStep === 5) {
       if (this.step5ArrivalOption === 'complete') return true;
@@ -420,7 +420,7 @@ export class Detail implements OnInit {
   }
 
   private async sendScNotification(): Promise<void> {
-    if (!this.step4File) return;
+    if (!this.step4File && !this.item.package) return;
     this.loaderService.show();
 
     let graphToken: string;
@@ -437,10 +437,12 @@ export class Detail implements OnInit {
       return;
     }
 
+    // Si el archivo está en memoria lo enviamos adjunto; si el paquete ya está guardado en
+    // SharePoint (reapertura del modal) lo omitimos y el backend lo descarga por URL.
     this.adjudicacionesService.sendScNotification(
       this.item.projectSubContractorId,
-      this.step4File,
       graphToken,
+      this.step4File ?? undefined,
     ).subscribe({
       next: (res) => {
         this.loaderService.hide();
