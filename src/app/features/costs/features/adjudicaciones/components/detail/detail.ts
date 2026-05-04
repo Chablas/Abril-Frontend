@@ -398,6 +398,10 @@ export class Detail implements OnInit {
           originalFileName,
         };
 
+        // Refresh the parent list to ensure the package data is persisted in the database
+        // and available when the modal is reopened
+        this.statusChanged.emit();
+
         Swal.fire({
           icon: 'success',
           title: 'Paquete generado',
