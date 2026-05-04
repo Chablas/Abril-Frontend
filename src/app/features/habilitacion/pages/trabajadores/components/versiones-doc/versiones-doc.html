@@ -20,7 +20,7 @@
           <tr *ngFor="let v of versiones">
             <td>v{{ v.version }}</td>
             <td>{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ v.subidoPorEmpresaId ? 'Empresa #' + v.subidoPorEmpresaId : v.subidoPorUserId ? 'Usuario #' + v.subidoPorUserId : '—' }}</td>
+            <td>{{ v.subidoPorNombre ? v.subidoPorNombre : v.subidoPorUserId ? 'Usuario #' + v.subidoPorUserId : v.subidoPorEmpresaId ? 'Empresa #' + v.subidoPorEmpresaId : '—' }}</td>
             <td>{{ v.estadoAlSubir ?? '—' }}</td>
             <td class="row-actions">
               <button type="button" class="btn-link" (click)="abrirVisor(v.archivoUrl)">

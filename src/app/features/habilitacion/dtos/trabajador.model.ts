@@ -42,6 +42,7 @@ export interface DocumentoVersionDto {
   archivoUrl: string;
   subidoPorUserId?: number;
   subidoPorEmpresaId?: number;
+  subidoPorNombre?: string;
   estadoAlSubir?: string;
   createdAt: string;
 }
