@@ -342,21 +342,28 @@
             Sin proyectos adicionales asignados
           </div>
           <ul class="proyectos-list" *ngIf="workerSeleccionadoProyectos.length > 0">
-            <li *ngFor="let p of workerSeleccionadoProyectos" class="proyecto-item">
-              <div class="proyecto-info">
+            <li *ngFor="let p of workerSeleccionadoProyectos" class="proyecto-item" [title]="p.proyectoNombre ?? ('Proyecto #' + p.proyectoId)">
+              <div class="proyecto-row">
                 <span class="proyecto-nombre">{{ p.proyectoNombre ?? ('Proyecto #' + p.proyectoId) }}</span>
-                <span class="proyecto-meta">
-                  Inicio: {{ p.fechaInicio | date: 'dd/MM/yyyy' }}
-                  <ng-container *ngIf="p.fechaFin"> · Fin: {{ p.fechaFin | date: 'dd/MM/yyyy' }}</ng-container>
-                  <ng-container *ngIf="p.empresaNombre"> · {{ p.empresaNombre }}</ng-container>
-                </span>
+                <span class="proyecto-fecha">{{ p.fechaInicio | date: 'dd/MM/yy' }}</span>
               </div>
               <div class="proyecto-badges">
-                <span [class]="'btn-chip ' + (p.activo ? 'chip-green' : 'chip-gray')">
+                <span [class]="'mini-chip ' + (p.activo ? 'chip-green' : 'chip-gray')">
                   {{ p.activo ? 'Activo' : 'Retirado' }}
                 </span>
-                <span class="btn-chip chip-green" *ngIf="p.induccionCompletada">Inducción ✓</span>
-                <span class="btn-chip chip-orange" *ngIf="!p.induccionCompletada">Inducción pendiente</span>
+                <span class="mini-chip chip-green" *ngIf="p.induccionCompletada" title="Inducción completada">Ind. ✓</span>
+                <span class="mini-chip chip-orange" *ngIf="!p.induccionCompletada" title="Inducción pendiente">Ind. ✗</span>
+                <button
+                  *ngIf="!p.induccionCompletada"
+                  type="button"
+                  class="ind-btn"
+                  title="Marcar inducción completada"
+                  (click)="marcarInduccion(p.proyectoId)"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
               </div>
             </li>
           </ul>

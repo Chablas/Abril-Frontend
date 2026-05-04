@@ -205,6 +205,28 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.loadWorkers(this.currentPage);
   }
 
+  marcarInduccion(proyectoId: number): void {
+    if (!this.selectedWorker) return;
+    const workerId = this.selectedWorker.workerId;
+    this.loaderService.show();
+    this.trabajadorHabService.marcarInduccion(workerId, proyectoId).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Inducción registrada',
+          timer: 1200,
+          showConfirmButton: false,
+        });
+        this.cargarProyectos(workerId);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   loadEntregables(workerId: number): void {
     this.loadingEntregables = true;
     this.entregables = [];
