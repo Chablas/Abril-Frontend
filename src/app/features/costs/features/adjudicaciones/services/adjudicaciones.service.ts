@@ -23,6 +23,24 @@ export class AdjudicacionesService {
     });
   }
 
+  getAdjudicacionPagedWithFilters(filters: any): Observable<{ paged: PagedResponseDTO<ProjectSubContractorDTO>; filters: ProjectSubContractorFormDataDTO }> {
+    const token = localStorage.getItem('access_token');
+    let params = new HttpParams();
+
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined && filters[key] !== 0) {
+        params = params.set(key, filters[key]);
+      }
+    });
+    return this.http.get<{ paged: PagedResponseDTO<ProjectSubContractorDTO>; filters: ProjectSubContractorFormDataDTO }>(
+      `${this.apiUrl}/paged-with-filters`,
+      {
+        params,
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  }
+
   createAdjudicacion(form: FormData): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, form, {
