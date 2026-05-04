@@ -47,6 +47,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
   // ── Tab Pólizas ──────────────────────────────────────────
   documentos: SctrVidaLeyDto[] = [];
   selectedDoc: SctrVidaLeyDto | null = null;
+  docSafeUrl: SafeResourceUrl | null = null;
+  private docBlobUrl = '';
   loading = false;
   totalRecords = 0;
   totalPages = 1;
@@ -57,6 +59,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   filtroMes: number | null = null;
   filtroAnio: number = new Date().getFullYear();
   filtroEmpresaId: number | null = null;
+  filtroObraOficina = '';
 
   modalSubirOpen = false;
   modalAprobarOpen = false;
@@ -76,8 +79,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
     { num: 12, label: 'Diciembre' },
   ];
 
-  // ── Tab Trabajadores — lista ──────────────────────────────
+  // ── Shared — empresas (Tab 1 + Tab 2) ────────────────────
   empresas: EmpresaSimpleDto[] = [];
+
+  // ── Tab Trabajadores — lista ──────────────────────────────
   proyectos: ProjectGetDTO[] = [];
   trabajadores: SctrTrabajadorEstadoDto[] = [];
   selectedWorker: SctrTrabajadorEstadoDto | null = null;
@@ -126,6 +131,16 @@ export class SctrVidaley implements OnInit, OnDestroy {
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => this.loadTrabajadores());
 
+    if (this.isAdmin()) {
+      this.catalogosService.getEmpresas().subscribe({
+        next: (res) => {
+          this.empresas = res ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => {},
+      });
+    }
+
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const tab = params.get('tab') as ActiveTab | null;
       this.activeTab = tab === 'trabajadores' ? 'trabajadores' : 'polizas';
@@ -141,6 +156,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.revokeBlobUrl();
+    this.revokeDocBlobUrl();
   }
 
   // ── Tabs ─────────────────────────────────────────────────
@@ -160,23 +176,11 @@ export class SctrVidaley implements OnInit, OnDestroy {
         this.proyectos = [];
       },
     });
-    if (this.isAdmin()) {
-      this.catalogosService.getEmpresas().subscribe({
-        next: (res) => {
-          this.empresas = res ?? [];
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.empresas = [];
-        },
-      });
-    } else {
+    if (!this.isAdmin()) {
       const id = this.readEmpresaIdFromJwt();
-      if (id) {
-        this.wFiltroEmpresaId = id;
-        this.loadTrabajadores();
-      }
+      if (id) this.wFiltroEmpresaId = id;
     }
+    this.loadTrabajadores();
   }
 
   private readEmpresaIdFromJwt(): number | null {
@@ -206,6 +210,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       mes: this.filtroMes ?? undefined,
       anio: this.filtroAnio || undefined,
       empresaId: this.filtroEmpresaId ?? undefined,
+      obraOficina: this.filtroObraOficina || undefined,
     };
     this.sctrService.getList(params).subscribe({
       next: (res) => {
@@ -216,6 +221,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
         if (this.selectedDoc) {
           const refreshed = this.documentos.find((d) => d.id === this.selectedDoc?.id);
           this.selectedDoc = refreshed ?? null;
+          if (!this.selectedDoc) this.clearDocPanel();
         }
         this.loading = false;
         this.loaderService.hide();
@@ -233,12 +239,68 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.filterChange$.next();
   }
 
+  onPolizaEmpresaChange(val: number | null): void {
+    this.filtroEmpresaId = val;
+    if (!this.selectedEmpresaEsAbril) {
+      this.filtroObraOficina = '';
+    }
+    this.onFilter();
+  }
+
   onPageChange(page: number): void {
     this.loadDocumentos(page);
   }
 
   selectDoc(doc: SctrVidaLeyDto): void {
+    if (this.selectedDoc?.id === doc.id) return;
+    this.clearDocPanel();
     this.selectedDoc = doc;
+    if (doc.archivoUrl) {
+      this.loadDocBlob(doc.archivoUrl);
+    }
+  }
+
+  private clearDocPanel(): void {
+    this.docSafeUrl = null;
+    this.revokeDocBlobUrl();
+  }
+
+  private revokeDocBlobUrl(): void {
+    if (this.docBlobUrl) {
+      URL.revokeObjectURL(this.docBlobUrl);
+      this.docBlobUrl = '';
+    }
+  }
+
+  private loadDocBlob(archivoUrl: string): void {
+    this.docSafeUrl = null;
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => {
+        fetch(res.url)
+          .then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.blob();
+          })
+          .then((blob) => {
+            this.revokeDocBlobUrl();
+            this.docBlobUrl = URL.createObjectURL(blob);
+            this.docSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.docBlobUrl);
+            this.cdr.detectChanges();
+          })
+          .catch(() => {
+            this.docSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url);
+            this.cdr.detectChanges();
+          });
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get selectedEmpresaEsAbril(): boolean {
+    if (!this.filtroEmpresaId) return false;
+    return this.empresas.find((e) => e.id === this.filtroEmpresaId)?.esAbril ?? false;
   }
 
   abrirSubir(): void {
@@ -271,7 +333,6 @@ export class SctrVidaley implements OnInit, OnDestroy {
   // ── Tab Trabajadores — lista ──────────────────────────────
 
   loadTrabajadores(): void {
-    if (!this.wFiltroEmpresaId) return;
     this.loadingWorkers = true;
     this.trabajadores = [];
     this.clearPolizaPanel();
@@ -281,7 +342,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
         : { estadoSctr: this.wFiltroEstado || undefined };
     this.sctrService
       .getTrabajadoresPorEmpresa({
-        empresaId: this.wFiltroEmpresaId,
+        empresaId: this.wFiltroEmpresaId ?? undefined,
         proyectoId: this.wFiltroProyectoId ?? undefined,
         tipo: this.wFiltroTipo,
         ...estadoParam,
@@ -380,7 +441,6 @@ export class SctrVidaley implements OnInit, OnDestroy {
             this.cdr.detectChanges();
           })
           .catch(() => {
-            // fallback: signed URL directa (puede forzar descarga en vez de renderizar)
             this.polizaSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url);
             this.cdr.detectChanges();
           });
@@ -418,8 +478,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   get polizaAllChecked(): boolean {
     const workers = this.selectedPoliza?.workers ?? [];
     return (
-      workers.length > 0 &&
-      workers.every((w) => this.polizaWorkersSeleccionados.has(w.workerId))
+      workers.length > 0 && workers.every((w) => this.polizaWorkersSeleccionados.has(w.workerId))
     );
   }
 
@@ -429,19 +488,11 @@ export class SctrVidaley implements OnInit, OnDestroy {
   }
 
   get canAprobar(): boolean {
-    return (
-      !this.savingAprobar &&
-      this.polizaWorkersSeleccionados.size > 0 &&
-      !!this.selectedPoliza
-    );
+    return !this.savingAprobar && this.polizaWorkersSeleccionados.size > 0 && !!this.selectedPoliza;
   }
 
   get canRechazar(): boolean {
-    return (
-      !this.savingAprobar &&
-      this.polizaWorkersSeleccionados.size > 0 &&
-      !!this.selectedPoliza
-    );
+    return !this.savingAprobar && this.polizaWorkersSeleccionados.size > 0 && !!this.selectedPoliza;
   }
 
   aprobarSeleccionados(): void {
@@ -455,12 +506,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
       next: () => {
         this.savingAprobar = false;
-        Swal.fire({
-          icon: 'success',
-          title: 'Trabajadores aprobados',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'success', title: 'Trabajadores aprobados', timer: 1500, showConfirmButton: false });
         this.loadTrabajadores();
       },
       error: (err: HttpErrorResponse) => {
@@ -482,12 +528,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
       next: () => {
         this.savingAprobar = false;
-        Swal.fire({
-          icon: 'success',
-          title: 'Trabajadores rechazados',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'success', title: 'Trabajadores rechazados', timer: 1500, showConfirmButton: false });
         this.loadTrabajadores();
       },
       error: (err: HttpErrorResponse) => {
@@ -509,12 +550,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.trabajadorHabService.updateEntregable(w.sctrHabId, dto).subscribe({
       next: () => {
         this.savingAprobar = false;
-        Swal.fire({
-          icon: 'success',
-          title: 'Trabajador rechazado',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'success', title: 'Trabajador rechazado', timer: 1500, showConfirmButton: false });
         this.loadTrabajadores();
       },
       error: (err: HttpErrorResponse) => {
@@ -563,12 +599,5 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   getViewUrl(url: string): string {
     return `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(url)}`;
-  }
-
-  verArchivo(url: string | undefined): void {
-    if (!url) return;
-    if (typeof window !== 'undefined') {
-      window.open(this.getViewUrl(url), '_blank', 'noopener');
-    }
   }
 }

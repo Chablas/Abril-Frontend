@@ -39,6 +39,23 @@
   <div class="sctr-columns" *ngIf="activeTab === 'polizas'">
     <div class="col-docs card">
       <div class="filters-card">
+        <div *ngIf="isAdmin()" style="margin-bottom: 0.5rem;">
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="filtroEmpresaId"
+            (valueChange)="onPolizaEmpresaChange($event)"
+            placeholder="Todas las empresas"
+          />
+        </div>
+        <div *ngIf="selectedEmpresaEsAbril" style="margin-bottom: 0.5rem;">
+          <select class="field-input" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
+            <option value="">Obra y Oficina</option>
+            <option value="Obra">Obra</option>
+            <option value="Staff">Staff / Oficina Central</option>
+          </select>
+        </div>
         <div class="filters-grid">
           <select class="field-input" [(ngModel)]="filtroTipo" (change)="onFilter()">
             <option value="">Todos los tipos</option>
@@ -78,9 +95,7 @@
         >
           <div class="doc-header">
             <span class="doc-tipo">{{ doc.tipo }}</span>
-            <span class="btn-chip" [class]="getEstadoClass(doc.estado)">
-              {{ doc.estado }}
-            </span>
+            <span class="btn-chip chip-green">Aprobado</span>
           </div>
           <div class="doc-empresa">{{ doc.empresaNombre }}</div>
           <div class="doc-meta">
@@ -114,82 +129,59 @@
               {{ selectedDoc.empresaNombre }} / {{ selectedDoc.proyectoNombre }}
             </p>
           </div>
-          <span class="btn-chip" [class]="getEstadoClass(selectedDoc.estado)">
-            {{ selectedDoc.estado }}
-          </span>
+          <span class="btn-chip chip-green">Aprobado</span>
         </div>
 
-        <div class="archivos-section">
-          <button
-            type="button"
-            class="btn-link"
-            *ngIf="selectedDoc.archivoUrl"
-            (click)="verArchivo(selectedDoc.archivoUrl)"
-          >
-            📄 Ver Póliza (Salud)
-          </button>
-          <button
-            type="button"
-            class="btn-link"
-            *ngIf="selectedDoc.archivoUrl2"
-            (click)="verArchivo(selectedDoc.archivoUrl2)"
-          >
-            📄 Ver Póliza (Pensión)
-          </button>
-          <span class="vigencia-line" *ngIf="selectedDoc.vigencia">
-            Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
-          </span>
-          <span
-            class="vigencia-line"
-            *ngIf="!selectedDoc.archivoUrl && !selectedDoc.archivoUrl2 && !selectedDoc.vigencia"
-          >
-            Sin archivos asociados
-          </span>
-        </div>
+        <!-- Split 70/30: PDF izquierda, workers derecha -->
+        <div class="sctr-detalle-split">
+          <!-- PDF inline -->
+          <div class="sctr-split-left">
+            <iframe
+              *ngIf="docSafeUrl"
+              [src]="docSafeUrl"
+              width="100%"
+              height="100%"
+              frameborder="0"
+            ></iframe>
+            <div *ngIf="!docSafeUrl" class="sctr-split-empty">
+              <span class="muted-line">Sin archivo PDF</span>
+            </div>
+          </div>
 
-        <div class="obs-detalle" *ngIf="isAdmin() && selectedDoc.obsAbril">
-          <span class="obs-label">Observaciones Abril</span>
-          <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
-        </div>
-
-        <div class="table-wrapper detalle-tabla">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>DNI</th>
-                <th>Apellidos y Nombres</th>
-                <th>Est. SCTR</th>
-                <th>Est. Vida Ley</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngIf="selectedDoc.workers.length === 0">
-                <td colspan="4" class="empty-row">Sin trabajadores asociados.</td>
-              </tr>
-              <tr *ngFor="let w of selectedDoc.workers">
-                <td>{{ w.dni }}</td>
-                <td>{{ w.apellidoNombre }}</td>
-                <td>
-                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">{{ w.estadoSctr }}</span>
-                </td>
-                <td>
-                  <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">{{ w.estadoVidaLey }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div
-          class="detalle-footer"
-          *ngIf="
-            isAdmin() &&
-            (selectedDoc.estado === 'Enviado' || selectedDoc.estado === 'Parcial')
-          "
-        >
-          <button type="button" class="btn-primary" (click)="abrirAprobar()">
-            Aprobar / Rechazar Workers
-          </button>
+          <!-- Info + lista de trabajadores -->
+          <div class="sctr-split-right">
+            <div
+              class="sctr-split-meta"
+              *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril)"
+            >
+              <span *ngIf="selectedDoc.vigencia" class="vigencia-line">
+                Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
+              </span>
+              <ng-container *ngIf="isAdmin() && selectedDoc.obsAbril">
+                <span class="obs-label">Observaciones</span>
+                <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
+              </ng-container>
+            </div>
+            <div class="sctr-split-workers">
+              <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
+                Sin trabajadores asociados.
+              </div>
+              <div *ngFor="let w of selectedDoc.workers" class="sctr-worker-item">
+                <div class="worker-info">
+                  <strong>{{ w.apellidoNombre }}</strong>
+                  <span class="muted-line">{{ w.dni }}</span>
+                </div>
+                <div class="sctr-worker-chips">
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
+                    {{ w.estadoSctr }}
+                  </span>
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">
+                    {{ w.estadoVidaLey }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>
@@ -252,7 +244,6 @@
         <button
           type="button"
           class="btn-primary btn-buscar"
-          [disabled]="!wFiltroEmpresaId"
           (click)="loadTrabajadores()"
         >
           Buscar
@@ -261,13 +252,7 @@
 
       <div class="workers-list">
         <div *ngIf="loadingWorkers" class="empty-list">Cargando trabajadores…</div>
-        <div *ngIf="!loadingWorkers && !wFiltroEmpresaId" class="empty-list">
-          Selecciona una empresa para buscar
-        </div>
-        <div
-          *ngIf="!loadingWorkers && wFiltroEmpresaId && trabajadores.length === 0"
-          class="empty-list"
-        >
+        <div *ngIf="!loadingWorkers && trabajadores.length === 0" class="empty-list">
           Sin trabajadores para los filtros seleccionados
         </div>
         <div

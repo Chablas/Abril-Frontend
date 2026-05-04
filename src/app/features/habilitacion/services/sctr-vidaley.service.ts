@@ -49,7 +49,7 @@ export class SctrVidaLeyService {
   }
 
   getTrabajadoresPorEmpresa(params: {
-    empresaId: number;
+    empresaId?: number | null;
     proyectoId?: number;
     tipo?: string;
     tipoPoliza?: string;
