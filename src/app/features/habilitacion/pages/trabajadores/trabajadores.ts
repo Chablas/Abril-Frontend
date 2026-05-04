@@ -28,6 +28,7 @@ import {
   WorkerEntregableDto,
   WorkerEntregableUpdateDto,
   WorkerHabilitacionListDto,
+  WorkerProyectoDto,
 } from '../../dtos/trabajador.model';
 import { environment } from '../../../../../environments/environment';
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
@@ -36,11 +37,12 @@ import { VersionesDoc } from './components/versiones-doc/versiones-doc';
 import { EditarPerfil } from './components/editar-perfil/editar-perfil';
 import { ReingresoForm } from './components/reingreso-form/reingreso-form';
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
+import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, SearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, AgregarProyecto, SearchSelect],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -87,9 +89,11 @@ export class Trabajadores implements OnInit, OnDestroy {
   modalEditarPerfilOpen = false;
   mostrarReingreso = false;
   mostrarHistorial = false;
+  mostrarAgregarProyecto = false;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
   workerParaHistorial: WorkerHabilitacionListDto | null = null;
+  workerSeleccionadoProyectos: WorkerProyectoDto[] = [];
 
   private searchChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -172,6 +176,33 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.selectedEntregable = null;
     this.resetPanel();
     this.loadEntregables(worker.workerId);
+    this.cargarProyectos(worker.workerId);
+  }
+
+  cargarProyectos(workerId: number): void {
+    this.trabajadorHabService.getProyectos(workerId).subscribe({
+      next: (res) => {
+        this.workerSeleccionadoProyectos = res ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.workerSeleccionadoProyectos = [];
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  abrirAgregarProyecto(worker: WorkerHabilitacionListDto): void {
+    if (this.selectedWorker?.workerId !== worker.workerId) {
+      this.selectWorker(worker);
+    }
+    this.mostrarAgregarProyecto = true;
+  }
+
+  onProyectoAgregado(dto: WorkerProyectoDto): void {
+    this.workerSeleccionadoProyectos = [...this.workerSeleccionadoProyectos, dto];
+    this.mostrarAgregarProyecto = false;
+    this.loadWorkers(this.currentPage);
   }
 
   loadEntregables(workerId: number): void {

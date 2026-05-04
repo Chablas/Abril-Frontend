@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
 import {
+  AgregarProyectoDto,
   DocumentoVersionDto,
   WorkerDetalleDto,
   WorkerEditDto,
@@ -10,6 +11,7 @@ import {
   WorkerEntregableUpdateDto,
   WorkerEventoDto,
   WorkerHabilitacionListDto,
+  WorkerProyectoDto,
   WorkerReingresoDto,
 } from '../dtos/trabajador.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
@@ -101,6 +103,32 @@ export class TrabajadorHabService {
     return this.http.patch<void>(
       `${this.base}/baja-masiva`,
       { ids, fechaRetiro },
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  getProyectos(workerId: number): Observable<WorkerProyectoDto[]> {
+    return this.http.get<WorkerProyectoDto[]>(`${this.base}/${workerId}/proyectos`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  agregarProyecto(workerId: number, dto: AgregarProyectoDto): Observable<WorkerProyectoDto> {
+    return this.http.post<WorkerProyectoDto>(`${this.base}/${workerId}/proyectos`, dto, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  retirarDeProyecto(workerId: number, proyectoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${workerId}/proyectos/${proyectoId}`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  marcarInduccion(workerId: number, proyectoId: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/${workerId}/proyectos/${proyectoId}/induccion`,
+      {},
       { headers: buildHabHeaders() },
     );
   }

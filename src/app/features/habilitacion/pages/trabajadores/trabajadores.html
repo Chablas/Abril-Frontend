@@ -205,6 +205,18 @@
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </button>
+              <button
+                *ngIf="w.contrataCasa === 'Casa'"
+                class="icon-btn"
+                title="Agregar proyecto"
+                (click)="$event.stopPropagation(); abrirAgregarProyecto(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  <line x1="12" y1="11" x2="12" y2="17"/>
+                  <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -292,7 +304,18 @@
                   <button
                     *ngIf="e.archivoUrl"
                     class="icon-btn-circle"
-                    title="Ver documento"
+                    title="Visualizar documento"
+                    (click)="$event.stopPropagation(); abrirVisor(e.archivoUrl)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button
+                    *ngIf="e.archivoUrl"
+                    class="icon-btn-circle"
+                    title="Abrir en nueva pestaña"
                     (click)="$event.stopPropagation(); abrirDocumento(e.archivoUrl)"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -303,6 +326,40 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="proyectos-section">
+          <div class="proyectos-hdr">
+            <h3 class="proyectos-title">Proyectos asignados</h3>
+            <button
+              *ngIf="selectedWorker?.contrataCasa === 'Casa'"
+              type="button"
+              class="btn-link"
+              (click)="abrirAgregarProyecto(selectedWorker!)"
+            >+ Agregar proyecto</button>
+          </div>
+          <div *ngIf="workerSeleccionadoProyectos.length === 0" class="proyectos-empty">
+            Sin proyectos adicionales asignados
+          </div>
+          <ul class="proyectos-list" *ngIf="workerSeleccionadoProyectos.length > 0">
+            <li *ngFor="let p of workerSeleccionadoProyectos" class="proyecto-item">
+              <div class="proyecto-info">
+                <span class="proyecto-nombre">{{ p.proyectoNombre ?? ('Proyecto #' + p.proyectoId) }}</span>
+                <span class="proyecto-meta">
+                  Inicio: {{ p.fechaInicio | date: 'dd/MM/yyyy' }}
+                  <ng-container *ngIf="p.fechaFin"> · Fin: {{ p.fechaFin | date: 'dd/MM/yyyy' }}</ng-container>
+                  <ng-container *ngIf="p.empresaNombre"> · {{ p.empresaNombre }}</ng-container>
+                </span>
+              </div>
+              <div class="proyecto-badges">
+                <span [class]="'btn-chip ' + (p.activo ? 'chip-green' : 'chip-gray')">
+                  {{ p.activo ? 'Activo' : 'Retirado' }}
+                </span>
+                <span class="btn-chip chip-green" *ngIf="p.induccionCompletada">Inducción ✓</span>
+                <span class="btn-chip chip-orange" *ngIf="!p.induccionCompletada">Inducción pendiente</span>
+              </div>
+            </li>
+          </ul>
         </div>
       </ng-container>
 
@@ -602,4 +659,10 @@
   [open]="mostrarHistorial"
   [workerId]="workerParaHistorial?.workerId ?? null"
   (closed)="mostrarHistorial = false; workerParaHistorial = null"
+/>
+<app-agregar-proyecto
+  [workerId]="mostrarAgregarProyecto ? (selectedWorker?.workerId ?? null) : null"
+  [workerNombre]="selectedWorker?.apellidoNombre ?? ''"
+  (proyectoAgregado)="onProyectoAgregado($event)"
+  (cerrar)="mostrarAgregarProyecto = false"
 />

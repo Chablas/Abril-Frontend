@@ -88,3 +88,23 @@ export interface WorkerEventoDto {
   datos?: string;
   createdAt: string;
 }
+
+export interface WorkerProyectoDto {
+  id: number;
+  workerId: number;
+  proyectoId: number;
+  proyectoNombre?: string;
+  empresaId?: number;
+  empresaNombre?: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  induccionCompletada: boolean;
+  fechaInduccion?: string;
+  activo: boolean;
+}
+
+export interface AgregarProyectoDto {
+  proyectoId: number;
+  empresaId?: number;
+  fechaInicio?: string;
+}
