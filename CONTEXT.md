@@ -712,6 +712,10 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/trabajadores/entregables/{id}/versiones` |
 | PATCH | `/trabajadores/{id}/cambiar-obra` |
 | PATCH | `/trabajadores/{id}/reingreso` |
+| GET | `/trabajadores/{workerId}/proyectos` (multiproyecto Casa) |
+| POST | `/trabajadores/{workerId}/proyectos` |
+| DELETE | `/trabajadores/{workerId}/proyectos/{proyectoId}` |
+| PATCH | `/trabajadores/{workerId}/proyectos/{proyectoId}/induccion` |
 | GET | `/bandeja` (paginado + cursor) |
 | PATCH | `/bandeja/trabajador/{id}` |
 | PATCH | `/bandeja/empresa/{id}` |
@@ -856,6 +860,44 @@ El botón "Descargar" sigue usando la URL Graph original (`tempUrl`), donde sí 
 
 Fix de UX en el mismo modal: dropdowns "Nueva obra" y "Razón social" usan `<app-search-select>` para filtrado en vivo. Opciones de Staff/Oficina son `Obra | Staff | Oficina Central` (ya no existe "Ninguno").
 
+### Multiproyecto (workers Casa)
+Trabajadores **Casa** (Abril) pueden estar asignados a múltiples proyectos en paralelo, además del `proyectoActualId` legacy. Se gestiona vía 4 endpoints nuevos bajo `/trabajadores/{workerId}/proyectos` (ver §7) y vive **íntegramente** dentro de `pages/trabajadores/` (sin nueva ruta).
+
+DTOs (`features/habilitacion/dtos/trabajador.model.ts`):
+```ts
+WorkerProyectoDto {
+  id, workerId, proyectoId,
+  proyectoNombre?, empresaId?, empresaNombre?,
+  fechaInicio: string, fechaFin?: string,
+  induccionCompletada: boolean, fechaInduccion?: string,
+  activo: boolean,
+}
+AgregarProyectoDto { proyectoId, empresaId?, fechaInicio? }
+```
+
+Métodos en `TrabajadorHabService`: `getProyectos(workerId)`, `agregarProyecto(workerId, dto)`, `retirarDeProyecto(workerId, proyectoId)`, `marcarInduccion(workerId, proyectoId)`.
+
+Componente modal: `pages/trabajadores/components/agregar-proyecto/` (selector `app-agregar-proyecto`). Replica el visual de `reingreso-form/` (BaseModal 520 px). API:
+- Inputs: `workerId: number | null`, `workerNombre: string`.
+- Outputs: `proyectoAgregado: EventEmitter<WorkerProyectoDto>`, `cerrar: EventEmitter<void>`.
+- Gate de apertura: `workerId !== null` (getter `isOpen`). En `ngOnChanges` se carga el catálogo de proyectos y se resetea el form.
+
+> ⚠️ **Pitfall del gate**: como el modal abre cuando `workerId !== null`, NO bindear `[workerId]="selectedWorker?.workerId"` directamente en el padre — abriría el modal cada vez que se selecciona un worker. El padre (`Trabajadores`) gatea con un flag aparte: `[workerId]="mostrarAgregarProyecto ? (selectedWorker?.workerId ?? null) : null"`.
+
+UI en `Trabajadores`:
+- **Worker card** (sidebar izquierda): botón folder-plus al final de `.wc-actions`, visible solo si `w.contrataCasa === 'Casa'`. Llama `abrirAgregarProyecto(w)` que asegura `selectWorker(w)` (si difiere) y enciende `mostrarAgregarProyecto = true`.
+- **Columna central**, después de la tabla de entregables: bloque `.proyectos-section` con título "Proyectos asignados", botón link "+ Agregar proyecto" (solo Casa) y `.proyectos-list` (flex-wrap). Cada `.proyecto-item` es chip compacta `max-width: 200px` con: nombre proyecto truncado, fecha inicio (`dd/MM/yy`), `mini-chip` Activo/Retirado, `mini-chip` "Ind. ✓"/"Ind. ✗" y botón circular `.ind-btn` (check) que llama `marcarInduccion(p.proyectoId)` solo si `!p.induccionCompletada`. El botón hace POST optimista y luego `cargarProyectos(workerId)`.
+- `selectWorker()` ahora también dispara `cargarProyectos(workerId)`. Errores en `getProyectos` se silencian a array vacío (mismo patrón que `loadCatalogos()`) para tolerar backend pendiente.
+
+> No confundir con el entregable "Inducción Obra" (item del flujo SSOMA en la tabla de entregables). El campo `induccionCompletada` del `WorkerProyectoDto` es **por proyecto**, independiente del entregable Inducción legacy.
+
+### Visor inline vs nueva pestaña en tabla de entregables
+Cada fila de la `.ent-table` con `archivoUrl` muestra dos íconos:
+- 👁️ ojo → `abrirVisor(e.archivoUrl)` → abre el `<app-document-viewer>` inline (mismo flujo que el botón "Visualizar" del drawer).
+- 🔗 clip → `abrirDocumento(e.archivoUrl)` → `sharepointService.getArchivoUrl(...)` + `window.open(_, '_blank')`. Útil cuando el visor inline no aplica.
+
+CSS: `.td-act` con `white-space: nowrap` y `.icon-btn-circle + .icon-btn-circle { margin-left: 6px }` para separación entre los dos botones.
+
 ### Estado actual
 - Sprints 1-8 completados.
 - Auth contratistas: login email+password, activación, reset, cambio password.
@@ -886,6 +928,15 @@ Fix de UX en el mismo modal: dropdowns "Nueva obra" y "Razón social" usan `<app
 - **Fix `EmpresaNombre` en lista trabajadores**: usaba `ss_empresa_contratista`; corregido para usar `contributor` vía `CatalogosSaludService`.
 - **Fix dropdown razón social en `cambiar-obra`**: quitado filtro `esAbril` que vaciaba la lista (el campo `esAbril` viene `false` para todos en BD actual). Se muestran todas las empresas sin filtrar.
 
+**Trabajado el 2026-05-03:**
+- **Visor inline en tabla de entregables** (`pages/trabajadores/trabajadores.html`): split del botón único de "ver documento" en dos íconos por fila — ojo (`abrirVisor`, viewer inline) + clip (`abrirDocumento`, nueva pestaña). Ver subsección "Visor inline vs nueva pestaña" arriba.
+- **Multiproyecto para workers Casa** — feature completa en `pages/trabajadores/`. Ver subsección "Multiproyecto (workers Casa)" arriba. Resumen:
+  - DTOs `WorkerProyectoDto` + `AgregarProyectoDto` en `dtos/trabajador.model.ts`.
+  - 4 métodos en `TrabajadorHabService`: `getProyectos`, `agregarProyecto`, `retirarDeProyecto`, `marcarInduccion`.
+  - Componente nuevo `components/agregar-proyecto/` (BaseModal 520 px, replica `reingreso-form` visualmente). Inputs `workerId`/`workerNombre`; outputs `proyectoAgregado`/`cerrar`.
+  - Botón folder-plus en `.worker-card` (solo Casa) y sección `.proyectos-section` después de la tabla de entregables con chips compactas (max 200 px) en flex-wrap. Botón check circular por chip para `marcarInduccion` cuando `!induccionCompletada`.
+  - `selectWorker()` ahora dispara `cargarProyectos()`. Pitfall del gate documentado arriba.
+
 ### Pendiente
 - Validar end-to-end el modal Editar perfil contra backend real (esp. cómo viene `sctr` — boolean vs string, y casing exacto de `obraOficina`).
 - Verificar `EsAbril` en `CatalogosRepository.ListEmpresas` (criterio actual: `ContributorName.ToUpper().Contains("ABRIL")`) — viene `false` para todos en BD actual.
@@ -893,6 +944,7 @@ Fix de UX en el mismo modal: dropdowns "Nueva obra" y "Razón social" usan `<app
 - Deploy a producción.
 - Crear primer usuario admin.
 - Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).
+- Backend: implementar 4 endpoints multiproyecto bajo `/trabajadores/{workerId}/proyectos` (GET, POST, DELETE `/{proyectoId}`, PATCH `/{proyectoId}/induccion`). Mientras no existan, `cargarProyectos()` silencia el error a array vacío y la UI muestra "Sin proyectos adicionales asignados".
 
 ---
 
