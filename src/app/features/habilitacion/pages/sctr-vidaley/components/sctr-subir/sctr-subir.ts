@@ -5,6 +5,7 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
   ViewChild,
@@ -12,226 +13,290 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
+import { jwtDecode } from 'jwt-decode';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { SctrVidaLeyService } from '../../../../services/sctr-vidaley.service';
-import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
-import { SctrVidaLeyCreateDto } from '../../../../dtos/sctr.model';
-import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
+import { SctrVidaLeyCreateDto, SctrTrabajadorEstadoDto } from '../../../../dtos/sctr.model';
+import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 
 interface SctrSubirForm {
   tipo: 'SCTR' | 'VIDA_LEY';
+  tipoPoliza: 'Renovacion' | 'Inclusion';
+  empresaId: number | null;
   proyectoId: number | null;
-  mes: number;
-  anio: number;
+  fechaInicio: string;
+  vigencia: string;
   archivoUrl: string;
   archivoNombre: string;
-  archivoUrl2: string;
-  archivoNombre2: string;
 }
 
 @Component({
   selector: 'app-sctr-subir',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './sctr-subir.html',
   styleUrl: './sctr-subir.css',
 })
-export class SctrSubir implements OnChanges {
-  @ViewChild('fileInput1') fileInput1?: ElementRef<HTMLInputElement>;
-  @ViewChild('fileInput2') fileInput2?: ElementRef<HTMLInputElement>;
+export class SctrSubir implements OnChanges, OnDestroy {
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   @Input() open = false;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
+  paso: 1 | 2 = 1;
+
+  empresas: EmpresaSimpleDto[] = [];
   proyectos: ProjectGetDTO[] = [];
 
-  workersSearch = '';
-  workersResultados: WorkerHabilitacionListDto[] = [];
-  workersSeleccionados: WorkerHabilitacionListDto[] = [];
+  trabajadores: SctrTrabajadorEstadoDto[] = [];
   loadingWorkers = false;
+  workersSeleccionados = new Set<number>();
 
+  archivoObjectUrl = '';
   model: SctrSubirForm = this.empty();
   saving = false;
 
-  meses = [
-    { num: 1, label: 'Enero' },
-    { num: 2, label: 'Febrero' },
-    { num: 3, label: 'Marzo' },
-    { num: 4, label: 'Abril' },
-    { num: 5, label: 'Mayo' },
-    { num: 6, label: 'Junio' },
-    { num: 7, label: 'Julio' },
-    { num: 8, label: 'Agosto' },
-    { num: 9, label: 'Septiembre' },
-    { num: 10, label: 'Octubre' },
-    { num: 11, label: 'Noviembre' },
-    { num: 12, label: 'Diciembre' },
-  ];
-
-  private searchChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
     private sctrService: SctrVidaLeyService,
-    private trabajadorHabService: TrabajadorHabService,
+    private authService: AuthService,
     private projectService: ProjectService,
+    private catalogosService: CatalogosSaludService,
+    private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
-  ) {
-    this.searchChange$
-      .pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe(() => this.searchWorkers());
-  }
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
-      this.model = this.empty();
-      this.workersSearch = '';
-      this.workersResultados = [];
-      this.workersSeleccionados = [];
-      this.loadProyectos();
+      this.reset();
+      this.loadInitial();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.revokeObjectUrl();
+  }
+
+  isAdmin(): boolean {
+    return (
+      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+      this.authService.hasRole('ADMINISTRADOR DE UDP')
+    );
+  }
+
+  private readEmpresaIdFromJwt(): number | null {
+    if (typeof localStorage === 'undefined') return null;
+    const token = localStorage.getItem('access_token');
+    if (!token) return null;
+    try {
+      const decoded: any = jwtDecode(token);
+      const raw = decoded?.empresaId ?? decoded?.['empresaId'];
+      const num = Number(raw);
+      return Number.isFinite(num) && num > 0 ? num : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private reset(): void {
+    this.paso = 1;
+    this.model = this.empty();
+    this.trabajadores = [];
+    this.workersSeleccionados = new Set();
+    this.revokeObjectUrl();
+  }
+
+  private loadInitial(): void {
+    this.projectService.getProjectPaged(1).subscribe({
+      next: (res) => {
+        this.proyectos = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.proyectos = []; },
+    });
+    if (this.isAdmin()) {
+      this.catalogosService.getEmpresas().subscribe({
+        next: (res) => {
+          this.empresas = res ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.empresas = []; },
+      });
+    } else {
+      const id = this.readEmpresaIdFromJwt();
+      if (id) this.model.empresaId = id;
     }
   }
 
   private empty(): SctrSubirForm {
     return {
       tipo: 'SCTR',
+      tipoPoliza: 'Renovacion',
+      empresaId: null,
       proyectoId: null,
-      mes: new Date().getMonth() + 1,
-      anio: new Date().getFullYear(),
+      fechaInicio: '',
+      vigencia: '',
       archivoUrl: '',
       archivoNombre: '',
-      archivoUrl2: '',
-      archivoNombre2: '',
     };
   }
 
-  private loadProyectos(): void {
-    this.projectService.getProjectPaged(1).subscribe({
-      next: (res) => {
-        this.proyectos = res.data ?? [];
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.proyectos = [];
-      },
-    });
-  }
-
-  onWorkersSearchChange(): void {
-    this.searchChange$.next();
-  }
-
-  private searchWorkers(): void {
-    const term = this.workersSearch.trim();
-    if (!term) {
-      this.workersResultados = [];
-      return;
-    }
-    this.loadingWorkers = true;
-    this.trabajadorHabService
-      .getTrabajadores({ search: term, page: 1, pageSize: 20 })
-      .subscribe({
-        next: (res) => {
-          this.workersResultados = res.data ?? [];
-          this.loadingWorkers = false;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.workersResultados = [];
-          this.loadingWorkers = false;
-        },
-      });
-  }
-
-  isWorkerSelected(workerId: number): boolean {
-    return this.workersSeleccionados.some((w) => w.workerId === workerId);
-  }
-
-  toggleWorker(worker: WorkerHabilitacionListDto): void {
-    if (this.isWorkerSelected(worker.workerId)) {
-      this.workersSeleccionados = this.workersSeleccionados.filter(
-        (w) => w.workerId !== worker.workerId,
-      );
-    } else {
-      this.workersSeleccionados = [...this.workersSeleccionados, worker];
-    }
-  }
-
-  removeWorker(workerId: number): void {
-    this.workersSeleccionados = this.workersSeleccionados.filter(
-      (w) => w.workerId !== workerId,
-    );
-  }
-
-  triggerFile1(): void {
-    this.fileInput1?.nativeElement.click();
-  }
-
-  triggerFile2(): void {
-    this.fileInput2?.nativeElement.click();
-  }
-
-  onFile1Selected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file) return;
-    this.model.archivoNombre = file.name;
-    this.model.archivoUrl = `pending-upload://${file.name}`;
-    input.value = '';
-  }
-
-  onFile2Selected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file) return;
-    this.model.archivoNombre2 = file.name;
-    this.model.archivoUrl2 = `pending-upload://${file.name}`;
-    input.value = '';
-  }
-
-  clearFile1(): void {
-    this.model.archivoUrl = '';
-    this.model.archivoNombre = '';
-  }
-
-  clearFile2(): void {
-    this.model.archivoUrl2 = '';
-    this.model.archivoNombre2 = '';
-  }
-
   get title(): string {
-    return 'Subir SCTR / Vida Ley';
+    return this.paso === 1 ? 'Subir SCTR / Vida Ley — Paso 1 de 2' : 'Subir SCTR / Vida Ley — Paso 2 de 2';
+  }
+
+  get modalWidth(): string {
+    return this.paso === 2 ? 'w-[1140px]' : 'w-[820px]';
+  }
+
+  get canPaso1(): boolean {
+    if (!this.model.tipo || !this.model.tipoPoliza) return false;
+    if (!this.model.empresaId) return false;
+    if (!this.model.fechaInicio || !this.model.vigencia) return false;
+    return true;
   }
 
   get canSubmit(): boolean {
     if (this.saving) return false;
-    if (!this.model.proyectoId) return false;
-    if (!this.model.mes || !this.model.anio) return false;
     if (!this.model.archivoUrl) return false;
-    if (this.workersSeleccionados.length === 0) return false;
+    if (this.workersSeleccionados.size === 0) return false;
     return true;
   }
 
+  get allChecked(): boolean {
+    return this.trabajadores.length > 0 &&
+      this.trabajadores.every((w) => this.workersSeleccionados.has(w.workerId));
+  }
+
+  get someChecked(): boolean {
+    return this.trabajadores.some((w) => this.workersSeleccionados.has(w.workerId));
+  }
+
+  get safeArchivoUrl(): SafeResourceUrl | null {
+    return this.archivoObjectUrl
+      ? this.sanitizer.bypassSecurityTrustResourceUrl(this.archivoObjectUrl)
+      : null;
+  }
+
+  avanzar(): void {
+    if (!this.canPaso1) return;
+    this.paso = 2;
+    this.loadWorkers();
+  }
+
+  volver(): void {
+    this.paso = 1;
+  }
+
+  private loadWorkers(): void {
+    const empresaId = this.model.empresaId;
+    if (!empresaId) return;
+    this.loadingWorkers = true;
+    this.trabajadores = [];
+    this.workersSeleccionados = new Set();
+    this.sctrService
+      .getTrabajadoresPorEmpresa({
+        empresaId,
+        proyectoId: this.model.proyectoId ?? undefined,
+        tipo: this.model.tipo,
+        tipoPoliza: this.model.tipoPoliza,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.trabajadores = res ?? [];
+          this.loadingWorkers = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.loadingWorkers = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  toggleWorker(workerId: number): void {
+    if (this.workersSeleccionados.has(workerId)) {
+      this.workersSeleccionados.delete(workerId);
+    } else {
+      this.workersSeleccionados.add(workerId);
+    }
+  }
+
+  toggleAll(checked: boolean): void {
+    if (checked) {
+      this.trabajadores.forEach((w) => this.workersSeleccionados.add(w.workerId));
+    } else {
+      this.workersSeleccionados.clear();
+    }
+  }
+
+  triggerFile(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    this.revokeObjectUrl();
+    this.archivoObjectUrl = URL.createObjectURL(file);
+    this.model.archivoNombre = file.name;
+    this.model.archivoUrl = `pending-upload://${file.name}`;
+    input.value = '';
+    this.cdr.detectChanges();
+  }
+
+  private revokeObjectUrl(): void {
+    if (this.archivoObjectUrl) {
+      URL.revokeObjectURL(this.archivoObjectUrl);
+      this.archivoObjectUrl = '';
+    }
+  }
+
+  getEstadoClass(estado: string): string {
+    switch (estado) {
+      case 'Aprobado': return 'chip-green';
+      case 'Rechazado': return 'chip-red';
+      case 'Falta': return 'chip-gray';
+      default: return 'chip-gray';
+    }
+  }
+
   submit(): void {
-    if (!this.canSubmit || !this.model.proyectoId) return;
+    if (!this.canSubmit) return;
+
+    const [anio, mes] = this.model.fechaInicio.split('-').map(Number);
 
     const payload: SctrVidaLeyCreateDto = {
-      proyectoId: this.model.proyectoId,
+      proyectoId: this.model.proyectoId ?? undefined,
       tipo: this.model.tipo,
-      mes: this.model.mes,
-      anio: this.model.anio,
-      archivoUrl: this.model.archivoUrl,
-      archivoUrl2: this.model.archivoUrl2 || undefined,
-      workerIds: this.workersSeleccionados.map((w) => w.workerId),
+      tipoPoliza: this.model.tipoPoliza,
+      mes,
+      anio,
+      fechaInicio: this.model.fechaInicio,
+      vigencia: this.model.vigencia,
+      archivoUrl: this.model.archivoUrl || undefined,
+      workers: Array.from(this.workersSeleccionados).map((wId) => ({
+        workerId: wId,
+        fechaInicioCobertura: this.model.fechaInicio || undefined,
+      })),
     };
 
     this.saving = true;
@@ -241,12 +306,7 @@ export class SctrSubir implements OnChanges {
       next: () => {
         this.saving = false;
         this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'Documento creado',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'success', title: 'Documento creado', timer: 1500, showConfirmButton: false });
         this.saved.emit();
       },
       error: (err: HttpErrorResponse) => {
@@ -259,13 +319,7 @@ export class SctrSubir implements OnChanges {
   }
 
   close(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.destroy$ = new Subject<void>();
-    this.searchChange$ = new Subject<void>();
-    this.searchChange$
-      .pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe(() => this.searchWorkers());
+    this.revokeObjectUrl();
     this.closed.emit();
   }
 }

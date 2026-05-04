@@ -1,138 +1,167 @@
-<app-base-modal *ngIf="open" [title]="title" width="w-[820px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="title" [width]="modalWidth" (closeModal)="close()">
   <div class="form-wrapper">
-    <div class="grid-2">
-      <div>
-        <label class="field-label">Tipo *</label>
-        <select class="field-input" [(ngModel)]="model.tipo">
-          <option value="SCTR">SCTR</option>
-          <option value="VIDA_LEY">Vida Ley</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Proyecto *</label>
-        <select class="field-input" [(ngModel)]="model.proyectoId">
-          <option [ngValue]="null">— Seleccionar —</option>
-          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
-            {{ p.projectDescription }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Mes *</label>
-        <select class="field-input" [(ngModel)]="model.mes">
-          <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Año *</label>
-        <input type="number" class="field-input" [(ngModel)]="model.anio" min="2020" max="2100" />
-      </div>
 
-      <div class="col-span-2">
-        <label class="field-label">Póliza Salud (archivo principal) *</label>
-        <div class="adjuntar-row">
-          <div class="adjuntar-info">
-            <span *ngIf="!model.archivoUrl" class="text-muted">Sin archivo seleccionado</span>
-            <span *ngIf="model.archivoUrl">📎 {{ model.archivoNombre }} (pendiente subir)</span>
+    <!-- Step indicator -->
+    <div class="wizard-steps">
+      <div class="step-item">
+        <div class="step-dot" [class.step-dot--active]="paso === 1" [class.step-dot--done]="paso > 1">1</div>
+        <span class="step-label" [class.step-label--active]="paso === 1">Datos básicos</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item">
+        <div class="step-dot" [class.step-dot--active]="paso === 2" [class.step-dot--pending]="paso < 2">2</div>
+        <span class="step-label" [class.step-label--active]="paso === 2">Trabajadores cubiertos</span>
+      </div>
+    </div>
+
+    <!-- PASO 1: Datos básicos -->
+    <ng-container *ngIf="paso === 1">
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Tipo *</label>
+          <select class="field-input" [(ngModel)]="model.tipo">
+            <option value="SCTR">SCTR</option>
+            <option value="VIDA_LEY">Vida Ley</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Tipo de póliza *</label>
+          <select class="field-input" [(ngModel)]="model.tipoPoliza">
+            <option value="Renovacion">Renovación</option>
+            <option value="Inclusion">Inclusión</option>
+          </select>
+        </div>
+
+        <div class="col-span-2" *ngIf="isAdmin()">
+          <label class="field-label">Empresa *</label>
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="model.empresaId"
+            (valueChange)="model.empresaId = $event"
+            placeholder="Seleccionar empresa"
+          />
+        </div>
+
+        <div class="col-span-2">
+          <label class="field-label">Proyecto (opcional)</label>
+          <app-search-select
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="model.proyectoId"
+            (valueChange)="model.proyectoId = $event"
+            placeholder="Todos los proyectos"
+          />
+        </div>
+
+        <div>
+          <label class="field-label">Fecha inicio *</label>
+          <input type="date" class="field-input" [(ngModel)]="model.fechaInicio" />
+        </div>
+        <div>
+          <label class="field-label">Fecha vencimiento *</label>
+          <input type="date" class="field-input" [(ngModel)]="model.vigencia" />
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- PASO 2: Trabajadores + visor -->
+    <ng-container *ngIf="paso === 2">
+      <div class="wizard-paso2">
+
+        <!-- Panel izquierdo: workers -->
+        <div class="panel-workers">
+          <div class="advertencia">
+            ⚠ Marca solo los trabajadores que figuran en el documento
           </div>
-          <div class="adjuntar-actions">
-            <button type="button" class="btn-link" (click)="triggerFile1()">
-              {{ model.archivoUrl ? 'Cambiar' : 'Adjuntar' }}
-            </button>
-            <button
-              type="button"
-              class="btn-ghost btn-x"
-              *ngIf="model.archivoUrl"
-              (click)="clearFile1()"
+
+          <div class="workers-select-all" *ngIf="!loadingWorkers && trabajadores.length > 0">
+            <input
+              type="checkbox"
+              [checked]="allChecked"
+              [indeterminate]="someChecked && !allChecked"
+              (change)="toggleAll($any($event.target).checked)"
+            />
+            <span class="field-label" style="margin:0">Seleccionar todos</span>
+            <span class="workers-count">{{ workersSeleccionados.size }} / {{ trabajadores.length }}</span>
+          </div>
+
+          <div class="workers-list">
+            <div *ngIf="loadingWorkers" class="muted-line">Cargando trabajadores…</div>
+            <div *ngIf="!loadingWorkers && trabajadores.length === 0" class="muted-line">
+              Sin trabajadores disponibles para los filtros seleccionados.
+            </div>
+            <div
+              *ngFor="let w of trabajadores"
+              class="worker-row"
+              (click)="toggleWorker(w.workerId)"
             >
-              ✕
-            </button>
-            <input #fileInput1 type="file" hidden (change)="onFile1Selected($event)" />
+              <input
+                type="checkbox"
+                [checked]="workersSeleccionados.has(w.workerId)"
+                (click)="$event.stopPropagation()"
+                (change)="toggleWorker(w.workerId)"
+              />
+              <div class="worker-info">
+                <strong>{{ w.apellidoNombre }}</strong>
+                <span class="muted-line">DNI {{ w.dni }}</span>
+              </div>
+              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(w.estadoSctr)">
+                {{ w.estadoSctr }}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-span-2" *ngIf="model.tipo === 'SCTR'">
-        <label class="field-label">Póliza Pensión (opcional)</label>
-        <div class="adjuntar-row">
-          <div class="adjuntar-info">
-            <span *ngIf="!model.archivoUrl2" class="text-muted">Sin archivo seleccionado</span>
-            <span *ngIf="model.archivoUrl2">📎 {{ model.archivoNombre2 }} (pendiente subir)</span>
+        <!-- Panel derecho: visor PDF -->
+        <div class="panel-visor">
+          <div class="visor-upload-bar">
+            <span class="visor-upload-filename">
+              {{ model.archivoNombre || 'Sin archivo seleccionado' }}
+            </span>
+            <button type="button" class="btn-link" (click)="triggerFile()">
+              {{ model.archivoUrl ? 'Cambiar' : 'Subir archivo' }}
+            </button>
+            <input #fileInput type="file" hidden accept=".pdf,.png,.jpg,.jpeg" (change)="onFileSelected($event)" />
           </div>
-          <div class="adjuntar-actions">
-            <button type="button" class="btn-link" (click)="triggerFile2()">
-              {{ model.archivoUrl2 ? 'Cambiar' : 'Adjuntar' }}
-            </button>
-            <button
-              type="button"
-              class="btn-ghost btn-x"
-              *ngIf="model.archivoUrl2"
-              (click)="clearFile2()"
-            >
-              ✕
-            </button>
-            <input #fileInput2 type="file" hidden (change)="onFile2Selected($event)" />
+
+          <div class="visor-frame" *ngIf="safeArchivoUrl">
+            <iframe [src]="safeArchivoUrl" width="100%" height="100%"></iframe>
+          </div>
+          <div class="visor-frame visor-empty" *ngIf="!safeArchivoUrl">
+            <p class="muted-line">Sube el archivo para previsualizar</p>
           </div>
         </div>
-      </div>
-    </div>
 
-    <h4 class="subsection-title">Trabajadores cubiertos *</h4>
-
-    <input
-      type="text"
-      class="field-input"
-      placeholder="Buscar por nombre o DNI…"
-      [(ngModel)]="workersSearch"
-      (input)="onWorkersSearchChange()"
-    />
-
-    <div class="workers-search-box">
-      <div *ngIf="loadingWorkers" class="muted-line">Buscando…</div>
-      <div *ngIf="!loadingWorkers && workersSearch && workersResultados.length === 0" class="muted-line">
-        Sin resultados.
       </div>
-      <div
-        *ngFor="let w of workersResultados"
-        class="worker-row"
-        (click)="toggleWorker(w)"
-      >
-        <input
-          type="checkbox"
-          [checked]="isWorkerSelected(w.workerId)"
-          (click)="$event.stopPropagation()"
-          (change)="toggleWorker(w)"
-        />
-        <div class="worker-info">
-          <strong>{{ w.apellidoNombre }}</strong>
-          <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre ?? '—' }}</span>
-        </div>
-      </div>
-    </div>
+    </ng-container>
 
-    <div class="seleccionados-box" *ngIf="workersSeleccionados.length > 0">
-      <div class="seleccionados-header">
-        Seleccionados ({{ workersSeleccionados.length }})
-      </div>
-      <div class="seleccionados-list">
-        <span *ngFor="let w of workersSeleccionados" class="worker-chip">
-          {{ w.apellidoNombre }}
-          <button
-            type="button"
-            class="chip-remove"
-            (click)="removeWorker(w.workerId)"
-          >
-            ✕
-          </button>
-        </span>
-      </div>
-    </div>
-
+    <!-- Footer -->
     <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
-      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <button type="button" class="btn-ghost" (click)="paso === 1 ? close() : volver()">
+        {{ paso === 1 ? 'Cancelar' : '← Volver' }}
+      </button>
+      <button
+        *ngIf="paso === 1"
+        type="button"
+        class="btn-primary"
+        [disabled]="!canPaso1"
+        (click)="avanzar()"
+      >
+        Siguiente →
+      </button>
+      <button
+        *ngIf="paso === 2"
+        type="button"
+        class="btn-primary"
+        [disabled]="!canSubmit"
+        (click)="submit()"
+      >
         {{ saving ? 'Guardando…' : 'Crear documento' }}
       </button>
     </footer>
+
   </div>
 </app-base-modal>

@@ -125,29 +125,33 @@
           </span>
         </div>
 
+        <div class="obs-detalle" *ngIf="isAdmin() && selectedDoc.obsAbril">
+          <span class="obs-label">Observaciones Abril</span>
+          <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
+        </div>
+
         <div class="table-wrapper detalle-tabla">
           <table class="data-table">
             <thead>
               <tr>
                 <th>DNI</th>
                 <th>Apellidos y Nombres</th>
-                <th>Estado</th>
+                <th>Est. SCTR</th>
+                <th>Est. Vida Ley</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngIf="selectedDoc.workers.length === 0">
-                <td colspan="3" class="empty-row">Sin trabajadores asociados.</td>
+                <td colspan="4" class="empty-row">Sin trabajadores asociados.</td>
               </tr>
               <tr *ngFor="let w of selectedDoc.workers">
                 <td>{{ w.dni }}</td>
                 <td>{{ w.apellidoNombre }}</td>
                 <td>
-                  <span
-                    class="btn-chip"
-                    [class]="w.aprobado ? 'chip-green' : 'chip-orange'"
-                  >
-                    {{ w.aprobado ? 'Aprobado' : 'Pendiente' }}
-                  </span>
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">{{ w.estadoSctr }}</span>
+                </td>
+                <td>
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">{{ w.estadoVidaLey }}</span>
                 </td>
               </tr>
             </tbody>
