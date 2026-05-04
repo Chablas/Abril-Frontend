@@ -29,9 +29,10 @@ export class SctrVidaLeyService {
     });
   }
 
-  create(dto: SctrVidaLeyCreateDto): Observable<SctrVidaLeyDto> {
+  create(dto: SctrVidaLeyCreateDto, empresaId?: number): Observable<SctrVidaLeyDto> {
     return this.http.post<SctrVidaLeyDto>(this.base, dto, {
       headers: buildHabHeaders(),
+      params: buildHabParams({ empresaId }),
     });
   }
 

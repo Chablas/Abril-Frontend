@@ -50,6 +50,12 @@ export interface SctrTrabajadorEstadoDto {
   dni: string;
   estadoSctr: string;
   estadoVidaLey: string;
+  obraOficina?: string;
+  sctrId?: number;
+  sctrHabId?: number;
+  archivoUrl?: string;
+  empresaNombre?: string;
+  proyectoNombre?: string;
 }
 
 export interface SctrVidaLeyAprobarDto {

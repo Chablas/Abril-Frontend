@@ -25,6 +25,7 @@ import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { SctrVidaLeyService } from '../../../../services/sctr-vidaley.service';
+import { SharepointUploadService } from '../../../../services/sharepoint-upload.service';
 import { SctrVidaLeyCreateDto, SctrTrabajadorEstadoDto } from '../../../../dtos/sctr.model';
 import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
@@ -62,15 +63,19 @@ export class SctrSubir implements OnChanges, OnDestroy {
   trabajadores: SctrTrabajadorEstadoDto[] = [];
   loadingWorkers = false;
   workersSeleccionados = new Set<number>();
+  filtroObra: 'obra' | 'staff' | '' = '';
 
   archivoObjectUrl = '';
   model: SctrSubirForm = this.empty();
   saving = false;
+  uploadingFile = false;
 
   private destroy$ = new Subject<void>();
+  private uploadCancel$ = new Subject<void>();
 
   constructor(
     private sctrService: SctrVidaLeyService,
+    private sharepointService: SharepointUploadService,
     private authService: AuthService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
@@ -90,6 +95,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.uploadCancel$.complete();
     this.revokeObjectUrl();
   }
 
@@ -115,6 +121,8 @@ export class SctrSubir implements OnChanges, OnDestroy {
   }
 
   private reset(): void {
+    this.uploadCancel$.next();
+    this.uploadingFile = false;
     this.paso = 1;
     this.model = this.empty();
     this.trabajadores = [];
@@ -173,19 +181,33 @@ export class SctrSubir implements OnChanges, OnDestroy {
   }
 
   get canSubmit(): boolean {
-    if (this.saving) return false;
+    if (this.saving || this.uploadingFile) return false;
     if (!this.model.archivoUrl) return false;
     if (this.workersSeleccionados.size === 0) return false;
     return true;
   }
 
+  private static readonly STAFF_VALUES = ['Staff', 'Oficina Central'];
+
+  get trabajadoresFiltrados(): SctrTrabajadorEstadoDto[] {
+    if (!this.filtroObra) return this.trabajadores;
+    if (this.filtroObra === 'staff') {
+      return this.trabajadores.filter((w) =>
+        SctrSubir.STAFF_VALUES.includes(w.obraOficina ?? ''),
+      );
+    }
+    return this.trabajadores.filter(
+      (w) => !SctrSubir.STAFF_VALUES.includes(w.obraOficina ?? ''),
+    );
+  }
+
   get allChecked(): boolean {
-    return this.trabajadores.length > 0 &&
-      this.trabajadores.every((w) => this.workersSeleccionados.has(w.workerId));
+    const lista = this.trabajadoresFiltrados;
+    return lista.length > 0 && lista.every((w) => this.workersSeleccionados.has(w.workerId));
   }
 
   get someChecked(): boolean {
-    return this.trabajadores.some((w) => this.workersSeleccionados.has(w.workerId));
+    return this.trabajadoresFiltrados.some((w) => this.workersSeleccionados.has(w.workerId));
   }
 
   get safeArchivoUrl(): SafeResourceUrl | null {
@@ -210,25 +232,33 @@ export class SctrSubir implements OnChanges, OnDestroy {
     this.loadingWorkers = true;
     this.trabajadores = [];
     this.workersSeleccionados = new Set();
+    this.filtroObra = '';
+
+    const baseParams = {
+      empresaId,
+      proyectoId: this.model.proyectoId ?? undefined,
+      tipo: this.model.tipo,
+      tipoPoliza: this.model.tipoPoliza,
+    };
+
+    const estadoSctr = this.model.tipoPoliza === 'Renovacion'
+      ? 'Aprobado'
+      : 'Falta,Vencido,Rechazado';
+
     this.sctrService
-      .getTrabajadoresPorEmpresa({
-        empresaId,
-        proyectoId: this.model.proyectoId ?? undefined,
-        tipo: this.model.tipo,
-        tipoPoliza: this.model.tipoPoliza,
-      })
+      .getTrabajadoresPorEmpresa({ ...baseParams, estadoSctr })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (res) => {
-          this.trabajadores = res ?? [];
-          this.loadingWorkers = false;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.loadingWorkers = false;
-          this.cdr.detectChanges();
-        },
-      });
+      next: (res) => {
+        this.trabajadores = res ?? [];
+        this.loadingWorkers = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingWorkers = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   toggleWorker(workerId: number): void {
@@ -241,9 +271,9 @@ export class SctrSubir implements OnChanges, OnDestroy {
 
   toggleAll(checked: boolean): void {
     if (checked) {
-      this.trabajadores.forEach((w) => this.workersSeleccionados.add(w.workerId));
+      this.trabajadoresFiltrados.forEach((w) => this.workersSeleccionados.add(w.workerId));
     } else {
-      this.workersSeleccionados.clear();
+      this.trabajadoresFiltrados.forEach((w) => this.workersSeleccionados.delete(w.workerId));
     }
   }
 
@@ -255,12 +285,36 @@ export class SctrSubir implements OnChanges, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) return;
+    this.uploadCancel$.next();
     this.revokeObjectUrl();
     this.archivoObjectUrl = URL.createObjectURL(file);
     this.model.archivoNombre = file.name;
-    this.model.archivoUrl = `pending-upload://${file.name}`;
+    this.model.archivoUrl = '';
     input.value = '';
+    this.uploadFile(file);
     this.cdr.detectChanges();
+  }
+
+  private uploadFile(file: File): void {
+    this.uploadingFile = true;
+    this.sharepointService
+      .subirArchivo(file, 'sctr')
+      .pipe(takeUntil(this.uploadCancel$), takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.model.archivoUrl = res.url;
+          this.uploadingFile = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.uploadingFile = false;
+          this.model.archivoUrl = '';
+          this.model.archivoNombre = '';
+          this.revokeObjectUrl();
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   private revokeObjectUrl(): void {
@@ -302,7 +356,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
     this.saving = true;
     this.loaderService.show();
 
-    this.sctrService.create(payload).subscribe({
+    this.sctrService.create(payload, this.model.empresaId ?? undefined).subscribe({
       next: () => {
         this.saving = false;
         this.loaderService.hide();
