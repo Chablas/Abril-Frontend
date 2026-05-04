@@ -196,26 +196,19 @@
 }
 
 /* ── 2-column layout (when project selected) ── */
-.hab-layout {
+.ent-view {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  overflow: hidden;
-}
-
-/* ── Left column: entregable list ── */
-.col-workers {
-  background: #ffffff;
-  border-right: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: #f8fafc;
 }
 
 .proj-hdr {
   flex-shrink: 0;
-  padding: 10px 12px;
+  padding: 12px 16px;
+  background: #ffffff;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
@@ -233,6 +226,7 @@
   font-weight: 600;
   cursor: pointer;
   padding: 0;
+  width: max-content;
   transition: color 0.12s ease;
 }
 
@@ -248,79 +242,143 @@
 }
 
 .proj-hdr-name {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #0f172a;
 }
 
-.grupo-header {
-  padding: 0.4rem 12px;
-  background: #f3f4f6;
+.table-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.ent-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ent-table thead tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ent-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  background: #ffffff;
+}
+
+.th-doc { width: 40%; }
+.th-estado { width: 20%; }
+.th-vig { width: 20%; }
+.th-act { width: 20%; text-align: right; }
+
+.grupo-row {
+  background: #f9fafb;
+}
+
+.grupo-cell {
+  padding: 6px 16px !important;
   font-size: 0.68rem;
   font-weight: 700;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.col-workers .grupo-header:first-of-type {
-  border-top: 0;
-}
-
-.workers-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.worker-card {
-  padding: 10px 12px;
-  border-radius: 0;
+.ent-row {
   cursor: pointer;
-  border-left: 3px solid transparent;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f8fafc;
+  transition: background 0.12s ease;
+}
+
+.ent-row:last-child {
+  border-bottom: none;
+}
+
+.ent-row:hover {
+  background: #f8fafc;
+}
+
+.ent-row--sel {
+  background: #f0fdf4;
+}
+
+.ent-table td {
+  padding: 11px 16px;
+  font-size: 0.85rem;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.td-doc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-nombre {
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.td-act {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.td-act .icon-btn-circle + .icon-btn-circle {
+  margin-left: 6px;
+}
+
+.vig-date {
+  font-size: 0.8rem;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.no-data {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+}
+
+.ent-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.icon-btn-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
   transition: all 0.12s ease;
 }
 
-.worker-card:hover {
-  background: #f8fafc;
-}
-
-.worker-card--sel {
+.icon-btn-circle:hover {
   background: #f0fdf4;
-  border-left-color: #64bc04;
-}
-
-.wc-top {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.wc-name {
-  flex: 1;
-  font-size: 0.84rem;
-  font-weight: 500;
-  color: #0f172a;
-  line-height: 1.3;
-}
-
-.wc-foot {
-  padding-top: 3px;
-  padding-left: 17px;
-}
-
-.wc-proyecto {
-  font-size: 0.72rem;
-  color: #94a3b8;
-}
-
-/* ── Right column: placeholder ── */
-.col-entregables {
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  border-color: #64bc04;
+  color: #166534;
 }
 
 /* ── Shared: chips, dots ── */

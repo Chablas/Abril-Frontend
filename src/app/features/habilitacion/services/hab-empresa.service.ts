@@ -7,6 +7,7 @@ import {
   EmpresaProyectoDto,
   ProyectoDisponibleDto,
 } from '../dtos/empresa.model';
+import { DocumentoVersionDto } from '../dtos/trabajador.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +39,13 @@ export class HabEmpresaService {
     return this.http.put<EmpresaEntregableDto>(
       `${this.base}/${empresaId}/entregables/${itemId}`,
       dto,
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  getVersiones(empresaId: number, itemId: number): Observable<DocumentoVersionDto[]> {
+    return this.http.get<DocumentoVersionDto[]>(
+      `${this.base}/${empresaId}/entregables/${itemId}/versiones`,
       { headers: buildHabHeaders() },
     );
   }

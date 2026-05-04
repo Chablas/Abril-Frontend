@@ -86,6 +86,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   todosSeleccionados = false;
   modalCambiarObraOpen = false;
   modalVersionesOpen = false;
+  versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
   modalEditarPerfilOpen = false;
   mostrarReingreso = false;
   mostrarHistorial = false;

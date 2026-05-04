@@ -8,10 +8,10 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
 import { DocumentoVersionDto } from '../../../../dtos/trabajador.model';
 
 @Component({
@@ -24,6 +24,7 @@ import { DocumentoVersionDto } from '../../../../dtos/trabajador.model';
 export class VersionesDoc implements OnChanges {
   @Input() open = false;
   @Input() entregableId: number | undefined;
+  @Input() loader!: (id: number) => Observable<DocumentoVersionDto[]>;
   @Output() closed = new EventEmitter<void>();
 
   versiones: DocumentoVersionDto[] = [];
@@ -32,7 +33,6 @@ export class VersionesDoc implements OnChanges {
   visorNombre = '';
 
   constructor(
-    private trabajadorHabService: TrabajadorHabService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -46,7 +46,7 @@ export class VersionesDoc implements OnChanges {
   private loadVersiones(id: number): void {
     this.loading = true;
     this.versiones = [];
-    this.trabajadorHabService.getVersiones(id).subscribe({
+    this.loader(id).subscribe({
       next: (res) => {
         this.versiones = res ?? [];
         this.loading = false;

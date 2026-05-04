@@ -648,6 +648,7 @@
 <app-hab-versiones-doc
   [open]="modalVersionesOpen"
   [entregableId]="selectedEntregable?.id"
+  [loader]="versionesLoader"
   (closed)="closeVersiones()"
 />
 <app-hab-editar-perfil
