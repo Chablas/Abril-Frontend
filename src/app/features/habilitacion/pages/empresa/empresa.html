@@ -522,7 +522,7 @@
 <!-- Modal historial de versiones -->
 <app-hab-versiones-doc
   [open]="modalVersionesOpen"
-  [entregableId]="selectedEntregable?.id"
+  [entregableId]="selectedEntregable?.itemId"
   [loader]="versionesLoader"
   (closed)="closeVersiones()"
 />
