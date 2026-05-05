@@ -39,4 +39,13 @@ export class ContractorManagementService {
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
+
+  sendCredentials(contractorId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${contractorId}/send-credentials`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

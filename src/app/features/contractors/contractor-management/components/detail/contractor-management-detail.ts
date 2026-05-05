@@ -19,6 +19,8 @@ export class ContractorManagementDetail {
   @Output() closeModal = new EventEmitter<void>();
   @Output() actionCompleted = new EventEmitter<void>();
 
+  activeTab: 'general' | 'users' = 'general';
+
   constructor(
     private service: ContractorManagementService,
     private loaderService: LoaderService,
@@ -60,6 +62,40 @@ export class ContractorManagementDetail {
           this.closeModal.emit();
         },
         error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  sendCredentials(): void {
+    const alreadyHasUser = !!this.item.hasUser;
+    const text = alreadyHasUser
+      ? `${this.item.contributorName} ya tiene credenciales registradas. ¿Deseas enviar un nuevo enlace de activación de todas formas?`
+      : `Se enviará un enlace de activación a los correos registrados de ${this.item.contributorName}.`;
+
+    Swal.fire({
+      icon: 'question',
+      title: 'Enviar credenciales',
+      text,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.sendCredentials(this.item.contractorId).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Enviado',
+            text: res.message ?? 'El enlace de activación fue enviado exitosamente.',
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
           this.errorService.handleError(err);
         },
       });

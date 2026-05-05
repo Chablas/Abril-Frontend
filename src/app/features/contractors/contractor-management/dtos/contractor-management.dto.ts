@@ -1,3 +1,9 @@
+export interface ContractorUserItemDTO {
+  userId: number;
+  email: string;
+  createdDateTime: string;
+}
+
 export interface ContractorManagementDTO {
   contractorId: number;
   contributorId: number;
@@ -15,6 +21,8 @@ export interface ContractorManagementDTO {
   contractorStateDescription: string;
   createdDateTime: string;
   emails: string[];
+  hasUser?: boolean;
+  users: ContractorUserItemDTO[];
   brochureFileUrl?: string | null;
   fichaRucFileUrl?: string | null;
   referencesListFileUrl?: string | null;

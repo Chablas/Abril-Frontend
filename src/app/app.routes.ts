@@ -105,6 +105,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'auth/contractor-credentials',
+    loadComponent: () =>
+      import('./features/auth/pages/contractor-credentials/components/contractor-credentials')
+      .then(m => m.ContractorCredentials)
+  },
+
+  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')
