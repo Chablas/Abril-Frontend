@@ -9,6 +9,8 @@ import {
   ActividadListItemDTO,
   ActividadPatchBody,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
+import { NuevaConsulta } from './components/nueva-consulta/nueva-consulta';
+import { EditarActividad } from './components/editar-actividad/editar-actividad';
 
 type TipoFiltro = '' | 'ENTREGABLE' | 'HITO' | 'CONSULTA';
 
@@ -22,7 +24,7 @@ interface EtapaGroup {
 @Component({
   selector: 'app-arq-comercial-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
@@ -54,6 +56,9 @@ export class Actividades implements OnInit {
   soloActivas = false;
 
   seleccionadas = new Set<number>();
+  mostrarNuevaConsulta = false;
+  mostrarEditarActividad = false;
+  actividadParaEditar: ActividadListItemDTO | null = null;
 
   constructor(
     private service: ArquitecturaComercialService,
@@ -351,6 +356,48 @@ export class Actividades implements OnInit {
     }
     if (p.estado !== 'ACTIVO') base.push('opacity-60');
     return base.join(' ');
+  }
+
+  onNuevaConsultaGuardada(): void {
+    this.mostrarNuevaConsulta = false;
+    this.loadActividades();
+  }
+
+  onEditarActividad(a: ActividadListItemDTO): void {
+    this.actividadParaEditar = a;
+    this.mostrarEditarActividad = true;
+  }
+
+  onEditarGuardado(updated: ActividadListItemDTO): void {
+    this.mostrarEditarActividad = false;
+    updated.retraso = this.computeRetraso(updated);
+    const idx = this.actividades.findIndex(a => a.id === updated.id);
+    if (idx >= 0) {
+      this.actividades[idx] = updated;
+      this.rebuildGroups();
+    }
+    this.cdr.detectChanges();
+  }
+
+  onEliminarActividad(id: number): void {
+    Swal.fire({
+      title: '¿Eliminar actividad?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then(result => {
+      if (!result.isConfirmed) return;
+      this.service.deleteActividad(id).subscribe({
+        next: () => this.loadActividades(),
+        error: err => {
+          const msg = err?.error?.message ?? 'No se pudo eliminar la actividad';
+          this.showError(msg);
+        },
+      });
+    });
   }
 
   private showError(msg: string): void {

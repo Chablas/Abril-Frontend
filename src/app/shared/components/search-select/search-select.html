@@ -18,16 +18,32 @@
       <span [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
         {{ selectedLabel }}
       </span>
-      <svg
-        class="flex-shrink-0 text-gray-400 transition-transform duration-200"
-        [ngClass]="isOpen ? 'rotate-180' : ''"
-        width="16" height="16" viewBox="0 0 16 9" fill="none"
-      >
-        <path
-          d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z"
-          fill="currentColor"
-        />
-      </svg>
+      <span class="flex items-center gap-[8px]">
+        <span
+          *ngIf="allowClear && hasValue"
+          (click)="clear($event)"
+          (keydown.enter)="clear($any($event))"
+          tabindex="0"
+          role="button"
+          aria-label="Limpiar selección"
+          title="Limpiar"
+          class="flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </span>
+        <svg
+          class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+          [ngClass]="isOpen ? 'rotate-180' : ''"
+          width="16" height="16" viewBox="0 0 16 9" fill="none"
+        >
+          <path
+            d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
     </button>
 
     <!-- Dropdown -->

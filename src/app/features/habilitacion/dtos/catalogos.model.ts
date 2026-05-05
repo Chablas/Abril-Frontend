@@ -29,3 +29,14 @@ export interface ReglaDto {
   nota?: string;
   activo: boolean;
 }
+
+export interface AreaCatDto {
+  area: string;
+}
+
+export interface SubareaCatDto {
+  id?: number;
+  subarea: string;
+  area: string;
+  jefatura: string;
+}

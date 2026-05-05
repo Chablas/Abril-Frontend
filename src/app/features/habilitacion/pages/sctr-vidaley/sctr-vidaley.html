@@ -14,9 +14,48 @@
     </button>
   </div>
 
-  <div class="sctr-columns">
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'polizas'"
+      (click)="switchTab('polizas')"
+    >
+      Pólizas
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab === 'trabajadores'"
+      (click)="switchTab('trabajadores')"
+      *ngIf="isAdmin()"
+    >
+      Trabajadores
+    </button>
+  </div>
+
+  <!-- ── TAB PÓLIZAS ───────────────────────────────────────── -->
+  <div class="sctr-columns" *ngIf="activeTab === 'polizas'">
     <div class="col-docs card">
       <div class="filters-card">
+        <div *ngIf="isAdmin()" style="margin-bottom: 0.5rem;">
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="filtroEmpresaId"
+            (valueChange)="onPolizaEmpresaChange($event)"
+            placeholder="Todas las empresas"
+          />
+        </div>
+        <div *ngIf="selectedEmpresaEsAbril" style="margin-bottom: 0.5rem;">
+          <select class="field-input" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
+            <option value="">Obra y Oficina</option>
+            <option value="Obra">Obra</option>
+            <option value="Staff">Staff / Oficina Central</option>
+          </select>
+        </div>
         <div class="filters-grid">
           <select class="field-input" [(ngModel)]="filtroTipo" (change)="onFilter()">
             <option value="">Todos los tipos</option>
@@ -56,9 +95,7 @@
         >
           <div class="doc-header">
             <span class="doc-tipo">{{ doc.tipo }}</span>
-            <span class="btn-chip" [class]="getEstadoClass(doc.estado)">
-              {{ doc.estado }}
-            </span>
+            <span class="btn-chip chip-green">Aprobado</span>
           </div>
           <div class="doc-empresa">{{ doc.empresaNombre }}</div>
           <div class="doc-meta">
@@ -92,78 +129,59 @@
               {{ selectedDoc.empresaNombre }} / {{ selectedDoc.proyectoNombre }}
             </p>
           </div>
-          <span class="btn-chip" [class]="getEstadoClass(selectedDoc.estado)">
-            {{ selectedDoc.estado }}
-          </span>
+          <span class="btn-chip chip-green">Aprobado</span>
         </div>
 
-        <div class="archivos-section">
-          <button
-            type="button"
-            class="btn-link"
-            *ngIf="selectedDoc.archivoUrl"
-            (click)="verArchivo(selectedDoc.archivoUrl)"
-          >
-            📄 Ver Póliza (Salud)
-          </button>
-          <button
-            type="button"
-            class="btn-link"
-            *ngIf="selectedDoc.archivoUrl2"
-            (click)="verArchivo(selectedDoc.archivoUrl2)"
-          >
-            📄 Ver Póliza (Pensión)
-          </button>
-          <span class="vigencia-line" *ngIf="selectedDoc.vigencia">
-            Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
-          </span>
-          <span
-            class="vigencia-line"
-            *ngIf="!selectedDoc.archivoUrl && !selectedDoc.archivoUrl2 && !selectedDoc.vigencia"
-          >
-            Sin archivos asociados
-          </span>
-        </div>
+        <!-- Split 70/30: PDF izquierda, workers derecha -->
+        <div class="sctr-detalle-split">
+          <!-- PDF inline -->
+          <div class="sctr-split-left">
+            <iframe
+              *ngIf="docSafeUrl"
+              [src]="docSafeUrl"
+              width="100%"
+              height="100%"
+              frameborder="0"
+            ></iframe>
+            <div *ngIf="!docSafeUrl" class="sctr-split-empty">
+              <span class="muted-line">Sin archivo PDF</span>
+            </div>
+          </div>
 
-        <div class="table-wrapper detalle-tabla">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>DNI</th>
-                <th>Apellidos y Nombres</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngIf="selectedDoc.workers.length === 0">
-                <td colspan="3" class="empty-row">Sin trabajadores asociados.</td>
-              </tr>
-              <tr *ngFor="let w of selectedDoc.workers">
-                <td>{{ w.dni }}</td>
-                <td>{{ w.apellidoNombre }}</td>
-                <td>
-                  <span
-                    class="btn-chip"
-                    [class]="w.aprobado ? 'chip-green' : 'chip-orange'"
-                  >
-                    {{ w.aprobado ? 'Aprobado' : 'Pendiente' }}
+          <!-- Info + lista de trabajadores -->
+          <div class="sctr-split-right">
+            <div
+              class="sctr-split-meta"
+              *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril)"
+            >
+              <span *ngIf="selectedDoc.vigencia" class="vigencia-line">
+                Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
+              </span>
+              <ng-container *ngIf="isAdmin() && selectedDoc.obsAbril">
+                <span class="obs-label">Observaciones</span>
+                <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
+              </ng-container>
+            </div>
+            <div class="sctr-split-workers">
+              <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
+                Sin trabajadores asociados.
+              </div>
+              <div *ngFor="let w of selectedDoc.workers" class="sctr-worker-item">
+                <div class="worker-info">
+                  <strong>{{ w.apellidoNombre }}</strong>
+                  <span class="muted-line">{{ w.dni }}</span>
+                </div>
+                <div class="sctr-worker-chips">
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
+                    {{ w.estadoSctr }}
                   </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div
-          class="detalle-footer"
-          *ngIf="
-            isAdmin() &&
-            (selectedDoc.estado === 'Enviado' || selectedDoc.estado === 'Parcial')
-          "
-        >
-          <button type="button" class="btn-primary" (click)="abrirAprobar()">
-            Aprobar / Rechazar Workers
-          </button>
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">
+                    {{ w.estadoVidaLey }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>
@@ -173,6 +191,258 @@
         <p>Selecciona un documento para ver el detalle</p>
       </div>
     </ng-template>
+  </div>
+
+  <!-- ── TAB TRABAJADORES ──────────────────────────────────── -->
+  <div class="trabajadores-layout" *ngIf="activeTab === 'trabajadores'">
+
+    <!-- Panel izquierdo: filtros + lista -->
+    <div class="card panel-wleft">
+      <div class="wfilters">
+        <div class="wfilters-grid">
+          <div class="wfilter-col2" *ngIf="isAdmin()">
+            <label class="field-label">Empresa</label>
+            <app-search-select
+              [options]="empresas"
+              valueField="id"
+              displayField="nombre"
+              [value]="wFiltroEmpresaId"
+              (valueChange)="wFiltroEmpresaId = $event; onWorkerFilter()"
+              placeholder="Seleccionar empresa"
+            />
+          </div>
+          <div>
+            <label class="field-label">Proyecto</label>
+            <app-search-select
+              [options]="proyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="wFiltroProyectoId"
+              (valueChange)="wFiltroProyectoId = $event; onWorkerFilter()"
+              placeholder="Todos"
+            />
+          </div>
+          <div>
+            <label class="field-label">Tipo *</label>
+            <select class="field-input" [(ngModel)]="wFiltroTipo" (change)="onTipoChange()">
+              <option value="SCTR">SCTR</option>
+              <option value="VIDA_LEY">Vida Ley</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Estado</label>
+            <select class="field-input" [(ngModel)]="wFiltroEstado" (change)="onWorkerFilter()">
+              <option value="">Todos</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Rechazado">Rechazado</option>
+              <option value="Falta">Falta</option>
+              <option value="Vencido">Vencido</option>
+            </select>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-primary btn-buscar"
+          (click)="loadTrabajadores()"
+        >
+          Buscar
+        </button>
+      </div>
+
+      <div class="workers-list">
+        <div *ngIf="loadingWorkers" class="empty-list">Cargando trabajadores…</div>
+        <div *ngIf="!loadingWorkers && trabajadores.length === 0" class="empty-list">
+          Sin trabajadores para los filtros seleccionados
+        </div>
+        <div
+          *ngFor="let w of trabajadores"
+          class="worker-row"
+          [class.selected]="selectedWorker?.workerId === w.workerId"
+          (click)="selectWorker(w)"
+        >
+          <div class="worker-info">
+            <strong>{{ w.apellidoNombre }}</strong>
+            <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre }}</span>
+          </div>
+          <div class="worker-chips">
+            <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">{{ w.estadoSctr }}</span>
+            <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">{{ w.estadoVidaLey }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel derecho -->
+    <ng-container *ngIf="selectedWorker; else noWorkerSelected">
+      <div class="card panel-wdetalle">
+
+        <!-- Header visible en casos sin póliza y cargando (no en split) -->
+        <div class="wdetalle-info" *ngIf="!selectedPoliza || loadingPoliza">
+          <span class="wdetalle-name">{{ selectedWorker.apellidoNombre }}</span>
+          <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre }}</span>
+          <div class="wdetalle-estados">
+            <span class="wdetalle-estado-label">SCTR:</span>
+            <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoSctr)">
+              {{ selectedWorker.estadoSctr }}
+            </span>
+            <span class="wdetalle-estado-label">Vida Ley:</span>
+            <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoVidaLey)">
+              {{ selectedWorker.estadoVidaLey }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Sin póliza asociada -->
+        <div *ngIf="!selectedWorker.sctrId" class="wdetalle-sin-poliza">
+          <p class="muted-line">Este trabajador no tiene póliza asociada</p>
+          <ng-container *ngIf="selectedWorker.sctrHabId">
+            <div class="sin-poliza-actions">
+              <label class="field-label">Motivo rechazo (opcional)</label>
+              <div class="action-row">
+                <input
+                  type="text"
+                  class="field-input"
+                  [(ngModel)]="motivoRechazo"
+                  placeholder="Motivo"
+                />
+                <button
+                  type="button"
+                  class="btn-danger btn-action-sm"
+                  [disabled]="savingAprobar"
+                  (click)="rechazarSinPoliza()"
+                >
+                  Rechazar
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Cargando póliza -->
+        <div *ngIf="selectedWorker.sctrId && loadingPoliza" class="wdetalle-placeholder">
+          <p class="muted-line">Cargando póliza…</p>
+        </div>
+
+        <!-- Póliza cargada — split horizontal 50/50 -->
+        <div
+          *ngIf="selectedWorker.sctrId && !loadingPoliza && selectedPoliza"
+          class="wdetalle-split"
+        >
+          <!-- Izquierda: visor PDF fijo 500px -->
+          <div class="wdetalle-split-left">
+            <iframe
+              *ngIf="polizaSafeUrl"
+              [src]="polizaSafeUrl"
+              width="100%"
+              height="100%"
+              frameborder="0"
+            ></iframe>
+            <div *ngIf="!polizaSafeUrl" class="wdetalle-split-empty">
+              <span class="muted-line">Sin archivo PDF en la póliza</span>
+            </div>
+          </div>
+
+          <!-- Derecha: header + workers + acciones -->
+          <div class="wdetalle-split-right">
+
+            <!-- Header del trabajador -->
+            <div class="wdetalle-info">
+              <span class="wdetalle-name">{{ selectedWorker.apellidoNombre }}</span>
+              <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre }}</span>
+              <div class="wdetalle-estados">
+                <span class="wdetalle-estado-label">SCTR:</span>
+                <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoSctr)">
+                  {{ selectedWorker.estadoSctr }}
+                </span>
+                <span class="wdetalle-estado-label">Vida Ley:</span>
+                <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoVidaLey)">
+                  {{ selectedWorker.estadoVidaLey }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Workers de la póliza -->
+            <div class="wdetalle-workers">
+              <div class="wdetalle-workers-header">
+                <input
+                  type="checkbox"
+                  [checked]="polizaAllChecked"
+                  [indeterminate]="polizaSomeChecked && !polizaAllChecked"
+                  (change)="toggleAllPolizaWorkers($any($event.target).checked)"
+                />
+                <span class="field-label" style="margin:0">Trabajadores de la póliza</span>
+                <span class="workers-count">
+                  {{ polizaWorkersSeleccionados.size }} / {{ selectedPoliza.workers.length }}
+                </span>
+              </div>
+              <div class="wdetalle-workers-list">
+                <div
+                  *ngFor="let w of selectedPoliza.workers"
+                  class="wdetalle-worker-row"
+                  (click)="togglePolizaWorker(w.workerId)"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="polizaWorkersSeleccionados.has(w.workerId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="togglePolizaWorker(w.workerId)"
+                  />
+                  <div class="worker-info">
+                    <strong>{{ w.apellidoNombre }}</strong>
+                    <span class="muted-line">DNI {{ w.dni }}</span>
+                  </div>
+                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
+                    {{ w.estadoSctr }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Acciones fijas abajo -->
+            <div class="wdetalle-actions">
+              <div class="actions-row-inline">
+                <button
+                  type="button"
+                  class="btn-primary btn-action-sm"
+                  [disabled]="!canAprobar"
+                  (click)="aprobarSeleccionados()"
+                >
+                  {{ savingAprobar ? 'Guardando…' : 'Aprobar seleccionados' }}
+                </button>
+                <div class="action-group" style="flex:1">
+                  <div class="action-row">
+                    <input
+                      type="text"
+                      class="field-input"
+                      [(ngModel)]="motivoRechazo"
+                      placeholder="Motivo rechazo (opcional)"
+                    />
+                    <button
+                      type="button"
+                      class="btn-danger btn-action-sm"
+                      [disabled]="!canRechazar"
+                      (click)="rechazarSeleccionados()"
+                    >
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <ng-template #noWorkerSelected>
+      <div class="card panel-wdetalle empty-detalle">
+        <p>Selecciona un trabajador para ver la póliza</p>
+      </div>
+    </ng-template>
+
   </div>
 </div>
 

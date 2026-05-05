@@ -12,28 +12,38 @@
       </div>
       <div class="col-span-2">
         <label class="field-label">Nueva obra *</label>
-        <select class="field-input" [(ngModel)]="model.proyectoId">
-          <option [ngValue]="null">— Seleccionar proyecto —</option>
-          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
-            {{ p.projectDescription }}
-          </option>
-        </select>
+        <app-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="model.proyectoId"
+          [showLabel]="false"
+          placeholder="Seleccionar proyecto"
+          (valueChange)="model.proyectoId = $event"
+        />
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Razón social / Empresa</label>
-        <select class="field-input" [(ngModel)]="model.empresaId">
-          <option [ngValue]="null">— Mantener actual —</option>
-          <option *ngFor="let e of empresas" [ngValue]="e.id">
-            {{ e.razonSocial }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Staff / Oficina</label>
-        <select class="field-input" [(ngModel)]="model.staffOficina">
-          <option *ngFor="let o of staffOficinaOptions" [value]="o.id">{{ o.nombre }}</option>
-        </select>
-      </div>
+      <ng-container *ngIf="worker?.contrataCasa === 'Casa'">
+        <div class="col-span-2">
+          <label class="field-label">Razón social / Empresa</label>
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="model.empresaId"
+            [showLabel]="false"
+            placeholder="Mantener actual"
+            (valueChange)="model.empresaId = $event"
+          />
+        </div>
+      </ng-container>
+      <ng-container *ngIf="worker?.contrataCasa === 'Casa'">
+        <div>
+          <label class="field-label">Staff / Oficina</label>
+          <select class="field-input" [(ngModel)]="model.staffOficina">
+            <option *ngFor="let o of staffOficinaOptions" [value]="o.id">{{ o.nombre }}</option>
+          </select>
+        </div>
+      </ng-container>
       <div>
         <label class="field-label">Fecha de cambio *</label>
         <input type="date" class="field-input" [(ngModel)]="model.fechaCambio" />

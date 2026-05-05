@@ -71,7 +71,7 @@ src/app/
             ├── programaciones/
             ├── interconsultas/
             ├── convalidaciones/
-            ├── catalogos/        # ← agregado en feature/arquitectura-comercial branch
+            ├── catalogos/
             ├── services/         # http-base.ts + un servicio por recurso
             ├── dtos/
             └── shared/           # utils del módulo (no UI compartida global)
@@ -219,6 +219,30 @@ this.service.foo().subscribe({
 - Paginación: `core/dtos/api/pagedResponse.model.ts` → `PagedResponseDTO<T> { page, pageSize, totalRecords, totalPages, data }`.
 - Mensajes: `core/dtos/api/ApiMessage.model.ts` → `ApiMessageDTO { message }`.
 
+### Selectores de empresa — regla de fuente de datos
+- **SIEMPRE** usar `CatalogosSaludService.getEmpresas()` → endpoint `GET /ssoma/salud-ocupacional/catalogos/empresas` → tabla `contributor`. `EmpresaSimpleDto { id, nombre, esAbril }`, `displayField="nombre"`.
+- **NUNCA** usar `EmpresaContratistaService.getEmpresas()` para selectores de razón social en el módulo Habilitación — esa tabla es `ss_empresa_contratista` y su FK rompe con `worker_vinculaciones.empresa_id` que referencia `contributor`.
+- **NO filtrar por `esAbril`** — el campo viene `false` para todos en BD actual (criterio `ContributorName.Contains("ABRIL")` no matchea). Mostrar todas las empresas.
+
+### Patrón modal canónico (Habilitación)
+```ts
+@Input() open = false;
+@Input() initial: XxxDto | null = null;
+@Output() closed = new EventEmitter<void>();
+@Output() saved  = new EventEmitter<void>();
+
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['open'] && this.open) this.resetAndLoad();
+}
+```
+Template: `<app-base-modal *ngIf="open" ... (closeModal)="close()">`. El `*ngIf="open"` monta/desmonta el modal (no `[open]` binding — `BaseModal` no tiene ese @Input).
+
+### `soloRetirados` — modo exclusivo
+- `soloRetirados = false` (default) → backend filtra `Estado != 'RETIRADO'` (solo activos).
+- `soloRetirados = true` → backend filtra `Estado == 'RETIRADO'` (solo retirados).
+- No hay modo "todos" — es exclusivo.
+- Cuando `soloRetirados = true`: ocultar checkboxes, barra de baja masiva y botón "Dar de baja"; mostrar botón "Reingreso".
+
 ### Estilos
 - **Tailwind utilities** + **CSS por componente** (no global). Mezcla intencional.
 - Cada feature/page maneja su propio `.css`.
@@ -284,7 +308,7 @@ Importables como standalone desde cualquier feature.
 |------------|----------|------|-------|
 | `BaseModal` | `app-base-modal` | `shared/components/base-modal/` | Inputs: `title`, `width` (default `w-[1000px]`). Output: `closeModal`. Slot `<ng-content>`. Cierra al hacer mousedown sobre backdrop. |
 | `Paginator` | `app-paginator` | `shared/components/paginator/` | Inputs: `totalRecords`, `currentPage`, `totalPages`. Output: `pageChange`. Hasta 5 botones visibles. |
-| `SearchSelect` | `app-search-select` | `shared/components/search-select/` | Dropdown con búsqueda. Inputs: `options`, `valueField` (default `id`), `displayField` (default `name`), `value`, `placeholder`, `showLabel`, `label`. Output: `valueChange`. |
+| `SearchSelect` | `app-search-select` | `shared/components/search-select/` | Dropdown con búsqueda. Inputs: `options`, `valueField` (default `id`), `displayField` (default `name`), `value`, `placeholder`, `showLabel`, `label`, `allowClear` (default `true`). Output: `valueChange`. Botón X inline para limpiar valor cuando `allowClear = true`. |
 | `ViewToggle` | `app-view-toggle` | `shared/components/view-toggle/` | Toggle list/calendar/grid según `modes: ViewToggleMode[]`. |
 | `Layout` | — | `shared/components/layout/` | Shell autenticado. Renderiza Header + Sidebar + `<router-outlet>`. |
 | `Header`, `Sidebar`, `SidebarMobile`, `NavIcon` | — | `shared/components/header,sidebar*,nav-icon/` | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
@@ -316,19 +340,6 @@ import { SearchSelect } from '.../search-select/search-select';
   </div>
 </app-base-modal>
 ```
-Componente:
-```ts
-@Input() open = false;
-@Input() mode: 'create' | 'edit' = 'create';
-@Input() initial: XxxDto | null = null;
-@Output() closed = new EventEmitter<void>();
-@Output() saved  = new EventEmitter<void>();
-
-ngOnChanges(changes: SimpleChanges): void {
-  if (changes['open'] && this.open) this.reset();
-}
-```
-Inspirados por: `programaciones/components/programacion-create/`, `catalogos/components/clinica-form/`.
 
 ---
 
@@ -377,34 +388,6 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | `/api/v1/phaseStageSubStageSubSpecialty` | `PhaseStageSubStageSubSpecialtyService` |
 | `/api/v1/milestone` | `MilestoneService` |
 
-### Lecciones aprendidas
-| Endpoint | Servicio |
-|----------|----------|
-| `/api/v1/lesson` | `LessonService` |
-
-### Residentes / IVTs / Cuaderno / Informes
-| Endpoint | Servicio |
-|----------|----------|
-| `/api/v1/residentMonitoring` | `ResidentMonitoringService` |
-| `/api/v1/residentReportIncidence` | `ResidentReportIncidenceService` |
-| `/api/v1/ivtcontrolpdf` | `IvtControlService` |
-| `/api/v1/ConstructionSiteLogbookControl` | `ConstructionLogbookControlService` |
-| `/api/v1/milestoneSchedule` | `MilestoneScheduleService` |
-| `/api/v1/milestoneScheduleHistory` | `MilestoneScheduleHistoryService` |
-| `/api/v1/schedule` | `ScheduleService` |
-
-### Costos & contratistas
-| Endpoint | Servicio |
-|----------|----------|
-| `/api/v1/projectSubContractor` | `AdjudicacionesService` (features/costs/) |
-| `/api/v1/contractorRegistration` | `ContractorService` |
-| `/api/v1/ContractorManagement` | `ContractorManagementService` |
-
-### Arquitectura Comercial
-| Endpoint | Servicio |
-|----------|----------|
-| `/api/v1/arquitectura-comercial/...` | `ArquitecturaComercialService` (core) |
-
 ### SSOMA — Salud Ocupacional
 Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
@@ -434,21 +417,52 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 | GET | `/convalidaciones/{id}` | `ConvalidacionService.getConvalidacion` |
 | POST | `/convalidaciones` | `ConvalidacionService.createConvalidacion` |
 | PUT | `/convalidaciones/{id}` | `ConvalidacionService.updateConvalidacion` |
-| GET | `/catalogos/clinicas` | `CatalogosSaludService.getClinicas` (cached) / `listClinicas` |
+| GET | `/catalogos/clinicas` | `CatalogosSaludService.getClinicas` (cached) |
 | POST | `/catalogos/clinicas` | `CatalogosSaludService.createClinica` |
 | PUT | `/catalogos/clinicas/{id}` | `CatalogosSaludService.updateClinica` |
-| GET | `/catalogos/medicos` | `CatalogosSaludService.getMedicos` (cached) / `listMedicos` |
+| GET | `/catalogos/medicos` | `CatalogosSaludService.getMedicos` (cached) |
 | POST | `/catalogos/medicos` | `CatalogosSaludService.createMedico` |
 | PUT | `/catalogos/medicos/{id}` | `CatalogosSaludService.updateMedico` |
-| GET | `/catalogos/emo-tipos` | `CatalogosSaludService.getEmoTipos` (cached) / `listEmoTipos` |
+| GET | `/catalogos/emo-tipos` | `CatalogosSaludService.getEmoTipos` (cached) |
 | POST | `/catalogos/emo-tipos` | `CatalogosSaludService.createEmoTipo` |
 | PUT | `/catalogos/emo-tipos/{id}` | `CatalogosSaludService.updateEmoTipo` |
 | GET | `/catalogos/examen-tipos` | `CatalogosSaludService.getExamenTipos` (cached) |
 | GET | `/catalogos/restriccion-tipos` | `CatalogosSaludService.getRestriccionTipos` (cached) |
 | GET | `/catalogos/empresas` | `CatalogosSaludService.getEmpresas` (cached) |
 
-> **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns. Las mutaciones (`create*`, `update*`) ya invalidan vía `tap()` automáticamente.
-> Activar/desactivar un registro: usar `update*` con el campo `activo` toggleado (no hay endpoint PATCH dedicado).
+> **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns.
+
+### Arquitectura Comercial
+Base: `${apiUrl}api/v1/arquitectura-comercial`
+
+| Método | Endpoint | Servicio |
+|--------|----------|----------|
+| GET | `/dashboard` | `getDashboardData` |
+| GET | `/filters` | `getFilters` |
+| GET | `/proyectos-con-actividades` | `getProyectosConActividades` |
+| GET | `/supervisores-ac` | `getSupervisoresAc` |
+| GET | `/actividades?proyectoId=&tipo=&search=&soloActivas=&pagina=&porPagina=` | `getActividades` |
+| POST | `/actividades` | `createActividad` (body: `CreateActividadBody`) |
+| PUT | `/actividades/{id}` | `updateActividad` (body: `UpdateActividadBody`) |
+| PATCH | `/actividades/{id}` | `patchActividad` (body: `ActividadPatchBody`) |
+| DELETE | `/actividades/{id}` | `deleteActividad` |
+| POST | `/actividades/generar` | `generarActividades` (body: `{ proyectoId }`) |
+| POST | `/actividades/reasignar-encargado` | `reasignarEncargado` |
+| PATCH | `/proyectos/{id}` | `patchProyecto` |
+| GET | `/plantilla` | `getPlantilla` |
+| POST | `/plantilla` | `createPlantilla` |
+| PATCH | `/plantilla/{id}` | `patchPlantilla` |
+| GET | `/categorias` | `getCategorias` |
+| GET | `/especialidades` | `getEspecialidades` |
+| GET | `/etapas` | `getEtapas` |
+| GET | `/gantt` | `getGantt` |
+
+**DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
+- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días).
+- `ActividadPatchBody` — solo fechas programadas/efectivas, userId, observaciones.
+- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas.
+- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones.
+- `AcEtapaDTO { id, nombre }` — catálogo de etapas del backend.
 
 ---
 
@@ -464,53 +478,34 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
 ### `features/security/` — ✅ CRUD completo
 - `/security/users` (gestión de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
-- **Lista paginada** con búsqueda client-side por nombre (filtra sobre la página recibida).
-- **Crear** usuario: modal inline con POST `/api/v1/user`.
-- **Editar** usuario: modal `UserEditForm` en `features/security/users/components/user-edit-form/` con PUT `/api/v1/user/{id}`.
-- **Toggle activo/inactivo**: chip color-coded + confirmación Swal + PATCH `/api/v1/user/{id}/toggle`.
-- **Reenviar credenciales**: botón `chip-gray` presente en UI, sin acción backend aún.
+- Lista paginada con búsqueda client-side. CRUD completo: crear, editar, toggle activo/inactivo.
 - Ver §13 para detalles de implementación.
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
-Sub-features:
-- `lecciones-aprendidas/` — list + card + detail. ✅
-- `lessons-dashboard/` — métricas + filtros. ✅
-- `milestone-schedule/` — gantt de hitos. ✅
-- `ivt-control/` — visitas técnicas (con generación PDF). ✅
-- `construction-logbook-control/` — cuaderno obra. ✅
-- `report-response-control/` — informes con tabs (active/closed). ✅
-- `resident-monitoring-measurement/` — seguimiento residentes. ✅
-- `configuration/` — `pages/`: areas, fases, etapas, subetapas, layers, subespecialidades, relaciones, milestones, recordatorios, **proyectos**. ✅
-  - **Proyectos** ahora incluye botón **"Emails SSOMA"** en cada fila → abre modal `ProjectEmailsForm` (5 campos: residente, responsable, RRHH, coord. SSOMA, coord. admin) que hace `PATCH /api/v1/project/{id}/emails`.
-
-> **Nota**: páginas de configuración de proyectos usan **Tailwind inline** (no el sistema CSS de SSOMA). Mantener.
+Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cuaderno obra, informes, seguimiento residentes, configuración (áreas/fases/etapas/etc.). Todos completados. Proyectos incluye botón **"Emails SSOMA"** → modal `ProjectEmailsForm` (PATCH `/api/v1/project/{id}/emails`).
 
 ### `features/costs/` — ⚠️ Solo Adjudicaciones
-- `/costs/adjudicaciones` con detail. Rol: `ADMINISTRADOR DEL SISTEMA`.
+- `/costs/adjudicaciones`. Rol: `ADMINISTRADOR DEL SISTEMA`.
 
 ### `features/contractors/` — ✅ Completo
 - Doble routing: `CONTRACTORS_ROUTES` (`/contractors/registro`, público) + `CONTRACTORS_ADMIN_ROUTES` (`/contractors/management`, autenticado).
 
-### `features/arquitectura-comercial/` — ✅ Completo (en evolución)
-- Dashboard, Actividades, Gantt, Plantilla.
-- Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars). Ver `gantt/gantt.ts`.
-- Histórico: existió "Entregables" (eliminado, ver commit `dfabf16`).
+### `features/arquitectura-comercial/` — ✅ Completo
+- Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
+- Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
+- **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta (POST).
+- **Botón "+ Nueva Consulta"**: visible solo cuando `tipoFiltro === 'CONSULTA'` (`actividades.html`). Abre `components/nueva-consulta/`.
+- **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada `['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4']` (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
+- **Modal Editar Actividad**: `components/editar-actividad/`. Campos: nombre, tipo (ENTREGABLE/HITO/CONSULTA), etapa (del endpoint), responsable, 4 fechas, observaciones. Pre-poblado desde `ActividadListItemDTO` en `ngOnChanges`.
+- **Eliminar**: botón basura en cada fila → Swal → DELETE → `loadActividades()`.
+- **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
+- **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
-### `features/ssoma/salud-ocupacional/` — ✅ Recientemente completado
-- **Dashboard** — KPIs + 3 charts (chart.js). ✅
-- **EMOs** — listado por worker (último EMO o "Sin EMO"); historial por worker. ✅
-- **Programaciones** — vista lista + calendario semanal; estados Programada/Confirmada/Completada/No se presentó/Cancelada. ✅
-- **Interconsultas** — listado + detalle editable. ✅
-- **Convalidaciones** — CRUD con worker-search. ✅
-- **Catálogos** (NUEVO en branch `feature/arquitectura-comercial`) — tabs Clínicas / Médicos / Tipos de EMO; cada uno con search, paginator, modal CRUD, activar/desactivar. ✅
+### `features/ssoma/salud-ocupacional/` — ✅ Completado
+- Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
 ### `features/configuracion/` — ✅ Completo
-Standalone routes (no NgModule). Posición: **último item** del sidebar (después de SSOMA). `iconKey: 'config'` (engranaje). Roles: `ADMINISTRADOR DEL SISTEMA`, `ADMINISTRADOR DE UDP`.
-- **Razones Sociales** (`pages/companies/`) — Tabla Razón Social / RUC / Partida Registral / Tipo Actividad / Dirección / Estado + acción Editar. Búsqueda + filtro estado, paginación client-side. GET vía `CatalogosSaludService.getEmpresas()` con `invalidateCache()`. Modal `CompanyEditForm` (mock-save: muestra "Funcionalidad en desarrollo" — backend PUT pendiente). ✅
-- **Proyectos** (`pages/projects/`) — Tabla con 14 columnas (Nombre, Código, Empresa, Estado, Responsable, 5 emails, Fecha Inicio/Fin, Área m², Activo) + acciones Editar / Emails SSOMA. Filtros server-side: search, empresa, estado (`ACTIVO/FINALIZADO/INACTIVO`). Paginación server-side via `ProjectService.getProjectsPaged(query)`. Modal `ProjectEditForm` con todos los campos (PUT real, endpoint existente). Modal `ProjectEmailsForm` reutilizado (PATCH). ✅
-- **Lista de Trabajadores** (`pages/workers/`) — Tabla Nombre / DNI / Empresa / Proyecto / Tipo / Estado EMO / Aptitud + acciones Editar / Retirar. Botón **"+ Nuevo Trabajador"** en header. Filtros server-side (search, aptitud, estado EMO), paginación server-side via `EmoService.getEmosPorTrabajador(query)`. Modal `WorkerEditForm` dual-mode (create/edit) — DNI editable en create, read-only en edit. CRUD completo: POST / PUT / PATCH retirar via `WorkerService` nuevo. ✅
-
-> **Reuse cross-feature**: `ProjectEmailsForm` vive en `features/projects/configuration/pages/proyectos/components/project-emails-form/` y se importa desde `configuracion/pages/projects/`. Si crece, considerar mover a `shared/components/`.
+Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (CRUD completo).
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -520,59 +515,34 @@ Standalone routes (no NgModule). Posición: **último item** del sidebar (despu�
 
 ## 9. Pitfalls conocidos
 
-### SSR (servidor)
-- **Hydration desactivado a propósito** (`app.config.ts:25`). Reactivar requiere revisar todos los accesos a `localStorage`/`window` (auth.guard, services con cache localStorage, etc.).
-- En `authGuard:15` el SSR retorna `true` directo. **No quitar** — sin esto, refresh en cliente fallaba.
-- En servicios SSOMA usar `typeof localStorage !== 'undefined'` (ya hecho en `http-base.ts`). En servicios de `core/services/*` el patrón antiguo no es defensivo (lee `localStorage` directamente) — está OK porque `authGuard` filtra antes, pero **ojo si reactivas SSR**.
+### SSR
+- **Hydration desactivado a propósito** (`app.config.ts:25`). Reactivar requiere revisar todos los accesos a `localStorage`/`window`.
+- En `authGuard:15` el SSR retorna `true` directo. **No quitar**.
+- Servicios SSOMA usan `typeof localStorage !== 'undefined'` (defensivo). Servicios en `core/services/*` no son defensivos (OK si no reactivas SSR).
 
 ### Auth & roles
-- Roles vienen del claim Microsoft (`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`). Si el backend cambia el claim URI, romperá `AuthService.getRoles`.
-- Match de roles es **string exact** (uppercase español). No normalizar.
+- Roles vienen del claim Microsoft. Match es **string exact** (uppercase español). No normalizar.
+- `getRoles()` soporta tanto JWT Microsoft (`http://schemas.microsoft.com/...role`) como JWT contratista (`role` plano).
 
 ### HTTP
 - **No hay interceptor.** Cada request requiere construir manualmente el header. Olvidarse = 401.
 - `ErrorService.handleError` ya esconde el loader — no llamar `loaderService.hide()` además.
-- Caches con `shareReplay(1)` (`CatalogosSaludService`) → tras un POST/PUT, invalida con `invalidateCache()` o usa los métodos `create*/update*` que ya lo hacen vía `tap()`.
+- Caches con `shareReplay(1)` → tras POST/PUT, invalida con `invalidateCache()`.
 
 ### Ruteo & nav
-- Cada ruta protegida **debe** declarar `data.titulo` y `data.roles`. Olvidarlo deja el header sin título y la ruta sin gating.
-- Para que aparezca en sidebar: agregar la entry en `core/navigation/navigation.service.ts:config`. Es la única fuente de verdad.
-
-### Estilos
-- `features/projects/configuration/pages/proyectos/` usa Tailwind inline (estilo legacy). Modales nuevos en proyectos pueden usar `BaseModal` para no mezclar (ver `project-emails-form/`).
-- En SSOMA usar el sistema CSS documentado en §5 (clases `.card`, `.field-input`, `.btn-primary`, `.chip-*`, etc.). Inline Tailwind solo para layout puntual (`flex`, `gap`, `text-*`).
+- Cada ruta protegida **debe** declarar `data.titulo` y `data.roles`.
+- Para que aparezca en sidebar: agregar en `core/navigation/navigation.service.ts:config`.
 
 ### DTOs
-- Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No "uniformes"**, romperías muchos imports.
-- Páginas standalone se importan en routing modules pero **NO** se declaran en `declarations` del NgModule. Si lo haces, falla compilación.
-
-### Build / dev
-- Vitest reemplazó Karma — usar `npx ng test --include <spec>` para correr uno solo.
-- `npm start` corre en puerto 4200; backend default `localhost:5236` (configurable en `environment.ts`).
-- En Windows + Git Bash, paths con espacios deben quotearse. El working dir habitual está en `C:\Users\<user>\Abril-Frontend`.
+- Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No uniformizar**.
+- Páginas standalone **NO** se declaran en `declarations` del NgModule.
 
 ### Backend pitfalls (ASP.NET / PostgreSQL)
-- **`AuditoriaInterceptor` debe ser Singleton** (no Scoped). Al usar `IDbContextFactory<>` el interceptor se instancia por factory y no por request HTTP — si está registrado como Scoped arroja `ObjectDisposedException`. Registrar con `services.AddSingleton<AuditoriaInterceptor>()`.
-- **Columnas `datos_anteriores` / `datos_nuevos`** en la entidad `AuditoriaCambio` requieren `.HasColumnType("jsonb")` en `OnModelCreating`. Sin eso EF Core las mapea como `text` y PostgreSQL rechaza la inserción directa de objetos JSON serializados.
-- **Swagger** solo funciona con `--launch-profile Development`. El bloque `if (app.Environment.IsDevelopment())` que envuelve `app.UseSwagger()` exige que `ASPNETCORE_ENVIRONMENT=Development`; garantizar que `launchSettings.json` tenga ese perfil con la variable seteada.
-
-### Catálogos SSOMA — específico
-- `EmoTipoDto` y `MedicoSimpleDto`/`ClinicaSimpleDto` se extendieron con campos opcionales (`activo?`, `descripcion?`, `email?`, etc.) para soportar el admin sin romper los dropdowns que ya consumían estos DTOs en `programacion-create`/`emo-create`. **No quitar los `?` ni cambiar nombres de campos.**
-- Activar/desactivar usa **PUT con payload completo** (no PATCH), por contrato con backend (`GET/POST/PUT` documentados en spec original).
-- La paginación es **client-side** sobre el array completo que retorna el GET — para pequeños catálogos es OK; si crecen mucho, migrar a `PagedResponseDTO<T>` server-side.
-
-### DTOs extendidos por Configuración (campos opcionales)
-Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. **No remover los `?`** ni cambiar nombres.
-- `core/dtos/project/project.model.ts` → `ProjectGetDTO` ahora incluye `projectCode?`, `companyId?`, `companyName?`.
-- `features/ssoma/.../dtos/catalogos.model.ts` → `EmpresaSimpleDto` incluye `direccion?`, `activo?` (además del original `esAbril`).
-- `features/ssoma/.../dtos/emo.model.ts` → `EmoPorTrabajadorDto` incluye `proyectoId?`, `proyecto?`.
-
-### Configuración — específico
-- El módulo **reutiliza servicios SSOMA y core**, salvo cuando un dominio nuevo lo justifica (ej.: `WorkerService` para CRUD de trabajadores vive en `features/ssoma/.../services/worker.service.ts`, NO en `configuracion/`). Regla: el servicio vive donde está el dominio backend, no donde se consume.
-- `Companies` llama a `service.invalidateCache()` antes de `getEmpresas()` para forzar lectura fresca aunque el observable esté cacheado por `shareReplay(1)`.
-- `ProjectEmailsForm` se **importa cross-feature** desde `features/projects/...` — el path relativo es profundo pero válido. No mover sin actualizar ambos consumidores.
-- **Workers CRUD** completo: `POST /workers`, `PUT /workers/{id}`, `PATCH /workers/{id}/retirar` (vía `WorkerService`). Botón "Retirar" se muestra solo si `(item.estadoWorker ?? 'ACTIVO') === 'ACTIVO'`.
-- **Companies edit** y **Projects edit form completo** wirean a sus respectivos backends; sólo `CompanyEditForm` muestra Swal "Funcionalidad en desarrollo" porque el PUT de empresas aún no existe.
+- **`AuditoriaInterceptor` debe ser Singleton** (no Scoped) — usar `services.AddSingleton<AuditoriaInterceptor>()`.
+- **Columnas jsonb** en `AuditoriaCambio` requieren `.HasColumnType("jsonb")` en `OnModelCreating`.
+- **Snapshot EF desfasado**: antes de aplicar migraciones, leer `Up()` operación por operación.
+- **`@microsoft.graph.downloadUrl` y `Content-Disposition`**: el endpoint `/habilitacion/archivos/url` devuelve URLs con `Content-Disposition: attachment` — usar fetch-as-blob (ver §12 "Visor de documentos PDF").
+- **`esAbril` en BD**: el campo viene `false` para todos los registros actuales (criterio `ContributorName.Contains("ABRIL")` no matchea). **No filtrar por `esAbril`** — mostrar todas las empresas.
 
 ---
 
@@ -582,21 +552,20 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 2. **Service**: archivo en `services/<nombre>.service.ts` usando `SALUD_OCUPACIONAL_BASE` + `buildAuthHeaders()` + `buildParams()`.
 3. **Page standalone**: carpeta `<nombre>/` con `<nombre>.{ts,html,css}`. Imports: `CommonModule`, `FormsModule`, `Paginator`, `SearchSelect`, etc.
 4. **Modales**: subcarpeta `<nombre>/components/<nombre>-create/` (o `-form/`) con `BaseModal`. Inputs `open/mode/initial`, outputs `closed/saved`.
-5. **CSS**: copiar el set base de §5 (card, filters, table, btn-*, chip-*).
+5. **CSS**: copiar el set base de §5.
 6. **Ruta**: agregar en `salud-ocupacional.routes.ts` con `data.titulo: 'SALUD OCUPACIONAL - <NOMBRE>'`.
-7. **Nav**: agregar `{ label, route }` en `core/navigation/navigation.service.ts` dentro del grupo "Salud Ocupacional" del module `ssoma`.
+7. **Nav**: agregar `{ label, route }` en `core/navigation/navigation.service.ts` dentro del grupo correspondiente.
 8. **Build**: `npx ng build --configuration development` para verificar antes de commit.
 
-## 10.b Checklist al agregar un módulo top-level nuevo (estilo `configuracion/`)
+## 10.b Checklist al agregar un módulo top-level nuevo
 
 1. **Carpeta**: `features/<nombre>/` con `<nombre>.routes.ts` (export `<NOMBRE>_ROUTES: Routes`).
-2. **Pages standalone**: `pages/<page>/<page>.{ts,html,css}` siguiendo el sistema CSS de §5.
-3. **app.routes.ts**: agregar lazy `loadChildren: () => import('./features/<nombre>/<nombre>.routes').then(m => m.<NOMBRE>_ROUTES)` dentro del `Layout` autenticado.
-4. **Sidebar**: `NavModule` nuevo en `core/navigation/navigation.service.ts:config` con `key`, `label`, `iconKey` (string libre), `baseRoute`, `roles`, `items[]` (o `groups[]`).
-5. **Icono**: agregar `<svg *ngSwitchCase="'<iconKey>'">` en `shared/components/nav-icon/nav-icon.html` (color `#64BC04`, viewBox 0 0 24 24).
-6. **Roles**: cada page con `data: { titulo: 'TÍTULO', roles: [...] }`. Si toda la sección comparte roles, basta con `roles` en el `NavModule` para sidebar — pero el `roleGuard` per-route sigue siendo necesario para gating real.
-7. **Reuse**: si reutilizas modales/forms de otra feature, importa con path relativo. Si crece a >2 consumidores, mover a `shared/components/`.
-8. **Build**: `npx ng build --configuration development`.
+2. **Pages standalone**: `pages/<page>/<page>.{ts,html,css}`.
+3. **app.routes.ts**: agregar lazy `loadChildren` dentro del `Layout` autenticado.
+4. **Sidebar**: `NavModule` nuevo en `navigation.service.ts:config`.
+5. **Icono**: agregar `<svg *ngSwitchCase="'<iconKey>'">` en `nav-icon.html`.
+6. **Roles**: `data: { titulo: 'TÍTULO', roles: [...] }` en cada ruta.
+7. **Build**: `npx ng build --configuration development`.
 
 ---
 
@@ -605,19 +574,14 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 - Patrón page CRUD completo: `features/ssoma/salud-ocupacional/programaciones/programaciones.ts`
 - Patrón modal create con dropdowns: `features/ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create.ts`
 - Patrón page con tabs: `features/ssoma/salud-ocupacional/catalogos/catalogos.ts`
-- Patrón page admin (cliente paginado): `features/ssoma/salud-ocupacional/catalogos/components/catalogo-clinicas/catalogo-clinicas.ts`
-- Patrón modal CRUD con `mode: 'create' | 'edit'`: `features/ssoma/salud-ocupacional/catalogos/components/clinica-form/clinica-form.ts`
 - Patrón service SSOMA con cache + mutaciones: `features/ssoma/salud-ocupacional/services/catalogos-salud.service.ts`
 - Patrón service core legacy: `core/services/project.service.ts`
 - Patrón módulo top-level standalone: `features/configuracion/configuracion.routes.ts`
 - Patrón page CRUD completo (create/edit/retire/list): `features/configuracion/pages/workers/workers.ts`
-- Patrón modal dual-mode con campo read-only condicional: `features/configuracion/pages/workers/components/worker-edit-form/worker-edit-form.ts`
-- Patrón service SSOMA mínimo (POST/PUT/PATCH sin cache): `features/ssoma/salud-ocupacional/services/worker.service.ts`
-- Patrón page read-only client-paged: `features/configuracion/pages/companies/companies.ts`
-- Patrón page con paginación server + acción modal: `features/configuracion/pages/projects/projects.ts`
-- Patrón modal con form simple (PATCH único): `features/projects/configuration/pages/proyectos/components/project-emails-form/project-emails-form.ts`
+- Patrón layout lista + visor PDF (SCTR-style): `features/habilitacion/pages/sctr-vidaley/sctr-vidaley.ts`
+- Patrón layout lista + visor PDF (Bandeja): `features/habilitacion/pages/bandeja/bandeja.ts`
 - Sidebar config: `core/navigation/navigation.service.ts`
-- Iconos sidebar: `shared/components/nav-icon/nav-icon.html` (cases por `iconKey`)
+- Iconos sidebar: `shared/components/nav-icon/nav-icon.html`
 - Error handling central: `core/services/error.service.ts`
 - Base modal: `shared/components/base-modal/base-modal.ts`
 - Paginator: `shared/components/paginator/paginator.ts`
@@ -628,8 +592,8 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 ## 12. Módulo Habilitación SSOMA
 
 ### Ubicación
-`features/habilitacion/` — standalone routes (igual que `configuracion/`).
-- `iconKey: 'habilitacion'` (escudo o documento, agregar en `nav-icon.html`).
+`features/habilitacion/` — standalone routes.
+- `iconKey: 'habilitacion'`.
 - Roles: `ADMINISTRADOR SSOMA`, `ADMINISTRADOR DE UDP`, `CONTRATISTA`.
 
 ### Sub-rutas
@@ -640,24 +604,23 @@ Mismo principio: backend puede o no devolver los campos; UI fallbackea a `—`. 
 /habilitacion/equipos                  → Equipos y Máquinas
 /habilitacion/bandeja                  → Bandeja de Aprobaciones
 /habilitacion/sctr-vidaley             → SCTR y Vida Ley
-/habilitacion/inducciones              → Programar Inducción
+/habilitacion/inducciones              → Programar Inducción (ruta activa, SIN item en sidebar)
 /habilitacion/registros-modelo         → Registros Modelo
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
 ```
 
+> **Inducciones no aparece en el sidebar** — el item fue eliminado de `navigation.service.ts`. La ruta sigue activa pero se accede desde el botón "Programar Inducción" dentro de Trabajadores. Las inducciones se gestionan desde la Bandeja de Aprobaciones (tipo INDUCCION).
+
 ### Restricciones del rol CONTRATISTA
-- **Navegación** (`navigation.service.ts`): los items del módulo Habilitación llevan `roles` por item. CONTRATISTA solo ve: Trabajadores, Inducciones, Registros Modelo. No ve: Empresa, Equipos, SCTR/Vida Ley, Bandeja, Evaluación Supervisores, Reglas, Auditoría.
-- **Rutas** (`habilitacion.routes.ts`): cada ruta tiene `roleGuard` con `data.roles`. CONTRATISTA solo tiene acceso a `/trabajadores`, `/inducciones`, `/registros-modelo`, `/cambiar-password`.
-- **Filtro server-side por empresaId**: el backend (`HabTrabajadorController.GetWorkers`) detecta el rol CONTRATISTA en el JWT y filtra por el claim `empresaId` automáticamente. El frontend **nunca envía `empresaId`** en los query params para CONTRATISTA (`filtroEmpresaId: null → undefined → omitido por buildHabParams`).
+- CONTRATISTA solo ve en sidebar: Trabajadores, Registros Modelo. No ve: Empresa, Equipos, SCTR/Vida Ley, Bandeja, Evaluación Supervisores, Reglas, Auditoría.
+- Filtro server-side por `empresaId`: el backend detecta rol CONTRATISTA en JWT y filtra automáticamente. El frontend nunca envía `empresaId` para CONTRATISTA.
 
 ### Auth contratistas
-- Login en `/auth/login` con selector empresa (dropdown) + password.
-- JWT contratista trae claim `role='CONTRATISTA'` y claim `empresaId`.
-- Contratistas ven **solo** sus trabajadores y su empresa.
+- Login en `/auth/login` con selector empresa + password.
+- JWT contratista trae `role='CONTRATISTA'` y `empresaId`.
 - Contratistas **NO** pueden aprobar documentos — solo dejan en estado `Enviado`.
-- Usar `AuthService` existente para verificar rol `CONTRATISTA`.
 
 ### Base URL backend
 ```ts
@@ -674,18 +637,27 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/catalogos/items-empresa` |
 | GET | `/catalogos/items-equipo` |
 | GET | `/catalogos/criterios` |
+| GET | `/catalogos/areas` |
+| GET | `/catalogos/subareas?area={area}` |
 | POST | `/auth/login` (contratista) |
-| GET | `/auth/empresas` (dropdown login) |
+| GET | `/auth/empresas` |
 | GET | `/trabajadores` (paginado) |
+| GET | `/trabajadores/{id}` (detalle) |
+| PUT | `/trabajadores/{id}` (editar perfil) |
 | GET | `/trabajadores/{id}/entregables` |
 | PUT | `/trabajadores/entregables/{id}` |
 | GET | `/trabajadores/entregables/{id}/versiones` |
 | PATCH | `/trabajadores/{id}/cambiar-obra` |
 | PATCH | `/trabajadores/{id}/reingreso` |
-| GET | `/bandeja` (paginado + cursor) |
+| GET | `/trabajadores/{workerId}/proyectos` |
+| POST | `/trabajadores/{workerId}/proyectos` |
+| DELETE | `/trabajadores/{workerId}/proyectos/{proyectoId}` |
+| PATCH | `/trabajadores/{workerId}/proyectos/{proyectoId}/induccion` |
+| GET | `/bandeja` (paginado) |
 | PATCH | `/bandeja/trabajador/{id}` |
 | PATCH | `/bandeja/empresa/{id}` |
 | PATCH | `/bandeja/equipo/{id}` |
+| PATCH | `/bandeja/induccion/{id}` (aprobar inducción — sin body de vigencia) |
 | GET | `/empresas/{id}/entregables` |
 | PUT | `/empresas/{id}/entregables/{itemId}` |
 | GET/POST | `/sctr-vidaley` |
@@ -693,10 +665,16 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | PATCH | `/sctr-vidaley/{id}/aprobar` |
 | GET | `/sctr-vidaley/por-trabajador/{workerId}` |
 | GET | `/sctr-vidaley/proximos-vencer` |
+| GET | `/sctr-vidaley/trabajadores-por-empresa?proyectoId=X&tipo=Y&estadoSctr=Z&estadoVidaLey=W` |
 | GET/POST/PUT | `/equipos` |
 | GET | `/equipos/{id}/entregables` |
 | PUT | `/equipos/entregables/{id}` |
-| GET/POST | `/inducciones` |
+| GET | `/inducciones` (paginado) |
+| POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
+| PATCH | `/inducciones/{id}/estado` |
+| PATCH | `/inducciones/{id}/aprobar` |
+| POST | `/inducciones/aprobar-batch` body `{ ids }` |
+| GET | `/inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y` |
 | GET/POST/PUT/DELETE | `/reglas` |
 | GET | `/auditoria` |
 | GET | `/archivos/ver?url={encodedUrl}` |
@@ -705,92 +683,179 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 ### Estados de entregables
 `Falta` → `Enviado` → `Aprobado` / `Rechazado` / `No Aplica`
 
-Colores:
-- `Falta` = rojo
-- `Enviado` = amarillo / naranja
-- `Aprobado` = verde
-- `Rechazado` = rojo oscuro
-- `No Aplica` = gris
-
-### SCTR / Vida Ley — estados especiales
-`Aprobado`, `Rechazado`, `Parcial`, `Falta`, `Enviado`.
+Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo oscuro, No Aplica=gris.
 
 ### Estado habilitación worker
 - `Habilitado` = chip verde
 - `No Autorizado` = chip rojo
 
-### Notas importantes
-- **EMO es read-only** — viene del módulo SSOMA, no se puede subir.
-- **SCTR/Vida Ley flujo masivo** — un doc cubre múltiples workers.
-- Contratista no puede ver workers de otra empresa (`403` del backend).
-- Versiones de documentos disponibles por entregable.
-- Auditoría implementada en backend — pantalla solo para admins.
-
-### Auth contratistas — flujo completo
-
-Endpoints (`api/v1/habilitacion/auth/...`):
-- `POST /login` — body `{ email, password }` → `ContratistaTokenDto { token, empresaId, razonSocial, tipo }`. Token guardado en `localStorage.access_token` (mismo key que login Abril).
-- `POST /activar` — body `{ token, password }` → `ContratistaTokenDto`. **Auto-login**: persiste el token retornado y redirige a `/habilitacion/trabajadores`.
-- `POST /reset-password` — body `{ token, nuevaPassword }` → `void`. Tras éxito redirige a `/auth/login` (no auto-login).
-- `POST /solicitar-reset` — body `{ email }` → `void`. La UI siempre muestra "Si el correo está registrado, recibirás un enlace en breve." en `next` y `error` (no revelar existencia).
-- `PATCH /cambiar-password` — body `{ passwordActual, passwordNuevo }` → `void`. Requiere JWT.
-
-Métodos en `core/services/auth.service.ts`: `loginContratista(email, password)`, `activarCuenta({token, password})`, `resetPassword({token, nuevaPassword})`, `solicitarReset(email)`, `isContratista()`. La persistencia del token contratista vive en el helper privado `persistContratistaToken()`.
-
-`getRoles()` lee `decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? decoded.role` para soportar tanto el JWT Microsoft (Abril) como el JWT contratista (`role` plano).
-
-Detección de cuenta no activada en login: el handler matchea `err.error?.message` con `/no\s+(ha\s+)?(sido\s+)?activad[ao]/i` y muestra un Swal especial con CTA "Reenviar activación" → `/auth/recuperar-contratista`.
-
 ### Rutas públicas (FUERA del Layout autenticado)
-
-En `src/app/app.routes.ts`:
 ```
-/habilitacion/registro-empresa     → registro-empresa (RegistroEmpresa)
-/auth/activar-contratista          → activar-contratista (ActivarContratista) — query: ?token=…&tipo=activacion-contratista|reset-contratista
-/auth/recuperar-contratista        → recuperar-contratista (RecuperarContratista)
-/registros-modelo                  → registros-modelo (dual-mount, data: { publicMode: true })
+/habilitacion/registro-empresa     → RegistroEmpresa
+/auth/activar-contratista          → ActivarContratista (?token=…&tipo=activacion-contratista|reset-contratista)
+/auth/recuperar-contratista        → RecuperarContratista
+/registros-modelo                  → dual-mount (publicMode: true)
 ```
-
-`registros-modelo` está **dual-montado**: en `/registros-modelo` (público, con header propio) y en `/habilitacion/registros-modelo` (dentro del Layout). El componente lee `route.snapshot.data['publicMode']` para decidir si renderiza el `<header>` con logo Abril.
 
 ### Subida de archivos a SharePoint
+`features/habilitacion/services/sharepoint-upload.service.ts` → POST `multipart/form-data` a `/api/v1/habilitacion/archivos/subir`.
 
-`features/habilitacion/services/sharepoint-upload.service.ts` expone `subirArchivo(file, contexto)` → POST `multipart/form-data` a `/api/v1/habilitacion/archivos/subir`.
+**Patrón fallback**: si el endpoint retorna error, guardar `panelArchivoUrl = 'pending-upload://' + file.name` y `uploadingFile: boolean` para continuar el flujo UI.
 
-**Patrón fallback**: las páginas Trabajadores / Empresa / Equipos llaman al servicio en `onFileSelected()` y, si el endpoint retorna error (404 mientras no exista, 500, etc.), guardan `panelArchivoUrl = 'pending-upload://' + file.name` para que el flujo de UI siga funcionando. Mientras sube se muestra `📎 Subiendo {{ panelArchivoNombre }}…` controlado por `uploadingFile: boolean`.
+### Visor de documentos PDF — fetch como blob
+`shared/components/document-viewer/document-viewer.ts`: URLs de Microsoft Graph vienen con `Content-Disposition: attachment`. Solución: `fetch(url) → .blob() → URL.createObjectURL(blob) → bypassSecurityTrustResourceUrl(blobUrl)`. Los blob URLs se renderizan inline (sin `Content-Disposition`). Revocar con `URL.revokeObjectURL` en `reset()`. **No cambiar a binding directo sin entender esto.**
 
-Contextos usados:
-- Trabajadores: `habilitacion/trabajadores/{workerId}`
-- Empresa: `habilitacion/empresas/{empresaId}`
-- Equipos: `habilitacion/equipos/{equipoId}`
-- Logos de empresa (registro público): `habilitacion/logos`
+### Patrón loadWorkers con callback (Trabajadores)
+`pages/trabajadores/trabajadores.ts`: `loadWorkers(page, afterLoad?: () => void)`. El parámetro `afterLoad` se invoca dentro del `next` del subscribe, **después** de que `this.workers` está poblado. Permite re-seleccionar un worker tras reload:
 
-**Logo en registro-empresa** (`pages/registro-empresa/`): campo opcional "Logo de empresa" (JPG/PNG ≤ 2 MB). Llama a `SharepointUploadService.subirArchivo` durante el registro público. Mientras sube, el botón "Registrar Empresa" queda deshabilitado (`uploadingFile = true`). Si falla, muestra `Swal.fire` directo (NO `ErrorService.handleError`, que redirige a login en 401 — la página es pública). El campo `logoUrl` se incluye en el payload `EmpresaContratistaCreateDto`.
+```ts
+loadWorkers(page: number = this.currentPage, afterLoad?: () => void): void {
+  this.limpiarSeleccion();
+  // ... build params ...
+  this.trabajadorHabService.getTrabajadores(params).subscribe({
+    next: (res) => {
+      this.workers = res.data ?? [];
+      // ...
+      afterLoad?.();  // ← se llama aquí, workers ya disponibles
+      this.cdr.detectChanges();
+    },
+  });
+}
+```
 
-> **Backend pendiente**: `POST /archivos/subir` aún no existe (TODO marcado en `sharepoint-upload.service.ts`). El fallback `pending-upload://` permite testear el flujo end-to-end sin backend.
+Uso en `onCambiarObraSaved()`:
+```ts
+onCambiarObraSaved(): void {
+  this.modalCambiarObraOpen = false;
+  const prevId = this.workerParaAccion?.workerId ?? this.selectedWorker?.workerId ?? null;
+  this.workerParaAccion = null;
+  this.loadWorkers(this.currentPage, () => {
+    if (prevId) {
+      const updated = this.workers.find((w) => w.workerId === prevId);
+      if (updated) this.selectWorker(updated);
+    }
+  });
+}
+```
+> `prevId` se captura **antes** de `workerParaAccion = null` y antes de `limpiarSeleccion()` (que limpia `selectedWorker`).
 
-### Componentes nuevos
+### Modal Cambiar Obra — inicialización y lógica contratistas
+`pages/trabajadores/components/cambiar-obra/cambiar-obra.ts`:
+- `staffOficina` se inicializa con el valor actual del worker (`worker?.obraOficina ?? 'Obra'`) en `ngOnChanges`, sobreescribiendo el default `'Obra'` de `empty()`.
+- El dropdown "Razón social" usa `CatalogosSaludService.getEmpresas()` (NO `EmpresaContratistaService`).
+- Opciones de `staffOficina`: `Obra | Staff | Oficina Central`.
+- **Contratistas**: los campos "Razón social" y "Staff / Oficina" se ocultan con `*ngIf="worker?.contrataCasa === 'Casa'"`. El payload fuerza `empresaId = null` en `submit()` si `contrataCasa !== 'Casa'`.
 
-- `shared/components/password-strength/` (standalone, `app-password-strength`) — input `password: string`, calcula débil/media/fuerte por longitud (≥8) + presencia de mayús/dígito/símbolo. Usado en `activar-contratista` y `cambiar-password`.
+### Bandeja de Aprobaciones — layout SCTR-style
+`pages/bandeja/bandeja.ts/.html/.css` — layout idéntico a SCTR y Vida Ley (lista izquierda + visor PDF derecho).
 
-### Diseño enterprise de Trabajadores
-`pages/trabajadores/trabajadores.html` y `.css` rediseñados completamente (layout 3 columnas, sin tocar `.ts`):
-- **Panel izquierdo** (300px): buscador con icono lupa, lista de worker-cards con indicador `border-left: 3px solid #64bc04` al seleccionar, chips de estado, acciones admin (cambiar obra, reingreso).
-- **Panel central** (flex): barra de nombre/estado del worker seleccionado; tabla `<table>` con columnas DOCUMENTO / ESTADO / VIGENCIA / ACCIONES; estado vacío con SVG inline.
-- **Panel derecho** (360px): modo Filtros (radio pills Tipo + select Estado) cuando no hay entregable activo; modo Documento (upload zone dashed + vigencia + aprobar/rechazar/observaciones) cuando hay entregable seleccionado y es accionable.
-- Stats bar superior (solo admin): total de trabajadores + botón Actualizar.
-- Toda la lógica TypeScript intacta — no se modificó `.ts`.
+#### Tabs horizontales
+```
+Todos | Trabajadores | Empresas | Inducciones | Equipos
+```
+Cada tab tiene color de borde activo propio:
+- Todos: `border #111827`
+- Trabajadores: `#3b82f6` (azul)
+- Empresas: `#22c55e` (verde)
+- Inducciones: `#f59e0b` (naranja)
+- Equipos: `#9ca3af` (gris)
 
-### Estado actual
-- Sprints 1-8 completados.
-- Auth contratistas: login email+password, activación, reset, cambio password.
-- Páginas completadas: Trabajadores (rediseño enterprise), Empresa, Equipos, Bandeja, SCTR/Vida Ley, Inducciones, Registros Modelo, Evaluación Supervisores, Auditoría, Reglas, Registro Empresa (público, con logo upload), Activar Cuenta (público), Recuperar Contraseña (público), Cambiar Contraseña.
-- Restricciones CONTRATISTA implementadas en rutas y navegación.
+Clases: `tab-active-all`, `tab-active-blue`, `tab-active-green`, `tab-active-orange`, `tab-active-gray`.
+
+#### Chip colors por tipo
+- `TRABAJADOR` = chip-blue
+- `EMPRESA` = chip-green
+- `EQUIPO` = chip-gray
+- `INDUCCION` = chip-orange
+
+#### Layout principal
+```css
+.bandeja-layout { display: flex; flex-direction: column; gap: 0.75rem; height: calc(100vh - 120px); }
+.bandeja-columns { display: grid; grid-template-columns: 300px 1fr; gap: 1rem; flex: 1; overflow: hidden; min-height: 0; }
+.col-items, .col-detalle { display: flex; flex-direction: column; overflow: hidden; }
+.doc-body { flex: 1; min-height: 0; overflow: hidden; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
+.doc-body iframe { width: 100%; height: 100%; display: block; border: 0; }
+```
+
+#### Card seleccionada
+```css
+.bandeja-card.selected { background: #f0fdf4; border-color: #64bc04; }
+```
+
+#### Patrón blob URL para PDF
+Igual que SCTR: `sharepointService.getArchivoUrl(archivoUrl)` → `fetch(res.url)` → `.blob()` → `URL.createObjectURL(blob)` → `sanitizer.bypassSecurityTrustResourceUrl(blobUrl)`. Se revoca en `revokeDocBlobUrl()` al cerrar/destruir.
+
+#### Flujo de aprobación por tipo
+- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input para fecha de vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
+- **INDUCCION**: Swal simple sin campo vigencia → `bandejaService.aprobarInduccion(id)` → PATCH `/bandeja/induccion/{id}` con body `{}`.
+
+Tras aprobar/rechazar: `this.selectedItem = null; this.clearDocPanel();` y luego `loadItems()`.
+
+#### Estado
+```ts
+selectedItem: BandejaItemDto | null = null;
+docSafeUrl: SafeResourceUrl | null = null;
+loadingDoc = false;
+private docBlobUrl = '';
+filtroTipo = '';  // '' = Todos
+```
+
+### Modal "Programar Inducción"
+`pages/trabajadores/components/programar-induccion/` — 2 pasos.
+
+**Paso 1**: Proyecto (obligatorio), Fecha programada (obligatorio), Trabajo en altura (checkbox), Equipo eléctrico (checkbox).
+
+**Paso 2**: Lista de trabajadores con:
+- Pills Todos/Obra/Staff-Oficina Central (solo si `empresaEsAbril` — actualmente siempre oculto por bug `esAbril=false` en BD).
+- Buscador por nombre/DNI.
+- Selección individual + "Seleccionar todos".
+- Badge amarillo `"Ya indujo · puede homologar"` si `worker.yaIndujo === true` — worker sigue siendo seleccionable.
+- Contador de seleccionados.
+
+Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/inducciones`.
+
+`InduccionTrabajadorDto`:
+```ts
+{ workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre?, yaIndujo? }
+```
+
+### Multiproyecto (workers Casa y Contratistas)
+Workers Casa y Contratistas pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
+
+DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionCompletada, activo, fechaInicio, fechaFin? }`, `AgregarProyectoDto { proyectoId, empresaId?, fechaInicio? }`.
+
+**Botón "+ Agregar proyecto"**: visible para todos los workers (Casa y Contratistas). El modal `agregar-proyecto` diferencia la fuente de proyectos:
+- **Casa**: `ProjectService.getProjectsPaged({ page: 1, pageSize: 200 })` — todos los proyectos.
+- **Contratista**: `EmpresaContratistaService.getProyectos(empresaId)` → `GET /habilitacion/empresas/{id}/proyectos` — solo los proyectos asignados a esa empresa. El resultado (`EmpresaProyectoDto { proyectoId, proyectoNombre }`) se mapea a `{ projectId, projectDescription }` para compatibilidad con el `SearchSelect`.
+
+`agregar-proyecto` recibe 4 inputs: `workerId`, `workerNombre`, `contrataCasa`, `empresaId`. La rama se decide en `loadCatalogos()` según `contrataCasa !== 'Casa' && empresaId !== null`.
+
+> ⚠️ **Gate del modal agregar-proyecto**: usar flag aparte (`mostrarAgregarProyecto`) en el padre. `[workerId]="mostrarAgregarProyecto ? selectedWorker?.workerId ?? null : null"`. NO bindear directamente a `selectedWorker?.workerId` — abriría el modal cada vez que se selecciona un worker.
+
+### Diseño Trabajadores (layout 3 columnas)
+- **Columna izquierda** (270px): filter-bar compacta (2 filas) + lista de worker-cards + paginator.
+- **Columna central** (flex): header del worker + tabla de entregables (ojo=viewer inline, clip=nueva pestaña) + sección proyectos asignados.
+- **Columna derecha** (360px): filtros (radio pills + select estado) o drawer de documento (upload + vigencia + acciones).
+
+**Fix de layout columna central** (`trabajadores.css`): `min-height: 0` añadido a `.col-workers, .col-entregables` (grid items) y a `.table-scroll` (flex child). Sin esto el `overflow-y: auto` del scroll de entregables no respeta los límites del grid y el scrollbar desborda la pantalla.
+
+**Sección proyectos asignados**: movida fuera de `.table-scroll` — ahora es un hermano `flex-shrink: 0; max-height: 220px; overflow-y: auto; border-top` dentro de `.col-entregables`. La tabla de entregables y la sección de proyectos scrollean independientemente.
+
+Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados + Actualizar + **"Programar Inducción"** (admin, `.btn-induccion`).
+
+### Notas importantes
+- EMO es read-only — viene del módulo SSOMA, no se puede subir.
+- SCTR/Vida Ley flujo masivo — un doc cubre múltiples workers.
+- Auditoría solo para admins.
 
 ### Pendiente
-- Deploy a producción.
-- Crear primer usuario admin.
-- Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).
+- Validar modal Editar perfil contra backend real (casing `obraOficina`, `sctr` boolean vs string).
+- Backend: `GET /inducciones/trabajadores-por-programar` — sin esto paso 2 de Programar Inducción no carga.
+- Backend: `POST /api/v1/habilitacion/archivos/subir` (hoy cae al fallback `pending-upload://`).
+- Backend: 4 endpoints multiproyecto `/trabajadores/{workerId}/proyectos` (hoy silenciado a array vacío).
+- Backend: confirmar `PATCH /bandeja/induccion/{id}` — frontend ya configurado.
+- PRs a `master` (backend debe deployarse antes que frontend).
+- Deploy a producción + primer usuario admin.
 
 ---
 
@@ -799,57 +864,25 @@ Contextos usados:
 ### Ubicación
 `features/security/` — NgModule (`SeguridadModule`). Ruta: `/security/users`. Rol: `ADMINISTRADOR DEL SISTEMA`.
 
-### Archivos clave
-```
-features/security/
-├── seguridad-module.ts
-├── seguridad-routing-module.ts
-└── pages/
-    └── users/
-        ├── users.ts / .html               # contenedor: orquesta lista + modal
-        ├── list/
-        │   ├── list.ts / .html / .css     # tabla paginada + búsqueda + acciones
-        └── components/
-            └── user-edit-form/
-                ├── user-edit-form.ts / .html / .css  # modal edición
-```
-
 ### Flujo completo
 1. `users.ts` es el shell: renderiza `<app-user-list>` y `<app-user-edit-form>`.
-2. `list.ts` carga usuarios paginados (`UserService.getUserPaged(page)`), filtra client-side por `searchTerm` sobre `apellidoNombre`/`fullName`.
-3. Editar: `list` emite `(editUser)="openEditForm($event)"` → `users.ts` abre el modal con el `UserDTO` seleccionado.
-4. Toggle: `list.ts` llama `userService.toggleUser(id)` con confirmación Swal + `cdr.detectChanges()`.
-5. Al guardar en el modal: `users.ts` recibe `(saved)="onEditSaved()"` → cierra modal y fuerza reload.
+2. `list.ts` carga usuarios paginados, filtra client-side por `apellidoNombre`/`fullName`.
+3. Toggle: confirmación Swal + PATCH `/api/v1/user/{id}/toggle`.
+4. Al guardar en modal: cierra y fuerza reload.
 
 ### Endpoints
-| Método | Endpoint | Acción |
-|--------|----------|--------|
-| GET | `/api/v1/user/paged?page=N` | Lista paginada |
-| POST | `/api/v1/user` | Crear usuario |
-| PUT | `/api/v1/user/{id}` | Editar usuario |
-| PATCH | `/api/v1/user/{id}/toggle` | Activar / desactivar |
+| Método | Endpoint |
+|--------|----------|
+| GET | `/api/v1/user/paged?page=N` |
+| POST | `/api/v1/user` |
+| PUT | `/api/v1/user/{id}` |
+| PATCH | `/api/v1/user/{id}/toggle` |
 
-### DTOs relevantes
-- `core/dtos/user/user.model.ts` → `UserDTO { userId, person: PersonDTO, role, active, ... }`
-- `core/dtos/user/userCreate.model.ts` → `UserCreateDTO`
-- `core/dtos/user/userUpdate.model.ts` → `UserUpdateDTO { firstNames, firstLastName, secondLastName, email, phoneNumber, roleId }`
-- `PersonDTO` solo expone `fullName` (nombre completo combinado). Los campos individuales (`firstNames`, etc.) los rellena el usuario en el modal de edición.
-
-### UserEditForm — detalles
-- Patrón modal canónico: `@Input() open`, `@Input() initial: UserDTO | null`, `@Output() closed`, `@Output() saved`.
-- `ngOnChanges` resetea el formulario cuando `open` cambia a `true`.
-- Barra de referencia (`ref-bar`) muestra `initial.person.fullName` + DNI como solo-lectura; los campos de nombre se dejan vacíos para que el admin los complete.
-- `canSubmit` valida: `firstNames`, `firstLastName`, `email` no vacíos + `roleId > 0`.
-
-### UserService — `buildAuthHeaders`
-`core/services/user.service.ts` usa la función local `buildAuthHeaders()` (mismo patrón que `http-base.ts` de SSOMA):
+### `UserService` — `buildAuthHeaders`
 ```ts
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 ```
-Nunca envía `Bearer null` — retorna `{}` si no hay token.
-
-### Búsqueda client-side
-`list.ts` tiene `searchTerm = ''` y getter `filteredData: UserDTO[]` que filtra `fullName.toLowerCase().includes(searchTerm.toLowerCase())`. La paginación sigue siendo server-side; el filtro solo afecta la página actual mostrada.
+Nunca envía `Bearer null`.

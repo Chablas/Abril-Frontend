@@ -5,7 +5,9 @@ import {
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
   EmpresaProyectoDto,
+  ProyectoDisponibleDto,
 } from '../dtos/empresa.model';
+import { DocumentoVersionDto } from '../dtos/trabajador.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
 @Injectable({ providedIn: 'root' })
@@ -41,9 +43,38 @@ export class HabEmpresaService {
     );
   }
 
+  getVersiones(empresaId: number, itemId: number): Observable<DocumentoVersionDto[]> {
+    return this.http.get<DocumentoVersionDto[]>(
+      `${this.base}/${empresaId}/entregables/${itemId}/versiones`,
+      { headers: buildHabHeaders() },
+    );
+  }
+
   getProyectos(empresaId: number): Observable<EmpresaProyectoDto[]> {
     return this.http.get<EmpresaProyectoDto[]>(`${this.base}/${empresaId}/proyectos`, {
       headers: buildHabHeaders(),
     });
+  }
+
+  getProyectosDisponibles(empresaId: number): Observable<ProyectoDisponibleDto[]> {
+    return this.http.get<ProyectoDisponibleDto[]>(
+      `${this.base}/${empresaId}/proyectos-disponibles`,
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  activarProyecto(empresaId: number, proyectoId: number): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}/${empresaId}/activar-proyecto`,
+      { proyectoId },
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  desactivarProyecto(empresaId: number, proyectoId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.base}/${empresaId}/desactivar-proyecto`,
+      { headers: buildHabHeaders(), body: { proyectoId } },
+    );
   }
 }

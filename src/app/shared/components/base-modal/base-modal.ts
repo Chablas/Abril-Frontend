@@ -3,6 +3,7 @@ import { Component, Output, EventEmitter, Input } from '@angular/core';
 
 @Component({
   selector: 'app-base-modal',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './base-modal.html',
   styleUrl: './base-modal.css',

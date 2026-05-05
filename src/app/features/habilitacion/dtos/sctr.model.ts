@@ -1,8 +1,15 @@
+export interface SctrWorkerInputDto {
+  workerId: number;
+  fechaInicioCobertura?: string;
+}
+
 export interface SctrWorkerDto {
   workerId: number;
   apellidoNombre: string;
   dni: string;
-  aprobado: boolean;
+  estadoSctr: string;
+  estadoVidaLey: string;
+  fechaInicioCobertura?: string;
 }
 
 export interface SctrVidaLeyDto {
@@ -12,8 +19,10 @@ export interface SctrVidaLeyDto {
   proyectoId: number;
   proyectoNombre: string;
   tipo: string;
+  tipoPoliza: string;
   mes: number;
   anio: number;
+  fechaInicio?: string;
   archivoUrl?: string;
   archivoUrl2?: string;
   estado: string;
@@ -23,11 +32,35 @@ export interface SctrVidaLeyDto {
 }
 
 export interface SctrVidaLeyCreateDto {
-  proyectoId: number;
+  proyectoId?: number;
   tipo: string;
+  tipoPoliza: string;
   mes: number;
   anio: number;
+  fechaInicio?: string;
+  vigencia?: string;
   archivoUrl?: string;
   archivoUrl2?: string;
-  workerIds: number[];
+  workers: SctrWorkerInputDto[];
+}
+
+export interface SctrTrabajadorEstadoDto {
+  workerId: number;
+  apellidoNombre: string;
+  dni: string;
+  estadoSctr: string;
+  estadoVidaLey: string;
+  obraOficina?: string;
+  sctrId?: number;
+  sctrHabId?: number;
+  archivoUrl?: string;
+  empresaNombre?: string;
+  proyectoNombre?: string;
+}
+
+export interface SctrVidaLeyAprobarDto {
+  workerIdsAprobados: number[];
+  workerIdsRechazados: number[];
+  obsAbril?: string;
+  vigencia?: string;
 }

@@ -10,6 +10,8 @@ export interface WorkerHabilitacionListDto {
   categoria?: string;
   ocupacion?: string;
   estadoWorker: string;
+  contrataCasa?: string;
+  obraOficina?: string;
 }
 
 export interface WorkerEntregableDto {
@@ -40,6 +42,70 @@ export interface DocumentoVersionDto {
   archivoUrl: string;
   subidoPorUserId?: number;
   subidoPorEmpresaId?: number;
+  subidoPorNombre?: string;
   estadoAlSubir?: string;
   createdAt: string;
+}
+
+export interface WorkerDetalleDto {
+  workerId: number;
+  apellidoNombre: string;
+  dni?: string;
+  celular?: string;
+  fechaNacimiento?: string;
+  fechaRetiro?: string;
+  sctr?: boolean;
+  area?: string;
+  subarea?: string;
+  jefatura?: string;
+  obraOficina?: string;
+}
+
+export interface WorkerEditDto {
+  apellidoNombre: string;
+  celular?: string;
+  fechaNacimiento?: string;
+  fechaRetiro?: string;
+  sctr?: boolean;
+  area?: string;
+  subarea?: string;
+  jefatura?: string;
+}
+
+export interface WorkerReingresoDto {
+  nuevoProyectoId?: number;
+  nuevaEmpresaId?: number;
+  fechaReingreso?: string;
+}
+
+export interface WorkerEventoDto {
+  id: number;
+  tipoEvento: string;
+  descripcion?: string;
+  proyectoAnterior?: string;
+  proyectoNuevo?: string;
+  empresaAnterior?: string;
+  empresaNueva?: string;
+  datos?: string;
+  createdAt: string;
+}
+
+export interface WorkerProyectoDto {
+  id: number;
+  workerId: number;
+  proyectoId: number;
+  proyectoNombre?: string;
+  empresaId?: number;
+  empresaNombre?: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  induccionCompletada: boolean;
+  fechaInduccion?: string;
+  activo: boolean;
+}
+
+export interface AgregarProyectoDto {
+  proyectoId: number;
+  empresaId?: number;
+  fechaInicio?: string;
 }
