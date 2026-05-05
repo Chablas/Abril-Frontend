@@ -183,6 +183,7 @@ export class ControlAcceso implements OnInit {
     if (e.estado === 'Aprobado') {
       if (e.vigencia) {
         const dias = Math.floor((new Date(e.vigencia).getTime() - Date.now()) / 86400000);
+        if (dias < 0) return 'chip-red';
         if (dias <= 14) return 'chip-yellow';
       }
       return 'chip-green';

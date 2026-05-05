@@ -135,10 +135,18 @@
               <div class="ca-entregables" *ngIf="r.entregables?.length">
                 <div *ngFor="let e of r.entregables"
                      [class]="'ca-entregable ' + getEntregableClass(e)">
+                  <ng-container *ngIf="e.estado === 'Falta' || e.estado === 'Rechazado'">
+                    <span class="ca-doc-x">✗</span>
+                  </ng-container>
                   <span class="ca-entregable-nombre">{{ e.nombre }}</span>
-                  <span class="ca-entregable-vigencia" *ngIf="e.vigencia">
-                    {{ e.vigencia | date:'dd/MM/yyyy' }}
-                  </span>
+                  <ng-container *ngIf="e.vigencia">
+                    <ng-container *ngIf="e.estado === 'Aprobado' && (e.vigencia | date:'yyyyMMdd') < (fechaHoy | date:'yyyyMMdd'); else vigNormal">
+                      <span class="ca-doc-x ca-entregable-vigencia">✗ {{ e.vigencia | date:'dd/MM/yyyy' }}</span>
+                    </ng-container>
+                    <ng-template #vigNormal>
+                      <span class="ca-entregable-vigencia">{{ e.vigencia | date:'dd/MM/yyyy' }}</span>
+                    </ng-template>
+                  </ng-container>
                 </div>
               </div>
             </ng-container>
