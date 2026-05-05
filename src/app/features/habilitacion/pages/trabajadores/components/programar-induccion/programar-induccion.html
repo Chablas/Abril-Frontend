@@ -103,7 +103,10 @@
           (change)="toggleWorker(w.workerId)"
         />
         <div class="pi-worker-info">
-          <span class="pi-worker-name">{{ w.apellidoNombre }}</span>
+          <div class="pi-worker-name-row">
+            <span class="pi-worker-name">{{ w.apellidoNombre }}</span>
+            <span class="pi-badge-homologa" *ngIf="w.yaIndujo">Ya indujo · puede homologar</span>
+          </div>
           <span class="pi-worker-meta">{{ w.dni }}<ng-container *ngIf="w.empresaNombre"> · {{ w.empresaNombre }}</ng-container></span>
         </div>
         <span class="pi-worker-obra" *ngIf="w.obraOficina">{{ w.obraOficina }}</span>

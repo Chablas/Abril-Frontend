@@ -37,4 +37,10 @@ export class BandejaService {
       headers: buildHabHeaders(),
     });
   }
+
+  aprobarInduccion(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.base}/induccion/${id}`, {}, {
+      headers: buildHabHeaders(),
+    });
+  }
 }

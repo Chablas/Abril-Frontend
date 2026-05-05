@@ -5,6 +5,7 @@ export interface InduccionTrabajadorDto {
   obraOficina?: string;
   empresaId?: number;
   empresaNombre?: string;
+  yaIndujo?: boolean;
 }
 
 export interface InduccionDto {

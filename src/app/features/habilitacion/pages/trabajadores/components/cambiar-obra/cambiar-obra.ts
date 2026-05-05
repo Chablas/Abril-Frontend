@@ -67,6 +67,7 @@ export class CambiarObra implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.model = this.empty();
+      this.model.staffOficina = this.worker?.obraOficina ?? 'Obra';
       this.loadCatalogos();
     }
   }

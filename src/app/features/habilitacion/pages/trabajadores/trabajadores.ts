@@ -142,7 +142,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadWorkers(page: number = this.currentPage): void {
+  loadWorkers(page: number = this.currentPage, afterLoad?: () => void): void {
     this.limpiarSeleccion();
     this.loading = true;
     this.loaderService.show();
@@ -164,6 +164,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.totalRecords = res.totalRecords;
         this.loading = false;
         this.loaderService.hide();
+        afterLoad?.();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -777,8 +778,14 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   onCambiarObraSaved(): void {
     this.modalCambiarObraOpen = false;
+    const prevId = this.workerParaAccion?.workerId ?? this.selectedWorker?.workerId ?? null;
     this.workerParaAccion = null;
-    this.loadWorkers(this.currentPage);
+    this.loadWorkers(this.currentPage, () => {
+      if (prevId) {
+        const updated = this.workers.find((w) => w.workerId === prevId);
+        if (updated) this.selectWorker(updated);
+      }
+    });
   }
 
   closeCambiarObra(): void {
