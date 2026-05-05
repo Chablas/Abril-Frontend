@@ -28,7 +28,7 @@ export interface ProjectSubContractorDTO {
   currencyId: number;
   currencyCode: string;
   amountHasIgv: boolean;
-  contractorEmail: string;
+  contractorEmails: string[];
   workItemId: number;
   workItemDescription: string;
   workItemCategoryId: number;
@@ -52,6 +52,8 @@ export interface ProjectSubContractorDTO {
   attachedQuotation?: ProjectSubContractorFileDTO;
   serviceOrder?: ProjectSubContractorFileDTO;
   promissoryNote?: ProjectSubContractorFileDTO;  // solo si paymentMethodId === 2
+  // Paquete del contrato completo (paso 4 — autogenerado: Hoja Resumen + Contrato + Pagaré)
+  package?: ProjectSubContractorFileDTO;
   // Documentos escaneados (paso 7)
   scannedDoc1?: ProjectSubContractorFileDTO;
   scannedDoc2?: ProjectSubContractorFileDTO;

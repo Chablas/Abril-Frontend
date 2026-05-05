@@ -76,6 +76,9 @@ export class Detail implements OnInit {
   /** Paso 4 — archivo en memoria hasta que se envía */
   step4File: File | null = null;
 
+  /** Paso 4 — indica que el paquete PDF se está generando */
+  generatingPackage = false;
+
   /** Paso 7 — clave de doc de escaneados siendo subido en este momento */
   currentScannedDocType: string | null = null;
 
@@ -106,7 +109,7 @@ export class Detail implements OnInit {
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,
@@ -203,7 +206,7 @@ export class Detail implements OnInit {
       return this.allDocsApproved;
     }
     if (this.actualStatus === 4 && this.viewStep === 4) {
-      return this.step4File !== null;
+      return this.step4File !== null || !!this.item.package;
     }
     if (this.actualStatus === 5 && this.viewStep === 5) {
       if (this.step5ArrivalOption === 'complete') return true;
@@ -374,6 +377,46 @@ export class Detail implements OnInit {
     });
   }
 
+  generatePackage(): void {
+    this.generatingPackage = true;
+    this.loaderService.show();
+    this.adjudicacionesService.generateContractPackage(this.item.projectSubContractorId).subscribe({
+      next: (response) => {
+        this.loaderService.hide();
+        this.generatingPackage = false;
+
+        // Unpack the response: bytes, fileUrl, and originalFileName
+        const { bytes, fileUrl, originalFileName } = response;
+
+        // Create the File object for local usage (in-memory until sent to SC)
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        this.step4File = new File([blob], originalFileName, { type: 'application/pdf' });
+
+        // Store the package info with the SharePoint URL so the template shows the clickable link
+        this.item.package = {
+          fileUrl,
+          originalFileName,
+        };
+
+        // Refresh the parent list to ensure the package data is persisted in the database
+        // and available when the modal is reopened
+        this.statusChanged.emit();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Paquete generado',
+          text: 'El PDF combinado está listo. Haz clic en "Enviar al SC" para enviarlo.',
+          draggable: true,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.generatingPackage = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   onStep4FileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
@@ -381,7 +424,7 @@ export class Detail implements OnInit {
   }
 
   private async sendScNotification(): Promise<void> {
-    if (!this.step4File) return;
+    if (!this.step4File && !this.item.package) return;
     this.loaderService.show();
 
     let graphToken: string;
@@ -398,10 +441,12 @@ export class Detail implements OnInit {
       return;
     }
 
+    // Si el archivo está en memoria lo enviamos adjunto; si el paquete ya está guardado en
+    // SharePoint (reapertura del modal) lo omitimos y el backend lo descarga por URL.
     this.adjudicacionesService.sendScNotification(
       this.item.projectSubContractorId,
-      this.step4File,
       graphToken,
+      this.step4File ?? undefined,
     ).subscribe({
       next: (res) => {
         this.loaderService.hide();

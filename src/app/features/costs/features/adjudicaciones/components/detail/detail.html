@@ -133,8 +133,13 @@
         </div>
 
         <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Correo del contratista</p>
-          <p class="text-sm text-gray-700 break-all">{{ item.contractorEmail }}</p>
+          <p class="text-xs text-gray-400 mb-[2px]">Correos del contratista</p>
+          <div *ngIf="item.contractorEmails?.length; else noEmails" class="flex flex-col gap-[2px]">
+            <p *ngFor="let email of item.contractorEmails" class="text-sm text-gray-700 break-all">{{ email }}</p>
+          </div>
+          <ng-template #noEmails>
+            <p class="text-sm text-gray-400 italic">Sin correos registrados</p>
+          </ng-template>
         </div>
 
         <div>
@@ -461,30 +466,65 @@
           <span class="text-sm font-semibold text-gray-700">Contrato completo</span>
         </div>
 
-        <!-- Archivo seleccionado -->
+        <!-- Archivo seleccionado / guardado -->
         <div class="text-xs min-h-[18px]">
-          <span *ngIf="step4File; else noStep4File"
-            class="text-[#64BC04] flex items-center gap-1 break-all">
-            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          <!-- 1. Paquete generado o guardado → link verde clickeable (tiene prioridad sobre el span) -->
+          <a *ngIf="item.package; else noPackageLink"
+            [href]="item.package.fileUrl" target="_blank"
+            class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
             </svg>
-            {{ step4File.name }}
-          </span>
-          <ng-template #noStep4File>
-            <span class="italic text-gray-300">Sin archivo seleccionado</span>
+            {{ item.package.originalFileName ?? 'Ver archivo' }}
+          </a>
+
+          <ng-template #noPackageLink>
+            <!-- 2. Archivo seleccionado manualmente en esta sesión (sin paquete persistido) -->
+            <span *ngIf="step4File; else noFile4"
+              class="text-[#64BC04] flex items-center gap-1 break-all">
+              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              {{ step4File.name }}
+            </span>
+            <!-- 3. Sin nada -->
+            <ng-template #noFile4>
+              <span class="italic text-gray-300">Sin archivo seleccionado</span>
+            </ng-template>
           </ng-template>
         </div>
 
-        <!-- Botón seleccionar -->
-        <button (click)="fileInputStep4.click()"
-          [disabled]="actualStatus !== 4"
-          class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-          </svg>
-          {{ step4File ? 'Cambiar archivo' : 'Seleccionar archivo' }}
-        </button>
+        <!-- Botones de archivo -->
+        <div class="flex gap-[8px] flex-wrap">
+
+          <!-- Generar paquete PDF -->
+          <button (click)="generatePackage()"
+            [disabled]="actualStatus !== 4 || generatingPackage"
+            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="!generatingPackage" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <svg *ngIf="generatingPackage" class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 0 12 12H4z"></path>
+            </svg>
+            {{ generatingPackage ? 'Generando...' : 'Generar archivo' }}
+          </button>
+
+          <!-- Seleccionar archivo manualmente -->
+          <button (click)="fileInputStep4.click()"
+            [disabled]="actualStatus !== 4"
+            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            {{ step4File ? 'Cambiar archivo' : 'Seleccionar archivo' }}
+          </button>
+
+        </div>
 
         <!-- Nota informativa -->
         <p class="text-xs text-gray-400 leading-relaxed">
