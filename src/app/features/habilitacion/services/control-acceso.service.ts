@@ -1,0 +1,108 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
+
+export interface ConsultaResultDto {
+  workerId: number;
+  nombre: string;
+  empresa: string;
+  dni: string;
+  estadoHabilitacion: 'AUTORIZADO' | 'NO_AUTORIZADO' | 'POR_VENCER';
+  documentosFaltantes: string[] | null;
+  documentosPorVencer: { nombre: string; vigencia: string }[] | null;
+}
+
+export interface InduccionHoyDto {
+  id: number;
+  workerId: number;
+  nombre: string;
+  empresa: string;
+  confirmado: boolean;
+  horaConfirmacion: string | null;
+}
+
+export interface NoAutorizadoDto {
+  workerId: number;
+  nombre: string;
+  empresa: string;
+  documentosFaltantes: string[];
+}
+
+export interface OficinaCentralDto {
+  workerId: number;
+  nombre: string;
+  empresa: string;
+  sctrVigencia: string | null;
+}
+
+export interface TareoPartidaDto {
+  id?: number;
+  nombre: string;
+  tipo: 'CASA' | 'CONTRATISTA';
+  cantidad: number;
+  horas: number;
+}
+
+export interface TareoDto {
+  id?: number;
+  proyectoId: number;
+  fecha: string;
+  partidas: TareoPartidaDto[];
+}
+
+@Injectable({ providedIn: 'root' })
+export class ControlAccesoService {
+  private readonly base = `${HABILITACION_BASE}/control-acceso`;
+
+  constructor(private http: HttpClient) {}
+
+  consultar(proyectoId: number, query: string): Observable<ConsultaResultDto[]> {
+    return this.http.get<ConsultaResultDto[]>(`${this.base}/consulta`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId, query }),
+    });
+  }
+
+  getInducciones(proyectoId: number, fecha: string): Observable<InduccionHoyDto[]> {
+    return this.http.get<InduccionHoyDto[]>(`${this.base}/inducciones`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId, fecha }),
+    });
+  }
+
+  confirmarIngreso(id: number): Observable<InduccionHoyDto> {
+    return this.http.patch<InduccionHoyDto>(
+      `${this.base}/inducciones/${id}/confirmar`,
+      {},
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  getNoAutorizados(proyectoId: number): Observable<NoAutorizadoDto[]> {
+    return this.http.get<NoAutorizadoDto[]>(`${this.base}/no-autorizados`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId }),
+    });
+  }
+
+  getOficinaCentral(proyectoId: number): Observable<OficinaCentralDto[]> {
+    return this.http.get<OficinaCentralDto[]>(`${this.base}/oficina-central`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId }),
+    });
+  }
+
+  getTareo(proyectoId: number, fecha: string): Observable<TareoDto> {
+    return this.http.get<TareoDto>(`${this.base}/tareo`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId, fecha }),
+    });
+  }
+
+  saveTareo(body: TareoDto): Observable<TareoDto> {
+    return this.http.post<TareoDto>(`${this.base}/tareo`, body, {
+      headers: buildHabHeaders(),
+    });
+  }
+}

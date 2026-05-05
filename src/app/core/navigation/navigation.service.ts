@@ -180,6 +180,7 @@ export class NavigationService {
         {
           label: 'Operaciones',
           items: [
+            { label: 'Control de Acceso', route: '/habilitacion/control-acceso', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
             { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },
             { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
             { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'] },

@@ -102,6 +102,16 @@ export const HABILITACION_ROUTES: Routes = [
     },
   },
   {
+    path: 'control-acceso',
+    loadComponent: () =>
+      import('./pages/control-acceso/control-acceso').then((m) => m.ControlAcceso),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'HABILITACIÓN - CONTROL DE ACCESO',
+      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+    },
+  },
+  {
     path: 'cambiar-password',
     loadComponent: () =>
       import('./pages/cambiar-password/cambiar-password').then((m) => m.CambiarPassword),
