@@ -9,7 +9,7 @@ import { LessonService } from '../../../../../core/services/lesson.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { LessonFiltersDTO } from '../../../../../core/dtos/lesson/lessonFilters.model';
+import { LessonFiltersDTO } from '../../dtos/lessonFilters.model';
 import {
   PhaseStageSubStageSubSpecialtyDTO,
   StageFilterDTO,

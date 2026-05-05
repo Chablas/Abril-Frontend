@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LessonListDTO, LessonListPagedDTO } from '../dtos/lesson/lesson.model';
+import { LessonListDTO } from '../../features/projects/lecciones-aprendidas/dtos/lessonList.model';
 import { LessonDetailDTO } from '../dtos/lesson/lessonDetail.model';
-import { LessonFiltersDTO } from "../dtos/lesson/lessonFilters.model";
 import { PhaseStageSubStageSubSpecialtyDTO } from "../dtos/phaseStageSubStageSubSpecialty/phaseStageSubStageSubSpecialty.model";
 import { environment } from '../../../environments/environment';
 import { DashboardDTO } from "../dtos/dashboard/DashboardDTO";
@@ -39,30 +38,9 @@ export class LessonService {
     });
   }
 
-  getFilters(): Observable<LessonFiltersDTO> {
-    const token = localStorage.getItem('access_token');
-    return this.http.get<LessonFiltersDTO>(`${this.apiUrl}/filters`, { headers: { Authorization: `Bearer ${token}` } });
-  }
-
   getFiltersCreate(): Observable<PhaseStageSubStageSubSpecialtyDTO[]> {
     const token = localStorage.getItem('access_token');
     return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  }
-
-  getLessonsUsingFilters(filters: any) {
-    const token = localStorage.getItem('access_token');
-    let params = new HttpParams();
-
-    Object.keys(filters).forEach((key) => {
-      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
-        params = params.set(key, filters[key]);
-      }
-    });
-
-    return this.http.get<LessonListPagedDTO>(this.apiUrl, {
-      params,
       headers: { Authorization: `Bearer ${token}` },
     });
   }

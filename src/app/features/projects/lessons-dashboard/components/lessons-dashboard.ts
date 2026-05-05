@@ -1,20 +1,21 @@
 import { Component, AfterViewInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
-import { DashboardDTO } from '../../../core/dtos/dashboard/DashboardDTO';
-import { LessonService } from '../../../core/services/lesson.service';
-import { PhaseStageChartDTO } from '../../../core/dtos/dashboard/DashboardDTO';
+import { DashboardDTO } from '../../../../core/dtos/dashboard/DashboardDTO';
+import { LessonService } from '../../../../core/services/lesson.service';
+import { LessonsDashboardService } from '../services/lessons-dashboard.service';
+import { PhaseStageChartDTO } from '../../../../core/dtos/dashboard/DashboardDTO';
 import { HttpErrorResponse } from '@angular/common/http';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import { Filters } from "../../../core/models/filters.model";
+import { Filters } from "../../../../core/models/filters.model";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { forkJoin } from 'rxjs';
-import { LessonFiltersDTO } from "../../../core/dtos/lesson/lessonFilters.model";
-import { SelectedFilters } from "../../../core/models/selectedFilters.model";
-import { SelectedDashboardOptions } from "../../../core/models/lesson-dashboard/selectedOptions.model";
+import { LessonFiltersDTO } from "../../lecciones-aprendidas/dtos/lessonFilters.model";
+import { SelectedFilters } from "../../../../core/models/selectedFilters.model";
+import { SelectedDashboardOptions } from "../../../../core/models/lesson-dashboard/selectedOptions.model";
 import { FormsModule } from '@angular/forms';
 
 Chart.register(...registerables, ChartDataLabels);
@@ -85,6 +86,7 @@ export class LessonsDashboard implements AfterViewInit {
 
   constructor(
     private dashboardService: LessonService,
+    private lessonsDashboardService: LessonsDashboardService,
     private cdr: ChangeDetectorRef,
     private router: Router,
   ) {}
@@ -94,7 +96,7 @@ export class LessonsDashboard implements AfterViewInit {
 
     forkJoin({
       dashboard: this.dashboardService.getDashboardData([6, 7, 24, 25, 27, 28, 29, 30, 47], this.selectedFilters),
-      filters: this.dashboardService.getFilters(),
+      filters: this.lessonsDashboardService.getFilters(),
     }).subscribe({
       next: ({ dashboard, filters }) => {
         this.createBarChart(dashboard);

@@ -45,6 +45,11 @@ export interface LessonListPagedDTO {
   data: LessonListDTO[];
 }
 
+export interface LessonsPagedWithFiltersDTO {
+  paged: LessonListPagedDTO;
+  filters: import('./lessonFilters.model').LessonFiltersDTO;
+}
+
 interface LessonImage {
   lessonImageId: number;
   imageUrl: string;

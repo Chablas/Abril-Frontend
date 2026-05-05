@@ -78,42 +78,16 @@ export class Login implements OnInit {
     this.cdr.detectChanges();
 
     const { email, password } = this.contratistaForm.value;
-    this.authService.loginContratista(email.trim(), password).subscribe({
+    this.authService.login({ email: email.trim(), password }).subscribe({
       next: () => {
         this.loaderService.hide();
         this.cdr.detectChanges();
-        this.router.navigate(['/habilitacion/trabajadores']);
+        this.router.navigate(['/']);
       },
       error: (err: HttpErrorResponse) => {
-        this.handleContratistaError(err);
+        this.error(err);
       },
     });
-  }
-
-  private handleContratistaError(err: HttpErrorResponse): void {
-    this.loaderService.hide();
-    this.cdr.detectChanges();
-
-    const msg = (err.error?.message ?? '').toString();
-    const noActivada = /no\s+(ha\s+)?(sido\s+)?activad[ao]/i.test(msg);
-
-    if (noActivada) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Cuenta no activada',
-        text: 'Tu cuenta no está activada. Revisa tu correo o solicita un nuevo enlace.',
-        showCancelButton: true,
-        confirmButtonText: 'Reenviar activación',
-        cancelButtonText: 'Cerrar',
-        confirmButtonColor: '#64bc04',
-        cancelButtonColor: '#6b7280',
-      }).then((res) => {
-        if (res.isConfirmed) this.router.navigate(['/auth/recuperar-contratista']);
-      });
-      return;
-    }
-
-    this.error(err);
   }
 
   async submitMicrosoft() {

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
 import { LessonService } from '../../../../core/services/lesson.service';
-import { LessonListDTO } from '../../../../core/dtos/lesson/lesson.model';
-import { LessonFiltersDTO } from '../../../../core/dtos/lesson/lessonFilters.model';
+import { LeccionesAprendidasService } from '../services/lecciones-aprendidas.service';
+import { LessonListDTO } from '../dtos/lessonList.model';
+import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -87,6 +87,7 @@ export class LeccionesAprendidas implements OnInit {
 
   constructor(
     private lessonService: LessonService,
+    private leccionesAprendidasService: LeccionesAprendidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
@@ -102,17 +103,14 @@ export class LeccionesAprendidas implements OnInit {
 
   private loadInitial(): void {
     this.loaderService.show();
-    forkJoin({
-      lessons: this.lessonService.getLessonsUsingFilters(this.filtersTable),
-      filtersData: this.lessonService.getFilters(),
-    }).subscribe({
-      next: ({ lessons, filtersData }) => {
-        this.lessons = lessons.data;
-        this.filtersData = filtersData;
-        this.currentPage = lessons.page;
-        this.totalPages = lessons.totalPages;
-        this.totalRecords = lessons.totalRecords;
-        this.buildFilterOptions(filtersData);
+    this.leccionesAprendidasService.getLessonsPagedWithFilters(this.filtersTable).subscribe({
+      next: ({ paged, filters }) => {
+        this.lessons = paged.data;
+        this.filtersData = filters;
+        this.currentPage = paged.page;
+        this.totalPages = paged.totalPages;
+        this.totalRecords = paged.totalRecords;
+        this.buildFilterOptions(filters);
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
@@ -150,7 +148,7 @@ export class LeccionesAprendidas implements OnInit {
   loadLessons(page: number = 1): void {
     this.filtersTable.page = page;
     this.loaderService.show();
-    this.lessonService.getLessonsUsingFilters(this.filtersTable).subscribe({
+    this.leccionesAprendidasService.getLessonsUsingFilters(this.filtersTable).subscribe({
       next: (data) => {
         this.lessons = data.data;
         this.currentPage = data.page;

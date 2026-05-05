@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LessonListDTO } from '../../../../../core/dtos/lesson/lesson.model';
+import { LessonListDTO } from '../../dtos/lessonList.model';
 
 @Component({
   selector: 'app-lesson-card',

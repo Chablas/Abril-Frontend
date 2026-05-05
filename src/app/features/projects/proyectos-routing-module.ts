@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LeccionesAprendidas } from './lecciones-aprendidas/components/lecciones-aprendidas';
-import { LessonsDashboard } from './lessons-dashboard/lessons-dashboard';
+import { LessonsDashboard } from './lessons-dashboard/components/lessons-dashboard';
 import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
 import { IvtControl } from '../projects/ivt-control/ivt-control';
 import { ConstructionLogbookControl } from '../projects/construction-logbook-control/construction-logbook-control';
