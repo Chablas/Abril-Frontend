@@ -20,6 +20,7 @@ export interface EquipoEntregableDto {
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;
+  obsContratista?: string;
   requiereVigencia: boolean;
 }
 
@@ -41,4 +42,5 @@ export interface EquipoEntregableUpdateDto {
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;
+  obsContratista?: string;
 }

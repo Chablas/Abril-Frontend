@@ -5,6 +5,7 @@ import { HABILITACION_BASE, buildHabHeaders } from './http-base';
 
 export interface UploadResultDto {
   url: string;
+  path: string;
 }
 
 // TODO Sprint 7 Backend: implementar POST /archivos/subir
