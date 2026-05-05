@@ -1,0 +1,160 @@
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
+import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { ArquitecturaComercialService } from '../../../../../core/services/arquitectura-comercial.service';
+import {
+  AcEtapaDTO,
+  ActividadListItemDTO,
+  SupervisorAcDTO,
+  UpdateActividadBody,
+} from '../../../../../core/dtos/arquitectura-comercial/actividades.model';
+
+interface EditarActividadForm {
+  nombre: string;
+  tipo: string;
+  etapaId: number | null;
+  userId: number | null;
+  inicioProgramado: string;
+  finProgramado: string;
+  inicioEfectivo: string;
+  finEfectivo: string;
+  observaciones: string;
+}
+
+@Component({
+  selector: 'app-editar-actividad',
+  standalone: true,
+  imports: [CommonModule, FormsModule, BaseModal],
+  templateUrl: './editar-actividad.html',
+  styleUrl: './editar-actividad.css',
+})
+export class EditarActividad implements OnChanges {
+  @Input() open = false;
+  @Input() actividad: ActividadListItemDTO | null = null;
+  @Input() supervisores: SupervisorAcDTO[] = [];
+  @Output() closed = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<ActividadListItemDTO>();
+
+  readonly tipoOpciones = ['ENTREGABLE', 'HITO', 'CONSULTA'];
+
+  etapas: AcEtapaDTO[] = [];
+  loadingEtapas = false;
+  saving = false;
+
+  model: EditarActividadForm = this.empty();
+
+  constructor(
+    private service: ArquitecturaComercialService,
+    private cdr: ChangeDetectorRef,
+  ) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['open'] && this.open) {
+      this.populateForm();
+      this.loadEtapas();
+    }
+  }
+
+  private empty(): EditarActividadForm {
+    return {
+      nombre: '',
+      tipo: '',
+      etapaId: null,
+      userId: null,
+      inicioProgramado: '',
+      finProgramado: '',
+      inicioEfectivo: '',
+      finEfectivo: '',
+      observaciones: '',
+    };
+  }
+
+  private populateForm(): void {
+    if (!this.actividad) return;
+    this.model = {
+      nombre: this.actividad.nombre,
+      tipo: this.actividad.tipo ?? '',
+      etapaId: this.actividad.etapaId,
+      userId: this.actividad.userId,
+      inicioProgramado: this.actividad.inicioProgramado ?? '',
+      finProgramado: this.actividad.finProgramado ?? '',
+      inicioEfectivo: this.actividad.inicioEfectivo ?? '',
+      finEfectivo: this.actividad.finEfectivo ?? '',
+      observaciones: this.actividad.observaciones ?? '',
+    };
+  }
+
+  private loadEtapas(): void {
+    if (this.etapas.length > 0) return;
+    this.loadingEtapas = true;
+    this.service.getEtapas().subscribe({
+      next: data => {
+        this.etapas = data;
+        this.loadingEtapas = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingEtapas = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get canSubmit(): boolean {
+    return !this.saving && !!this.actividad && !!this.model.nombre.trim();
+  }
+
+  submit(): void {
+    if (!this.canSubmit || !this.actividad) return;
+
+    const body: UpdateActividadBody = {
+      nombre: this.model.nombre.trim(),
+      tipo: this.model.tipo || null,
+      etapaId: this.model.etapaId,
+      userId: this.model.userId,
+      inicioProgramado: this.model.inicioProgramado || null,
+      finProgramado: this.model.finProgramado || null,
+      inicioEfectivo: this.model.inicioEfectivo || null,
+      finEfectivo: this.model.finEfectivo || null,
+      observaciones: this.model.observaciones.trim() || null,
+    };
+
+    this.saving = true;
+    this.service.updateActividad(this.actividad.id, body).subscribe({
+      next: updated => {
+        this.saving = false;
+        Swal.fire({ icon: 'success', title: 'Actividad actualizada', timer: 1500, showConfirmButton: false });
+        this.saved.emit(updated);
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.saving = false;
+        const msg = err?.error?.message ?? 'No se pudo actualizar la actividad';
+        Swal.fire({ icon: 'error', title: 'Error', text: msg });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  close(): void {
+    this.closed.emit();
+  }
+
+  trackByEtapa(_: number, e: AcEtapaDTO): number {
+    return e.id;
+  }
+
+  trackBySupervisor(_: number, s: SupervisorAcDTO): number {
+    return s.id;
+  }
+}

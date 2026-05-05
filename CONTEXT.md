@@ -432,6 +432,38 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
 > **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns.
 
+### Arquitectura Comercial
+Base: `${apiUrl}api/v1/arquitectura-comercial`
+
+| Método | Endpoint | Servicio |
+|--------|----------|----------|
+| GET | `/dashboard` | `getDashboardData` |
+| GET | `/filters` | `getFilters` |
+| GET | `/proyectos-con-actividades` | `getProyectosConActividades` |
+| GET | `/supervisores-ac` | `getSupervisoresAc` |
+| GET | `/actividades?proyectoId=&tipo=&search=&soloActivas=&pagina=&porPagina=` | `getActividades` |
+| POST | `/actividades` | `createActividad` (body: `CreateActividadBody`) |
+| PUT | `/actividades/{id}` | `updateActividad` (body: `UpdateActividadBody`) |
+| PATCH | `/actividades/{id}` | `patchActividad` (body: `ActividadPatchBody`) |
+| DELETE | `/actividades/{id}` | `deleteActividad` |
+| POST | `/actividades/generar` | `generarActividades` (body: `{ proyectoId }`) |
+| POST | `/actividades/reasignar-encargado` | `reasignarEncargado` |
+| PATCH | `/proyectos/{id}` | `patchProyecto` |
+| GET | `/plantilla` | `getPlantilla` |
+| POST | `/plantilla` | `createPlantilla` |
+| PATCH | `/plantilla/{id}` | `patchPlantilla` |
+| GET | `/categorias` | `getCategorias` |
+| GET | `/especialidades` | `getEspecialidades` |
+| GET | `/etapas` | `getEtapas` |
+| GET | `/gantt` | `getGantt` |
+
+**DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
+- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días).
+- `ActividadPatchBody` — solo fechas programadas/efectivas, userId, observaciones.
+- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas.
+- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones.
+- `AcEtapaDTO { id, nombre }` — catálogo de etapas del backend.
+
 ---
 
 ## 8. Estado actual de cada módulo
@@ -459,8 +491,15 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - Doble routing: `CONTRACTORS_ROUTES` (`/contractors/registro`, público) + `CONTRACTORS_ADMIN_ROUTES` (`/contractors/management`, autenticado).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
-- Dashboard, Actividades, Gantt, Plantilla.
+- Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
+- **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta (POST).
+- **Botón "+ Nueva Consulta"**: visible solo cuando `tipoFiltro === 'CONSULTA'` (`actividades.html`). Abre `components/nueva-consulta/`.
+- **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada `['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4']` (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
+- **Modal Editar Actividad**: `components/editar-actividad/`. Campos: nombre, tipo (ENTREGABLE/HITO/CONSULTA), etapa (del endpoint), responsable, 4 fechas, observaciones. Pre-poblado desde `ActividadListItemDTO` en `ngOnChanges`.
+- **Eliminar**: botón basura en cada fila → Swal → DELETE → `loadActividades()`.
+- **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
+- **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
@@ -700,11 +739,12 @@ onCambiarObraSaved(): void {
 ```
 > `prevId` se captura **antes** de `workerParaAccion = null` y antes de `limpiarSeleccion()` (que limpia `selectedWorker`).
 
-### Modal Cambiar Obra — inicialización
+### Modal Cambiar Obra — inicialización y lógica contratistas
 `pages/trabajadores/components/cambiar-obra/cambiar-obra.ts`:
 - `staffOficina` se inicializa con el valor actual del worker (`worker?.obraOficina ?? 'Obra'`) en `ngOnChanges`, sobreescribiendo el default `'Obra'` de `empty()`.
 - El dropdown "Razón social" usa `CatalogosSaludService.getEmpresas()` (NO `EmpresaContratistaService`).
 - Opciones de `staffOficina`: `Obra | Staff | Oficina Central`.
+- **Contratistas**: los campos "Razón social" y "Staff / Oficina" se ocultan con `*ngIf="worker?.contrataCasa === 'Casa'"`. El payload fuerza `empresaId = null` en `submit()` si `contrataCasa !== 'Casa'`.
 
 ### Bandeja de Aprobaciones — layout SCTR-style
 `pages/bandeja/bandeja.ts/.html/.css` — layout idéntico a SCTR y Vida Ley (lista izquierda + visor PDF derecho).
@@ -779,10 +819,16 @@ Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/ind
 { workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre?, yaIndujo? }
 ```
 
-### Multiproyecto (workers Casa)
-Workers Casa pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
+### Multiproyecto (workers Casa y Contratistas)
+Workers Casa y Contratistas pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
 
 DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionCompletada, activo, fechaInicio, fechaFin? }`, `AgregarProyectoDto { proyectoId, empresaId?, fechaInicio? }`.
+
+**Botón "+ Agregar proyecto"**: visible para todos los workers (Casa y Contratistas). El modal `agregar-proyecto` diferencia la fuente de proyectos:
+- **Casa**: `ProjectService.getProjectsPaged({ page: 1, pageSize: 200 })` — todos los proyectos.
+- **Contratista**: `EmpresaContratistaService.getProyectos(empresaId)` → `GET /habilitacion/empresas/{id}/proyectos` — solo los proyectos asignados a esa empresa. El resultado (`EmpresaProyectoDto { proyectoId, proyectoNombre }`) se mapea a `{ projectId, projectDescription }` para compatibilidad con el `SearchSelect`.
+
+`agregar-proyecto` recibe 4 inputs: `workerId`, `workerNombre`, `contrataCasa`, `empresaId`. La rama se decide en `loadCatalogos()` según `contrataCasa !== 'Casa' && empresaId !== null`.
 
 > ⚠️ **Gate del modal agregar-proyecto**: usar flag aparte (`mostrarAgregarProyecto`) en el padre. `[workerId]="mostrarAgregarProyecto ? selectedWorker?.workerId ?? null : null"`. NO bindear directamente a `selectedWorker?.workerId` — abriría el modal cada vez que se selecciona un worker.
 
@@ -790,6 +836,10 @@ DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionC
 - **Columna izquierda** (270px): filter-bar compacta (2 filas) + lista de worker-cards + paginator.
 - **Columna central** (flex): header del worker + tabla de entregables (ojo=viewer inline, clip=nueva pestaña) + sección proyectos asignados.
 - **Columna derecha** (360px): filtros (radio pills + select estado) o drawer de documento (upload + vigencia + acciones).
+
+**Fix de layout columna central** (`trabajadores.css`): `min-height: 0` añadido a `.col-workers, .col-entregables` (grid items) y a `.table-scroll` (flex child). Sin esto el `overflow-y: auto` del scroll de entregables no respeta los límites del grid y el scrollbar desborda la pantalla.
+
+**Sección proyectos asignados**: movida fuera de `.table-scroll` — ahora es un hermano `flex-shrink: 0; max-height: 220px; overflow-y: auto; border-top` dentro de `.col-entregables`. La tabla de entregables y la sección de proyectos scrollean independientemente.
 
 Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados + Actualizar + **"Programar Inducción"** (admin, `.btn-induccion`).
 

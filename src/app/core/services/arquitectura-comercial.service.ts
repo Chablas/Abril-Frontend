@@ -25,6 +25,8 @@ import {
   AcCategoriaDTO,
   AcEspecialidadDTO,
   AcEtapaDTO,
+  CreateActividadBody,
+  UpdateActividadBody,
 } from '../dtos/arquitectura-comercial/actividades.model';
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +85,24 @@ export class ArquitecturaComercialService {
     if (q.porPagina != null) params = params.set('porPagina', q.porPagina);
     return this.http.get<ActividadListResponseDTO>(`${this.apiUrl}/actividades`, {
       params,
+      headers: this.authHeaders(),
+    });
+  }
+
+  createActividad(body: CreateActividadBody): Observable<ActividadListItemDTO> {
+    return this.http.post<ActividadListItemDTO>(`${this.apiUrl}/actividades`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  updateActividad(id: number, body: UpdateActividadBody): Observable<ActividadListItemDTO> {
+    return this.http.put<ActividadListItemDTO>(`${this.apiUrl}/actividades/${id}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  deleteActividad(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/actividades/${id}`, {
       headers: this.authHeaders(),
     });
   }

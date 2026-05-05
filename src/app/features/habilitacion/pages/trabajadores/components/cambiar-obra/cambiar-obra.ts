@@ -118,6 +118,10 @@ export class CambiarObra implements OnChanges {
   submit(): void {
     if (!this.canSubmit || !this.worker) return;
 
+    if (this.worker?.contrataCasa !== 'Casa') {
+      this.model.empresaId = null;
+    }
+
     const payload = {
       nuevoProyectoId: this.model.proyectoId,
       nuevaEmpresaId: this.model.empresaId ?? undefined,

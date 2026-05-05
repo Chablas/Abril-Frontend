@@ -145,3 +145,25 @@ export interface AcEtapaDTO {
   id: number;
   nombre: string;
 }
+
+export interface UpdateActividadBody {
+  nombre: string;
+  tipo: string | null;
+  etapaId: number | null;
+  userId: number | null;
+  inicioProgramado: string | null;
+  finProgramado: string | null;
+  inicioEfectivo: string | null;
+  finEfectivo: string | null;
+  observaciones: string | null;
+}
+
+export interface CreateActividadBody {
+  nombre: string;
+  tipo: string;
+  projectId: number;
+  etapaId: number | null;
+  userId: number | null;
+  inicioProgramado: string | null;
+  finProgramado: string | null;
+}

@@ -18,6 +18,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
+import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { AgregarProyectoDto, WorkerProyectoDto } from '../../../../dtos/trabajador.model';
 
 interface AgregarProyectoFormData {
@@ -35,6 +36,8 @@ interface AgregarProyectoFormData {
 export class AgregarProyecto implements OnChanges {
   @Input() workerId: number | null = null;
   @Input() workerNombre = '';
+  @Input() contrataCasa: string | null = null;
+  @Input() empresaId: number | null = null;
   @Output() proyectoAgregado = new EventEmitter<WorkerProyectoDto>();
   @Output() cerrar = new EventEmitter<void>();
 
@@ -46,6 +49,7 @@ export class AgregarProyecto implements OnChanges {
   constructor(
     private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
+    private empresaContratistaService: EmpresaContratistaService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -75,18 +79,37 @@ export class AgregarProyecto implements OnChanges {
 
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
-    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
-      next: (res) => {
-        this.proyectos = res.data ?? [];
-        this.loadingCatalogos = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.proyectos = [];
-        this.loadingCatalogos = false;
-        this.errorService.handleError(err);
-      },
-    });
+
+    if (this.contrataCasa !== 'Casa' && this.empresaId !== null) {
+      this.empresaContratistaService.getProyectos(this.empresaId).subscribe({
+        next: (res) => {
+          this.proyectos = (res ?? []).map((p) => ({
+            projectId: p.proyectoId,
+            projectDescription: p.proyectoNombre,
+          } as ProjectGetDTO));
+          this.loadingCatalogos = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.proyectos = [];
+          this.loadingCatalogos = false;
+          this.errorService.handleError(err);
+        },
+      });
+    } else {
+      this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+        next: (res) => {
+          this.proyectos = res.data ?? [];
+          this.loadingCatalogos = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.proyectos = [];
+          this.loadingCatalogos = false;
+          this.errorService.handleError(err);
+        },
+      });
+    }
   }
 
   submit(): void {
