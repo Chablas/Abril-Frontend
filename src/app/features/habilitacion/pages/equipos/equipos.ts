@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -17,18 +18,24 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EquipoHabService } from '../../services/equipo-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
+import { ProjectService } from '../../../../core/services/project.service';
+import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
+import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import {
   EquipoEntregableDto,
   EquipoEntregableUpdateDto,
   EquipoListDto,
 } from '../../dtos/equipo.model';
-import { environment } from '../../../../../environments/environment';
 import { EquipoForm } from './components/equipo-form/equipo-form';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
+import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 
 @Component({
   selector: 'app-hab-equipos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, EquipoForm],
+  imports: [CommonModule, FormsModule, Paginator, EquipoForm, SearchSelect, DocumentViewer, VersionesDoc],
   templateUrl: './equipos.html',
   styleUrl: './equipos.css',
 })
@@ -50,14 +57,24 @@ export class Equipos implements OnInit, OnDestroy {
 
   filtroSearch = '';
   filtroProyectoId: number | null = null;
+  filtroEmpresaId: number | null = null;
+  catalogoProyectos: ProjectGetDTO[] = [];
+  catalogoEmpresas: EmpresaSimpleDto[] = [];
 
   modalNuevoOpen = false;
   modalEditarEquipo: EquipoListDto | null = null;
+  modalVersionesOpen = false;
+  versionesLoader = (id: number) => this.equipoService.getVersiones(id);
 
+  drawerOpen = false;
+  visorArchivoUrl = '';
+  visorNombre = '';
+
+  panelVigencia = '';
   panelArchivoUrl = '';
   panelArchivoNombre = '';
-  panelVigencia = '';
   panelObsAbril = '';
+  panelEstado = '';
   uploadingFile = false;
 
   private searchChange$ = new Subject<void>();
@@ -69,6 +86,8 @@ export class Equipos implements OnInit, OnDestroy {
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private projectService: ProjectService,
+    private catalogosService: CatalogosSaludService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -77,22 +96,29 @@ export class Equipos implements OnInit, OnDestroy {
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => this.loadEquipos(1));
     this.loadEquipos(1);
+    this.loadCatalogos();
+  }
+
+  private loadCatalogos(): void {
+    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.catalogoProyectos = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.catalogoProyectos = []; },
+    });
+    this.catalogosService.getEmpresas().subscribe({
+      next: (res) => {
+        this.catalogoEmpresas = res ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.catalogoEmpresas = []; },
+    });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
-  }
-
-  isAdmin(): boolean {
-    return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
-    );
   }
 
   loadEquipos(page: number = this.currentPage): void {
@@ -103,6 +129,7 @@ export class Equipos implements OnInit, OnDestroy {
       pageSize: this.pageSize,
       search: this.filtroSearch.trim() || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
+      empresaId: this.filtroEmpresaId ?? undefined,
     };
     this.equipoService.getEquipos(params).subscribe({
       next: (res) => {
@@ -120,14 +147,6 @@ export class Equipos implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
-  }
-
-  onSearch(): void {
-    this.searchChange$.next();
-  }
-
-  onPageChange(page: number): void {
-    this.loadEquipos(page);
   }
 
   selectEquipo(eq: EquipoListDto): void {
@@ -159,18 +178,132 @@ export class Equipos implements OnInit, OnDestroy {
     this.panelArchivoUrl = e.archivoUrl ?? '';
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
     this.panelObsAbril = e.obsAbril ?? '';
+    this.panelEstado = e.estado;
+    this.drawerOpen = true;
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen = false;
+    this.selectedEntregable = null;
+    this.resetPanel();
   }
 
   private extractFileName(url: string): string {
-    const parts = url.split(/[\\/]/);
-    return parts[parts.length - 1] || url;
+    try {
+      const parts = url.split(/[\\/]/);
+      return parts[parts.length - 1] || url;
+    } catch {
+      return url;
+    }
   }
 
   private resetPanel(): void {
+    this.panelVigencia = '';
     this.panelArchivoUrl = '';
     this.panelArchivoNombre = '';
-    this.panelVigencia = '';
     this.panelObsAbril = '';
+    this.panelEstado = '';
+  }
+
+  onSearch(): void {
+    this.searchChange$.next();
+  }
+
+  onFilterChange(): void {
+    this.loadEquipos(1);
+  }
+
+  onPageChange(page: number): void {
+    this.loadEquipos(page);
+  }
+
+  isContratista(): boolean {
+    return this.authService.hasRole('CONTRATISTA');
+  }
+
+  isAdmin(): boolean {
+    return (
+      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+      this.authService.hasRole('ADMINISTRADOR DE UDP') ||
+      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION')
+    );
+  }
+
+  getEstadoHabClass(estado: string): string {
+    return estado === 'Habilitado' ? 'chip-green' : 'chip-orange';
+  }
+
+  getChipEstado(estado: string): string {
+    switch (estado) {
+      case 'Aprobado':
+        return 'chip-green';
+      case 'Enviado':
+        return 'chip-orange';
+      case 'Rechazado':
+        return 'chip-orange';
+      case 'No Aplica':
+        return 'chip-gray';
+      case 'Falta':
+      default:
+        return 'chip-gray';
+    }
+  }
+
+  getDotClass(estado: string): string {
+    const norm = (estado ?? '').toLowerCase();
+    if (norm === 'aprobado') return 'dot-aprobado';
+    if (norm === 'falta' || norm === 'rechazado') return 'dot-falta';
+    if (norm === 'enviado') return 'dot-enviado';
+    if (norm === 'no aplica') return 'dot-no-aplica';
+    return 'dot-no-aplica';
+  }
+
+  nombreArchivo(url: string): string {
+    return url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.visorArchivoUrl) this.onVisorClosed();
+    else if (this.drawerOpen) this.closeDrawer();
+  }
+
+  abrirVisor(archivoUrl: string): void {
+    this.visorNombre = this.nombreArchivo(archivoUrl);
+    this.visorArchivoUrl = archivoUrl;
+  }
+
+  onVisorClosed(): void {
+    this.visorArchivoUrl = '';
+  }
+
+  abrirDocumento(archivoUrl: string): void {
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => window.open(res.url, '_blank', 'noopener'),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  descargarDocumento(archivoUrl: string): void {
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => {
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.download = this.nombreArchivo(archivoUrl);
+        a.click();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private actualizarEntregableLocal(updates: Partial<EquipoEntregableDto>): void {
+    if (!this.selectedEntregable) return;
+    const idx = this.entregables.findIndex((e) => e.id === this.selectedEntregable!.id);
+    if (idx !== -1) {
+      this.entregables[idx] = { ...this.entregables[idx], ...updates };
+      this.selectedEntregable = this.entregables[idx];
+    }
+    this.cdr.detectChanges();
   }
 
   triggerFileInput(): void {
@@ -181,24 +314,52 @@ export class Equipos implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) return;
+    if (!this.selectedEntregable || !this.selectedEquipo) return;
 
     this.panelArchivoNombre = file.name;
     this.uploadingFile = true;
     this.cdr.detectChanges();
 
-    const contexto = `habilitacion/equipos/${this.selectedEquipo?.id ?? 'sin-equipo'}`;
+    const contexto = `habilitacion/equipos/${this.selectedEquipo.id}`;
     this.sharepointService.subirArchivo(file, contexto).subscribe({
       next: (res) => {
-        this.panelArchivoUrl = res.url;
+        this.panelArchivoUrl = res.path;
         this.uploadingFile = false;
         input.value = '';
+        this.autoMarcarEnviado();
         this.cdr.detectChanges();
       },
       error: () => {
         this.panelArchivoUrl = `pending-upload://${file.name}`;
         this.uploadingFile = false;
         input.value = '';
+        this.autoMarcarEnviado();
         this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private autoMarcarEnviado(): void {
+    if (!this.selectedEntregable || !this.selectedEquipo) return;
+
+    const payload: EquipoEntregableUpdateDto = {
+      estado: 'Enviado',
+      archivoUrl: this.panelArchivoUrl || undefined,
+      vigencia: this.panelVigencia || undefined,
+      obsContratista: this.isContratista() ? this.panelObsAbril || undefined : undefined,
+      obsAbril: !this.isContratista() ? this.panelObsAbril || undefined : undefined,
+    };
+
+    this.equipoService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
+      next: () => {
+        this.actualizarEntregableLocal({
+          estado: 'Enviado',
+          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+        });
+        this.panelEstado = 'Enviado';
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
       },
     });
   }
@@ -222,19 +383,62 @@ export class Equipos implements OnInit, OnDestroy {
       estado: nuevoEstado,
       vigencia: this.panelVigencia || undefined,
       archivoUrl: this.panelArchivoUrl || undefined,
+      obsContratista: this.isContratista() ? this.panelObsAbril : undefined,
+    };
+
+    this.loaderService.show();
+    this.equipoService
+      .updateEntregable(this.selectedEntregable.id, payload)
+      .subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Enviado',
+            text: 'Documento enviado.',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.actualizarEntregableLocal({
+            estado: 'Enviado',
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  guardarEntregable(): void {
+    if (!this.selectedEntregable || !this.selectedEquipo) return;
+
+    const vigencia = !this.selectedEntregable.requiereVigencia
+      ? '2040-12-31'
+      : this.panelVigencia || undefined;
+
+    const payload: EquipoEntregableUpdateDto = {
+      estado: this.panelEstado,
+      vigencia,
+      archivoUrl: this.panelArchivoUrl || undefined,
+      obsAbril: this.panelObsAbril || undefined,
     };
 
     this.loaderService.show();
     this.equipoService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
       next: () => {
         this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'Enviado',
-          timer: 1500,
-          showConfirmButton: false,
+        Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
+        const vigencia = !this.selectedEntregable?.requiereVigencia
+          ? '2040-12-31'
+          : this.panelVigencia || undefined;
+        this.actualizarEntregableLocal({
+          estado: this.panelEstado,
+          vigencia,
+          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          obsAbril: this.panelObsAbril || undefined,
         });
-        if (this.selectedEquipo) this.loadEntregablesEquipo(this.selectedEquipo.id);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -243,82 +447,13 @@ export class Equipos implements OnInit, OnDestroy {
     });
   }
 
-  aprobarEntregable(): void {
-    if (!this.selectedEntregable || !this.selectedEquipo) return;
-    Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar entregable?',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed || !this.selectedEntregable || !this.selectedEquipo) return;
-      this.loaderService.show();
-      this.equipoService
-        .updateEntregable(this.selectedEntregable.id, {
-          estado: 'Aprobado',
-          obsAbril: this.panelObsAbril || undefined,
-          vigencia: this.panelVigencia || undefined,
-        })
-        .subscribe({
-          next: () => {
-            this.loaderService.hide();
-            Swal.fire({
-              icon: 'success',
-              title: 'Aprobado',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            if (this.selectedEquipo) this.loadEntregablesEquipo(this.selectedEquipo.id);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-    });
+  verVersiones(): void {
+    if (!this.selectedEntregable) return;
+    this.modalVersionesOpen = true;
   }
 
-  rechazarEntregable(): void {
-    if (!this.selectedEntregable || !this.selectedEquipo) return;
-    Swal.fire({
-      icon: 'warning',
-      title: 'Rechazar entregable',
-      input: 'textarea',
-      inputLabel: 'Motivo del rechazo',
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      inputValidator: (value) => (!value?.trim() ? 'Debes indicar un motivo' : null),
-    }).then((res) => {
-      if (!res.isConfirmed || !this.selectedEntregable || !this.selectedEquipo) return;
-      this.loaderService.show();
-      this.equipoService
-        .updateEntregable(this.selectedEntregable.id, {
-          estado: 'Rechazado',
-          obsAbril: res.value,
-        })
-        .subscribe({
-          next: () => {
-            this.loaderService.hide();
-            Swal.fire({
-              icon: 'success',
-              title: 'Rechazado',
-              timer: 1500,
-              showConfirmButton: false,
-            });
-            if (this.selectedEquipo) this.loadEntregablesEquipo(this.selectedEquipo.id);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-    });
+  closeVersiones(): void {
+    this.modalVersionesOpen = false;
   }
 
   abrirNuevoEquipo(): void {
@@ -341,42 +476,5 @@ export class Equipos implements OnInit, OnDestroy {
     this.modalNuevoOpen = false;
     this.modalEditarEquipo = null;
     this.loadEquipos(this.currentPage);
-  }
-
-  getEstadoHabClass(estado: string): string {
-    return estado === 'Habilitado' ? 'chip-green' : 'chip-orange';
-  }
-
-  getDotClass(estado: string): string {
-    const norm = (estado ?? '').toLowerCase();
-    if (norm === 'aprobado') return 'dot-aprobado';
-    if (norm === 'falta' || norm === 'rechazado') return 'dot-falta';
-    if (norm === 'enviado') return 'dot-enviado';
-    if (norm === 'no aplica') return 'dot-no-aplica';
-    return 'dot-no-aplica';
-  }
-
-  getChipEstado(estado: string): string {
-    switch (estado) {
-      case 'Aprobado':
-        return 'chip-green';
-      case 'Enviado':
-      case 'Rechazado':
-        return 'chip-orange';
-      case 'No Aplica':
-        return 'chip-gray';
-      default:
-        return 'chip-gray';
-    }
-  }
-
-  getViewUrl(url: string): string {
-    return `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(url)}`;
-  }
-
-  verArchivo(url: string): void {
-    if (typeof window !== 'undefined') {
-      window.open(this.getViewUrl(url), '_blank', 'noopener');
-    }
   }
 }

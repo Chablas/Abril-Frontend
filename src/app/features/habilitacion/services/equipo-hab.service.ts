@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
 import { EquipoEntregableDto, EquipoListDto } from '../dtos/equipo.model';
+import { DocumentoVersionDto } from '../dtos/trabajador.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
 @Injectable({ providedIn: 'root' })
@@ -42,5 +43,12 @@ export class EquipoHabService {
     return this.http.put<EquipoEntregableDto>(`${this.base}/entregables/${id}`, dto, {
       headers: buildHabHeaders(),
     });
+  }
+
+  getVersiones(id: number): Observable<DocumentoVersionDto[]> {
+    return this.http.get<DocumentoVersionDto[]>(
+      `${this.base}/entregables/${id}/versiones`,
+      { headers: buildHabHeaders() },
+    );
   }
 }

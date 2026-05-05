@@ -313,6 +313,7 @@ Importables como standalone desde cualquier feature.
 | `Layout` | — | `shared/components/layout/` | Shell autenticado. Renderiza Header + Sidebar + `<router-outlet>`. |
 | `Header`, `Sidebar`, `SidebarMobile`, `NavIcon` | — | `shared/components/header,sidebar*,nav-icon/` | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
 | `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes. |
+| `DocumentViewer` | `app-document-viewer` | `shared/components/document-viewer/` | Visor de documentos modal. Inputs: `archivoUrl` (ruta relativa o URL), `nombre`. Output: `closed`. Llama `getArchivoUrl(path)` para obtener URL firmada, luego fetch-as-blob para PDF/imagen. `archivoUrl = ''` cierra el visor. Reutilizable en cualquier feature de habilitación. |
 
 **Importación correcta** (standalone):
 ```ts
@@ -669,6 +670,7 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET/POST/PUT | `/equipos` |
 | GET | `/equipos/{id}/entregables` |
 | PUT | `/equipos/entregables/{id}` |
+| GET | `/equipos/entregables/{id}/versiones` |
 | GET | `/inducciones` (paginado) |
 | POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
 | PATCH | `/inducciones/{id}/estado` |
@@ -699,6 +701,8 @@ Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo os
 
 ### Subida de archivos a SharePoint
 `features/habilitacion/services/sharepoint-upload.service.ts` → POST `multipart/form-data` a `/api/v1/habilitacion/archivos/subir`.
+
+**`UploadResultDto`**: `{ url: string; path: string }`. El campo `path` es la ruta relativa que se almacena en `panelArchivoUrl` (y luego en `archivoUrl` del entregable). El campo `url` es la URL firmada temporal para abrir/descargar.
 
 **Patrón fallback**: si el endpoint retorna error, guardar `panelArchivoUrl = 'pending-upload://' + file.name` y `uploadingFile: boolean` para continuar el flujo UI.
 
@@ -842,6 +846,41 @@ DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionC
 **Sección proyectos asignados**: movida fuera de `.table-scroll` — ahora es un hermano `flex-shrink: 0; max-height: 220px; overflow-y: auto; border-top` dentro de `.col-entregables`. La tabla de entregables y la sección de proyectos scrollean independientemente.
 
 Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados + Actualizar + **"Programar Inducción"** (admin, `.btn-induccion`).
+
+### Página Equipos — patrón drawer (igual a Trabajadores)
+`pages/equipos/equipos.ts` — mismo patrón que trabajadores pero para equipos y maquinaria.
+
+**Layout**: lista de equipo-cards (izquierda) + tabla de entregables (derecha) + drawer lateral (panel de documento).
+
+**Flujo del drawer**:
+1. `selectEquipo(eq)` → llama `loadEntregablesEquipo(eq.id)`.
+2. `selectEntregable(e)` → puebla `panelVigencia`, `panelArchivoUrl`, `panelArchivoNombre`, `panelObsAbril`, `panelEstado`; abre drawer.
+3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
+4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
+5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
+6. Botón ENVIAR (contratista): habilitado si `panelArchivoUrl || panelObsAbril`.
+7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
+
+**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
+
+**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
+
+### Componente VersionesDoc (genérico)
+`pages/trabajadores/components/versiones-doc/versiones-doc.ts` — usado tanto por Trabajadores como por Equipos.
+
+```ts
+@Input() open = false;
+@Input() entregableId: number | undefined;
+@Input() loader!: (id: number) => Observable<DocumentoVersionDto[]>;
+@Output() closed = new EventEmitter<void>();
+```
+
+Importar como:
+```ts
+import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
+```
+
+Selector: `app-hab-versiones-doc`.
 
 ### Notas importantes
 - EMO es read-only — viene del módulo SSOMA, no se puede subir.

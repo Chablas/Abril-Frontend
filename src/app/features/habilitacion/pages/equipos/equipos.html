@@ -1,65 +1,96 @@
-<div class="equipos-layout">
-  <div class="section-bar">
-    <div>
-      <h2 class="section-title">EQUIPOS Y MÁQUINAS</h2>
-      <p class="section-sub">Habilitación documental por equipo</p>
-    </div>
-    <button type="button" class="btn-primary" *ngIf="isAdmin()" (click)="abrirNuevoEquipo()">
-      + Nuevo equipo / máquina
-    </button>
-  </div>
+<div class="eq-root">
 
-  <div class="equipos-columns">
-    <div class="col-equipos card">
-      <div class="filters-card">
+  <!-- ── Barra de filtros ─────────────────────────────────── -->
+  <div class="eq-filter-bar">
+    <div class="eq-filter-row">
+      <div class="eq-search">
+        <svg class="eq-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
         <input
           type="text"
-          class="field-input"
+          class="eq-search-input"
           placeholder="Buscar tipo, marca, modelo…"
           [(ngModel)]="filtroSearch"
           (input)="onSearch()"
         />
       </div>
+      <div class="eq-ss-wrap">
+        <app-search-select
+          [options]="catalogoProyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="filtroProyectoId"
+          [showLabel]="false"
+          placeholder="Todos los proyectos"
+          [allowClear]="true"
+          (valueChange)="filtroProyectoId = $event; onFilterChange()"
+        />
+      </div>
+      <div class="eq-ss-wrap">
+        <app-search-select
+          [options]="catalogoEmpresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="filtroEmpresaId"
+          [showLabel]="false"
+          placeholder="Todas las razones sociales"
+          [allowClear]="true"
+          (valueChange)="filtroEmpresaId = $event; onFilterChange()"
+        />
+      </div>
+      <button type="button" class="btn-ghost-sm" *ngIf="isAdmin()" (click)="abrirNuevoEquipo()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nuevo equipo
+      </button>
+    </div>
+  </div>
 
-      <div class="equipos-list">
+  <!-- ── Grid principal ──────────────────────────────────── -->
+  <div class="eq-layout">
+
+    <!-- Columna izquierda: lista de equipos -->
+    <aside class="eq-col-list">
+      <div class="eq-list">
+        <div *ngIf="loading" class="eq-list-msg">Cargando…</div>
+        <div *ngIf="!loading && equipos.length === 0" class="eq-list-msg">
+          Sin equipos con los filtros aplicados.
+        </div>
         <div
           *ngFor="let eq of equipos"
-          class="equipo-card"
-          [class.selected]="selectedEquipo?.id === eq.id"
+          class="eq-card"
+          [class.eq-card--sel]="selectedEquipo?.id === eq.id"
           (click)="selectEquipo(eq)"
         >
-          <div class="equipo-header">
-            <div class="equipo-tipo">{{ eq.tipo }}</div>
-            <button
-              *ngIf="isAdmin()"
-              type="button"
-              class="btn-icon"
-              title="Editar"
-              (click)="abrirEditarEquipo(eq, $event)"
-            >
-              ✎
-            </button>
-          </div>
-          <div class="equipo-meta">
-            {{ eq.marca ?? '' }} {{ eq.modelo ?? '' }}
-          </div>
-          <div class="equipo-serie" *ngIf="eq.nSerie">N° {{ eq.nSerie }}</div>
-          <div class="equipo-footer">
-            <span class="equipo-empresa">
-              {{ eq.propietarioEmpresaNombre ?? '—' }}
-            </span>
+          <div class="eq-card-top">
+            <span class="eq-card-tipo">{{ eq.tipo }}</span>
             <span class="btn-chip" [class]="getEstadoHabClass(eq.estadoHabilitacion)">
               {{ eq.estadoHabilitacion }}
             </span>
           </div>
-          <div class="equipo-proyecto">{{ eq.proyectoNombre }}</div>
-        </div>
-        <div *ngIf="!loading && equipos.length === 0" class="empty-list">
-          No hay equipos registrados.
+          <div class="eq-card-meta" *ngIf="eq.marca || eq.modelo">
+            {{ eq.marca ?? '' }} {{ eq.modelo ?? '' }}
+          </div>
+          <div class="eq-card-serie" *ngIf="eq.nSerie">N° {{ eq.nSerie }}</div>
+          <div class="eq-card-foot">
+            <span class="eq-card-empresa">{{ eq.propietarioEmpresaNombre ?? '—' }}</span>
+            <div class="eq-card-actions" *ngIf="isAdmin()" (click)="$event.stopPropagation()">
+              <button class="icon-btn" title="Editar equipo" (click)="abrirEditarEquipo(eq, $event)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="eq-card-proyecto">{{ eq.proyectoNombre }}</div>
         </div>
       </div>
 
-      <div class="paginator-wrapper" *ngIf="totalPages > 1">
+      <div class="eq-paginator-wrap" *ngIf="totalPages > 1">
         <app-paginator
           [totalRecords]="totalRecords"
           [currentPage]="currentPage"
@@ -67,149 +98,350 @@
           (pageChange)="onPageChange($event)"
         />
       </div>
-    </div>
+    </aside>
 
-    <ng-container *ngIf="selectedEquipo; else noEquipo">
-      <div class="col-entregables-eq card">
-        <div class="col-header">
-          <div>
-            <span class="section-title">
-              {{ selectedEquipo.tipo }} — {{ selectedEquipo.marca ?? '' }}
-              {{ selectedEquipo.modelo ?? '' }}
+    <!-- Columna derecha: entregables -->
+    <main class="eq-col-detail">
+      <ng-container *ngIf="selectedEquipo; else noEquipoTpl">
+
+        <div class="eq-hdr">
+          <div class="eq-hdr-left">
+            <h2 class="eq-hdr-name">{{ selectedEquipo.tipo }}</h2>
+            <span class="eq-hdr-sub" *ngIf="selectedEquipo.marca || selectedEquipo.modelo">
+              {{ selectedEquipo.marca ?? '' }} {{ selectedEquipo.modelo ?? '' }}
             </span>
-            <div class="section-sub-detail">
-              <span *ngIf="selectedEquipo.nSerie">N° Serie: {{ selectedEquipo.nSerie }}</span>
-              <span *ngIf="selectedEquipo.nSerie"> | </span>
-              <span>{{ selectedEquipo.proyectoNombre }}</span>
-            </div>
+            <span class="eq-hdr-sub" *ngIf="selectedEquipo.nSerie">N° {{ selectedEquipo.nSerie }}</span>
           </div>
-          <span class="btn-chip" [class]="getEstadoHabClass(selectedEquipo.estadoHabilitacion)">
-            {{ selectedEquipo.estadoHabilitacion }}
-          </span>
-        </div>
-
-        <div *ngIf="loadingEntregables" class="loading-text">Cargando entregables…</div>
-
-        <div *ngIf="!loadingEntregables" class="entregables-list">
-          <div *ngIf="entregables.length === 0" class="empty-line">
-            Sin entregables para este equipo.
-          </div>
-          <div
-            *ngFor="let e of entregables"
-            class="entregable-row"
-            [class.selected]="selectedEntregable?.id === e.id"
-            (click)="selectEntregable(e)"
-          >
-            <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
-            <span class="entregable-nombre">{{ e.nombreItem }}</span>
-            <span class="btn-chip" [class]="getChipEstado(e.estado)">
-              {{ e.estado }}
+          <div class="eq-hdr-right">
+            <span class="eq-hdr-empresa">{{ selectedEquipo.propietarioEmpresaNombre ?? '—' }}</span>
+            <span class="eq-hdr-sep">·</span>
+            <span class="eq-hdr-proyecto">{{ selectedEquipo.proyectoNombre }}</span>
+            <span class="btn-chip" [class]="getEstadoHabClass(selectedEquipo.estadoHabilitacion)">
+              {{ selectedEquipo.estadoHabilitacion }}
             </span>
-            <span class="vigencia-text" *ngIf="e.vigencia">
-              {{ e.vigencia | date: 'dd/MM/yyyy' }}
-            </span>
-            <button
-              *ngIf="e.archivoUrl"
-              type="button"
-              class="btn-icon"
-              title="Ver documento"
-              (click)="$event.stopPropagation(); verArchivo(e.archivoUrl!)"
-            >
-              📄
-            </button>
-            <button
-              type="button"
-              class="btn-icon"
-              title="Adjuntar"
-              (click)="$event.stopPropagation(); selectEntregable(e)"
-            >
-              📎
-            </button>
           </div>
         </div>
 
-        <div class="panel-section" *ngIf="selectedEntregable">
-          <div *ngIf="selectedEntregable.requiereVigencia">
-            <label class="field-label">Vigencia</label>
-            <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
-          </div>
+        <div class="eq-table-scroll">
+          <div *ngIf="loadingEntregables" class="eq-list-msg">Cargando entregables…</div>
 
-          <div>
-            <label class="field-label">Datos adjuntos</label>
-            <div class="adjuntar-box">
-              <div *ngIf="uploadingFile" class="adjuntar-placeholder">
-                <span>📎 Subiendo {{ panelArchivoNombre }}…</span>
-              </div>
-              <div *ngIf="!uploadingFile && !panelArchivoUrl" class="adjuntar-placeholder">
-                <span>No hay nada adjunto.</span>
-                <button type="button" class="btn-link" (click)="triggerFileInput()">
-                  📎 Adjuntar archivo
-                </button>
-                <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
-              </div>
-              <div *ngIf="!uploadingFile && panelArchivoUrl" class="adjuntar-file">
-                <a
-                  *ngIf="!panelArchivoUrl.startsWith('pending-upload://')"
-                  [href]="getViewUrl(panelArchivoUrl)"
-                  target="_blank"
-                  rel="noopener"
-                  class="btn-link"
-                >
-                  Ver documento
-                </a>
-                <span
-                  *ngIf="panelArchivoUrl.startsWith('pending-upload://')"
-                  class="adjuntar-pending"
-                >
-                  📎 {{ panelArchivoNombre }} (pendiente subir)
-                </span>
-                <button type="button" class="btn-ghost btn-x" (click)="clearArchivo()">
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="panel-actions">
-            <button
-              type="button"
-              class="btn-primary"
-              [disabled]="!panelArchivoUrl && !panelVigencia"
-              (click)="enviarDocumento()"
-            >
-              ENVIAR
-            </button>
-            <ng-container
-              *ngIf="isAdmin() && selectedEntregable.estado === 'Enviado'"
-            >
-              <button type="button" class="btn-chip chip-green btn-pill" (click)="aprobarEntregable()">
-                ✓ Aprobar
-              </button>
-              <button type="button" class="btn-chip btn-pill chip-red" (click)="rechazarEntregable()">
-                ✕ Rechazar
-              </button>
-            </ng-container>
-          </div>
-
-          <div class="obs-section" *ngIf="isAdmin()">
-            <label class="field-label">Observaciones</label>
-            <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"></textarea>
-          </div>
+          <table *ngIf="!loadingEntregables" class="eq-table">
+            <thead>
+              <tr>
+                <th class="th-doc">DOCUMENTO</th>
+                <th class="th-estado">ESTADO</th>
+                <th class="th-vig">VIGENCIA</th>
+                <th class="th-act"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="entregables.length === 0">
+                <td colspan="4" class="eq-empty">Sin entregables para este equipo.</td>
+              </tr>
+              <tr
+                *ngFor="let e of entregables"
+                class="eq-row"
+                [class.eq-row--sel]="selectedEntregable?.id === e.id"
+                (click)="selectEntregable(e)"
+              >
+                <td class="td-doc">
+                  <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+                  <span class="doc-nombre">{{ e.nombreItem }}</span>
+                </td>
+                <td class="td-estado">
+                  <span [class]="'btn-chip ' + getChipEstado(e.estado)">{{ e.estado }}</span>
+                </td>
+                <td class="td-vig">
+                  <span class="vig-date" *ngIf="e.vigencia">{{ e.vigencia | date: 'dd/MM/yyyy' }}</span>
+                  <span class="no-data" *ngIf="!e.vigencia">—</span>
+                </td>
+                <td class="td-act">
+                  <button
+                    *ngIf="e.archivoUrl"
+                    class="icon-btn-circle"
+                    title="Visualizar documento"
+                    (click)="$event.stopPropagation(); abrirVisor(e.archivoUrl)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button
+                    *ngIf="e.archivoUrl"
+                    class="icon-btn-circle"
+                    title="Abrir en nueva pestaña"
+                    (click)="$event.stopPropagation(); abrirDocumento(e.archivoUrl)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
-    </ng-container>
 
-    <ng-template #noEquipo>
-      <div class="col-entregables-eq card empty-panel">
-        <p>Selecciona un equipo para ver sus entregables</p>
-      </div>
-    </ng-template>
+      </ng-container>
+
+      <ng-template #noEquipoTpl>
+        <div class="eq-center-empty">
+          <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
+            <rect x="10" y="18" width="48" height="30" rx="5" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5"/>
+            <rect x="24" y="12" width="20" height="8" rx="3" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle cx="22" cy="52" r="5" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle cx="46" cy="52" r="5" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>
+          </svg>
+          <p class="eq-center-empty-text">Selecciona un equipo para ver sus entregables.</p>
+        </div>
+      </ng-template>
+    </main>
+
   </div>
 </div>
 
+<!-- Drawer overlay -->
+<div class="eq-drawer-overlay" [class.open]="drawerOpen" (click)="closeDrawer()"></div>
+
+<!-- Drawer -->
+<div class="eq-drawer" [class.open]="drawerOpen">
+  <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+
+  <ng-container *ngIf="selectedEntregable">
+
+    <div class="eq-drawer-hdr">
+      <div class="eq-drawer-hdr-info">
+        <h3 class="eq-drawer-title">{{ selectedEntregable.nombreItem }}</h3>
+        <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
+          {{ selectedEntregable.estado }}
+        </span>
+      </div>
+      <button class="eq-drawer-close" title="Cerrar" (click)="closeDrawer()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="eq-drawer-body">
+
+      <ng-container *ngIf="isContratista()">
+
+        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
+          <label class="field-lbl">VIGENCIA</label>
+          <input
+            type="date"
+            class="field-input"
+            [(ngModel)]="panelVigencia"
+            [readonly]="selectedEntregable.estado !== 'Falta' && selectedEntregable.estado !== 'Rechazado'"
+          />
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">DOCUMENTO ADJUNTO</label>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
+          </div>
+          <div class="upload-zone" *ngIf="uploadingFile">
+            <span class="upload-spinner"></span>
+            <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
+          </div>
+          <div class="upload-file-card" *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
+            <div class="ufc-name">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
+            </div>
+            <div class="ufc-actions">
+              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Visualizar
+              </button>
+              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Descargar
+              </button>
+            </div>
+            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+              </svg>
+              Reemplazar archivo
+            </button>
+          </div>
+          <div class="upload-state" *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
+            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
+            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">TUS OBSERVACIONES</label>
+          <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"
+            placeholder="Notas que verá Abril…"></textarea>
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.obsAbril">
+          <label class="field-lbl">OBS. DE ABRIL</label>
+          <textarea class="field-input field-readonly" rows="3" readonly
+            [value]="selectedEntregable.obsAbril"></textarea>
+        </div>
+
+      </ng-container>
+
+      <ng-container *ngIf="!isContratista()">
+
+        <div class="field-grp">
+          <label class="field-lbl">ESTADO</label>
+          <select class="field-input" [(ngModel)]="panelEstado">
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+            <option value="Falta">Falta</option>
+            <option value="No Aplica">No Aplica</option>
+            <option value="En Plazo">En Plazo</option>
+            <option value="Vencido">Vencido</option>
+          </select>
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
+          <label class="field-lbl">VIGENCIA</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
+          </div>
+          <div class="upload-zone" *ngIf="uploadingFile">
+            <span class="upload-spinner"></span>
+            <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
+          </div>
+          <div class="upload-file-card" *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
+            <div class="ufc-name">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
+            </div>
+            <div class="ufc-actions">
+              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Visualizar
+              </button>
+              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Descargar
+              </button>
+            </div>
+            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+              </svg>
+              Reemplazar archivo
+            </button>
+          </div>
+          <div class="upload-state" *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
+            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
+            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">OBS. ABRIL</label>
+          <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"></textarea>
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">OBS. CONTRATISTA</label>
+          <textarea class="field-input field-readonly" rows="3" readonly
+            [value]="selectedEntregable.obsContratista ?? ''"></textarea>
+        </div>
+
+      </ng-container>
+
+    </div>
+
+    <div class="eq-drawer-footer">
+      <button
+        *ngIf="isContratista()"
+        type="button"
+        class="btn-primary"
+        [disabled]="!panelArchivoUrl && !panelObsAbril"
+        (click)="enviarDocumento()"
+      >ENVIAR DOCUMENTO</button>
+      <button
+        *ngIf="!isContratista()"
+        type="button"
+        class="btn-primary"
+        [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
+        (click)="guardarEntregable()"
+      >GUARDAR</button>
+      <button type="button" class="btn-link drawer-footer-link" (click)="verVersiones()">
+        Ver historial de versiones
+      </button>
+    </div>
+
+  </ng-container>
+</div>
+
+<!-- Document viewer -->
+<app-document-viewer
+  [archivoUrl]="visorArchivoUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()"
+/>
+
+<!-- Modal equipo -->
 <app-equipo-form
   [open]="modalNuevoOpen"
   [equipo]="modalEditarEquipo"
   (closed)="closeNuevoEquipo()"
   (saved)="onEquipoSaved()"
+/>
+
+<!-- Modal versiones -->
+<app-hab-versiones-doc
+  [open]="modalVersionesOpen"
+  [entregableId]="selectedEntregable?.id"
+  [loader]="versionesLoader"
+  (closed)="closeVersiones()"
 />
