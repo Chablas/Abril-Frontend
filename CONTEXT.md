@@ -605,6 +605,7 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 /habilitacion/equipos                  → Equipos y Máquinas
 /habilitacion/bandeja                  → Bandeja de Aprobaciones
 /habilitacion/sctr-vidaley             → SCTR y Vida Ley
+/habilitacion/control-acceso           → Control de Acceso (ADMINISTRADOR SSOMA, ADMINISTRADOR DE UDP)
 /habilitacion/inducciones              → Programar Inducción (ruta activa, SIN item en sidebar)
 /habilitacion/registros-modelo         → Registros Modelo
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
@@ -671,6 +672,12 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/equipos/{id}/entregables` |
 | PUT | `/equipos/entregables/{id}` |
 | GET | `/equipos/entregables/{id}/versiones` |
+| GET | `/control-acceso/consulta?proyectoId=&search=` |
+| PATCH | `/control-acceso/inducciones/{id}/confirmar` |
+| GET | `/control-acceso/inducciones?proyectoId=&fecha=` |
+| GET | `/control-acceso/no-autorizados?proyectoId=` |
+| GET | `/control-acceso/tareo?proyectoId=&fecha=` |
+| POST | `/control-acceso/tareo` |
 | GET | `/inducciones` (paginado) |
 | POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
 | PATCH | `/inducciones/{id}/estado` |
@@ -864,6 +871,52 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 **Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
 
 **`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
+
+### Página Control de Acceso — mobile-first operaciones en obra
+`pages/control-acceso/control-acceso.ts/.html/.css` + subcomponente `components/tareo/`.
+Servicio: `features/habilitacion/services/control-acceso.service.ts`.
+
+**4 tabs**: Consulta | Inducción | No Autorizados | Tareo.
+
+**Tab Consulta — búsqueda de trabajadores**:
+- `GET /control-acceso/consulta?proyectoId=&search=` → `ConsultaResultDto[]`.
+- Un resultado → tarjeta directa. Múltiples → lista compacta; tocar → tarjeta.
+- Tarjeta: banner de estado (`.ca-status-habilitado` verde #64BC04 / `.ca-status-no-autorizado` rojo #ef4444).
+- Condición de clase: `[class]="r.estadoHabilitacion === 'Habilitado' ? 'ca-status-habilitado' : 'ca-status-no-autorizado'"`. El backend devuelve el string `'Habilitado'` (no `'AUTORIZADO'`).
+- Body con scroll: `max-height: calc(100vh - 220px); overflow-y: auto` en `.ca-result-body`.
+- Entregables en grid 2 columnas con `getEntregableClass()` → chip por estado.
+- `oficinaId = 36`: cuando el proyecto seleccionado es Oficina Central (id 36), se oculta la sección de entregables.
+
+**DTOs** (`control-acceso.service.ts`):
+```ts
+EntregableResumenDto { nombre, estado, vigencia: string | null }
+ConsultaResultDto {
+  workerId, apellidoNombre, nombre, empresa, dni,
+  estadoHabilitacion: string,      // 'Habilitado' | 'No Autorizado' | otros
+  documentosFaltantes: string[] | null,
+  documentosPorVencer: { nombre, vigencia }[] | null,
+  sctrEstado: string | null, sctrVigencia: string | null,
+  entregables: EntregableResumenDto[] | null,
+}
+```
+
+**`getEntregableClass(e)`**:
+- `'No Aplica'` → `chip-gray`
+- `'Enviado'` → `chip-orange`
+- `'Rechazado'` | `'Falta'` → `chip-red`
+- `'Aprobado'` + vigencia ≤ 14 días → `chip-yellow`; sin fecha o plazo largo → `chip-green`
+
+**Diseño CSS** (§5-compatible):
+- Header: fondo blanco, padding compacto, título + `app-search-select` en una sola fila.
+- Tabs: patrón §5 (`.tabs button.active { border-bottom-color: #64bc04 }`).
+- Sin card wrapper en buscador — input + botón directamente en `.ca-search-row`.
+- Chips nuevos: `.chip-red` (#fee2e2/#dc2626), `.chip-yellow` (#fef9c3/#a16207).
+
+**Subcomponente Tareo** (`components/tareo/tareo.ts`):
+- `@Input() proyectoId!: number`.
+- `OnChanges` → `loadTareo()` (`GET /control-acceso/tareo`).
+- Getters: `partidasCasa`, `partidasContratistas`, `totalCasa`, `totalContratistas`, `totalGeneral`.
+- `guardar()` → `POST /control-acceso/tareo`.
 
 ### Componente VersionesDoc (genérico)
 `pages/trabajadores/components/versiones-doc/versiones-doc.ts` — usado tanto por Trabajadores como por Equipos.

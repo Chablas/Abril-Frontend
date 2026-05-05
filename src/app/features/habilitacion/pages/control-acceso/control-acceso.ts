@@ -7,24 +7,26 @@ import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import {
   ControlAccesoService,
   ConsultaResultDto,
+  EntregableResumenDto,
   InduccionHoyDto,
   NoAutorizadoDto,
-  OficinaCentralDto,
 } from '../../services/control-acceso.service';
 import { Tareo } from './components/tareo/tareo';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 
-type Tab = 'consulta' | 'induccion' | 'no-autorizados' | 'oficina' | 'tareo';
+type Tab = 'consulta' | 'induccion' | 'no-autorizados' | 'tareo';
 
 @Component({
   selector: 'app-control-acceso',
   standalone: true,
-  imports: [CommonModule, FormsModule, Tareo],
+  imports: [CommonModule, FormsModule, Tareo, SearchSelect],
   templateUrl: './control-acceso.html',
   styleUrl: './control-acceso.css',
 })
 export class ControlAcceso implements OnInit {
   proyectos: ProjectGetDTO[] = [];
   selectedProyectoId: number | null = null;
+  readonly oficinaId = 36;
 
   activeTab: Tab = 'consulta';
 
@@ -51,10 +53,6 @@ export class ControlAcceso implements OnInit {
   noAutorizados: NoAutorizadoDto[] = [];
   loadingNoAutorizados = false;
 
-  // Oficina central
-  oficinaCentral: OficinaCentralDto[] = [];
-  loadingOficina = false;
-
   constructor(
     private projectService: ProjectService,
     private controlAccesoService: ControlAccesoService,
@@ -70,7 +68,8 @@ export class ControlAcceso implements OnInit {
     });
   }
 
-  onProyectoChange(): void {
+  onProyectoChange(value: number | null): void {
+    this.selectedProyectoId = value;
     this.searchResults = [];
     this.selectedResult = null;
     this.searched = false;
@@ -78,7 +77,6 @@ export class ControlAcceso implements OnInit {
     this.searchQuery = '';
     this.inducciones = [];
     this.noAutorizados = [];
-    this.oficinaCentral = [];
     if (this.activeTab !== 'consulta' && this.activeTab !== 'tareo') {
       this.loadTab(this.activeTab);
     }
@@ -95,7 +93,6 @@ export class ControlAcceso implements OnInit {
     if (!this.selectedProyectoId) return;
     if (tab === 'induccion') this.loadInducciones();
     else if (tab === 'no-autorizados') this.loadNoAutorizados();
-    else if (tab === 'oficina') this.loadOficina();
   }
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -130,7 +127,7 @@ export class ControlAcceso implements OnInit {
 
   estadoLabel(estado: string): string {
     switch (estado) {
-      case 'AUTORIZADO': return 'AUTORIZADO';
+      case 'AUTORIZADO': return 'HABILITADO';
       case 'NO_AUTORIZADO': return 'NO AUTORIZADO';
       case 'POR_VENCER': return 'POR VENCER';
       default: return estado;
@@ -179,6 +176,20 @@ export class ControlAcceso implements OnInit {
     });
   }
 
+  getEntregableClass(e: EntregableResumenDto): string {
+    if (e.estado === 'No Aplica') return 'chip-gray';
+    if (e.estado === 'Enviado') return 'chip-orange';
+    if (e.estado === 'Rechazado' || e.estado === 'Falta') return 'chip-red';
+    if (e.estado === 'Aprobado') {
+      if (e.vigencia) {
+        const dias = Math.floor((new Date(e.vigencia).getTime() - Date.now()) / 86400000);
+        if (dias <= 14) return 'chip-yellow';
+      }
+      return 'chip-green';
+    }
+    return '';
+  }
+
   // ── No autorizados ────────────────────────────────────────────────────────
 
   loadNoAutorizados(): void {
@@ -192,24 +203,6 @@ export class ControlAcceso implements OnInit {
       },
       error: () => {
         this.loadingNoAutorizados = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  // ── Oficina central ───────────────────────────────────────────────────────
-
-  loadOficina(): void {
-    if (!this.selectedProyectoId) return;
-    this.loadingOficina = true;
-    this.controlAccesoService.getOficinaCentral(this.selectedProyectoId).subscribe({
-      next: res => {
-        this.oficinaCentral = res;
-        this.loadingOficina = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loadingOficina = false;
         this.cdr.detectChanges();
       },
     });

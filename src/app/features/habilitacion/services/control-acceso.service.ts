@@ -3,14 +3,24 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
+export interface EntregableResumenDto {
+  nombre: string;
+  estado: string;
+  vigencia: string | null;
+}
+
 export interface ConsultaResultDto {
   workerId: number;
+  apellidoNombre: string;
   nombre: string;
   empresa: string;
   dni: string;
-  estadoHabilitacion: 'AUTORIZADO' | 'NO_AUTORIZADO' | 'POR_VENCER';
+  estadoHabilitacion: string;
   documentosFaltantes: string[] | null;
   documentosPorVencer: { nombre: string; vigencia: string }[] | null;
+  sctrEstado: string | null;
+  sctrVigencia: string | null;
+  entregables: EntregableResumenDto[] | null;
 }
 
 export interface InduccionHoyDto {
@@ -27,13 +37,6 @@ export interface NoAutorizadoDto {
   nombre: string;
   empresa: string;
   documentosFaltantes: string[];
-}
-
-export interface OficinaCentralDto {
-  workerId: number;
-  nombre: string;
-  empresa: string;
-  sctrVigencia: string | null;
 }
 
 export interface TareoPartidaDto {
@@ -60,7 +63,7 @@ export class ControlAccesoService {
   consultar(proyectoId: number, query: string): Observable<ConsultaResultDto[]> {
     return this.http.get<ConsultaResultDto[]>(`${this.base}/consulta`, {
       headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId, query }),
+      params: buildHabParams({ proyectoId, search: query }),
     });
   }
 
@@ -81,13 +84,6 @@ export class ControlAccesoService {
 
   getNoAutorizados(proyectoId: number): Observable<NoAutorizadoDto[]> {
     return this.http.get<NoAutorizadoDto[]>(`${this.base}/no-autorizados`, {
-      headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId }),
-    });
-  }
-
-  getOficinaCentral(proyectoId: number): Observable<OficinaCentralDto[]> {
-    return this.http.get<OficinaCentralDto[]>(`${this.base}/oficina-central`, {
       headers: buildHabHeaders(),
       params: buildHabParams({ proyectoId }),
     });
