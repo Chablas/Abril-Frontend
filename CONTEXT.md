@@ -727,10 +727,16 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | PATCH | `/sctr-vidaley/{id}/aprobar` |
 | GET | `/sctr-vidaley/por-trabajador/{workerId}` |
 | GET | `/sctr-vidaley/proximos-vencer` |
+| GET | `/sctr-vidaley/trabajadores-por-empresa?proyectoId=X&tipo=Y&estadoSctr=Z&estadoVidaLey=W` |
 | GET/POST/PUT | `/equipos` |
 | GET | `/equipos/{id}/entregables` |
 | PUT | `/equipos/entregables/{id}` |
-| GET/POST | `/inducciones` |
+| GET | `/inducciones` (paginado) |
+| POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
+| PATCH | `/inducciones/{id}/estado` |
+| PATCH | `/inducciones/{id}/aprobar` |
+| POST | `/inducciones/aprobar-batch` body `{ ids }` |
+| GET | `/inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y` |
 | GET/POST/PUT/DELETE | `/reglas` |
 | GET | `/auditoria` |
 | GET | `/archivos/ver?url={encodedUrl}` |
@@ -937,10 +943,68 @@ CSS: `.td-act` con `white-space: nowrap` y `.icon-btn-circle + .icon-btn-circle 
   - Botón folder-plus en `.worker-card` (solo Casa) y sección `.proyectos-section` después de la tabla de entregables con chips compactas (max 200 px) en flex-wrap. Botón check circular por chip para `marcarInduccion` cuando `!induccionCompletada`.
   - `selectWorker()` ahora dispara `cargarProyectos()`. Pitfall del gate documentado arriba.
 
+**Trabajado el 2026-05-04:**
+
+- **SCTR / Vida Ley — Tab 1 (Pólizas) rediseño completo** (`pages/sctr-vidaley/`):
+  - Badge de estado de cada póliza y del detalle fijado siempre en `chip-green "Aprobado"` (sin lógica dinámica — el flujo de negocio solo muestra pólizas aprobadas en este listado).
+  - Eliminado botón "Ver Póliza" de cada fila → PDF renderizado **inline** al seleccionar una póliza, mismo patrón blob URL que Tab 2 (`docBlobUrl` / `docSafeUrl` / `revokeDocBlobUrl()`). Método `loadDocBlob(archivoUrl)` llama `sharepointService.getArchivoUrl` → fetch → `URL.createObjectURL`.
+  - Eliminado botón "Aprobar / Rechazar Workers" del footer del panel derecho.
+  - Filtros en panel izquierdo (admin only): empresa (`SearchSelect`, `filtroEmpresaId`) + obraOficina (`select Obra / Staff-Oficina Central`, solo visible si `selectedEmpresaEsAbril`). Cambio de empresa resetea `filtroObraOficina`. Getter `selectedEmpresaEsAbril` busca en `empresas[]` por `filtroEmpresaId`.
+  - Panel derecho reestructurado como split 70/30: izquierda `<iframe [src]="docSafeUrl">` (PDF inline); derecha meta de póliza + lista de trabajadores asociados (`.sctr-worker-item`).
+  - Panel izquierdo (lista de pólizas) reducido de `35%` a `240px` fijo (`.sctr-columns { grid-template-columns: 240px 1fr }`).
+  - `empresas[]` cargado en `ngOnInit()` (compartido entre Tab 1 y Tab 2). Método `onPolizaEmpresaChange()` para reset de obraOficina.
+
+- **SCTR / Vida Ley — Tab 2 (Trabajadores) mejoras**:
+  - Carga automática en `initTrabajadoresTab()`: llama `loadTrabajadores()` sin requerir selección de empresa, pasando `estadoSctr: 'Enviado'`. El filtro empresa queda vacío inicialmente.
+  - Eliminado estado `[disabled]="!wFiltroEmpresaId"` del botón Buscar y el mensaje "Selecciona una empresa para buscar".
+  - Panel izquierdo (lista de workers en Tab 2) reducido a `280px` fijo.
+  - Split Tab 2 cambiado a 70% PDF / 30% workers (`.wdetalle-split-left { flex: 0 0 70% }`, `.wdetalle-split-right { flex: 0 0 30% }`).
+  - `SctrVidaLeyService.getTrabajadoresPorEmpresa`: `empresaId` ahora es `number | null` (antes `number`), para soportar búsqueda sin empresa.
+
+- **Trabajadores — rediseño barra de filtros horizontal** (`pages/trabajadores/`):
+  - Eliminado el header con logo y título "HABILITACIÓN - TRABAJADORES" (`stats-bar`).
+  - Nueva `.filter-bar` con dos `.filter-row` compactas sobre los paneles:
+    - Fila 1 (todos): búsqueda `fb-search` + pills Todos/Contratistas/Casa (`fb-pills`, admin) + toggle "Ver retirados" + botón Actualizar + botón **"Programar Inducción"** (admin, borde verde `.btn-induccion`).
+    - Fila 2 (admin): select estado + SearchSelect proyecto + SearchSelect empresa (oculto si `filtroContratistaCasa === 'Contratista'`) + toggle "Seleccionar todos".
+  - Panel izquierdo (`.col-workers`) ahora contiene solo la lista de workers + paginator. Filtros eliminados del panel.
+  - `grid-template-columns` del layout principal: `380px 1fr` → `270px 1fr`.
+  - Layout `page-root`: `height: calc(100vh - 64px); overflow: hidden`. Cada panel tiene scroll interno.
+  - Padding reducido: `workers-list` 6→4px, `worker-card` 10→7px, `table-scroll` 16→10px, `worker-hdr` 14→9px.
+  - `selection-bar` movida entre filter-bar y `hab-layout`; cambio a `flex-shrink: 0` + `border-bottom` (sin margin ni border-radius).
+
+- **Proyectos asignados — chips simplificados**:
+  - Eliminado el chip `Activo/Retirado` por proyecto en `.proyectos-section`. El estado del trabajador es global (badge principal Habilitado / No Autorizado).
+  - Cada proyecto ahora muestra solo: nombre, fecha de asignación y chip inducción (Ind. ✓ / Ind. ✗) + botón marcar si aplica.
+
+- **Modal "Programar Inducción"** — feature completa:
+  - Nuevo componente `pages/trabajadores/components/programar-induccion/` (selector `app-programar-induccion`). 2 pasos con step indicator visual.
+  - **Paso 1 (Configuración)**: Proyecto (`SearchSelect`, obligatorio), Fecha programada (date, obligatorio), Trabajo en altura (checkbox), Equipo eléctrico (checkbox). Sin campo empresa (eliminado por diseño).
+  - **Paso 2 (Trabajadores)**: pills Todos / Obra / Staff-Oficina Central (solo si `empresaEsAbril`), buscador, lista scrollable con checkboxes (selección individual + "Seleccionar todos"), contador, warning si ninguno seleccionado.
+  - Carga de workers: `InduccionService.getTrabajadoresPorProgramar(proyectoId, empresaId?)` → `GET /habilitacion/inducciones/trabajadores-por-programar`. Retorna `InduccionTrabajadorDto[]` (ya filtrado por backend — no requiere `estadoWorker` client-side).
+  - `preselectedEmpresaId`: viene del padre vía `@Input()`. El padre lo computa como `workers.find(w => w.workerId === selectedIds[0])?.empresaId ?? null` (empresa del primer worker seleccionado en la lista principal). Si no hay selección → `null` → backend devuelve todos.
+  - En `confirmar()`: `empresaId` se extrae del primer worker seleccionado en paso 2 (`workers.find(...)`), no de un campo UI.
+  - Submit → `InduccionService.crearBatch(dto)` → `POST /habilitacion/inducciones`. `InduccionBatchCreateDto { proyectoId, empresaId?, fechaProgramada, trabajoAltura, equipoElectrico, workerIds[] }`.
+  - Swal success "Inducción programada" con conteo de workers.
+  - Inputs: `open`, `proyectos`, `empresas`, `preselectedEmpresaId`. Outputs: `closed`, `saved`.
+  - Botón "Programar Inducción" en filter-bar fila 1 (admin only), clase `.btn-induccion` (borde + texto verde, hover `#f0fce4`).
+
+- **Nuevos DTOs** (`dtos/induccion.model.ts`):
+  - `InduccionTrabajadorDto { workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre? }` — resultado de `trabajadores-por-programar`.
+  - `InduccionBatchCreateDto { proyectoId, empresaId?, fechaProgramada, trabajoAltura, equipoElectrico, workerIds[] }`.
+
+- **Nuevos métodos en `InduccionService`**:
+  - `getTrabajadoresPorProgramar(proyectoId, empresaId?)` → `InduccionTrabajadorDto[]`
+  - `crearBatch(dto)` → `InduccionDto[]` (POST `/inducciones`)
+  - `aprobar(id)` → `void` (PATCH `/inducciones/{id}/aprobar`)
+  - `aprobarBatch(ids[])` → `void` (POST `/inducciones/aprobar-batch`)
+
 ### Pendiente
 - Validar end-to-end el modal Editar perfil contra backend real (esp. cómo viene `sctr` — boolean vs string, y casing exacto de `obraOficina`).
-- Verificar `EsAbril` en `CatalogosRepository.ListEmpresas` (criterio actual: `ContributorName.ToUpper().Contains("ABRIL")`) — viene `false` para todos en BD actual.
-- PRs a `master` (frontend + backend coordinados; backend debe deployarse antes que el frontend en master, sino los endpoints `/trabajadores/{id}` GET+PUT, `/catalogos/areas`, `/catalogos/subareas` no existirán).
+- Verificar `EsAbril` en `CatalogosRepository.ListEmpresas` (criterio actual: `ContributorName.ToUpper().Contains("ABRIL")`) — viene `false` para todos en BD actual. Impacta: pills Obra/Staff en `programar-induccion` (no se muestran si `esAbril` es siempre false).
+- Backend: implementar `GET /inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y` → `InduccionTrabajadorDto[]`. Mientras no exista, el paso 2 del modal "Programar Inducción" no carga trabajadores.
+- Backend: confirmar URL exacta del batch create de inducciones (`POST /inducciones` — ya configurado en frontend).
+- Backend: implementar `PATCH /inducciones/{id}/aprobar` y `POST /inducciones/aprobar-batch` (métodos `aprobar`/`aprobarBatch` del servicio ya wirean a esos endpoints).
+- PRs a `master` (frontend + backend coordinados; backend debe deployarse antes que el frontend en master).
 - Deploy a producción.
 - Crear primer usuario admin.
 - Backend: implementar `POST /api/v1/habilitacion/archivos/subir` para activar la subida real a SharePoint (hoy se cae al fallback `pending-upload://`).
