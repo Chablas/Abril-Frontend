@@ -1,3 +1,12 @@
+export interface InduccionTrabajadorDto {
+  workerId: number;
+  apellidoNombre: string;
+  dni: string;
+  obraOficina?: string;
+  empresaId?: number;
+  empresaNombre?: string;
+}
+
 export interface InduccionDto {
   id: number;
   workerId: number;
@@ -19,4 +28,13 @@ export interface InduccionCreateDto {
   empresaId: number;
   fechaProgramada: string;
   trabajoAltura: boolean;
+}
+
+export interface InduccionBatchCreateDto {
+  proyectoId: number;
+  empresaId?: number;
+  fechaProgramada: string;
+  trabajoAltura: boolean;
+  equipoElectrico: boolean;
+  workerIds: number[];
 }

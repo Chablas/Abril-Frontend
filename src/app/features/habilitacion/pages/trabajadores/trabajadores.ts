@@ -38,11 +38,12 @@ import { EditarPerfil } from './components/editar-perfil/editar-perfil';
 import { ReingresoForm } from './components/reingreso-form/reingreso-form';
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
+import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, AgregarProyecto, SearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -91,6 +92,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarReingreso = false;
   mostrarHistorial = false;
   mostrarAgregarProyecto = false;
+  mostrarProgramarInduccion = false;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
   workerParaHistorial: WorkerHabilitacionListDto | null = null;
@@ -646,6 +648,11 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   get haySeleccionados(): boolean {
     return this.selectedIds.length > 0;
+  }
+
+  get programarInduccionEmpresaId(): number | null {
+    if (this.selectedIds.length === 0) return null;
+    return this.workers.find((w) => w.workerId === this.selectedIds[0])?.empresaId ?? null;
   }
 
   limpiarSeleccion(): void {
