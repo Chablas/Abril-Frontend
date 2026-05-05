@@ -55,7 +55,6 @@ export class Actividades implements OnInit {
   searchQuery = '';
   soloActivas = false;
 
-  seleccionadas = new Set<number>();
   mostrarNuevaConsulta = false;
   mostrarEditarActividad = false;
   actividadParaEditar: ActividadListItemDTO | null = null;
@@ -98,7 +97,6 @@ export class Actividades implements OnInit {
   selectProyecto(p: ProyectoConActividadesDTO): void {
     if (this.selectedProyectoId === p.id) return;
     this.selectedProyectoId = p.id;
-    this.seleccionadas.clear();
     this.resetFilters();
     this.loadActividades();
   }
@@ -320,10 +318,44 @@ export class Actividades implements OnInit {
     });
   }
 
-  toggleSeleccion(a: ActividadListItemDTO): void {
+  onToggleActivo(a: ActividadListItemDTO, event: Event): void {
+    event.preventDefault();
     if (!a.activo) return;
-    if (this.seleccionadas.has(a.id)) this.seleccionadas.delete(a.id);
-    else this.seleccionadas.add(a.id);
+    Swal.fire({
+      title: '¿Resetear actividad?',
+      text: '¿Estás segura de resetear esta actividad? Se borrarán todas las fechas y el estado volverá a VACÍO.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, resetear',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then(result => {
+      if (!result.isConfirmed) return;
+      const body: ActividadPatchBody = {
+        estado: 'VACIO',
+        inicioProgramado: null,
+        finProgramado: null,
+        inicioEfectivo: null,
+        finEfectivo: null,
+        activo: false,
+      };
+      this.service.patchActividad(a.id, body).subscribe({
+        next: updated => {
+          updated.retraso = this.computeRetraso(updated);
+          const idx = this.actividades.findIndex(x => x.id === a.id);
+          if (idx >= 0) {
+            this.actividades[idx] = updated;
+            this.rebuildGroups();
+            this.refreshSelectedProyectoCounts();
+          }
+          this.cdr.detectChanges();
+        },
+        error: err => {
+          const msg = err?.error?.message ?? 'No se pudo resetear la actividad';
+          this.showError(msg);
+        },
+      });
+    });
   }
 
   estadoClass(estado: string): string {

@@ -195,10 +195,9 @@
                   [class]="'border-b border-[#E5E7EB] ' + (i % 2 === 0 ? 'bg-white ' : 'bg-[#F9FAFB] ') + (a.activo ? 'hover:bg-[#F0FDF4]' : 'opacity-50')">
                 <td class="px-2 py-1.5">
                   <input type="checkbox"
-                         [disabled]="!a.activo"
-                         [checked]="seleccionadas.has(a.id)"
-                         (change)="toggleSeleccion(a)"
-                         class="rounded border-gray-300" />
+                         [checked]="a.activo"
+                         (click)="onToggleActivo(a, $event)"
+                         class="rounded border-gray-300 cursor-pointer" />
                 </td>
                 <td class="px-2 py-1.5 text-gray-500">{{ a.indice }}</td>
                 <td class="px-2 py-1.5 text-gray-800">{{ a.nombre }}</td>

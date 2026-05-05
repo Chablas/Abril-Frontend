@@ -60,6 +60,8 @@ export interface ActividadPatchBody {
   finEfectivo?: string | null;
   userId?: number | null;
   observaciones?: string | null;
+  estado?: string | null;
+  activo?: boolean;
 }
 
 export interface ReasignarEncargadoResultDTO {
