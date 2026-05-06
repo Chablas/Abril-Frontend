@@ -112,6 +112,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'clinica/activar',
+    loadComponent: () =>
+      import('./features/clinica/pages/activar/activar')
+      .then(m => m.ActivarClinica)
+  },
+
+  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')

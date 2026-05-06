@@ -156,6 +156,7 @@ export class NavigationService {
             { label: 'Interconsultas', route: '/ssoma/salud-ocupacional/interconsultas' },
             { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones' },
             { label: 'Catálogos', route: '/ssoma/salud-ocupacional/catalogos' },
+            { label: 'Reportes', route: '/ssoma/salud-ocupacional/reportes' },
           ],
         },
       ],

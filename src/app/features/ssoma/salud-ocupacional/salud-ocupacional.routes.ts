@@ -6,6 +6,7 @@ import { Programaciones } from './programaciones/programaciones';
 import { Interconsultas } from './interconsultas/interconsultas';
 import { Convalidaciones } from './convalidaciones/convalidaciones';
 import { Catalogos } from './catalogos/catalogos';
+import { Reportes } from './reportes/reportes';
 
 export const SALUD_OCUPACIONAL_ROUTES: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -43,5 +44,10 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
     path: 'catalogos',
     component: Catalogos,
     data: { titulo: 'SALUD OCUPACIONAL - CATÁLOGOS' },
+  },
+  {
+    path: 'reportes',
+    component: Reportes,
+    data: { titulo: 'SALUD OCUPACIONAL - REPORTES' },
   },
 ];

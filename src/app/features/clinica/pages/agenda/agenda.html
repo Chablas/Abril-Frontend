@@ -5,7 +5,12 @@
       <h2 class="section-title">Agenda del Día</h2>
       <p class="section-sub">{{ fechaHoy() }}</p>
     </div>
-    <button class="btn-ghost" (click)="load()">↺ Actualizar</button>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <span class="badge border bg-gray-100 text-gray-700 border-gray-200" style="font-size:0.82rem;padding:0.35rem 0.75rem;">
+        Atendidos: {{ capacidadOcupada }}
+      </span>
+      <button class="btn-ghost" (click)="load()">↺ Actualizar</button>
+    </div>
   </div>
 
   <div *ngIf="loading" class="empty-row">Cargando...</div>

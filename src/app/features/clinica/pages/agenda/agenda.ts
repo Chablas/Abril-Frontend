@@ -49,6 +49,17 @@ export class Agenda implements OnInit {
     });
   }
 
+  get totalHoy(): number {
+    return this.items.length;
+  }
+
+  get capacidadOcupada(): string {
+    const completados = this.items.filter((i) =>
+      ['Completado', 'En Atención'].includes(i.estado),
+    ).length;
+    return `${completados} / ${this.totalHoy}`;
+  }
+
   get pendientes(): ProgramacionClinicaDto[] {
     return this.items.filter((i) => i.estado === 'Programado');
   }
