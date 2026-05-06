@@ -6,11 +6,22 @@ export interface EstadoStyle {
 }
 
 const PROGRAMACION: Record<string, EstadoStyle> = {
-  Programada: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' },
-  Confirmada: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200' },
-  Completada: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
-  'No se presentó': { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200' },
-  Cancelada: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' },
+  // estados legacy
+  Programada:       { bg: 'bg-blue-100',    text: 'text-blue-800',    border: 'border-blue-200' },
+  Confirmada:       { bg: 'bg-green-100',   text: 'text-green-800',   border: 'border-green-200' },
+  Completada:       { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
+  'No se presentó': { bg: 'bg-orange-100',  text: 'text-orange-800',  border: 'border-orange-200' },
+  Cancelada:        { bg: 'bg-gray-100',    text: 'text-gray-600',    border: 'border-gray-200' },
+  // estados nuevos
+  Programado:              { bg: 'bg-blue-100',    text: 'text-blue-800',    border: 'border-blue-200' },
+  Confirmado:              { bg: 'bg-green-100',   text: 'text-green-800',   border: 'border-green-200' },
+  Realizado:               { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
+  Cancelado:               { bg: 'bg-gray-100',    text: 'text-gray-600',    border: 'border-gray-200' },
+  Reprogramado:            { bg: 'bg-purple-100',  text: 'text-purple-800',  border: 'border-purple-200' },
+  'Aceptado por Clínica':  { bg: 'bg-teal-100',    text: 'text-teal-800',    border: 'border-teal-200' },
+  'Rechazado por Clínica': { bg: 'bg-red-100',     text: 'text-red-800',     border: 'border-red-200' },
+  'En Atención':           { bg: 'bg-orange-100',  text: 'text-orange-800',  border: 'border-orange-200' },
+  Completado:              { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
 };
 
 const INTERCONSULTA: Record<string, EstadoStyle> = {

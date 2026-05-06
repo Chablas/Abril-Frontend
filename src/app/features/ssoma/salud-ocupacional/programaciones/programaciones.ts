@@ -62,8 +62,16 @@ export class Programaciones implements OnInit, OnDestroy {
     { id: 'Programada', nombre: 'Programada' },
     { id: 'Confirmada', nombre: 'Confirmada' },
     { id: 'Completada', nombre: 'Completada' },
+    { id: 'Programado', nombre: 'Programado' },
+    { id: 'Confirmado', nombre: 'Confirmado' },
+    { id: 'Aceptado por Clínica', nombre: 'Aceptado por Clínica' },
+    { id: 'Rechazado por Clínica', nombre: 'Rechazado por Clínica' },
+    { id: 'En Atención', nombre: 'En Atención' },
+    { id: 'Completado', nombre: 'Completado' },
     { id: 'No se presentó', nombre: 'No se presentó' },
+    { id: 'Cancelado', nombre: 'Cancelado' },
     { id: 'Cancelada', nombre: 'Cancelada' },
+    { id: 'Reprogramado', nombre: 'Reprogramado' },
   ];
 
   viewModes: ViewToggleMode[] = [
@@ -87,6 +95,8 @@ export class Programaciones implements OnInit, OnDestroy {
   loading = false;
 
   createOpen = false;
+  rechazandoId: number | null = null;
+  motivoRechazo = '';
 
   // Calendario
   semanaInicio: Date = this.startOfWeek(new Date());
@@ -291,6 +301,38 @@ export class Programaciones implements OnInit, OnDestroy {
 
   puedeCancelar(e: ProgramacionListDto): boolean {
     return e.estado === 'Programada' || e.estado === 'Confirmada';
+  }
+
+  puedeAceptarClinica(e: ProgramacionListDto): boolean {
+    return e.estado === 'Programado' || e.estado === 'Confirmado';
+  }
+
+  puedeRechazarClinica(e: ProgramacionListDto): boolean {
+    return e.estado === 'Programado' || e.estado === 'Confirmado';
+  }
+
+  puedeVerMotivoRechazo(e: ProgramacionListDto): boolean {
+    return !!e.motivoRechazo;
+  }
+
+  esAutomatico(e: ProgramacionListDto): boolean {
+    return e.origen === 'Automatico';
+  }
+
+  iniciarRechazo(id: number): void {
+    this.rechazandoId = id;
+    this.motivoRechazo = '';
+  }
+
+  confirmarRechazo(item: ProgramacionListDto): void {
+    if (!this.motivoRechazo.trim()) return;
+    this.rechazandoId = null;
+    this.service
+      .accionClinica(item.id, { id: item.id, accion: 'Rechazar', motivoRechazo: this.motivoRechazo })
+      .subscribe({
+        next: () => this.load(this.currentPage),
+        error: (err) => this.errorService.handleError(err),
+      });
   }
 
   private startOfWeek(date: Date): Date {

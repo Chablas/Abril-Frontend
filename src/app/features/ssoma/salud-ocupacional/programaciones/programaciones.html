@@ -110,6 +110,7 @@
               <td class="text-gray-600">{{ item.medico || '—' }}</td>
               <td>
                 <span class="badge border" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+                <span *ngIf="esAutomatico(item)" class="badge border bg-violet-50 text-violet-700 border-violet-200" style="font-size:0.68rem">AUTO</span>
               </td>
               <td class="text-right">
                 <div class="row-actions">
@@ -140,6 +141,15 @@
                   >
                     Cancelar
                   </button>
+                  <span
+                    *ngIf="puedeVerMotivoRechazo(item)"
+                    class="badge border bg-red-50 text-red-700 border-red-200"
+                    title="{{ item.motivoRechazo }}"
+                  >⚠ Rechazado</span>
+                  <span
+                    *ngIf="item.checkInHora"
+                    class="badge border bg-gray-100 text-gray-600 border-gray-200"
+                  >⏱ {{ item.checkInHora }}</span>
                 </div>
               </td>
             </tr>

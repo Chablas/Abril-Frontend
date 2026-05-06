@@ -4,6 +4,15 @@ export type EstadoProgramacion =
   | 'Completada'
   | 'No se presentó'
   | 'Cancelada'
+  | 'Programado'
+  | 'Confirmado'
+  | 'Realizado'
+  | 'Cancelado'
+  | 'Reprogramado'
+  | 'Aceptado por Clínica'
+  | 'Rechazado por Clínica'
+  | 'En Atención'
+  | 'Completado'
   | string;
 
 export interface ProgramacionListDto {
@@ -20,6 +29,10 @@ export interface ProgramacionListDto {
   estado: EstadoProgramacion;
   motivo?: string;
   notas?: string;
+  origen?: string;
+  checkInHora?: string;
+  motivoRechazo?: string;
+  emoResultadoId?: number;
 }
 
 export interface ProgramacionCreateDto {
