@@ -21,6 +21,38 @@
     </div>
   </header>
 
+  <!-- KPIs -->
+  <div class="kpis-row">
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpis.programados }}</span>
+      <span class="kpi-label">Programados</span>
+    </div>
+    <div class="kpi-card kpi-green">
+      <span class="kpi-value">{{ kpis.aceptados }}</span>
+      <span class="kpi-label">Aceptados</span>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <span class="kpi-value">{{ kpis.enAtencion }}</span>
+      <span class="kpi-label">En Atención</span>
+    </div>
+    <div class="kpi-card kpi-emerald">
+      <span class="kpi-value">{{ kpis.completados }}</span>
+      <span class="kpi-label">Completados</span>
+    </div>
+    <div class="kpi-card kpi-red">
+      <span class="kpi-value">{{ kpis.rechazados }}</span>
+      <span class="kpi-label">Rechazados</span>
+    </div>
+    <div class="kpi-card kpi-gray">
+      <span class="kpi-value">{{ kpis.noPresento }}</span>
+      <span class="kpi-label">No se presentó</span>
+    </div>
+    <div class="kpi-card kpi-violet">
+      <span class="kpi-value">{{ kpis.automaticos }}</span>
+      <span class="kpi-label">Auto</span>
+    </div>
+  </div>
+
   <!-- Vista Lista -->
   <ng-container *ngIf="viewMode === 'list'">
     <div class="filters-card">

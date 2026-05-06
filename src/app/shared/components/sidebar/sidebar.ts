@@ -1,9 +1,10 @@
-import { Component, ElementRef, HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
+import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -12,15 +13,21 @@ import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
-export class Sidebar {
+export class Sidebar implements OnInit {
   activeMenu: string | null = null;
   activeGroup: string | null = null;
 
   constructor(
     private router: Router,
     public navService: NavigationService,
+    public alertaSvc: ProgramacionAlertasService,
     private elementRef: ElementRef,
   ) {}
+
+  ngOnInit(): void {
+    this.alertaSvc.checkRechazados();
+    setInterval(() => this.alertaSvc.checkRechazados(), 5 * 60 * 1000);
+  }
 
   isActiveModule(baseRoute: string): boolean {
     return this.router.url.startsWith(baseRoute);

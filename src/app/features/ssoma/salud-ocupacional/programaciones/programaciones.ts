@@ -359,6 +359,18 @@ export class Programaciones implements OnInit, OnDestroy {
     return `${y}-${m}-${day}`;
   }
 
+  get kpis() {
+    return {
+      programados: this.items.filter((i) => i.estado === 'Programado').length,
+      aceptados: this.items.filter((i) => i.estado === 'Aceptado por Clínica').length,
+      enAtencion: this.items.filter((i) => i.estado === 'En Atención').length,
+      completados: this.items.filter((i) => i.estado === 'Completado').length,
+      rechazados: this.items.filter((i) => i.estado === 'Rechazado por Clínica').length,
+      noPresento: this.items.filter((i) => i.estado === 'No se presentó').length,
+      automaticos: this.items.filter((i) => i.origen === 'Automatico').length,
+    };
+  }
+
   get hasActiveFilters(): boolean {
     return !!(
       this.filters.search ||
