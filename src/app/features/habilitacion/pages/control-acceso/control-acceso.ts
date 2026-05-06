@@ -66,6 +66,7 @@ export class ControlAcceso implements OnInit {
         this.cdr.detectChanges();
       },
     });
+    this.loadInducciones();
   }
 
   onProyectoChange(value: number | null): void {
@@ -75,7 +76,6 @@ export class ControlAcceso implements OnInit {
     this.searched = false;
     this.searchError = '';
     this.searchQuery = '';
-    this.inducciones = [];
     this.noAutorizados = [];
     if (this.activeTab !== 'consulta' && this.activeTab !== 'tareo') {
       this.loadTab(this.activeTab);
@@ -90,9 +90,8 @@ export class ControlAcceso implements OnInit {
   }
 
   private loadTab(tab: Tab): void {
-    if (!this.selectedProyectoId) return;
     if (tab === 'induccion') this.loadInducciones();
-    else if (tab === 'no-autorizados') this.loadNoAutorizados();
+    else if (tab === 'no-autorizados' && this.selectedProyectoId) this.loadNoAutorizados();
   }
 
   // ── Consulta ─────────────────────────────────────────────────────────────
@@ -137,10 +136,9 @@ export class ControlAcceso implements OnInit {
   // ── Inducción ─────────────────────────────────────────────────────────────
 
   loadInducciones(): void {
-    if (!this.selectedProyectoId) return;
     this.loadingInducciones = true;
     this.controlAccesoService
-      .getInducciones(this.selectedProyectoId, this.fechaHoy)
+      .getInducciones()
       .subscribe({
         next: res => {
           this.inducciones = res;
@@ -155,15 +153,15 @@ export class ControlAcceso implements OnInit {
   }
 
   get confirmadosCount(): number {
-    return this.inducciones.filter(i => i.confirmado).length;
+    return this.inducciones.filter(i => i.ingresoConfirmado).length;
   }
 
   confirmarIngreso(ind: InduccionHoyDto): void {
-    if (ind.confirmado) return;
-    this.controlAccesoService.confirmarIngreso(ind.id).subscribe({
-      next: updated => {
-        const idx = this.inducciones.findIndex(i => i.id === ind.id);
-        if (idx >= 0) this.inducciones[idx] = updated;
+    if (ind.ingresoConfirmado) return;
+    this.controlAccesoService.confirmarIngreso(ind.induccionId).subscribe({
+      next: () => {
+        const idx = this.inducciones.findIndex(i => i.induccionId === ind.induccionId);
+        if (idx >= 0) this.inducciones[idx] = { ...this.inducciones[idx], ingresoConfirmado: true };
         this.cdr.detectChanges();
       },
       error: err => {
@@ -176,19 +174,22 @@ export class ControlAcceso implements OnInit {
     });
   }
 
-  getEntregableClass(e: EntregableResumenDto): string {
-    if (e.estado === 'No Aplica') return 'chip-gray';
-    if (e.estado === 'Enviado') return 'chip-orange';
-    if (e.estado === 'Rechazado' || e.estado === 'Falta') return 'chip-red';
-    if (e.estado === 'Aprobado') {
-      if (e.vigencia) {
-        const dias = Math.floor((new Date(e.vigencia).getTime() - Date.now()) / 86400000);
-        if (dias < 0) return 'chip-red';
-        if (dias <= 14) return 'chip-yellow';
-      }
-      return 'chip-green';
+  estaVencido(vigencia: string | null): boolean {
+    return !!vigencia && vigencia < this.fechaHoy;
+  }
+
+  entregablesVigentes(entregables: EntregableResumenDto[] | null | undefined): EntregableResumenDto[] {
+    return (entregables ?? []).filter(
+      e => e.estado === 'Aprobado' && !this.estaVencido(e.vigencia),
+    );
+  }
+
+  entregableIcono(e: EntregableResumenDto): { icono: string; color: string } {
+    if (e.vigencia) {
+      const dias = Math.floor((new Date(e.vigencia).getTime() - Date.now()) / 86400000);
+      if (dias <= 7) return { icono: '⚠', color: '#eab308' };
     }
-    return '';
+    return { icono: '✓', color: '#22c55e' };
   }
 
   // ── No autorizados ────────────────────────────────────────────────────────

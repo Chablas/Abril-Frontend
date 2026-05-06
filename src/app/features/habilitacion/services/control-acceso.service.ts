@@ -24,12 +24,15 @@ export interface ConsultaResultDto {
 }
 
 export interface InduccionHoyDto {
-  id: number;
-  workerId: number;
-  nombre: string;
-  empresa: string;
-  confirmado: boolean;
-  horaConfirmacion: string | null;
+  induccionId: number;
+  apellidoNombre: string;
+  dni: string;
+  empresaNombre: string;
+  fechaProgramada: string;
+  trabajoAltura: boolean;
+  equipoElectrico: boolean;
+  estado: string;
+  ingresoConfirmado: boolean;
 }
 
 export interface NoAutorizadoDto {
@@ -67,16 +70,15 @@ export class ControlAccesoService {
     });
   }
 
-  getInducciones(proyectoId: number, fecha: string): Observable<InduccionHoyDto[]> {
-    return this.http.get<InduccionHoyDto[]>(`${this.base}/inducciones`, {
+  getInducciones(): Observable<InduccionHoyDto[]> {
+    return this.http.get<InduccionHoyDto[]>(`${this.base}/inducciones-hoy`, {
       headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId, fecha }),
     });
   }
 
   confirmarIngreso(id: number): Observable<InduccionHoyDto> {
-    return this.http.patch<InduccionHoyDto>(
-      `${this.base}/inducciones/${id}/confirmar`,
+    return this.http.post<InduccionHoyDto>(
+      `${this.base}/inducciones/${id}/confirmar-ingreso`,
       {},
       { headers: buildHabHeaders() },
     );

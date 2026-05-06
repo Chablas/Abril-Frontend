@@ -27,7 +27,7 @@
   <div class="ca-content">
 
     <!-- Sin proyecto -->
-    <div *ngIf="!selectedProyectoId" class="ca-empty">
+    <div *ngIf="!selectedProyectoId && activeTab !== 'induccion'" class="ca-empty">
       Selecciona un proyecto para continuar
     </div>
 
@@ -131,22 +131,21 @@
             </div>
 
             <!-- Entregables (solo proyectos que no son Oficina Central) -->
-            <ng-container *ngIf="selectedProyectoId !== oficinaId">
-              <div class="ca-entregables" *ngIf="r.entregables?.length">
-                <div *ngFor="let e of r.entregables"
-                     [class]="'ca-entregable ' + getEntregableClass(e)">
-                  <ng-container *ngIf="e.estado === 'Falta' || e.estado === 'Rechazado'">
-                    <span class="ca-doc-x">✗</span>
-                  </ng-container>
-                  <span class="ca-entregable-nombre">{{ e.nombre }}</span>
-                  <ng-container *ngIf="e.vigencia">
-                    <ng-container *ngIf="e.estado === 'Aprobado' && (e.vigencia | date:'yyyyMMdd') < (fechaHoy | date:'yyyyMMdd'); else vigNormal">
-                      <span class="ca-doc-x ca-entregable-vigencia">✗ {{ e.vigencia | date:'dd/MM/yyyy' }}</span>
+            <ng-container *ngIf="selectedProyectoId !== oficinaId && r.entregables?.length">
+              <div class="ca-docs">
+                <div class="ca-docs-title ca-docs-title--neutral">Entregables</div>
+                <div class="ca-ent-card">
+                <div class="ca-ent-list">
+                  <ng-container *ngFor="let e of entregablesVigentes(r.entregables)">
+                    <ng-container *ngIf="entregableIcono(e) as icon">
+                      <div class="ca-ent-row">
+                        <span class="ca-ent-icon" [style.color]="icon.color">{{ icon.icono }}</span>
+                        <span class="ca-ent-nombre">{{ e.nombre }}</span>
+                        <span *ngIf="e.vigencia" class="ca-doc-fecha">{{ e.vigencia | date:'dd/MM/yyyy' }}</span>
+                      </div>
                     </ng-container>
-                    <ng-template #vigNormal>
-                      <span class="ca-entregable-vigencia">{{ e.vigencia | date:'dd/MM/yyyy' }}</span>
-                    </ng-template>
                   </ng-container>
+                </div>
                 </div>
               </div>
             </ng-container>
@@ -158,7 +157,7 @@
     </ng-container>
 
     <!-- ══ Tab Inducción ══════════════════════════════════════ -->
-    <ng-container *ngIf="selectedProyectoId && activeTab === 'induccion'">
+    <ng-container *ngIf="activeTab === 'induccion'">
 
       <div class="section-bar ca-section-hdr">
         <div>
@@ -176,13 +175,18 @@
       <div class="ca-list">
         <div *ngFor="let ind of inducciones"
              class="ca-list-item ca-induccion-item"
-             [class.ca-induccion-item--ok]="ind.confirmado">
+             [class.ca-induccion-item--ok]="ind.ingresoConfirmado">
           <div style="flex: 1">
-            <div class="ca-list-nombre">{{ ind.nombre }}</div>
-            <div class="ca-list-sub">{{ ind.empresa }}</div>
+            <div class="ca-list-nombre">{{ ind.apellidoNombre }}</div>
+            <div class="ca-list-sub">{{ ind.empresaNombre }} · DNI {{ ind.dni }}</div>
+            <div class="ca-list-sub">
+              {{ ind.fechaProgramada | date:'dd/MM/yyyy' }}
+              <span *ngIf="ind.trabajoAltura"> · Altura</span>
+              <span *ngIf="ind.equipoElectrico"> · Eq. eléctrico</span>
+            </div>
           </div>
-          <button *ngIf="ind.confirmado" class="btn-chip chip-green" disabled>✓ Confirmado</button>
-          <button *ngIf="!ind.confirmado" class="btn-primary ca-btn-confirmar" (click)="confirmarIngreso(ind)">
+          <button *ngIf="ind.ingresoConfirmado" class="btn-chip chip-green" disabled>✓ Confirmado</button>
+          <button *ngIf="!ind.ingresoConfirmado" class="btn-primary ca-btn-confirmar" (click)="confirmarIngreso(ind)">
             Confirmar
           </button>
         </div>
