@@ -199,7 +199,15 @@
 
       <div class="section-bar ca-section-hdr">
         <span class="section-title">No autorizados</span>
-        <span class="badge chip-orange">{{ noAutorizados.length }}</span>
+        <span class="ca-noauth-count">{{ noAutorizados.length }}</span>
+      </div>
+
+      <!-- Filtro por empresa -->
+      <div *ngIf="empresasNA.length > 0" class="ca-noauth-filter">
+        <select class="ca-select" [(ngModel)]="filtroEmpresaNA">
+          <option value="">Todas las empresas</option>
+          <option *ngFor="let e of empresasNA" [value]="e">{{ e }}</option>
+        </select>
       </div>
 
       <div *ngIf="loadingNoAutorizados" class="ca-loading">Cargando…</div>
@@ -207,15 +215,15 @@
         No hay trabajadores no autorizados.
       </div>
 
-      <div class="ca-list">
-        <div *ngFor="let w of noAutorizados" class="card ca-noauth-card">
-          <div class="ca-list-nombre">{{ w.nombre }}</div>
-          <div class="ca-list-sub">{{ w.empresa }}</div>
-          <ul class="ca-docs-list ca-noauth-docs">
-            <li *ngFor="let d of w.documentosFaltantes">
-              <span class="ca-doc-x">✗</span>{{ d }}
-            </li>
-          </ul>
+      <div *ngIf="noAutorizadosFiltrados.length > 0" class="ca-noauth-list">
+        <div *ngFor="let w of noAutorizadosFiltrados" class="ca-noauth-row">
+          <div style="flex: 1; min-width: 0">
+            <div class="ca-list-nombre">{{ w.apellidoNombre }}</div>
+            <div class="ca-list-sub">
+              {{ w.empresaNombre }}<ng-container *ngIf="w.dni"> · DNI {{ w.dni }}</ng-container>
+            </div>
+          </div>
+          <span class="ca-noauth-badge">No autorizado</span>
         </div>
       </div>
 

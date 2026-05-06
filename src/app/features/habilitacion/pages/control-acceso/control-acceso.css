@@ -377,8 +377,69 @@
 .ca-btn-confirmar { font-size: 0.82rem; padding: 0.4rem 0.75rem; }
 
 /* ── No autorizados ──────────────────────────────────────────────── */
-.ca-noauth-card { padding: 1rem 1.25rem; cursor: default; }
-.ca-noauth-docs { margin-top: 0.75rem; }
+.ca-noauth-count {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.ca-noauth-filter {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.ca-select {
+  border: 1px solid #d6dee5;
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  width: 100%;
+  max-width: 280px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #111827;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+.ca-select:focus {
+  outline: none;
+  border-color: #64bc04;
+  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
+}
+
+.ca-noauth-list {
+  margin-top: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow-y: auto;
+  max-height: 500px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.ca-noauth-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ca-noauth-row:last-child { border-bottom: none; }
+
+.ca-noauth-badge {
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 20px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* ── Estados vacíos / error ──────────────────────────────────────── */
 .ca-empty, .ca-empty-tab, .ca-loading {

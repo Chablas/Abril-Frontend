@@ -52,6 +52,16 @@ export class ControlAcceso implements OnInit {
   // No autorizados
   noAutorizados: NoAutorizadoDto[] = [];
   loadingNoAutorizados = false;
+  filtroEmpresaNA = '';
+
+  get empresasNA(): string[] {
+    return [...new Set(this.noAutorizados.map(w => w.empresaNombre).filter(Boolean))].sort() as string[];
+  }
+
+  get noAutorizadosFiltrados(): NoAutorizadoDto[] {
+    if (!this.filtroEmpresaNA) return this.noAutorizados;
+    return this.noAutorizados.filter(w => w.empresaNombre === this.filtroEmpresaNA);
+  }
 
   constructor(
     private projectService: ProjectService,
@@ -77,6 +87,7 @@ export class ControlAcceso implements OnInit {
     this.searchError = '';
     this.searchQuery = '';
     this.noAutorizados = [];
+    this.filtroEmpresaNA = '';
     if (this.activeTab !== 'consulta' && this.activeTab !== 'tareo') {
       this.loadTab(this.activeTab);
     }

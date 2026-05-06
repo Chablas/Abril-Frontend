@@ -1,12 +1,24 @@
 import { ChangeDetectorRef, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import {
   ControlAccesoService,
   TareoDto,
   TareoPartidaDto,
+  TareoEmpresaDto,
 } from '../../../../services/control-acceso.service';
+
+interface DetalleCasa {
+  partida: TareoPartidaDto;
+  cantidad: number;
+}
+
+interface DetalleContratista {
+  empresa: TareoEmpresaDto;
+  cantidad: number;
+}
 
 @Component({
   selector: 'app-control-acceso-tareo',
@@ -19,9 +31,12 @@ export class Tareo implements OnChanges {
   @Input() proyectoId!: number;
 
   fecha = new Date().toISOString().slice(0, 10);
-  partidas: TareoPartidaDto[] = [];
   loading = false;
   saving = false;
+
+  tareoId: number | null = null;
+  detallesCasa: DetalleCasa[] = [];
+  detallesContratista: DetalleContratista[] = [];
 
   constructor(
     private service: ControlAccesoService,
@@ -36,14 +51,39 @@ export class Tareo implements OnChanges {
 
   loadTareo(): void {
     this.loading = true;
+    this.tareoId = null;
+    forkJoin({
+      partidas: this.service.getPartidas(),
+      empresas: this.service.getEmpresasTareo(this.proyectoId),
+    }).subscribe({
+      next: ({ partidas, empresas }) => {
+        this.detallesCasa = partidas.map(p => ({ partida: p, cantidad: 0 }));
+        this.detallesContratista = empresas.map(e => ({ empresa: e, cantidad: 0 }));
+        this.loadTareoExistente();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadTareoExistente(): void {
     this.service.getTareo(this.proyectoId, this.fecha).subscribe({
       next: res => {
-        this.partidas = res.partidas ?? [];
+        this.tareoId = res.id ?? null;
+        for (const dc of (res.detallesCasa ?? [])) {
+          const found = this.detallesCasa.find(d => d.partida.id === dc.partidaId);
+          if (found) found.cantidad = dc.cantidadPersonas;
+        }
+        for (const dc of (res.detallesContratista ?? [])) {
+          const found = this.detallesContratista.find(d => d.empresa.empresaId === dc.empresaId);
+          if (found) found.cantidad = dc.cantidadPersonas;
+        }
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.partidas = [];
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -54,64 +94,43 @@ export class Tareo implements OnChanges {
     this.loadTareo();
   }
 
-  get partidasCasa(): TareoPartidaDto[] {
-    return this.partidas.filter(p => p.tipo === 'CASA');
+  get totalCasa(): number {
+    return this.detallesCasa.reduce((s, d) => s + (Number(d.cantidad) || 0), 0);
   }
 
-  get partidasContratistas(): TareoPartidaDto[] {
-    return this.partidas.filter(p => p.tipo === 'CONTRATISTA');
+  get totalContratistas(): number {
+    return this.detallesContratista.reduce((s, d) => s + (Number(d.cantidad) || 0), 0);
   }
 
-  get totalCasa(): { cantidad: number; horas: number } {
-    return this.sumar(this.partidasCasa);
+  get totalGeneral(): number {
+    return this.totalCasa + this.totalContratistas;
   }
 
-  get totalContratistas(): { cantidad: number; horas: number } {
-    return this.sumar(this.partidasContratistas);
-  }
-
-  get totalGeneral(): { cantidad: number; horas: number } {
-    return {
-      cantidad: this.totalCasa.cantidad + this.totalContratistas.cantidad,
-      horas: this.totalCasa.horas + this.totalContratistas.horas,
-    };
-  }
-
-  private sumar(lista: TareoPartidaDto[]): { cantidad: number; horas: number } {
-    return {
-      cantidad: lista.reduce((s, p) => s + (Number(p.cantidad) || 0), 0),
-      horas: lista.reduce((s, p) => s + (Number(p.horas) || 0), 0),
-    };
-  }
-
-  agregarPartida(tipo: 'CASA' | 'CONTRATISTA'): void {
-    this.partidas = [...this.partidas, { nombre: '', tipo, cantidad: 0, horas: 0 }];
-  }
-
-  eliminarPartida(partida: TareoPartidaDto): void {
-    this.partidas = this.partidas.filter(p => p !== partida);
+  get puedeGuardar(): boolean {
+    return this.detallesCasa.some(d => d.cantidad > 0) ||
+      this.detallesContratista.some(d => d.cantidad > 0);
   }
 
   guardar(): void {
-    const invalidas = this.partidas.filter(p => !p.nombre.trim());
-    if (invalidas.length > 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Atención',
-        text: 'Todas las partidas deben tener un nombre.',
-      });
-      return;
-    }
-
     this.saving = true;
     const body: TareoDto = {
       proyectoId: this.proyectoId,
       fecha: this.fecha,
-      partidas: this.partidas,
+      detallesCasa: this.detallesCasa
+        .filter(d => d.cantidad > 0)
+        .map(d => ({ partidaId: d.partida.id, cantidadPersonas: d.cantidad })),
+      detallesContratista: this.detallesContratista
+        .filter(d => d.cantidad > 0)
+        .map(d => ({ empresaId: d.empresa.empresaId, cantidadPersonas: d.cantidad })),
     };
-    this.service.saveTareo(body).subscribe({
+
+    const request$ = this.tareoId
+      ? this.service.updateTareo(this.tareoId, body)
+      : this.service.saveTareo(body);
+
+    request$.subscribe({
       next: res => {
-        this.partidas = res.partidas ?? this.partidas;
+        this.tareoId = res.id ?? this.tareoId;
         this.saving = false;
         Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
         this.cdr.detectChanges();

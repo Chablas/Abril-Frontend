@@ -1,22 +1,19 @@
 .tareo-root {
-  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  max-width: 700px;
-  margin: 0 auto;
-  width: 100%;
+  height: calc(100vh - 200px);
 }
 
-/* ── Fecha ──────────────────────────────────────────────── */
-.tareo-fecha-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+/* ── Fecha ───────────────────────────────────────────────── */
+.tareo-top {
+  padding: 12px 16px;
+  flex-shrink: 0;
 }
+
+.tareo-fecha-row { display: flex; flex-direction: column; gap: 6px; }
 
 .tareo-fecha-lbl {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -24,15 +21,13 @@
 }
 
 .tareo-fecha-input {
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
-  border: 1.5px solid #d6dee5;
-  border-radius: 12px;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   background: #fff;
   color: #111827;
-  min-height: 48px;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .tareo-fecha-input:focus {
@@ -41,220 +36,152 @@
   box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.15);
 }
 
-.tareo-loading {
-  text-align: center;
-  padding: 2rem;
-  color: #94a3b8;
-  font-size: 1rem;
-}
-
-/* ── Grupo ──────────────────────────────────────────────── */
-.tareo-grupo {
+/* ── Lista unificada ─────────────────────────────────────── */
+.tareo-lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin: 0 16px;
   background: #fff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  overflow: hidden;
 }
 
-.tareo-grupo-hdr {
+/* ── Headers sticky ──────────────────────────────────────── */
+.tareo-seccion-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.tareo-grupo-hdr--casa {
+  align-items: center;
+  padding: 10px 16px;
   background: #eff6ff;
-}
-
-.tareo-grupo-hdr--cont {
-  background: #f0fdf4;
-}
-
-.tareo-grupo-titulo {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #374151;
-}
-
-.tareo-btn-agregar {
-  background: #fff;
-  border: 1.5px solid #d6dee5;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #374151;
-  padding: 0.4rem 0.875rem;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.tareo-btn-agregar:hover {
-  border-color: #64bc04;
-  background: #f0fdf4;
-  color: #15803d;
-}
-
-.tareo-grupo-empty {
-  padding: 1.25rem;
-  text-align: center;
-  color: #94a3b8;
+  border-bottom: 1px solid #e5e7eb;
   font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  border-left: 3px solid #3b82f6;
 }
 
-/* ── Fila de partida ────────────────────────────────────── */
+.tareo-seccion-header--verde {
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ── Filas ───────────────────────────────────────────────── */
 .tareo-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
+  padding: 10px 16px;
   border-bottom: 1px solid #f3f4f6;
 }
 
-.tareo-input {
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.5rem 0.625rem;
-  font-size: 0.9rem;
-  color: #111827;
-  background: #f9fafb;
-  min-height: 40px;
-  transition: border-color 0.15s;
-}
+.tareo-row:last-of-type { border-bottom: none; }
 
-.tareo-input:focus {
-  outline: none;
-  border-color: #64bc04;
-  background: #fff;
-}
-
-.tareo-input--nombre {
+.tareo-row-label {
   flex: 1;
+  font-size: 14px;
+  color: #374151;
   min-width: 0;
 }
 
-.tareo-input--num {
-  width: 70px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.tareo-btn-eliminar {
-  background: none;
-  border: none;
+.tareo-empty {
+  padding: 10px 16px;
+  font-size: 0.88rem;
   color: #9ca3af;
-  cursor: pointer;
-  padding: 0.375rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+/* ── Input numérico ──────────────────────────────────────── */
+.tareo-num-input {
+  width: 80px;
+  text-align: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 14px;
+  color: #111827;
+  background: #fff;
   flex-shrink: 0;
-  transition: color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.tareo-btn-eliminar:hover {
-  color: #dc2626;
-  background: #fee2e2;
+.tareo-num-input:focus {
+  outline: none;
+  border-color: #64bc04;
+  box-shadow: 0 0 0 2px rgba(100, 188, 4, 0.15);
 }
 
-/* ── Subtotal ───────────────────────────────────────────── */
-.tareo-subtotal {
+.tareo-num-input--active {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+/* ── Total ───────────────────────────────────────────────── */
+.tareo-total-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0.625rem 1rem;
-  background: #f9fafb;
-  border-top: 1px solid #e2e8f0;
-}
-
-.tareo-subtotal-lbl {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7280;
-}
-
-.tareo-subtotal-val {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #374151;
-}
-
-/* ── Total general ──────────────────────────────────────── */
-.tareo-total-card {
-  background: #111827;
-  color: #fff;
-  border-radius: 14px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  padding: 12px 16px;
+  background: #111827;
+  border-radius: 0 0 12px 12px;
 }
 
 .tareo-total-lbl {
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: #9ca3af;
-}
-
-.tareo-total-nums {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.tareo-total-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.1rem;
 }
 
 .tareo-total-num {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #64bc04;
-  line-height: 1;
 }
 
 .tareo-total-sub {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #9ca3af;
 }
 
-.tareo-total-sep {
-  font-size: 1.5rem;
-  color: #4b5563;
+/* ── Loading ─────────────────────────────────────────────── */
+.tareo-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.95rem;
 }
 
-/* ── Botón guardar ──────────────────────────────────────── */
+/* ── Footer / botón ──────────────────────────────────────── */
+.tareo-footer {
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
 .tareo-btn-guardar {
   width: 100%;
   background: #64bc04;
   color: #fff;
   border: none;
-  border-radius: 14px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  padding: 1rem;
-  min-height: 56px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px;
   cursor: pointer;
-  letter-spacing: 0.02em;
   transition: background 0.15s;
 }
 
-.tareo-btn-guardar:hover:not(:disabled) {
-  background: #5aa904;
-}
+.tareo-btn-guardar:hover:not(:disabled) { background: #5aa904; }
 
 .tareo-btn-guardar:disabled {
-  background: #e2e8f0;
-  color: #94a3b8;
+  background: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
 }

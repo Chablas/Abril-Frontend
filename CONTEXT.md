@@ -673,8 +673,8 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | PUT | `/equipos/entregables/{id}` |
 | GET | `/equipos/entregables/{id}/versiones` |
 | GET | `/control-acceso/consulta?proyectoId=&search=` |
-| PATCH | `/control-acceso/inducciones/{id}/confirmar` |
-| GET | `/control-acceso/inducciones?proyectoId=&fecha=` |
+| GET | `/control-acceso/inducciones-hoy` (sin params) |
+| POST | `/control-acceso/inducciones/{induccionId}/confirmar-ingreso` |
 | GET | `/control-acceso/no-autorizados?proyectoId=` |
 | GET | `/control-acceso/tareo?proyectoId=&fecha=` |
 | POST | `/control-acceso/tareo` |
@@ -884,8 +884,9 @@ Servicio: `features/habilitacion/services/control-acceso.service.ts`.
 - Tarjeta: banner de estado (`.ca-status-habilitado` verde #64BC04 / `.ca-status-no-autorizado` rojo #ef4444).
 - Condición de clase: `[class]="r.estadoHabilitacion === 'Habilitado' ? 'ca-status-habilitado' : 'ca-status-no-autorizado'"`. El backend devuelve el string `'Habilitado'` (no `'AUTORIZADO'`).
 - Body con scroll: `max-height: calc(100vh - 220px); overflow-y: auto` en `.ca-result-body`.
-- Entregables en grid 2 columnas con `getEntregableClass()` → chip por estado.
 - `oficinaId = 36`: cuando el proyecto seleccionado es Oficina Central (id 36), se oculta la sección de entregables.
+- **Entregables**: lista de filas limpias (no chips). Solo se muestran los `Aprobado` no vencidos (`entregablesVigentes()`). Faltantes/rechazados y vencidos aparecen únicamente en las secciones "Documentos faltantes" / "Por vencer" de arriba. Ícono a la izquierda: ✓ verde `#22c55e` (vigente o sin vigencia), ⚠ amarillo `#eab308` (≤ 7 días). Contenedor `.ca-ent-card`: borde `1px solid #e5e7eb`, `border-radius: 12px`, `max-height: 320px; overflow-y: auto`, sombra sutil.
+- EMO (Certificado de Aptitud Médica) se obtiene desde `worker_emos`, no desde `ss_hab_trabajador`.
 
 **DTOs** (`control-acceso.service.ts`):
 ```ts
@@ -898,13 +899,23 @@ ConsultaResultDto {
   sctrEstado: string | null, sctrVigencia: string | null,
   entregables: EntregableResumenDto[] | null,
 }
+InduccionHoyDto {
+  induccionId, apellidoNombre, dni, empresaNombre,
+  fechaProgramada: string, trabajoAltura: boolean,
+  equipoElectrico: boolean, estado: string, ingresoConfirmado: boolean,
+}
 ```
 
-**`getEntregableClass(e)`**:
-- `'No Aplica'` → `chip-gray`
-- `'Enviado'` → `chip-orange`
-- `'Rechazado'` | `'Falta'` → `chip-red`
-- `'Aprobado'` + vigencia ≤ 14 días → `chip-yellow`; sin fecha o plazo largo → `chip-green`
+**`entregableIcono(e)`** (reemplaza `getEntregableClass`):
+- Solo se llama sobre entregables filtrados por `entregablesVigentes()` (Aprobado + no vencido).
+- vigencia ≤ 7 días → `{ icono: '⚠', color: '#eab308' }`
+- sin vigencia o > 7 días → `{ icono: '✓', color: '#22c55e' }`
+
+**Tab Inducción**:
+- No requiere proyecto seleccionado. `loadInducciones()` se llama en `ngOnInit` y al cambiar a ese tab.
+- `GET /control-acceso/inducciones-hoy` sin parámetros.
+- Botón "Confirmar" → `POST /control-acceso/inducciones/{induccionId}/confirmar-ingreso`. Al confirmar, muta localmente `ingresoConfirmado: true` (spread, no depende del body del response) y el botón cambia a "✓ Confirmado" deshabilitado. Contador `confirmadosCount` es getter que recuenta el array.
+- Cambiar de proyecto no resetea `inducciones`.
 
 **Diseño CSS** (§5-compatible):
 - Header: fondo blanco, padding compacto, título + `app-search-select` en una sola fila.
@@ -912,11 +923,24 @@ ConsultaResultDto {
 - Sin card wrapper en buscador — input + botón directamente en `.ca-search-row`.
 - Chips nuevos: `.chip-red` (#fee2e2/#dc2626), `.chip-yellow` (#fef9c3/#a16207).
 
-**Subcomponente Tareo** (`components/tareo/tareo.ts`):
-- `@Input() proyectoId!: number`.
-- `OnChanges` → `loadTareo()` (`GET /control-acceso/tareo`).
-- Getters: `partidasCasa`, `partidasContratistas`, `totalCasa`, `totalContratistas`, `totalGeneral`.
-- `guardar()` → `POST /control-acceso/tareo`.
+**Tab No Autorizados**:
+- Card por trabajador: `apellidoNombre` + `empresaNombre · DNI` + badge "No autorizado" (`#fee2e2/#dc2626`, `border-radius: 20px`).
+- Filtro client-side por empresa con `<select class="ca-select">`. Getter `empresasNA` extrae empresas únicas. Getter `noAutorizadosFiltrados` filtra el array.
+- DTO: `{ workerId, apellidoNombre, dni: string|null, empresaNombre, proyectoNombre, estadoHabilitacion }`.
+
+**Subcomponente Tareo** (`components/tareo/tareo.ts` + `tareo.html` + `tareo.css`):
+- `@Input() proyectoId!: number`. `OnChanges` → `loadTareo()`.
+- **Carga en 3 pasos**: `forkJoin(getPartidas(), getEmpresasTareo(proyectoId))` en paralelo → construye arrays locales con `cantidad: 0` → luego `getTareo(proyectoId, fecha)` rellena cantidades existentes y guarda `tareoId`.
+- **Endpoints**:
+  - `GET /tareo/partidas` → catálogo `TareoPartidaDto { id, nombre }` (tabla `ss_tareo_partida`)
+  - `GET /tareo/empresas?proyectoId=` → `TareoEmpresaDto { empresaId, empresaNombre }`
+  - `GET /tareo?proyectoId=&fecha=` → tareo existente del día
+  - `POST /tareo` si `tareoId` es null, `PUT /tareo/{id}` si ya existe
+- **Layout**: `tareo-root` flex-column con `height: calc(100vh - 200px)`. Fecha en `.tareo-top` (flex-shrink: 0). Lista unificada en `.tareo-lista` (flex: 1; min-height: 0; overflow-y: auto — único scroll). Botón en `.tareo-footer` (flex-shrink: 0; border-top).
+- **Lista unificada**: Casa + Contratistas en una sola lista. Headers de sección con `position: sticky; top: 0` (azul para Casa, verde para Contratistas). Total en fila final con fondo `#111827`.
+- **DTOs**: `TareoDetalleCasaDto { partidaId, cantidadPersonas }`, `TareoDetalleContratistaDto { empresaId, cantidadPersonas }`, `TareoDto { id?, proyectoId, fecha, detallesCasa[], detallesContratista[] }`.
+- `puedeGuardar` habilita el botón solo si al menos un valor > 0. Botón muestra "Guardar tareo" o "Actualizar tareo" según `tareoId`.
+- **Pitfall CSS**: no usar `max-height + overflow-y` en contenedores internos dentro de `.tareo-lista` — genera scroll anidado que Chromium corta. Un solo scroll en `.tareo-lista`.
 
 ### Componente VersionesDoc (genérico)
 `pages/trabajadores/components/versiones-doc/versiones-doc.ts` — usado tanto por Trabajadores como por Equipos.

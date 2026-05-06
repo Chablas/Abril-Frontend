@@ -37,24 +37,39 @@ export interface InduccionHoyDto {
 
 export interface NoAutorizadoDto {
   workerId: number;
-  nombre: string;
-  empresa: string;
-  documentosFaltantes: string[];
+  apellidoNombre: string;
+  dni: string | null;
+  empresaNombre: string;
+  proyectoNombre: string;
+  estadoHabilitacion: string;
 }
 
 export interface TareoPartidaDto {
-  id?: number;
+  id: number;
   nombre: string;
-  tipo: 'CASA' | 'CONTRATISTA';
-  cantidad: number;
-  horas: number;
+}
+
+export interface TareoEmpresaDto {
+  empresaId: number;
+  empresaNombre: string;
+}
+
+export interface TareoDetalleCasaDto {
+  partidaId: number;
+  cantidadPersonas: number;
+}
+
+export interface TareoDetalleContratistaDto {
+  empresaId: number;
+  cantidadPersonas: number;
 }
 
 export interface TareoDto {
   id?: number;
   proyectoId: number;
   fecha: string;
-  partidas: TareoPartidaDto[];
+  detallesCasa: TareoDetalleCasaDto[];
+  detallesContratista: TareoDetalleContratistaDto[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -91,6 +106,19 @@ export class ControlAccesoService {
     });
   }
 
+  getPartidas(): Observable<TareoPartidaDto[]> {
+    return this.http.get<TareoPartidaDto[]>(`${this.base}/tareo/partidas`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  getEmpresasTareo(proyectoId: number): Observable<TareoEmpresaDto[]> {
+    return this.http.get<TareoEmpresaDto[]>(`${this.base}/tareo/empresas`, {
+      headers: buildHabHeaders(),
+      params: buildHabParams({ proyectoId }),
+    });
+  }
+
   getTareo(proyectoId: number, fecha: string): Observable<TareoDto> {
     return this.http.get<TareoDto>(`${this.base}/tareo`, {
       headers: buildHabHeaders(),
@@ -100,6 +128,12 @@ export class ControlAccesoService {
 
   saveTareo(body: TareoDto): Observable<TareoDto> {
     return this.http.post<TareoDto>(`${this.base}/tareo`, body, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  updateTareo(id: number, body: TareoDto): Observable<TareoDto> {
+    return this.http.put<TareoDto>(`${this.base}/tareo/${id}`, body, {
       headers: buildHabHeaders(),
     });
   }
