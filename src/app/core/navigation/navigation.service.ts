@@ -196,6 +196,23 @@ export class NavigationService {
       ],
     },
     {
+      key: 'clinica',
+      label: 'Clínica',
+      iconKey: 'clinica',
+      baseRoute: '/clinica',
+      roles: [],
+      items: [],
+      groups: [
+        {
+          label: 'Gestión',
+          items: [
+            { label: 'Agenda del Día', route: '/clinica/agenda' },
+            { label: 'Programaciones', route: '/clinica/programaciones' },
+          ],
+        },
+      ],
+    },
+    {
       key: 'seguridad',
       label: 'Seguridad',
       iconKey: 'security',
@@ -237,7 +254,7 @@ export class NavigationService {
   constructor(private authService: AuthService) {}
 
   getModules(): NavModule[] {
-    return this.config.filter(m => this.hasAnyRole(m.roles));
+    return this.config.filter(m => m.roles.length === 0 || this.hasAnyRole(m.roles));
   }
 
   filterItems(items: NavItem[]): NavItem[] {
