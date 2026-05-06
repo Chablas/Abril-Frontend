@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../../core/guards/role.guard';
 import { Dashboard } from './dashboard/dashboard';
 import { Emos } from './emos/emos';
 import { EmoHistorial } from './emos/components/emo-historial/emo-historial';
@@ -12,36 +13,43 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
   {
     path: 'dashboard',
     component: Dashboard,
-    data: { titulo: 'SALUD OCUPACIONAL - DASHBOARD' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - DASHBOARD', featureKey: 'ssoma.salud-ocupacional.dashboard' },
   },
   {
     path: 'emos',
     component: Emos,
-    data: { titulo: 'SALUD OCUPACIONAL - EMOs' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - EMOs', featureKey: 'ssoma.salud-ocupacional.emos' },
   },
   {
     path: 'emos/:workerId/historial',
     component: EmoHistorial,
-    data: { titulo: 'SALUD OCUPACIONAL - HISTORIAL EMO' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - HISTORIAL EMO', featureKey: 'ssoma.salud-ocupacional.emos' },
   },
   {
     path: 'programaciones',
     component: Programaciones,
-    data: { titulo: 'SALUD OCUPACIONAL - PROGRAMACIONES' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - PROGRAMACIONES', featureKey: 'ssoma.salud-ocupacional.programaciones' },
   },
   {
     path: 'interconsultas',
     component: Interconsultas,
-    data: { titulo: 'SALUD OCUPACIONAL - INTERCONSULTAS' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - INTERCONSULTAS', featureKey: 'ssoma.salud-ocupacional.interconsultas' },
   },
   {
     path: 'convalidaciones',
     component: Convalidaciones,
-    data: { titulo: 'SALUD OCUPACIONAL - CONVALIDACIONES' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - CONVALIDACIONES', featureKey: 'ssoma.salud-ocupacional.convalidaciones' },
   },
   {
     path: 'catalogos',
     component: Catalogos,
-    data: { titulo: 'SALUD OCUPACIONAL - CATÁLOGOS' },
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - CATÁLOGOS', featureKey: 'ssoma.salud-ocupacional.catalogos' },
   },
 ];

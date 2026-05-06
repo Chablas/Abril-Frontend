@@ -5,7 +5,7 @@ import { UserCreate } from './create/create';
 import { UserEditForm } from './components/user-edit-form/user-edit-form';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
-import { UserDTO } from '../../../../core/dtos/user/user.model';
+import { UserListItemDto } from '../../../../core/dtos/user/userListItem.model';
 
 @Component({
   selector: 'app-users',
@@ -16,7 +16,7 @@ import { UserDTO } from '../../../../core/dtos/user/user.model';
 export class Users {
   showCreateModal = false;
   formOpen = false;
-  formUser: UserDTO | null = null;
+  formUser: UserListItemDto | null = null;
   currentPage = 1;
   totalPages = 0;
   totalRecords = 0;
@@ -28,7 +28,7 @@ export class Users {
     this.showCreateModal = true;
   }
 
-  openEditForm(user: UserDTO) {
+  openEditForm(user: UserListItemDto) {
     this.formUser = user;
     this.formOpen = true;
   }
@@ -43,7 +43,7 @@ export class Users {
     this.userList.loadUsers(page);
   }
 
-  updatePagination(data: PagedResponseDTO<UserDTO>) {
+  updatePagination(data: PagedResponseDTO<UserListItemDto>) {
     this.currentPage = data.page;
     this.totalPages = data.totalPages;
     this.totalRecords = data.totalRecords;

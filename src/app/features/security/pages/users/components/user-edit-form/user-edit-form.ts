@@ -1,23 +1,20 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Input,
-  OnInit,
-  Output,
-} from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { UserService } from '../../../../../../core/services/user.service';
+import { UserFeatureService } from '../../services/user-feature.service';
 import { RoleService } from '../../../../../../core/services/role.service';
-import { UserDTO } from '../../../../../../core/dtos/user/user.model';
-import { UserUpdateDTO } from '../../../../../../core/dtos/user/userUpdate.model';
+import { UserListItemDto } from '../../../../../../core/dtos/user/userListItem.model';
+import { UserFeatureUpdateDto } from '../../../../../../core/dtos/user/userFeatureUpdate.model';
 import { RoleSimpleDTO } from '../../../../../../core/dtos/role/RoleSimpleDTO.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import Swal from 'sweetalert2';
+
+interface RoleItem extends RoleSimpleDTO {
+  checked: boolean;
+}
 
 @Component({
   selector: 'app-user-edit-form',
@@ -28,16 +25,17 @@ import Swal from 'sweetalert2';
 })
 export class UserEditForm implements OnInit {
   @Input() open = false;
-  @Input() initial: UserDTO | null = null;
+  @Input() initial: UserListItemDto | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  model: UserUpdateDTO = this.empty();
+  model: UserFeatureUpdateDto = this.empty();
+  roles: RoleItem[] = [];
+  searchTerm = '';
   saving = false;
-  roles: RoleSimpleDTO[] = [];
 
   constructor(
-    private userService: UserService,
+    private userFeatureService: UserFeatureService,
     private roleService: RoleService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -46,29 +44,11 @@ export class UserEditForm implements OnInit {
 
   ngOnInit(): void {
     this.reset();
-    this.loadRoles();
-  }
-
-  private empty(): UserUpdateDTO {
-    return { firstNames: '', firstLastName: '', secondLastName: '', email: '', phoneNumber: 0, roleId: 0 };
-  }
-
-  private reset(): void {
-    this.model = {
-      firstNames: '',
-      firstLastName: '',
-      secondLastName: '',
-      email: this.initial?.person?.email ?? '',
-      phoneNumber: 0,
-      roleId: this.initial?.roles?.[0]?.roleId ?? 0,
-    };
-  }
-
-  private loadRoles(): void {
     this.loaderService.show();
     this.roleService.getRoles().subscribe({
       next: (res) => {
-        this.roles = res;
+        const assignedIds = new Set(this.initial?.roles.map((r) => r.roleId) ?? []);
+        this.roles = res.map((r) => ({ ...r, checked: assignedIds.has(r.roleId) }));
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -79,37 +59,65 @@ export class UserEditForm implements OnInit {
     });
   }
 
-  get title(): string {
-    return 'EDITAR USUARIO';
+  get isPersona(): boolean {
+    return this.initial?.userType === 'PERSONA';
+  }
+
+  get filteredRoles(): RoleItem[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) return this.roles;
+    return this.roles.filter((r) => r.roleDescription.toLowerCase().includes(term));
+  }
+
+  get checkedCount(): number {
+    return this.roles.filter((r) => r.checked).length;
+  }
+
+  toggleAll(checked: boolean) {
+    this.filteredRoles.forEach((r) => (r.checked = checked));
+  }
+
+  trackByRoleId(_: number, r: RoleItem): number {
+    return r.roleId;
+  }
+
+  private empty(): UserFeatureUpdateDto {
+    return { firstNames: '', firstLastName: '', secondLastName: '', email: '', phoneNumber: undefined, roleIds: [] };
+  }
+
+  private reset(): void {
+    this.model = {
+      firstNames: this.initial?.firstNames ?? '',
+      firstLastName: this.initial?.firstLastName ?? '',
+      secondLastName: this.initial?.secondLastName ?? '',
+      email: this.initial?.email ?? '',
+      phoneNumber: this.initial?.phoneNumber ?? undefined,
+      roleIds: [],
+    };
   }
 
   get canSubmit(): boolean {
-    return (
-      !!this.model.firstNames.trim() &&
-      !!this.model.firstLastName.trim() &&
-      !!this.model.email.trim() &&
-      this.model.roleId > 0 &&
-      !this.saving
-    );
+    return !!this.model.email.trim() && !this.saving;
   }
 
   submit(): void {
     if (!this.canSubmit) {
-      Swal.fire({ icon: 'warning', title: 'Completa los campos requeridos' });
+      Swal.fire({ icon: 'warning', title: 'El correo es requerido' });
       return;
     }
     if (!this.initial) return;
 
+    this.model.roleIds = this.roles.filter((r) => r.checked).map((r) => r.roleId);
     this.saving = true;
     this.loaderService.show();
-    this.userService
+    this.userFeatureService
       .updateUser(this.initial.userId, {
         firstNames: this.model.firstNames.trim(),
         firstLastName: this.model.firstLastName.trim(),
         secondLastName: this.model.secondLastName?.trim() ?? '',
         email: this.model.email.trim(),
         phoneNumber: this.model.phoneNumber,
-        roleId: this.model.roleId,
+        roleIds: this.model.roleIds,
       })
       .subscribe({
         next: () => {

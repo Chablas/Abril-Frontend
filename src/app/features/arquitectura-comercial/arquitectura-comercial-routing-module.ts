@@ -16,46 +16,31 @@ const routes: Routes = [
         path: 'dashboard',
         component: Dashboard,
         canActivate: [roleGuard],
-        data: {
-          titulo: 'ARQUITECTURA COMERCIAL - DASHBOARD',
-          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
-        },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - DASHBOARD', featureKey: 'arquitectura-comercial.dashboard' },
       },
       {
         path: 'actividades',
         component: Actividades,
         canActivate: [roleGuard],
-        data: {
-          titulo: 'ARQUITECTURA COMERCIAL - ACTIVIDADES',
-          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
-        },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - ACTIVIDADES', featureKey: 'arquitectura-comercial.actividades' },
       },
       {
         path: 'entregables',
         component: Entregables,
         canActivate: [roleGuard],
-        data: {
-          titulo: 'ARQUITECTURA COMERCIAL - ENTREGABLES',
-          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
-        },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - ENTREGABLES', featureKey: 'arquitectura-comercial.entregables' },
       },
       {
         path: 'gantt',
         component: Gantt,
         canActivate: [roleGuard],
-        data: {
-          titulo: 'ARQUITECTURA COMERCIAL - GANTT',
-          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
-        },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - GANTT', featureKey: 'arquitectura-comercial.gantt' },
       },
       {
         path: 'plantilla',
         component: Plantilla,
         canActivate: [roleGuard],
-        data: {
-          titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA',
-          roles: ['USUARIO DE ARQUITECTURA COMERCIAL'],
-        },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA', featureKey: 'arquitectura-comercial.plantilla' },
       },
     ],
   },

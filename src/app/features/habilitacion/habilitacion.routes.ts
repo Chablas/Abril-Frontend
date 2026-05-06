@@ -11,7 +11,8 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - TRABAJADORES',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      featureKey: 'habilitacion.trabajadores',
+      roles: ['CONTRATISTA'],
     },
   },
   {
@@ -20,7 +21,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - EMPRESA',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      featureKey: 'habilitacion.empresa',
     },
   },
   {
@@ -29,7 +30,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - EQUIPOS Y MÁQUINAS',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      featureKey: 'habilitacion.equipos',
     },
   },
   {
@@ -38,7 +39,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - BANDEJA DE APROBACIONES',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      featureKey: 'habilitacion.bandeja',
     },
   },
   {
@@ -48,7 +49,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - SCTR Y VIDA LEY',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      featureKey: 'habilitacion.sctr-vidaley',
     },
   },
   {
@@ -58,7 +59,8 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - INDUCCIONES',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      featureKey: 'habilitacion.inducciones',
+      roles: ['CONTRATISTA'],
     },
   },
   {
@@ -68,7 +70,8 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - REGISTROS MODELO',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      featureKey: 'habilitacion.registros-modelo',
+      roles: ['CONTRATISTA'],
     },
   },
   {
@@ -80,7 +83,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - EVALUACIÓN SUPERVISORES',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP'],
+      featureKey: 'habilitacion.evaluacion-supervisores',
     },
   },
   {
@@ -89,7 +92,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - AUDITORÍA',
-      roles: ['ADMINISTRADOR SSOMA'],
+      featureKey: 'habilitacion.auditoria',
     },
   },
   {
@@ -98,7 +101,7 @@ export const HABILITACION_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'HABILITACIÓN - REGLAS DE ENTREGABLES',
-      roles: ['ADMINISTRADOR SSOMA'],
+      featureKey: 'habilitacion.reglas',
     },
   },
   {

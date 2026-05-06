@@ -122,6 +122,9 @@ export class MicrosoftAuthService {
       localStorage.setItem('session_token', response.sessionToken);
       localStorage.setItem('token_expires_at', response.expiresAt);
       localStorage.setItem('graph_access_token', microsoftToken);
+      if (response.allowedFeatures) {
+        localStorage.setItem('allowed_features', JSON.stringify(response.allowedFeatures));
+      }
       localStorage.setItem('user', JSON.stringify({
         displayName: response.displayName,
         givenName: response.givenName,

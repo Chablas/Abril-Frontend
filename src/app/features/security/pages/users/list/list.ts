@@ -2,11 +2,10 @@ import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { UserService } from '../../../../../core/services/user.service';
+import { UserFeatureService } from '../services/user-feature.service';
 import { AuthService } from '../../../../../core/services/auth.service';
-import { UserDTO } from '../../../../../core/dtos/user/user.model';
+import { UserListItemDto } from '../../../../../core/dtos/user/userListItem.model';
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
-import { RoleSimpleDTO } from '../../../../../core/dtos/role/RoleSimpleDTO.model';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
@@ -18,7 +17,7 @@ import Swal from 'sweetalert2';
   styleUrl: './list.css',
 })
 export class UserList implements OnInit {
-  tableData: PagedResponseDTO<UserDTO> = {
+  tableData: PagedResponseDTO<UserListItemDto> = {
     page: 0,
     pageSize: 0,
     totalRecords: 0,
@@ -28,12 +27,12 @@ export class UserList implements OnInit {
 
   searchTerm = '';
 
-  @Output() pagedData = new EventEmitter<PagedResponseDTO<UserDTO>>();
-  @Output() editUser = new EventEmitter<UserDTO>();
+  @Output() pagedData = new EventEmitter<PagedResponseDTO<UserListItemDto>>();
+  @Output() editUser = new EventEmitter<UserListItemDto>();
   @Output() userToggled = new EventEmitter<void>();
 
   constructor(
-    private userService: UserService,
+    private userFeatureService: UserFeatureService,
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -44,17 +43,19 @@ export class UserList implements OnInit {
     setTimeout(() => this.loadUsers());
   }
 
-  get filteredData(): UserDTO[] {
+  get filteredData(): UserListItemDto[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) return this.tableData.data;
-    return this.tableData.data.filter((u) =>
-      u.person.fullName.toLowerCase().includes(term)
-    );
+    return this.tableData.data.filter((u) => {
+      const name = (u.displayName ?? u.email).toLowerCase();
+      const doc = (u.documentIdentityCode ?? '').toLowerCase();
+      return name.includes(term) || doc.includes(term) || u.email.toLowerCase().includes(term);
+    });
   }
 
   loadUsers(page: number = 1) {
     this.loaderService.show();
-    this.userService.getUserPaged(page).subscribe({
+    this.userFeatureService.getUserPaged(page).subscribe({
       next: (response) => {
         this.tableData = response;
         this.pagedData.emit(response);
@@ -67,7 +68,7 @@ export class UserList implements OnInit {
     });
   }
 
-  resendEmail(user: UserDTO, event: MouseEvent) {
+  resendEmail(user: UserListItemDto, event: MouseEvent) {
     event.stopPropagation();
     this.loaderService.show();
     this.authService.forgotPassword(user.userId).subscribe({
@@ -75,7 +76,7 @@ export class UserList implements OnInit {
         this.loaderService.hide();
         Swal.fire({
           title: 'Correo reenviado',
-          text: `Se reenvió el correo a ${user.person.email}`,
+          text: `Se reenvió el correo a ${user.email}`,
           icon: 'success',
           draggable: true,
         });
@@ -86,17 +87,18 @@ export class UserList implements OnInit {
     });
   }
 
-  openEdit(user: UserDTO, event: MouseEvent) {
+  openEdit(user: UserListItemDto, event: MouseEvent) {
     event.stopPropagation();
     this.editUser.emit(user);
   }
 
-  toggleUser(user: UserDTO, event: MouseEvent) {
+  toggleUser(user: UserListItemDto, event: MouseEvent) {
     event.stopPropagation();
+    const label = user.displayName ?? user.email;
     const accion = user.active ? 'desactivar' : 'activar';
     Swal.fire({
       title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} usuario?`,
-      text: `${user.person.fullName} será ${user.active ? 'desactivado' : 'activado'}.`,
+      text: `${label} será ${user.active ? 'desactivado' : 'activado'}.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',
@@ -104,7 +106,7 @@ export class UserList implements OnInit {
     }).then((result) => {
       if (!result.isConfirmed) return;
       this.loaderService.show();
-      this.userService.toggleUser(user.userId).subscribe({
+      this.userFeatureService.toggleUser(user.userId).subscribe({
         next: () => {
           this.loaderService.hide();
           this.userToggled.emit();
@@ -118,8 +120,13 @@ export class UserList implements OnInit {
     });
   }
 
-  getRolesText(roles: RoleSimpleDTO[]): string {
-    if (!roles) return '';
-    return roles.map((r) => r.roleDescription).join(', ');
+  getRolesText(user: UserListItemDto): string {
+    return user.roles.map((r) => r.roleDescription).join(', ') || '—';
+  }
+
+  userTypeBadge(type: string): string {
+    if (type === 'PERSONA') return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (type === 'COLABORADOR') return 'bg-purple-100 text-purple-800 border-purple-200';
+    return 'bg-orange-100 text-orange-800 border-orange-200';
   }
 }

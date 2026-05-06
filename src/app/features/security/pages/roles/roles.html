@@ -22,6 +22,7 @@
     <app-role-list
       class="w-full"
       (pagedData)="updatePagination($event)"
+      (editRole)="openEditModal($event)"
     ></app-role-list>
     <app-paginator
       class="w-full"
@@ -38,3 +39,10 @@
   (closeModal)="showCreateModal = false"
   (roleCreated)="reloadRoles()"
 ></app-role-create>
+
+<app-role-edit
+  *ngIf="selectedRoleForEdit"
+  [role]="selectedRoleForEdit"
+  (closeModal)="selectedRoleForEdit = null"
+  (roleUpdated)="reloadRoles()"
+></app-role-edit>

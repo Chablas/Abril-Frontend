@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/role.guard';
 
 /** Rutas públicas (sin layout) — registro de contratistas externos */
 export const CONTRACTORS_ROUTES: Routes = [
@@ -17,6 +18,7 @@ export const CONTRACTORS_ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./contractor-management/components/contractor-management')
       .then(m => m.ContractorManagement),
-    data: { titulo: 'HOMOLOGACIÓN DE CONTRATISTAS', roles: ['USUARIO DE COSTOS Y PRESUPUESTOS'] },
+    canActivate: [roleGuard],
+    data: { titulo: 'HOMOLOGACIÓN DE CONTRATISTAS', featureKey: 'contractors.management' },
   }
 ];

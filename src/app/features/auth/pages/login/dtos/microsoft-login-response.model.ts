@@ -12,4 +12,5 @@ export interface MicrosoftLoginResponseDTO {
   mobilePhone?: string;
   businessPhones: string[];
   photoBase64?: string;
+  allowedFeatures?: string[];
 }

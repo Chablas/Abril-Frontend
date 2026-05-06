@@ -8,6 +8,7 @@ import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
+
 @Component({
   selector: 'app-role-list',
   imports: [CommonModule, FormsModule],
@@ -26,6 +27,7 @@ export class RoleList implements OnInit {
   searchTerm = '';
 
   @Output() pagedData = new EventEmitter<PagedResponseDTO<RoleDto>>();
+  @Output() editRole = new EventEmitter<RoleDto>();
 
   constructor(
     private roleService: RoleFeatureService,

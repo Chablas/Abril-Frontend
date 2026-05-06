@@ -5,6 +5,7 @@ import { environment } from '../../../../../../environments/environment';
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { RoleDto } from '../dtos/role.model';
 import { RoleCreateDto } from '../dtos/roleCreate.model';
+import { FeatureDto } from '../dtos/feature.model';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -25,5 +26,23 @@ export class RoleFeatureService {
 
   createRole(dto: RoleCreateDto): Observable<any> {
     return this.http.post(`${this.apiUrl}`, dto, { headers: buildAuthHeaders() });
+  }
+
+  getAllFeatures(): Observable<FeatureDto[]> {
+    return this.http.get<FeatureDto[]>(`${this.apiUrl}/features/all`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getRoleFeatureIds(roleId: number): Observable<number[]> {
+    return this.http.get<number[]>(`${this.apiUrl}/${roleId}/features`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  updateRoleFeatures(roleId: number, featureIds: number[]): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${roleId}/features`, { featureIds }, {
+      headers: buildAuthHeaders(),
+    });
   }
 }

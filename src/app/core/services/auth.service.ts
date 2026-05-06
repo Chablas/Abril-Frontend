@@ -63,6 +63,9 @@ export class AuthService {
       tap((res) => {
         localStorage.setItem('access_token', res.accessToken);
         localStorage.setItem('user', JSON.stringify(res.user));
+        if (res.allowedFeatures) {
+          localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures));
+        }
       }),
     );
   }
@@ -70,6 +73,7 @@ export class AuthService {
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
+    localStorage.removeItem('allowed_features');
   }
 
   isTokenExpired(): boolean {

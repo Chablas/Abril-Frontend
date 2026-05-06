@@ -2,15 +2,20 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { UserService } from '../../../../../core/services/user.service';
+import { forkJoin } from 'rxjs';
+import { UserFeatureService } from '../services/user-feature.service';
 import { PersonService } from '../../../../../core/services/person.service';
 import { RoleService } from '../../../../../core/services/role.service';
-import { UserCreateDTO } from '../../../../../core/dtos/user/userCreate.model';
+import { UserFeatureCreateDto } from '../../../../../core/dtos/user/userFeatureCreate.model';
 import { RoleSimpleDTO } from '../../../../../core/dtos/role/RoleSimpleDTO.model';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import Swal from 'sweetalert2';
+
+interface RoleItem extends RoleSimpleDTO {
+  checked: boolean;
+}
 
 @Component({
   selector: 'app-user-create',
@@ -19,25 +24,26 @@ import Swal from 'sweetalert2';
   styleUrl: './create.css',
 })
 export class UserCreate implements OnInit {
-  roles: RoleSimpleDTO[] = [];
+  roles: RoleItem[] = [];
+  searchTerm = '';
 
-  createDto: UserCreateDTO = {
+  createDto: UserFeatureCreateDto = {
     documentIdentityCode: '',
     firstNames: '',
     firstLastName: '',
     secondLastName: '',
     email: '',
-    phoneNumber: 0,
+    phoneNumber: undefined,
     createdUserId: 1,
     active: true,
-    roleId: 0,
+    roleIds: [],
   };
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() userCreated = new EventEmitter<void>();
 
   constructor(
-    private userService: UserService,
+    private userFeatureService: UserFeatureService,
     private personService: PersonService,
     private roleService: RoleService,
     private loaderService: LoaderService,
@@ -45,18 +51,32 @@ export class UserCreate implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadRoles();
-  }
-
-  loadRoles() {
     this.loaderService.show();
     this.roleService.getRoles().subscribe({
       next: (res) => {
-        this.roles = res,
+        this.roles = res.map((r) => ({ ...r, checked: false }));
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  get filteredRoles(): RoleItem[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) return this.roles;
+    return this.roles.filter((r) => r.roleDescription.toLowerCase().includes(term));
+  }
+
+  get checkedCount(): number {
+    return this.roles.filter((r) => r.checked).length;
+  }
+
+  toggleAll(checked: boolean) {
+    this.filteredRoles.forEach((r) => (r.checked = checked));
+  }
+
+  trackByRoleId(_: number, r: RoleItem): number {
+    return r.roleId;
   }
 
   getPersonRENIEC() {
@@ -73,28 +93,21 @@ export class UserCreate implements OnInit {
         this.createDto.secondLastName = res.second_last_name;
         this.loaderService.hide();
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 
   saveUser() {
+    this.createDto.roleIds = this.roles.filter((r) => r.checked).map((r) => r.roleId);
     this.loaderService.show();
-    this.userService.createUser(this.createDto).subscribe({
+    this.userFeatureService.createUser(this.createDto).subscribe({
       next: () => {
         this.loaderService.hide();
         this.userCreated.emit();
         this.closeModal.emit();
-        Swal.fire({
-          title: 'Usuario creado exitosamente',
-          icon: 'success',
-          draggable: true,
-        });
+        Swal.fire({ title: 'Usuario creado exitosamente', icon: 'success', draggable: true });
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 }

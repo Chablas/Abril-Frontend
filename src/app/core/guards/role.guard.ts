@@ -8,20 +8,24 @@ export const roleGuard: CanActivateFn = (route) => {
   const router = inject(Router);
   const platformId = inject(PLATFORM_ID);
 
-  if (!isPlatformBrowser(platformId)) {
-    return true;
+  if (!isPlatformBrowser(platformId)) return true;
+
+  const featureKey   = route.data?.['featureKey'] as string | undefined;
+  const allowedRoles = route.data?.['roles']      as string[] | undefined;
+
+  // Verificación por feature key (sistema dinámico desde BD)
+  if (featureKey) {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('allowed_features') : null;
+    const allowedFeatures: string[] = raw ? JSON.parse(raw) : [];
+    if (allowedFeatures.includes(featureKey)) return true;
   }
 
-  const allowedRoles = route.data?.['roles'] as string[];
-
-  const userRoles = authService.getRoles();
-
-  const hasAccess = allowedRoles.some((role) => userRoles.includes(role));
-
-  if (!hasAccess) {
-    router.navigate(['/']);
-    return false;
+  // Fallback por rol JWT (rutas de CONTRATISTA u otros roles especiales)
+  if (allowedRoles?.length) {
+    const userRoles = authService.getRoles();
+    if (allowedRoles.some((r) => userRoles.includes(r))) return true;
   }
 
-  return true;
+  router.navigate(['/']);
+  return false;
 };
