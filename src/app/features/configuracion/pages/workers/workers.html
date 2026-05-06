@@ -6,12 +6,6 @@
         Trabajadores activos con su último EMO, estado de vigencia y aptitud.
       </p>
     </div>
-    <button type="button" class="btn-primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-      Nuevo Trabajador
-    </button>
   </header>
 
   <div class="filters-card">
@@ -64,7 +58,6 @@
             <th>Tipo</th>
             <th>Estado EMO</th>
             <th>Aptitud</th>
-            <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -92,21 +85,6 @@
                 {{ aptitudLabel(item) }}
               </span>
             </td>
-            <td class="text-right">
-              <div class="row-actions">
-                <button type="button" class="btn-chip chip-blue" (click)="openEdit(item)">
-                  Editar
-                </button>
-                <button
-                  *ngIf="esActivo(item)"
-                  type="button"
-                  class="btn-chip chip-red"
-                  (click)="retirar(item)"
-                >
-                  Retirar
-                </button>
-              </div>
-            </td>
           </tr>
           <tr *ngIf="!loading && items.length === 0">
             <td colspan="8" class="empty-row">Sin trabajadores.</td>
@@ -126,11 +104,3 @@
   </div>
 </section>
 
-<app-worker-edit-form
-  *ngIf="formOpen"
-  [open]="formOpen"
-  [mode]="formMode"
-  [worker]="formWorker"
-  (closed)="closeForm()"
-  (saved)="onSaved()"
-></app-worker-edit-form>

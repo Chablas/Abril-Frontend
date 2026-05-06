@@ -34,8 +34,8 @@ import { environment } from '../../../../../environments/environment';
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { CambiarObra } from './components/cambiar-obra/cambiar-obra';
 import { VersionesDoc } from './components/versiones-doc/versiones-doc';
-import { EditarPerfil } from './components/editar-perfil/editar-perfil';
 import { ReingresoForm } from './components/reingreso-form/reingreso-form';
+import { WorkerCreateEdit } from './components/worker-create-edit/worker-create-edit';
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
@@ -43,7 +43,7 @@ import { ProgramarInduccion } from './components/programar-induccion/programar-i
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, EditarPerfil, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -88,7 +88,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   modalCambiarObraOpen = false;
   modalVersionesOpen = false;
   versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
-  modalEditarPerfilOpen = false;
+  modalWorkerOpen = false;
+  modalWorkerMode: 'create' | 'edit' = 'create';
+  workerParaEditar: WorkerHabilitacionListDto | null = null;
   mostrarReingreso = false;
   mostrarHistorial = false;
   mostrarAgregarProyecto = false;
@@ -797,24 +799,27 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.modalVersionesOpen = false;
   }
 
-  abrirEditarPerfil(worker: WorkerHabilitacionListDto): void {
-    this.workerParaAccion = worker;
-    this.modalEditarPerfilOpen = true;
+  abrirCrear(): void {
+    this.modalWorkerMode = 'create';
+    this.workerParaEditar = null;
+    this.modalWorkerOpen = true;
   }
 
-  closeEditarPerfil(): void {
-    this.modalEditarPerfilOpen = false;
-    this.workerParaAccion = null;
+  abrirEditar(worker: WorkerHabilitacionListDto): void {
+    this.modalWorkerMode = 'edit';
+    this.workerParaEditar = worker;
+    this.modalWorkerOpen = true;
   }
 
-  onEditarPerfilSaved(): void {
-    this.modalEditarPerfilOpen = false;
-    this.workerParaAccion = null;
+  onWorkerSaved(): void {
+    this.modalWorkerOpen = false;
+    this.workerParaEditar = null;
     this.loadWorkers(this.currentPage);
-    if (this.selectedWorker) {
-      const id = this.selectedWorker.workerId;
-      const updated = this.workers.find((w) => w.workerId === id);
-      if (updated) this.selectedWorker = updated;
-    }
+  }
+
+  onBuscarWorker(dni: string): void {
+    this.modalWorkerOpen = false;
+    this.search = dni;
+    this.loadWorkers(1);
   }
 }

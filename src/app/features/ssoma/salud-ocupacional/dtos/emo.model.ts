@@ -158,6 +158,7 @@ export interface WorkerUpsertDto {
   sctr?: boolean;
   habilitadoObra?: boolean;
   notas?: string | null;
+  tipoDocumento?: string;
 }
 
 export interface EmoPorTrabajadorQuery {

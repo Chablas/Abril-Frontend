@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay } from 'rxjs';
+import { Observable, catchError, of, shareReplay } from 'rxjs';
 import {
   AreaCatDto,
   SsItemEmpresaDto,
@@ -15,6 +15,8 @@ export class CatalogosHabService {
   private itemsTrabajador$?: Observable<SsItemTrabajadorDto[]>;
   private itemsEmpresa$?: Observable<SsItemEmpresaDto[]>;
   private areas$?: Observable<AreaCatDto[]>;
+  private categorias$?: Observable<{ id: number; nombre: string }[]>;
+  private ocupaciones$?: Observable<{ id: number; nombre: string }[]>;
 
   constructor(private http: HttpClient) {}
 
@@ -47,6 +49,28 @@ export class CatalogosHabService {
         .pipe(shareReplay(1));
     }
     return this.areas$;
+  }
+
+  getCategorias(): Observable<{ id: number; nombre: string }[]> {
+    if (!this.categorias$) {
+      this.categorias$ = this.http
+        .get<{ id: number; nombre: string }[]>(`${this.base}/categorias`, {
+          headers: buildHabHeaders(),
+        })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.categorias$;
+  }
+
+  getOcupaciones(): Observable<{ id: number; nombre: string }[]> {
+    if (!this.ocupaciones$) {
+      this.ocupaciones$ = this.http
+        .get<{ id: number; nombre: string }[]>(`${this.base}/ocupaciones`, {
+          headers: buildHabHeaders(),
+        })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.ocupaciones$;
   }
 
   getSubareas(area: string): Observable<SubareaCatDto[]> {
