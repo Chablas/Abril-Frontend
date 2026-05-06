@@ -73,6 +73,14 @@
             (change)="onFilterChange()"
           />
         </div>
+
+        <div>
+          <label class="filter-label">Clínica</label>
+          <select class="field-input" [(ngModel)]="filtroClinicaId" (change)="onFilterChange()">
+            <option [ngValue]="null">Todas</option>
+            <option *ngFor="let c of clinicas" [ngValue]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
       </div>
 
       <div *ngIf="hasActiveFilters" class="pt-2">
@@ -203,6 +211,10 @@
               <div class="event-time">{{ p.hora || '--' }}</div>
               <div class="event-body">
                 <div class="event-name">{{ p.workerNombre }}</div>
+                <span *ngIf="esAutomatico(p)"
+                  style="font-size:0.62rem;background:#ede9fe;color:#7c3aed;border-radius:4px;padding:1px 4px;font-weight:700;">
+                  AUTO
+                </span>
                 <div class="event-sub">{{ p.tipoEmo }}<span *ngIf="p.clinica"> · {{ p.clinica }}</span></div>
                 <span class="badge border mt-1" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
               </div>

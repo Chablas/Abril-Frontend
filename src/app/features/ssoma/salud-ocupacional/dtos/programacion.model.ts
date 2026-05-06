@@ -56,6 +56,7 @@ export interface ProgramacionEstadoPatchDto {
 }
 
 export interface ProgramacionQueryParams {
+  clinicaId?: number;
   desde?: string;
   hasta?: string;
   estado?: string;
