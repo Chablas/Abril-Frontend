@@ -506,7 +506,10 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
 ### `features/configuracion/` — ✅ Completo
-Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (CRUD completo).
+Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
+
+### `features/habilitacion/` — ✅ Completo (detalle en §12)
+Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -537,6 +540,12 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 ### DTOs
 - Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No uniformizar**.
 - Páginas standalone **NO** se declaran en `declarations` del NgModule.
+
+### Habilitación — servicios y worker-create-edit
+- **`buildHabHeaders()` ≠ `buildAuthHeaders()`** — son funciones en módulos distintos (`habilitacion/services/http-base.ts` vs `ssoma/.../http-base.ts`). Todos los servicios de Habilitación usan `buildHabHeaders()`. Usar `buildAuthHeaders()` genera 401 silencioso.
+- **`onDniBlur()` encadena 4 pasos sincrono→async**: (1) validación formato DNI/CE, (2) RENIEC (solo DNI, best-effort), (3) verificar restringidos, (4) verificar existencia en BD. El flag `verificandoDni` se mantiene `true` durante los 4 pasos — cada paso llama al siguiente en su callback `next`/`error`. Solo el paso 4 pone `verificandoDni = false`.
+- **Lógica Casa vs Contratista en `verificarExistenciaEnBd()`**: rol Abril siempre bloquea (activo o retirado). Contratista bloquea si activo o si retirado en su misma empresa; permite si retirado en otra empresa. Usa `authService.getEmpresaId()` (lee `localStorage.user.empresaId`).
+- **`TipoDocumento` no se guarda en BD** — campo de transporte en `WorkerUpsertDto`. El frontend lo infiere del formato del DNI existente al abrir el modal en modo edit (`/^\d{8}$/.test(dni)` → DNI, else → CE).
 
 ### Backend pitfalls (ASP.NET / PostgreSQL)
 - **`AuditoriaInterceptor` debe ser Singleton** (no Scoped) — usar `services.AddSingleton<AuditoriaInterceptor>()`.
@@ -579,6 +588,7 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 - Patrón service core legacy: `core/services/project.service.ts`
 - Patrón módulo top-level standalone: `features/configuracion/configuracion.routes.ts`
 - Patrón page CRUD completo (create/edit/retire/list): `features/configuracion/pages/workers/workers.ts`
+- Patrón modal crear/editar con lógica por rol + DNI/CE + catálogos en cascada: `features/habilitacion/pages/trabajadores/components/worker-create-edit/worker-create-edit.ts`
 - Patrón layout lista + visor PDF (SCTR-style): `features/habilitacion/pages/sctr-vidaley/sctr-vidaley.ts`
 - Patrón layout lista + visor PDF (Bandeja): `features/habilitacion/pages/bandeja/bandeja.ts`
 - Sidebar config: `core/navigation/navigation.service.ts`
@@ -641,6 +651,11 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/catalogos/criterios` |
 | GET | `/catalogos/areas` |
 | GET | `/catalogos/subareas?area={area}` |
+| GET | `/catalogos/categorias` (cached `shareReplay(1)`) |
+| GET | `/catalogos/ocupaciones` (cached `shareReplay(1)`) |
+| GET | `/restringidos?dni=&soloActivos=` |
+| POST | `/restringidos` |
+| DELETE | `/restringidos/{id}` |
 | POST | `/auth/login` (contratista) |
 | GET | `/auth/empresas` |
 | GET | `/trabajadores` (paginado) |
@@ -830,6 +845,27 @@ Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/ind
 { workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre?, yaIndujo? }
 ```
 
+### Modal WorkerCreateEdit — Crear/Editar Worker
+`pages/trabajadores/components/worker-create-edit/` — migrado desde `configuracion/pages/workers/`.
+
+**Inputs/Outputs**: `[open]`, `[mode: 'create'|'edit']`, `[worker: WorkerHabilitacionListDto|null]`, `(closed)`, `(saved)`, `(buscarWorker: EventEmitter<string>)`.
+
+**Flujo crear**: selección TipoDocumento (DNI/CE) → `onDniBlur()` (4 pasos) → formulario → `WorkerService.createWorker(WorkerUpsertDto)` (endpoint SSOMA).
+
+**Flujo editar**: prefill desde `WorkerHabilitacionListDto` (lista) + `getWorker(workerId)` para `celular/sctr/area/subarea/jefatura` → `WorkerService.updateWorker(id, WorkerUpsertDto)`.
+
+**Diferencias Casa vs Contratista**:
+- Contratista: oculta campos org (Contrata/Casa, Obra/Oficina, Empresa, Proyecto, Área, Subárea, Jefatura, SCTR). Payload fuerza `contrataCasa: 'Contratista'`.
+- Rol Abril: muestra todos los campos + catálogos de empresa/proyecto/área/subárea.
+
+**Catálogos cargados en `resetAndLoad()` (todos los roles)**: `getCategorias()`, `getOcupaciones()` — ambos cacheados con `shareReplay(1)`.
+
+**Catálogos solo rol Abril**: `getEmpresas()`, `getProjectsPaged()`, `getAreas()`. Subáreas: lazy al seleccionar área (`getSubareas(area)`, sin cache).
+
+**SCTR**: solo editable cuando `obraOficina === 'Oficina Central'`. Para otros valores, `sctr` forzado a `true` y checkbox deshabilitado.
+
+**`(buscarWorker)`**: se emite cuando el usuario confirma "Ir a buscarlo" en el Swal de existencia. El padre (`trabajadores.ts`) cierra el modal, pone el DNI en `search`, y llama `loadWorkers(1)`.
+
 ### Multiproyecto (workers Casa y Contratistas)
 Workers Casa y Contratistas pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
 
@@ -965,11 +1001,13 @@ Selector: `app-hab-versiones-doc`.
 - Auditoría solo para admins.
 
 ### Pendiente
-- Validar modal Editar perfil contra backend real (casing `obraOficina`, `sctr` boolean vs string).
 - Backend: `GET /inducciones/trabajadores-por-programar` — sin esto paso 2 de Programar Inducción no carga.
 - Backend: `POST /api/v1/habilitacion/archivos/subir` (hoy cae al fallback `pending-upload://`).
 - Backend: 4 endpoints multiproyecto `/trabajadores/{workerId}/proyectos` (hoy silenciado a array vacío).
 - Backend: confirmar `PATCH /bandeja/induccion/{id}` — frontend ya configurado.
+- Frontend: pantalla gestión de trabajadores restringidos (listar, agregar, desactivar vía `/restringidos` endpoints — backend listo).
+- Frontend: tour guiado / onboarding para contratistas en primer acceso tras activar cuenta.
+- Seguridad: cerrar `[AllowAnonymous]` en `WorkersController` (SSOMA) antes de producción.
 - PRs a `master` (backend debe deployarse antes que frontend).
 - Deploy a producción + primer usuario admin.
 
