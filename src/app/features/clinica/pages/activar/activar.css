@@ -1,0 +1,4 @@
+.activar-root { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f9fafb; }
+.activar-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 2rem; width: 100%; max-width: 420px; }
+.alert-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 0.75rem 1rem; border-radius: 8px; }
+.alert-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 0.75rem 1rem; border-radius: 8px; }

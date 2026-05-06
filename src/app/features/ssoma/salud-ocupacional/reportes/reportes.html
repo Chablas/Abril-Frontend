@@ -1,0 +1,29 @@
+<div class="p-6 space-y-4">
+  <div class="section-bar">
+    <div>
+      <h2 class="section-title">Reportes SUNAFIL</h2>
+      <p class="section-sub">Exportar registros de vigilancia médica ocupacional</p>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:500px;padding:1.5rem;">
+    <h3 style="font-weight:600;margin-bottom:1rem;color:#111827;">Reporte mensual de EMOs</h3>
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div>
+        <label class="field-label">Mes</label>
+        <select class="field-input" [(ngModel)]="mes">
+          <option *ngFor="let m of meses" [value]="m.v">{{ m.l }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Año</label>
+        <select class="field-input" [(ngModel)]="anio">
+          <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" [disabled]="loading" (click)="exportar()">
+      📊 Exportar Excel
+    </button>
+  </div>
+</div>

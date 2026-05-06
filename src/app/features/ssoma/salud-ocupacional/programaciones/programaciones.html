@@ -21,6 +21,38 @@
     </div>
   </header>
 
+  <!-- KPIs -->
+  <div class="kpis-row">
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpis.programados }}</span>
+      <span class="kpi-label">Programados</span>
+    </div>
+    <div class="kpi-card kpi-green">
+      <span class="kpi-value">{{ kpis.aceptados }}</span>
+      <span class="kpi-label">Aceptados</span>
+    </div>
+    <div class="kpi-card kpi-orange">
+      <span class="kpi-value">{{ kpis.enAtencion }}</span>
+      <span class="kpi-label">En Atención</span>
+    </div>
+    <div class="kpi-card kpi-emerald">
+      <span class="kpi-value">{{ kpis.completados }}</span>
+      <span class="kpi-label">Completados</span>
+    </div>
+    <div class="kpi-card kpi-red">
+      <span class="kpi-value">{{ kpis.rechazados }}</span>
+      <span class="kpi-label">Rechazados</span>
+    </div>
+    <div class="kpi-card kpi-gray">
+      <span class="kpi-value">{{ kpis.noPresento }}</span>
+      <span class="kpi-label">No se presentó</span>
+    </div>
+    <div class="kpi-card kpi-violet">
+      <span class="kpi-value">{{ kpis.automaticos }}</span>
+      <span class="kpi-label">Auto</span>
+    </div>
+  </div>
+
   <!-- Vista Lista -->
   <ng-container *ngIf="viewMode === 'list'">
     <div class="filters-card">
@@ -72,6 +104,14 @@
             [(ngModel)]="filters.hasta"
             (change)="onFilterChange()"
           />
+        </div>
+
+        <div>
+          <label class="filter-label">Clínica</label>
+          <select class="field-input" [(ngModel)]="filtroClinicaId" (change)="onFilterChange()">
+            <option [ngValue]="null">Todas</option>
+            <option *ngFor="let c of clinicas" [ngValue]="c.id">{{ c.nombre }}</option>
+          </select>
         </div>
       </div>
 
@@ -150,6 +190,11 @@
                     *ngIf="item.checkInHora"
                     class="badge border bg-gray-100 text-gray-600 border-gray-200"
                   >⏱ {{ item.checkInHora }}</span>
+                  <span
+                    *ngIf="item.fechaNotificacion"
+                    class="badge border bg-blue-50 text-blue-600 border-blue-200"
+                    title="Notificado el {{ item.fechaNotificacion | date:'dd/MM/yyyy HH:mm' }}"
+                  >📧</span>
                 </div>
               </td>
             </tr>
@@ -198,6 +243,10 @@
               <div class="event-time">{{ p.hora || '--' }}</div>
               <div class="event-body">
                 <div class="event-name">{{ p.workerNombre }}</div>
+                <span *ngIf="esAutomatico(p)"
+                  style="font-size:0.62rem;background:#ede9fe;color:#7c3aed;border-radius:4px;padding:1px 4px;font-weight:700;">
+                  AUTO
+                </span>
                 <div class="event-sub">{{ p.tipoEmo }}<span *ngIf="p.clinica"> · {{ p.clinica }}</span></div>
                 <span class="badge border mt-1" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
               </div>

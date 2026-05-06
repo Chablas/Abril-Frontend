@@ -88,12 +88,13 @@ export class NavigationService {
         {
           label: 'Salud Ocupacional',
           items: [
-            { label: 'Dashboard',      route: '/ssoma/salud-ocupacional/dashboard',     featureKey: 'ssoma.salud-ocupacional.dashboard' },
-            { label: 'EMOs',           route: '/ssoma/salud-ocupacional/emos',          featureKey: 'ssoma.salud-ocupacional.emos' },
-            { label: 'Programaciones', route: '/ssoma/salud-ocupacional/programaciones', featureKey: 'ssoma.salud-ocupacional.programaciones' },
-            { label: 'Interconsultas', route: '/ssoma/salud-ocupacional/interconsultas', featureKey: 'ssoma.salud-ocupacional.interconsultas' },
+            { label: 'Dashboard',       route: '/ssoma/salud-ocupacional/dashboard',      featureKey: 'ssoma.salud-ocupacional.dashboard' },
+            { label: 'EMOs',            route: '/ssoma/salud-ocupacional/emos',           featureKey: 'ssoma.salud-ocupacional.emos' },
+            { label: 'Programaciones',  route: '/ssoma/salud-ocupacional/programaciones', featureKey: 'ssoma.salud-ocupacional.programaciones' },
+            { label: 'Interconsultas',  route: '/ssoma/salud-ocupacional/interconsultas', featureKey: 'ssoma.salud-ocupacional.interconsultas' },
             { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones', featureKey: 'ssoma.salud-ocupacional.convalidaciones' },
-            { label: 'Catálogos',      route: '/ssoma/salud-ocupacional/catalogos',     featureKey: 'ssoma.salud-ocupacional.catalogos' },
+            { label: 'Catálogos',       route: '/ssoma/salud-ocupacional/catalogos',      featureKey: 'ssoma.salud-ocupacional.catalogos' },
+            { label: 'Reportes',        route: '/ssoma/salud-ocupacional/reportes',       featureKey: 'ssoma.salud-ocupacional.reportes' },
           ],
         },
       ],

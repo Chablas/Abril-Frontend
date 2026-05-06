@@ -1,15 +1,17 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { ProgramacionService } from '../services/programacion.service';
+import { CatalogosSaludService } from '../services/catalogos-salud.service';
 import {
   EstadoProgramacion,
   ProgramacionListDto,
   ProgramacionQueryParams,
 } from '../dtos/programacion.model';
+import { ClinicaSimpleDto } from '../dtos/catalogos.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -43,6 +45,7 @@ interface FilterOption {
     SearchSelect,
     ViewToggle,
     ProgramacionCreate,
+    DatePipe,
   ],
   templateUrl: './programaciones.html',
   styleUrl: './programaciones.css',
@@ -97,6 +100,8 @@ export class Programaciones implements OnInit, OnDestroy {
   createOpen = false;
   rechazandoId: number | null = null;
   motivoRechazo = '';
+  filtroClinicaId: number | null = null;
+  clinicas: ClinicaSimpleDto[] = [];
 
   // Calendario
   semanaInicio: Date = this.startOfWeek(new Date());
@@ -108,6 +113,7 @@ export class Programaciones implements OnInit, OnDestroy {
 
   constructor(
     private service: ProgramacionService,
+    private catalogosSvc: CatalogosSaludService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -117,6 +123,7 @@ export class Programaciones implements OnInit, OnDestroy {
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.load(1));
+    this.catalogosSvc.getClinicas().subscribe((data) => (this.clinicas = data));
     this.load(1);
   }
 
@@ -135,6 +142,7 @@ export class Programaciones implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       desde: this.filters.desde || undefined,
       hasta: this.filters.hasta || undefined,
+      clinicaId: this.filtroClinicaId ?? undefined,
     };
     this.service.getProgramaciones(query).subscribe({
       next: (res) => {
@@ -233,6 +241,7 @@ export class Programaciones implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.filters = { search: '', estado: '', desde: '', hasta: '' };
+    this.filtroClinicaId = null;
     this.load(1);
   }
 
@@ -350,12 +359,25 @@ export class Programaciones implements OnInit, OnDestroy {
     return `${y}-${m}-${day}`;
   }
 
+  get kpis() {
+    return {
+      programados: this.items.filter((i) => i.estado === 'Programado').length,
+      aceptados: this.items.filter((i) => i.estado === 'Aceptado por Clínica').length,
+      enAtencion: this.items.filter((i) => i.estado === 'En Atención').length,
+      completados: this.items.filter((i) => i.estado === 'Completado').length,
+      rechazados: this.items.filter((i) => i.estado === 'Rechazado por Clínica').length,
+      noPresento: this.items.filter((i) => i.estado === 'No se presentó').length,
+      automaticos: this.items.filter((i) => i.origen === 'Automatico').length,
+    };
+  }
+
   get hasActiveFilters(): boolean {
     return !!(
       this.filters.search ||
       this.filters.estado ||
       this.filters.desde ||
-      this.filters.hasta
+      this.filters.hasta ||
+      this.filtroClinicaId
     );
   }
 

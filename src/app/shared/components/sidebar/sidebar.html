@@ -26,9 +26,15 @@
             *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
             [routerLink]="item.route"
             (click)="closeAllMenus()"
-            class="block px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
+            class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
           >
-            {{ item.label }}
+            <span>{{ item.label }}</span>
+            <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
+              <span *ngIf="count > 0"
+                style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
+                {{ count }}
+              </span>
+            </ng-container>
           </a>
 
           <!-- Grupos (ej. Configuración) -->

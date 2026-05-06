@@ -33,6 +33,7 @@ export interface ProgramacionListDto {
   checkInHora?: string;
   motivoRechazo?: string;
   emoResultadoId?: number;
+  fechaNotificacion?: string;
 }
 
 export interface ProgramacionCreateDto {
@@ -55,6 +56,7 @@ export interface ProgramacionEstadoPatchDto {
 }
 
 export interface ProgramacionQueryParams {
+  clinicaId?: number;
   desde?: string;
   hasta?: string;
   estado?: string;

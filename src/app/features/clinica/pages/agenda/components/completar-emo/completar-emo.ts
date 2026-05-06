@@ -26,6 +26,7 @@ export class CompletarEmo implements OnChanges {
   numeroInforme = '';
   urlResultado = '';
   notas = '';
+  requiereInterconsulta = false;
   saving = false;
 
   readonly aptitudes = ['Apto', 'Apto con Restricciones', 'No Apto', 'Observado'];
@@ -46,6 +47,7 @@ export class CompletarEmo implements OnChanges {
     this.numeroInforme = '';
     this.urlResultado = '';
     this.notas = '';
+    this.requiereInterconsulta = false;
     this.saving = false;
   }
 
@@ -68,7 +70,7 @@ export class CompletarEmo implements OnChanges {
       empresaOrigenId: this.programacion.empresaId ?? 0,
       fechaEmo: new Date().toISOString().split('T')[0],
       aptitud: this.aptitud,
-      requiereInterconsulta: this.aptitud === 'Observado',
+      requiereInterconsulta: this.aptitud === 'Observado' && this.requiereInterconsulta,
       numeroInforme: this.numeroInforme || undefined,
       urlResultado: this.urlResultado || undefined,
       notas: this.notas || undefined,
