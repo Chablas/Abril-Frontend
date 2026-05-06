@@ -1,0 +1,18 @@
+<app-base-modal [title]="'AGREGAR ROL'" width="w-[500px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-[20px] mt-[15px]">
+    <div class="flex flex-col">
+      <p class="text-[#64BC04]">Descripción del rol</p>
+      <input
+        type="text"
+        [(ngModel)]="createDto.roleDescription"
+        class="border border-[#E2E2E2] rounded-lg p-[10px]"
+        placeholder="Ej: ADMINISTRADOR DE SEGURIDAD"
+      />
+    </div>
+  </div>
+  <div class="flex justify-center mt-[15px]">
+    <button (click)="saveRole()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+      <p class="text-[#ffffff] text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

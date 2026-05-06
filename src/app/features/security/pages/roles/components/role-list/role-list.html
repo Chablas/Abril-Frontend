@@ -1,0 +1,44 @@
+<div class="space-y-3">
+  <div class="filters-card">
+    <label class="filter-label">Buscar rol</label>
+    <div class="search-input">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input type="text" placeholder="Nombre del rol..." [(ngModel)]="searchTerm" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Descripción</th>
+            <th>Fecha de creación</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredData">
+            <td class="id-col id-cell" data-label="#">{{ item.roleId }}</td>
+            <td class="font-semibold" data-label="Descripción">{{ item.roleDescription }}</td>
+            <td class="date-cell" data-label="Fecha de creación">
+              {{ item.createdDateTime | date: 'dd/MM/yyyy' }}
+            </td>
+            <td data-label="Estado">
+              <span class="badge border" [ngClass]="item.active ? 'chip-green' : 'chip-gray'">
+                {{ item.active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+          </tr>
+          <tr class="empty-row" *ngIf="filteredData.length === 0">
+            <td colspan="4">Sin roles registrados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

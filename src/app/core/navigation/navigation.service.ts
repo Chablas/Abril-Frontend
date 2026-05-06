@@ -165,7 +165,7 @@ export class NavigationService {
       label: 'Habilitación',
       iconKey: 'habilitacion',
       baseRoute: '/habilitacion',
-      roles: ['ADMINISTRADOR SSOMA', 'ADMINISTRADOR DE UDP', 'CONTRATISTA'],
+      roles: [],
       items: [],
       groups: [
         {
@@ -204,6 +204,10 @@ export class NavigationService {
         {
           label: 'Creación de usuarios',
           route: '/security/users',
+        },
+        {
+          label: 'Roles',
+          route: '/security/roles',
         },
       ],
     },

@@ -1,0 +1,29 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../../../environments/environment';
+import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
+import { RoleDto } from '../dtos/role.model';
+import { RoleCreateDto } from '../dtos/roleCreate.model';
+
+function buildAuthHeaders(): Record<string, string> {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+@Injectable({ providedIn: 'root' })
+export class RoleFeatureService {
+  private readonly apiUrl = `${environment.apiUrl}api/v1/role`;
+
+  constructor(private http: HttpClient) {}
+
+  getRolesPaged(page: number): Observable<PagedResponseDTO<RoleDto>> {
+    return this.http.get<PagedResponseDTO<RoleDto>>(`${this.apiUrl}/paged?page=${page}`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  createRole(dto: RoleCreateDto): Observable<any> {
+    return this.http.post(`${this.apiUrl}`, dto, { headers: buildAuthHeaders() });
+  }
+}

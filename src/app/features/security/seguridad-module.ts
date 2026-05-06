@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Users } from './pages/users/users';
+import { Roles } from './pages/roles/roles';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -20,12 +21,23 @@ const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'roles',
+        children: [
+          {
+            path: '',
+            component: Roles,
+            canActivate: [roleGuard],
+            data: { titulo: 'ROLES', roles: ['ADMINISTRADOR DEL SISTEMA'] },
+          },
+        ],
+      },
     ],
   },
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes), CommonModule, Users],
+  imports: [RouterModule.forChild(routes), CommonModule, Users, Roles],
   exports: [RouterModule],
 })
 export class SeguridadModule {}

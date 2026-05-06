@@ -1,0 +1,42 @@
+import { Component, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RoleList } from './components/role-list/role-list';
+import { RoleCreate } from './components/role-create/role-create';
+import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { RoleDto } from './dtos/role.model';
+
+@Component({
+  selector: 'app-roles',
+  imports: [CommonModule, RoleList, RoleCreate, Paginator],
+  templateUrl: './roles.html',
+  styleUrl: './roles.css',
+})
+export class Roles {
+  showCreateModal = false;
+  currentPage = 1;
+  totalPages = 0;
+  totalRecords = 0;
+
+  @ViewChild(RoleList) roleList!: RoleList;
+
+  openCreateModal(event: MouseEvent) {
+    event.stopPropagation();
+    this.showCreateModal = true;
+  }
+
+  updatePagination(data: PagedResponseDTO<RoleDto>) {
+    this.currentPage = data.page;
+    this.totalPages = data.totalPages;
+    this.totalRecords = data.totalRecords;
+  }
+
+  changePage(page: number) {
+    this.currentPage = page;
+    this.roleList.loadRoles(page);
+  }
+
+  reloadRoles() {
+    this.roleList.loadRoles(this.currentPage);
+  }
+}
