@@ -1,0 +1,66 @@
+<app-base-modal *ngIf="open" title="Registrar Resultado EMO" width="w-[600px]" (closeModal)="close()">
+  <div class="form-wrapper">
+    <div class="grid-2">
+
+      <div class="col-span-2" *ngIf="programacion">
+        <div class="worker-info-box">
+          <span class="worker-name">{{ programacion.workerNombre }}</span>
+          <span class="worker-dni">{{ programacion.workerDni }}</span>
+          <span class="badge border bg-gray-100 text-gray-600 border-gray-200">{{ programacion.tipoEmo }}</span>
+        </div>
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Aptitud *</label>
+        <select class="field-input" [(ngModel)]="aptitud">
+          <option value="">Seleccionar...</option>
+          <option *ngFor="let a of aptitudes" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Fecha de vencimiento</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
+      </div>
+
+      <div>
+        <label class="field-label">N° Informe / URL resultado</label>
+        <input type="text" class="field-input" [(ngModel)]="urlResultado" placeholder="https://..." />
+      </div>
+
+      <div>
+        <label class="field-label">URL Lectura de EMO</label>
+        <input type="text" class="field-input" [(ngModel)]="urlLectura" placeholder="https://..." />
+      </div>
+
+      <div>
+        <label class="field-label">URL Cargo de entrega firmado</label>
+        <input type="text" class="field-input" [(ngModel)]="urlCargoEntrega" placeholder="https://..." />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Notas</label>
+        <textarea class="field-input" rows="2" [(ngModel)]="notas" placeholder="Observaciones..."></textarea>
+      </div>
+
+      <div class="col-span-2" *ngIf="aptitud === 'No Apto'">
+        <div class="alert-box alert-red">
+          ⚠ Este trabajador quedará como No Apto. Se reflejará automáticamente en habilitación como Rechazado.
+        </div>
+      </div>
+
+      <div class="col-span-2" *ngIf="aptitud === 'Observado'">
+        <div class="alert-box alert-orange">
+          ⚠ Este trabajador requiere interconsulta. El resultado quedará pendiente hasta resolver la interconsulta.
+        </div>
+      </div>
+
+    </div>
+    <footer class="form-footer">
+      <button class="btn-ghost" (click)="close()">Cancelar</button>
+      <button class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando...' : 'Registrar resultado' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

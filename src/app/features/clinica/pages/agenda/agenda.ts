@@ -5,11 +5,12 @@ import { ClinicaProgramacionService } from '../../services/clinica-programacion.
 import { ProgramacionClinicaDto, ClinicaAccionDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { CompletarEmo } from './components/completar-emo/completar-emo';
 
 @Component({
   selector: 'app-clinica-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CompletarEmo],
   templateUrl: './agenda.html',
   styleUrls: ['./agenda.css'],
 })
@@ -19,6 +20,7 @@ export class Agenda implements OnInit {
   accionando: number | null = null;
   motivoRechazo = '';
   rechazandoId: number | null = null;
+  completandoItem: ProgramacionClinicaDto | null = null;
 
   constructor(
     private svc: ClinicaProgramacionService,
@@ -85,8 +87,13 @@ export class Agenda implements OnInit {
     this.ejecutarAccion(item.id, { id: item.id, accion: 'CheckIn', checkInHora: hora });
   }
 
-  completar(item: ProgramacionClinicaDto): void {
-    this.ejecutarAccion(item.id, { id: item.id, accion: 'Completar' });
+  abrirCompletar(item: ProgramacionClinicaDto): void {
+    this.completandoItem = item;
+  }
+
+  onCompletado(): void {
+    this.completandoItem = null;
+    this.load();
   }
 
   private ejecutarAccion(id: number, body: ClinicaAccionDto): void {

@@ -76,9 +76,9 @@
             class="btn-chip chip-green"
             *ngIf="item.estado === 'En Atención'"
             [disabled]="accionando === item.id"
-            (click)="completar(item)"
+            (click)="abrirCompletar(item)"
           >
-            ✓ Completado
+            ✓ Registrar resultado
           </button>
         </div>
       </div>
@@ -105,3 +105,10 @@
 
   </ng-container>
 </div>
+
+<app-completar-emo
+  [open]="!!completandoItem"
+  [programacion]="completandoItem"
+  (closed)="completandoItem = null"
+  (completado)="onCompletado()"
+></app-completar-emo>

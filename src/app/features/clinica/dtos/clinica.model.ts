@@ -4,7 +4,9 @@ export interface ProgramacionClinicaDto {
   workerNombre: string;
   workerDni: string;
   tipoEmo: string;
+  tipoEmoId?: number;
   empresa: string;
+  empresaId?: number;
   fechaProgramada: string;
   horaProgramada: string | null;
   clinica: string | null;
