@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ReporteService } from '../services/reporte.service';
+import { ErrorService } from '../../../../core/services/error.service';
 
 @Component({
   selector: 'app-salud-reportes',
@@ -30,8 +32,27 @@ export class Reportes {
   ];
   readonly anios = [2024, 2025, 2026];
 
+  constructor(
+    private svc: ReporteService,
+    private errorService: ErrorService,
+  ) {}
+
   exportar(): void {
-    // TODO: conectar con backend
-    alert('Endpoint de reporte pendiente de implementar en backend.');
+    this.loading = true;
+    this.svc.exportarSunafilMensual(this.mes, this.anio).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ReporteEMO_${this.mes}_${this.anio}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorService.handleError(err);
+      },
+    });
   }
 }
