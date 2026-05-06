@@ -6,6 +6,7 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { ContratistaTokenDto, EmpresaSimpleDto } from '../../features/habilitacion/dtos/empresa.model';
+import { ClinicaTokenDto } from '../dtos/auth/clinica-token.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -13,6 +14,21 @@ export class AuthService {
   private readonly habAuthUrl = `${environment.apiUrl}api/v1/habilitacion/auth`;
 
   constructor(private http: HttpClient) {}
+
+  loginClinica(email: string, password: string): Observable<ClinicaTokenDto> {
+    return this.http.post<ClinicaTokenDto>(
+      `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/auth/login`,
+      { email, password },
+    );
+  }
+
+  persistClinicaToken(data: ClinicaTokenDto): void {
+    localStorage.setItem('access_token', data.token);
+    localStorage.setItem(
+      'user',
+      JSON.stringify({ clinicaId: data.clinicaId, nombre: data.nombre, tipo: data.tipo }),
+    );
+  }
 
   loginContratista(email: string, password: string): Observable<ContratistaTokenDto> {
     return this.http
