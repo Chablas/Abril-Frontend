@@ -23,10 +23,8 @@ export class CompletarEmo implements OnChanges {
   @Output() completado = new EventEmitter<void>();
 
   aptitud = '';
-  fechaVencimiento = '';
+  numeroInforme = '';
   urlResultado = '';
-  urlLectura = '';
-  urlCargoEntrega = '';
   notas = '';
   saving = false;
 
@@ -45,10 +43,8 @@ export class CompletarEmo implements OnChanges {
 
   reset(): void {
     this.aptitud = '';
-    this.fechaVencimiento = '';
+    this.numeroInforme = '';
     this.urlResultado = '';
-    this.urlLectura = '';
-    this.urlCargoEntrega = '';
     this.notas = '';
     this.saving = false;
   }
@@ -73,6 +69,7 @@ export class CompletarEmo implements OnChanges {
       fechaEmo: new Date().toISOString().split('T')[0],
       aptitud: this.aptitud,
       requiereInterconsulta: this.aptitud === 'Observado',
+      numeroInforme: this.numeroInforme || undefined,
       urlResultado: this.urlResultado || undefined,
       notas: this.notas || undefined,
       examenes: [],
