@@ -506,7 +506,10 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
 ### `features/configuracion/` — ✅ Completo
-Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (CRUD completo).
+Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
+
+### `features/habilitacion/` — ✅ Completo (detalle en §12)
+Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -537,6 +540,12 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 ### DTOs
 - Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No uniformizar**.
 - Páginas standalone **NO** se declaran en `declarations` del NgModule.
+
+### Habilitación — servicios y worker-create-edit
+- **`buildHabHeaders()` ≠ `buildAuthHeaders()`** — son funciones en módulos distintos (`habilitacion/services/http-base.ts` vs `ssoma/.../http-base.ts`). Todos los servicios de Habilitación usan `buildHabHeaders()`. Usar `buildAuthHeaders()` genera 401 silencioso.
+- **`onDniBlur()` encadena 4 pasos sincrono→async**: (1) validación formato DNI/CE, (2) RENIEC (solo DNI, best-effort), (3) verificar restringidos, (4) verificar existencia en BD. El flag `verificandoDni` se mantiene `true` durante los 4 pasos — cada paso llama al siguiente en su callback `next`/`error`. Solo el paso 4 pone `verificandoDni = false`.
+- **Lógica Casa vs Contratista en `verificarExistenciaEnBd()`**: rol Abril siempre bloquea (activo o retirado). Contratista bloquea si activo o si retirado en su misma empresa; permite si retirado en otra empresa. Usa `authService.getEmpresaId()` (lee `localStorage.user.empresaId`).
+- **`TipoDocumento` no se guarda en BD** — campo de transporte en `WorkerUpsertDto`. El frontend lo infiere del formato del DNI existente al abrir el modal en modo edit (`/^\d{8}$/.test(dni)` → DNI, else → CE).
 
 ### Backend pitfalls (ASP.NET / PostgreSQL)
 - **`AuditoriaInterceptor` debe ser Singleton** (no Scoped) — usar `services.AddSingleton<AuditoriaInterceptor>()`.
@@ -579,6 +588,7 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 - Patrón service core legacy: `core/services/project.service.ts`
 - Patrón módulo top-level standalone: `features/configuracion/configuracion.routes.ts`
 - Patrón page CRUD completo (create/edit/retire/list): `features/configuracion/pages/workers/workers.ts`
+- Patrón modal crear/editar con lógica por rol + DNI/CE + catálogos en cascada: `features/habilitacion/pages/trabajadores/components/worker-create-edit/worker-create-edit.ts`
 - Patrón layout lista + visor PDF (SCTR-style): `features/habilitacion/pages/sctr-vidaley/sctr-vidaley.ts`
 - Patrón layout lista + visor PDF (Bandeja): `features/habilitacion/pages/bandeja/bandeja.ts`
 - Sidebar config: `core/navigation/navigation.service.ts`
@@ -605,6 +615,7 @@ Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOM
 /habilitacion/equipos                  → Equipos y Máquinas
 /habilitacion/bandeja                  → Bandeja de Aprobaciones
 /habilitacion/sctr-vidaley             → SCTR y Vida Ley
+/habilitacion/control-acceso           → Control de Acceso (ADMINISTRADOR SSOMA, ADMINISTRADOR DE UDP)
 /habilitacion/inducciones              → Programar Inducción (ruta activa, SIN item en sidebar)
 /habilitacion/registros-modelo         → Registros Modelo
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
@@ -640,6 +651,11 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/catalogos/criterios` |
 | GET | `/catalogos/areas` |
 | GET | `/catalogos/subareas?area={area}` |
+| GET | `/catalogos/categorias` (cached `shareReplay(1)`) |
+| GET | `/catalogos/ocupaciones` (cached `shareReplay(1)`) |
+| GET | `/restringidos?dni=&soloActivos=` |
+| POST | `/restringidos` |
+| DELETE | `/restringidos/{id}` |
 | POST | `/auth/login` (contratista) |
 | GET | `/auth/empresas` |
 | GET | `/trabajadores` (paginado) |
@@ -671,6 +687,12 @@ HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
 | GET | `/equipos/{id}/entregables` |
 | PUT | `/equipos/entregables/{id}` |
 | GET | `/equipos/entregables/{id}/versiones` |
+| GET | `/control-acceso/consulta?proyectoId=&search=` |
+| GET | `/control-acceso/inducciones-hoy` (sin params) |
+| POST | `/control-acceso/inducciones/{induccionId}/confirmar-ingreso` |
+| GET | `/control-acceso/no-autorizados?proyectoId=` |
+| GET | `/control-acceso/tareo?proyectoId=&fecha=` |
+| POST | `/control-acceso/tareo` |
 | GET | `/inducciones` (paginado) |
 | POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
 | PATCH | `/inducciones/{id}/estado` |
@@ -823,6 +845,27 @@ Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/ind
 { workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre?, yaIndujo? }
 ```
 
+### Modal WorkerCreateEdit — Crear/Editar Worker
+`pages/trabajadores/components/worker-create-edit/` — migrado desde `configuracion/pages/workers/`.
+
+**Inputs/Outputs**: `[open]`, `[mode: 'create'|'edit']`, `[worker: WorkerHabilitacionListDto|null]`, `(closed)`, `(saved)`, `(buscarWorker: EventEmitter<string>)`.
+
+**Flujo crear**: selección TipoDocumento (DNI/CE) → `onDniBlur()` (4 pasos) → formulario → `WorkerService.createWorker(WorkerUpsertDto)` (endpoint SSOMA).
+
+**Flujo editar**: prefill desde `WorkerHabilitacionListDto` (lista) + `getWorker(workerId)` para `celular/sctr/area/subarea/jefatura` → `WorkerService.updateWorker(id, WorkerUpsertDto)`.
+
+**Diferencias Casa vs Contratista**:
+- Contratista: oculta campos org (Contrata/Casa, Obra/Oficina, Empresa, Proyecto, Área, Subárea, Jefatura, SCTR). Payload fuerza `contrataCasa: 'Contratista'`.
+- Rol Abril: muestra todos los campos + catálogos de empresa/proyecto/área/subárea.
+
+**Catálogos cargados en `resetAndLoad()` (todos los roles)**: `getCategorias()`, `getOcupaciones()` — ambos cacheados con `shareReplay(1)`.
+
+**Catálogos solo rol Abril**: `getEmpresas()`, `getProjectsPaged()`, `getAreas()`. Subáreas: lazy al seleccionar área (`getSubareas(area)`, sin cache).
+
+**SCTR**: solo editable cuando `obraOficina === 'Oficina Central'`. Para otros valores, `sctr` forzado a `true` y checkbox deshabilitado.
+
+**`(buscarWorker)`**: se emite cuando el usuario confirma "Ir a buscarlo" en el Swal de existencia. El padre (`trabajadores.ts`) cierra el modal, pone el DNI en `search`, y llama `loadWorkers(1)`.
+
 ### Multiproyecto (workers Casa y Contratistas)
 Workers Casa y Contratistas pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
 
@@ -865,6 +908,76 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 
 **`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
 
+### Página Control de Acceso — mobile-first operaciones en obra
+`pages/control-acceso/control-acceso.ts/.html/.css` + subcomponente `components/tareo/`.
+Servicio: `features/habilitacion/services/control-acceso.service.ts`.
+
+**4 tabs**: Consulta | Inducción | No Autorizados | Tareo.
+
+**Tab Consulta — búsqueda de trabajadores**:
+- `GET /control-acceso/consulta?proyectoId=&search=` → `ConsultaResultDto[]`.
+- Un resultado → tarjeta directa. Múltiples → lista compacta; tocar → tarjeta.
+- Tarjeta: banner de estado (`.ca-status-habilitado` verde #64BC04 / `.ca-status-no-autorizado` rojo #ef4444).
+- Condición de clase: `[class]="r.estadoHabilitacion === 'Habilitado' ? 'ca-status-habilitado' : 'ca-status-no-autorizado'"`. El backend devuelve el string `'Habilitado'` (no `'AUTORIZADO'`).
+- Body con scroll: `max-height: calc(100vh - 220px); overflow-y: auto` en `.ca-result-body`.
+- `oficinaId = 36`: cuando el proyecto seleccionado es Oficina Central (id 36), se oculta la sección de entregables.
+- **Entregables**: lista de filas limpias (no chips). Solo se muestran los `Aprobado` no vencidos (`entregablesVigentes()`). Faltantes/rechazados y vencidos aparecen únicamente en las secciones "Documentos faltantes" / "Por vencer" de arriba. Ícono a la izquierda: ✓ verde `#22c55e` (vigente o sin vigencia), ⚠ amarillo `#eab308` (≤ 7 días). Contenedor `.ca-ent-card`: borde `1px solid #e5e7eb`, `border-radius: 12px`, `max-height: 320px; overflow-y: auto`, sombra sutil.
+- EMO (Certificado de Aptitud Médica) se obtiene desde `worker_emos`, no desde `ss_hab_trabajador`.
+
+**DTOs** (`control-acceso.service.ts`):
+```ts
+EntregableResumenDto { nombre, estado, vigencia: string | null }
+ConsultaResultDto {
+  workerId, apellidoNombre, nombre, empresa, dni,
+  estadoHabilitacion: string,      // 'Habilitado' | 'No Autorizado' | otros
+  documentosFaltantes: string[] | null,
+  documentosPorVencer: { nombre, vigencia }[] | null,
+  sctrEstado: string | null, sctrVigencia: string | null,
+  entregables: EntregableResumenDto[] | null,
+}
+InduccionHoyDto {
+  induccionId, apellidoNombre, dni, empresaNombre,
+  fechaProgramada: string, trabajoAltura: boolean,
+  equipoElectrico: boolean, estado: string, ingresoConfirmado: boolean,
+}
+```
+
+**`entregableIcono(e)`** (reemplaza `getEntregableClass`):
+- Solo se llama sobre entregables filtrados por `entregablesVigentes()` (Aprobado + no vencido).
+- vigencia ≤ 7 días → `{ icono: '⚠', color: '#eab308' }`
+- sin vigencia o > 7 días → `{ icono: '✓', color: '#22c55e' }`
+
+**Tab Inducción**:
+- No requiere proyecto seleccionado. `loadInducciones()` se llama en `ngOnInit` y al cambiar a ese tab.
+- `GET /control-acceso/inducciones-hoy` sin parámetros.
+- Botón "Confirmar" → `POST /control-acceso/inducciones/{induccionId}/confirmar-ingreso`. Al confirmar, muta localmente `ingresoConfirmado: true` (spread, no depende del body del response) y el botón cambia a "✓ Confirmado" deshabilitado. Contador `confirmadosCount` es getter que recuenta el array.
+- Cambiar de proyecto no resetea `inducciones`.
+
+**Diseño CSS** (§5-compatible):
+- Header: fondo blanco, padding compacto, título + `app-search-select` en una sola fila.
+- Tabs: patrón §5 (`.tabs button.active { border-bottom-color: #64bc04 }`).
+- Sin card wrapper en buscador — input + botón directamente en `.ca-search-row`.
+- Chips nuevos: `.chip-red` (#fee2e2/#dc2626), `.chip-yellow` (#fef9c3/#a16207).
+
+**Tab No Autorizados**:
+- Card por trabajador: `apellidoNombre` + `empresaNombre · DNI` + badge "No autorizado" (`#fee2e2/#dc2626`, `border-radius: 20px`).
+- Filtro client-side por empresa con `<select class="ca-select">`. Getter `empresasNA` extrae empresas únicas. Getter `noAutorizadosFiltrados` filtra el array.
+- DTO: `{ workerId, apellidoNombre, dni: string|null, empresaNombre, proyectoNombre, estadoHabilitacion }`.
+
+**Subcomponente Tareo** (`components/tareo/tareo.ts` + `tareo.html` + `tareo.css`):
+- `@Input() proyectoId!: number`. `OnChanges` → `loadTareo()`.
+- **Carga en 3 pasos**: `forkJoin(getPartidas(), getEmpresasTareo(proyectoId))` en paralelo → construye arrays locales con `cantidad: 0` → luego `getTareo(proyectoId, fecha)` rellena cantidades existentes y guarda `tareoId`.
+- **Endpoints**:
+  - `GET /tareo/partidas` → catálogo `TareoPartidaDto { id, nombre }` (tabla `ss_tareo_partida`)
+  - `GET /tareo/empresas?proyectoId=` → `TareoEmpresaDto { empresaId, empresaNombre }`
+  - `GET /tareo?proyectoId=&fecha=` → tareo existente del día
+  - `POST /tareo` si `tareoId` es null, `PUT /tareo/{id}` si ya existe
+- **Layout**: `tareo-root` flex-column con `height: calc(100vh - 200px)`. Fecha en `.tareo-top` (flex-shrink: 0). Lista unificada en `.tareo-lista` (flex: 1; min-height: 0; overflow-y: auto — único scroll). Botón en `.tareo-footer` (flex-shrink: 0; border-top).
+- **Lista unificada**: Casa + Contratistas en una sola lista. Headers de sección con `position: sticky; top: 0` (azul para Casa, verde para Contratistas). Total en fila final con fondo `#111827`.
+- **DTOs**: `TareoDetalleCasaDto { partidaId, cantidadPersonas }`, `TareoDetalleContratistaDto { empresaId, cantidadPersonas }`, `TareoDto { id?, proyectoId, fecha, detallesCasa[], detallesContratista[] }`.
+- `puedeGuardar` habilita el botón solo si al menos un valor > 0. Botón muestra "Guardar tareo" o "Actualizar tareo" según `tareoId`.
+- **Pitfall CSS**: no usar `max-height + overflow-y` en contenedores internos dentro de `.tareo-lista` — genera scroll anidado que Chromium corta. Un solo scroll en `.tareo-lista`.
+
 ### Componente VersionesDoc (genérico)
 `pages/trabajadores/components/versiones-doc/versiones-doc.ts` — usado tanto por Trabajadores como por Equipos.
 
@@ -888,11 +1001,13 @@ Selector: `app-hab-versiones-doc`.
 - Auditoría solo para admins.
 
 ### Pendiente
-- Validar modal Editar perfil contra backend real (casing `obraOficina`, `sctr` boolean vs string).
 - Backend: `GET /inducciones/trabajadores-por-programar` — sin esto paso 2 de Programar Inducción no carga.
 - Backend: `POST /api/v1/habilitacion/archivos/subir` (hoy cae al fallback `pending-upload://`).
 - Backend: 4 endpoints multiproyecto `/trabajadores/{workerId}/proyectos` (hoy silenciado a array vacío).
 - Backend: confirmar `PATCH /bandeja/induccion/{id}` — frontend ya configurado.
+- Frontend: pantalla gestión de trabajadores restringidos (listar, agregar, desactivar vía `/restringidos` endpoints — backend listo).
+- Frontend: tour guiado / onboarding para contratistas en primer acceso tras activar cuenta.
+- Seguridad: cerrar `[AllowAnonymous]` en `WorkersController` (SSOMA) antes de producción.
 - PRs a `master` (backend debe deployarse antes que frontend).
 - Deploy a producción + primer usuario admin.
 

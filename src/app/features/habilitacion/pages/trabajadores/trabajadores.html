@@ -51,6 +51,12 @@
           </svg>
           Programar Inducción
         </button>
+        <button class="btn-ghost-sm btn-crear" (click)="abrirCrear()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Nuevo Trabajador
+        </button>
       </ng-container>
     </div>
 
@@ -247,8 +253,8 @@
                 *ngIf="!isContratista()"
                 type="button"
                 class="icon-btn-edit"
-                title="Editar perfil"
-                (click)="abrirEditarPerfil(selectedWorker)"
+                title="Editar trabajador"
+                (click)="abrirEditar(selectedWorker)"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 20h9"/>
@@ -646,11 +652,13 @@
   [loader]="versionesLoader"
   (closed)="closeVersiones()"
 />
-<app-hab-editar-perfil
-  [open]="modalEditarPerfilOpen"
-  [worker]="workerParaAccion"
-  (closed)="closeEditarPerfil()"
-  (saved)="onEditarPerfilSaved()"
+<app-worker-create-edit
+  [open]="modalWorkerOpen"
+  [mode]="modalWorkerMode"
+  [worker]="workerParaEditar"
+  (closed)="modalWorkerOpen = false"
+  (saved)="onWorkerSaved()"
+  (buscarWorker)="onBuscarWorker($event)"
 />
 <app-reingreso-form
   [open]="mostrarReingreso"

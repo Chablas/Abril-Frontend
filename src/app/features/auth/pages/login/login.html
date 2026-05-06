@@ -22,6 +22,10 @@
                     (click)="setTab('contratistas')">
                     Contratistas
                 </button>
+                <button type="button" class="login-tab" [class.active]="activeTab === 'clinica'"
+                    (click)="setTab('clinica')">
+                    Clínica
+                </button>
             </div>
 
             <!-- Tab Abril -->
@@ -100,6 +104,32 @@
                     </a>
                 </div>
             </form>
+
+            <!-- Tab Clínica -->
+            <div *ngIf="activeTab === 'clinica'" class="flex flex-col gap-6">
+                <div class="flex flex-col gap-1.5">
+                    <label>Email</label>
+                    <input type="email" placeholder="correo@clinica.com"
+                        class="border border-[#E2E2E2] rounded-lg p-[10px] w-full"
+                        [(ngModel)]="clinicaForm.email" autocomplete="email" />
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label>Contraseña</label>
+                    <input type="password" placeholder="Tu contraseña"
+                        class="border border-[#E2E2E2] rounded-lg p-[10px] w-full"
+                        [(ngModel)]="clinicaForm.password" autocomplete="current-password" />
+                </div>
+
+                <div *ngIf="clinicaError" class="text-sm text-red-600 text-center">{{ clinicaError }}</div>
+
+                <button type="button"
+                    class="text-white w-full bg-[#64BC04] py-[10px] rounded-[10px] cursor-pointer"
+                    [disabled]="clinicaLoading || !clinicaForm.email || !clinicaForm.password"
+                    (click)="submitClinica()">
+                    {{ clinicaLoading ? 'Ingresando...' : 'INGRESAR' }}
+                </button>
+            </div>
 
         </div>
     </div>

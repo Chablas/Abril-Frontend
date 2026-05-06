@@ -3,12 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
-import Swal from 'sweetalert2';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EmoService } from '../../../ssoma/salud-ocupacional/services/emo.service';
-import { WorkerService } from '../../../ssoma/salud-ocupacional/services/worker.service';
 import {
   EmoPorTrabajadorDto,
   EmoPorTrabajadorQuery,
@@ -19,12 +17,11 @@ import {
   SIN_EMO_COLOR,
   SIN_EMO_LABEL,
 } from '../../../ssoma/salud-ocupacional/shared/aptitud.utils';
-import { WorkerEditForm } from './components/worker-edit-form/worker-edit-form';
 
 @Component({
   selector: 'app-config-workers',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, WorkerEditForm],
+  imports: [CommonModule, FormsModule, Paginator],
   templateUrl: './workers.html',
   styleUrl: './workers.css',
 })
@@ -42,10 +39,6 @@ export class Workers implements OnInit, OnDestroy {
   totalPages = 1;
   currentPage = 1;
   loading = false;
-
-  formOpen = false;
-  formMode: 'create' | 'edit' = 'edit';
-  formWorker: EmoPorTrabajadorDto | null = null;
 
   aptitudOptions = [
     { id: '', nombre: 'Todas las aptitudes' },
@@ -69,7 +62,6 @@ export class Workers implements OnInit, OnDestroy {
 
   constructor(
     private service: EmoService,
-    private workerService: WorkerService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -131,64 +123,6 @@ export class Workers implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.load(page);
-  }
-
-  openCreate(): void {
-    this.formMode = 'create';
-    this.formWorker = null;
-    this.formOpen = true;
-  }
-
-  openEdit(worker: EmoPorTrabajadorDto): void {
-    this.formMode = 'edit';
-    this.formWorker = worker;
-    this.formOpen = true;
-  }
-
-  closeForm(): void {
-    this.formOpen = false;
-    this.formWorker = null;
-  }
-
-  onSaved(): void {
-    this.closeForm();
-    this.load(this.currentPage);
-  }
-
-  esActivo(item: EmoPorTrabajadorDto): boolean {
-    return (item.estadoWorker ?? 'ACTIVO') === 'ACTIVO';
-  }
-
-  retirar(worker: EmoPorTrabajadorDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Retirar trabajador?',
-      text: `¿Está seguro que desea retirar a ${worker.nombreCompleto}?`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, retirar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.loaderService.show();
-      this.workerService.retirarWorker(worker.workerId).subscribe({
-        next: () => {
-          this.loaderService.hide();
-          Swal.fire({
-            icon: 'success',
-            title: 'Trabajador retirado',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          this.load(this.currentPage);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-        },
-      });
-    });
   }
 
   estadoEmoClass(estado?: string): string {

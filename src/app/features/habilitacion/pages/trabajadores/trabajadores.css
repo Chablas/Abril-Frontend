@@ -132,6 +132,18 @@
   color: #5aa904;
 }
 
+.btn-crear {
+  background: #64bc04;
+  border-color: #64bc04;
+  color: #ffffff;
+}
+
+.btn-crear:hover {
+  background: #5aa904;
+  border-color: #5aa904;
+  color: #ffffff;
+}
+
 /* ── Grid ── */
 .hab-layout {
   flex: 1;

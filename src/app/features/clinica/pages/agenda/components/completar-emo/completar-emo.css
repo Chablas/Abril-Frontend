@@ -1,0 +1,23 @@
+.worker-info-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.85rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.worker-name { font-weight: 600; color: #111827; }
+.worker-dni  { font-size: 0.82rem; color: #6b7280; }
+
+.alert-box {
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.alert-red    { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.alert-orange { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }

@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { FormBuilder, Validators, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, Validators, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MicrosoftAuthService } from './services/microsoft-auth.service';
 import Swal from 'sweetalert2';
@@ -8,11 +8,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { LoaderService } from '../../../../core/services/loader.service';
 
-type LoginTab = 'abril' | 'contratistas';
+type LoginTab = 'abril' | 'contratistas' | 'clinica';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, CommonModule, RouterLink],
+  imports: [ReactiveFormsModule, FormsModule, CommonModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -23,6 +23,9 @@ export class Login implements OnInit {
 
   activeTab: LoginTab = 'abril';
   showContratistaPassword = false;
+  clinicaForm = { email: '', password: '' };
+  clinicaLoading = false;
+  clinicaError = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -52,6 +55,21 @@ export class Login implements OnInit {
 
   toggleContratistaPassword(): void {
     this.showContratistaPassword = !this.showContratistaPassword;
+  }
+
+  submitClinica(): void {
+    this.clinicaLoading = true;
+    this.clinicaError = '';
+    this.authService.loginClinica(this.clinicaForm.email, this.clinicaForm.password).subscribe({
+      next: (data) => {
+        this.authService.persistClinicaToken(data);
+        this.router.navigate(['/clinica/agenda']);
+      },
+      error: () => {
+        this.clinicaLoading = false;
+        this.clinicaError = 'Credenciales inválidas.';
+      },
+    });
   }
 
   submit() {

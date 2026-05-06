@@ -72,6 +72,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/habilitacion/habilitacion.routes')
           .then(m => m.HABILITACION_ROUTES)
+      },
+
+      {
+        path: 'clinica',
+        loadChildren: () =>
+          import('./features/clinica/clinica.routes')
+          .then(m => m.CLINICA_ROUTES)
       }
     ]
   },

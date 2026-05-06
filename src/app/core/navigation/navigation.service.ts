@@ -117,6 +117,7 @@ export class NavigationService {
         {
           label: 'Operaciones',
           items: [
+            { label: 'Control de Acceso',       route: '/habilitacion/control-acceso',         featureKey: 'habilitacion.control-acceso' },
             { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                featureKey: 'habilitacion.bandeja' },
             { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',       featureKey: 'habilitacion.registros-modelo' },
             { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
@@ -127,6 +128,22 @@ export class NavigationService {
           items: [
             { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
             { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
+          ],
+        },
+      ],
+    },
+    {
+      key: 'clinica',
+      label: 'Clínica',
+      iconKey: 'clinica',
+      baseRoute: '/clinica',
+      items: [],
+      groups: [
+        {
+          label: 'Gestión',
+          items: [
+            { label: 'Agenda del Día', route: '/clinica/agenda',           featureKey: 'clinica.agenda' },
+            { label: 'Programaciones', route: '/clinica/programaciones', featureKey: 'clinica.programaciones' },
           ],
         },
       ],

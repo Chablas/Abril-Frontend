@@ -55,4 +55,10 @@ export class ProgramacionService {
       headers: buildAuthHeaders(),
     });
   }
+
+  accionClinica(id: number, body: Record<string, unknown>): Observable<ProgramacionListDto> {
+    return this.http.patch<ProgramacionListDto>(`${this.apiUrl}/${id}/clinica-accion`, body, {
+      headers: buildAuthHeaders(),
+    });
+  }
 }
