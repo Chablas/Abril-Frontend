@@ -33,6 +33,7 @@ export interface ProgramacionListDto {
   checkInHora?: string;
   motivoRechazo?: string;
   emoResultadoId?: number;
+  fechaNotificacion?: string;
 }
 
 export interface ProgramacionCreateDto {

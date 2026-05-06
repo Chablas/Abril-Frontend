@@ -150,6 +150,11 @@
                     *ngIf="item.checkInHora"
                     class="badge border bg-gray-100 text-gray-600 border-gray-200"
                   >⏱ {{ item.checkInHora }}</span>
+                  <span
+                    *ngIf="item.fechaNotificacion"
+                    class="badge border bg-blue-50 text-blue-600 border-blue-200"
+                    title="Notificado el {{ item.fechaNotificacion | date:'dd/MM/yyyy HH:mm' }}"
+                  >📧</span>
                 </div>
               </td>
             </tr>
