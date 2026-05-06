@@ -119,6 +119,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'portal-trabajador',
+    loadComponent: () =>
+      import('./features/portal-trabajador/portal-trabajador')
+      .then(m => m.PortalTrabajador)
+  },
+
+  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')
