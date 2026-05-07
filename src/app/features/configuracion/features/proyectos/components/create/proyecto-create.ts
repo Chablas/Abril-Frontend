@@ -13,6 +13,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 interface ProjectFormModel {
   projectDescription: string;
   codigo: string;
+  abbreviation: string;
   levelDescription: string;
   estado: string;
 
@@ -107,7 +108,8 @@ export class ProyectoCreate {
 
     const dto: ProjectCreateDto = {
       projectDescription: this.form.projectDescription.trim(),
-      codigo:             this.form.codigo.trim() || undefined,
+      codigo:             this.form.codigo.trim()        || undefined,
+      abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
       estado:             this.form.estado.trim() || undefined,
 
@@ -159,6 +161,7 @@ export class ProyectoCreate {
     return {
       projectDescription: '',
       codigo: '',
+      abbreviation: '',
       levelDescription: '',
       estado: '',
 

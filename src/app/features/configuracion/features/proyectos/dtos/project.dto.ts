@@ -2,6 +2,7 @@ export interface ProjectDto {
   projectId: number;
   projectDescription: string;
   codigo?: string;
+  abbreviation?: string;
   levelDescription?: string;
   estado?: string;
 

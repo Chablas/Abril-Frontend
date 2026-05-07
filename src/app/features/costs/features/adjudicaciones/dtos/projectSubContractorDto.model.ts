@@ -56,6 +56,9 @@ export interface ProjectSubContractorDTO {
   package?: ProjectSubContractorFileDTO;
   // Instructivo (paso 3 — obtenido desde OneDrive de Calidad)
   instructivo?: ProjectSubContractorFileDTO;
+  // Salidas no conforme y cuadro de tolerancias (paso 3 — solo subida)
+  nonConformingOutput?: ProjectSubContractorFileDTO;
+  toleranceChart?: ProjectSubContractorFileDTO;
   // Documentos escaneados (paso 7)
   scannedDoc1?: ProjectSubContractorFileDTO;
   scannedDoc2?: ProjectSubContractorFileDTO;

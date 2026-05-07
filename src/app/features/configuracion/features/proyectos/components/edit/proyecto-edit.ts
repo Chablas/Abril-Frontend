@@ -14,6 +14,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 interface ProjectFormModel {
   projectDescription: string;
   codigo: string;
+  abbreviation: string;
   levelDescription: string;
   estado: string;
 
@@ -72,7 +73,8 @@ export class ProyectoEdit implements OnInit {
   ngOnInit(): void {
     this.form = {
       projectDescription: this.project.projectDescription,
-      codigo: this.project.codigo ?? '',
+      codigo:        this.project.codigo        ?? '',
+      abbreviation:  this.project.abbreviation  ?? '',
       levelDescription: this.project.levelDescription ?? '',
       estado: this.project.estado ?? '',
 
@@ -160,7 +162,8 @@ export class ProyectoEdit implements OnInit {
     const dto: ProjectEditDto = {
       projectId: this.project.projectId,
       projectDescription: this.form.projectDescription.trim(),
-      codigo:             this.form.codigo.trim() || undefined,
+      codigo:             this.form.codigo.trim()        || undefined,
+      abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
       estado:             this.form.estado.trim() || undefined,
 
@@ -212,6 +215,7 @@ export class ProyectoEdit implements OnInit {
     return {
       projectDescription: '',
       codigo: '',
+      abbreviation: '',
       levelDescription: '',
       estado: '',
 

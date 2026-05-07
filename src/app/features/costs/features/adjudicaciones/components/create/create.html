@@ -9,16 +9,23 @@
       </p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
 
-        <app-search-select label="Proyecto" [options]="createFormData.projects" valueField="projectId"
-          displayField="projectDescription" [(value)]="createDto.projectId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Proyecto" [options]="createFormData.projects" valueField="projectId"
+            displayField="projectDescription" [(value)]="createDto.projectId" />
+          <p *ngIf="submitted && !createDto.projectId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
-        <app-search-select label="Empresa / Subcontratista" [options]="createFormData.contributors" valueField="contractorId"
-          displayField="contributorName" [value]="createDto.contractorId" (valueChange)="onCompanyChange($event)" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Empresa / Subcontratista" [options]="createFormData.contributors" valueField="contractorId"
+            displayField="contributorName" [value]="createDto.contractorId" (valueChange)="onCompanyChange($event)" />
+          <p *ngIf="submitted && !createDto.contractorId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
         <div class="flex flex-col gap-[6px]">
           <app-search-select label="Partida de control" [options]="createFormData.workItemCategories"
             valueField="workItemCategoryId" displayField="workItemCategoryDescription"
             [(value)]="createDto.workItemCategoryId" />
+          <p *ngIf="submitted && !createDto.workItemCategoryId" class="text-xs text-red-500">Campo requerido</p>
           <ng-container *ngIf="selectedWorkItemCategorySyncStatus !== null" [ngSwitch]="selectedWorkItemCategorySyncStatus">
             <span *ngSwitchCase="1" class="flex items-center gap-1 text-[11px] text-[#009C87]">
               <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -41,8 +48,11 @@
           </ng-container>
         </div>
 
-        <app-search-select label="Partida" [options]="createFormData.workItems" valueField="workItemId"
-          displayField="workItemDescription" [(value)]="createDto.workItemId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Partida" [options]="createFormData.workItems" valueField="workItemId"
+            displayField="workItemDescription" [(value)]="createDto.workItemId" />
+          <p *ngIf="submitted && !createDto.workItemId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
       </div>
 
@@ -75,14 +85,23 @@
       </p>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
 
-        <app-search-select label="Contrato" [options]="createFormData.contracts" valueField="contractId"
-          displayField="contractDescription" [(value)]="createDto.contractId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Contrato" [options]="createFormData.contracts" valueField="contractId"
+            displayField="contractDescription" [(value)]="createDto.contractId" />
+          <p *ngIf="submitted && !createDto.contractId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
-        <app-search-select label="Tipo de contrato" [options]="createFormData.contractTypes" valueField="contractTypeId"
-          displayField="contractTypeDescription" [(value)]="createDto.contractTypeId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Tipo de contrato" [options]="createFormData.contractTypes" valueField="contractTypeId"
+            displayField="contractTypeDescription" [(value)]="createDto.contractTypeId" />
+          <p *ngIf="submitted && !createDto.contractTypeId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
-        <app-search-select label="Origen del contrato" [options]="createFormData.contractOrigins" valueField="contractOriginId"
-          displayField="contractOriginDescription" [(value)]="createDto.contractOriginId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Origen del contrato" [options]="createFormData.contractOrigins" valueField="contractOriginId"
+            displayField="contractOriginDescription" [(value)]="createDto.contractOriginId" />
+          <p *ngIf="submitted && !createDto.contractOriginId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
       </div>
     </div>
@@ -106,13 +125,20 @@
             (input)="onAmountInput($event)"
             class="border border-[#E2E2E2] rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30"
           />
+          <p *ngIf="submitted && !createDto.amount" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
-        <app-search-select label="Moneda" [options]="createFormData.currencies" valueField="currencyId"
-          displayField="currencyCode" [(value)]="createDto.currencyId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Moneda" [options]="createFormData.currencies" valueField="currencyId"
+            displayField="currencyCode" [(value)]="createDto.currencyId" />
+          <p *ngIf="submitted && !createDto.currencyId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
-        <app-search-select label="Forma de pago" [options]="createFormData.paymentMethods" valueField="paymentMethodId"
-          displayField="paymentMethodDescription" [(value)]="createDto.paymentMethodId" />
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Forma de pago" [options]="createFormData.paymentMethods" valueField="paymentMethodId"
+            displayField="paymentMethodDescription" [(value)]="createDto.paymentMethodId" />
+          <p *ngIf="submitted && !createDto.paymentMethodId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
 
         <div *ngIf="createDto.paymentMethodId === 2" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
 
@@ -130,6 +156,7 @@
               />
               <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
             </div>
+            <p *ngIf="submitted && !createDto.advancePercentage" class="text-xs text-red-500">Campo requerido</p>
           </div>
 
           <!-- Monto de adelanto -->

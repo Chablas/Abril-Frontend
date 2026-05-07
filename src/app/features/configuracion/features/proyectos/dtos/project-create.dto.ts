@@ -1,6 +1,7 @@
 export interface ProjectCreateDto {
   projectDescription: string;
   codigo?: string;
+  abbreviation?: string;
   levelDescription?: string;
   estado?: string;
 

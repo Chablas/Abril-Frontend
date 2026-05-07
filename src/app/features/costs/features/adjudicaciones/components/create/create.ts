@@ -51,6 +51,7 @@ export class Create implements OnInit {
 
   contractorEmails: string[] = [];
   advanceAmount: number | undefined = undefined;
+  submitted = false;
 
   quotationFileItems: FilePreviewItem[] = [];
   comparativeFileItems: FilePreviewItem[] = [];
@@ -129,7 +130,35 @@ export class Create implements OnInit {
     })
   }
 
+  private getMissingFields(): string[] {
+    const missing: string[] = [];
+    if (!this.createDto.projectId)         missing.push('Proyecto');
+    if (!this.createDto.contractorId)      missing.push('Empresa / Subcontratista');
+    if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
+    if (!this.createDto.workItemId)        missing.push('Partida');
+    if (!this.createDto.contractId)        missing.push('Contrato');
+    if (!this.createDto.contractTypeId)    missing.push('Tipo de contrato');
+    if (!this.createDto.contractOriginId)  missing.push('Origen del contrato');
+    if (!this.createDto.amount)            missing.push('Monto');
+    if (!this.createDto.currencyId)        missing.push('Moneda');
+    if (!this.createDto.paymentMethodId)   missing.push('Forma de pago');
+    if (this.createDto.paymentMethodId === 2 && !this.createDto.advancePercentage)
+      missing.push('Porcentaje de adelanto');
+    return missing;
+  }
+
   save() {
+    this.submitted = true;
+    const missing = this.getMissingFields();
+    if (missing.length > 0) {
+      Swal.fire({
+        title: 'Campos requeridos',
+        html: `<ul class="text-left text-sm list-disc pl-4">${missing.map(f => `<li>${f}</li>`).join('')}</ul>`,
+        icon: 'warning',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
     const form = new FormData();
     form.append('projectId', this.createDto.projectId.toString());
     form.append('contractorId', this.createDto.contractorId.toString());

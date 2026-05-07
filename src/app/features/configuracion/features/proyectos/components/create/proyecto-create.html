@@ -36,10 +36,17 @@
       </div>
     </div>
 
-    <div class="flex flex-col">
-      <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
-      <input type="text" [(ngModel)]="form.levelDescription" placeholder="Ej: Sótano + 10 pisos"
-        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Abreviación <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="text" [(ngModel)]="form.levelDescription" placeholder="Ej: Sótano + 10 pisos"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
     </div>
 
     <!-- =============== Razón social =============== -->
