@@ -4,6 +4,7 @@
       <tr class="text-[#64BC04] text-sm">
         <th class="py-2 px-2 w-[64px]"></th>
         <th class="py-2 px-3 text-left font-semibold">Descripción</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Instructivo</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Fecha creación</th>
       </tr>
@@ -37,6 +38,42 @@
           </span>
         </td>
 
+        <!-- Instructivo sync status -->
+        <td class="px-3 py-2 text-center">
+          <ng-container [ngSwitch]="item.instructivosSyncStatus">
+            <!-- 1 = automático -->
+            <ng-container *ngSwitchCase="1">
+              <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-[#D7FAF4] text-[#009C87]">
+                Carpeta sincronizada
+              </span>
+              <p *ngIf="item.instructivosFolderName" class="text-[11px] text-gray-400 mt-0.5 line-clamp-1"
+                [title]="item.instructivosFolderName">
+                {{ item.instructivosFolderName }}
+              </p>
+            </ng-container>
+            <!-- 2 = manual -->
+            <ng-container *ngSwitchCase="2">
+              <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-blue-50 text-blue-500">
+                Manual
+              </span>
+              <p *ngIf="item.instructivosFolderName" class="text-[11px] text-gray-400 mt-0.5 line-clamp-1"
+                [title]="item.instructivosFolderName">
+                {{ item.instructivosFolderName }}
+              </p>
+            </ng-container>
+            <!-- 3 = sin instructivo -->
+            <span *ngSwitchCase="3"
+              class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-gray-100 text-gray-400">
+              Sin instructivo
+            </span>
+            <!-- null / sin sync -->
+            <span *ngSwitchDefault
+              class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-gray-100 text-gray-400">
+              —
+            </span>
+          </ng-container>
+        </td>
+
         <!-- Estado -->
         <td class="px-3 py-2 text-center">
           <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
@@ -56,7 +93,7 @@
       </tr>
 
       <tr *ngIf="items.length === 0">
-        <td colspan="4" class="text-center text-sm text-gray-400 italic py-8">
+        <td colspan="5" class="text-center text-sm text-gray-400 italic py-8">
           No hay registros.
         </td>
       </tr>

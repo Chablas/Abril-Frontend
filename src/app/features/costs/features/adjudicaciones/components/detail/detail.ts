@@ -66,6 +66,7 @@ export class Detail implements OnInit {
       { key: 'Schedule',          label: 'Cronograma' },
       { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
       { key: 'ServiceOrder',      label: 'Orden de Servicio' },
+      { key: 'Instructivo',       label: 'Instructivo' },
     ];
     if (this.item.paymentMethodId === 2) {
       return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
@@ -109,7 +110,7 @@ export class Detail implements OnInit {
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote', 'Instructivo']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,
@@ -265,6 +266,7 @@ export class Detail implements OnInit {
       case 'AttachedQuotation': return this.item.attachedQuotation ?? undefined;
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
       case 'PromissoryNote':    return this.item.promissoryNote    ?? undefined;
+      case 'Instructivo':       return this.item.instructivo       ?? undefined;
       case 'ScannedDoc1':       return this.item.scannedDoc1       ?? undefined;
       default: return undefined;
     }
@@ -290,6 +292,7 @@ export class Detail implements OnInit {
           case 'AttachedQuotation': this.item.attachedQuotation = generated; break;
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
           case 'PromissoryNote':    this.item.promissoryNote    = generated; break;
+          case 'Instructivo':       this.item.instructivo       = generated; break;
           case 'ScannedDoc1':       this.item.scannedDoc1       = generated; break;
         }
         Swal.fire({ icon: 'success', title: 'Documento generado exitosamente', draggable: true });
@@ -330,6 +333,7 @@ export class Detail implements OnInit {
           case 'AttachedQuotation': this.item.attachedQuotation = uploaded; break;
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
           case 'PromissoryNote':    this.item.promissoryNote    = uploaded; break;
+          case 'Instructivo':       this.item.instructivo       = uploaded; break;
           case 'ScannedDoc1':       this.item.scannedDoc1       = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });

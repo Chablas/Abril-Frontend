@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
-import { WorkItemCategoryDto } from '../dtos/work-item-category.dto';
+import { WorkItemCategoryDto, WorkItemCategorySyncResultDto } from '../dtos/work-item-category.dto';
 import { WorkItemCategoryCreateDto } from '../dtos/work-item-category-create.dto';
 import { WorkItemCategoryEditDto } from '../dtos/work-item-category-edit.dto';
 import { WorkItemCategoryFilterDto } from '../dtos/work-item-category-filter.dto';
@@ -42,5 +42,13 @@ export class WorkItemCategoryService {
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${workItemCategoryId}`, {
       headers: this.headers,
     });
+  }
+
+  syncInstructivos(): Observable<WorkItemCategorySyncResultDto> {
+    return this.http.post<WorkItemCategorySyncResultDto>(
+      `${this.apiUrl}/sync-instructivos`,
+      {},
+      { headers: this.headers },
+    );
   }
 }

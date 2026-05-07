@@ -103,6 +103,13 @@ export class Create implements OnInit {
     return this.createFormData.currencies.find(c => c.currencyId === this.createDto.currencyId)?.currencyCode ?? '';
   }
 
+  get selectedWorkItemCategorySyncStatus(): number | null {
+    if (!this.createDto.workItemCategoryId) return null;
+    return this.createFormData.workItemCategories
+      .find(c => c.workItemCategoryId === this.createDto.workItemCategoryId)
+      ?.instructivosSyncStatus ?? null;
+  }
+
   onCompanyChange(contractorId: number): void {
     this.createDto.contractorId = contractorId;
     const contractor = this.createFormData.contributors.find(c => c.contractorId === contractorId);

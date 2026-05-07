@@ -54,6 +54,8 @@ export interface ProjectSubContractorDTO {
   promissoryNote?: ProjectSubContractorFileDTO;  // solo si paymentMethodId === 2
   // Paquete del contrato completo (paso 4 — autogenerado: Hoja Resumen + Contrato + Pagaré)
   package?: ProjectSubContractorFileDTO;
+  // Instructivo (paso 3 — obtenido desde OneDrive de Calidad)
+  instructivo?: ProjectSubContractorFileDTO;
   // Documentos escaneados (paso 7)
   scannedDoc1?: ProjectSubContractorFileDTO;
   scannedDoc2?: ProjectSubContractorFileDTO;
