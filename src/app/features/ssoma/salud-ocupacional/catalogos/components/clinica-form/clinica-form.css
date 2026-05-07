@@ -81,3 +81,53 @@
 .btn-ghost:hover {
   color: #111827;
 }
+
+.emails-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.emails-header .field-label {
+  margin-bottom: 0;
+}
+
+.email-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.emails-empty {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  padding: 0.25rem 0;
+}
+
+.btn-link {
+  font-size: 0.82rem;
+  color: #64bc04;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.btn-delete {
+  padding: 0.35rem 0.45rem;
+  color: #9ca3af;
+  font-size: 1rem;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.btn-delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}

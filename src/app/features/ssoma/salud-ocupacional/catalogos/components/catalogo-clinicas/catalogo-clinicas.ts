@@ -2,7 +2,8 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, debounceTime, forkJoin, of, takeUntil } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -26,6 +27,7 @@ export class CatalogoClinicas implements OnInit, OnDestroy {
   all: ClinicaSimpleDto[] = [];
   filtered: ClinicaSimpleDto[] = [];
   pageItems: ClinicaSimpleDto[] = [];
+  emailsMap: Map<number, string> = new Map();
 
   totalRecords = 0;
   totalPages = 1;
@@ -62,12 +64,33 @@ export class CatalogoClinicas implements OnInit, OnDestroy {
     this.loading = true;
     this.loaderService.show();
     this.service.listClinicas().subscribe({
-      next: (res) => {
-        this.all = res ?? [];
-        this.applyFilters(1);
-        this.loading = false;
-        this.loaderService.hide();
-        this.cdr.detectChanges();
+      next: (clinicas) => {
+        this.all = clinicas ?? [];
+
+        if (this.all.length === 0) {
+          this.emailsMap = new Map();
+          this.applyFilters(1);
+          this.loading = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          return;
+        }
+
+        forkJoin(
+          this.all.map((c) =>
+            this.service.getClinicaEmails(c.id).pipe(catchError(() => of([]))),
+          ),
+        ).subscribe({
+          next: (results) => {
+            this.emailsMap = new Map(
+              this.all.map((c, i) => [c.id, results[i].map((e) => e.email).join(', ')]),
+            );
+            this.applyFilters(1);
+            this.loading = false;
+            this.loaderService.hide();
+            this.cdr.detectChanges();
+          },
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
@@ -84,10 +107,11 @@ export class CatalogoClinicas implements OnInit, OnDestroy {
       if (estado === 'activo' && !c.activo) return false;
       if (estado === 'inactivo' && c.activo) return false;
       if (!q) return true;
+      const emails = this.emailsMap.get(c.id) ?? '';
       return (
         c.nombre.toLowerCase().includes(q) ||
         (c.ruc ?? '').toLowerCase().includes(q) ||
-        (c.email ?? '').toLowerCase().includes(q)
+        emails.toLowerCase().includes(q)
       );
     });
     this.totalRecords = this.filtered.length;
@@ -155,7 +179,6 @@ export class CatalogoClinicas implements OnInit, OnDestroy {
         .updateClinica(item.id, {
           nombre: item.nombre,
           ruc: item.ruc ?? null,
-          email: item.email ?? null,
           telefono: item.telefono ?? null,
           direccion: item.direccion ?? null,
           activo: next,

@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, shareReplay, tap } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
 import {
+  ClinicaEmailCreateDto,
+  ClinicaEmailDto,
   ClinicaSimpleDto,
   ClinicaUpsertDto,
   EmoTipoDto,
@@ -98,6 +100,24 @@ export class CatalogosSaludService {
     return this.http
       .put<ClinicaSimpleDto>(`${this.apiUrl}/clinicas/${id}`, dto, { headers: buildAuthHeaders() })
       .pipe(tap(() => (this.clinicas$ = undefined)));
+  }
+
+  getClinicaEmails(clinicaId: number): Observable<ClinicaEmailDto[]> {
+    return this.http.get<ClinicaEmailDto[]>(`${this.apiUrl}/clinicas/${clinicaId}/emails`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  createClinicaEmail(clinicaId: number, dto: ClinicaEmailCreateDto): Observable<ClinicaEmailDto> {
+    return this.http.post<ClinicaEmailDto>(`${this.apiUrl}/clinicas/${clinicaId}/emails`, dto, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  deleteClinicaEmail(clinicaId: number, emailId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/clinicas/${clinicaId}/emails/${emailId}`, {
+      headers: buildAuthHeaders(),
+    });
   }
 
   listMedicos(): Observable<MedicoSimpleDto[]> {

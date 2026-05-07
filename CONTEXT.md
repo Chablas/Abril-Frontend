@@ -421,6 +421,9 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 | GET | `/catalogos/clinicas` | `CatalogosSaludService.getClinicas` (cached) |
 | POST | `/catalogos/clinicas` | `CatalogosSaludService.createClinica` |
 | PUT | `/catalogos/clinicas/{id}` | `CatalogosSaludService.updateClinica` |
+| GET | `/catalogos/clinicas/{id}/emails` | `CatalogosSaludService.getClinicaEmails` |
+| POST | `/catalogos/clinicas/{id}/emails` | `CatalogosSaludService.createClinicaEmail` |
+| DELETE | `/catalogos/clinicas/{id}/emails/{emailId}` | `CatalogosSaludService.deleteClinicaEmail` |
 | GET | `/catalogos/medicos` | `CatalogosSaludService.getMedicos` (cached) |
 | POST | `/catalogos/medicos` | `CatalogosSaludService.createMedico` |
 | PUT | `/catalogos/medicos/{id}` | `CatalogosSaludService.updateMedico` |
@@ -1040,3 +1043,91 @@ function buildAuthHeaders(): Record<string, string> {
 }
 ```
 Nunca envía `Bearer null`.
+
+---
+
+## Sesión 2026-05-06 — Módulo Clínica + Salud Ocupacional
+
+### Nuevos archivos creados:
+- features/clinica/ — módulo completo nuevo
+  * clinica.routes.ts — rutas /agenda y /programaciones con rol CLINICA
+  * pages/agenda/agenda.ts/html/css — agenda del día con flujo completo
+  * pages/agenda/components/completar-emo/ — modal registrar resultado EMO
+  * pages/programaciones/programaciones.ts/html/css — historial programaciones
+  * pages/activar/activar.ts/html/css — activación cuenta clínica (ruta pública)
+  * services/clinica-programacion.service.ts — getProgramacionesHoy, getProgramacionesFiltradas, accionClinica
+  * dtos/clinica.model.ts — ProgramacionClinicaDto, ClinicaAccionDto, EstadoProgramacionClinica
+- features/ssoma/salud-ocupacional/reportes/reportes.ts/html/css — exportar Excel SUNAFIL
+- features/ssoma/salud-ocupacional/services/reporte.service.ts — exportarSunafilMensual()
+- features/portal-trabajador/portal-trabajador.ts/html/css — portal público búsqueda por DNI
+- core/services/programacion-alertas.service.ts — BehaviorSubject rechazados$, polling 5min
+
+### Cambios en archivos existentes:
+- app.routes.ts — ruta lazy /clinica + ruta pública /portal-trabajador + /clinica/activar
+- core/navigation/navigation.service.ts — módulo Clínica agregado con roles:[] temporal. Item "Reportes" en grupo Salud Ocupacional. getModules() trata roles:[] como sin restricción
+- core/services/auth.service.ts — loginClinica() + persistClinicaToken()
+- features/auth/pages/login/ — tercer tab "Clínica" con FormGroup y submitClinica()
+- shared/components/sidebar/ — badge rojo contador programaciones rechazadas hoy
+- shared/estado.utils.ts — 9 estados nuevos en dict PROGRAMACION
+- features/ssoma/salud-ocupacional/programaciones/:
+  * KPIs panel 7 contadores arriba de la tabla
+  * Filtro por clínica (clinicaId)
+  * Badge AUTO en lista y calendario
+  * Badge 📧 para fechaNotificacion
+  * Acciones nuevas: accionClinica para rechazar desde admin
+- features/ssoma/salud-ocupacional/dtos/programacion.model.ts — EstadoProgramacion extendido, ProgramacionListDto con origen/checkInHora/motivoRechazo/fechaNotificacion
+- features/ssoma/salud-ocupacional/services/programacion.service.ts — método accionClinica()
+
+### Rutas nuevas:
+- /clinica/agenda — agenda del día (roles:[] temporal, cambiar a CLINICA en prod)
+- /clinica/programaciones — historial (roles:[] temporal)
+- /clinica/activar — activación cuenta (pública, fuera del shell)
+- /ssoma/salud-ocupacional/reportes — reporte SUNAFIL
+- /portal-trabajador — portal público (fuera del shell)
+
+### Pendiente para prod:
+- Cambiar roles:[] a roles:['CLINICA'] en navigation.service.ts módulo clínica
+- Restaurar data.roles: ['CLINICA'] en clinica.routes.ts
+- Probar login clínica con kgadea@serviperu.com.pe / Clinica2025!
+
+---
+
+## Sesión 2026-05-06 — Emails múltiples por clínica (SSOMA Catálogos)
+
+### Contexto
+El campo `email` único de `ss_clinica` se reemplaza por una tabla `ss_clinica_emails` con múltiples contactos. El frontend ya no usa `ClinicaSimpleDto.email` para crear/editar.
+
+### Nuevos DTOs (`dtos/catalogos.model.ts`)
+```ts
+ClinicaEmailDto        { id, email, nombre }         // respuesta GET
+ClinicaEmailCreateDto  { email, nombre }              // payload POST
+```
+
+### Nuevos métodos de servicio (`services/catalogos-salud.service.ts`)
+| Método | HTTP | Endpoint |
+|--------|------|----------|
+| `getClinicaEmails(clinicaId)` | GET | `/catalogos/clinicas/{id}/emails` |
+| `createClinicaEmail(clinicaId, dto)` | POST | `/catalogos/clinicas/{id}/emails` |
+| `deleteClinicaEmail(clinicaId, emailId)` | DELETE | `/catalogos/clinicas/{id}/emails/{emailId}` |
+
+Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
+
+### `clinica-form` — modal crear/editar clínica
+- Campo email único **eliminado** del formulario y del payload `ClinicaUpsertDto`.
+- Estado local: `emails: EmailEntry[]` (interfaz local `{ email, nombre, id? }`) + `deletedEmailIds: number[]` (privado).
+- `reset()`: en modo edit carga emails via `getClinicaEmails(initial.id)` (async, error silencioso).
+- `agregarEmail()` — push `{ email: '', nombre: '' }`.
+- `eliminarEmail(i)` — si el item tiene `id`, lo acumula en `deletedEmailIds`; luego splice.
+- `submit()` — guarda la clínica, recibe `clinicaId` en la respuesta, llama `syncEmails(clinicaId)`.
+- `syncEmails()` — `forkJoin` de POST (emails sin id con email no vacío) + DELETE (deletedEmailIds). Si ops vacías, llama `onSaveSuccess()` directo.
+- UI: sección "Emails de contacto" con header flex (label + botón "+ Agregar email"), filas `email-row` (grid `1fr 1fr auto`: input email, input nombre, botón 🗑), mensaje vacío si no hay filas.
+
+### `catalogo-clinicas` — lista de clínicas
+- `emailsMap: Map<number, string>` — clave `clinicaId`, valor emails separados por coma.
+- `load()`: tras `listClinicas()`, hace `forkJoin` de `getClinicaEmails(id)` por cada clínica. Cada inner observable lleva `.pipe(catchError(() => of([])))` para fallo silencioso individual. Construye el Map y luego llama `applyFilters(1)`.
+- `applyFilters()`: búsqueda ahora consulta `emailsMap.get(c.id)` en lugar de `c.email`.
+- `toggleActivo()`: `email: item.email ?? null` eliminado del payload.
+- Template: `{{ emailsMap.get(item.id) || '—' }}` en columna Email.
+
+### Pitfall N+1
+`load()` dispara 1 + N requests (1 listClinicas + N getClinicaEmails). Aceptable para catálogos de clínicas (volumen bajo). Si el backend crece, considerar endpoint `/catalogos/clinicas/con-emails`.
