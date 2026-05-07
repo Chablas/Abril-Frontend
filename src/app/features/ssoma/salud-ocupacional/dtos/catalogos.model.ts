@@ -88,3 +88,14 @@ export interface EmpresaUpsertDto {
   tipoActividad?: string | null;
   activo?: boolean;
 }
+
+export interface ClinicaEmailDto {
+  id: number;
+  email: string;
+  nombre: string;
+}
+
+export interface ClinicaEmailCreateDto {
+  email: string;
+  nombre: string;
+}

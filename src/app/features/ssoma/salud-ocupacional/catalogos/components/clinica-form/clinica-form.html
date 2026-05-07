@@ -14,13 +14,37 @@
         <input type="text" class="field-input" [(ngModel)]="model.telefono" />
       </div>
       <div class="col-span-2">
-        <label class="field-label">Email</label>
-        <input type="email" class="field-input" [(ngModel)]="model.email" />
-      </div>
-      <div class="col-span-2">
         <label class="field-label">Dirección</label>
         <input type="text" class="field-input" [(ngModel)]="model.direccion" />
       </div>
+
+      <div class="col-span-2">
+        <div class="emails-header">
+          <span class="field-label">Emails de contacto</span>
+          <button type="button" class="btn-link" (click)="agregarEmail()">+ Agregar email</button>
+        </div>
+        <div class="email-row" *ngFor="let e of emails; let i = index">
+          <input
+            type="email"
+            class="field-input"
+            [(ngModel)]="e.email"
+            [name]="'email-' + i"
+            placeholder="correo@ejemplo.com"
+          />
+          <input
+            type="text"
+            class="field-input"
+            [(ngModel)]="e.nombre"
+            [name]="'nombre-' + i"
+            placeholder="Nombre contacto"
+          />
+          <button type="button" class="btn-delete" (click)="eliminarEmail(i)" title="Eliminar">
+            🗑
+          </button>
+        </div>
+        <p *ngIf="emails.length === 0" class="emails-empty">Sin emails registrados</p>
+      </div>
+
       <div>
         <label class="field-label">Estado</label>
         <select class="field-input" [(ngModel)]="model.activo">

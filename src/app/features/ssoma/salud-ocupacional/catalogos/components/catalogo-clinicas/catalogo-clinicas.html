@@ -67,7 +67,7 @@
           <tr *ngFor="let item of pageItems">
             <td class="font-semibold text-gray-800">{{ item.nombre }}</td>
             <td class="text-gray-600">{{ item.ruc || '—' }}</td>
-            <td class="text-gray-600">{{ item.email || '—' }}</td>
+            <td class="text-gray-600">{{ emailsMap.get(item.id) || '—' }}</td>
             <td class="text-gray-600">{{ item.telefono || '—' }}</td>
             <td class="text-gray-600">{{ item.direccion || '—' }}</td>
             <td>
