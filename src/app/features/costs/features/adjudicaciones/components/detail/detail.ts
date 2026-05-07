@@ -508,33 +508,15 @@ export class Detail implements OnInit {
     });
   }
 
-  private async sendStep6Notification(): Promise<void> {
+  private sendStep6Notification(): void {
     this.loaderService.show();
-
-    let graphToken: string;
-    try {
-      graphToken = await this.microsoftAuthService.getGraphToken();
-    } catch (err: any) {
-      this.loaderService.hide();
-      Swal.fire({
-        icon: 'error',
-        title: 'Error de autenticación',
-        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
-        draggable: true,
-      });
-      return;
-    }
-
-    this.adjudicacionesService.sendStep6Notification(
-      this.item.projectSubContractorId,
-      graphToken,
-    ).subscribe({
+    this.adjudicacionesService.sendStep6Notification(this.item.projectSubContractorId).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 7;
         this.viewStep = 7;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Correo de proceso de firma enviado', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Paso 6 confirmado', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -556,10 +538,25 @@ export class Detail implements OnInit {
     });
   }
 
-  private confirmStep5(): void {
-    const arrivedWithObservations = this.step5ArrivalOption === 'with_observations';
+  private async confirmStep5(): Promise<void> {
     this.loaderService.show();
-    this.adjudicacionesService.confirmStep5(this.item.projectSubContractorId, arrivedWithObservations).subscribe({
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    const arrivedWithObservations = this.step5ArrivalOption === 'with_observations';
+    this.adjudicacionesService.confirmStep5(this.item.projectSubContractorId, arrivedWithObservations, graphToken).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 6;

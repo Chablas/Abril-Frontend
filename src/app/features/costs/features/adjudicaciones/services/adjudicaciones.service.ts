@@ -125,20 +125,20 @@ export class AdjudicacionesService {
     );
   }
 
-  confirmStep5(projectSubContractorId: number, arrivedWithObservations: boolean): Observable<ApiMessageDTO> {
+  confirmStep5(projectSubContractorId: number, arrivedWithObservations: boolean, graphAccessToken: string): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(
       `${this.apiUrl}/${projectSubContractorId}/confirm-step5`,
-      { arrivedWithObservations },
+      { arrivedWithObservations, graphAccessToken },
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
 
-  sendStep6Notification(projectSubContractorId: number, graphAccessToken: string): Observable<ApiMessageDTO> {
+  sendStep6Notification(projectSubContractorId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(
       `${this.apiUrl}/${projectSubContractorId}/send-step6-notification`,
-      { graphAccessToken },
+      {},
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
