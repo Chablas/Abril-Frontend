@@ -20,9 +20,13 @@ export interface ActividadListItemDTO {
   projectNombre: string | null;
   indice: number | null;
   nombre: string;
-  tipo: string | null;
+  partidaDeControl: string | null;
   etapaId: number | null;
   etapaNombre: string | null;
+  categoriaId: number | null;
+  categoriaNombre: string | null;
+  especialidadId: number | null;
+  especialidadNombre: string | null;
   userId: number | null;
   responsableNombre: string | null;
   encargado1: string | null;
@@ -152,6 +156,8 @@ export interface UpdateActividadBody {
   nombre: string;
   tipo: string | null;
   etapaId: number | null;
+  categoriaId?: number | null;
+  especialidadId?: number | null;
   userId: number | null;
   inicioProgramado: string | null;
   finProgramado: string | null;
@@ -165,6 +171,8 @@ export interface CreateActividadBody {
   tipo: string;
   projectId: number;
   etapaId: number | null;
+  categoriaId?: number | null;
+  especialidadId?: number | null;
   userId: number | null;
   inicioProgramado: string | null;
   finProgramado: string | null;

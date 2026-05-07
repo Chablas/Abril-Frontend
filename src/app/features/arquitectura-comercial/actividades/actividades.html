@@ -155,7 +155,21 @@
         >
           + Nueva Consulta
         </button>
-        <span *ngIf="loading" class="text-xs text-gray-500" [class.ml-auto]="tipoFiltro !== 'CONSULTA'">Cargando...</span>
+        <button
+          *ngIf="tipoFiltro === 'HITO'"
+          (click)="mostrarNuevoHito = true"
+          class="ml-auto px-3.5 py-1.5 text-sm rounded-lg bg-[#1a4731] text-white font-medium hover:bg-[#143824] transition-colors"
+        >
+          + Nuevo Hito
+        </button>
+        <button
+          *ngIf="tipoFiltro === 'ENTREGABLE'"
+          (click)="mostrarNuevoEntregable = true"
+          class="ml-auto px-3.5 py-1.5 text-sm rounded-lg bg-[#1a4731] text-white font-medium hover:bg-[#143824] transition-colors"
+        >
+          + Nuevo Entregable
+        </button>
+        <span *ngIf="loading" class="text-xs text-gray-500" [class.ml-auto]="tipoFiltro === ''">Cargando...</span>
       </div>
 
       <!-- Tabla -->
@@ -167,6 +181,9 @@
               <th class="p-2 w-10">#</th>
               <th class="p-2 min-w-[220px]">Actividad</th>
               <th class="p-2">Etapa</th>
+              <th class="p-2">Partida de Control</th>
+              <th class="p-2">Categoría</th>
+              <th class="p-2">Especialidad</th>
               <th class="p-2">Estado</th>
               <th class="p-2">Inicio prog.</th>
               <th class="p-2">Fin prog.</th>
@@ -184,7 +201,7 @@
             <ng-container *ngFor="let grupo of etapasConActividades; trackBy: trackByEtapaGroup">
               <!-- Separador de etapa -->
               <tr class="bg-[#F0FDF4]">
-                <td colspan="15" class="px-4 py-2 text-[11px] font-bold text-[#15803D] uppercase tracking-wide">
+                <td colspan="18" class="px-4 py-2 text-[11px] font-bold text-[#15803D] uppercase tracking-wide">
                   <span class="mr-2">{{ grupo.nombre }}</span>
                   <span class="text-[#15803D]/70 font-normal normal-case">· {{ grupo.activas }} activas / {{ grupo.total }} total</span>
                 </td>
@@ -204,6 +221,21 @@
                 <td class="px-2 py-1.5">
                   <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + etapaClass(a.etapaNombre)">
                     {{ a.etapaNombre || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.partidaDeControl || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.categoriaNombre || '—' }}
+                  </span>
+                </td>
+                <td class="px-2 py-1.5">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-gray-100 text-gray-700 border-gray-200">
+                    {{ a.especialidadNombre || '—' }}
                   </span>
                 </td>
                 <td class="px-2 py-1.5">
@@ -295,7 +327,7 @@
             </ng-container>
 
             <tr *ngIf="!loading && actividades.length === 0">
-              <td colspan="15" class="text-center py-8 text-gray-400">
+              <td colspan="18" class="text-center py-8 text-gray-400">
                 No se encontraron actividades con los filtros aplicados.
               </td>
             </tr>
@@ -322,4 +354,20 @@
   [supervisores]="supervisores"
   (closed)="mostrarNuevaConsulta = false"
   (saved)="onNuevaConsultaGuardada()"
+/>
+
+<app-nuevo-hito
+  [open]="mostrarNuevoHito"
+  [projectId]="selectedProyectoId"
+  [supervisores]="supervisores"
+  (closed)="mostrarNuevoHito = false"
+  (saved)="onNuevoHitoGuardado()"
+/>
+
+<app-nuevo-entregable
+  [open]="mostrarNuevoEntregable"
+  [projectId]="selectedProyectoId"
+  [supervisores]="supervisores"
+  (closed)="mostrarNuevoEntregable = false"
+  (saved)="onNuevoEntregableGuardado()"
 />

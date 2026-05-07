@@ -83,7 +83,7 @@ export class EditarActividad implements OnChanges {
     if (!this.actividad) return;
     this.model = {
       nombre: this.actividad.nombre,
-      tipo: this.actividad.tipo ?? '',
+      tipo: this.actividad.partidaDeControl ?? '',
       etapaId: this.actividad.etapaId,
       userId: this.actividad.userId,
       inicioProgramado: this.actividad.inicioProgramado ?? '',

@@ -11,6 +11,8 @@ import {
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
 import { NuevaConsulta } from './components/nueva-consulta/nueva-consulta';
 import { EditarActividad } from './components/editar-actividad/editar-actividad';
+import { NuevoHito } from './components/nuevo-hito/nuevo-hito';
+import { NuevoEntregable } from './components/nuevo-entregable/nuevo-entregable';
 
 type TipoFiltro = '' | 'ENTREGABLE' | 'HITO' | 'CONSULTA';
 
@@ -24,7 +26,7 @@ interface EtapaGroup {
 @Component({
   selector: 'app-arq-comercial-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad],
+  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
@@ -56,6 +58,8 @@ export class Actividades implements OnInit {
   soloActivas = false;
 
   mostrarNuevaConsulta = false;
+  mostrarNuevoHito = false;
+  mostrarNuevoEntregable = false;
   mostrarEditarActividad = false;
   actividadParaEditar: ActividadListItemDTO | null = null;
 
@@ -392,6 +396,16 @@ export class Actividades implements OnInit {
 
   onNuevaConsultaGuardada(): void {
     this.mostrarNuevaConsulta = false;
+    this.loadActividades();
+  }
+
+  onNuevoHitoGuardado(): void {
+    this.mostrarNuevoHito = false;
+    this.loadActividades();
+  }
+
+  onNuevoEntregableGuardado(): void {
+    this.mostrarNuevoEntregable = false;
     this.loadActividades();
   }
 

@@ -19,10 +19,10 @@ import {
   SupervisorAcDTO,
 } from '../../../../../core/dtos/arquitectura-comercial/actividades.model';
 
-interface NuevaConsultaForm {
+interface NuevoEntregableForm {
   etapaNombre: string;
-  rfiNumero: number | null;
-  ubicacion: string;
+  reporte: string;
+  categoriaId: number | null;
   etapaId: number | null;
   inicioProgramado: string;
   finProgramado: string;
@@ -30,13 +30,13 @@ interface NuevaConsultaForm {
 }
 
 @Component({
-  selector: 'app-nueva-consulta',
+  selector: 'app-nuevo-entregable',
   standalone: true,
   imports: [CommonModule, FormsModule, BaseModal],
-  templateUrl: './nueva-consulta.html',
-  styleUrl: './nueva-consulta.css',
+  templateUrl: './nuevo-entregable.html',
+  styleUrl: './nuevo-entregable.css',
 })
-export class NuevaConsulta implements OnChanges {
+export class NuevoEntregable implements OnChanges {
   @Input() open = false;
   @Input() projectId: number | null = null;
   @Input() supervisores: SupervisorAcDTO[] = [];
@@ -44,12 +44,23 @@ export class NuevaConsulta implements OnChanges {
   @Output() saved = new EventEmitter<ActividadListItemDTO>();
 
   readonly etapasNombre = ['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4'];
+  readonly reportes = [
+    'REPORTE DE LEVANTAMIENTO DE OBS MENSUAL',
+    'REPORTE DE SATISFACCIÓN MENSUAL',
+    'REPORTE DE OS - OC MENSUAL',
+    'REPORTE DE ALMACENES MENSUAL',
+    'REPORTE DE RECICLAJE MENSUAL',
+  ];
+  readonly categorias = [
+    { id: 3, nombre: 'POST VENTA' },
+    { id: 4, nombre: 'ALMACENES' },
+  ];
 
   etapas: AcEtapaDTO[] = [];
   loadingEtapas = false;
   saving = false;
 
-  model: NuevaConsultaForm = this.empty();
+  model: NuevoEntregableForm = this.empty();
 
   constructor(
     private service: ArquitecturaComercialService,
@@ -63,11 +74,11 @@ export class NuevaConsulta implements OnChanges {
     }
   }
 
-  private empty(): NuevaConsultaForm {
+  private empty(): NuevoEntregableForm {
     return {
       etapaNombre: '',
-      rfiNumero: null,
-      ubicacion: '',
+      reporte: '',
+      categoriaId: null,
       etapaId: null,
       inicioProgramado: '',
       finProgramado: '',
@@ -76,11 +87,15 @@ export class NuevaConsulta implements OnChanges {
   }
 
   private loadEtapas(): void {
-    if (this.etapas.length > 0) return;
+    if (this.etapas.length > 0) {
+      this.applyDefaultEtapa();
+      return;
+    }
     this.loadingEtapas = true;
     this.service.getEtapas().subscribe({
       next: data => {
         this.etapas = data;
+        this.applyDefaultEtapa();
         this.loadingEtapas = false;
         this.cdr.detectChanges();
       },
@@ -91,16 +106,19 @@ export class NuevaConsulta implements OnChanges {
     });
   }
 
+  private applyDefaultEtapa(): void {
+    const postVenta = this.etapas.find(e => e.nombre === 'POST VENTA Y EXPERIENCIA');
+    if (postVenta) this.model.etapaId = postVenta.id;
+  }
+
   get nombreCalculado(): string {
-    const etapa = this.model.etapaNombre;
-    const rfi = this.model.rfiNumero;
-    const ubi = this.model.ubicacion.trim();
-    if (!etapa || rfi == null || !ubi) return '';
-    return `${etapa}_RFI_${rfi}_${ubi}`;
+    const { etapaNombre, reporte } = this.model;
+    if (!etapaNombre || !reporte) return '';
+    return `${etapaNombre}_${reporte}`;
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.projectId && !!this.nombreCalculado;
+    return !this.saving && !!this.projectId && !!this.model.etapaNombre && !!this.model.reporte;
   }
 
   submit(): void {
@@ -108,10 +126,10 @@ export class NuevaConsulta implements OnChanges {
 
     const body: CreateActividadBody = {
       nombre: this.nombreCalculado,
-      tipo: 'CONSULTA',
+      tipo: 'ENTREGABLE',
       projectId: this.projectId,
       etapaId: this.model.etapaId,
-      categoriaId: 2,
+      categoriaId: this.model.categoriaId,
       especialidadId: 2,
       userId: this.model.userId,
       inicioProgramado: this.model.inicioProgramado || null,
@@ -122,13 +140,13 @@ export class NuevaConsulta implements OnChanges {
     this.service.createActividad(body).subscribe({
       next: created => {
         this.saving = false;
-        Swal.fire({ icon: 'success', title: 'Consulta creada', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Entregable creado', timer: 1500, showConfirmButton: false });
         this.saved.emit(created);
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.saving = false;
-        const msg = err?.error?.message ?? 'No se pudo crear la consulta';
+        const msg = err?.error?.message ?? 'No se pudo crear el entregable';
         Swal.fire({ icon: 'error', title: 'Error', text: msg });
         this.cdr.detectChanges();
       },
