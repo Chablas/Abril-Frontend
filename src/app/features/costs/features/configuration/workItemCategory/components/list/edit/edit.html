@@ -1,6 +1,7 @@
-<app-base-modal [title]="'EDITAR PARTIDA DE CONTROL'" width="w-[420px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'EDITAR PARTIDA DE CONTROL'" width="w-[560px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-5">
 
+    <!-- Descripción -->
     <div class="flex flex-col gap-1.5">
       <label class="text-sm text-[#64BC04] font-medium">Descripción</label>
       <input
@@ -10,6 +11,7 @@
         class="border border-[#D6DEE5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
     </div>
 
+    <!-- Estado -->
     <div class="flex flex-col gap-1.5">
       <label class="text-sm text-[#64BC04] font-medium">Estado</label>
       <select [(ngModel)]="dto.active"
@@ -19,6 +21,73 @@
       </select>
     </div>
 
+    <!-- Cláusulas especiales -->
+    <div class="flex flex-col gap-3">
+      <label class="text-sm text-[#64BC04] font-medium">Cláusulas especiales</label>
+
+      <!-- Lista de cláusulas -->
+      <div *ngIf="clauses.length > 0" class="flex flex-col gap-2">
+        <div
+          *ngFor="let clause of clauses; let i = index"
+          class="flex items-start gap-2 bg-[#f8f9fa] border border-[#E2E2E2] rounded-xl p-3">
+
+          <!-- Número -->
+          <span class="text-xs font-bold text-gray-400 mt-[3px] w-5 shrink-0 text-right">{{ i + 1 }}.</span>
+
+          <!-- Texto editable -->
+          <textarea
+            [(ngModel)]="clause.clauseText"
+            rows="2"
+            class="flex-1 text-sm bg-transparent border-none outline-none resize-y leading-relaxed min-h-[48px]">
+          </textarea>
+
+          <!-- Controles -->
+          <div class="flex flex-col gap-1 shrink-0">
+            <button type="button" (click)="moveUp(i)" [disabled]="i === 0"
+              class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Subir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+              </svg>
+            </button>
+            <button type="button" (click)="moveDown(i)" [disabled]="i === clauses.length - 1"
+              class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Bajar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <button type="button" (click)="removeClause(i)"
+              class="p-1 rounded hover:bg-red-100 text-red-400 transition-colors"
+              title="Eliminar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p *ngIf="clauses.length === 0" class="text-xs text-gray-400 italic">
+        Sin cláusulas especiales. Agrega la primera abajo.
+      </p>
+
+      <!-- Input para nueva cláusula -->
+      <div class="flex gap-2 items-end">
+        <textarea
+          [(ngModel)]="newClauseText"
+          rows="3"
+          placeholder="Escribe una cláusula y presiona Agregar..."
+          class="flex-1 border border-[#D6DEE5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-y min-h-[72px]">
+        </textarea>
+        <button type="button" (click)="addClause()"
+          class="h-[42px] px-4 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors shrink-0">
+          Agregar
+        </button>
+      </div>
+    </div>
+
+    <!-- Botón guardar -->
     <div class="flex justify-center pt-1">
       <button (click)="save()"
         class="w-[140px] bg-[#64BC04] py-2 rounded-xl cursor-pointer hover:bg-[#57a803] transition-colors">

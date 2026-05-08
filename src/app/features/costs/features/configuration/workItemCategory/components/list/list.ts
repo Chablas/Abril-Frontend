@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { WorkItemCategoryService } from '../../services/work-item-category.service';
 import { WorkItemCategoryDto } from '../../dtos/work-item-category.dto';
 import { WorkItemCategoryEditDto } from '../../dtos/work-item-category-edit.dto';
+import { WorkItemCategoryClauseDto } from '../../dtos/work-item-category.dto';
 import { WorkItemCategoryFilterDto } from '../../dtos/work-item-category-filter.dto';
 import { WorkItemCategoryEdit } from './edit/edit';
 import { PagedResponseDTO } from '../../../../../../../core/dtos/api/pagedResponse.model';
@@ -23,7 +24,8 @@ export class WorkItemCategoryList implements OnInit {
 
   items: WorkItemCategoryDto[] = [];
   showEditModal = false;
-  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true };
+  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true, clauses: [] };
+  editingClauses: WorkItemCategoryClauseDto[] = [];
 
   constructor(
     private service: WorkItemCategoryService,
@@ -53,7 +55,9 @@ export class WorkItemCategoryList implements OnInit {
       workItemCategoryId: item.workItemCategoryId,
       workItemCategoryDescription: item.workItemCategoryDescription,
       active: item.active,
+      clauses: [],
     };
+    this.editingClauses = item.clauses ?? [];
     this.showEditModal = true;
   }
 

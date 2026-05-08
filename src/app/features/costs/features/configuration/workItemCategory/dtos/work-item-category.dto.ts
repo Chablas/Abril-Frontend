@@ -1,3 +1,9 @@
+export interface WorkItemCategoryClauseDto {
+  workItemCategoryClauseId: number;
+  clauseText: string;
+  sortOrder: number;
+}
+
 export interface WorkItemCategoryDto {
   workItemCategoryId: number;
   workItemCategoryDescription: string;
@@ -10,6 +16,7 @@ export interface WorkItemCategoryDto {
   instructivosFolderName?: string | null;
   instructivosSyncStatus?: number | null; // 1=automático, 2=manual, 3=sin instructivo
   instructivosSyncedAt?: string | null;
+  clauses: WorkItemCategoryClauseDto[];
 }
 
 export interface WorkItemCategorySyncResultDto {
