@@ -44,7 +44,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -128,6 +128,8 @@ export class Detail implements OnInit {
     if (this.item.endDate)        this.step2Form.endDate        = this.item.endDate.substring(0, 10);
     if (this.item.contractNumber)        this.step2Form.contractNumber        = this.item.contractNumber;
     if (this.item.promissoryNoteNumber)  this.step2Form.promissoryNoteNumber  = this.item.promissoryNoteNumber;
+    if (this.item.guaranteeFundPercentage != null) this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage;
+    if (this.item.guaranteeFundDays != null)       this.step2Form.guaranteeFundDays       = this.item.guaranteeFundDays;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -205,7 +207,14 @@ export class Detail implements OnInit {
   canGoForward(): boolean {
     if (this.actualStatus === 1) return true;
     if (this.actualStatus === 2 && this.viewStep === 2) {
-      const baseOk = !!(this.step2Form.signingDate && this.step2Form.startDate && this.step2Form.endDate && this.step2Form.contractNumber != null && (this.step2Form.contractNumber as any) !== '');
+      const baseOk = !!(
+        this.step2Form.signingDate &&
+        this.step2Form.startDate &&
+        this.step2Form.endDate &&
+        this.step2Form.contractNumber != null && (this.step2Form.contractNumber as any) !== '' &&
+        this.step2Form.guaranteeFundPercentage != null && (this.step2Form.guaranteeFundPercentage as any) !== '' &&
+        this.step2Form.guaranteeFundDays != null && (this.step2Form.guaranteeFundDays as any) !== ''
+      );
       if (!baseOk) return false;
       if (this.item.paymentMethodId === 2) {
         return this.step2Form.promissoryNoteNumber != null && (this.step2Form.promissoryNoteNumber as any) !== '';
@@ -748,6 +757,28 @@ export class Detail implements OnInit {
       return;
     }
 
+    const rawGfp = this.step2Form.guaranteeFundPercentage;
+    const guaranteeFundPercentage: number | null =
+      rawGfp === null || rawGfp === undefined || (rawGfp as any) === ''
+        ? null
+        : Math.trunc(Number(rawGfp));
+
+    const rawGfd = this.step2Form.guaranteeFundDays;
+    const guaranteeFundDays: number | null =
+      rawGfd === null || rawGfd === undefined || (rawGfd as any) === ''
+        ? null
+        : Math.trunc(Number(rawGfd));
+
+    if (guaranteeFundPercentage === null) {
+      Swal.fire({ icon: 'warning', title: 'El porcentaje del fondo de garantía es obligatorio.', draggable: true });
+      return;
+    }
+
+    if (guaranteeFundDays === null) {
+      Swal.fire({ icon: 'warning', title: 'Los días del fondo de garantía son obligatorios.', draggable: true });
+      return;
+    }
+
     this.loaderService.show();
     this.adjudicacionesService.saveDates(this.item.projectSubContractorId, {
       signingDate:    this.step2Form.signingDate,
@@ -755,15 +786,19 @@ export class Detail implements OnInit {
       endDate:        this.step2Form.endDate,
       contractNumber,
       promissoryNoteNumber,
+      guaranteeFundPercentage,
+      guaranteeFundDays,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 3;
-        this.item.signingDate          = this.step2Form.signingDate;
-        this.item.startDate            = this.step2Form.startDate;
-        this.item.endDate              = this.step2Form.endDate;
-        this.item.contractNumber       = contractNumber;
-        this.item.promissoryNoteNumber = promissoryNoteNumber;
+        this.item.signingDate              = this.step2Form.signingDate;
+        this.item.startDate                = this.step2Form.startDate;
+        this.item.endDate                  = this.step2Form.endDate;
+        this.item.contractNumber           = contractNumber;
+        this.item.promissoryNoteNumber     = promissoryNoteNumber;
+        this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
+        this.item.guaranteeFundDays        = guaranteeFundDays;
         this.viewStep = 3;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });

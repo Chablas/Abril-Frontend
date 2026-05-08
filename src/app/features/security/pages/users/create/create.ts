@@ -97,7 +97,32 @@ export class UserCreate implements OnInit {
     });
   }
 
+  private getValidationErrors(): string[] {
+    const errors: string[] = [];
+    if (!this.createDto.documentIdentityCode?.trim())  errors.push('DNI');
+    if (!this.createDto.firstNames?.trim())            errors.push('Nombres');
+    if (!this.createDto.firstLastName?.trim())         errors.push('Primer apellido');
+    if (!this.createDto.secondLastName?.trim())        errors.push('Segundo apellido');
+    if (!this.createDto.email?.trim())                 errors.push('Correo');
+    if (!this.createDto.phoneNumber)                   errors.push('Celular');
+    if (!this.roles.some((r) => r.checked))            errors.push('Rol (debe asignar al menos uno)');
+    return errors;
+  }
+
   saveUser() {
+    const errors = this.getValidationErrors();
+    if (errors.length > 0) {
+      const listHtml = errors.map((e) => `<li>${e}</li>`).join('');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<p style="font-size:0.85rem;color:#666;margin-bottom:8px">Por favor completa los siguientes campos:</p>
+               <ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     this.createDto.roleIds = this.roles.filter((r) => r.checked).map((r) => r.roleId);
     this.loaderService.show();
     this.userFeatureService.createUser(this.createDto).subscribe({

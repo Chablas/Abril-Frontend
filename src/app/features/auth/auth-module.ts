@@ -7,6 +7,7 @@ import { MsalRedirect } from "./pages/msal-redirect/msal-redirect";
 
 const routes: Routes = [
   { path: "complete-registration", component: CompleteRegistration },
+  { path: "set-password", component: CompleteRegistration },
   { path: "login", component: Login },
   { path: "msal-redirect", component: MsalRedirect },
 ]

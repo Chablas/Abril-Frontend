@@ -77,6 +77,11 @@
                 title="Reenviar correo de registro"
                 (click)="resendEmail(item, $event)"
               >Reenviar</button>
+              <button
+                type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                (click)="deleteUser(item, $event)"
+              >Eliminar</button>
             </div>
           </td>
         </tr>
@@ -121,6 +126,11 @@
             [ngClass]="item.active ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-green-50 border-green-200 text-green-700'"
             (click)="toggleUser(item, $event)"
           >{{ item.active ? 'Desactivar' : 'Activar' }}</button>
+          <button
+            type="button"
+            class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer bg-red-50 border-red-200 text-red-600"
+            (click)="deleteUser(item, $event)"
+          >Eliminar</button>
         </div>
       </div>
     </div>

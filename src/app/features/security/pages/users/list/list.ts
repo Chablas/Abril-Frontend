@@ -30,6 +30,7 @@ export class UserList implements OnInit {
   @Output() pagedData = new EventEmitter<PagedResponseDTO<UserListItemDto>>();
   @Output() editUser = new EventEmitter<UserListItemDto>();
   @Output() userToggled = new EventEmitter<void>();
+  @Output() userDeleted = new EventEmitter<void>();
 
   constructor(
     private userFeatureService: UserFeatureService,
@@ -111,6 +112,34 @@ export class UserList implements OnInit {
           this.loaderService.hide();
           this.userToggled.emit();
           Swal.fire({ title: 'Estado actualizado', icon: 'success', timer: 1500, showConfirmButton: false });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  deleteUser(user: UserListItemDto, event: MouseEvent) {
+    event.stopPropagation();
+    const label = user.displayName ?? user.email;
+    Swal.fire({
+      title: '¿Eliminar usuario?',
+      text: `${label} será eliminado permanentemente del sistema.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      confirmButtonColor: '#ef4444',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.userFeatureService.deleteUser(user.userId).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          this.userDeleted.emit();
+          Swal.fire({ title: 'Usuario eliminado', icon: 'success', timer: 1500, showConfirmButton: false });
           this.cdr.detectChanges();
         },
         error: (err: HttpErrorResponse) => {

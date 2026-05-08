@@ -36,4 +36,8 @@ export class UserFeatureService {
   toggleUser(id: number): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${id}/toggle`, {}, { headers: buildAuthHeaders() });
   }
+
+  deleteUser(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers: buildAuthHeaders() });
+  }
 }

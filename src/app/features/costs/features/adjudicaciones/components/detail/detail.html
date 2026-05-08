@@ -225,6 +225,22 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">% fondo de garantía</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage"
+              min="0" max="100" step="1"
+              placeholder="Ej: 5"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Días del fondo de garantía</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays"
+              min="0" step="1"
+              placeholder="Ej: 365"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
           <!-- Plazo calculado automáticamente -->
           <div *ngIf="plazoEnDias !== null" class="sm:col-span-2">
             <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
@@ -280,6 +296,16 @@
           <div *ngIf="item.paymentMethodId === 2 && item.promissoryNoteNumber != null">
             <p class="text-xs text-gray-400 mb-[2px]">Número de pagaré</p>
             <p class="text-sm font-semibold text-gray-800">{{ item.promissoryNoteNumber }}</p>
+          </div>
+
+          <div *ngIf="item.guaranteeFundPercentage != null">
+            <p class="text-xs text-gray-400 mb-[2px]">% fondo de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundPercentage }}%</p>
+          </div>
+
+          <div *ngIf="item.guaranteeFundDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Días del fondo de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundDays }} días</p>
           </div>
 
         </div>
