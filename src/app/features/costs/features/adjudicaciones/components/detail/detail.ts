@@ -309,16 +309,43 @@ export class Detail implements OnInit {
     });
   }
 
+  /** Tipos de documento que solo admiten archivos Word (.docx / .doc). */
+  private static readonly WORD_ONLY_DOCS = new Set(['Instructivo', 'NonConformingOutput', 'ToleranceChart']);
+
+  private static readonly WORD_ACCEPT =
+    '.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword';
+
   triggerUpload(docKey: string): void {
     this.currentDocType = docKey;
     this.fileInput.nativeElement.value = '';
+    // Restringir el selector de archivos según el tipo de documento
+    this.fileInput.nativeElement.accept = Detail.WORD_ONLY_DOCS.has(docKey)
+      ? Detail.WORD_ACCEPT
+      : '';
     this.fileInput.nativeElement.click();
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length || !this.currentDocType) return;
-    this.uploadDoc(this.currentDocType, input.files[0]);
+
+    const file = input.files[0];
+
+    // Validación extra: los documentos Word-only solo permiten .docx / .doc
+    if (Detail.WORD_ONLY_DOCS.has(this.currentDocType)) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'docx' && ext !== 'doc') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Formato no permitido',
+          text: 'Este documento solo acepta archivos Word (.docx o .doc).',
+          confirmButtonColor: '#64BC04',
+        });
+        return;
+      }
+    }
+
+    this.uploadDoc(this.currentDocType, file);
   }
 
   private uploadDoc(docType: string, file: File): void {
