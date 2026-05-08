@@ -462,11 +462,12 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 | GET | `/gantt` | `getGantt` |
 
 **DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
-- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días).
+- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días). Campo `tipo` renombrado a `partidaDeControl: string | null`. Campos añadidos: `categoriaId`, `categoriaNombre`, `especialidadId`, `especialidadNombre`.
 - `ActividadPatchBody` — solo fechas programadas/efectivas, userId, observaciones.
-- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas.
-- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones.
+- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
+- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
 - `AcEtapaDTO { id, nombre }` — catálogo de etapas del backend.
+- **Nota**: `GanttActividadDTO` conserva `tipo: string | null` (NO renombrado).
 
 ---
 
@@ -497,10 +498,14 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 ### `features/arquitectura-comercial/` — ✅ Completo
 - Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
-- **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta (POST).
-- **Botón "+ Nueva Consulta"**: visible solo cuando `tipoFiltro === 'CONSULTA'` (`actividades.html`). Abre `components/nueva-consulta/`.
-- **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada `['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4']` (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
-- **Modal Editar Actividad**: `components/editar-actividad/`. Campos: nombre, tipo (ENTREGABLE/HITO/CONSULTA), etapa (del endpoint), responsable, 4 fechas, observaciones. Pre-poblado desde `ActividadListItemDTO` en `ngOnChanges`.
+- **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta/hito/entregable (POST).
+- **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`). Colspan separadores = 18.
+- **Botón "+ Nueva Consulta"**: visible cuando `tipoFiltro === 'CONSULTA'`. Abre `components/nueva-consulta/`. Body fijo: `categoriaId: 2, especialidadId: 2`.
+- **Botón "+ Nuevo Hito"**: visible cuando `tipoFiltro === 'HITO'`. Abre `components/nuevo-hito/`. Campos: etapaNombre, actividad (3 opciones), mes (12 opciones), correlativo, especialidadId (1=EJECUCIÓN / 2=CONTROL). Fijos: `categoriaId: 3 (POST VENTA), tipo: 'HITO'`. Nombre: `${etapaNombre}_${actividad}  (${mes}) ${correlativo.padStart(2,'0')}`.
+- **Botón "+ Nuevo Entregable"**: visible cuando `tipoFiltro === 'ENTREGABLE'`. Abre `components/nuevo-entregable/`. Campos: etapaNombre, reporte (5 opciones), categoriaId (3=POST VENTA / 4=ALMACENES). Fijos: `especialidadId: 2, tipo: 'ENTREGABLE'`. Nombre: `${etapaNombre}_${reporte}`.
+- **Modales Nuevo Hito / Nuevo Entregable**: auto-seleccionan etapa "POST VENTA Y EXPERIENCIA" al abrir. Etapas cacheadas en el componente (guard `etapas.length > 0` + `applyDefaultEtapa()` en cada apertura).
+- **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
+- **Modal Editar Actividad**: `components/editar-actividad/`. Campo `tipo` del form mapea a `partidaDeControl` de `ActividadListItemDTO` (campo local del form sigue llamándose `tipo` para el body del backend).
 - **Eliminar**: botón basura en cada fila → Swal → DELETE → `loadActividades()`.
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).

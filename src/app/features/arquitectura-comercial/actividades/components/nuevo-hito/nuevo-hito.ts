@@ -19,10 +19,12 @@ import {
   SupervisorAcDTO,
 } from '../../../../../core/dtos/arquitectura-comercial/actividades.model';
 
-interface NuevaConsultaForm {
+interface NuevoHitoForm {
   etapaNombre: string;
-  rfiNumero: number | null;
-  ubicacion: string;
+  actividad: string;
+  mes: string;
+  correlativo: number | null;
+  especialidadId: number | null;
   etapaId: number | null;
   inicioProgramado: string;
   finProgramado: string;
@@ -30,13 +32,13 @@ interface NuevaConsultaForm {
 }
 
 @Component({
-  selector: 'app-nueva-consulta',
+  selector: 'app-nuevo-hito',
   standalone: true,
   imports: [CommonModule, FormsModule, BaseModal],
-  templateUrl: './nueva-consulta.html',
-  styleUrl: './nueva-consulta.css',
+  templateUrl: './nuevo-hito.html',
+  styleUrl: './nuevo-hito.css',
 })
-export class NuevaConsulta implements OnChanges {
+export class NuevoHito implements OnChanges {
   @Input() open = false;
   @Input() projectId: number | null = null;
   @Input() supervisores: SupervisorAcDTO[] = [];
@@ -44,12 +46,25 @@ export class NuevaConsulta implements OnChanges {
   @Output() saved = new EventEmitter<ActividadListItemDTO>();
 
   readonly etapasNombre = ['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4'];
+  readonly actividades = [
+    'RUTEO DE SALA',
+    'LEVANTAMIENTO DE OBS DE INSPECCIÓN',
+    'INSPECCIÓN DE ALMACEN',
+  ];
+  readonly meses = [
+    'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+    'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
+  ];
+  readonly especialidades = [
+    { id: 1, nombre: 'EJECUCIÓN' },
+    { id: 2, nombre: 'CONTROL' },
+  ];
 
   etapas: AcEtapaDTO[] = [];
   loadingEtapas = false;
   saving = false;
 
-  model: NuevaConsultaForm = this.empty();
+  model: NuevoHitoForm = this.empty();
 
   constructor(
     private service: ArquitecturaComercialService,
@@ -63,11 +78,13 @@ export class NuevaConsulta implements OnChanges {
     }
   }
 
-  private empty(): NuevaConsultaForm {
+  private empty(): NuevoHitoForm {
     return {
       etapaNombre: '',
-      rfiNumero: null,
-      ubicacion: '',
+      actividad: '',
+      mes: '',
+      correlativo: null,
+      especialidadId: null,
       etapaId: null,
       inicioProgramado: '',
       finProgramado: '',
@@ -76,11 +93,15 @@ export class NuevaConsulta implements OnChanges {
   }
 
   private loadEtapas(): void {
-    if (this.etapas.length > 0) return;
+    if (this.etapas.length > 0) {
+      this.applyDefaultEtapa();
+      return;
+    }
     this.loadingEtapas = true;
     this.service.getEtapas().subscribe({
       next: data => {
         this.etapas = data;
+        this.applyDefaultEtapa();
         this.loadingEtapas = false;
         this.cdr.detectChanges();
       },
@@ -91,16 +112,27 @@ export class NuevaConsulta implements OnChanges {
     });
   }
 
+  private applyDefaultEtapa(): void {
+    const postVenta = this.etapas.find(e => e.nombre === 'POST VENTA Y EXPERIENCIA');
+    if (postVenta) this.model.etapaId = postVenta.id;
+  }
+
   get nombreCalculado(): string {
-    const etapa = this.model.etapaNombre;
-    const rfi = this.model.rfiNumero;
-    const ubi = this.model.ubicacion.trim();
-    if (!etapa || rfi == null || !ubi) return '';
-    return `${etapa}_RFI_${rfi}_${ubi}`;
+    const { etapaNombre, actividad, mes, correlativo } = this.model;
+    if (!etapaNombre || !actividad || !mes || correlativo == null) return '';
+    return `${etapaNombre}_${actividad}  (${mes}) ${correlativo.toString().padStart(2, '0')}`;
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.projectId && !!this.nombreCalculado;
+    const { etapaNombre, actividad, mes, correlativo } = this.model;
+    return (
+      !this.saving &&
+      !!this.projectId &&
+      !!etapaNombre &&
+      !!actividad &&
+      !!mes &&
+      correlativo != null
+    );
   }
 
   submit(): void {
@@ -108,11 +140,11 @@ export class NuevaConsulta implements OnChanges {
 
     const body: CreateActividadBody = {
       nombre: this.nombreCalculado,
-      tipo: 'CONSULTA',
+      tipo: 'HITO',
       projectId: this.projectId,
       etapaId: this.model.etapaId,
-      categoriaId: 2,
-      especialidadId: 2,
+      categoriaId: 3,
+      especialidadId: this.model.especialidadId,
       userId: this.model.userId,
       inicioProgramado: this.model.inicioProgramado || null,
       finProgramado: this.model.finProgramado || null,
@@ -122,13 +154,13 @@ export class NuevaConsulta implements OnChanges {
     this.service.createActividad(body).subscribe({
       next: created => {
         this.saving = false;
-        Swal.fire({ icon: 'success', title: 'Consulta creada', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Hito creado', timer: 1500, showConfirmButton: false });
         this.saved.emit(created);
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.saving = false;
-        const msg = err?.error?.message ?? 'No se pudo crear la consulta';
+        const msg = err?.error?.message ?? 'No se pudo crear el hito';
         Swal.fire({ icon: 'error', title: 'Error', text: msg });
         this.cdr.detectChanges();
       },
