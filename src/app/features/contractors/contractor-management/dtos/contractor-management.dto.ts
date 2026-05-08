@@ -23,6 +23,7 @@ export interface ContractorManagementDTO {
   emails: string[];
   hasUser?: boolean;
   users: ContractorUserItemDTO[];
+  logoFileUrl?: string | null;
   brochureFileUrl?: string | null;
   fichaRucFileUrl?: string | null;
   referencesListFileUrl?: string | null;

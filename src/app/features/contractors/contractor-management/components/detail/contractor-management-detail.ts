@@ -6,12 +6,13 @@ import { ContractorManagementDTO } from '../../dtos/contractor-management.dto';
 import { ContractorManagementService } from '../../services/contractor-management.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { ContractorManagementEdit } from '../edit/contractor-management-edit';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-contractor-management-detail',
   standalone: true,
-  imports: [CommonModule, BaseModal],
+  imports: [CommonModule, BaseModal, ContractorManagementEdit],
   templateUrl: './contractor-management-detail.html',
 })
 export class ContractorManagementDetail {
@@ -20,6 +21,7 @@ export class ContractorManagementDetail {
   @Output() actionCompleted = new EventEmitter<void>();
 
   activeTab: 'general' | 'users' = 'general';
+  showEditModal = false;
 
   constructor(
     private service: ContractorManagementService,
@@ -66,6 +68,16 @@ export class ContractorManagementDetail {
         },
       });
     });
+  }
+
+  openEdit(): void {
+    this.showEditModal = true;
+  }
+
+  onEditSaved(): void {
+    this.showEditModal = false;
+    this.actionCompleted.emit();
+    this.closeModal.emit();
   }
 
   sendCredentials(): void {

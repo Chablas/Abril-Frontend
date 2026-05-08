@@ -48,4 +48,13 @@ export class ContractorManagementService {
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
+
+  update(contractorId: number, form: FormData): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.put<ApiMessageDTO>(
+      `${this.apiUrl}/${contractorId}`,
+      form,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

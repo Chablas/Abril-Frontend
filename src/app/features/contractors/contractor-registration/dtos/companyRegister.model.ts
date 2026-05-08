@@ -1,3 +1,13 @@
+export interface ContractorPersonTypeDTO {
+  contractorPersonTypeId: number;
+  description: string;
+}
+
+export interface EmailContactItem {
+  email: string;
+  personTypeId: number | null;
+}
+
 export interface ContributorRegisterDTO {
   contributorRuc: string;
   contributorName: string;
@@ -9,7 +19,6 @@ export interface ContributorRegisterDTO {
   legalRepresentativeDni?: string | null;
   legalRepresentativeFullName?: string | null;
   legalEntityRegistryNumber?: string | null;
-  emails: string[];
   graphAccessToken?: string;
   brochureFile?: File | null;
   fichaRucFile?: File | null;

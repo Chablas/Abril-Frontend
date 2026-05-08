@@ -1,23 +1,28 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ContractorService } from '../services/contractor.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { SunatContributorDTO } from '../dtos/sunatCompany.model';
 import { ReniecPersonDTO } from '../dtos/reniecPerson.model';
-import { ContributorRegisterDTO } from '../dtos/companyRegister.model';
+import { ContributorRegisterDTO, ContractorPersonTypeDTO, EmailContactItem } from '../dtos/companyRegister.model';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-contractor-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './contractor-registration.html',
 })
-export class ContractorRegistration {
+export class ContractorRegistration implements OnInit {
   readonly currentYear = new Date().getFullYear();
+
+  // Person types (clasificaciones de correo)
+  personTypes: ContractorPersonTypeDTO[] = [];
 
   // RUC search
   rucInput = '';
@@ -39,9 +44,16 @@ export class ContractorRegistration {
     legalRepresentativeDni: null,
     legalRepresentativeFullName: null,
     legalEntityRegistryNumber: null,
-    emails: [''],
   };
 
+  // Emails con clasificación
+  emailItems: EmailContactItem[] = [{ email: '', personTypeId: null }];
+
+  // Logo
+  logoFile: File | null = null;
+  logoPreviewUrl: string | null = null;
+
+  // Otros archivos
   brochureFile: File | null = null;
   fichaRucFile: File | null = null;
   referencesListFile: File | null = null;
@@ -51,7 +63,26 @@ export class ContractorRegistration {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {}
+
+  ngOnInit(): void {
+    this.loaderService.show();
+    this.contractorService.getPersonTypes().subscribe({
+      next: (types) => {
+        this.personTypes = types;
+        this.loaderService.hide();
+      },
+      error: () => {
+        this.loaderService.hide(); // no bloquear el formulario si falla
+      },
+    });
+  }
+
+  // ── Navegación ────────────────────────────────────────────────────
+  goToLogin(): void {
+    this.router.navigate(['/auth/login']);
+  }
 
   // ── RUC ──────────────────────────────────────────────────────────
   searchSunat() {
@@ -116,17 +147,36 @@ export class ContractorRegistration {
 
   // ── Emails ───────────────────────────────────────────────────────
   addEmail() {
-    this.form.emails.push('');
+    this.emailItems.push({ email: '', personTypeId: null });
   }
 
   removeEmail(index: number) {
-    if (this.form.emails.length > 1) {
-      this.form.emails.splice(index, 1);
+    if (this.emailItems.length > 1) {
+      this.emailItems.splice(index, 1);
     }
   }
 
   trackByIndex(index: number): number {
     return index;
+  }
+
+  // ── Logo ─────────────────────────────────────────────────────────
+  onLogoChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    if (!file) return;
+    this.logoFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.logoPreviewUrl = e.target?.result as string;
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearLogo(inputEl: HTMLInputElement): void {
+    this.logoFile = null;
+    this.logoPreviewUrl = null;
+    inputEl.value = '';
   }
 
   // ── Files ────────────────────────────────────────────────────────
@@ -141,6 +191,10 @@ export class ContractorRegistration {
   }
 
   // ── Submit ───────────────────────────────────────────────────────
+  get isFormValid(): boolean {
+    return !!(this.form.contributorRuc && this.form.contributorName && this.emailItems[0]?.email);
+  }
+
   submit() {
     this.loaderService.show();
 
@@ -156,9 +210,16 @@ export class ContractorRegistration {
     if (this.form.legalRepresentativeDni)        formData.append('LegalRepresentativeDni', this.form.legalRepresentativeDni);
     if (this.form.legalRepresentativeFullName)   formData.append('LegalRepresentativeFullName', this.form.legalRepresentativeFullName);
     if (this.form.legalEntityRegistryNumber)     formData.append('LegalEntityRegistryNumber', this.form.legalEntityRegistryNumber);
-    this.form.emails.forEach(email => formData.append('ContributorEmails', email));
-    if (this.brochureFile)      formData.append('BrochureFile', this.brochureFile, this.brochureFile.name);
-    if (this.fichaRucFile)      formData.append('FichaRucFile', this.fichaRucFile, this.fichaRucFile.name);
+
+    // Correos + clasificaciones (listas paralelas)
+    this.emailItems.forEach(item => {
+      formData.append('ContributorEmails', item.email);
+      formData.append('ContributorEmailPersonTypeIds', item.personTypeId != null ? item.personTypeId.toString() : '');
+    });
+
+    if (this.logoFile)           formData.append('LogoFile',          this.logoFile,          this.logoFile.name);
+    if (this.brochureFile)       formData.append('BrochureFile',      this.brochureFile,      this.brochureFile.name);
+    if (this.fichaRucFile)       formData.append('FichaRucFile',      this.fichaRucFile,      this.fichaRucFile.name);
     if (this.referencesListFile) formData.append('ReferencesListFile', this.referencesListFile, this.referencesListFile.name);
 
     this.contractorService.register(formData).subscribe({

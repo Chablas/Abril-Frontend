@@ -134,6 +134,8 @@ export class Create implements OnInit {
     const missing: string[] = [];
     if (!this.createDto.projectId)         missing.push('Proyecto');
     if (!this.createDto.contractorId)      missing.push('Empresa / Subcontratista');
+    else if (this.contractorEmails.length === 0)
+      missing.push('La empresa seleccionada no tiene correos registrados — agrégalos antes de continuar');
     if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
     if (!this.createDto.workItemId)        missing.push('Partida');
     if (!this.createDto.contractId)        missing.push('Contrato');
