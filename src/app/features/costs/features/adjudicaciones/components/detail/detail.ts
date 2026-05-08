@@ -172,11 +172,18 @@ export class Detail implements OnInit {
     return this.scannedDocuments.some(doc => !!this.getDocFile(doc.key));
   }
 
-  /** True cuando todos los documentos que tienen archivo subido tienen statusId === 4 (Aprobado). */
+  /**
+   * True cuando cada documento tiene un estado que permite avanzar:
+   *   • statusId === 1 (No aplica) → no requiere archivo.
+   *   • statusId === 4 (Aprobado)  → requiere archivo subido.
+   * Cualquier otro estado (null, 2, 3) bloquea el avance.
+   */
   get allDocsApproved(): boolean {
-    const docsWithFile = this.documents.filter(doc => !!this.getDocFile(doc.key));
-    return docsWithFile.length > 0 &&
-           docsWithFile.every(doc => this.docForms[doc.key]?.statusId === 4);
+    return this.documents.every(doc => {
+      const statusId = this.docForms[doc.key]?.statusId;
+      const hasFile  = !!this.getDocFile(doc.key);
+      return statusId === 1 || (statusId === 4 && hasFile);
+    });
   }
 
   get forwardLabel(): string {
@@ -380,6 +387,9 @@ export class Detail implements OnInit {
   }
 
   onStatusChange(docKey: string): void {
+    // Si no hay archivo subido no existe ningún registro en BD que actualizar;
+    // el estado queda guardado solo localmente para el propósito de desbloquear el avance.
+    if (!this.getDocFile(docKey)) return;
     this.saveDocStatus(docKey);
   }
 
@@ -449,7 +459,19 @@ export class Detail implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.generatingPackage = false;
-        this.errorService.handleError(err);
+        // responseType: 'arraybuffer' → err.error es un ArrayBuffer, no JSON.
+        // Hay que decodificarlo para leer el mensaje del backend.
+        if (err.error instanceof ArrayBuffer) {
+          try {
+            const text = new TextDecoder().decode(err.error);
+            const json = JSON.parse(text);
+            Swal.fire({ icon: 'error', title: 'Error', text: json.message ?? 'Ocurrió un error.', draggable: true });
+          } catch {
+            this.errorService.handleError(err);
+          }
+        } else {
+          this.errorService.handleError(err);
+        }
       },
     });
   }

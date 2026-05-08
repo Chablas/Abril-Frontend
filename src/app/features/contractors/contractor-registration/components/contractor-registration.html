@@ -101,7 +101,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Dirección</label>
+            <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-400">*</span></label>
             <input
               type="text"
               [(ngModel)]="form.address"
@@ -112,7 +112,7 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#64BC04] font-medium">Distrito</label>
+              <label class="text-sm text-[#64BC04] font-medium">Distrito <span class="text-red-400">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="form.contributorDistrict"
@@ -123,7 +123,7 @@
               />
             </div>
             <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#64BC04] font-medium">Provincia</label>
+              <label class="text-sm text-[#64BC04] font-medium">Provincia <span class="text-red-400">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="form.contributorProvince"
@@ -134,7 +134,7 @@
               />
             </div>
             <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#64BC04] font-medium">Departamento</label>
+              <label class="text-sm text-[#64BC04] font-medium">Departamento <span class="text-red-400">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="form.contributorDepartment"
@@ -147,7 +147,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Actividad económica</label>
+            <label class="text-sm text-[#64BC04] font-medium">Actividad económica <span class="text-red-400">*</span></label>
             <input
               type="text"
               [(ngModel)]="form.economicActivityDescription"
@@ -158,7 +158,7 @@
 
           <!-- ── Logo de la empresa ── -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Logo / imagen de la empresa <span class="font-normal text-gray-400 text-[11px]">(opcional)</span></label>
+            <label class="text-sm text-[#64BC04] font-medium">Logo / imagen de la empresa <span class="text-red-400">*</span></label>
             <div class="flex items-center gap-4">
 
               <!-- Preview -->
@@ -199,13 +199,13 @@
       <!-- ── SECCIÓN 3: Representante legal ────────────────────── -->
       <div>
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-          Representante legal <span class="normal-case font-normal text-[11px]">(opcional)</span>
+          Representante legal
         </p>
         <div class="flex flex-col gap-4">
 
           <!-- DNI search -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">DNI del representante</label>
+            <label class="text-sm text-[#64BC04] font-medium">DNI del representante <span class="text-red-400">*</span></label>
             <div class="flex gap-3">
               <div class="flex-1 flex items-center border rounded-xl overflow-hidden transition-all"
                 [ngClass]="reniecData ? 'border-[#D6DEE5] bg-gray-50' : 'border-[#D6DEE5]'">
@@ -251,7 +251,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Nombre completo</label>
+            <label class="text-sm text-[#64BC04] font-medium">Nombre completo <span class="text-red-400">*</span></label>
             <input
               type="text"
               [(ngModel)]="form.legalRepresentativeFullName"
@@ -263,7 +263,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">N° de partida registral</label>
+            <label class="text-sm text-[#64BC04] font-medium">N° de partida registral <span class="text-red-400">*</span></label>
             <input
               type="text"
               [(ngModel)]="form.legalEntityRegistryNumber"
@@ -322,8 +322,8 @@
                 [value]="item.personTypeId"
                 (valueChange)="item.personTypeId = $event"
                 [showLabel]="false"
-                placeholder="— Clasificación —"
-                [allowClear]="true">
+                placeholder="— Clasificación * —"
+                [allowClear]="false">
               </app-search-select>
             </div>
 
@@ -346,13 +346,13 @@
       <!-- ── SECCIÓN 5: Documentos ──────────────────────────────── -->
       <div>
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-          Documentos <span class="normal-case font-normal text-[11px]">(opcional)</span>
+          Documentos
         </p>
         <div class="flex flex-col gap-4">
 
           <!-- Brochure -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Brochure</label>
+            <label class="text-sm text-[#64BC04] font-medium">Brochure <span class="text-red-400">*</span></label>
             <div class="flex items-center gap-3">
               <label class="flex-1 flex items-center gap-3 border border-dashed border-[#D6DEE5] rounded-xl px-4 py-[10px] cursor-pointer hover:border-[#64BC04] hover:bg-[#F7FBF3] transition-all group">
                 <svg class="w-5 h-5 text-gray-300 group-hover:text-[#64BC04] shrink-0 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -375,7 +375,7 @@
 
           <!-- Ficha RUC -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Ficha RUC</label>
+            <label class="text-sm text-[#64BC04] font-medium">Ficha RUC <span class="text-red-400">*</span></label>
             <div class="flex items-center gap-3">
               <label class="flex-1 flex items-center gap-3 border border-dashed border-[#D6DEE5] rounded-xl px-4 py-[10px] cursor-pointer hover:border-[#64BC04] hover:bg-[#F7FBF3] transition-all group">
                 <svg class="w-5 h-5 text-gray-300 group-hover:text-[#64BC04] shrink-0 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -398,7 +398,7 @@
 
           <!-- Lista de referencias -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">Lista de referencias</label>
+            <label class="text-sm text-[#64BC04] font-medium">Lista de referencias <span class="text-red-400">*</span></label>
             <div class="flex items-center gap-3">
               <label class="flex-1 flex items-center gap-3 border border-dashed border-[#D6DEE5] rounded-xl px-4 py-[10px] cursor-pointer hover:border-[#64BC04] hover:bg-[#F7FBF3] transition-all group">
                 <svg class="w-5 h-5 text-gray-300 group-hover:text-[#64BC04] shrink-0 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -429,11 +429,7 @@
         <button
           type="button"
           (click)="submit()"
-          [disabled]="!isFormValid"
-          class="w-full sm:w-auto sm:min-w-[220px] flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-semibold transition-all"
-          [ngClass]="isFormValid
-            ? 'bg-[#64BC04] text-white hover:bg-[#57a803] shadow-md hover:shadow-lg cursor-pointer'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+          class="w-full sm:w-auto sm:min-w-[220px] flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-semibold transition-all bg-[#64BC04] text-white hover:bg-[#57a803] shadow-md hover:shadow-lg cursor-pointer">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>

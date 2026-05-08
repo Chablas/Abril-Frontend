@@ -331,50 +331,45 @@
               </ng-template>
             </div>
 
-            <!-- Estado y observación (solo si existe registro del documento) -->
-            <ng-container *ngIf="ctx.file">
+            <!-- Desplegable de estado (siempre visible) -->
+            <div class="flex items-center gap-[6px]">
+              <select
+                [(ngModel)]="docForms[doc.key].statusId"
+                (change)="onStatusChange(doc.key)"
+                [disabled]="updatingStatusDoc === doc.key"
+                class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+                <option [ngValue]="null">— Estado —</option>
+                <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
+              </select>
+              <!-- spinner mientras guarda el estado -->
+              <svg *ngIf="updatingStatusDoc === doc.key"
+                class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </div>
 
-              <!-- Desplegable de estado -->
-              <div class="flex items-center gap-[6px]">
-                <select
-                  [(ngModel)]="docForms[doc.key].statusId"
-                  (change)="onStatusChange(doc.key)"
-                  [disabled]="updatingStatusDoc === doc.key"
-                  class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-                  <option [ngValue]="null">— Estado —</option>
-                  <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
-                </select>
-                <!-- spinner mientras guarda el estado -->
-                <svg *ngIf="updatingStatusDoc === doc.key"
-                  class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            <!-- Observación + correo (solo cuando estado = Con observaciones y hay archivo) -->
+            <ng-container *ngIf="ctx.file && docForms[doc.key].statusId === 3">
+
+              <textarea
+                [(ngModel)]="docForms[doc.key].observation"
+                (blur)="onObservationBlur(doc.key)"
+                [disabled]="updatingStatusDoc === doc.key"
+                placeholder="Observación..."
+                rows="2"
+                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+              </textarea>
+
+              <button
+                [disabled]="updatingStatusDoc === doc.key"
+                class="w-full flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
-              </div>
-
-              <!-- Observación + correo (solo cuando estado = Con observaciones) -->
-              <ng-container *ngIf="docForms[doc.key].statusId === 3">
-
-                <textarea
-                  [(ngModel)]="docForms[doc.key].observation"
-                  (blur)="onObservationBlur(doc.key)"
-                  [disabled]="updatingStatusDoc === doc.key"
-                  placeholder="Observación..."
-                  rows="2"
-                  class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-                </textarea>
-
-                <button
-                  [disabled]="updatingStatusDoc === doc.key"
-                  class="w-full flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-                  <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                  </svg>
-                  Enviar correo con observaciones
-                </button>
-
-              </ng-container>
+                Enviar correo con observaciones
+              </button>
 
             </ng-container>
 

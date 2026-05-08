@@ -190,26 +190,70 @@ export class ContractorRegistration implements OnInit {
     inputEl.value = '';
   }
 
-  // ── Submit ───────────────────────────────────────────────────────
-  get isFormValid(): boolean {
-    return !!(this.form.contributorRuc && this.form.contributorName && this.emailItems[0]?.email);
+  // ── Validation ───────────────────────────────────────────────────
+  private getValidationErrors(): string[] {
+    const errors: string[] = [];
+
+    // Empresa
+    if (!this.form.contributorRuc?.trim())                errors.push('RUC');
+    if (!this.form.contributorName?.trim())               errors.push('Razón social');
+    if (!this.form.address?.trim())                       errors.push('Dirección');
+    if (!this.form.contributorDistrict?.trim())           errors.push('Distrito');
+    if (!this.form.contributorProvince?.trim())           errors.push('Provincia');
+    if (!this.form.contributorDepartment?.trim())         errors.push('Departamento');
+    if (!this.form.economicActivityDescription?.trim())   errors.push('Actividad económica');
+    if (!this.logoFile)                                   errors.push('Logo / imagen de la empresa');
+
+    // Representante legal
+    if (!this.form.legalRepresentativeDni?.trim())        errors.push('DNI del representante legal');
+    if (!this.form.legalRepresentativeFullName?.trim())   errors.push('Nombre completo del representante legal');
+    if (!this.form.legalEntityRegistryNumber?.trim())     errors.push('N° de partida registral');
+
+    // Correos
+    this.emailItems.forEach((item, i) => {
+      if (!item.email?.trim())
+        errors.push(`Correo ${i + 1}`);
+      else if (item.personTypeId == null)
+        errors.push(`Clasificación del correo ${i + 1}`);
+    });
+
+    // Documentos
+    if (!this.brochureFile)       errors.push('Brochure');
+    if (!this.fichaRucFile)       errors.push('Ficha RUC');
+    if (!this.referencesListFile) errors.push('Lista de referencias');
+
+    return errors;
   }
 
+  // ── Submit ───────────────────────────────────────────────────────
   submit() {
+    const errors = this.getValidationErrors();
+    if (errors.length > 0) {
+      const listHtml = errors.map(e => `<li>${e}</li>`).join('');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<p style="font-size:0.85rem;color:#666;margin-bottom:8px">Por favor completa los siguientes campos:</p>
+               <ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     this.loaderService.show();
 
     const formData = new FormData();
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
     formData.append('ContributorRuc', this.form.contributorRuc);
     formData.append('ContributorName', this.form.contributorName);
-    if (this.form.address)                       formData.append('ContributorAddress', this.form.address);
-    if (this.form.contributorDistrict)           formData.append('ContributorDistrict', this.form.contributorDistrict);
-    if (this.form.contributorProvince)           formData.append('ContributorProvince', this.form.contributorProvince);
-    if (this.form.contributorDepartment)         formData.append('ContributorDepartment', this.form.contributorDepartment);
-    if (this.form.economicActivityDescription)   formData.append('ContributorEconomicActivityDescription', this.form.economicActivityDescription);
-    if (this.form.legalRepresentativeDni)        formData.append('LegalRepresentativeDni', this.form.legalRepresentativeDni);
-    if (this.form.legalRepresentativeFullName)   formData.append('LegalRepresentativeFullName', this.form.legalRepresentativeFullName);
-    if (this.form.legalEntityRegistryNumber)     formData.append('LegalEntityRegistryNumber', this.form.legalEntityRegistryNumber);
+    formData.append('ContributorAddress', this.form.address!);
+    formData.append('ContributorDistrict', this.form.contributorDistrict!);
+    formData.append('ContributorProvince', this.form.contributorProvince!);
+    formData.append('ContributorDepartment', this.form.contributorDepartment!);
+    formData.append('ContributorEconomicActivityDescription', this.form.economicActivityDescription!);
+    formData.append('LegalRepresentativeDni', this.form.legalRepresentativeDni!);
+    formData.append('LegalRepresentativeFullName', this.form.legalRepresentativeFullName!);
+    formData.append('LegalEntityRegistryNumber', this.form.legalEntityRegistryNumber!);
 
     // Correos + clasificaciones (listas paralelas)
     this.emailItems.forEach(item => {
