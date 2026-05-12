@@ -25,6 +25,7 @@ export class Create implements OnInit {
     projects: [],
     contracts: [],
     contractTypes: [],
+    contractModalities: [],
     contractOrigins: [],
     paymentMethods: [],
     currencies: [],
@@ -38,6 +39,7 @@ export class Create implements OnInit {
     contractorId: 0,
     contractId: 0,
     contractTypeId: 0,
+    contractModalityId: null,
     contractOriginId: 0,
     paymentMethodId: 0,
     amount: 0,
@@ -166,6 +168,9 @@ export class Create implements OnInit {
     form.append('contractorId', this.createDto.contractorId.toString());
     form.append('contractId', this.createDto.contractId.toString());
     form.append('contractTypeId', this.createDto.contractTypeId.toString());
+    if (this.createDto.contractModalityId != null) {
+      form.append('contractModalityId', this.createDto.contractModalityId.toString());
+    }
     form.append('contractOriginId', this.createDto.contractOriginId.toString());
     form.append('paymentMethodId', this.createDto.paymentMethodId.toString());
     if (this.createDto.paymentMethodId === 2 && this.createDto.advancePercentage != null) {

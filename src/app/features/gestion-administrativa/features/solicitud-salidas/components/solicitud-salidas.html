@@ -1,0 +1,60 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+
+  <!-- ── Cabecera ──────────────────────────────────────────────────────── -->
+  <div>
+    <app-btn-new label="Solicitar salida" (clicked)="showModal = true" />
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+    <table class="w-full text-sm">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold">#</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Fecha</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Salida</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Retorno</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Motivo</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Estado</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Registrada</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="solicitudes.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay solicitudes registradas.
+          </td>
+        </tr>
+        <tr
+          *ngFor="let s of solicitudes; let i = index"
+          class="border-b border-[#D6DEE5] hover:bg-[#FAFAFA] transition-colors">
+          <td class="px-[16px] py-[10px] text-gray-500">{{ i + 1 }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ s.fechaSalida }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ s.horaSalida }}</td>
+          <td class="px-[16px] py-[10px] text-gray-400">{{ s.horaRetorno ?? '—' }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ s.motivo }}</td>
+          <td class="px-[16px] py-[10px] text-gray-500">{{ s.lugarOrigen ?? '—' }}</td>
+          <td class="px-[16px] py-[10px] text-gray-500">{{ s.lugarDestino ?? '—' }}</td>
+          <td class="px-[16px] py-[10px]">
+            <app-status-badge
+              [text]="s.estado"
+              [bgColor]="estadoColors(s.estado).bg"
+              [textColor]="estadoColors(s.estado).text" />
+          </td>
+          <td class="px-[16px] py-[10px] text-gray-400 whitespace-nowrap">
+            {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modal (fuera del card) ────────────────────────────────────────── -->
+<app-solicitud-salida-create
+  *ngIf="showModal"
+  (closeModal)="showModal = false"
+  (saved)="onSaved()" />

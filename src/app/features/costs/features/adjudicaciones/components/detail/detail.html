@@ -100,6 +100,11 @@
           <p class="text-sm text-gray-700">{{ item.contractTypeDescription }}</p>
         </div>
 
+        <div *ngIf="item.contractModalityDescription">
+          <p class="text-xs text-gray-400 mb-[2px]">Modalidad de contrato</p>
+          <p class="text-sm text-gray-700">{{ item.contractModalityDescription }}</p>
+        </div>
+
         <div>
           <p class="text-xs text-gray-400 mb-[2px]">Origen del contrato</p>
           <p class="text-sm text-gray-700">{{ item.contractOriginDescription }}</p>

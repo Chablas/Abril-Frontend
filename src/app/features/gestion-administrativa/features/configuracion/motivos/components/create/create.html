@@ -1,0 +1,25 @@
+<app-base-modal [title]="'NUEVO MOTIVO DE SALIDA'" width="w-[420px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm text-[#64BC04] font-medium">Descripción</label>
+      <input
+        type="text"
+        [(ngModel)]="descripcion"
+        placeholder="Ej. Trámite bancario"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+      <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="save()"
+        class="w-[160px] bg-[#64BC04] py-[8px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

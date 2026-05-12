@@ -74,4 +74,6 @@ export class SearchSelect {
   close() {
     this.isOpen = false;
   }
+
+  trackByOption = (_index: number, option: any): any => option[this.valueField];
 }

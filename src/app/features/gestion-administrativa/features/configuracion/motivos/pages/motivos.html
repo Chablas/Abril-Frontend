@@ -1,0 +1,72 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+
+  <!-- ── Cabecera ──────────────────────────────────────────────────────── -->
+  <div>
+    <app-btn-new label="Nuevo motivo" (clicked)="showCreateModal = true" />
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+    <table class="w-full text-sm">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold">Descripción</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold">Estado</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="motivos.length === 0">
+          <td colspan="3" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            No hay motivos registrados.
+          </td>
+        </tr>
+
+        <tr *ngFor="let m of motivos" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+
+          <td class="px-[16px] py-[10px] text-gray-700">{{ m.descripcion }}</td>
+
+          <td class="px-[16px] py-[10px] text-center">
+            <app-status-badge
+              [text]="m.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="m.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="m.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="px-[16px] py-[10px] text-center">
+            <div class="flex items-center justify-center gap-[10px]">
+              <button
+                (click)="toggle(m)"
+                class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
+                [ngClass]="m.activo
+                  ? 'border-red-200 text-red-600 hover:bg-red-50'
+                  : 'border-green-300 text-green-700 hover:bg-green-50'">
+                {{ m.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                (click)="openEdit(m)"
+                class="text-xs font-medium text-[#64BC04] hover:text-[#57a803] transition-colors cursor-pointer">
+                Editar
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modales (fuera del card) ──────────────────────────────────────── -->
+<app-ga-motivo-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load()" />
+
+<app-ga-motivo-edit
+  *ngIf="showEditModal && motivoToEdit"
+  [motivo]="motivoToEdit!"
+  (closeModal)="showEditModal = false; motivoToEdit = null"
+  (saved)="load()" />

@@ -101,6 +101,12 @@
         </div>
 
         <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Modalidad de contrato" [options]="createFormData.contractModalities"
+            valueField="contractModalityId" displayField="contractModalityDescription"
+            [(value)]="createDto.contractModalityId" />
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
           <app-search-select label="Tipo de contrato" [options]="createFormData.contractTypes" valueField="contractTypeId"
             displayField="contractTypeDescription" [(value)]="createDto.contractTypeId" />
           <p *ngIf="submitted && !createDto.contractTypeId" class="text-xs text-red-500">Campo requerido</p>

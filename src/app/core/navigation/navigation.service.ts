@@ -7,6 +7,25 @@ export class NavigationService {
 
   private readonly config: NavModule[] = [
     {
+      key: 'gestion-administrativa',
+      label: 'Gestión Administrativa',
+      iconKey: 'gestion-administrativa',
+      baseRoute: '/gestion-administrativa',
+      items: [
+        { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+      ],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Lugares',  route: '/gestion-administrativa/configuracion/lugares',  featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',  route: '/gestion-administrativa/configuracion/motivos',  featureKey: 'gestion-administrativa.config.motivos' },
+          ],
+        },
+      ],
+    },
+    {
       key: 'proyectos',
       label: 'Proyectos',
       iconKey: 'projects',

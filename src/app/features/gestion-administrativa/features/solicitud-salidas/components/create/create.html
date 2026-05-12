@@ -1,0 +1,146 @@
+<app-base-modal [title]="'NUEVA SOLICITUD DE SALIDA'" width="w-[800px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[24px] mt-[20px]">
+
+    <!-- ── SECCIÓN 1: Fechas y horas ─────────────────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Datos de la salida
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+        <div class="flex flex-col gap-[4px]">
+          <label class="text-sm text-[#64BC04] font-medium">Fecha de salida</label>
+          <input
+            type="date"
+            [ngModel]="createDto.fechaSalida"
+            (ngModelChange)="onFechaSalidaChange($event)"
+            class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+          <p *ngIf="submitted && !createDto.fechaSalida" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div></div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select
+            label="Hora de salida"
+            [options]="horasSalida"
+            valueField="valor"
+            displayField="label"
+            [allowClear]="false"
+            [value]="createDto.horaSalida"
+            (valueChange)="onHoraSalidaChange($event)" />
+          <p *ngIf="submitted && !createDto.horaSalida" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select
+            label="Hora de retorno"
+            [options]="horasRetorno"
+            valueField="valor"
+            displayField="label"
+            [allowClear]="false"
+            [(value)]="createDto.horaRetorno" />
+          <p *ngIf="submitted && createDto.horaRetorno === null" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="border-t border-[#F0F0F0]"></div>
+
+    <!-- ── SECCIÓN 2: Motivo y lugares ───────────────────────────────── -->
+    <div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
+        Detalle de la salida
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+
+        <div class="flex flex-col gap-[4px] sm:col-span-2">
+          <app-search-select
+            label="Motivo"
+            [options]="formData.motivos"
+            valueField="id"
+            displayField="descripcion"
+            [(value)]="createDto.motivoId" />
+          <p *ngIf="submitted && !createDto.motivoId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- Lugar de origen -->
+        <div class="flex flex-col gap-[4px]">
+          <ng-container *ngIf="!origenLibre">
+            <app-search-select
+              label="Lugar de origen"
+              [options]="formData.lugares"
+              valueField="id"
+              displayField="nombreDisplay"
+              [(value)]="createDto.lugarOrigenId" />
+          </ng-container>
+          <ng-container *ngIf="origenLibre">
+            <label class="text-sm text-[#64BC04] font-medium">Lugar de origen</label>
+            <input
+              type="text"
+              [(ngModel)]="createDto.lugarOrigenLibre"
+              placeholder="Ingresa la dirección o lugar"
+              class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+          </ng-container>
+          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              [ngModel]="origenLibre"
+              (ngModelChange)="onOrigenLibreChange($event)"
+              class="accent-[#64BC04]" />
+            <span class="text-xs text-gray-500">Otro lugar</span>
+          </label>
+          <p *ngIf="submitted && !createDto.lugarOrigenId && !createDto.lugarOrigenLibre?.trim()"
+             class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- Lugar de destino -->
+        <div class="flex flex-col gap-[4px]">
+          <ng-container *ngIf="!destinoLibre">
+            <app-search-select
+              label="Lugar de destino"
+              [options]="formData.lugares"
+              valueField="id"
+              displayField="nombreDisplay"
+              [(value)]="createDto.lugarDestinoId" />
+          </ng-container>
+          <ng-container *ngIf="destinoLibre">
+            <label class="text-sm text-[#64BC04] font-medium">Lugar de destino</label>
+            <input
+              type="text"
+              [(ngModel)]="createDto.lugarDestinoLibre"
+              placeholder="Ingresa la dirección o lugar"
+              class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+          </ng-container>
+          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              [ngModel]="destinoLibre"
+              (ngModelChange)="onDestinoLibreChange($event)"
+              class="accent-[#64BC04]" />
+            <span class="text-xs text-gray-500">Otro lugar</span>
+          </label>
+          <p *ngIf="submitted && !createDto.lugarDestinoId && !createDto.lugarDestinoLibre?.trim()"
+             class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && mismosLugares" class="text-xs text-red-500">
+            No puede ser igual al lugar de origen
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Botón guardar ──────────────────────────────────────────────── -->
+    <div class="flex justify-center">
+      <button
+        (click)="save()"
+        class="w-[200px] bg-[#64BC04] py-[8px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
+        <p class="text-white text-base font-medium text-center">Solicitar permiso</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
