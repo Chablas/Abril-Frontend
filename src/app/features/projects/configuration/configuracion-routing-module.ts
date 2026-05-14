@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { Areas } from './pages/areas/areas';
 import { ConfFaseEtapaSubetapa } from './pages/conf-fase-etapa-subetapa/conf-fase-etapa-subetapa';
 import { Etapas } from './pages/etapas/etapas';
 import { Fases } from './pages/fases/fases';
@@ -12,7 +11,6 @@ import { Milestones } from './pages/milestones/milestones';
 import { roleGuard } from '../../../core/guards/role.guard';
 
 const routes: Routes = [
-  { path: 'areas',           component: Areas,                  canActivate: [roleGuard], data: { titulo: 'ÁREAS',                        featureKey: 'projects.config.areas' } },
   { path: 'stages',          component: Etapas,                 canActivate: [roleGuard], data: { titulo: 'ETAPAS',                       featureKey: 'projects.config.stages' } },
   { path: 'layers',          component: Layers,                 canActivate: [roleGuard], data: { titulo: 'NIVELES',                      featureKey: 'projects.config.layers' } },
   { path: 'phases',          component: Fases,                  canActivate: [roleGuard], data: { titulo: 'FASES',                        featureKey: 'projects.config.phases' } },
@@ -21,7 +19,7 @@ const routes: Routes = [
   { path: 'relations',       component: ConfFaseEtapaSubetapa,  canActivate: [roleGuard], data: { titulo: 'RELACIONES',                   featureKey: 'projects.config.relations' } },
   { path: 'reminders',       component: Reminder,               canActivate: [roleGuard], data: { titulo: 'RECORDATORIOS DE LECCIONES',   featureKey: 'projects.config.reminders' } },
   { path: 'milestones',      component: Milestones,             canActivate: [roleGuard], data: { titulo: 'HITOS',                        featureKey: 'projects.config.milestones' } },
-  { path: '', redirectTo: 'areas', pathMatch: 'full' },
+  { path: '', redirectTo: 'stages', pathMatch: 'full' },
 ];
 
 @NgModule({

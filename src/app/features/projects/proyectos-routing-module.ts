@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LeccionesAprendidas } from './lecciones-aprendidas/components/lecciones-aprendidas';
 import { LessonsDashboard } from './lessons-dashboard/components/lessons-dashboard';
 import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
 import { IvtControl } from '../projects/ivt-control/ivt-control';
@@ -13,18 +12,7 @@ const routes: Routes = [
   {
     path: '',
     children: [
-      { path: '', redirectTo: 'lessons', pathMatch: 'full' },
-      {
-        path: 'lessons',
-        children: [
-          {
-            path: '',
-            component: LeccionesAprendidas,
-            canActivate: [roleGuard],
-            data: { titulo: 'LECCIONES APRENDIDAS', featureKey: 'projects.lessons' },
-          },
-        ],
-      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'dashboard',
         children: [

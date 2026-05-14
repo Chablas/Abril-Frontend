@@ -1,0 +1,67 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px]">
+
+    <!-- Sección Áreas -->
+    <div class="flex flex-col gap-[10px]">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-[#64BC04]">Áreas</h2>
+            <button (click)="openCreateModal($event)"
+                class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                <div class="flex items-center gap-[10px]">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <p>Nuevo registro</p>
+                </div>
+            </button>
+        </div>
+
+        <div class="flex flex-col justify-center items-stretch">
+            <app-area-list (pagedData)="updatePagination($event)">
+            </app-area-list>
+
+            <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage" [totalPages]="totalPages"
+                (pageChange)="changePage($event)">
+            </app-paginator>
+        </div>
+    </div>
+
+    <hr class="border-[#D6DEE5]" />
+
+    <!-- Sección Subáreas -->
+    <div class="flex flex-col gap-[10px]">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-[#64BC04]">Subáreas</h2>
+            <button (click)="openCreateSubAreaModal($event)"
+                class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer">
+                <div class="flex items-center gap-[10px]">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="#64BC04" />
+                    </svg>
+                    <p>Nuevo registro</p>
+                </div>
+            </button>
+        </div>
+
+        <div class="flex flex-col justify-center items-stretch">
+            <app-sub-area-list (pagedData)="updateSubAreaPagination($event)">
+            </app-sub-area-list>
+
+            <app-paginator [totalRecords]="totalSubAreaRecords" [currentPage]="currentSubAreaPage"
+                [totalPages]="totalSubAreaPages" (pageChange)="changeSubAreaPage($event)">
+            </app-paginator>
+        </div>
+    </div>
+
+</div>
+
+<app-area-create [showCreateModal]="showCreateModal" (closeCreateModal)="showCreateModal = false"
+    (loadAreas)="reloadAreas()">
+</app-area-create>
+
+<app-sub-area-create [showCreateModal]="showCreateSubAreaModal"
+    (closeCreateModal)="showCreateSubAreaModal = false" (saved)="reloadSubAreas()">
+</app-sub-area-create>

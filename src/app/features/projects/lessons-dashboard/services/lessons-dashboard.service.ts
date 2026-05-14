@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { LessonFiltersDTO } from '../../lecciones-aprendidas/dtos/lessonFilters.model';
+import { LessonFiltersDTO } from '../../../mejora-continua/features/lessons-learned/dtos/lessonFilters.model';
 
 @Injectable({
   providedIn: 'root',

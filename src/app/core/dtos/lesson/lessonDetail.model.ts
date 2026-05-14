@@ -12,16 +12,22 @@ export interface LessonDetailDTO {
 
     areaId: number;
     areaDescription: string;
+    subAreaId?: number;
+    subAreaDescription?: string;
 
     phaseStageSubStageSubSpecialtyId?: number;
     phaseId?: number;
     phaseDescription?: string;
     stageId?: number;
     stageDescription?: string;
+    layerId?: number;
+    layerDescription?: string;
     subStageId?: number;
     subStageDescription?: string;
-    subSpecialtyId: number;
-    subSpecialtyDescription: string;
+    subSpecialtyId?: number;
+    subSpecialtyDescription?: string;
+    partidaId?: number;
+    partidaDescription?: string;
 
     stateId: number;
     stateDescription: string;

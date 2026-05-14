@@ -26,12 +26,28 @@ export class NavigationService {
       ],
     },
     {
+      key: 'mejora-continua',
+      label: 'Mejora Continua',
+      iconKey: 'mejora-continua',
+      baseRoute: '/mejora-continua',
+      items: [
+        { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned', featureKey: 'mejora-continua.lessons-learned' },
+      ],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Áreas', route: '/mejora-continua/configuration/areas', featureKey: 'mejora-continua.config.areas' },
+          ],
+        },
+      ],
+    },
+    {
       key: 'proyectos',
       label: 'Proyectos',
       iconKey: 'projects',
       baseRoute: '/projects',
       items: [
-        { label: 'Lecciones aprendidas',         route: '/projects/lessons',                      featureKey: 'projects.lessons' },
         { label: 'Dashboard Lecciones',           route: '/projects/dashboard',                    featureKey: 'projects.dashboard' },
         { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
         { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
@@ -43,7 +59,6 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Áreas',              route: '/projects/configuration/areas',           featureKey: 'projects.config.areas' },
             { label: 'Fases',              route: '/projects/configuration/phases',          featureKey: 'projects.config.phases' },
             { label: 'Etapas',             route: '/projects/configuration/stages',          featureKey: 'projects.config.stages' },
             { label: 'Niveles',            route: '/projects/configuration/layers',          featureKey: 'projects.config.layers' },

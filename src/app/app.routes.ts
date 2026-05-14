@@ -86,6 +86,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/gestion-administrativa/gestion-administrativa.routes')
           .then(m => m.GESTION_ADMINISTRATIVA_ROUTES)
+      },
+
+      {
+        path: 'mejora-continua',
+        loadChildren: () =>
+          import('./features/mejora-continua/mejora-continua.routes')
+          .then(m => m.MEJORA_CONTINUA_ROUTES)
       }
     ]
   },

@@ -23,7 +23,6 @@ import Swal from 'sweetalert2';
 export class Create implements OnInit {
   createFormData: ProjectSubContractorFormDataDTO = {
     projects: [],
-    contracts: [],
     contractTypes: [],
     contractModalities: [],
     contractOrigins: [],
@@ -37,7 +36,6 @@ export class Create implements OnInit {
   createDto: ProjectSubContractorCreateDTO = {
     projectId: 0,
     contractorId: 0,
-    contractId: 0,
     contractTypeId: 0,
     contractModalityId: null,
     contractOriginId: 0,
@@ -140,7 +138,6 @@ export class Create implements OnInit {
       missing.push('La empresa seleccionada no tiene correos registrados — agrégalos antes de continuar');
     if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
     if (!this.createDto.workItemId)        missing.push('Partida');
-    if (!this.createDto.contractId)        missing.push('Contrato');
     if (!this.createDto.contractTypeId)    missing.push('Tipo de contrato');
     if (!this.createDto.contractOriginId)  missing.push('Origen del contrato');
     if (!this.createDto.amount)            missing.push('Monto');
@@ -166,7 +163,6 @@ export class Create implements OnInit {
     const form = new FormData();
     form.append('projectId', this.createDto.projectId.toString());
     form.append('contractorId', this.createDto.contractorId.toString());
-    form.append('contractId', this.createDto.contractId.toString());
     form.append('contractTypeId', this.createDto.contractTypeId.toString());
     if (this.createDto.contractModalityId != null) {
       form.append('contractModalityId', this.createDto.contractModalityId.toString());

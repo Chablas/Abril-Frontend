@@ -13,8 +13,6 @@ export interface ProjectSubContractorDTO {
   contractorId: number;
   contributorId: number;
   contributorName: string;
-  contractId: number;
-  contractDescription: string;
   contractTypeId: number;
   contractTypeDescription: string;
   contractModalityId?: number | null;

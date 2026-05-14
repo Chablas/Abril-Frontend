@@ -1,8 +1,9 @@
-<div class="max-w-xs min-h-screen py-[20px] px-[5px]">
-  <div class="flex flex-col items-center w-[100px] gap-[5px]">
+<div class="h-screen flex flex-col py-[20px] px-[5px]">
+  <div class="flex flex-col items-center w-[100px] gap-[5px] h-full">
 
-    <ng-container *ngFor="let module of navService.getModules(); trackBy: trackByModuleKey">
+    <ng-container *ngFor="let module of visibleModules; trackBy: trackByModuleKey">
       <div
+        #moduleItem
         class="relative flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
         [ngClass]="{
           'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
@@ -67,5 +68,119 @@
       </div>
     </ng-container>
 
+    <!-- Botón "Más" (overflow) -->
+    <div
+      *ngIf="overflowModules.length > 0"
+      class="mt-auto flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
+      [ngClass]="{
+        'bg-[#E5F7D1]': overflowOpen,
+        'hover:bg-[#E5F7D1]': !overflowOpen
+      }"
+      (click)="toggleOverflow()"
+    >
+      <div class="flex gap-1 items-center justify-center" style="height:28px">
+        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
+        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
+        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
+      </div>
+      <p class="font-sans text-sm text-center mt-1">Más</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Backdrop -->
+<div
+  class="fixed inset-0 z-40 bg-black transition-opacity duration-300"
+  [ngClass]="overflowOpen ? 'opacity-40 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+  (click)="closeOverflow()"
+></div>
+
+<!-- Panel de módulos extra -->
+<div
+  class="fixed top-[20px] bottom-[20px] left-[110px] w-64 bg-white z-50 shadow-xl rounded-xl flex flex-col transition-all duration-300 overflow-hidden"
+  [ngClass]="overflowOpen ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0 pointer-events-none'"
+>
+  <!-- Header del panel -->
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+    <span class="font-semibold text-gray-700 font-sans text-sm">Módulos</span>
+    <button class="p-1 hover:bg-gray-100 rounded-lg transition-colors" (click)="closeOverflow()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#666"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Lista de módulos en acordeón -->
+  <div class="flex-1 overflow-y-auto p-2">
+    <ng-container *ngFor="let module of overflowModules; trackBy: trackByModuleKey">
+
+      <!-- Cabecera del módulo -->
+      <div
+        class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors"
+        [ngClass]="{
+          'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
+          'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
+        }"
+        (click)="toggleOverflowMenu(module.key)"
+      >
+        <app-nav-icon [key]="module.iconKey" [size]="22" />
+        <span class="text-sm font-sans flex-1 leading-tight">{{ module.label }}</span>
+        <svg
+          width="7" height="12" viewBox="0 0 9 16" fill="none"
+          class="shrink-0 transition-transform duration-200"
+          [style.transform]="activeOverflowMenu === module.key ? 'rotate(90deg)' : 'rotate(0deg)'"
+        >
+          <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
+        </svg>
+      </div>
+
+      <!-- Contenido del acordeón -->
+      <div *ngIf="activeOverflowMenu === module.key" class="ml-2 mb-1">
+        <!-- Items directos -->
+        <a
+          *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
+          [routerLink]="item.route"
+          (click)="closeOverflow(); closeAllMenus()"
+          class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
+        >
+          <span>{{ item.label }}</span>
+          <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
+            <span *ngIf="count > 0"
+              style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
+              {{ count }}
+            </span>
+          </ng-container>
+        </a>
+
+        <!-- Grupos -->
+        <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
+          <div
+            class="flex justify-between items-center px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer"
+            (click)="toggleOverflowGroup(group.label)"
+          >
+            <span>{{ group.label }}</span>
+            <svg
+              width="7" height="12" viewBox="0 0 9 16" fill="none"
+              class="shrink-0 transition-transform duration-200"
+              [style.transform]="activeOverflowGroup === group.label ? 'rotate(90deg)' : 'rotate(0deg)'"
+            >
+              <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
+            </svg>
+          </div>
+          <div *ngIf="activeOverflowGroup === group.label" class="ml-4 mb-1">
+            <a
+              *ngFor="let item of group.items"
+              [routerLink]="item.route"
+              (click)="closeOverflow(); closeAllMenus()"
+              class="block px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl font-sans"
+            >
+              {{ item.label }}
+            </a>
+          </div>
+        </ng-container>
+      </div>
+
+    </ng-container>
   </div>
 </div>

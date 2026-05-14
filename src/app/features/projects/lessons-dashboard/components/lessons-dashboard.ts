@@ -13,7 +13,7 @@ import { Filters } from "../../../../core/models/filters.model";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { forkJoin } from 'rxjs';
-import { LessonFiltersDTO } from "../../lecciones-aprendidas/dtos/lessonFilters.model";
+import { LessonFiltersDTO } from "../../../mejora-continua/features/lessons-learned/dtos/lessonFilters.model";
 import { SelectedFilters } from "../../../../core/models/selectedFilters.model";
 import { SelectedDashboardOptions } from "../../../../core/models/lesson-dashboard/selectedOptions.model";
 import { FormsModule } from '@angular/forms';

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -19,6 +19,8 @@ export class SearchSelect {
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
+
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   isOpen = false;
   searchText = '';
@@ -54,7 +56,10 @@ export class SearchSelect {
   toggle(event: MouseEvent) {
     event.stopPropagation();
     this.isOpen = !this.isOpen;
-    if (this.isOpen) this.searchText = '';
+    if (this.isOpen) {
+      this.searchText = '';
+      setTimeout(() => this.searchInput?.nativeElement.focus());
+    }
   }
 
   select(option: any) {
