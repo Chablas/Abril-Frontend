@@ -7,6 +7,7 @@ import { ApiMessageDTO } from '../../../../../../../core/dtos/api/ApiMessage.mod
 import { HttpErrorResponse } from '@angular/common/http';
 import { AreaGetDTO } from '../../dtos/area.model';
 import { AreaEdit } from './area-edit/area-edit';
+import { PsssScopeEdit } from '../psss-scope-edit/psss-scope-edit';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { AreaEditDTO } from '../../dtos/areaEdit.model';
 import { ErrorService } from '../../../../../../../core/services/error.service';
@@ -14,26 +15,19 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-area-list',
-  imports: [CommonModule, FormsModule, AreaEdit],
+  imports: [CommonModule, FormsModule, AreaEdit, PsssScopeEdit],
   templateUrl: './area-list.html',
   styleUrl: './area-list.css',
 })
 export class AreaList implements OnInit {
-  areas: AreaPagedDTO = {
-    page: 0,
-    pageSize: 0,
-    totalRecords: 0,
-    totalPages: 0,
-    data: [],
-  };
+  areas: AreaPagedDTO = { page: 0, pageSize: 0, totalRecords: 0, totalPages: 0, data: [] };
 
-  editDto: AreaEditDTO = {
-    areaId: 0,
-    areaDescription: '',
-    active: true,
-  };
-
+  editDto: AreaEditDTO = { areaId: 0, areaDescription: '', active: true };
   showEditModal = false;
+
+  scopeAreaId?: number;
+  scopeEntityName = '';
+  showScopeModal = false;
 
   @Output() pagedData = new EventEmitter<AreaPagedDTO>();
 
@@ -45,9 +39,7 @@ export class AreaList implements OnInit {
   ) {}
 
   ngOnInit() {
-    setTimeout(() => {
-      this.loadAreas(1);
-    });
+    setTimeout(() => this.loadAreas(1));
   }
 
   loadAreas(page: number = 1) {
@@ -58,18 +50,21 @@ export class AreaList implements OnInit {
         this.pagedData.emit(response);
         this.loaderService.hide();
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 
   openEditModal(area: AreaGetDTO, event: MouseEvent) {
     event.stopPropagation();
+    this.editDto = { areaId: area.areaId, areaDescription: area.areaDescription, active: area.active };
     this.showEditModal = true;
-    this.editDto.areaId = area.areaId;
-    this.editDto.areaDescription = area.areaDescription;
-    this.editDto.active = area.active;
+  }
+
+  openScopeModal(area: AreaGetDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.scopeAreaId = area.areaId;
+    this.scopeEntityName = area.areaDescription;
+    this.showScopeModal = true;
   }
 
   deleteArea(areaId: number, event: MouseEvent) {
@@ -90,16 +85,9 @@ export class AreaList implements OnInit {
             this.loadAreas();
             this.loaderService.hide();
             this.cdr.detectChanges();
-            Swal.fire({
-              title: '¡Eliminado!',
-              text: response.message ?? 'El registro ha sido eliminado.',
-              confirmButtonColor: '#64BC04',
-              icon: 'success',
-            });
+            Swal.fire({ title: '¡Eliminado!', text: response.message ?? 'El registro ha sido eliminado.', confirmButtonColor: '#64BC04', icon: 'success' });
           },
-          error: (err: HttpErrorResponse) => {
-            this.errorService.handleError(err);
-          },
+          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
         });
       }
     });

@@ -1,0 +1,301 @@
+<div class="bg-white rounded-lg p-[20px] flex flex-col gap-[15px]">
+
+  <!-- Top bar -->
+  <div class="flex items-center">
+    <button
+      (click)="openCreateModal($event)"
+      class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer"
+    >
+      <div class="flex items-center gap-[10px]">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+            fill="#64BC04"
+          />
+        </svg>
+        <p>Nuevo registro</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- Filters row -->
+  <div class="flex flex-wrap gap-[10px] items-end">
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Fase</p>
+      <app-search-select
+        [options]="filtersData.phases"
+        valueField="phaseId"
+        displayField="phaseDescription"
+        [value]="filterPhaseId"
+        (valueChange)="filterPhaseId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Etapa</p>
+      <app-search-select
+        [options]="filtersData.stages"
+        valueField="stageId"
+        displayField="stageDescription"
+        [value]="filterStageId"
+        (valueChange)="filterStageId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Nivel</p>
+      <app-search-select
+        [options]="filtersData.layers"
+        valueField="layerId"
+        displayField="layerDescription"
+        [value]="filterLayerId"
+        (valueChange)="filterLayerId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Subetapa</p>
+      <app-search-select
+        [options]="filtersData.subStages"
+        valueField="subStageId"
+        displayField="subStageDescription"
+        [value]="filterSubStageId"
+        (valueChange)="filterSubStageId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Subespecialidad</p>
+      <app-search-select
+        [options]="filtersData.subSpecialties"
+        valueField="subSpecialtyId"
+        displayField="subSpecialtyDescription"
+        [value]="filterSubSpecialtyId"
+        (valueChange)="filterSubSpecialtyId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+    <div class="flex flex-col gap-[4px] w-[155px]">
+      <p class="text-[#64BC04] text-xs">Partida</p>
+      <app-search-select
+        [options]="filtersData.partidas"
+        valueField="partidaId"
+        displayField="partidaDescription"
+        [value]="filterPartidaId"
+        (valueChange)="filterPartidaId = $event; onFilterChange()"
+        [showLabel]="false"
+        placeholder="Todas"
+      ></app-search-select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+    <table class="w-full table-fixed">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="w-[50px]"></th>
+          <th class="w-[160px]">Fase</th>
+          <th class="w-[150px]">Etapa</th>
+          <th class="w-[110px]">Nivel</th>
+          <th class="w-[150px]">Subetapa</th>
+          <th class="w-[170px]">Subespecialidad</th>
+          <th class="w-[150px]">Partida</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of relations" class="border-b border-[#D6DEE5] h-[30px]">
+          <td class="text-center">
+            <div class="flex items-center justify-center">
+            <button class="cursor-pointer" title="Eliminar" (click)="deleteRelation(row.linkId, $event)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
+                  fill="#64BC04"
+                />
+              </svg>
+            </button>
+            </div>
+          </td>
+          <td>
+            <span [title]="row.phaseDescription" class="block line-clamp-1 text-ellipsis overflow-hidden text-center">
+              {{ row.phaseDescription }}
+            </span>
+          </td>
+          <td>
+            <span
+              [title]="row.stageDescription ?? ''"
+              class="block line-clamp-1 text-ellipsis overflow-hidden text-center"
+            >
+              {{ row.stageDescription ?? '-' }}
+            </span>
+          </td>
+          <td>
+            <span
+              [title]="row.layerDescription ?? ''"
+              class="block line-clamp-1 text-ellipsis overflow-hidden text-center"
+            >
+              {{ row.layerDescription ?? '-' }}
+            </span>
+          </td>
+          <td>
+            <span
+              [title]="row.subStageDescription ?? ''"
+              class="block line-clamp-1 text-ellipsis overflow-hidden text-center"
+            >
+              {{ row.subStageDescription ?? '-' }}
+            </span>
+          </td>
+          <td>
+            <span
+              [title]="row.subSpecialtyDescription ?? ''"
+              class="block line-clamp-1 text-ellipsis overflow-hidden text-center"
+            >
+              {{ row.subSpecialtyDescription ?? '-' }}
+            </span>
+          </td>
+          <td>
+            <span
+              [title]="row.partidaDescription ?? ''"
+              class="block line-clamp-1 text-ellipsis overflow-hidden text-center"
+            >
+              {{ row.partidaDescription ?? '-' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    class="flex gap-2 justify-around w-full border border-[#D6DEE5] rounded-lg h-[30px] items-center px-[10px]"
+  >
+    <span class="text-sm"># Registros: {{ totalRecords }}</span>
+    <div class="flex gap-[10px] items-center">
+      <button class="cursor-pointer text-[#0086A5]" (click)="prevPage()" [disabled]="currentPage === 1">«</button>
+      <button
+        class="cursor-pointer py-1 px-2 rounded transition-colors"
+        *ngFor="let page of pages"
+        (click)="goToPage(page)"
+        [ngClass]="{
+          'bg-[#0086A5] text-white': page === currentPage,
+          'text-black hover:bg-gray-100': page !== currentPage
+        }"
+      >
+        {{ page }}
+      </button>
+      <button
+        class="cursor-pointer text-[#0086A5]"
+        (click)="nextPage()"
+        [disabled]="currentPage === totalPages"
+      >
+        »
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Create modal -->
+<app-base-modal
+  *ngIf="showCreateModal"
+  [title]="'AGREGAR RELACIÓN'"
+  width="w-[640px]"
+  (closeModal)="showCreateModal = false"
+>
+  <div class="flex flex-col gap-[15px] items-center mt-[15px]">
+    <div class="grid grid-cols-2 gap-[15px] w-full">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Fase</p>
+        <app-search-select
+          [options]="filtersData.phases"
+          valueField="phaseId"
+          displayField="phaseDescription"
+          [value]="formPhaseId"
+          (valueChange)="formPhaseId = $event"
+          [allowClear]="false"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Etapa</p>
+        <app-search-select
+          [options]="filtersData.stages"
+          valueField="stageId"
+          displayField="stageDescription"
+          [value]="formStageId"
+          (valueChange)="formStageId = $event"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Nivel</p>
+        <app-search-select
+          [options]="filtersData.layers"
+          valueField="layerId"
+          displayField="layerDescription"
+          [value]="formLayerId"
+          (valueChange)="formLayerId = $event"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Subetapa</p>
+        <app-search-select
+          [options]="filtersData.subStages"
+          valueField="subStageId"
+          displayField="subStageDescription"
+          [value]="formSubStageId"
+          (valueChange)="formSubStageId = $event"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Subespecialidad</p>
+        <app-search-select
+          [options]="filtersData.subSpecialties"
+          valueField="subSpecialtyId"
+          displayField="subSpecialtyDescription"
+          [value]="formSubSpecialtyId"
+          (valueChange)="formSubSpecialtyId = $event"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Partida</p>
+        <app-search-select
+          [options]="filtersData.partidas"
+          valueField="partidaId"
+          displayField="partidaDescription"
+          [value]="formPartidaId"
+          (valueChange)="formPartidaId = $event"
+          [showLabel]="false"
+          placeholder="Seleccionar"
+        ></app-search-select>
+      </div>
+    </div>
+    <div class="flex flex-col w-full">
+      <p class="text-[#64BC04]">Estado</p>
+      <app-search-select
+        [options]="estadoOptions"
+        [value]="formActive"
+        (valueChange)="formActive = $event"
+        [allowClear]="false"
+        [showLabel]="false"
+      ></app-search-select>
+    </div>
+    <button (click)="saveItem()" class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
+      <p class="text-white text-lg">Guardar</p>
+    </button>
+  </div>
+</app-base-modal>

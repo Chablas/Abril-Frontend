@@ -9,6 +9,7 @@ import { SubAreaGetDTO } from '../../dtos/subArea.model';
 import { SubAreaEditDTO } from '../../dtos/subAreaEdit.model';
 import { AreaSimpleDTO } from '../../dtos/areaSimple.model';
 import { SubAreaEdit } from './sub-area-edit/sub-area-edit';
+import { PsssScopeEdit } from '../psss-scope-edit/psss-scope-edit';
 import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
 import { ApiMessageDTO } from '../../../../../../../core/dtos/api/ApiMessage.model';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
@@ -18,7 +19,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-sub-area-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SubAreaEdit, SearchSelect],
+  imports: [CommonModule, FormsModule, SubAreaEdit, PsssScopeEdit, SearchSelect],
   templateUrl: './sub-area-list.html',
   styleUrl: './sub-area-list.css',
 })
@@ -28,6 +29,10 @@ export class SubAreaList implements OnInit {
   areas: AreaSimpleDTO[] = [];
   selectedAreaId: number | null = null;
   showEditModal = false;
+
+  scopeSubAreaId?: number;
+  scopeEntityName = '';
+  showScopeModal = false;
 
   @Output() pagedData = new EventEmitter<SubAreaPagedDTO>();
 
@@ -78,6 +83,13 @@ export class SubAreaList implements OnInit {
     this.showEditModal = true;
   }
 
+  openScopeModal(item: SubAreaGetDTO, event: MouseEvent) {
+    event.stopPropagation();
+    this.scopeSubAreaId = item.subAreaId;
+    this.scopeEntityName = item.subAreaDescription;
+    this.showScopeModal = true;
+  }
+
   deleteSubArea(subAreaId: number, event: MouseEvent) {
     event.stopPropagation();
     Swal.fire({
@@ -96,12 +108,7 @@ export class SubAreaList implements OnInit {
             this.loadSubAreas(this.subAreas.page);
             this.loaderService.hide();
             this.cdr.detectChanges();
-            Swal.fire({
-              title: '¡Eliminado!',
-              text: response.message ?? 'El registro ha sido eliminado.',
-              confirmButtonColor: '#64BC04',
-              icon: 'success',
-            });
+            Swal.fire({ title: '¡Eliminado!', text: response.message ?? 'El registro ha sido eliminado.', confirmButtonColor: '#64BC04', icon: 'success' });
           },
           error: (err: HttpErrorResponse) => this.errorService.handleError(err),
         });

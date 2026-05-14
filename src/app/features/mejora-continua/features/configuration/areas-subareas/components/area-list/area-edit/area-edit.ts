@@ -19,13 +19,8 @@ import Swal from 'sweetalert2';
 })
 export class AreaEdit {
   readonly estadoOptions = [{ id: true, name: 'ACTIVO' }, { id: false, name: 'INACTIVO' }];
-  @Input() editDto: AreaEditDTO = {
-    areaId: 0,
-    areaDescription: '',
-    active: true,
-  };
-
-  @Input() showEditModal: boolean = false;
+  @Input() editDto: AreaEditDTO = { areaId: 0, areaDescription: '', active: true };
+  @Input() showEditModal = false;
   @Output() closeEditModal = new EventEmitter<void>();
   @Output() loadAreas = new EventEmitter();
 
@@ -38,9 +33,7 @@ export class AreaEdit {
 
   editArea(event: MouseEvent) {
     event.stopPropagation();
-    if (!this.editDto.areaDescription.trim()) {
-      return;
-    }
+    if (!this.editDto.areaDescription.trim()) return;
     this.loaderService.show();
     this.areaService.editArea(this.editDto).subscribe({
       next: (response: ApiMessageDTO) => {
@@ -48,16 +41,9 @@ export class AreaEdit {
         this.loaderService.hide();
         this.cdr.detectChanges();
         this.loadAreas.emit();
-        Swal.fire({
-          title: response.message ?? 'Área actualizada exitosamente',
-          icon: 'success',
-          draggable: true,
-        });
+        Swal.fire({ title: response.message ?? 'Área actualizada exitosamente', icon: 'success', draggable: true });
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
-
 }

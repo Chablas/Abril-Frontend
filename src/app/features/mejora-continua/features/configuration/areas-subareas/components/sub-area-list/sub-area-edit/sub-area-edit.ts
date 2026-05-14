@@ -56,5 +56,4 @@ export class SubAreaEdit {
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
-
 }

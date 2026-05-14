@@ -38,6 +38,8 @@ export class NavigationService {
           label: 'Configuración',
           items: [
             { label: 'Áreas', route: '/mejora-continua/configuration/areas', featureKey: 'mejora-continua.config.areas' },
+            { label: 'Relaciones', route: '/mejora-continua/configuration/relations', featureKey: 'mejora-continua.config.relations' },
+            { label: 'Plantillas', route: '/mejora-continua/configuration/templates', featureKey: 'mejora-continua.config.templates' },
           ],
         },
       ],
@@ -64,7 +66,6 @@ export class NavigationService {
             { label: 'Niveles',            route: '/projects/configuration/layers',          featureKey: 'projects.config.layers' },
             { label: 'Subetapas',          route: '/projects/configuration/sub-stages',      featureKey: 'projects.config.sub-stages' },
             { label: 'Subespecialidades',  route: '/projects/configuration/sub-specialties', featureKey: 'projects.config.sub-specialties' },
-            { label: 'Config. Relaciones', route: '/projects/configuration/relations',       featureKey: 'projects.config.relations' },
             { label: 'Recordatorios Lecciones', route: '/projects/configuration/reminders', featureKey: 'projects.config.reminders' },
             { label: 'Hitos',              route: '/projects/configuration/milestones',      featureKey: 'projects.config.milestones' },
           ],
