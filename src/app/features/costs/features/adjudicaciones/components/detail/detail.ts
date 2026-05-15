@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -13,7 +14,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })
@@ -99,6 +100,7 @@ export class Detail implements OnInit {
   uploadingDoc: string | null = null;
   generatingDoc: string | null = null;
   updatingStatusDoc: string | null = null;
+  sendingObservationEmail: string | null = null;
 
   /** Opciones fijas de estado para los documentos. */
   readonly fileStatuses = [
@@ -431,6 +433,50 @@ export class Detail implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  async sendObservationsEmail(docKey: string, docLabel: string): Promise<void> {
+    this.sendingObservationEmail = docKey;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingObservationEmail = null;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    const form = this.docForms[docKey];
+    this.adjudicacionesService
+      .sendObservationEmail(this.item.projectSubContractorId, docKey, {
+        graphAccessToken: graphToken,
+        documentLabel: docLabel,
+        observation: form.observation || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingObservationEmail = null;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingObservationEmail = null;
+          this.errorService.handleError(err);
+        },
+      });
   }
 
   generatePackage(): void {

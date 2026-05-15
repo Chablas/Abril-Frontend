@@ -370,14 +370,19 @@
 
             <!-- Desplegable de estado (siempre visible) -->
             <div class="flex items-center gap-[6px]">
-              <select
-                [(ngModel)]="docForms[doc.key].statusId"
-                (change)="onStatusChange(doc.key)"
-                [disabled]="updatingStatusDoc === doc.key"
-                class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-                <option [ngValue]="null">— Estado —</option>
-                <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
-              </select>
+              <div class="flex-1" [class.opacity-60]="updatingStatusDoc === doc.key"
+                [class.pointer-events-none]="updatingStatusDoc === doc.key">
+                <app-search-select
+                  [options]="$any(fileStatuses)"
+                  valueField="id"
+                  displayField="label"
+                  [showLabel]="false"
+                  placeholder="— Estado —"
+                  [allowClear]="true"
+                  [value]="docForms[doc.key].statusId"
+                  (valueChange)="docForms[doc.key].statusId = $event; onStatusChange(doc.key)">
+                </app-search-select>
+              </div>
               <!-- spinner mientras guarda el estado -->
               <svg *ngIf="updatingStatusDoc === doc.key"
                 class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
@@ -399,13 +404,22 @@
               </textarea>
 
               <button
-                [disabled]="updatingStatusDoc === doc.key"
+                (click)="sendObservationsEmail(doc.key, doc.label)"
+                [disabled]="updatingStatusDoc === doc.key || sendingObservationEmail === doc.key"
                 class="w-full flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <!-- spinner mientras envía -->
+                <svg *ngIf="sendingObservationEmail === doc.key"
+                  class="w-3.5 h-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <!-- ícono correo en reposo -->
+                <svg *ngIf="sendingObservationEmail !== doc.key"
+                  class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round"
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
-                Enviar correo con observaciones
+                {{ sendingObservationEmail === doc.key ? 'Enviando…' : 'Enviar correo con observaciones' }}
               </button>
 
             </ng-container>

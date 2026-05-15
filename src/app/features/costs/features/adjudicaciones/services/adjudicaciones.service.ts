@@ -187,6 +187,19 @@ export class AdjudicacionesService {
     );
   }
 
+  sendObservationEmail(
+    projectSubContractorId: number,
+    documentType: string,
+    dto: { graphAccessToken: string; documentLabel: string; observation: string | null },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/documents/${documentType}/send-observation-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   uploadDocument(
     projectSubContractorId: number,
     documentType: string,
