@@ -1,22 +1,20 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../../shared/components/base-modal/base-modal';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
-import { PsssTemplateService } from '../../services/psss-template.service';
-import { PsssTemplateDTO, PsssAllFlatDTO } from '../../dtos/psss-template.model';
+import { ScopeService, ScopeTemplateDTO } from '../../../scope/scope.service';
+import { CatalogService, CatalogItemDTO } from '../../../scope/catalog.service';
 import Swal from 'sweetalert2';
 
-interface PsssItem extends PsssAllFlatDTO {
+interface FlatCatalogItem {
+  catalogItemId: number;
+  catalogItemParentId: number | null;
+  description: string;
+  depth: number;
   checked: boolean;
-}
-
-interface PhaseOption {
-  phaseId: number;
-  phaseDescription: string;
 }
 
 @Component({
@@ -27,96 +25,90 @@ interface PhaseOption {
   styleUrl: './template-edit.css',
 })
 export class TemplateEdit implements OnInit {
-  @Input() template!: PsssTemplateDTO;
+  @Input() template!: ScopeTemplateDTO;
   @Output() closeModal = new EventEmitter<void>();
-  @Output() templateUpdated = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<void>();
 
-  items: PsssItem[] = [];
-  phases: PhaseOption[] = [];
+  editName = '';
+  items: FlatCatalogItem[] = [];
   searchTerm = '';
-  selectedPhaseId: number | null = null;
   loading = true;
 
   constructor(
-    private templateService: PsssTemplateService,
+    private scopeService: ScopeService,
+    private catalogService: CatalogService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
+    this.editName = this.template.templateName;
     this.loaderService.show();
-    forkJoin({
-      all: this.templateService.getAllPsssFlat(),
-      assigned: this.templateService.getTemplatePsssIds(this.template.psssTemplateId),
-    }).subscribe({
-      next: ({ all, assigned }) => {
-        const assignedSet = new Set(assigned);
-        this.items = all.map((p) => ({ ...p, checked: assignedSet.has(p.psssId) }));
-        this.phases = this.buildPhases();
+    this.catalogService.getFullTree().subscribe({
+      next: (tree) => {
+        const assigned = new Set(this.template.catalogItemIds);
+        this.items = this.flattenCatalog(tree, 0, assigned);
         this.loading = false;
         this.loaderService.hide();
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 
-  private buildPhases(): PhaseOption[] {
-    const seen = new Set<number>();
-    const result: PhaseOption[] = [];
-    for (const item of this.items) {
-      if (!seen.has(item.phaseId)) {
-        seen.add(item.phaseId);
-        result.push({ phaseId: item.phaseId, phaseDescription: item.phaseDescription });
+  private flattenCatalog(
+    items: CatalogItemDTO[],
+    depth: number,
+    assigned: Set<number>,
+  ): FlatCatalogItem[] {
+    const result: FlatCatalogItem[] = [];
+    for (const item of items) {
+      result.push({
+        catalogItemId: item.catalogItemId,
+        catalogItemParentId: item.catalogItemParentId,
+        description: item.catalogItemDescription,
+        depth,
+        checked: assigned.has(item.catalogItemId),
+      });
+      if (item.children?.length) {
+        result.push(...this.flattenCatalog(item.children, depth + 1, assigned));
       }
     }
     return result;
   }
 
-  get filteredItems(): PsssItem[] {
-    let list = this.items;
-    if (this.selectedPhaseId !== null) {
-      list = list.filter((i) => i.phaseId === this.selectedPhaseId);
-    }
+  get filteredItems(): FlatCatalogItem[] {
     const term = this.searchTerm.trim().toLowerCase();
-    if (term) {
-      list = list.filter((i) => i.label.toLowerCase().includes(term));
-    }
-    return list;
+    return term ? this.items.filter((i) => i.description.toLowerCase().includes(term)) : this.items;
   }
 
   get checkedCount(): number {
     return this.items.filter((i) => i.checked).length;
   }
 
-  trackByPhaseId(_: number, p: PhaseOption): number {
-    return p.phaseId;
-  }
-
-  trackByPsssId(_: number, i: PsssItem): number {
-    return i.psssId;
-  }
-
-  toggleAll(checked: boolean) {
+  toggleAll(checked: boolean): void {
     this.filteredItems.forEach((i) => (i.checked = checked));
   }
 
-  save() {
-    const psssIds = this.items.filter((i) => i.checked).map((i) => i.psssId);
+  save(): void {
+    if (!this.editName.trim()) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'El nombre no puede estar vacío.' });
+      return;
+    }
+    const catalogItemIds = this.items.filter((i) => i.checked).map((i) => i.catalogItemId);
     this.loaderService.show();
-    this.templateService
-      .updateTemplatePsss(this.template.psssTemplateId, { psssIds })
+    this.scopeService
+      .updateTemplate({
+        scopeTemplateId: this.template.scopeTemplateId,
+        templateName: this.editName.trim(),
+        catalogItemIds,
+      })
       .subscribe({
         next: () => {
-          this.loaderService.hide();
-          this.templateUpdated.emit();
+          this.saved.emit();
           this.closeModal.emit();
           Swal.fire({ title: 'Plantilla actualizada', icon: 'success', draggable: true });
         },
-        error: (err: HttpErrorResponse) => {
-          this.errorService.handleError(err);
-        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
   }
 }

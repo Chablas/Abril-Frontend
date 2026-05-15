@@ -30,6 +30,7 @@ export class SubAreaList implements OnInit {
   selectedAreaId: number | null = null;
   showEditModal = false;
 
+  scopeAreaId?: number;
   scopeSubAreaId?: number;
   scopeEntityName = '';
   showScopeModal = false;
@@ -85,6 +86,7 @@ export class SubAreaList implements OnInit {
 
   openScopeModal(item: SubAreaGetDTO, event: MouseEvent) {
     event.stopPropagation();
+    this.scopeAreaId = item.areaId;
     this.scopeSubAreaId = item.subAreaId;
     this.scopeEntityName = item.subAreaDescription;
     this.showScopeModal = true;

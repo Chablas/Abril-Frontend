@@ -1,23 +1,23 @@
-<app-base-modal [title]="'RELACIONES'" width="w-[640px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'RELACIONES'" width="w-[680px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-4">
 
     <!-- Nombre del área/subárea -->
     <div class="flex flex-col gap-1">
       <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">
-        {{ areaId ? 'Área' : 'Subárea' }}
+        {{ subAreaId ? 'Subárea' : 'Área' }}
       </label>
       <p class="text-[0.95rem] font-semibold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
         {{ entityName }}
       </p>
     </div>
 
-    <!-- Relaciones -->
+    <!-- Scope items -->
     <div class="flex flex-col gap-2">
 
       <!-- Header -->
       <div class="flex items-center justify-between">
         <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">
-          Relaciones asignadas
+          Ítems del scope
         </label>
         <span class="text-[0.7rem] font-bold bg-green-100 text-green-800 border border-green-200 rounded-full px-2 py-0.5">
           {{ checkedCount }} / {{ items.length }}
@@ -26,25 +26,21 @@
 
       <!-- Filtro por plantilla -->
       <div class="flex flex-wrap gap-1.5" *ngIf="templates.length > 0">
-        <button
-          type="button"
+        <button type="button"
           class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors whitespace-nowrap"
           [ngClass]="selectedTemplateId === null
             ? 'bg-green-100 border-[#64bc04] text-green-800'
             : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
-          (click)="selectedTemplateId = null"
-        >
+          (click)="selectedTemplateId = null">
           Todas
         </button>
-        <button
-          type="button"
-          *ngFor="let t of templates; trackBy: trackByTemplateId"
+        <button type="button"
+          *ngFor="let t of templates"
           class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors whitespace-nowrap"
-          [ngClass]="selectedTemplateId === t.psssTemplateId
+          [ngClass]="selectedTemplateId === t.scopeTemplateId
             ? 'bg-green-100 border-[#64bc04] text-green-800'
             : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
-          (click)="selectedTemplateId = t.psssTemplateId"
-        >
+          (click)="selectedTemplateId = t.scopeTemplateId">
           {{ t.templateName }}
         </button>
       </div>
@@ -53,45 +49,34 @@
       <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-400
                   focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
+          <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
         </svg>
-        <input
-          type="text"
-          placeholder="Buscar relación..."
-          [(ngModel)]="searchTerm"
-          class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
-        />
+        <input type="text" placeholder="Buscar..." [(ngModel)]="searchTerm"
+          class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm" />
       </div>
 
       <!-- Seleccionar todos -->
-      <label
-        *ngIf="!loading && filteredItems.length > 0"
-        class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-b-0 border-gray-200 rounded-t-xl cursor-pointer"
-      >
-        <input
-          type="checkbox"
-          class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
+      <label *ngIf="!loading && filteredItems.length > 0"
+        class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-b-0 border-gray-200 rounded-t-xl cursor-pointer">
+        <input type="checkbox" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
           [checked]="filteredItems.every(i => i.checked)"
           [indeterminate]="filteredItems.some(i => i.checked) && !filteredItems.every(i => i.checked)"
-          (change)="toggleAll($any($event.target).checked)"
-        />
+          (change)="toggleAll($any($event.target).checked)" />
         <span class="text-[0.78rem] font-bold text-gray-500 uppercase tracking-wide">Seleccionar todos</span>
       </label>
 
       <!-- Lista scrolleable -->
       <ng-container *ngIf="!loading; else loadingTpl">
-        <div
-          class="border border-gray-200 overflow-y-auto max-h-[300px] bg-white"
+        <div class="border border-gray-200 overflow-y-auto max-h-[340px] bg-white"
           [class.rounded-xl]="filteredItems.length === 0"
-          [class.rounded-b-xl]="filteredItems.length > 0"
-        >
-          <label
-            *ngFor="let item of filteredItems; trackBy: trackByPsssId"
-            class="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-green-50 transition-colors"
-          >
-            <input type="checkbox" [(ngModel)]="item.checked" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer" />
-            <span class="text-[0.82rem] text-gray-700">{{ item.label }}</span>
+          [class.rounded-b-xl]="filteredItems.length > 0">
+          <label *ngFor="let item of filteredItems"
+            class="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-green-50 transition-colors"
+            [style.paddingLeft.px]="16 + item.depth * 20">
+            <input type="checkbox" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
+              [checked]="item.checked"
+              (change)="onCheck(item, $any($event.target).checked)" />
+            <span class="text-[0.82rem] text-gray-700">{{ item.description }}</span>
           </label>
           <p class="text-center text-gray-400 py-8 text-sm" *ngIf="filteredItems.length === 0">
             Sin resultados.
@@ -101,7 +86,7 @@
 
       <ng-template #loadingTpl>
         <div class="text-center text-gray-400 py-8 text-sm border border-gray-200 rounded-xl">
-          Cargando relaciones...
+          Cargando...
         </div>
       </ng-template>
 
@@ -109,11 +94,8 @@
   </div>
 
   <div class="flex justify-center mt-5">
-    <button
-      type="button"
-      (click)="save()"
-      class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer"
-    >
+    <button type="button" (click)="save()"
+      class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer">
       <p class="text-white text-lg">Guardar</p>
     </button>
   </div>

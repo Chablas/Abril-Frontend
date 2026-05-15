@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { LessonListPagedDTO, LessonsPagedWithFiltersDTO } from '../dtos/lessonList.model';
 import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
-import { PhaseStageSubStageSubSpecialtyDTO } from '../dtos/phaseStageSubStageSubSpecialty.model';
+import { ScopeItemDTO } from '../dtos/scope-item.model';
 
 @Injectable({
   providedIn: 'root',
@@ -49,10 +49,10 @@ export class LeccionesAprendidasService {
     });
   }
 
-  getFiltersCreate(areaId: number, subAreaId?: number): Observable<PhaseStageSubStageSubSpecialtyDTO[]> {
+  getFiltersCreate(areaId: number, subAreaId?: number): Observable<ScopeItemDTO[]> {
     let params = new HttpParams().set('areaId', areaId);
     if (subAreaId) params = params.set('subAreaId', subAreaId);
-    return this.http.get<PhaseStageSubStageSubSpecialtyDTO[]>(`${this.apiUrl}/filters/create`, {
+    return this.http.get<ScopeItemDTO[]>(`${this.apiUrl}/filters/create`, {
       params,
       headers: this.authHeaders(),
     });

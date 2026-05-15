@@ -70,7 +70,8 @@
 </app-sub-area-edit>
 
 <app-psss-scope-edit
-  *ngIf="showScopeModal && scopeSubAreaId"
+  *ngIf="showScopeModal && scopeAreaId && scopeSubAreaId"
+  [areaId]="scopeAreaId"
   [subAreaId]="scopeSubAreaId"
   [entityName]="scopeEntityName"
   (closeModal)="showScopeModal = false"
