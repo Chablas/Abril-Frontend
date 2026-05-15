@@ -51,4 +51,14 @@ export class WorkItemCategoryService {
       { headers: this.headers },
     );
   }
+
+  uploadInstructivo(workItemCategoryId: number, file: File): Observable<ApiMessageDTO> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${workItemCategoryId}/upload-instructivo`,
+      form,
+      { headers: this.headers },
+    );
+  }
 }
