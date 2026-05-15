@@ -97,6 +97,7 @@ export class NavigationService {
             { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email', featureKey: 'costs.config.staff-project-email' },
             { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Partidas',             route: '/costs/configuration/work-item',            featureKey: 'costs.config.work-item' },
+            { label: 'Links de proyecto',    route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
           ],
         },
       ],

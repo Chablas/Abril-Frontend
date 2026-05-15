@@ -5,6 +5,7 @@ import { Adjudicaciones } from './features/adjudicaciones/components/adjudicacio
 import { StaffProjectEmail } from './features/configuration/staffProjectEmail/components/staff-project-email';
 import { WorkItemCategory } from './features/configuration/workItemCategory/components/work-item-category';
 import { WorkItem } from './features/configuration/workItem/components/work-item';
+import { ProjectLink } from './features/configuration/projectLink/components/project-link';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -43,6 +44,12 @@ const routes: Routes = [
             component: WorkItem,
             canActivate: [roleGuard],
             data: { titulo: 'PARTIDAS', featureKey: 'costs.config.work-item' },
+          },
+          {
+            path: 'project-link',
+            component: ProjectLink,
+            canActivate: [roleGuard],
+            data: { titulo: 'LINKS DE PROYECTO', featureKey: 'costs.config.project-link' },
           },
         ],
       },

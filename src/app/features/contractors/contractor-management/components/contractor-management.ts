@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ContractorManagementService } from '../services/contractor-management.service';
 import { ContractorManagementDTO } from '../dtos/contractor-management.dto';
@@ -8,6 +9,7 @@ import { ContractorManagementCard } from './card/contractor-management-card';
 import { ContractorManagementDetail } from './detail/contractor-management-detail';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { ViewToggle } from '../../../../shared/components/view-toggle/view-toggle';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { ViewToggleMode } from '../../../../shared/components/view-toggle/view-toggle.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -17,11 +19,13 @@ import { ErrorService } from '../../../../core/services/error.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ContractorManagementList,
     ContractorManagementCard,
     ContractorManagementDetail,
     Paginator,
     ViewToggle,
+    SearchSelect,
   ],
   templateUrl: './contractor-management.html',
 })
@@ -30,6 +34,24 @@ export class ContractorManagement implements OnInit {
   currentPage = 1;
   totalPages = 1;
   totalRecords = 0;
+
+  // Opciones estáticas para el filtro de estado
+  readonly stateOptions = [
+    { id: 1, label: 'En espera'   },
+    { id: 2, label: 'Aprobado'    },
+    { id: 3, label: 'No aprobado' },
+  ];
+
+  // Filtros básicos
+  searchName = '';
+  searchRuc  = '';
+  searchStateId: number | null = null;
+
+  // Filtros avanzados
+  showAdvanced  = false;
+  searchDni     = '';
+  searchRepName = '';
+  searchRegistry = '';
 
   selectedContractor: ContractorManagementDTO | null = null;
   viewMode = 'table';
@@ -59,18 +81,33 @@ export class ContractorManagement implements OnInit {
 
   load(page: number): void {
     this.loaderService.show();
-    this.service.getPaged(page).subscribe({
-      next: (res) => {
-        this.contractors = res.data;
-        this.currentPage = res.page;
-        this.totalPages = res.totalPages;
-        this.totalRecords = res.totalRecords;
-        this.loaderService.hide();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
-    });
+    this.service
+      .getPaged(
+        page,
+        this.searchName       || undefined,
+        this.searchRuc        || undefined,
+        this.searchStateId    ?? undefined,
+        this.searchDni        || undefined,
+        this.searchRepName    || undefined,
+        this.searchRegistry   || undefined,
+      )
+      .subscribe({
+        next: (res) => {
+          this.contractors = res.data;
+          this.currentPage = res.page;
+          this.totalPages = res.totalPages;
+          this.totalRecords = res.totalRecords;
+          this.loaderService.hide();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  search(): void {
+    this.load(1);
   }
 
   openDetail(item: ContractorManagementDTO): void {

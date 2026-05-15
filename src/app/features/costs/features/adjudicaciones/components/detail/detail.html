@@ -143,11 +143,21 @@
           </ng-template>
         </div>
 
-        <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Fecha de creación</p>
-          <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
-        </div>
+      </div>
 
+      <!-- ── Datos de registro ─────────────────────────────────────────── -->
+      <div class="mt-[18px] pt-[14px] border-t border-dashed border-gray-200">
+        <p class="text-[10px] font-semibold text-gray-300 uppercase tracking-widest mb-[10px]">Datos de registro</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[8px]">
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Creado por</p>
+            <p class="text-sm text-gray-700">{{ item.createdUserFullName ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de creación</p>
+            <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- Archivos adjuntos -->

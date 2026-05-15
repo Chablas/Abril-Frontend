@@ -16,6 +16,10 @@
     <span class="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
       {{ item.workItemDescription }}
     </span>
+    <span *ngIf="item.contractModalityDescription"
+      class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-500 rounded-full">
+      {{ item.contractModalityDescription }}
+    </span>
   </div>
 
   <div class="flex items-center justify-between pt-2 border-t border-gray-100">
@@ -33,6 +37,18 @@
         [ngClass]="i < item.projectSubContractorStatusId ? 'bg-[#64BC04]' : 'bg-gray-200'">
       </div>
     </div>
+  </div>
+
+  <!-- Creado por / Fecha de creación -->
+  <div class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100">
+    <span class="text-[10px] text-gray-400 flex items-center gap-1 truncate mr-2">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke="#9CA3AF" stroke-width="1.6"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#9CA3AF" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="truncate">{{ item.createdUserFullName ?? '—' }}</span>
+    </span>
+    <span class="text-[10px] text-gray-400 shrink-0">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</span>
   </div>
 
 </div>

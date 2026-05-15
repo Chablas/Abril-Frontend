@@ -1,44 +1,143 @@
-<div class="pt-5 pb-3 flex flex-wrap gap-3 items-center">
-  <button (click)="openCreateModal($event)" class="bg-[#E5F7D1] py-[5px] px-[18px] rounded-lg border border-[#64BC04] text-[#64BC04] text-sm flex items-center gap-2 cursor-pointer hover:bg-[#d4f0b8] transition-colors">
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="#64BC04"/></svg>
-    Nueva adjudicación
-  </button>
+<div class="bg-white rounded-lg p-5 h-full flex flex-col gap-3">
 
-  <input type="text" [(ngModel)]="filters.search" placeholder="Buscar razón social, servicio…"
-    class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-72 bg-white focus:outline-none focus:ring-2 focus:ring-[#64BC04]/40" />
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-4 py-1 items-end">
 
-  <app-search-select
-    [options]="projects"
-    valueField="projectId"
-    displayField="projectDescription"
-    [value]="filters.projectId"
-    (valueChange)="filters.projectId = $event"
-    placeholder="Todos los proyectos"
-    [showLabel]="false">
-  </app-search-select>
+    <!-- Nueva adjudicación -->
+    <button type="button" (click)="openCreateModal($event)"
+      class="h-[42px] px-4 bg-[#E5F7D1] rounded-xl border border-[#64BC04] text-[#64BC04] text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-[#d4f0b8] transition-colors self-end">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="#64BC04"/>
+      </svg>
+      Nueva adjudicación
+    </button>
 
-  <button (click)="load()" class="bg-[#64BC04] text-white text-sm px-4 py-2 rounded-lg cursor-pointer hover:bg-[#57a803] transition-colors">
-    Buscar
-  </button>
+    <!-- Razón social -->
+    <div class="w-[220px] flex flex-col gap-[6px]">
+      <label class="text-sm text-[#64BC04] font-medium">Razón social</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.contributorName"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border border-[#D6DEE5] rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+    </div>
 
-  <span class="text-xs text-gray-400 ml-auto">{{ totalRecords }} registros</span>
+    <!-- RUC -->
+    <div class="w-[160px] flex flex-col gap-[6px]">
+      <label class="text-sm text-[#64BC04] font-medium">RUC</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.contributorRuc"
+        (keyup.enter)="search()"
+        placeholder="Buscar…"
+        class="border border-[#D6DEE5] rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+    </div>
+
+    <!-- Proyecto -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Proyecto"
+        placeholder="Todos"
+        [options]="projects"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filters.projectId"
+        (valueChange)="filters.projectId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Filtros avanzados -->
+    <ng-container *ngIf="showAdvanced">
+
+      <!-- Tipo de contrato -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Tipo de contrato"
+          placeholder="Todos"
+          [options]="contractTypes"
+          valueField="contractTypeId"
+          displayField="contractTypeDescription"
+          [value]="filters.contractTypeId"
+          (valueChange)="filters.contractTypeId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Modalidad de contrato -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Modalidad"
+          placeholder="Todos"
+          [options]="contractModalities"
+          valueField="contractModalityId"
+          displayField="contractModalityDescription"
+          [value]="filters.contractModalityId"
+          (valueChange)="filters.contractModalityId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Forma de pago -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Forma de pago"
+          placeholder="Todos"
+          [options]="paymentMethods"
+          valueField="paymentMethodId"
+          displayField="paymentMethodDescription"
+          [value]="filters.paymentMethodId"
+          (valueChange)="filters.paymentMethodId = $event">
+        </app-search-select>
+      </div>
+
+    </ng-container>
+
+    <!-- Botón búsqueda avanzada -->
+    <button type="button" (click)="showAdvanced = !showAdvanced"
+      class="h-[42px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="#64BC04"/>
+      </svg>
+      {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+    </button>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="search()"
+      class="h-[42px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+    <!-- Contador -->
+    <span class="ml-auto text-xs text-gray-400 self-end pb-[2px]">{{ totalRecords }} registros</span>
+
+  </div>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────── -->
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-1">
+      <app-card
+        *ngFor="let item of items"
+        [item]="item"
+        (cardClick)="openDetail(item)">
+      </app-card>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
 </div>
 
-<main class="pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-  <app-card
-    *ngFor="let item of items"
-    [item]="item"
-    (cardClick)="openDetail(item)">
-  </app-card>
-</main>
-
-<app-paginator
-  [totalRecords]="totalRecords"
-  [currentPage]="currentPage"
-  [totalPages]="totalPages"
-  (pageChange)="load($event)">
-</app-paginator>
-
+<!-- ── MODALES (fuera del card blanco) ───────────────────────────── -->
 <app-create
   *ngIf="showCreateModal"
   (closeModal)="showCreateModal = false"
@@ -49,5 +148,5 @@
   *ngIf="selectedItem"
   [item]="selectedItem"
   (closeModal)="selectedItem = null"
-  (statusChanged)="load(currentPage)">
+  (statusChanged)="onStatusChanged()">
 </app-detail>
