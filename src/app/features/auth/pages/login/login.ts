@@ -96,7 +96,7 @@ export class Login implements OnInit {
     this.cdr.detectChanges();
 
     const { email, password } = this.contratistaForm.value;
-    this.authService.login({ email: email.trim(), password }).subscribe({
+    this.authService.loginContratista(email.trim(), password).subscribe({
       next: () => {
         this.loaderService.hide();
         this.cdr.detectChanges();

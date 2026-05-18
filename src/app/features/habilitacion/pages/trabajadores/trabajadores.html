@@ -18,8 +18,8 @@
           (input)="onSearch()"
         />
       </div>
-      <ng-container *ngIf="isAdmin()">
-        <div class="fb-pills">
+      <ng-container *ngIf="isAdmin() || isContratista()">
+        <div class="fb-pills" *ngIf="!isContratista()">
           <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === ''"
             (click)="filtroContratistaCasa = ''; onFilterChange()">Todos</button>
           <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === 'Contratista'"
@@ -51,7 +51,7 @@
           </svg>
           Programar Inducción
         </button>
-        <button class="btn-ghost-sm btn-crear" (click)="abrirCrear()">
+        <button *ngIf="isAdmin() || isContratista()" class="btn-ghost-sm btn-crear" (click)="abrirCrear()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 5v14M5 12h14"/>
           </svg>

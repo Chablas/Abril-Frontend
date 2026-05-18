@@ -514,6 +514,8 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 
 ### `features/contractors/` — ✅ Completo
 - Doble routing: `CONTRACTORS_ROUTES` (`/contractors/registro`, público) + `CONTRACTORS_ADMIN_ROUTES` (`/contractors/management`, autenticado).
+- `POST api/v1/contractorRegistration` (registro nuevo contratista): requiere auth (JWT). El backend sube archivos a SharePoint solo si se envían. Sin archivos, el registro funciona sin config SharePoint.
+- `POST /habilitacion/empresas` (registro empresa — `/habilitacion/registro-empresa`): público `[AllowAnonymous]`. Devuelve 400 con `{ message }` si el RUC ya existe en `ss_empresa_contratista` o `contributor`.
 
 ### `features/arquitectura-comercial/` — ✅ Completo
 - Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
