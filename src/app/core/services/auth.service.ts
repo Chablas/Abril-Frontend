@@ -64,6 +64,7 @@ export class AuthService {
         tipo: res.tipo,
       }),
     );
+    localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures ?? []));
   }
 
   setPassword(data: { token: string; password: string | null | undefined }) {

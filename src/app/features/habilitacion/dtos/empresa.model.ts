@@ -56,6 +56,7 @@ export interface ContratistaTokenDto {
   empresaId: number;
   razonSocial: string;
   tipo: string;
+  allowedFeatures: string[];
 }
 
 export interface EmpresaEntregableDto {
