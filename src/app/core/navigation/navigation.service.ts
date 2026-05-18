@@ -78,7 +78,7 @@ export class NavigationService {
       iconKey: 'contractors',
       baseRoute: '/contractors',
       items: [
-        { label: 'Registro de contratistas',    route: '/contractors/registro' },
+        { label: 'Registro de contratistas',    route: '/contractors/registro', featureKey: 'contractors.registro' },
         { label: 'Homologación de contratistas', route: '/contractors/management', featureKey: 'contractors.management' },
       ],
     },
