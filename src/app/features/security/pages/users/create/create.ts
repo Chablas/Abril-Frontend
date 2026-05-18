@@ -97,6 +97,9 @@ export class UserCreate implements OnInit {
     });
   }
 
+  allRolesChecked(): boolean { return this.filteredRoles.length > 0 && this.filteredRoles.every(r => r.checked); }
+  someRolesChecked(): boolean { return this.filteredRoles.some(r => r.checked) && !this.allRolesChecked(); }
+
   saveUser() {
     this.createDto.roleIds = this.roles.filter((r) => r.checked).map((r) => r.roleId);
     this.loaderService.show();

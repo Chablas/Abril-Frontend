@@ -129,6 +129,7 @@ export class NavigationService {
           items: [
             { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
             { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
+            { label: 'Clínicas',              route: '/habilitacion/clinicas' },
           ],
         },
       ],

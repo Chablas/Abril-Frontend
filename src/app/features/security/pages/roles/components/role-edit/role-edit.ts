@@ -102,6 +102,9 @@ export class RoleEdit implements OnInit {
     this.filteredFeatures.forEach((f) => (f.checked = checked));
   }
 
+  allFeaturesChecked(): boolean { return this.filteredFeatures.length > 0 && this.filteredFeatures.every(f => f.checked); }
+  someFeaturesChecked(): boolean { return this.filteredFeatures.some(f => f.checked) && !this.allFeaturesChecked(); }
+
   save() {
     const featureIds = this.features.filter((f) => f.checked).map((f) => f.featureId);
     this.loaderService.show();

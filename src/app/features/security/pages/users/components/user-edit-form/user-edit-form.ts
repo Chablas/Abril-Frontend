@@ -100,6 +100,9 @@ export class UserEditForm implements OnInit {
     return !!this.model.email.trim() && !this.saving;
   }
 
+  allRolesChecked(): boolean { return this.filteredRoles.length > 0 && this.filteredRoles.every(r => r.checked); }
+  someRolesChecked(): boolean { return this.filteredRoles.some(r => r.checked) && !this.allRolesChecked(); }
+
   submit(): void {
     if (!this.canSubmit) {
       Swal.fire({ icon: 'warning', title: 'El correo es requerido' });
