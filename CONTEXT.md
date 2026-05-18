@@ -57,10 +57,15 @@ src/app/
 └── features/
     ├── arquitectura-comercial/   # NgModule
     ├── auth/                     # NgModule (login, msal, set-password)
+    ├── clinica/                  # standalone routes (agenda, programaciones, activar cuenta pública)
     ├── configuracion/            # standalone routes (admin: empresas, proyectos, trabajadores)
     ├── contractors/              # standalone routes (pública + admin)
     ├── costs/                    # NgModule (adjudicaciones)
+    ├── gestion-administrativa/   # standalone routes (solicitud-salidas, gestion-salidas, config)
+    ├── habilitacion/             # standalone routes (trabajadores, empresa, equipos, bandeja…)
     ├── home/                     # Inicio
+    ├── mejora-continua/          # standalone routes (lessons-learned, áreas, relaciones, plantillas)
+    ├── portal-trabajador/        # página pública — consulta habilitación por DNI
     ├── projects/                 # NgModule (lecciones, IVTs, hitos, config…)
     ├── security/                 # NgModule (creación usuarios)
     └── ssoma/                    # standalone routes
@@ -114,7 +119,18 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /arquitectura-comercial                  → ArquitecturaComercialModule
    /ssoma                                   → SSOMA_ROUTES
    /configuracion                           → CONFIGURACION_ROUTES
+   /habilitacion                            → HABILITACION_ROUTES
+   /clinica                                 → CLINICA_ROUTES
+   /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
+   /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
+/habilitacion/registro-empresa             → RegistroEmpresa (público)
+/auth/activar-contratista                  → ActivarContratista (público)
+/auth/recuperar-contratista                → RecuperarContratista (público)
+/auth/contractor-credentials               → ContractorCredentials (público)
+/clinica/activar                           → ActivarClinica (público)
+/portal-trabajador                         → PortalTrabajador (público)
+/registros-modelo                          → RegistrosModelo (publicMode: true)
 /**                                         → redirect /auth/login
 ```
 
@@ -128,7 +144,11 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 
 ### Guards
 - `authGuard` (`core/guards/auth.guard.ts`): SSR → `true` (¡no quitar! evita problemas con refresh); sin token → `/auth/login`; token expirado → logout + login.
-- `roleGuard` (`core/guards/role.guard.ts`): lee `route.data.roles` (string[]) y exige al menos uno presente en JWT roles.
+- `roleGuard` (`core/guards/role.guard.ts`): verifica acceso en dos pasos:
+  1. Si `route.data.featureKey` existe → busca en `localStorage.allowed_features` (array JSON cargado al login desde BD). Si está incluido → permite.
+  2. Fallback: si `route.data.roles` existe → verifica contra JWT roles (solo para contratistas u otros casos legacy).
+  - Sin match en ninguno de los dos → redirige a `/`.
+  - **Regla**: rutas nuevas deben usar `featureKey` registrado en BD, no `roles` directos.
 
 ### Roles conocidos (string-exact, MAYÚSCULAS, español)
 ```
@@ -141,13 +161,13 @@ RESIDENTE
 
 ### Cada ruta protegida debe declarar
 ```ts
-data: { titulo: 'TÍTULO EN MAYÚSCULAS', roles: ['ROL_X', 'ROL_Y'] }
+data: { titulo: 'TÍTULO EN MAYÚSCULAS', featureKey: 'modulo.nombre-pantalla' }
 ```
-El `Header` lee `data.titulo` de la ruta activa más profunda.
+El `Header` lee `data.titulo` de la ruta activa más profunda. El `featureKey` debe estar registrado en BD; mientras no lo esté, omitirlo (la ruta será accesible a todos los autenticados) o usar `roles` como fallback temporal.
 
 ### Sidebar
-Fuente única: `core/navigation/navigation.service.ts` (`config: NavModule[]`). Cada `NavModule` tiene `key`, `label`, `iconKey`, `baseRoute`, `roles`, `items[]`, `groups[]`.
-**Agregar feature al menú = wirear ruta + entry en `navigation.service.ts`.**
+Fuente única: `core/navigation/navigation.service.ts` (`config: NavModule[]`). Cada `NavModule` tiene `key`, `label`, `iconKey`, `baseRoute`, `items[]`, `groups[]`. Cada `NavItem` puede tener `featureKey` (primario) o `roles[]` (fallback). `isItemAllowed()` sigue la misma lógica que `roleGuard`.
+**Agregar feature al menú = wirear ruta + entry en `navigation.service.ts` con `featureKey`.**
 
 ---
 
@@ -516,6 +536,12 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 ### `features/configuracion/` — ✅ Completo
 Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
 
+### `features/gestion-administrativa/` — ✅ Implementado (detalle en §14)
+Solicitud de Salidas, Gestión de Salidas. Configuración: Motivos de Salida, Lugares de Origen/Destino. Todas las rutas usan `featureKey`. DTOs auto-contenidos dentro del feature.
+
+### `features/mejora-continua/` — ✅ Implementado (detalle en §15)
+Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relaciones, Plantillas. Todas las rutas usan solo `roleGuard` (el shell padre aplica `authGuard`).
+
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
 Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
@@ -542,8 +568,8 @@ Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuraci
 - Caches con `shareReplay(1)` → tras POST/PUT, invalida con `invalidateCache()`.
 
 ### Ruteo & nav
-- Cada ruta protegida **debe** declarar `data.titulo` y `data.roles`.
-- Para que aparezca en sidebar: agregar en `core/navigation/navigation.service.ts:config`.
+- Cada ruta protegida **debe** declarar `data.titulo` y `data.featureKey` (o `data.roles` como fallback temporal hasta registrar en BD).
+- Para que aparezca en sidebar: agregar en `core/navigation/navigation.service.ts:config` con `featureKey` coincidente.
 
 ### DTOs
 - Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No uniformizar**.
@@ -582,7 +608,7 @@ Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuraci
 3. **app.routes.ts**: agregar lazy `loadChildren` dentro del `Layout` autenticado.
 4. **Sidebar**: `NavModule` nuevo en `navigation.service.ts:config`.
 5. **Icono**: agregar `<svg *ngSwitchCase="'<iconKey>'">` en `nav-icon.html`.
-6. **Roles**: `data: { titulo: 'TÍTULO', roles: [...] }` en cada ruta.
+6. **Auth**: `data: { titulo: 'TÍTULO', featureKey: 'modulo.pantalla' }` en cada ruta. Registrar el `featureKey` en BD para que `roleGuard` y el sidebar lo reconozcan.
 7. **Build**: `npx ng build --configuration development`.
 
 ---
@@ -1136,3 +1162,70 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 
 ### Pitfall N+1
 `load()` dispara 1 + N requests (1 listClinicas + N getClinicaEmails). Aceptable para catálogos de clínicas (volumen bajo). Si el backend crece, considerar endpoint `/catalogos/clinicas/con-emails`.
+
+---
+
+## 14. Módulo Gestión Administrativa
+
+### Ubicación
+`features/gestion-administrativa/` — standalone routes. Montado en `/gestion-administrativa`.
+
+### Sub-rutas
+```
+/gestion-administrativa                          → redirect 'solicitud-salidas'
+/gestion-administrativa/solicitud-salidas        → SolicitudSalidas  (featureKey: gestion-administrativa.solicitud-salidas)
+/gestion-administrativa/gestion-salidas          → GestionSalidas    (featureKey: gestion-administrativa.gestion-salidas)
+/gestion-administrativa/configuracion/motivos    → GaMotivos         (featureKey: gestion-administrativa.config.motivos)
+/gestion-administrativa/configuracion/lugares    → GaLugares         (featureKey: gestion-administrativa.config.lugares)
+```
+
+### API base
+`api/v1/gestion-administrativa/`
+
+### Servicios
+- `SolicitudSalidasService` — `getMySolicitudes()`, `getFormData()` (catálogos para el form), `create(dto)`.
+- `GestionSalidasService` — lista y gestión de solicitudes por administradores.
+- `MotivoService` — CRUD motivos de salida.
+- `LugarService` — CRUD lugares de origen/destino.
+
+### Estructura interna
+Cada sub-feature tiene su propia carpeta con `dtos/`, `services/`, `components/` o `pages/`. **Los DTOs NO van a `core/dtos/` — se mantienen dentro del feature.**
+
+### Guards
+Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
+
+---
+
+## 15. Módulo Mejora Continua
+
+### Ubicación
+`features/mejora-continua/` — standalone routes. Montado en `/mejora-continua`.
+
+### Sub-rutas
+```
+/mejora-continua/lessons-learned               → LeccionesAprendidas  (featureKey: mejora-continua.lessons-learned)
+/mejora-continua/configuration/areas           → Areas                (featureKey: mejora-continua.config.areas)
+/mejora-continua/configuration/relations       → Relations            (featureKey: mejora-continua.config.relations)
+/mejora-continua/configuration/templates       → Templates            (featureKey: mejora-continua.config.templates)
+```
+
+### Sub-features internas
+
+**`features/lessons-learned/`**
+- Subcomponentes: `card`, `create`, `detail`, `list`.
+- DTOs: `lessonFilters`, `lessonList`, `lessonPeriod`, `phaseStageSubStageSubSpecialty`.
+- Servicio: `LeccionesAprendidasService`.
+
+**`features/configuration/areas-subareas/`**
+- Layout dos paneles: `area-list` (izquierdo) + `sub-area-list` (derecho). Edición inline con modales `area-edit`/`sub-area-edit`.
+- Incluye `psss-scope-edit` — edita el alcance PSSS de cada subárea.
+- Servicios: `AreaService`, `SubareaService`, `PsssScopeService`.
+
+**`features/configuration/relations/`**
+- Tabla de relaciones con filtros. Servicio: `RelationsService`.
+
+**`features/configuration/templates/`**
+- CRUD de plantillas PSSS. DTO: `psss-template.model.ts`. Servicio: `PsssTemplateService`.
+
+### Guards
+Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica `authGuard` vía `canActivateChild`).
