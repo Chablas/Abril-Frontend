@@ -825,6 +825,12 @@ export class Detail implements OnInit {
       return;
     }
 
+    if (this.step2Form.startDate && this.step2Form.endDate &&
+        new Date(this.step2Form.startDate) > new Date(this.step2Form.endDate)) {
+      Swal.fire({ icon: 'warning', title: 'La fecha de inicio no puede ser posterior a la fecha fin del contrato.', draggable: true });
+      return;
+    }
+
     this.loaderService.show();
     this.adjudicacionesService.saveDates(this.item.projectSubContractorId, {
       signingDate:    this.step2Form.signingDate,
