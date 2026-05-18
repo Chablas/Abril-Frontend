@@ -115,6 +115,20 @@ export const HABILITACION_ROUTES: Routes = [
     },
   },
   {
+    path: 'clinicas',
+    loadComponent: () =>
+      import('./pages/clinicas/clinicas').then((m) => m.Clinicas),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - CLÍNICAS' },
+  },
+  {
+    path: 'clinicas/:id',
+    loadComponent: () =>
+      import('./pages/clinicas/detalle/clinica-detalle').then((m) => m.ClinicaDetalle),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - DETALLE CLÍNICA' },
+  },
+  {
     path: 'cambiar-password',
     loadComponent: () =>
       import('./pages/cambiar-password/cambiar-password').then((m) => m.CambiarPassword),
