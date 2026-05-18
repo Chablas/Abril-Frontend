@@ -15,6 +15,7 @@ interface FlatItem {
   catalogItemParentId: number | null;
   description: string;
   depth: number;
+  hasChildren: boolean;
   checked: boolean;
 }
 
@@ -86,6 +87,7 @@ export class PsssScopeEdit implements OnInit {
         catalogItemParentId: item.catalogItemParentId,
         description: item.catalogItemDescription,
         depth,
+        hasChildren: (item.children?.length ?? 0) > 0,
         checked: checkedIds.has(item.catalogItemId),
       });
       if (item.children?.length) {
@@ -112,49 +114,51 @@ export class PsssScopeEdit implements OnInit {
     return list;
   }
 
+  get leafFilteredItems(): FlatItem[] {
+    return this.filteredItems.filter((i) => !i.hasChildren);
+  }
+
   get checkedCount(): number {
-    return this.items.filter((i) => i.checked).length;
+    return this.items.filter((i) => i.checked && !i.hasChildren).length;
+  }
+
+  get totalLeafCount(): number {
+    return this.items.filter((i) => !i.hasChildren).length;
   }
 
   onCheck(item: FlatItem, checked: boolean): void {
     item.checked = checked;
-    if (checked) this.checkParents(item.catalogItemParentId);
-    else this.uncheckChildren(item.catalogItemId);
-  }
-
-  private checkParents(parentId: number | null): void {
-    if (!parentId) return;
-    const parent = this.items.find((i) => i.catalogItemId === parentId);
-    if (parent && !parent.checked) {
-      parent.checked = true;
-      this.checkParents(parent.catalogItemParentId);
-    }
-  }
-
-  private uncheckChildren(parentId: number): void {
-    this.items
-      .filter((i) => i.catalogItemParentId === parentId)
-      .forEach((child) => {
-        child.checked = false;
-        this.uncheckChildren(child.catalogItemId);
-      });
   }
 
   toggleAll(checked: boolean): void {
-    this.filteredItems.forEach((i) => (i.checked = checked));
+    this.filteredItems.filter((i) => !i.hasChildren).forEach((i) => (i.checked = checked));
   }
 
   save(): void {
-    // Asegurar que padres de ítems marcados también queden marcados
-    this.items.filter((i) => i.checked).forEach((i) => this.checkParents(i.catalogItemParentId));
+    // Recoger hojas marcadas y calcular sus ancestros programáticamente
+    const checkedLeaves = this.items.filter((i) => i.checked && !i.hasChildren);
+    const idToItem = new Map(this.items.map((i) => [i.catalogItemId, i]));
+    const allIds = new Set<number>();
 
-    const nodes = this.items
-      .filter((i) => i.checked)
-      .map((item, idx) => ({
+    for (const leaf of checkedLeaves) {
+      let current: FlatItem | undefined = leaf;
+      while (current) {
+        allIds.add(current.catalogItemId);
+        current =
+          current.catalogItemParentId != null
+            ? idToItem.get(current.catalogItemParentId)
+            : undefined;
+      }
+    }
+
+    const nodes = [...allIds].map((id, idx) => {
+      const item = idToItem.get(id)!;
+      return {
         catalogItemId: item.catalogItemId,
         parentCatalogItemId: item.catalogItemParentId,
         displayOrder: idx + 1,
-      }));
+      };
+    });
 
     this.loaderService.show();
     this.scopeService.upsertScope({ areaSubareaId: this.areaSubareaId, items: nodes }).subscribe({

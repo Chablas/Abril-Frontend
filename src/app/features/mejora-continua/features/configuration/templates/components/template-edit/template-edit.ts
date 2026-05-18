@@ -14,6 +14,7 @@ interface FlatCatalogItem {
   catalogItemParentId: number | null;
   description: string;
   depth: number;
+  hasChildren: boolean;
   checked: boolean;
 }
 
@@ -67,6 +68,7 @@ export class TemplateEdit implements OnInit {
         catalogItemParentId: item.catalogItemParentId,
         description: item.catalogItemDescription,
         depth,
+        hasChildren: (item.children?.length ?? 0) > 0,
         checked: assigned.has(item.catalogItemId),
       });
       if (item.children?.length) {
@@ -81,12 +83,20 @@ export class TemplateEdit implements OnInit {
     return term ? this.items.filter((i) => i.description.toLowerCase().includes(term)) : this.items;
   }
 
+  get leafFilteredItems(): FlatCatalogItem[] {
+    return this.filteredItems.filter((i) => !i.hasChildren);
+  }
+
   get checkedCount(): number {
-    return this.items.filter((i) => i.checked).length;
+    return this.items.filter((i) => i.checked && !i.hasChildren).length;
+  }
+
+  get totalLeafCount(): number {
+    return this.items.filter((i) => !i.hasChildren).length;
   }
 
   toggleAll(checked: boolean): void {
-    this.filteredItems.forEach((i) => (i.checked = checked));
+    this.filteredItems.filter((i) => !i.hasChildren).forEach((i) => (i.checked = checked));
   }
 
   save(): void {
@@ -94,7 +104,7 @@ export class TemplateEdit implements OnInit {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'El nombre no puede estar vacío.' });
       return;
     }
-    const catalogItemIds = this.items.filter((i) => i.checked).map((i) => i.catalogItemId);
+    const catalogItemIds = this.items.filter((i) => i.checked && !i.hasChildren).map((i) => i.catalogItemId);
     this.loaderService.show();
     this.scopeService
       .updateTemplate({
