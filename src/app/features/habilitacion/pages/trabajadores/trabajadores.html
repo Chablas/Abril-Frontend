@@ -109,7 +109,7 @@
   </div>
 
   <!-- Barra de selección masiva -->
-  <div class="selection-bar" *ngIf="isAdmin() && haySeleccionados && !soloRetirados">
+  <div class="selection-bar" *ngIf="(isAdmin() || isContratista()) && haySeleccionados && !soloRetirados">
     <span class="sel-count">
       {{ selectedIds.length }} trabajador{{ selectedIds.length !== 1 ? 'es' : '' }} seleccionado{{ selectedIds.length !== 1 ? 's' : '' }}
     </span>
@@ -146,7 +146,7 @@
           (click)="selectWorker(w)"
         >
           <div
-            *ngIf="isAdmin() && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
+            *ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
             class="wc-check"
             (click)="$event.stopPropagation()"
           >
@@ -169,42 +169,41 @@
           <div class="wc-foot">
             <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
             <div class="wc-actions">
-              <ng-container *ngIf="isAdmin()">
-                <button
-                  *ngIf="!soloRetirados && w.estadoWorker !== 'RETIRADO'"
-                  class="icon-btn icon-btn--danger"
-                  title="Dar de baja"
-                  (click)="$event.stopPropagation(); retirar(w)"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6"/><path d="M14 11v6"/>
-                  </svg>
-                </button>
-                <button
-                  class="icon-btn"
-                  title="Cambiar obra"
-                  (click)="$event.stopPropagation(); abrirCambiarObra(w)"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
-                    <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
-                    <path d="M12 8v8m-3-3 3 3 3-3"/>
-                  </svg>
-                </button>
-                <button
-                  *ngIf="w.estadoWorker === 'RETIRADO'"
-                  class="icon-btn"
-                  title="Reingreso"
-                  (click)="$event.stopPropagation(); abrirReingreso(w)"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M9 14 4 9l5-5"/>
-                    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-                  </svg>
-                </button>
-              </ng-container>
+              <button
+                *ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
+                class="icon-btn icon-btn--danger"
+                title="Dar de baja"
+                (click)="$event.stopPropagation(); retirar(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                </svg>
+              </button>
+              <button
+                *ngIf="isAdmin()"
+                class="icon-btn"
+                title="Cambiar obra"
+                (click)="$event.stopPropagation(); abrirCambiarObra(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
+                  <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                  <path d="M12 8v8m-3-3 3 3 3-3"/>
+                </svg>
+              </button>
+              <button
+                *ngIf="(isAdmin() || isContratista()) && w.estadoWorker === 'RETIRADO'"
+                class="icon-btn"
+                title="Reingreso"
+                (click)="$event.stopPropagation(); abrirReingreso(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M9 14 4 9l5-5"/>
+                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                </svg>
+              </button>
               <button
                 class="icon-btn"
                 title="Ver historial"

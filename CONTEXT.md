@@ -551,7 +551,7 @@ Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relacio
 
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
 Plataforma completa mobile-first.
-**Cambios 2026-05-18/19:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas; upload oculto para ítem 12 (Induccion Obra); APROBAR/RECHAZAR gated por `!isContratista() && isAdmin()`; marcarInduccion oculto para contratistas. `onFileSelected()` usa `res.path` (ruta relativa) en vez de `res.url` para `panelArchivoUrl` — evita almacenar URL absoluta que expira en BD. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
+**Cambios 2026-05-18/19:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas; upload oculto para ítem 12 (Induccion Obra); APROBAR/RECHAZAR gated por `!isContratista() && isAdmin()`; marcarInduccion oculto para contratistas; botones "Dar de baja" y "Reingreso" + checkboxes + barra masiva visibles para `isAdmin() || isContratista()`; "Cambiar obra" sigue solo para `isAdmin()`. `onFileSelected()` usa `res.path` (ruta relativa) en vez de `res.url` para `panelArchivoUrl` — evita almacenar URL absoluta que expira en BD. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -674,6 +674,12 @@ Plataforma completa mobile-first.
   - Upload zone oculto para el ítem `itemId === 12` ("Induccion Obra"): `*ngIf="selectedEntregable?.itemId !== 12"`.
   - Botones APROBAR y RECHAZAR solo visibles cuando `!isContratista() && isAdmin()`.
   - Botón "✓ marcarInduccion" en la sección Proyectos asignados oculto para contratistas: `*ngIf="!p.induccionCompletada && !isContratista()"`.
+- **Worker cards (`trabajadores.html`)** — acciones disponibles para contratistas:
+  - Botón "Dar de baja": `*ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"` — contratistas pueden dar de baja sus propios workers; backend filtra por `empresaId` del JWT.
+  - Botón "Reingreso": `*ngIf="(isAdmin() || isContratista()) && w.estadoWorker === 'RETIRADO'"` — contratistas pueden reingresar sus propios workers retirados.
+  - Checkboxes de selección masiva: `*ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"`.
+  - Barra "Dar de baja seleccionados": `*ngIf="(isAdmin() || isContratista()) && haySeleccionados && !soloRetirados"`.
+  - Botón "Cambiar obra": sigue siendo `*ngIf="isAdmin()"` exclusivo — contratistas no cambian obra.
 
 ### Auth contratistas
 - Login en `/auth/login` con selector empresa + password.
