@@ -101,7 +101,7 @@
   flex-wrap: wrap;
 }
 
-.btn-chip {
+.badge {
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.55rem;
@@ -109,29 +109,30 @@
   font-size: 0.72rem;
   font-weight: 600;
   border: 0;
-  cursor: default;
+  white-space: nowrap;
 }
 
-.btn-pill {
-  cursor: pointer;
-}
-
-.chip-green {
+.badge-green {
   background: #dcfce7;
   color: #166534;
 }
 
-.chip-orange {
+.badge-yellow {
   background: #fef3c7;
   color: #b45309;
 }
 
-.chip-red {
+.badge-red {
   background: #fee2e2;
   color: #b91c1c;
 }
 
-.chip-gray {
+.badge-orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-gray {
   background: #f3f4f6;
   color: #4b5563;
 }

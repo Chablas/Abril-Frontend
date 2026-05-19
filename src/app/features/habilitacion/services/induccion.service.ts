@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
-import { InduccionBatchCreateDto, InduccionCreateDto, InduccionDto, InduccionTrabajadorDto } from '../dtos/induccion.model';
+import { InduccionBatchCreateDto, InduccionCreateDto, InduccionDto, InduccionListDto, InduccionTrabajadorDto } from '../dtos/induccion.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +15,13 @@ export class InduccionService {
     params: Record<string, unknown> = {},
   ): Observable<PagedResponseDTO<InduccionDto>> {
     return this.http.get<PagedResponseDTO<InduccionDto>>(this.base, {
+      headers: buildHabHeaders(),
+      params: buildHabParams(params),
+    });
+  }
+
+  getList(params: Record<string, unknown> = {}): Observable<InduccionListDto[]> {
+    return this.http.get<InduccionListDto[]>(this.base, {
       headers: buildHabHeaders(),
       params: buildHabParams(params),
     });
