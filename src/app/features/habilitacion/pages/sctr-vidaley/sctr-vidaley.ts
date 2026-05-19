@@ -141,6 +141,11 @@ export class SctrVidaley implements OnInit, OnDestroy {
       });
     }
 
+    if (this.isContratista()) {
+      const id = this.authService.getEmpresaId();
+      if (id) this.filtroEmpresaId = id;
+    }
+
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       const tab = params.get('tab') as ActiveTab | null;
       this.activeTab = tab === 'trabajadores' ? 'trabajadores' : 'polizas';

@@ -29,6 +29,7 @@ import { SharepointUploadService } from '../../../../services/sharepoint-upload.
 import { SctrVidaLeyCreateDto, SctrTrabajadorEstadoDto } from '../../../../dtos/sctr.model';
 import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 
 interface SctrSubirForm {
   tipo: 'SCTR' | 'VIDA_LEY';
@@ -79,6 +80,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
     private authService: AuthService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
+    private empresaContratistaService: EmpresaContratistaService,
     private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -106,6 +108,10 @@ export class SctrSubir implements OnChanges, OnDestroy {
     );
   }
 
+  isContratista(): boolean {
+    return this.authService.isContratista();
+  }
+
   private readEmpresaIdFromJwt(): number | null {
     if (typeof localStorage === 'undefined') return null;
     const token = localStorage.getItem('access_token');
@@ -131,13 +137,6 @@ export class SctrSubir implements OnChanges, OnDestroy {
   }
 
   private loadInitial(): void {
-    this.projectService.getProjectPaged(1).subscribe({
-      next: (res) => {
-        this.proyectos = res.data ?? [];
-        this.cdr.detectChanges();
-      },
-      error: () => { this.proyectos = []; },
-    });
     if (this.isAdmin()) {
       this.catalogosService.getEmpresas().subscribe({
         next: (res) => {
@@ -146,9 +145,31 @@ export class SctrSubir implements OnChanges, OnDestroy {
         },
         error: () => { this.empresas = []; },
       });
+      this.projectService.getProjectPaged(1).subscribe({
+        next: (res) => {
+          this.proyectos = res.data ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.proyectos = []; },
+      });
     } else {
       const id = this.readEmpresaIdFromJwt();
-      if (id) this.model.empresaId = id;
+      if (id) {
+        this.model.empresaId = id;
+        this.empresaContratistaService.getProyectos(id).subscribe({
+          next: (data: any[]) => {
+            this.proyectos = data.map(p => ({
+              projectId: p.proyectoId,
+              projectDescription: p.proyectoNombre,
+            }) as ProjectGetDTO);
+            if (this.proyectos.length === 1) {
+              this.model.proyectoId = this.proyectos[0].projectId;
+            }
+            this.cdr.detectChanges();
+          },
+          error: () => { this.proyectos = []; },
+        });
+      }
     }
   }
 

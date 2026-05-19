@@ -84,15 +84,28 @@
 }
 
 .filters-card {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
   flex-shrink: 0;
+  background: #fff;
 }
 
-.filters-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.filter-ss-wrap {
+  flex: 1.5;
+  min-width: 130px;
+}
+
+.filter-sel {
+  flex: 1;
+  min-width: 90px;
+  width: auto !important;
 }
 
 .field-input {
