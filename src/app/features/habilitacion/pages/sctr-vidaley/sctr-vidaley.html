@@ -35,57 +35,56 @@
     </button>
   </div>
 
+  <!-- PÓLIZAS: barra de filtros full-width -->
+  <div class="filters-card card" *ngIf="activeTab === 'polizas'">
+    <div class="filters-row">
+      <div class="filter-ss-wrap" *ngIf="isAdmin()">
+        <app-search-select
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="filtroEmpresaId"
+          (valueChange)="onPolizaEmpresaChange($event)"
+          placeholder="Todas las empresas"
+        />
+      </div>
+      <select class="field-input filter-sel" *ngIf="selectedEmpresaEsAbril" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
+        <option value="">Obra y Oficina</option>
+        <option value="Obra">Obra</option>
+        <option value="Staff">Staff / Oficina Central</option>
+      </select>
+      <select class="field-input filter-sel" [(ngModel)]="filtroTipo" (change)="onFilter()">
+        <option value="">Todos los tipos</option>
+        <option value="SCTR">SCTR</option>
+        <option value="VIDA_LEY">Vida Ley</option>
+      </select>
+      <select class="field-input filter-sel" [(ngModel)]="filtroEstado" (change)="onFilter()">
+        <option value="">Todos los estados</option>
+        <option value="Enviado">Enviado</option>
+        <option value="Aprobado">Aprobado</option>
+        <option value="Parcial">Parcial</option>
+        <option value="Rechazado">Rechazado</option>
+        <option value="Falta">Falta</option>
+      </select>
+      <select class="field-input filter-sel" [(ngModel)]="filtroMes" (change)="onFilter()">
+        <option [ngValue]="null">Todos los meses</option>
+        <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+      </select>
+      <input
+        type="number"
+        class="field-input filter-year"
+        [(ngModel)]="filtroAnio"
+        (change)="onFilter()"
+        placeholder="Año"
+        min="2020"
+        max="2100"
+      />
+    </div>
+  </div>
+
   <!-- ── TAB PÓLIZAS ───────────────────────────────────────── -->
   <div class="sctr-columns" *ngIf="activeTab === 'polizas'">
     <div class="col-docs card">
-      <div class="filters-card">
-        <div *ngIf="isAdmin()" style="margin-bottom: 0.5rem;">
-          <app-search-select
-            [options]="empresas"
-            valueField="id"
-            displayField="nombre"
-            [value]="filtroEmpresaId"
-            (valueChange)="onPolizaEmpresaChange($event)"
-            placeholder="Todas las empresas"
-          />
-        </div>
-        <div *ngIf="selectedEmpresaEsAbril" style="margin-bottom: 0.5rem;">
-          <select class="field-input" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
-            <option value="">Obra y Oficina</option>
-            <option value="Obra">Obra</option>
-            <option value="Staff">Staff / Oficina Central</option>
-          </select>
-        </div>
-        <div class="filters-grid">
-          <select class="field-input" [(ngModel)]="filtroTipo" (change)="onFilter()">
-            <option value="">Todos los tipos</option>
-            <option value="SCTR">SCTR</option>
-            <option value="VIDA_LEY">Vida Ley</option>
-          </select>
-          <select class="field-input" [(ngModel)]="filtroEstado" (change)="onFilter()">
-            <option value="">Todos los estados</option>
-            <option value="Enviado">Enviado</option>
-            <option value="Aprobado">Aprobado</option>
-            <option value="Parcial">Parcial</option>
-            <option value="Rechazado">Rechazado</option>
-            <option value="Falta">Falta</option>
-          </select>
-          <select class="field-input" [(ngModel)]="filtroMes" (change)="onFilter()">
-            <option [ngValue]="null">Todos los meses</option>
-            <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
-          </select>
-          <input
-            type="number"
-            class="field-input"
-            [(ngModel)]="filtroAnio"
-            (change)="onFilter()"
-            placeholder="Año"
-            min="2020"
-            max="2100"
-          />
-        </div>
-      </div>
-
       <div class="docs-list">
         <div
           *ngFor="let doc of documentos"
@@ -166,7 +165,12 @@
               <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
                 Sin trabajadores asociados.
               </div>
-              <div *ngFor="let w of selectedDoc.workers" class="sctr-worker-item">
+              <div
+                *ngFor="let w of selectedDoc.workers"
+                class="sctr-worker-item"
+                [class.selected]="selectedPolizaWorker?.workerId === w.workerId"
+                (click)="selectPolizaWorker(w)"
+              >
                 <div class="worker-info">
                   <strong>{{ w.apellidoNombre }}</strong>
                   <span class="muted-line">{{ w.dni }}</span>
@@ -180,6 +184,11 @@
                   </span>
                 </div>
               </div>
+            </div>
+            <div class="sctr-split-actions" *ngIf="selectedPolizaWorker?.sctrHabId">
+              <button type="button" class="btn-link" (click)="verVersionesPoliza()">
+                Ver historial de versiones
+              </button>
             </div>
           </div>
         </div>
@@ -429,6 +438,14 @@
                   </div>
                 </div>
               </div>
+              <button
+                *ngIf="selectedWorker?.sctrHabId"
+                type="button"
+                class="btn-ghost btn-action-sm"
+                (click)="verVersiones()"
+              >
+                Ver historial de versiones
+              </button>
             </div>
 
           </div>
@@ -457,4 +474,18 @@
   [documento]="selectedDoc"
   (closed)="closeAprobar()"
   (saved)="onAprobarSaved()"
+/>
+
+<app-hab-versiones-doc
+  [open]="modalVersionesOpen"
+  [entregableId]="selectedWorker?.sctrHabId ?? undefined"
+  [loader]="versionesLoader"
+  (closed)="closeVersiones()"
+/>
+
+<app-hab-versiones-doc
+  [open]="modalVersionesPolizaOpen"
+  [entregableId]="selectedPolizaWorker?.sctrHabId ?? undefined"
+  [loader]="versionesLoader"
+  (closed)="closeVersionesPoliza()"
 />

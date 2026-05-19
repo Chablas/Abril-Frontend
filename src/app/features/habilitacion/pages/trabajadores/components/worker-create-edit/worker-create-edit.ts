@@ -53,6 +53,7 @@ interface WorkerFormModel {
   emailCorporativo: string;
   fechaIngreso: string;
   condicionMedica: string;
+  fechaNacimiento: string;
 }
 
 @Component({
@@ -145,7 +146,18 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       );
     }
 
-    return base && (!this.esStaffOOficina || !!this.model.emailCorporativo.trim());
+    const baseCasa =
+      base &&
+      !!this.model.obraOficina &&
+      !!this.model.fechaNacimiento.trim() &&
+      !!this.model.condicionMedica.trim() &&
+      !!this.model.empresaId;
+
+    if (this.esStaffOOficina) {
+      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim();
+    }
+
+    return baseCasa;
   }
 
   get mostrarProyecto(): boolean {
@@ -194,6 +206,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       emailCorporativo: '',
       fechaIngreso: '',
       condicionMedica: '',
+      fechaNacimiento: '',
     };
   }
 
@@ -232,6 +245,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.emailCorporativo = det.emailCorporativo ?? '';
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
+          this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
           this.loadingDetalle = false;
           if (this.model.area) {
             this.catalogosHabService.getSubareas(this.model.area).subscribe({
@@ -248,6 +262,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
     } else {
       this.model = this.emptyModel();
+      if (!this.esContratista) {
+        this.model.contrataCasa = 'Casa';
+      }
     }
 
     if (this.esContratista) {
@@ -297,7 +314,12 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.empresas = res ?? [];
+          console.log('[worker-create-edit] empresas raw:', res?.slice(0, 3));
+          this.empresas = (res ?? []).filter((e) => {
+            const raw = e as any;
+            return !!(raw.esAbril ?? raw.es_abril ?? raw.EsAbril);
+          });
+          console.log('[worker-create-edit] empresas filtered (esAbril):', this.empresas.length, this.empresas.slice(0, 3));
           this.cdr.detectChanges();
         },
         error: () => {
@@ -550,6 +572,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       notas: n(this.model.notas),
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
+      fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
     };
 
     this.saving = true;

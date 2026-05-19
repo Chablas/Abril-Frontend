@@ -84,15 +84,32 @@
 }
 
 .filters-card {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.6rem 1rem;
   flex-shrink: 0;
+  background: #fff;
 }
 
-.filters-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.filter-ss-wrap {
+  flex: 1.5;
+  min-width: 160px;
+}
+
+.filter-sel {
+  flex: 1;
+  min-width: 100px;
+  width: auto !important;
+}
+
+.filter-year {
+  flex: 0 0 84px;
+  width: 84px !important;
 }
 
 .field-input {
@@ -347,10 +364,27 @@
   gap: 0.5rem;
   padding: 0.45rem 0.75rem;
   border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.sctr-worker-item:hover {
+  background: #f9fafb;
+}
+
+.sctr-worker-item.selected {
+  background: #f0fdf4;
+  border-left: 2px solid #64bc04;
 }
 
 .sctr-worker-item:last-child {
   border-bottom: 0;
+}
+
+.sctr-split-actions {
+  padding: 0.45rem 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .sctr-worker-chips {

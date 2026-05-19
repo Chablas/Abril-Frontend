@@ -9,6 +9,7 @@ export interface SctrWorkerDto {
   dni: string;
   estadoSctr: string;
   estadoVidaLey: string;
+  sctrHabId?: number;
   fechaInicioCobertura?: string;
 }
 

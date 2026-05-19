@@ -75,6 +75,7 @@ export class Inducciones implements OnInit {
   getBadge(item: InduccionListDto): { label: string; clase: string } {
     if (item.estado === 'REALIZADA') return { label: 'Completada', clase: 'badge-green' };
     if (item.ingresoConfirmado) return { label: 'Ingresó', clase: 'badge-yellow' };
-    return { label: 'Pendiente', clase: 'badge-red' };
+    if (item.estado === 'PROGRAMADA') return { label: 'Programada', clase: 'badge-blue' };
+    return { label: item.estado ?? 'Desconocido', clase: 'badge-gray' };
   }
 }

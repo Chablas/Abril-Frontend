@@ -131,7 +131,13 @@ export class AuthService {
   }
 
   isContratista(): boolean {
-    return this.hasRole('CONTRATISTA');
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user.tipo === 'CONTRATISTA';
+    } catch {
+      return false;
+    }
   }
 
   getEmpresaId(): number | null {

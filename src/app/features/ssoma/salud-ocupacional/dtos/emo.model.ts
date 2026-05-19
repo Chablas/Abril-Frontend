@@ -164,6 +164,7 @@ export interface WorkerUpsertDto {
   tipoDocumento?: string;
   empresaId?: number | null;
   proyectoId?: number | null;
+  fechaNacimiento?: string | null;
 }
 
 export interface EmoPorTrabajadorQuery {

@@ -1319,3 +1319,164 @@ Fix: `this.panelArchivoUrl = res.path` — el path relativo permanente (`habilit
 `UploadResultDto` en `sharepoint-upload.service.ts` ya tenía `path: string` y `url: string` — no requirió cambios en el servicio.
 
 **Síntoma detectado:** log `"GetDownloadUrlAsync: URL absoluta detectada"` en backend al intentar visualizar documentos subidos previamente — indica registros históricos con URL absoluta en BD que ya expiraron.
+
+---
+
+## 17. Sesión 2026-05-19 (segunda parte) — bugs y mejoras CONTRATISTA en Equipos y SCTR
+
+### Equipos — botón Crear y Editar visibles para CONTRATISTA
+
+**`equipos.html`**:
+- Botón "Nuevo equipo" (línea 43): `*ngIf="isAdmin()"` → `*ngIf="isAdmin() || isContratista()"`
+- Botón Editar en card (línea 80): misma condición — CONTRATISTA puede editar sus propios equipos
+- Filtro "Todas las razones sociales": envuelto en `*ngIf="!isContratista()"` — no visible para CONTRATISTA
+
+**`equipos.ts`**:
+- `EmpresaContratistaService` inyectado
+- `loadCatalogos()` bifurcado por rol: CONTRATISTA carga solo proyectos afiliados vía `getProyectos(empresaId)` con mapeo `{proyectoId, proyectoNombre} → {projectId, projectDescription}`; admin carga todos los proyectos y todas las empresas
+
+### equipo-form — campos ocultos y auto-set para CONTRATISTA
+
+**`equipo-form.ts`**:
+- `isContratista()` añadido
+- `loadCatalogos()` bifurcado: CONTRATISTA auto-setea `model.propietarioEmpresaId = empresaId` desde JWT, carga proyectos afiliados con mapeo, auto-selecciona si `proyectos.length === 1`
+- `submit()`: campos `emailAdmin` y `emailSsoma` forzados a `undefined` para CONTRATISTA
+
+**`equipo-form.html`**:
+- "Empresa propietaria": `*ngIf="!isContratista()"` — oculto, se auto-setea desde JWT
+- "Email Admin" y "Email SSOMA": `*ngIf="!isContratista()"` — no aplica a contratistas
+
+### SCTR/Vida Ley — lista filtrada por empresa para CONTRATISTA
+
+**`sctr-vidaley.ts`** `ngOnInit()`:
+```typescript
+if (this.isContratista()) {
+  const id = this.authService.getEmpresaId();
+  if (id) this.filtroEmpresaId = id;
+}
+```
+Sin este bloque, CONTRATISTA veía todas las pólizas del sistema.
+
+**Backend** `SctrVidaLeyController.GetPaged`: inyecta `empresaId` del JWT cuando `tipo == "CONTRATISTA"` (ver CONTEXT.md backend).
+
+### SCTR/Vida Ley — filtros horizontales
+
+**`sctr-vidaley.html`**: reemplazado `filters-card` con grid de 2 columnas por `filters-row` (flex horizontal).
+
+**`sctr-vidaley.css`**:
+```css
+.filters-row { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.filter-ss-wrap { flex: 1.5; min-width: 130px; }
+.filter-sel { flex: 1; min-width: 90px; width: auto !important; }
+```
+
+### sctr-subir — mejoras y fixes CONTRATISTA
+
+**`sctr-subir.ts`**:
+- `EmpresaContratistaService` inyectado
+- `isContratista()` añadido
+- `loadInitial()` bifurcado: CONTRATISTA auto-setea `model.empresaId` desde JWT y carga solo proyectos afiliados (con mapeo `{proyectoId, proyectoNombre} → {projectId, projectDescription}`); auto-selecciona si solo hay un proyecto
+
+**`sctr-subir.html`**:
+- Filtro Obra/Staff en paso 2: `*ngIf="!loadingWorkers && trabajadores.length > 0 && !isContratista()"` — oculto para CONTRATISTA
+- Tooltip dinámico bajo selector Tipo de póliza:
+  - Renovación: *"Para trabajadores que ya cuentan con SCTR/Vida Ley aprobado y se va a renovar la póliza vigente."*
+  - Inclusión: *"Para trabajadores nuevos, reingresados o con SCTR/Vida Ley en estado Falta o Rechazado."*
+
+**`sctr-subir.css`**:
+- `wizard-paso2 min-height`: 420px → 600px
+- `visor-frame` y `iframe` `min-height`: 320px → 500px
+- `.field-hint` añadido (font-size 0.75rem, color #64748b)
+
+### SCTR/Vida Ley — historial de versiones en Tab Trabajadores
+
+**`sctr-vidaley.ts`**:
+```typescript
+import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
+// ...
+modalVersionesOpen = false;
+versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
+
+verVersiones(): void { this.modalVersionesOpen = true; }
+closeVersiones(): void { this.modalVersionesOpen = false; }
+```
+`VersionesDoc` añadido al array `imports[]`.
+
+**`sctr-vidaley.html`**:
+- Botón "Ver historial de versiones" en `.wdetalle-actions`, visible cuando `selectedWorker?.sctrHabId` existe
+- Componente al final del template:
+```html
+<app-hab-versiones-doc
+  [open]="modalVersionesOpen"
+  [entregableId]="selectedWorker?.sctrHabId ?? null"
+  [loader]="versionesLoader"
+  (closed)="closeVersiones()"
+/>
+```
+El `sctrHabId` es el `SsHabTrabajador.id` — el mismo que acepta el endpoint `GET /habilitacion/trabajadores/entregables/{id}/versiones`.
+
+### Mapeo obligatorio para getProyectos() de EmpresaContratistaService
+
+El backend devuelve `{ proyectoId, proyectoNombre }`. El frontend espera `ProjectGetDTO { projectId, projectDescription }`. Patrón aplicado en **3 lugares**:
+
+```typescript
+this.proyectos = data.map((p: any) => ({
+  projectId: p.proyectoId,
+  projectDescription: p.proyectoNombre,
+}) as ProjectGetDTO);
+if (this.proyectos.length === 1) {
+  this.model.proyectoId = this.proyectos[0].projectId;
+}
+```
+
+Archivos: `equipo-form.ts`, `equipos.ts`, `sctr-subir.ts`.
+
+---
+
+## Sesión 2026-05-19 (tarde) — feature/arquitectura-comercial
+
+### sctr-vidaley — filtroEmpresaId fijado desde JWT para CONTRATISTA
+
+`ngOnInit`: si el rol del JWT es `CONTRATISTA`, se extrae `empresaId` del token y se asigna a `filtroEmpresaId`, bloqueando el filtro de empresa para que el contratista solo vea sus propias pólizas.
+
+### sctr-vidaley — filtros en barra horizontal full-width
+
+Los filtros del tab Pólizas se extrajeron de la columna `col-docs` (240 px) a una fila `<div class="filters-card card">` de ancho completo ubicada entre el tab-bar y el `sctr-columns`. CSS: `.filters-row { flex-wrap: nowrap }`, `.filter-year { flex: 0 0 84px }`, `.filter-ss-wrap { min-width: 160px }`. Elimina scroll lateral al filtrar.
+
+### sctr-vidaley — historial de versiones por worker en tab Pólizas
+
+Workers en el panel derecho del tab Pólizas son seleccionables: `[class.selected]="selectedPolizaWorker?.workerId === w.workerId"` + `(click)="selectPolizaWorker(w)"`. Al seleccionar un worker con `sctrHabId` definido, aparece botón "Ver historial" en `.sctr-split-actions`. Segunda instancia de `app-hab-versiones-doc` al final del template, ligada a `selectedPolizaWorker?.sctrHabId`.
+
+**Campos nuevos en `sctr.model.ts`**: `sctrHabId?: number` en `SctrWorkerDto`.
+
+**Campos nuevos en `sctr-vidaley.ts`**: `modalVersionesPolizaOpen`, `selectedPolizaWorker: SctrWorkerDto | null`, métodos `selectPolizaWorker()`, `verVersionesPoliza()`, `closeVersionesPoliza()`. `clearDocPanel()` limpia también `selectedPolizaWorker`.
+
+### sctr-subir — proyectos solo afiliados para CONTRATISTA
+
+`loadProyectos()`: si rol es `CONTRATISTA`, llama a `EmpresaContratistaService.getProyectos()` (proyectos afiliados) en lugar del listado general. Opción Obra/Staff ocultada. Tooltip diferenciado: "Renovación" vs "Inclusión".
+
+### sctr-subir — loadWorkers bifurcado por tipo
+
+`loadWorkers()`: cuando `tipo === 'VIDA_LEY'` envía el parámetro `estadoVidaLey` al backend; cuando `tipo === 'SCTR'` envía `estadoSctr`. Antes siempre enviaba `estadoSctr` → workers con `estadoSctr='Aprobado'` pero `estadoVidaLey='Falta'` no aparecían en la lista de paso 2 para Vida Ley.
+
+### sctr-subir — modal 95vh×95vw, PDF maximizado, scroll interno
+
+`base-modal` recibe `[height]="modalHeight"` cuando es paso 2: `'h-[95vh] max-h-[95vh]'`. Cuando `height` está definido, el backdrop usa `overflow-hidden flex items-center justify-center` y el contenido interno usa `flex flex-col flex-1 min-h-0 overflow-hidden` — sin scroll de página. `.wizard-paso2` pasó de `height: calc(100vh - 320px)` a `flex: 1; min-height: 0; overflow: hidden`.
+
+`base-modal` — cambio aditivo: nuevo `@Input() height: string = ''`; sin `height`, comportamiento idéntico al anterior.
+
+### equipo-form — empresa propietaria y proyectos afiliados para CONTRATISTA
+
+`empresa_propietaria_id` auto-seteado desde el JWT en `ngOnInit` para CONTRATISTA (no editable). `loadProyectos()` llama a `EmpresaContratistaService.getProyectos()` para CONTRATISTA. Campos de emails del equipo ocultos para CONTRATISTA.
+
+### equipos — botón Crear/Editar visible para CONTRATISTA
+
+Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Filtros de proyectos y empresa usan solo proyectos/empresas afiliados para CONTRATISTA.
+
+### inducciones — getBadge caso "PROGRAMADA"
+
+`getBadge()`: añadido caso `'PROGRAMADA'` que retorna badge naranja. Antes el estado quedaba sin badge al no estar en el switch.
+
+### login — tab Abril simplificado a solo botón Microsoft
+
+`login.html`: reemplazado `<form *ngIf="activeTab === 'abril'"...>` (con campos Correo, Contraseña, botón INICIAR SESIÓN y separador "o") por `<div *ngIf="activeTab === 'abril'" class="flex justify-center">` que contiene únicamente el botón "Iniciar sesión con Microsoft". Los métodos `submit()`, `form`, `FormGroup` permanecen en `login.ts` (no se eliminaron, los usan otros flujos potenciales).

@@ -19,6 +19,7 @@ import { SharepointUploadService } from '../../services/sharepoint-upload.servic
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import {
   SctrVidaLeyDto,
+  SctrWorkerDto,
   SctrTrabajadorEstadoDto,
   SctrVidaLeyAprobarDto,
 } from '../../dtos/sctr.model';
@@ -28,13 +29,14 @@ import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogo
 import { environment } from '../../../../../environments/environment';
 import { SctrSubir } from './components/sctr-subir/sctr-subir';
 import { SctrAprobar } from './components/sctr-aprobar/sctr-aprobar';
+import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 
 type ActiveTab = 'polizas' | 'trabajadores';
 
 @Component({
   selector: 'app-hab-sctr-vidaley',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, SctrSubir, SctrAprobar],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, SctrSubir, SctrAprobar, VersionesDoc],
   templateUrl: './sctr-vidaley.html',
   styleUrl: './sctr-vidaley.css',
 })
@@ -63,6 +65,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   modalSubirOpen = false;
   modalAprobarOpen = false;
+  modalVersionesOpen = false;
+  modalVersionesPolizaOpen = false;
+  selectedPolizaWorker: SctrWorkerDto | null = null;
+  versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
 
   meses = [
     { num: 1, label: 'Enero' },
@@ -139,6 +145,11 @@ export class SctrVidaley implements OnInit, OnDestroy {
         },
         error: () => {},
       });
+    }
+
+    if (this.isContratista()) {
+      const id = this.authService.getEmpresaId();
+      if (id) this.filtroEmpresaId = id;
     }
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -260,9 +271,15 @@ export class SctrVidaley implements OnInit, OnDestroy {
     }
   }
 
+  selectPolizaWorker(w: SctrWorkerDto): void {
+    this.selectedPolizaWorker =
+      this.selectedPolizaWorker?.workerId === w.workerId ? null : w;
+  }
+
   private clearDocPanel(): void {
     this.docSafeUrl = null;
     this.revokeDocBlobUrl();
+    this.selectedPolizaWorker = null;
   }
 
   private revokeDocBlobUrl(): void {
@@ -539,6 +556,22 @@ export class SctrVidaley implements OnInit, OnDestroy {
     });
   }
 
+  verVersiones(): void {
+    this.modalVersionesOpen = true;
+  }
+
+  closeVersiones(): void {
+    this.modalVersionesOpen = false;
+  }
+
+  verVersionesPoliza(): void {
+    this.modalVersionesPolizaOpen = true;
+  }
+
+  closeVersionesPoliza(): void {
+    this.modalVersionesPolizaOpen = false;
+  }
+
   rechazarSinPoliza(): void {
     const w = this.selectedWorker;
     if (!w?.sctrHabId || this.savingAprobar) return;
@@ -564,7 +597,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   // ── Shared ───────────────────────────────────────────────
 
   isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
+    return this.authService.isContratista();
   }
 
   isAdmin(): boolean {

@@ -102,7 +102,7 @@ export class Empresa implements OnInit {
   }
 
   isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
+    return this.authService.isContratista();
   }
 
   isAdmin(): boolean {
