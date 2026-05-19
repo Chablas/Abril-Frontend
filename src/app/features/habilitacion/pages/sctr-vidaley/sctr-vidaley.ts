@@ -28,13 +28,14 @@ import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogo
 import { environment } from '../../../../../environments/environment';
 import { SctrSubir } from './components/sctr-subir/sctr-subir';
 import { SctrAprobar } from './components/sctr-aprobar/sctr-aprobar';
+import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 
 type ActiveTab = 'polizas' | 'trabajadores';
 
 @Component({
   selector: 'app-hab-sctr-vidaley',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, SctrSubir, SctrAprobar],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, SctrSubir, SctrAprobar, VersionesDoc],
   templateUrl: './sctr-vidaley.html',
   styleUrl: './sctr-vidaley.css',
 })
@@ -63,6 +64,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   modalSubirOpen = false;
   modalAprobarOpen = false;
+  modalVersionesOpen = false;
+  versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
 
   meses = [
     { num: 1, label: 'Enero' },
@@ -542,6 +545,14 @@ export class SctrVidaley implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  verVersiones(): void {
+    this.modalVersionesOpen = true;
+  }
+
+  closeVersiones(): void {
+    this.modalVersionesOpen = false;
   }
 
   rechazarSinPoliza(): void {

@@ -427,6 +427,14 @@
                   </div>
                 </div>
               </div>
+              <button
+                *ngIf="selectedWorker?.sctrHabId"
+                type="button"
+                class="btn-ghost btn-action-sm"
+                (click)="verVersiones()"
+              >
+                Ver historial de versiones
+              </button>
             </div>
 
           </div>
@@ -455,4 +463,11 @@
   [documento]="selectedDoc"
   (closed)="closeAprobar()"
   (saved)="onAprobarSaved()"
+/>
+
+<app-hab-versiones-doc
+  [open]="modalVersionesOpen"
+  [entregableId]="selectedWorker?.sctrHabId ?? null"
+  [loader]="versionesLoader"
+  (closed)="closeVersiones()"
 />
