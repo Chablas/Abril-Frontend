@@ -53,6 +53,7 @@ interface WorkerFormModel {
   emailCorporativo: string;
   fechaIngreso: string;
   condicionMedica: string;
+  fechaNacimiento: string;
 }
 
 @Component({
@@ -145,7 +146,18 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       );
     }
 
-    return base && (!this.esStaffOOficina || !!this.model.emailCorporativo.trim());
+    const baseCasa =
+      base &&
+      !!this.model.obraOficina &&
+      !!this.model.fechaNacimiento.trim() &&
+      !!this.model.condicionMedica.trim() &&
+      !!this.model.empresaId;
+
+    if (this.esStaffOOficina) {
+      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim();
+    }
+
+    return baseCasa;
   }
 
   get mostrarProyecto(): boolean {
@@ -194,6 +206,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       emailCorporativo: '',
       fechaIngreso: '',
       condicionMedica: '',
+      fechaNacimiento: '',
     };
   }
 
@@ -232,6 +245,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.emailCorporativo = det.emailCorporativo ?? '';
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
+          this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
           this.loadingDetalle = false;
           if (this.model.area) {
             this.catalogosHabService.getSubareas(this.model.area).subscribe({
@@ -300,7 +314,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.empresas = res ?? [];
+          this.empresas = (res ?? []).filter((e) => e.esAbril);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -553,6 +567,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       notas: n(this.model.notas),
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
+      fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
     };
 
     this.saving = true;

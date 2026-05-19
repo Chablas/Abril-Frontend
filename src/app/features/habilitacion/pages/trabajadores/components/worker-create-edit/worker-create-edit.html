@@ -55,6 +55,10 @@
             placeholder="Se autocompleta con RENIEC"
           />
         </div>
+        <div *ngIf="!esContratista">
+          <label class="field-label">Fecha de nacimiento *</label>
+          <input type="date" class="field-input" [(ngModel)]="model.fechaNacimiento" />
+        </div>
         <div class="col-span-2" *ngIf="esObrero">
           <label class="field-label">Email personal</label>
           <input type="email" class="field-input" [(ngModel)]="model.emailPersonal" />
