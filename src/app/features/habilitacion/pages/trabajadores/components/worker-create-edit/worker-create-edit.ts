@@ -248,6 +248,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
     } else {
       this.model = this.emptyModel();
+      if (!this.esContratista) {
+        this.model.contrataCasa = 'Casa';
+      }
     }
 
     if (this.esContratista) {
