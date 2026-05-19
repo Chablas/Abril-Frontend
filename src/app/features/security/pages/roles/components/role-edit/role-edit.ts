@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { HttpErrorResponse } from "@angular/common/http";
+import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { RoleFeatureService } from '../../services/role.service';
 import { RoleDto } from '../../dtos/role.model';
@@ -31,6 +31,8 @@ export class RoleEdit implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() roleUpdated = new EventEmitter<void>();
 
+  editedDescription = '';
+
   features: FeatureItem[] = [];
   modules: ModuleOption[] = [];
   searchTerm = '';
@@ -44,6 +46,7 @@ export class RoleEdit implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.editedDescription = this.role.roleDescription;
     this.loaderService.show();
     forkJoin({
       all: this.roleService.getAllFeatures(),
@@ -106,16 +109,27 @@ export class RoleEdit implements OnInit {
   someFeaturesChecked(): boolean { return this.filteredFeatures.some(f => f.checked) && !this.allFeaturesChecked(); }
 
   save() {
+    const trimmed = this.editedDescription.trim();
+    if (!trimmed) {
+      Swal.fire({ icon: 'warning', title: 'El nombre del rol es obligatorio.', confirmButtonColor: '#64BC04' });
+      return;
+    }
+
     const featureIds = this.features.filter((f) => f.checked).map((f) => f.featureId);
+
     this.loaderService.show();
-    this.roleService.updateRoleFeatures(this.role.roleId, featureIds).subscribe({
+    forkJoin({
+      description: this.roleService.updateRoleDescription(this.role.roleId, { roleDescription: trimmed }),
+      features:    this.roleService.updateRoleFeatures(this.role.roleId, featureIds),
+    }).subscribe({
       next: () => {
         this.loaderService.hide();
         this.roleUpdated.emit();
         this.closeModal.emit();
-        Swal.fire({ title: 'Funcionalidades actualizadas', icon: 'success', draggable: true });
+        Swal.fire({ title: 'Rol actualizado exitosamente', icon: 'success', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
         this.errorService.handleError(err);
       },
     });

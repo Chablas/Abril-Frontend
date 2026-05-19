@@ -17,8 +17,6 @@ export interface ProjectSubContractorDTO {
   contractTypeDescription: string;
   contractModalityId?: number | null;
   contractModalityDescription?: string | null;
-  contractOriginId: number;
-  contractOriginDescription: string;
   paymentMethodId: number;
   paymentMethodDescription: string;
   advancePercentage?: number;
