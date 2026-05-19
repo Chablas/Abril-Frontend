@@ -100,10 +100,13 @@ export class EquipoForm implements OnChanges {
     if (esContratista && empresaId) {
       this.model.propietarioEmpresaId = empresaId;
       this.empresaService.getProyectos(empresaId).subscribe({
-        next: (data) => {
-          this.proyectos = data;
-          if (data.length === 1) {
-            this.model.proyectoId = data[0].projectId;
+        next: (data: any[]) => {
+          this.proyectos = data.map(p => ({
+            projectId: p.proyectoId,
+            projectDescription: p.proyectoNombre,
+          }) as any);
+          if (this.proyectos.length === 1) {
+            this.model.proyectoId = this.proyectos[0].projectId;
           }
           this.cdr.detectChanges();
         },
