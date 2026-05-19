@@ -442,7 +442,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     const contexto = `habilitacion/trabajadores/${this.selectedWorker.workerId}`;
     this.sharepointService.subirArchivo(file, contexto).subscribe({
       next: (res) => {
-        this.panelArchivoUrl = res.url;
+        this.panelArchivoUrl = res.path;
         this.uploadingFile = false;
         input.value = '';
         this.autoMarcarEnviado();

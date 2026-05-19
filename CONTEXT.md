@@ -1285,3 +1285,15 @@ proyectoId?: number | null;
 
 **Parámetro `soloVerificacion?: boolean`** añadido a `TrabajadoresQueryParams` (o equivalente) y pasado como query param al endpoint `GET /habilitacion/trabajadores?soloVerificacion=true`.
 Permite búsqueda global sin filtro de empresa para verificar duplicados de DNI.
+
+### trabajadores.ts — fix archivo_url guarda URL absoluta en BD
+
+**Archivo:** `features/habilitacion/pages/trabajadores/trabajadores.ts` línea 445
+
+Bug: `onFileSelected()` asignaba `this.panelArchivoUrl = res.url` (URL absoluta de SharePoint que expira) tras subir un archivo. Todos los `updateEntregable` posteriores enviaban esa URL al backend, que la guardaba en `ss_hab_trabajador.archivo_url`.
+
+Fix: `this.panelArchivoUrl = res.path` — el path relativo permanente (`habilitacion/trabajadores/{id}/YYYYMMDD_archivo.pdf`).
+
+`UploadResultDto` en `sharepoint-upload.service.ts` ya tenía `path: string` y `url: string` — no requirió cambios en el servicio.
+
+**Síntoma detectado:** log `"GetDownloadUrlAsync: URL absoluta detectada"` en backend al intentar visualizar documentos subidos previamente — indica registros históricos con URL absoluta en BD que ya expiraron.
