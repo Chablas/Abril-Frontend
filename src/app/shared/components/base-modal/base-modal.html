@@ -1,20 +1,29 @@
-<div class="fixed inset-0 bg-black/40 z-50 overflow-y-auto" (mousedown)="onBackdropMousedown()"
-    (click)="onBackdropClick()">
-    <div class="min-h-screen flex items-center justify-center py-10">
-        <div [class]="'m-5 bg-white rounded-xl shadow-xl relative ' + width" (mousedown)="$event.stopPropagation()"
-            (click)="$event.stopPropagation()">
-            <div class="p-[20px] flex flex-col">
+<div
+  class="fixed inset-0 bg-black/40 z-50"
+  [class.overflow-y-auto]="!height"
+  [class.overflow-hidden]="!!height"
+  [class.flex]="!!height"
+  [class.items-center]="!!height"
+  [class.justify-center]="!!height"
+  (mousedown)="onBackdropMousedown()"
+  (click)="onBackdropClick()">
 
-                <h1 class="text-2xl text-center">{{ title }}</h1>
+  <div [class]="height ? '' : 'min-h-screen flex items-center justify-center py-10'">
+    <div
+      [class]="(height ? '' : 'm-5 ') + 'bg-white rounded-xl shadow-xl relative ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : '')"
+      (mousedown)="$event.stopPropagation()"
+      (click)="$event.stopPropagation()">
 
-                <ng-content></ng-content>
+      <div [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'">
+        <h1 [class]="height ? 'text-base text-center flex-shrink-0 mb-2 pr-6' : 'text-2xl text-center'">{{ title }}</h1>
+        <ng-content></ng-content>
+      </div>
 
-            </div>
-            <button class="absolute top-5 right-5 cursor-pointer" (click)="close()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
-                </svg>
-            </button>
-        </div>
+      <button class="absolute top-3 right-4 cursor-pointer" (click)="close()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
     </div>
+  </div>
 </div>

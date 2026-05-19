@@ -191,7 +191,11 @@ export class SctrSubir implements OnChanges, OnDestroy {
   }
 
   get modalWidth(): string {
-    return this.paso === 2 ? 'w-[1140px]' : 'w-[820px]';
+    return this.paso === 2 ? 'w-[95vw] max-w-[95vw]' : 'w-[820px]';
+  }
+
+  get modalHeight(): string {
+    return this.paso === 2 ? 'h-[95vh] max-h-[95vh]' : '';
   }
 
   get canPaso1(): boolean {
