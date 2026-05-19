@@ -1237,3 +1237,51 @@ Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
 
 ### Guards
 Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica `authGuard` vía `canActivateChild`).
+
+---
+
+## 16. Sesión 2026-05-19 — flujo worker-create-edit contratistas
+
+### worker-create-edit — cambios
+
+**Archivo:** `features/habilitacion/pages/trabajadores/components/worker-create-edit/worker-create-edit.ts`
+
+**`verificarExistenciaEnBd()`:**
+- Llama `getTrabajadores({ search: dni, pageSize: 1, page: 1, soloVerificacion: true })`
+- `soloVerificacion: true` bypasea el filtro de empresa en el backend → permite detectar si el DNI ya existe en cualquier empresa
+- Lógica de bloqueo para contratistas:
+  - `estaActivo` en cualquier empresa → bloquea siempre
+  - `estaActivo` en misma empresa → además muestra "Ir a buscarlo" (`puedeIrABuscar = true`)
+  - `estaActivo` en otra empresa → bloquea sin opción de ir a buscar
+  - No activo pero en misma empresa → bloquea + muestra "Ir a buscarlo" (para reingreso)
+- El botón "Ir a buscarlo" emite `(buscarWorker)` solo cuando `puedeIrABuscar`
+
+**`canSubmit` getter:**
+- Contratistas requieren: `proyectoId`, `categoria`, `ocupacion`, `condicionMedica`, `fechaIngreso`
+- Staff/Oficina requieren: `emailCorporativo`
+- Celular, emailPersonal, notas nunca obligatorios
+
+**`submit()` payload:**
+- `empresaId`: para contratistas usa `authService.getEmpresaId()` (ContributorId del JWT); para Casa usa `model.empresaId`
+- `proyectoId`: `model.proyectoId ?? null`
+
+**Archivo:** `features/habilitacion/pages/trabajadores/components/worker-create-edit/worker-create-edit.html`
+
+- `condicionMedica` en bloque contratista: cambiado de `<input type="text">` a `<select>` con opciones Apto / Apto con restricciones, marcado como `*` (obligatorio)
+- `condicionMedica` en sección "Estado y notas" (Casa): también convertido a `<select>`, sin `*` (opcional)
+- Campos obligatorios contratista marcados con `*`: Proyecto, Categoría, Ocupación, Condición médica, Fecha de ingreso
+
+### WorkerUpsertDto — campos nuevos
+
+**Archivo:** `src/app/features/ssoma/salud-ocupacional/dtos/emo.model.ts`
+
+Añadidos a `WorkerUpsertDto`:
+```typescript
+empresaId?: number | null;
+proyectoId?: number | null;
+```
+
+### TrabajadorHabilitacionService — soloVerificacion
+
+**Parámetro `soloVerificacion?: boolean`** añadido a `TrabajadoresQueryParams` (o equivalente) y pasado como query param al endpoint `GET /habilitacion/trabajadores?soloVerificacion=true`.
+Permite búsqueda global sin filtro de empresa para verificar duplicados de DNI.

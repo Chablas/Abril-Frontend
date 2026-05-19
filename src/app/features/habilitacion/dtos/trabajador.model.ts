@@ -52,6 +52,9 @@ export interface WorkerDetalleDto {
   apellidoNombre: string;
   dni?: string;
   celular?: string;
+  emailCorporativo?: string;
+  fechaIngreso?: string;
+  condicionMedica?: string;
   fechaNacimiento?: string;
   fechaRetiro?: string;
   sctr?: boolean;

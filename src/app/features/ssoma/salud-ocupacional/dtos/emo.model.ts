@@ -148,6 +148,9 @@ export interface WorkerUpsertDto {
   dni?: string;
   celular?: string | null;
   emailPersonal?: string | null;
+  emailCorporativo?: string | null;
+  fechaIngreso?: string | null;
+  condicionMedica?: string | null;
   categoria?: string | null;
   ocupacion?: string | null;
   area?: string | null;
@@ -159,6 +162,8 @@ export interface WorkerUpsertDto {
   habilitadoObra?: boolean;
   notas?: string | null;
   tipoDocumento?: string;
+  empresaId?: number | null;
+  proyectoId?: number | null;
 }
 
 export interface EmoPorTrabajadorQuery {
