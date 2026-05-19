@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay, tap } from 'rxjs';
+import { Observable, catchError, shareReplay, tap } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
 import {
   ClinicaEmailCreateDto,
@@ -69,7 +69,10 @@ export class CatalogosSaludService {
   getEmpresas(): Observable<EmpresaSimpleDto[]> {
     this.empresas$ ??= this.http
       .get<EmpresaSimpleDto[]>(`${this.apiUrl}/empresas`, { headers: buildAuthHeaders() })
-      .pipe(shareReplay(1));
+      .pipe(
+        shareReplay(1),
+        catchError((err) => { this.empresas$ = undefined; throw err; }),
+      );
     return this.empresas$;
   }
 
