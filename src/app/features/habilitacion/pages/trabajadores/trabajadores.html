@@ -361,7 +361,7 @@
                 <span class="mini-chip chip-green" *ngIf="p.induccionCompletada" title="Inducción completada">Ind. ✓</span>
                 <span class="mini-chip chip-orange" *ngIf="!p.induccionCompletada" title="Inducción pendiente">Ind. ✗</span>
                 <button
-                  *ngIf="!p.induccionCompletada"
+                  *ngIf="!p.induccionCompletada && !isContratista()"
                   type="button"
                   class="ind-btn"
                   title="Marcar inducción completada"
@@ -443,7 +443,7 @@
           />
         </div>
 
-        <div class="field-grp">
+        <div class="field-grp" *ngIf="selectedEntregable?.itemId !== 12">
           <label class="field-lbl">DOCUMENTO ADJUNTO</label>
           <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
@@ -624,6 +624,18 @@
         [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
         (click)="guardarEntregable()"
       >GUARDAR</button>
+      <button
+        *ngIf="!isContratista() && isAdmin()"
+        type="button"
+        class="btn-approve"
+        (click)="aprobarEntregable()"
+      >✓ APROBAR</button>
+      <button
+        *ngIf="!isContratista() && isAdmin()"
+        type="button"
+        class="btn-reject-act"
+        (click)="rechazarEntregable()"
+      >✕ RECHAZAR</button>
       <button type="button" class="btn-link drawer-footer-link" (click)="verVersiones()">
         Ver historial de versiones
       </button>

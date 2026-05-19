@@ -551,7 +551,7 @@ Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relacio
 
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
 Plataforma completa mobile-first.
-**Cambios 2026-05-18:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
+**Cambios 2026-05-18/19:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas; upload oculto para ítem 12 (Induccion Obra); APROBAR/RECHAZAR gated por `!isContratista() && isAdmin()`; marcarInduccion oculto para contratistas. `onFileSelected()` usa `res.path` (ruta relativa) en vez de `res.url` para `panelArchivoUrl` — evita almacenar URL absoluta que expira en BD. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -670,10 +670,14 @@ Plataforma completa mobile-first.
 ### Restricciones del rol CONTRATISTA
 - CONTRATISTA solo ve en sidebar: Trabajadores, Registros Modelo. No ve: Empresa, Equipos, SCTR/Vida Ley, Bandeja, Evaluación Supervisores, Reglas, Auditoría.
 - Filtro server-side por `empresaId`: el backend detecta rol CONTRATISTA en JWT y filtra automáticamente. El frontend nunca envía `empresaId` para CONTRATISTA.
+- **Panel de entregables (`trabajadores.html`)** — restricciones de UI para contratistas:
+  - Upload zone oculto para el ítem `itemId === 12` ("Induccion Obra"): `*ngIf="selectedEntregable?.itemId !== 12"`.
+  - Botones APROBAR y RECHAZAR solo visibles cuando `!isContratista() && isAdmin()`.
+  - Botón "✓ marcarInduccion" en la sección Proyectos asignados oculto para contratistas: `*ngIf="!p.induccionCompletada && !isContratista()"`.
 
 ### Auth contratistas
 - Login en `/auth/login` con selector empresa + password.
-- JWT contratista trae `role='CONTRATISTA'` y `empresaId`.
+- JWT contratista trae `role='CONTRATISTA'` y `empresaId` (= `contributor_id`, **no** `ss_empresa_contratista.id`).
 - Contratistas **NO** pueden aprobar documentos — solo dejan en estado `Enviado`.
 
 ### Base URL backend
@@ -1044,8 +1048,6 @@ Selector: `app-hab-versiones-doc`.
 
 ### Pendiente
 - Backend: `GET /inducciones/trabajadores-por-programar` — sin esto paso 2 de Programar Inducción no carga.
-- Backend: `POST /api/v1/habilitacion/archivos/subir` (hoy cae al fallback `pending-upload://`).
-- Backend: 4 endpoints multiproyecto `/trabajadores/{workerId}/proyectos` (hoy silenciado a array vacío).
 - Backend: confirmar `PATCH /bandeja/induccion/{id}` — frontend ya configurado.
 - Frontend: pantalla gestión de trabajadores restringidos (listar, agregar, desactivar vía `/restringidos` endpoints — backend listo).
 - Frontend: tour guiado / onboarding para contratistas en primer acceso tras activar cuenta.
