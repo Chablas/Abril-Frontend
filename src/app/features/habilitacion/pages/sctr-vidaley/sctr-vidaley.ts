@@ -597,7 +597,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   // ── Shared ───────────────────────────────────────────────
 
   isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
+    return this.authService.isContratista();
   }
 
   isAdmin(): boolean {

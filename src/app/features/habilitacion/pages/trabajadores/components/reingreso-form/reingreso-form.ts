@@ -78,7 +78,7 @@ export class ReingresoForm implements OnChanges {
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
 
-    if (this.authService.hasRole('CONTRATISTA')) {
+    if (this.authService.isContratista()) {
       const empresaId = this.authService.getEmpresaId();
       if (empresaId) {
         this.empresaContratistaService.getProyectos(empresaId).subscribe({

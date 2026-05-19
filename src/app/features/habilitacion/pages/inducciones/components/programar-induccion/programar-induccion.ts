@@ -91,7 +91,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   }
 
   private loadProyectos(): void {
-    if (this.authService.hasRole('CONTRATISTA')) {
+    if (this.authService.isContratista()) {
       const empresaId = this.authService.getEmpresaId();
       if (!empresaId) { this.proyectos = []; return; }
       this.empresaContratistaService.getProyectos(empresaId).subscribe({

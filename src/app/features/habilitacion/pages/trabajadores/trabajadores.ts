@@ -126,7 +126,7 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   private loadCatalogos(): void {
     const roles = this.authService.getRoles();
-    const esContratista = this.authService.hasRole('CONTRATISTA');
+    const esContratista = this.authService.isContratista();
     console.log('[DIAG loadCatalogos] roles:', roles, '| esContratista:', esContratista);
 
     if (esContratista) {
@@ -332,7 +332,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
+    return this.authService.isContratista();
   }
 
   isAdmin(): boolean {

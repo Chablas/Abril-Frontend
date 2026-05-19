@@ -236,7 +236,7 @@ export class Equipos implements OnInit, OnDestroy {
   }
 
   isContratista(): boolean {
-    return this.authService.hasRole('CONTRATISTA');
+    return this.authService.isContratista();
   }
 
   isAdmin(): boolean {
