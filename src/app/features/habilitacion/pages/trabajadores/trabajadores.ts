@@ -125,8 +125,13 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   private loadCatalogos(): void {
-    if (this.authService.hasRole('CONTRATISTA')) {
+    const roles = this.authService.getRoles();
+    const esContratista = this.authService.hasRole('CONTRATISTA');
+    console.log('[DIAG loadCatalogos] roles:', roles, '| esContratista:', esContratista);
+
+    if (esContratista) {
       const empresaId = this.authService.getEmpresaId();
+      console.log('[DIAG loadCatalogos] → rama CONTRATISTA | empresaId:', empresaId);
       if (empresaId) {
         this.empresaContratistaService.getProyectos(empresaId).subscribe({
           next: (res) => {
@@ -134,26 +139,40 @@ export class Trabajadores implements OnInit, OnDestroy {
               projectId: p.proyectoId,
               projectDescription: p.proyectoNombre,
             })) as unknown as ProjectGetDTO[];
+            console.log('[DIAG loadCatalogos] CONTRATISTA proyectos:', this.catalogoProyectos.length);
             this.cdr.detectChanges();
           },
-          error: () => { this.catalogoProyectos = []; },
+          error: (err: any) => {
+            console.error('[DIAG loadCatalogos] CONTRATISTA getProyectos ERROR:', err?.status, err?.message);
+            this.catalogoProyectos = [];
+          },
         });
       }
       return;
     }
+
+    console.log('[DIAG loadCatalogos] → rama CASA/ADMIN — llamando getProjectsPaged y getEmpresas');
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
         this.catalogoProyectos = res.data ?? [];
+        console.log('[DIAG loadCatalogos] getProjectsPaged OK — items:', this.catalogoProyectos.length, '| totalRecords:', res.totalRecords);
         this.cdr.detectChanges();
       },
-      error: () => { this.catalogoProyectos = []; },
+      error: (err: any) => {
+        console.error('[DIAG loadCatalogos] getProjectsPaged ERROR:', err?.status, err?.message, err);
+        this.catalogoProyectos = [];
+      },
     });
     this.catalogosService.getEmpresas().subscribe({
       next: (res) => {
         this.catalogoEmpresas = res ?? [];
+        console.log('[DIAG loadCatalogos] getEmpresas OK — items:', this.catalogoEmpresas.length);
         this.cdr.detectChanges();
       },
-      error: () => { this.catalogoEmpresas = []; },
+      error: (err: any) => {
+        console.error('[DIAG loadCatalogos] getEmpresas ERROR:', err?.status, err?.message, err);
+        this.catalogoEmpresas = [];
+      },
     });
   }
 
