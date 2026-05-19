@@ -98,9 +98,13 @@ export class EquipoForm implements OnChanges {
     const empresaId = esContratista ? this.authService.getEmpresaId() : null;
 
     if (esContratista && empresaId) {
+      this.model.propietarioEmpresaId = empresaId;
       this.empresaService.getProyectos(empresaId).subscribe({
         next: (data) => {
           this.proyectos = data;
+          if (data.length === 1) {
+            this.model.proyectoId = data[0].projectId;
+          }
           this.cdr.detectChanges();
         },
         error: () => { this.proyectos = []; },
@@ -122,6 +126,10 @@ export class EquipoForm implements OnChanges {
       },
       error: () => { this.empresas = []; },
     });
+  }
+
+  isContratista(): boolean {
+    return this.authService.isContratista();
   }
 
   get title(): string {
@@ -149,6 +157,7 @@ export class EquipoForm implements OnChanges {
       return;
     }
 
+    const esContratista = this.authService.isContratista();
     const payload: EquipoUpsertDto = {
       tipo: this.model.tipo.trim(),
       marca: this.model.marca?.trim() || undefined,
@@ -158,8 +167,8 @@ export class EquipoForm implements OnChanges {
       capacidad: this.model.capacidad?.trim() || undefined,
       propietarioEmpresaId: this.model.propietarioEmpresaId ?? undefined,
       proyectoId: this.model.proyectoId,
-      emailAdmin: this.model.emailAdmin?.trim() || undefined,
-      emailSsoma: this.model.emailSsoma?.trim() || undefined,
+      emailAdmin: esContratista ? undefined : (this.model.emailAdmin?.trim() || undefined),
+      emailSsoma: esContratista ? undefined : (this.model.emailSsoma?.trim() || undefined),
     };
 
     this.saving = true;
