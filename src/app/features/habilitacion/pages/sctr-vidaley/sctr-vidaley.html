@@ -467,7 +467,7 @@
 
 <app-hab-versiones-doc
   [open]="modalVersionesOpen"
-  [entregableId]="selectedWorker?.sctrHabId ?? null"
+  [entregableId]="selectedWorker?.sctrHabId ?? undefined"
   [loader]="versionesLoader"
   (closed)="closeVersiones()"
 />
