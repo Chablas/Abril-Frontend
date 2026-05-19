@@ -552,6 +552,14 @@ Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relacio
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
 Plataforma completa mobile-first.
 **Cambios 2026-05-18/19:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas; upload oculto para ítem 12 (Induccion Obra); APROBAR/RECHAZAR gated por `!isContratista() && isAdmin()`; marcarInduccion oculto para contratistas; botones "Dar de baja" y "Reingreso" + checkboxes + barra masiva visibles para `isAdmin() || isContratista()`; "Cambiar obra" sigue solo para `isAdmin()`. `onFileSelected()` usa `res.path` (ruta relativa) en vez de `res.url` para `panelArchivoUrl` — evita almacenar URL absoluta que expira en BD. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
+**Cambios 2026-05-19 (sesión actual):**
+- **Componente `inducciones`** (`pages/inducciones/`): reescrito completo. Tabla de seguimiento para CONTRATISTA. Badge con 3 estados: `REALIZADA` → "Completada" (verde), `PROGRAMADA + ingresoConfirmado=true` → "Ingresó" (amarillo), `PROGRAMADA + ingresoConfirmado=false` → "Pendiente" (rojo). Llama `InduccionService.getList(params)` con `empresaId` del JWT. Filtros: estado, fechaDesde, fechaHasta. CSS usa `.badge`, `.badge-green`, `.badge-yellow`, `.badge-red`, `.badge-orange`, `.badge-gray`.
+- **Sidebar Inducciones para CONTRATISTA**: `navigation.service.ts` — entrada `{ label: 'Inducciones', route: '/habilitacion/inducciones', roles: ['CONTRATISTA'] }` en el grupo Gestión. Solo visible para CONTRATISTA (usa `roles` en vez de `featureKey`).
+- **`InduccionListDto`**: añadidos `ingresoConfirmado: boolean` y `fechaIngreso?: string` para alimentar la lógica de badges.
+- **`InduccionService.getList()`**: nuevo método que llama `GET /inducciones` y retorna `InduccionListDto[]` (no paginado).
+- **`reingreso-form.ts`** (`components/reingreso-form/`): branch CONTRATISTA en `loadCatalogos()` — carga proyectos vía `EmpresaContratistaService.getProyectos(empresaId)` en vez de todos los proyectos.
+- **Fix `res.url` → `res.path`** al subir archivos (3 componentes): `empresa.ts:364`, `sctr-subir.ts:305`, `registro-empresa.ts:92`. Todos almacenaban `res.url` (URL firmada temporal) en vez de `res.path` (path relativo estable) → `archivoUrl` en BD quedaba con URL expirada. `trabajadores.ts` y `equipos.ts` ya estaban correctos.
+- **Fix dropdown proyectos en Programar Inducción** (2 componentes): `inducciones/components/programar-induccion/programar-induccion.ts` y `trabajadores/trabajadores.ts` (`loadCatalogos()`). Cuando `authService.hasRole('CONTRATISTA')`, carga proyectos vía `EmpresaContratistaService.getProyectos(empresaId)` y mapea `{ proyectoId, proyectoNombre } → { projectId, projectDescription }`. Antes cargaba todos los proyectos.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
@@ -658,17 +666,17 @@ Plataforma completa mobile-first.
 /habilitacion/bandeja                  → Bandeja de Aprobaciones
 /habilitacion/sctr-vidaley             → SCTR y Vida Ley
 /habilitacion/control-acceso           → Control de Acceso (ADMINISTRADOR SSOMA, ADMINISTRADOR DE UDP)
-/habilitacion/inducciones              → Programar Inducción (ruta activa, SIN item en sidebar)
+/habilitacion/inducciones              → Seguimiento de Inducciones (CONTRATISTA — aparece en sidebar Gestión)
 /habilitacion/registros-modelo         → Registros Modelo
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
 ```
 
-> **Inducciones no aparece en el sidebar** — el item fue eliminado de `navigation.service.ts`. La ruta sigue activa pero se accede desde el botón "Programar Inducción" dentro de Trabajadores. Las inducciones se gestionan desde la Bandeja de Aprobaciones (tipo INDUCCION).
+> **Inducciones** — aparece en el sidebar del grupo Gestión **solo para CONTRATISTA** (`roles: ['CONTRATISTA']`). Es una vista de solo lectura (seguimiento de estado) para el contratista. Los admins gestionan inducciones desde Trabajadores (botón "Programar Inducción") y las aprueban desde Bandeja (tipo INDUCCION).
 
 ### Restricciones del rol CONTRATISTA
-- CONTRATISTA solo ve en sidebar: Trabajadores, Registros Modelo. No ve: Empresa, Equipos, SCTR/Vida Ley, Bandeja, Evaluación Supervisores, Reglas, Auditoría.
+- CONTRATISTA solo ve en sidebar: Trabajadores, Empresa, Equipos, SCTR y Vida Ley, **Inducciones**, Registros Modelo. No ve: Bandeja, Evaluación Supervisores, Reglas, Auditoría. (Inducciones visible por `roles: ['CONTRATISTA']` directo, sin `featureKey`.)
 - Filtro server-side por `empresaId`: el backend detecta rol CONTRATISTA en JWT y filtra automáticamente. El frontend nunca envía `empresaId` para CONTRATISTA.
 - **Panel de entregables (`trabajadores.html`)** — restricciones de UI para contratistas:
   - Upload zone oculto para el ítem `itemId === 12` ("Induccion Obra"): `*ngIf="selectedEntregable?.itemId !== 12"`.
@@ -778,6 +786,8 @@ Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo os
 
 **`UploadResultDto`**: `{ url: string; path: string }`. El campo `path` es la ruta relativa que se almacena en `panelArchivoUrl` (y luego en `archivoUrl` del entregable). El campo `url` es la URL firmada temporal para abrir/descargar.
 
+> **⚠️ Siempre usar `res.path`, NUNCA `res.url`** al guardar el resultado del upload. `res.url` es la URL firmada que expira; `res.path` es la ruta relativa estable que luego se resuelve vía `getArchivoUrl(path)`. Componentes corregidos: `empresa.ts`, `sctr-subir.ts`, `registro-empresa.ts`. Los componentes `trabajadores.ts` y `equipos.ts` ya usaban `res.path` correctamente.
+
 **Patrón fallback**: si el endpoint retorna error, guardar `panelArchivoUrl = 'pending-upload://' + file.name` y `uploadingFile: boolean` para continuar el flujo UI.
 
 ### Visor de documentos PDF — fetch como blob
@@ -878,8 +888,12 @@ private docBlobUrl = '';
 filtroTipo = '';  // '' = Todos
 ```
 
-### Modal "Programar Inducción"
+### Modal "Programar Inducción" — proyectos filtrados por empresa
 `pages/trabajadores/components/programar-induccion/` — 2 pasos.
+
+> **Fuente de proyectos**: el modal recibe `[proyectos]` del padre (`trabajadores.ts`). El padre lo carga en `loadCatalogos()`: si CONTRATISTA → `EmpresaContratistaService.getProyectos(empresaId)` mapeado a `ProjectGetDTO`; si admin → `ProjectService.getProjectsPaged(200)`.
+
+Hay una segunda instancia en `inducciones/components/programar-induccion/` (carga proyectos propia en `loadProyectos()`): misma lógica de branch por rol.
 
 **Paso 1**: Proyecto (obligatorio), Fecha programada (obligatorio), Trabajo en altura (checkbox), Equipo eléctrico (checkbox).
 
@@ -1053,13 +1067,13 @@ Selector: `app-hab-versiones-doc`.
 - Auditoría solo para admins.
 
 ### Pendiente
-- Backend: `GET /inducciones/trabajadores-por-programar` — sin esto paso 2 de Programar Inducción no carga.
-- Backend: confirmar `PATCH /bandeja/induccion/{id}` — frontend ya configurado.
 - Frontend: pantalla gestión de trabajadores restringidos (listar, agregar, desactivar vía `/restringidos` endpoints — backend listo).
 - Frontend: tour guiado / onboarding para contratistas en primer acceso tras activar cuenta.
 - Seguridad: cerrar `[AllowAnonymous]` en `WorkersController` (SSOMA) antes de producción.
 - PRs a `master` (backend debe deployarse antes que frontend).
 - Deploy a producción + primer usuario admin.
+- Verificar que `ingreso_confirmado` y `fecha_ingreso` ya están creados en BD (columnas manuales en `ss_induccion`).
+- Bug potencial: `InduccionController.GetAsync()` — confirmar que empresaId se inyecta del JWT también en `GET /inducciones/trabajadores-por-programar` cuando CONTRATISTA.
 
 ---
 
