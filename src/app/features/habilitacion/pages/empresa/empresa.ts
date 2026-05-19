@@ -361,7 +361,7 @@ export class Empresa implements OnInit {
     const contexto = `habilitacion/empresas/${this.empresaId ?? 'sin-empresa'}`;
     this.sharepointService.subirArchivo(file, contexto).subscribe({
       next: (res) => {
-        this.panelArchivoUrl = res.url;
+        this.panelArchivoUrl = res.path;
         this.uploadingFile = false;
         input.value = '';
         this.autoMarcarEnviado();

@@ -302,7 +302,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.uploadCancel$), takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.model.archivoUrl = res.url;
+          this.model.archivoUrl = res.path;
           this.uploadingFile = false;
           this.cdr.detectChanges();
         },
