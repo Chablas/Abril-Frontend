@@ -1430,3 +1430,53 @@ if (this.proyectos.length === 1) {
 ```
 
 Archivos: `equipo-form.ts`, `equipos.ts`, `sctr-subir.ts`.
+
+---
+
+## Sesión 2026-05-19 (tarde) — feature/arquitectura-comercial
+
+### sctr-vidaley — filtroEmpresaId fijado desde JWT para CONTRATISTA
+
+`ngOnInit`: si el rol del JWT es `CONTRATISTA`, se extrae `empresaId` del token y se asigna a `filtroEmpresaId`, bloqueando el filtro de empresa para que el contratista solo vea sus propias pólizas.
+
+### sctr-vidaley — filtros en barra horizontal full-width
+
+Los filtros del tab Pólizas se extrajeron de la columna `col-docs` (240 px) a una fila `<div class="filters-card card">` de ancho completo ubicada entre el tab-bar y el `sctr-columns`. CSS: `.filters-row { flex-wrap: nowrap }`, `.filter-year { flex: 0 0 84px }`, `.filter-ss-wrap { min-width: 160px }`. Elimina scroll lateral al filtrar.
+
+### sctr-vidaley — historial de versiones por worker en tab Pólizas
+
+Workers en el panel derecho del tab Pólizas son seleccionables: `[class.selected]="selectedPolizaWorker?.workerId === w.workerId"` + `(click)="selectPolizaWorker(w)"`. Al seleccionar un worker con `sctrHabId` definido, aparece botón "Ver historial" en `.sctr-split-actions`. Segunda instancia de `app-hab-versiones-doc` al final del template, ligada a `selectedPolizaWorker?.sctrHabId`.
+
+**Campos nuevos en `sctr.model.ts`**: `sctrHabId?: number` en `SctrWorkerDto`.
+
+**Campos nuevos en `sctr-vidaley.ts`**: `modalVersionesPolizaOpen`, `selectedPolizaWorker: SctrWorkerDto | null`, métodos `selectPolizaWorker()`, `verVersionesPoliza()`, `closeVersionesPoliza()`. `clearDocPanel()` limpia también `selectedPolizaWorker`.
+
+### sctr-subir — proyectos solo afiliados para CONTRATISTA
+
+`loadProyectos()`: si rol es `CONTRATISTA`, llama a `EmpresaContratistaService.getProyectos()` (proyectos afiliados) en lugar del listado general. Opción Obra/Staff ocultada. Tooltip diferenciado: "Renovación" vs "Inclusión".
+
+### sctr-subir — loadWorkers bifurcado por tipo
+
+`loadWorkers()`: cuando `tipo === 'VIDA_LEY'` envía el parámetro `estadoVidaLey` al backend; cuando `tipo === 'SCTR'` envía `estadoSctr`. Antes siempre enviaba `estadoSctr` → workers con `estadoSctr='Aprobado'` pero `estadoVidaLey='Falta'` no aparecían en la lista de paso 2 para Vida Ley.
+
+### sctr-subir — modal 95vh×95vw, PDF maximizado, scroll interno
+
+`base-modal` recibe `[height]="modalHeight"` cuando es paso 2: `'h-[95vh] max-h-[95vh]'`. Cuando `height` está definido, el backdrop usa `overflow-hidden flex items-center justify-center` y el contenido interno usa `flex flex-col flex-1 min-h-0 overflow-hidden` — sin scroll de página. `.wizard-paso2` pasó de `height: calc(100vh - 320px)` a `flex: 1; min-height: 0; overflow: hidden`.
+
+`base-modal` — cambio aditivo: nuevo `@Input() height: string = ''`; sin `height`, comportamiento idéntico al anterior.
+
+### equipo-form — empresa propietaria y proyectos afiliados para CONTRATISTA
+
+`empresa_propietaria_id` auto-seteado desde el JWT en `ngOnInit` para CONTRATISTA (no editable). `loadProyectos()` llama a `EmpresaContratistaService.getProyectos()` para CONTRATISTA. Campos de emails del equipo ocultos para CONTRATISTA.
+
+### equipos — botón Crear/Editar visible para CONTRATISTA
+
+Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Filtros de proyectos y empresa usan solo proyectos/empresas afiliados para CONTRATISTA.
+
+### inducciones — getBadge caso "PROGRAMADA"
+
+`getBadge()`: añadido caso `'PROGRAMADA'` que retorna badge naranja. Antes el estado quedaba sin badge al no estar en el switch.
+
+### login — tab Abril simplificado a solo botón Microsoft
+
+`login.html`: reemplazado `<form *ngIf="activeTab === 'abril'"...>` (con campos Correo, Contraseña, botón INICIAR SESIÓN y separador "o") por `<div *ngIf="activeTab === 'abril'" class="flex justify-center">` que contiene únicamente el botón "Iniciar sesión con Microsoft". Los métodos `submit()`, `form`, `FormGroup` permanecen en `login.ts` (no se eliminaron, los usan otros flujos potenciales).
