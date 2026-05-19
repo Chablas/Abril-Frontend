@@ -165,7 +165,12 @@
               <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
                 Sin trabajadores asociados.
               </div>
-              <div *ngFor="let w of selectedDoc.workers" class="sctr-worker-item">
+              <div
+                *ngFor="let w of selectedDoc.workers"
+                class="sctr-worker-item"
+                [class.selected]="selectedPolizaWorker?.workerId === w.workerId"
+                (click)="selectPolizaWorker(w)"
+              >
                 <div class="worker-info">
                   <strong>{{ w.apellidoNombre }}</strong>
                   <span class="muted-line">{{ w.dni }}</span>
@@ -179,6 +184,11 @@
                   </span>
                 </div>
               </div>
+            </div>
+            <div class="sctr-split-actions" *ngIf="selectedPolizaWorker?.sctrHabId">
+              <button type="button" class="btn-link" (click)="verVersionesPoliza()">
+                Ver historial de versiones
+              </button>
             </div>
           </div>
         </div>
@@ -471,4 +481,11 @@
   [entregableId]="selectedWorker?.sctrHabId ?? undefined"
   [loader]="versionesLoader"
   (closed)="closeVersiones()"
+/>
+
+<app-hab-versiones-doc
+  [open]="modalVersionesPolizaOpen"
+  [entregableId]="selectedPolizaWorker?.sctrHabId ?? undefined"
+  [loader]="versionesLoader"
+  (closed)="closeVersionesPoliza()"
 />

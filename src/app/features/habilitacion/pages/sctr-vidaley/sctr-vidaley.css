@@ -364,10 +364,27 @@
   gap: 0.5rem;
   padding: 0.45rem 0.75rem;
   border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.sctr-worker-item:hover {
+  background: #f9fafb;
+}
+
+.sctr-worker-item.selected {
+  background: #f0fdf4;
+  border-left: 2px solid #64bc04;
 }
 
 .sctr-worker-item:last-child {
   border-bottom: 0;
+}
+
+.sctr-split-actions {
+  padding: 0.45rem 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .sctr-worker-chips {

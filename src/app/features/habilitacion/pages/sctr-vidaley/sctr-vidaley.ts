@@ -19,6 +19,7 @@ import { SharepointUploadService } from '../../services/sharepoint-upload.servic
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import {
   SctrVidaLeyDto,
+  SctrWorkerDto,
   SctrTrabajadorEstadoDto,
   SctrVidaLeyAprobarDto,
 } from '../../dtos/sctr.model';
@@ -65,6 +66,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
   modalSubirOpen = false;
   modalAprobarOpen = false;
   modalVersionesOpen = false;
+  modalVersionesPolizaOpen = false;
+  selectedPolizaWorker: SctrWorkerDto | null = null;
   versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
 
   meses = [
@@ -268,9 +271,15 @@ export class SctrVidaley implements OnInit, OnDestroy {
     }
   }
 
+  selectPolizaWorker(w: SctrWorkerDto): void {
+    this.selectedPolizaWorker =
+      this.selectedPolizaWorker?.workerId === w.workerId ? null : w;
+  }
+
   private clearDocPanel(): void {
     this.docSafeUrl = null;
     this.revokeDocBlobUrl();
+    this.selectedPolizaWorker = null;
   }
 
   private revokeDocBlobUrl(): void {
@@ -553,6 +562,14 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   closeVersiones(): void {
     this.modalVersionesOpen = false;
+  }
+
+  verVersionesPoliza(): void {
+    this.modalVersionesPolizaOpen = true;
+  }
+
+  closeVersionesPoliza(): void {
+    this.modalVersionesPolizaOpen = false;
   }
 
   rechazarSinPoliza(): void {
