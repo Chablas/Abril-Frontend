@@ -40,7 +40,7 @@
           (valueChange)="filtroEmpresaId = $event; onFilterChange()"
         />
       </div>
-      <button type="button" class="btn-ghost-sm" *ngIf="isAdmin()" (click)="abrirNuevoEquipo()">
+      <button type="button" class="btn-ghost-sm" *ngIf="isAdmin() || isContratista()" (click)="abrirNuevoEquipo()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -77,7 +77,7 @@
           <div class="eq-card-serie" *ngIf="eq.nSerie">N° {{ eq.nSerie }}</div>
           <div class="eq-card-foot">
             <span class="eq-card-empresa">{{ eq.propietarioEmpresaNombre ?? '—' }}</span>
-            <div class="eq-card-actions" *ngIf="isAdmin()" (click)="$event.stopPropagation()">
+            <div class="eq-card-actions" *ngIf="isAdmin() || isContratista()" (click)="$event.stopPropagation()">
               <button class="icon-btn" title="Editar equipo" (click)="abrirEditarEquipo(eq, $event)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M12 20h9"/>
