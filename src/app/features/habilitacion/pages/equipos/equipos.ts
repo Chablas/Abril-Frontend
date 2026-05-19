@@ -22,6 +22,7 @@ import { ProjectService } from '../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 import {
   EquipoEntregableDto,
   EquipoEntregableUpdateDto,
@@ -88,6 +89,7 @@ export class Equipos implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
+    private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -100,20 +102,36 @@ export class Equipos implements OnInit, OnDestroy {
   }
 
   private loadCatalogos(): void {
-    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
-      next: (res) => {
-        this.catalogoProyectos = res.data ?? [];
-        this.cdr.detectChanges();
-      },
-      error: () => { this.catalogoProyectos = []; },
-    });
-    this.catalogosService.getEmpresas().subscribe({
-      next: (res) => {
-        this.catalogoEmpresas = res ?? [];
-        this.cdr.detectChanges();
-      },
-      error: () => { this.catalogoEmpresas = []; },
-    });
+    const esContratista = this.authService.isContratista();
+    const empresaId = esContratista ? this.authService.getEmpresaId() : null;
+
+    if (esContratista && empresaId) {
+      this.empresaContratistaService.getProyectos(empresaId).subscribe({
+        next: (data: any[]) => {
+          this.catalogoProyectos = data.map(p => ({
+            projectId: p.proyectoId,
+            projectDescription: p.proyectoNombre,
+          }) as ProjectGetDTO);
+          this.cdr.detectChanges();
+        },
+        error: () => { this.catalogoProyectos = []; },
+      });
+    } else {
+      this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+        next: (res) => {
+          this.catalogoProyectos = res.data ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.catalogoProyectos = []; },
+      });
+      this.catalogosService.getEmpresas().subscribe({
+        next: (res) => {
+          this.catalogoEmpresas = res ?? [];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.catalogoEmpresas = []; },
+      });
+    }
   }
 
   ngOnDestroy(): void {

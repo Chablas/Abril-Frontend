@@ -28,7 +28,7 @@
           (valueChange)="filtroProyectoId = $event; onFilterChange()"
         />
       </div>
-      <div class="eq-ss-wrap">
+      <div class="eq-ss-wrap" *ngIf="!isContratista()">
         <app-search-select
           [options]="catalogoEmpresas"
           valueField="id"
