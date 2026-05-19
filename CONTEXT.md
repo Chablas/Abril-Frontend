@@ -516,6 +516,11 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - Doble routing: `CONTRACTORS_ROUTES` (`/contractors/registro`, público) + `CONTRACTORS_ADMIN_ROUTES` (`/contractors/management`, autenticado).
 - `POST api/v1/contractorRegistration` (registro nuevo contratista): requiere auth (JWT). El backend sube archivos a SharePoint solo si se envían. Sin archivos, el registro funciona sin config SharePoint.
 - `POST /habilitacion/empresas` (registro empresa — `/habilitacion/registro-empresa`): público `[AllowAnonymous]`. Devuelve 400 con `{ message }` si el RUC ya existe en `ss_empresa_contratista` o `contributor`.
+- **Homologación** (`PATCH /ContractorManagement/{id}/approve`): ahora auto-envía email de activación al aprobar. Ya no es necesario llamar manualmente a `send-credentials` después.
+- **Activación de credenciales** (`POST /auth/contractor-credentials`): si el email ya tiene `app_user`, reutiliza el usuario (actualiza contraseña) en vez de retornar 400.
+- **Login contratista**: `login.ts` usa `authService.loginContratista(email, password)` (no `authService.login()`).
+- **`allowedFeatures`** del token contratista ahora viene de BD (`role_feature` del rol CONTRATISTA), no hardcodeado. Administrar desde pgAdmin asignando features al rol.
+- **`empresaId` en JWT contratista** = `contributor_id` (no `contractor_id`).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
 - Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
@@ -545,7 +550,8 @@ Solicitud de Salidas, Gestión de Salidas. Configuración: Motivos de Salida, Lu
 Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relaciones, Plantillas. Todas las rutas usan solo `roleGuard` (el shell padre aplica `authGuard`).
 
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
-Plataforma completa mobile-first. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
+Plataforma completa mobile-first.
+**Cambios 2026-05-18:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
