@@ -114,8 +114,26 @@ export class PsssScopeEdit implements OnInit {
     return list;
   }
 
+  /**
+   * IDs de ítems que tienen al menos un hijo también visible en filteredItems.
+   * Un ítem que NO está en este Set es hoja contextual → seleccionable,
+   * aunque tenga hijos en el catálogo completo (caso: plantilla que llega solo
+   * hasta nivel etapa sin expandir sub-especialidades).
+   */
+  get filteredParentIds(): Set<number> {
+    const filteredIds = new Set(this.filteredItems.map((i) => i.catalogItemId));
+    const parentIds = new Set<number>();
+    for (const item of this.filteredItems) {
+      if (item.catalogItemParentId !== null && filteredIds.has(item.catalogItemParentId)) {
+        parentIds.add(item.catalogItemParentId);
+      }
+    }
+    return parentIds;
+  }
+
   get leafFilteredItems(): FlatItem[] {
-    return this.filteredItems.filter((i) => !i.hasChildren);
+    const parentIds = this.filteredParentIds;
+    return this.filteredItems.filter((i) => !parentIds.has(i.catalogItemId));
   }
 
   get checkedCount(): number {
@@ -131,12 +149,22 @@ export class PsssScopeEdit implements OnInit {
   }
 
   toggleAll(checked: boolean): void {
-    this.filteredItems.filter((i) => !i.hasChildren).forEach((i) => (i.checked = checked));
+    const parentIds = this.filteredParentIds;
+    this.filteredItems.filter((i) => !parentIds.has(i.catalogItemId)).forEach((i) => (i.checked = checked));
   }
 
   save(): void {
-    // Recoger hojas marcadas y calcular sus ancestros programáticamente
-    const checkedLeaves = this.items.filter((i) => i.checked && !i.hasChildren);
+    // Hojas efectivas: ítems marcados sin hijos también marcados.
+    // Cubre tanto hojas reales del catálogo como hojas contextuales
+    // (ítems que son padres en el catálogo pero último nivel en la plantilla activa).
+    const checkedSet = new Set(this.items.filter((i) => i.checked).map((i) => i.catalogItemId));
+    const checkedLeaves = this.items.filter(
+      (i) =>
+        i.checked &&
+        !this.items.some(
+          (child) => child.catalogItemParentId === i.catalogItemId && checkedSet.has(child.catalogItemId),
+        ),
+    );
     const idToItem = new Map(this.items.map((i) => [i.catalogItemId, i]));
     const allIds = new Set<number>();
 

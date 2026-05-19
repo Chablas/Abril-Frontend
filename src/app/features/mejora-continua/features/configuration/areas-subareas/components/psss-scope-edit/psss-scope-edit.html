@@ -71,16 +71,17 @@
           [class.rounded-xl]="filteredItems.length === 0"
           [class.rounded-b-xl]="filteredItems.length > 0">
           <ng-container *ngFor="let item of filteredItems">
-            <!-- Nodo padre — encabezado no seleccionable -->
-            <div *ngIf="item.hasChildren"
+            <!-- Nodo padre en contexto actual — encabezado no seleccionable -->
+            <div *ngIf="filteredParentIds.has(item.catalogItemId)"
               class="flex items-center py-2 border-b border-gray-100 bg-gray-50"
               [style.paddingLeft.px]="16 + item.depth * 20">
               <span class="text-[0.75rem] font-bold text-gray-400 uppercase tracking-wide select-none">
                 {{ item.description }}
               </span>
             </div>
-            <!-- Nodo hoja — seleccionable -->
-            <label *ngIf="!item.hasChildren"
+            <!-- Hoja contextual — seleccionable (incluso si tiene hijos en el catálogo
+                 pero ninguno aparece en la lista actual) -->
+            <label *ngIf="!filteredParentIds.has(item.catalogItemId)"
               class="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-green-50 transition-colors"
               [style.paddingLeft.px]="16 + item.depth * 20">
               <input type="checkbox" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
