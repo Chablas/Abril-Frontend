@@ -314,7 +314,12 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.empresas = (res ?? []).filter((e) => e.esAbril);
+          console.log('[worker-create-edit] empresas raw:', res?.slice(0, 3));
+          this.empresas = (res ?? []).filter((e) => {
+            const raw = e as any;
+            return !!(raw.esAbril ?? raw.es_abril ?? raw.EsAbril);
+          });
+          console.log('[worker-create-edit] empresas filtered (esAbril):', this.empresas.length, this.empresas.slice(0, 3));
           this.cdr.detectChanges();
         },
         error: () => {
