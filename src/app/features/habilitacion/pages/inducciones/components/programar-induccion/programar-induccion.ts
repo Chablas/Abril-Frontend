@@ -16,10 +16,12 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { InduccionService } from '../../../../services/induccion.service';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
+import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { InduccionCreateDto } from '../../../../dtos/induccion.model';
 
@@ -56,6 +58,8 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
     private induccionService: InduccionService,
     private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
+    private empresaContratistaService: EmpresaContratistaService,
+    private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -87,6 +91,21 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   }
 
   private loadProyectos(): void {
+    if (this.authService.hasRole('CONTRATISTA')) {
+      const empresaId = this.authService.getEmpresaId();
+      if (!empresaId) { this.proyectos = []; return; }
+      this.empresaContratistaService.getProyectos(empresaId).subscribe({
+        next: (res) => {
+          this.proyectos = (res ?? []).map((p: any) => ({
+            projectId: p.proyectoId,
+            projectDescription: p.proyectoNombre,
+          })) as unknown as ProjectGetDTO[];
+          this.cdr.detectChanges();
+        },
+        error: () => { this.proyectos = []; },
+      });
+      return;
+    }
     this.projectService.getProjectPaged(1).subscribe({
       next: (res) => {
         this.proyectos = res.data ?? [];

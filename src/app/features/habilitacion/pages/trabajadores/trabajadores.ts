@@ -39,6 +39,7 @@ import { WorkerCreateEdit } from './components/worker-create-edit/worker-create-
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
+import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 
 @Component({
   selector: 'app-hab-trabajadores',
@@ -111,6 +112,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
+    private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -123,6 +125,22 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   private loadCatalogos(): void {
+    if (this.authService.hasRole('CONTRATISTA')) {
+      const empresaId = this.authService.getEmpresaId();
+      if (empresaId) {
+        this.empresaContratistaService.getProyectos(empresaId).subscribe({
+          next: (res) => {
+            this.catalogoProyectos = (res ?? []).map((p: any) => ({
+              projectId: p.proyectoId,
+              projectDescription: p.proyectoNombre,
+            })) as unknown as ProjectGetDTO[];
+            this.cdr.detectChanges();
+          },
+          error: () => { this.catalogoProyectos = []; },
+        });
+      }
+      return;
+    }
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
         this.catalogoProyectos = res.data ?? [];
