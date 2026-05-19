@@ -266,12 +266,16 @@ export class SctrSubir implements OnChanges, OnDestroy {
       tipoPoliza: this.model.tipoPoliza,
     };
 
-    const estadoSctr = this.model.tipoPoliza === 'Renovacion'
+    const estadoFiltro = this.model.tipoPoliza === 'Renovacion'
       ? 'Aprobado'
       : 'Falta,Vencido,Rechazado';
 
+    const estadoParams = this.model.tipo === 'VIDA_LEY'
+      ? { estadoVidaLey: estadoFiltro }
+      : { estadoSctr: estadoFiltro };
+
     this.sctrService
-      .getTrabajadoresPorEmpresa({ ...baseParams, estadoSctr })
+      .getTrabajadoresPorEmpresa({ ...baseParams, ...estadoParams })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
       next: (res) => {
