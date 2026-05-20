@@ -1,0 +1,107 @@
+<div class="flex flex-col gap-6 p-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-bold text-gray-800">Ítems de Catálogo</h2>
+      <p class="text-sm text-gray-500 mt-0.5">Estructura jerárquica del catálogo de mejora continua</p>
+    </div>
+    <button type="button" (click)="openCreate(null)"
+      [disabled]="selectedTypeId === null"
+      class="flex items-center gap-2 bg-[#64BC04] text-white text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer hover:bg-[#57a803] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Nuevo ítem raíz
+    </button>
+  </div>
+
+  <!-- Pills de tipo -->
+  <div class="flex flex-wrap gap-1.5" *ngIf="!loadingTypes && types.length > 0">
+    <button type="button"
+      *ngFor="let t of types; trackBy: trackByTypeId"
+      class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors whitespace-nowrap"
+      [ngClass]="selectedTypeId === t.catalogTypeId
+        ? 'bg-green-100 border-[#64bc04] text-green-800'
+        : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
+      (click)="selectType(t.catalogTypeId)">
+      {{ t.catalogTypeName }}
+    </button>
+  </div>
+
+  <!-- Árbol -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <ng-container *ngIf="!loadingItems; else loadingTpl">
+      <ng-container *ngIf="flatItems.length > 0; else emptyTpl">
+        <div *ngFor="let item of flatItems; trackBy: trackByItemId"
+          class="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+          [style.paddingLeft.px]="16 + item.depth * 24">
+
+          <!-- Descripción + código -->
+          <div class="flex items-center gap-2 min-w-0">
+            <!-- Icono árbol -->
+            <svg *ngIf="item.depth > 0" width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 text-gray-300">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+            <span class="text-[0.85rem] text-gray-700 truncate">{{ item.catalogItemDescription }}</span>
+            <span *ngIf="item.catalogItemCode"
+              class="font-mono text-[0.68rem] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded flex-shrink-0">
+              {{ item.catalogItemCode }}
+            </span>
+          </div>
+
+          <!-- Acciones -->
+          <div class="flex items-center gap-0.5 pr-2 flex-shrink-0">
+            <!-- Agregar hijo -->
+            <button type="button" (click)="openCreate(item.catalogItemId)" title="Agregar sub-ítem"
+              class="p-1.5 rounded-lg text-[#64bc04] hover:bg-green-50 transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            <!-- Editar -->
+            <button type="button" (click)="openEdit(item)" title="Editar"
+              class="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <!-- Eliminar -->
+            <button type="button" (click)="delete(item)" title="Eliminar"
+              class="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #emptyTpl>
+        <p class="text-center text-gray-400 py-12 text-sm">
+          {{ selectedTypeId === null ? 'Selecciona un tipo para ver los ítems.' : 'No hay ítems para este tipo.' }}
+        </p>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #loadingTpl>
+      <p class="text-center text-gray-400 py-12 text-sm">Cargando ítems...</p>
+    </ng-template>
+  </div>
+</div>
+
+<!-- Modal crear / editar -->
+<app-catalog-item-form
+  *ngIf="showForm && selectedTypeId !== null"
+  [catalogTypeId]="selectedTypeId!"
+  [editingItem]="editingItem"
+  [preselectedParentId]="preselectedParentId"
+  [allItems]="allItemsForType"
+  (closeModal)="showForm = false"
+  (saved)="onSaved()"
+/>

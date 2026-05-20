@@ -34,4 +34,20 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'PLANTILLAS', featureKey: 'mejora-continua.config.templates' },
   },
+  {
+    path: 'configuration/catalog-types',
+    loadComponent: () =>
+      import('./features/configuration/catalog-types/catalog-types')
+        .then((m) => m.CatalogTypes),
+    canActivate: [roleGuard],
+    data: { titulo: 'TIPOS DE CATÁLOGO', featureKey: 'mejora-continua.config.catalog-types' },
+  },
+  {
+    path: 'configuration/catalog-items',
+    loadComponent: () =>
+      import('./features/configuration/catalog-items/catalog-items')
+        .then((m) => m.CatalogItems),
+    canActivate: [roleGuard],
+    data: { titulo: 'ÍTEMS DE CATÁLOGO', featureKey: 'mejora-continua.config.catalog-items' },
+  },
 ];

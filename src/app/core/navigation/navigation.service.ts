@@ -40,6 +40,8 @@ export class NavigationService {
             { label: 'Áreas', route: '/mejora-continua/configuration/areas', featureKey: 'mejora-continua.config.areas' },
             { label: 'Relaciones', route: '/mejora-continua/configuration/relations', featureKey: 'mejora-continua.config.relations' },
             { label: 'Plantillas', route: '/mejora-continua/configuration/templates', featureKey: 'mejora-continua.config.templates' },
+            { label: 'Tipos de Catálogo', route: '/mejora-continua/configuration/catalog-types', featureKey: 'mejora-continua.config.catalog-types' },
+            { label: 'Ítems de Catálogo', route: '/mejora-continua/configuration/catalog-items', featureKey: 'mejora-continua.config.catalog-items' },
           ],
         },
       ],
