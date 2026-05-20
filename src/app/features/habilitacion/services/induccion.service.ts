@@ -64,7 +64,7 @@ export class InduccionService {
   }
 
   aprobarBatch(ids: number[]): Observable<void> {
-    return this.http.post<void>(`${this.base}/aprobar-batch`, { ids }, {
+    return this.http.patch<void>(`${this.base}/aprobar-batch`, { ids }, {
       headers: buildHabHeaders(),
     });
   }
