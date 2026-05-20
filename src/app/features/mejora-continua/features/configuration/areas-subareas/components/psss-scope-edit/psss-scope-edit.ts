@@ -12,10 +12,8 @@ import Swal from 'sweetalert2';
 
 interface FlatItem {
   catalogItemId: number;
-  catalogItemParentId: number | null;
+  catalogTypeName: string;
   description: string;
-  depth: number;
-  hasChildren: boolean;
   checked: boolean;
 }
 
@@ -40,6 +38,11 @@ export class PsssScopeEdit implements OnInit {
   selectedTemplateId: number | null = null;
   loading = true;
 
+  // Cached derived arrays
+  filteredItems: FlatItem[] = [];
+  leafFilteredItems: FlatItem[] = [];
+  visibleItems: FlatItem[] = [];
+
   constructor(
     private scopeService: ScopeService,
     private catalogService: CatalogService,
@@ -58,10 +61,16 @@ export class PsssScopeEdit implements OnInit {
           templates: this.scopeService.getTemplates(),
         }).subscribe({
           next: ({ catalog, scope, templates }) => {
-            const checkedIds = new Set<number>();
-            this.collectScopeCatalogIds(scope, checkedIds);
-            this.items = this.flattenCatalog(catalog, 0, checkedIds);
+            const checkedIds = this.collectScopeCatalogIds(scope);
+            this.items = catalog.map((item) => ({
+              catalogItemId: item.catalogItemId,
+              catalogTypeName: item.catalogTypeName,
+              description: item.catalogItemDescription,
+              checked: checkedIds.has(item.catalogItemId),
+            }));
+            this.sortItemsByScope(scope);
             this.templates = templates;
+            this.recomputeFiltered();
             this.loading = false;
             this.loaderService.hide();
           },
@@ -72,121 +81,130 @@ export class PsssScopeEdit implements OnInit {
     });
   }
 
-  private collectScopeCatalogIds(items: ScopeItemDTO[], set: Set<number>): void {
-    for (const item of items) {
-      set.add(item.catalogItemId);
-      if (item.children?.length) this.collectScopeCatalogIds(item.children, set);
-    }
-  }
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  private flattenCatalog(items: CatalogItemDTO[], depth: number, checkedIds: Set<number>): FlatItem[] {
-    const result: FlatItem[] = [];
-    for (const item of items) {
-      result.push({
-        catalogItemId: item.catalogItemId,
-        catalogItemParentId: item.catalogItemParentId,
-        description: item.catalogItemDescription,
-        depth,
-        hasChildren: (item.children?.length ?? 0) > 0,
-        checked: checkedIds.has(item.catalogItemId),
-      });
-      if (item.children?.length) {
-        result.push(...this.flattenCatalog(item.children, depth + 1, checkedIds));
+  private collectScopeCatalogIds(items: ScopeItemDTO[]): Set<number> {
+    const set = new Set<number>();
+    const visit = (list: ScopeItemDTO[]) => {
+      for (const item of list) {
+        set.add(item.catalogItemId);
+        if (item.children?.length) visit(item.children);
       }
-    }
-    return result;
+    };
+    visit(items);
+    return set;
   }
 
-  get filteredItems(): FlatItem[] {
+  private sortItemsByScope(scopeItems: ScopeItemDTO[]): void {
+    if (!scopeItems.length) return;
+    const orderMap = new Map<number, number>();
+    const collect = (items: ScopeItemDTO[]) => {
+      items.forEach((item, i) => {
+        orderMap.set(item.catalogItemId, i);
+        if (item.children?.length) collect(item.children);
+      });
+    };
+    collect(scopeItems);
+    this.items.sort((a, b) => {
+      const oa = orderMap.get(a.catalogItemId);
+      const ob = orderMap.get(b.catalogItemId);
+      if (oa !== undefined && ob !== undefined) return oa - ob;
+      if (oa !== undefined) return -1;
+      if (ob !== undefined) return 1;
+      return 0;
+    });
+  }
+
+  // ── Filters ─────────────────────────────────────────────────────────────────
+
+  selectTemplate(id: number | null): void {
+    this.selectedTemplateId = id;
+    this.recomputeFiltered();
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.recomputeFiltered();
+  }
+
+  private recomputeFiltered(): void {
     let list = this.items;
 
-    // Filtrar por plantilla: la plantilla contiene catalogItemIds directamente
     if (this.selectedTemplateId !== null) {
       const tpl = this.templates.find((t) => t.scopeTemplateId === this.selectedTemplateId);
       if (tpl) {
-        const tplIds = new Set(tpl.catalogItemIds);
+        const tplIds = new Set(tpl.items.map((i) => i.catalogItemId));
         list = list.filter((i) => tplIds.has(i.catalogItemId));
       }
     }
 
     const term = this.searchTerm.trim().toLowerCase();
     if (term) list = list.filter((i) => i.description.toLowerCase().includes(term));
-    return list;
+
+    this.filteredItems = list;
+    this.leafFilteredItems = list;
+    this.visibleItems = list;
   }
 
-  /**
-   * IDs de ítems que tienen al menos un hijo también visible en filteredItems.
-   * Un ítem que NO está en este Set es hoja contextual → seleccionable,
-   * aunque tenga hijos en el catálogo completo (caso: plantilla que llega solo
-   * hasta nivel etapa sin expandir sub-especialidades).
-   */
-  get filteredParentIds(): Set<number> {
-    const filteredIds = new Set(this.filteredItems.map((i) => i.catalogItemId));
-    const parentIds = new Set<number>();
-    for (const item of this.filteredItems) {
-      if (item.catalogItemParentId !== null && filteredIds.has(item.catalogItemParentId)) {
-        parentIds.add(item.catalogItemParentId);
-      }
-    }
-    return parentIds;
+  trackByItemId(_: number, item: FlatItem): number {
+    return item.catalogItemId;
   }
 
-  get leafFilteredItems(): FlatItem[] {
-    const parentIds = this.filteredParentIds;
-    return this.filteredItems.filter((i) => !parentIds.has(i.catalogItemId));
+  // ── Reorder ─────────────────────────────────────────────────────────────────
+
+  canMoveUp(index: number): boolean {
+    return index > 0;
   }
+
+  canMoveDown(index: number): boolean {
+    return index < this.visibleItems.length - 1;
+  }
+
+  moveUp(index: number): void {
+    if (index <= 0) return;
+    const aId = this.visibleItems[index - 1].catalogItemId;
+    const bId = this.visibleItems[index].catalogItemId;
+    this.swapInItems(aId, bId);
+  }
+
+  moveDown(index: number): void {
+    if (index >= this.visibleItems.length - 1) return;
+    const aId = this.visibleItems[index].catalogItemId;
+    const bId = this.visibleItems[index + 1].catalogItemId;
+    this.swapInItems(aId, bId);
+  }
+
+  private swapInItems(aId: number, bId: number): void {
+    const aIdx = this.items.findIndex((i) => i.catalogItemId === aId);
+    const bIdx = this.items.findIndex((i) => i.catalogItemId === bId);
+    if (aIdx < 0 || bIdx < 0) return;
+    [this.items[aIdx], this.items[bIdx]] = [this.items[bIdx], this.items[aIdx]];
+    this.recomputeFiltered();
+  }
+
+  // ── Counters ─────────────────────────────────────────────────────────────────
 
   get checkedCount(): number {
-    return this.items.filter((i) => i.checked && !i.hasChildren).length;
+    return this.items.filter((i) => i.checked).length;
   }
 
   get totalLeafCount(): number {
-    return this.items.filter((i) => !i.hasChildren).length;
-  }
-
-  onCheck(item: FlatItem, checked: boolean): void {
-    item.checked = checked;
+    return this.items.length;
   }
 
   toggleAll(checked: boolean): void {
-    const parentIds = this.filteredParentIds;
-    this.filteredItems.filter((i) => !parentIds.has(i.catalogItemId)).forEach((i) => (i.checked = checked));
+    this.leafFilteredItems.forEach((i) => (i.checked = checked));
   }
 
+  // ── Save ─────────────────────────────────────────────────────────────────────
+
   save(): void {
-    // Hojas efectivas: ítems marcados sin hijos también marcados.
-    // Cubre tanto hojas reales del catálogo como hojas contextuales
-    // (ítems que son padres en el catálogo pero último nivel en la plantilla activa).
-    const checkedSet = new Set(this.items.filter((i) => i.checked).map((i) => i.catalogItemId));
-    const checkedLeaves = this.items.filter(
-      (i) =>
-        i.checked &&
-        !this.items.some(
-          (child) => child.catalogItemParentId === i.catalogItemId && checkedSet.has(child.catalogItemId),
-        ),
-    );
-    const idToItem = new Map(this.items.map((i) => [i.catalogItemId, i]));
-    const allIds = new Set<number>();
-
-    for (const leaf of checkedLeaves) {
-      let current: FlatItem | undefined = leaf;
-      while (current) {
-        allIds.add(current.catalogItemId);
-        current =
-          current.catalogItemParentId != null
-            ? idToItem.get(current.catalogItemParentId)
-            : undefined;
-      }
-    }
-
-    const nodes = [...allIds].map((id, idx) => {
-      const item = idToItem.get(id)!;
-      return {
-        catalogItemId: item.catalogItemId,
-        parentCatalogItemId: item.catalogItemParentId,
-        displayOrder: idx + 1,
-      };
-    });
+    const checkedItems = this.items.filter((i) => i.checked);
+    const nodes = checkedItems.map((item, idx) => ({
+      catalogItemId: item.catalogItemId,
+      parentCatalogItemId: null,
+      displayOrder: idx + 1,
+    }));
 
     this.loaderService.show();
     this.scopeService.upsertScope({ areaSubareaId: this.areaSubareaId, items: nodes }).subscribe({

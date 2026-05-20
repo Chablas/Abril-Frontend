@@ -3,7 +3,7 @@ export interface ScopeItemDTO {
   areaSubareaId: number;
   catalogItemId: number;
   catalogItemDescription: string;
-  catalogTypeCode: string;
+  catalogTypeName: string;
   scopeItemParentId: number | null;
   displayOrder: number;
   active: boolean;

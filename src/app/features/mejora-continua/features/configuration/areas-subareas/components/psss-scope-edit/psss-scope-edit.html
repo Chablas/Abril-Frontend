@@ -1,5 +1,5 @@
 <app-base-modal [title]="'RELACIONES'" width="w-[680px]" (closeModal)="closeModal.emit()">
-  <div class="flex flex-col gap-5 mt-4">
+  <div class="flex flex-col gap-4 mt-4">
 
     <!-- Nombre del área/subárea -->
     <div class="flex flex-col gap-1">
@@ -11,14 +11,11 @@
       </p>
     </div>
 
-    <!-- Scope items -->
     <div class="flex flex-col gap-2">
 
-      <!-- Header -->
+      <!-- Header con contador -->
       <div class="flex items-center justify-between">
-        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">
-          Ítems del scope
-        </label>
+        <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Ítems asignados</label>
         <span class="text-[0.7rem] font-bold bg-green-100 text-green-800 border border-green-200 rounded-full px-2 py-0.5">
           {{ checkedCount }} / {{ totalLeafCount }}
         </span>
@@ -31,7 +28,7 @@
           [ngClass]="selectedTemplateId === null
             ? 'bg-green-100 border-[#64bc04] text-green-800'
             : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
-          (click)="selectedTemplateId = null">
+          (click)="selectTemplate(null)">
           Todas
         </button>
         <button type="button"
@@ -40,7 +37,7 @@
           [ngClass]="selectedTemplateId === t.scopeTemplateId
             ? 'bg-green-100 border-[#64bc04] text-green-800'
             : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
-          (click)="selectedTemplateId = t.scopeTemplateId">
+          (click)="selectTemplate(t.scopeTemplateId)">
           {{ t.templateName }}
         </button>
       </div>
@@ -51,7 +48,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
           <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
         </svg>
-        <input type="text" placeholder="Buscar..." [(ngModel)]="searchTerm"
+        <input type="text" placeholder="Buscar..." [ngModel]="searchTerm" (ngModelChange)="onSearchChange($event)"
           class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm" />
       </div>
 
@@ -68,29 +65,47 @@
       <!-- Lista scrolleable -->
       <ng-container *ngIf="!loading; else loadingTpl">
         <div class="border border-gray-200 overflow-y-auto max-h-[340px] bg-white"
-          [class.rounded-xl]="filteredItems.length === 0"
-          [class.rounded-b-xl]="filteredItems.length > 0">
-          <ng-container *ngFor="let item of filteredItems">
-            <!-- Nodo padre en contexto actual — encabezado no seleccionable -->
-            <div *ngIf="filteredParentIds.has(item.catalogItemId)"
-              class="flex items-center py-2 border-b border-gray-100 bg-gray-50"
-              [style.paddingLeft.px]="16 + item.depth * 20">
-              <span class="text-[0.75rem] font-bold text-gray-400 uppercase tracking-wide select-none">
-                {{ item.description }}
-              </span>
-            </div>
-            <!-- Hoja contextual — seleccionable (incluso si tiene hijos en el catálogo
-                 pero ninguno aparece en la lista actual) -->
-            <label *ngIf="!filteredParentIds.has(item.catalogItemId)"
-              class="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-green-50 transition-colors"
-              [style.paddingLeft.px]="16 + item.depth * 20">
-              <input type="checkbox" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer"
-                [checked]="item.checked"
-                (change)="onCheck(item, $any($event.target).checked)" />
-              <span class="text-[0.82rem] text-gray-700">{{ item.description }}</span>
+          [class.rounded-xl]="visibleItems.length === 0"
+          [class.rounded-b-xl]="visibleItems.length > 0">
+          <div *ngFor="let item of visibleItems; let i = index; trackBy: trackByItemId"
+            class="flex items-center gap-2 py-2.5 px-4 border-b border-gray-100 last:border-b-0 hover:bg-green-50 transition-colors"
+            style="padding-right: 6px;">
+
+            <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="item.checked" class="accent-[#64bc04] w-4 h-4 flex-shrink-0 cursor-pointer" />
+              <span class="text-[0.82rem] text-gray-700 truncate">{{ item.description }}</span>
             </label>
-          </ng-container>
-          <p class="text-center text-gray-400 py-8 text-sm" *ngIf="filteredItems.length === 0">
+
+            <!-- Tipo como badge -->
+            <span *ngIf="item.catalogTypeName"
+              class="text-[0.65rem] bg-gray-100 text-gray-500 border border-gray-200 rounded px-1.5 py-0.5 whitespace-nowrap flex-shrink-0">
+              {{ item.catalogTypeName }}
+            </span>
+
+            <!-- Flechas de orden -->
+            <div class="flex items-center gap-0 flex-shrink-0">
+              <button type="button"
+                class="p-1 rounded transition-colors"
+                [ngClass]="canMoveUp(i) ? 'text-[#64BC04] hover:bg-green-50 cursor-pointer' : 'text-gray-200 cursor-default'"
+                [disabled]="!canMoveUp(i)"
+                (click)="moveUp(i)" title="Subir">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/>
+                </svg>
+              </button>
+              <button type="button"
+                class="p-1 rounded transition-colors"
+                [ngClass]="canMoveDown(i) ? 'text-[#64BC04] hover:bg-green-50 cursor-pointer' : 'text-gray-200 cursor-default'"
+                [disabled]="!canMoveDown(i)"
+                (click)="moveDown(i)" title="Bajar">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                </svg>
+              </button>
+            </div>
+
+          </div>
+          <p class="text-center text-gray-400 py-8 text-sm" *ngIf="visibleItems.length === 0">
             Sin resultados.
           </p>
         </div>
@@ -103,6 +118,7 @@
       </ng-template>
 
     </div>
+
   </div>
 
   <div class="flex justify-center mt-5">

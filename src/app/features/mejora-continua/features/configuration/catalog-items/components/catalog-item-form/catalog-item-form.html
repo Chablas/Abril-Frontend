@@ -8,25 +8,6 @@
         class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#64bc04]" />
     </div>
 
-    <!-- Código (opcional) -->
-    <div class="flex flex-col gap-1">
-      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Código <span class="normal-case font-normal">(opcional)</span></label>
-      <input type="text" [(ngModel)]="code" placeholder="Ej: CA-001"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#64bc04]" />
-    </div>
-
-    <!-- Padre (opcional) -->
-    <div class="flex flex-col gap-1">
-      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Ítem padre <span class="normal-case font-normal">(opcional)</span></label>
-      <select [(ngModel)]="selectedParentId"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#64bc04]">
-        <option [ngValue]="null">— Sin padre (ítem raíz) —</option>
-        <option *ngFor="let opt of parentOptions" [ngValue]="opt.catalogItemId">
-          {{ opt.label }}
-        </option>
-      </select>
-    </div>
-
     <!-- Activo (solo en edición) -->
     <label *ngIf="isEdit" class="flex items-center gap-2 cursor-pointer select-none">
       <input type="checkbox" [(ngModel)]="active" class="accent-[#64bc04] w-4 h-4 cursor-pointer" />

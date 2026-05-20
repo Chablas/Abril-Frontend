@@ -58,7 +58,7 @@ export class Templates implements OnInit {
     this.loaderService.show();
     const dto: ScopeTemplateCreateDTO = {
       templateName: this.newTemplateName.trim(),
-      catalogItemIds: [],
+      items: [],
     };
     this.scopeService.createTemplate(dto).subscribe({
       next: () => {

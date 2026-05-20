@@ -2,33 +2,39 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CatalogService, CatalogTypeDTO, CatalogItemDTO } from '../scope/catalog.service';
-import { LoaderService } from '../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../core/services/error.service';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
 import { CatalogItemForm } from './components/catalog-item-form/catalog-item-form';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import Swal from 'sweetalert2';
-
-interface FlatItem extends CatalogItemDTO {
-  depth: number;
-}
 
 @Component({
   selector: 'app-catalog-items',
   standalone: true,
-  imports: [CommonModule, CatalogItemForm],
+  imports: [CommonModule, CatalogItemForm, Paginator],
   templateUrl: './catalog-items.html',
   styleUrl: './catalog-items.css',
 })
 export class CatalogItems implements OnInit {
   types: CatalogTypeDTO[] = [];
-  flatItems: FlatItem[] = [];
-  allItemsForType: CatalogItemDTO[] = []; // flat list for parent dropdown
+  items: CatalogItemDTO[] = [];
   selectedTypeId: number | null = null;
   loadingTypes = true;
   loadingItems = false;
 
   showForm = false;
   editingItem: CatalogItemDTO | null = null;
-  preselectedParentId: number | null = null;
+
+  readonly pageSize = 20;
+  currentPage = 1;
+
+  get totalRecords(): number { return this.items.length; }
+  get totalPages(): number { return Math.ceil(this.totalRecords / this.pageSize) || 1; }
+  get pagedItems(): CatalogItemDTO[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.items.slice(start, start + this.pageSize);
+  }
+  changePage(page: number): void { this.currentPage = page; }
 
   constructor(
     private catalogService: CatalogService,
@@ -55,33 +61,22 @@ export class CatalogItems implements OnInit {
     this.loaderService.show();
     this.catalogService.getItemsByType(typeId).subscribe({
       next: (items) => {
-        this.allItemsForType = items;
-        this.flatItems = this.buildFlatTree(items, null, 0);
+        this.items = items;
         this.loadingItems = false;
+        this.currentPage = 1;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 
-  private buildFlatTree(items: CatalogItemDTO[], parentId: number | null, depth: number): FlatItem[] {
-    return items
-      .filter((i) => i.catalogItemParentId === parentId)
-      .flatMap((i) => [
-        { ...i, depth },
-        ...this.buildFlatTree(items, i.catalogItemId, depth + 1),
-      ]);
-  }
-
-  openCreate(parentId: number | null = null): void {
+  openCreate(): void {
     this.editingItem = null;
-    this.preselectedParentId = parentId;
     this.showForm = true;
   }
 
   openEdit(item: CatalogItemDTO): void {
     this.editingItem = { ...item };
-    this.preselectedParentId = null;
     this.showForm = true;
   }
 
@@ -117,11 +112,6 @@ export class CatalogItems implements OnInit {
     this.reloadItems();
   }
 
-  trackByTypeId(_: number, t: CatalogTypeDTO): number {
-    return t.catalogTypeId;
-  }
-
-  trackByItemId(_: number, i: FlatItem): number {
-    return i.catalogItemId;
-  }
+  trackByTypeId(_: number, t: CatalogTypeDTO): number { return t.catalogTypeId; }
+  trackByItemId(_: number, i: CatalogItemDTO): number { return i.catalogItemId; }
 }

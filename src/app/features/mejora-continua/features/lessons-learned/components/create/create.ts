@@ -63,19 +63,8 @@ export class CreateLesson implements OnInit {
 
   // ── Helpers de árbol ────────────────────────────────────────────────────────
 
-  /** Label del nivel según el catalogTypeCode del primer ítem de ese nivel */
   getLevelLabel(levelIndex: number): string {
-    const item = this.scopeLevels[levelIndex]?.[0];
-    if (!item) return `Nivel ${levelIndex + 1}`;
-    const labels: Record<string, string> = {
-      phase: 'Fase',
-      stage: 'Etapa',
-      layer: 'Nivel',
-      sub_stage: 'Subetapa',
-      sub_specialty: 'Subespecialidad',
-      partida: 'Partida',
-    };
-    return labels[item.catalogTypeCode] ?? item.catalogTypeCode;
+    return this.scopeLevels[levelIndex]?.[0]?.catalogTypeName ?? `Nivel ${levelIndex + 1}`;
   }
 
   onScopeItemChange(levelIndex: number, selectedId: number | undefined): void {

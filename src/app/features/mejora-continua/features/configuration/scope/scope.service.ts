@@ -14,7 +14,7 @@ export interface ScopeItemDTO {
   areaSubareaId: number;
   catalogItemId: number;
   catalogItemDescription: string;
-  catalogTypeCode: string;
+  catalogTypeName: string;
   scopeItemParentId: number | null;
   displayOrder: number;
   active: boolean;
@@ -32,23 +32,29 @@ export interface ScopeItemUpsertDTO {
   items: ScopeItemNodeDTO[];
 }
 
+export interface ScopeTemplateItemNodeDTO {
+  catalogItemId: number;
+  catalogItemDescription: string;
+  scopeTemplateItemParentId: number | null;
+  displayOrder: number;
+}
+
 export interface ScopeTemplateDTO {
   scopeTemplateId: number;
   templateName: string;
   active: boolean;
-  /** IDs de catalog_item — plantilla global sin contexto de área/subárea. */
-  catalogItemIds: number[];
+  items: ScopeTemplateItemNodeDTO[];
 }
 
 export interface ScopeTemplateCreateDTO {
   templateName: string;
-  catalogItemIds: number[];
+  items: ScopeTemplateItemNodeDTO[];
 }
 
 export interface ScopeTemplateUpdateDTO {
   scopeTemplateId: number;
   templateName: string;
-  catalogItemIds: number[];
+  items: ScopeTemplateItemNodeDTO[];
 }
 
 @Injectable({ providedIn: 'root' })

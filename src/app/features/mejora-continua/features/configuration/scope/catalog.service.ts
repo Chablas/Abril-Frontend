@@ -6,20 +6,17 @@ import { environment } from '../../../../../../environments/environment';
 export interface CatalogTypeDTO {
   catalogTypeId: number;
   catalogTypeName: string;
-  catalogTypeCode: string;
   active: boolean;
 }
 
 export interface CatalogTypeCreateDTO {
   catalogTypeName: string;
-  catalogTypeCode: string;
   active: boolean;
 }
 
 export interface CatalogTypeEditDTO {
   catalogTypeId: number;
   catalogTypeName: string;
-  catalogTypeCode: string;
   active: boolean;
 }
 
@@ -27,29 +24,20 @@ export interface CatalogItemDTO {
   catalogItemId: number;
   catalogTypeId: number;
   catalogTypeName: string;
-  catalogTypeCode: string;
-  catalogItemParentId: number | null;
-  parentDescription: string | null;
   catalogItemDescription: string;
-  catalogItemCode: string | null;
   active: boolean;
-  children: CatalogItemDTO[];
 }
 
 export interface CatalogItemCreateDTO {
   catalogTypeId: number;
-  catalogItemParentId: number | null;
   catalogItemDescription: string;
-  catalogItemCode: string | null;
   active: boolean;
 }
 
 export interface CatalogItemEditDTO {
   catalogItemId: number;
   catalogTypeId: number;
-  catalogItemParentId: number | null;
   catalogItemDescription: string;
-  catalogItemCode: string | null;
   active: boolean;
 }
 

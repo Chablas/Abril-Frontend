@@ -8,14 +8,6 @@
         class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#64bc04]" />
     </div>
 
-    <!-- Código -->
-    <div class="flex flex-col gap-1">
-      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Código *</label>
-      <input type="text" [(ngModel)]="code" placeholder="Ej: obras-civiles"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#64bc04]" />
-      <p class="text-[0.7rem] text-gray-400">Identificador único (se guardará en minúsculas).</p>
-    </div>
-
     <!-- Activo (solo en edición) -->
     <label *ngIf="isEdit" class="flex items-center gap-2 cursor-pointer select-none">
       <input type="checkbox" [(ngModel)]="active" class="accent-[#64bc04] w-4 h-4 cursor-pointer" />

@@ -2,10 +2,10 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BaseModal } from '../../../../../../../../shared/components/base-modal/base-modal';
+import { BaseModal } from '../../../../../../../shared/components/base-modal/base-modal';
 import { CatalogService, CatalogTypeDTO } from '../../../scope/catalog.service';
-import { LoaderService } from '../../../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../../../core/services/error.service';
+import { LoaderService } from '../../../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -16,13 +16,11 @@ import Swal from 'sweetalert2';
   styleUrl: './catalog-type-form.css',
 })
 export class CatalogTypeForm implements OnInit {
-  /** null → modo crear | valor → modo editar */
   @Input() editingType: CatalogTypeDTO | null = null;
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   name = '';
-  code = '';
   active = true;
 
   get isEdit(): boolean {
@@ -42,14 +40,13 @@ export class CatalogTypeForm implements OnInit {
   ngOnInit(): void {
     if (this.editingType) {
       this.name = this.editingType.catalogTypeName;
-      this.code = this.editingType.catalogTypeCode;
       this.active = this.editingType.active;
     }
   }
 
   save(): void {
-    if (!this.name.trim() || !this.code.trim()) {
-      Swal.fire({ icon: 'error', title: 'Campos requeridos', text: 'Nombre y código son obligatorios.' });
+    if (!this.name.trim()) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'El nombre es obligatorio.' });
       return;
     }
 
@@ -59,12 +56,10 @@ export class CatalogTypeForm implements OnInit {
       ? this.catalogService.updateType({
           catalogTypeId: this.editingType!.catalogTypeId,
           catalogTypeName: this.name.trim(),
-          catalogTypeCode: this.code.trim(),
           active: this.active,
         })
       : this.catalogService.createType({
           catalogTypeName: this.name.trim(),
-          catalogTypeCode: this.code.trim(),
           active: true,
         });
 
