@@ -149,7 +149,7 @@ export class NavigationService {
             { label: 'Empresa',            route: '/habilitacion/empresa',      featureKey: 'habilitacion.empresa' },
             { label: 'Equipos y Máquinas', route: '/habilitacion/equipos',      featureKey: 'habilitacion.equipos' },
             { label: 'SCTR y Vida Ley',    route: '/habilitacion/sctr-vidaley', featureKey: 'habilitacion.sctr-vidaley' },
-            { label: 'Inducciones',        route: '/habilitacion/inducciones',  roles: ['CONTRATISTA'] },
+            { label: 'Inducciones',        route: '/habilitacion/inducciones',  featureKey: 'habilitacion.inducciones' },
           ],
         },
         {
@@ -166,7 +166,7 @@ export class NavigationService {
           items: [
             { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
             { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
-            { label: 'Clínicas',              route: '/habilitacion/clinicas' },
+            { label: 'Clínicas',              route: '/habilitacion/clinicas', featureKey: 'habilitacion.clinicas' },
           ],
         },
       ],
