@@ -16,6 +16,7 @@ interface FlatCatalogItem {
   depth: number;
   hasChildren: boolean;
   checked: boolean;
+  rootCategoryId: number;
 }
 
 @Component({
@@ -33,6 +34,7 @@ export class TemplateEdit implements OnInit {
   editName = '';
   items: FlatCatalogItem[] = [];
   searchTerm = '';
+  selectedRootId: number | null = null;
   loading = true;
 
   constructor(
@@ -60,9 +62,11 @@ export class TemplateEdit implements OnInit {
     items: CatalogItemDTO[],
     depth: number,
     assigned: Set<number>,
+    rootId?: number,
   ): FlatCatalogItem[] {
     const result: FlatCatalogItem[] = [];
     for (const item of items) {
+      const effectiveRootId = depth === 0 ? item.catalogItemId : rootId!;
       result.push({
         catalogItemId: item.catalogItemId,
         catalogItemParentId: item.catalogItemParentId,
@@ -70,17 +74,34 @@ export class TemplateEdit implements OnInit {
         depth,
         hasChildren: (item.children?.length ?? 0) > 0,
         checked: assigned.has(item.catalogItemId),
+        rootCategoryId: effectiveRootId,
       });
       if (item.children?.length) {
-        result.push(...this.flattenCatalog(item.children, depth + 1, assigned));
+        result.push(...this.flattenCatalog(item.children, depth + 1, assigned, effectiveRootId));
+      }
+    }
+    return result;
+  }
+
+  get rootCategories(): { id: number; description: string }[] {
+    const seen = new Set<number>();
+    const result: { id: number; description: string }[] = [];
+    for (const item of this.items) {
+      if (item.depth === 0 && !seen.has(item.catalogItemId)) {
+        seen.add(item.catalogItemId);
+        result.push({ id: item.catalogItemId, description: item.description });
       }
     }
     return result;
   }
 
   get filteredItems(): FlatCatalogItem[] {
+    let list = this.items;
+    if (this.selectedRootId !== null) {
+      list = list.filter((i) => i.rootCategoryId === this.selectedRootId);
+    }
     const term = this.searchTerm.trim().toLowerCase();
-    return term ? this.items.filter((i) => i.description.toLowerCase().includes(term)) : this.items;
+    return term ? list.filter((i) => i.description.toLowerCase().includes(term)) : list;
   }
 
   get leafFilteredItems(): FlatCatalogItem[] {
@@ -93,6 +114,10 @@ export class TemplateEdit implements OnInit {
 
   get totalLeafCount(): number {
     return this.items.filter((i) => !i.hasChildren).length;
+  }
+
+  trackByCatId(_: number, cat: { id: number; description: string }): number {
+    return cat.id;
   }
 
   toggleAll(checked: boolean): void {

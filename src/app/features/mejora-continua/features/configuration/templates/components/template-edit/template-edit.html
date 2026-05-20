@@ -18,6 +18,27 @@
         </span>
       </div>
 
+      <!-- Filtro por categoría raíz -->
+      <div class="flex flex-wrap gap-1.5" *ngIf="!loading && rootCategories.length > 0">
+        <button type="button"
+          class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors whitespace-nowrap"
+          [ngClass]="selectedRootId === null
+            ? 'bg-green-100 border-[#64bc04] text-green-800'
+            : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
+          (click)="selectedRootId = null">
+          Todas
+        </button>
+        <button type="button"
+          *ngFor="let cat of rootCategories; trackBy: trackByCatId"
+          class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors whitespace-nowrap"
+          [ngClass]="selectedRootId === cat.id
+            ? 'bg-green-100 border-[#64bc04] text-green-800'
+            : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-green-50 hover:border-green-300 hover:text-green-800'"
+          (click)="selectedRootId = cat.id">
+          {{ cat.description }}
+        </button>
+      </div>
+
       <!-- Buscador -->
       <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-400
                   focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all">
