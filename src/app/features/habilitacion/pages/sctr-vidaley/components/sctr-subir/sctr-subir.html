@@ -135,8 +135,8 @@
                 <strong>{{ w.apellidoNombre }}</strong>
                 <span class="muted-line">DNI {{ w.dni }}</span>
               </div>
-              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(w.estadoSctr)">
-                {{ w.estadoSctr }}
+              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+                {{ model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
               </span>
             </div>
           </div>

@@ -524,6 +524,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       next: () => {
         this.savingAprobar = false;
         Swal.fire({ icon: 'success', title: 'Trabajadores aprobados', timer: 1500, showConfirmButton: false });
+        this.loadDocumentos(this.currentPage);
         this.loadTrabajadores();
       },
       error: (err: HttpErrorResponse) => {
@@ -546,6 +547,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       next: () => {
         this.savingAprobar = false;
         Swal.fire({ icon: 'success', title: 'Trabajadores rechazados', timer: 1500, showConfirmButton: false });
+        this.loadDocumentos(this.currentPage);
         this.loadTrabajadores();
       },
       error: (err: HttpErrorResponse) => {

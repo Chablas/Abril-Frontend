@@ -438,13 +438,17 @@
             type="date"
             class="field-input"
             [(ngModel)]="panelVigencia"
-            [readonly]="selectedEntregable.estado !== 'Falta' && selectedEntregable.estado !== 'Rechazado'"
+            [readonly]="!selectedEntregable.requiereVigencia"
           />
+          <span *ngIf="selectedEntregable.requiereVigencia && !panelVigencia"
+                style="color:#ef4444;font-size:0.75rem;margin-top:4px;display:block;">
+            * Ingresa la fecha de vigencia para poder adjuntar el documento
+          </span>
         </div>
 
         <div class="field-grp" *ngIf="selectedEntregable?.itemId !== 12">
           <label class="field-lbl">DOCUMENTO ADJUNTO</label>
-          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+          <div class="upload-zone" [class.upload-zone--active]="!(selectedEntregable.requiereVigencia && !panelVigencia)" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="!(selectedEntregable.requiereVigencia && !panelVigencia) && triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -481,7 +485,9 @@
                 Descargar
               </button>
             </div>
-            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
+            <button type="button" class="ufc-replace"
+                    [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
+                    (click)="clearArchivo(); triggerFileInput()">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="1 4 1 10 7 10"/>
                 <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
@@ -502,7 +508,8 @@
         <div class="field-grp">
           <label class="field-lbl">TUS OBSERVACIONES</label>
           <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"
-            placeholder="Notas que verá Abril…"></textarea>
+            placeholder="Notas que verá Abril…"
+            (blur)="guardarObservaciones()"></textarea>
         </div>
 
         <div class="field-grp" *ngIf="selectedEntregable.obsAbril">
@@ -609,13 +616,6 @@
     </div>
 
     <div class="drawer-footer" *ngIf="!esSoloLecturaPanel(selectedEntregable)">
-      <button
-        *ngIf="isContratista()"
-        type="button"
-        class="btn-primary"
-        [disabled]="!panelArchivoUrl && !panelVigencia"
-        (click)="enviarDocumento()"
-      >ENVIAR DOCUMENTO</button>
       <button
         *ngIf="!isContratista() && puedeEditar(selectedEntregable)"
         type="button"

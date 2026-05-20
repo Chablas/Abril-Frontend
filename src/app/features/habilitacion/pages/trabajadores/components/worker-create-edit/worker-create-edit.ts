@@ -154,7 +154,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       !!this.model.empresaId;
 
     if (this.esStaffOOficina) {
-      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim();
+      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim() && !!this.model.subarea.trim();
     }
 
     return baseCasa;
@@ -379,6 +379,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     if (this.model.obraOficina !== 'Oficina Central') {
       this.model.sctr = true;
     }
+    this.model.area = '';
+    this.model.subarea = '';
+    this.model.jefatura = '';
+    this.subareas = [];
   }
 
   onTipoDocumentoChange(): void {

@@ -288,10 +288,12 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   selectEntregable(e: WorkerEntregableDto): void {
     this.selectedEntregable = e;
-    this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
+    this.panelVigencia = !e.requiereVigencia
+      ? '2040-12-31'
+      : (e.vigencia ? e.vigencia.substring(0, 10) : '');
     this.panelArchivoUrl = e.archivoUrl ?? '';
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
-    this.panelObsAbril = e.obsAbril ?? '';
+    this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
   }
@@ -512,6 +514,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.actualizarEntregableLocal({
           estado: 'Enviado',
           archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          vigencia: this.panelVigencia || undefined,
         });
         this.panelEstado = 'Enviado';
       },
@@ -519,6 +522,19 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  guardarObservaciones(): void {
+    if (!this.selectedEntregable) return;
+    this.trabajadorHabService
+      .updateEntregable(this.selectedEntregable.id, { estado: this.selectedEntregable.estado, obsContratista: this.panelObsAbril || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === this.selectedEntregable!.id);
+          if (e) e.obsContratista = this.panelObsAbril;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   clearArchivo(): void {
