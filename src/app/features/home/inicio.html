@@ -20,9 +20,9 @@
 
   <ng-container *ngIf="navService.getModules().length > 0">
 
-    <!-- Bento grid Habilitación -->
+    <!-- Bento grid Gestión de Ingresos -->
     <ng-container *ngIf="habilitacionModule">
-      <div *ngFor="let group of habilitacionModule.groups">
+      <div *ngFor="let group of orderedGroups">
 
         <!-- Separador de grupo -->
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;font-weight:600;margin-top:20px;margin-bottom:8px">

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation/navigation.service';
-import { NavModule } from '../../core/navigation/nav.model';
+import { NavGroup, NavModule } from '../../core/navigation/nav.model';
 
 @Component({
   selector: 'app-inicio',
@@ -16,6 +16,22 @@ export class Inicio {
 
   get habilitacionModule(): NavModule | undefined {
     return this.navService.getModules().find((m) => m.key === 'habilitacion');
+  }
+
+  get orderedGroups(): NavGroup[] {
+    const groups = this.habilitacionModule?.groups ?? [];
+    const order = ['Administración', 'Operaciones', 'Gestión'];
+    return order
+      .map((label) => groups.find((g) => g.label === label))
+      .filter((g): g is NavGroup => g !== undefined);
+  }
+
+  getPillLabel(module: NavModule): string {
+    const overrides: Record<string, string> = {
+      habilitacion: 'Gestión de Ingresos',
+      ssoma: 'Salud',
+    };
+    return overrides[module.key] ?? module.label;
   }
 
   getGroupCols(groupLabel: string): number {

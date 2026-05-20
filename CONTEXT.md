@@ -1489,3 +1489,23 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 ### login — tab Abril simplificado a solo botón Microsoft
 
 `login.html`: reemplazado `<form *ngIf="activeTab === 'abril'"...>` (con campos Correo, Contraseña, botón INICIAR SESIÓN y separador "o") por `<div *ngIf="activeTab === 'abril'" class="flex justify-center">` que contiene únicamente el botón "Iniciar sesión con Microsoft". Los métodos `submit()`, `form`, `FormGroup` permanecen en `login.ts` (no se eliminaron, los usan otros flujos potenciales).
+
+---
+
+## Sesión 2026-05-20 — Rediseño Home Habilitación
+
+### Home (inicio.ts / inicio.html / inicio.css)
+- Bento grid por grupos al hacer clic en "Habilitación" en sidebar: sin submenús, clic directo a cada sección
+- 3 grupos visuales: GESTIÓN (Trabajadores, Empresa, Equipos y Máquinas, SCTR y Vida Ley, Inducciones), OPERACIONES (Reglas de Entregables, Auditoría, Clínicas), ADMINISTRACIÓN (Bandeja de Aprobaciones, Registros Modelo, Evaluación Supervisores)
+- Cards: fondo #fff, border-radius 14px, border 1px solid #ececec, hover translateY(-2px) + sombra suave
+- Card Trabajadores: acento lila #f8f6ff / #5b4fcf
+- Íconos por grupo: GESTIÓN indigo (#eef2ff/#4f46e5), OPERACIONES verde (#f0fdf4/#16a34a), ADMINISTRACIÓN ámbar (#fff7ed/#ea580c)
+- Labels de grupo: 11px uppercase color #6b7280 font-weight 600
+
+### sidebar.ts / sidebar.html
+- onModuleClick(): clic en "habilitacion" navega a '/' y cierra dropdown; demás módulos conservan toggleMenu()
+- Estado activo visual en sidebar cuando ruta es '/'
+
+### navigation.service.ts
+- "Control de Acceso" eliminado de grupos de Habilitación → nuevo módulo independiente key: 'control-acceso' apuntando a /habilitacion/control-acceso
+- Labels visibles en home: "Habilitación" → "Gestión de Ingresos", "SSOMA" → "Salud" (solo en inicio.ts, rutas y sidebar sin cambio)

@@ -116,7 +116,7 @@ export class NavigationService {
     },
     {
       key: 'ssoma',
-      label: 'SSOMA',
+      label: 'Salud',
       iconKey: 'ssoma',
       baseRoute: '/ssoma',
       items: [],
@@ -137,7 +137,7 @@ export class NavigationService {
     },
     {
       key: 'habilitacion',
-      label: 'Habilitación',
+      label: 'Gestión de Ingresos',
       iconKey: 'habilitacion',
       baseRoute: '/habilitacion',
       items: [],
