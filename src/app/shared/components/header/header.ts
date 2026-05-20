@@ -14,6 +14,7 @@ import { MicrosoftAuthService } from '../../../features/auth/pages/login/service
 })
 export class Header {
   titulo: string = '';
+  hideHeader = false;
   menuOpen = false;
   showUserMenu = false;
   userPhotoSrc: string | null = null;
@@ -35,6 +36,7 @@ export class Header {
         current = current.firstChild;
       }
       this.titulo = current.snapshot.data['titulo'] ?? '';
+      this.hideHeader = !!current.snapshot.data['hideHeader'];
       if (isPlatformBrowser(this.platformId)) {
         const user = JSON.parse(localStorage.getItem('user') ?? '{}');
         this.userPhotoSrc  = user?.photoBase64 ?? null;

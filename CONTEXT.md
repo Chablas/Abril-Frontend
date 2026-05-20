@@ -1509,3 +1509,5 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 ### navigation.service.ts
 - "Control de Acceso" eliminado de grupos de Habilitación → nuevo módulo independiente key: 'control-acceso' apuntando a /habilitacion/control-acceso
 - Labels visibles en home: "Habilitación" → "Gestión de Ingresos", "SSOMA" → "Salud" (solo en inicio.ts, rutas y sidebar sin cambio)
+- navigation.service.ts: key 'ssoma' label → 'Salud', key 'habilitacion' label → 'Gestión de Ingresos' (keys y rutas sin cambio)
+- Orden grupos bento: ADMINISTRACIÓN → OPERACIONES → GESTIÓN (getter `orderedGroups` en inicio.ts reordena sin tocar NavigationService ni sidebar)

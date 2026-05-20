@@ -1,137 +1,58 @@
 <div class="page-root">
 
-  <!-- ── Barra de filtros horizontal compacta ───────────────── -->
-  <div class="filter-bar">
-
-    <!-- Fila 1: búsqueda · pills · retirados · actualizar -->
-    <div class="filter-row">
-      <div class="fb-search">
-        <svg class="fb-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-          type="text"
-          class="fb-search-input"
-          placeholder="Buscar nombre o DNI…"
-          [(ngModel)]="search"
-          (input)="onSearch()"
-        />
-      </div>
-      <ng-container *ngIf="isAdmin() || isContratista()">
-        <div class="fb-pills" *ngIf="!isContratista()">
-          <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === ''"
-            (click)="filtroContratistaCasa = ''; onFilterChange()">Todos</button>
-          <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === 'Contratista'"
-            (click)="filtroContratistaCasa = 'Contratista'; onFilterChange()">Contratistas</button>
-          <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === 'Casa'"
-            (click)="filtroContratistaCasa = 'Casa'; onFilterChange()">Casa</button>
-        </div>
-        <label class="fb-toggle">
-          <input type="checkbox" [(ngModel)]="soloRetirados" (change)="onFilterChange()" />
-          <span>Ver retirados</span>
-        </label>
-        <button class="btn-ghost-sm" (click)="loadWorkers(currentPage)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-            <path d="M3 3v5h5"/>
-            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-            <path d="M16 16h5v5"/>
-          </svg>
-          Actualizar
-        </button>
-        <button class="btn-ghost-sm btn-induccion" (click)="mostrarProgramarInduccion = true">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <line x1="12" y1="14" x2="12" y2="18"/>
-            <line x1="10" y1="16" x2="14" y2="16"/>
-          </svg>
-          Programar Inducción
-        </button>
-        <button *ngIf="isAdmin() || isContratista()" class="btn-ghost-sm btn-crear" (click)="abrirCrear()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Nuevo Trabajador
-        </button>
-      </ng-container>
+  <!-- ── Topbar: breadcrumb + acciones ─────────────────────── -->
+  <div class="page-topbar" *ngIf="isAdmin() || isContratista()">
+    <div class="page-breadcrumb">
+      <span>Gestión de Ingresos</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Trabajadores</span>
     </div>
-
-    <!-- Fila 2: estado · proyecto · razón social · seleccionar todos (admin) -->
-    <div class="filter-row" *ngIf="isAdmin()">
-      <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
-        <option value="">Todos los estados</option>
-        <option value="Habilitado">Habilitado</option>
-        <option value="No Autorizado">No Autorizado</option>
-      </select>
-      <div class="fb-ss-wrap">
-        <app-search-select
-          [options]="catalogoProyectos"
-          valueField="projectId"
-          displayField="projectDescription"
-          [value]="filtroProyectoId"
-          [showLabel]="false"
-          placeholder="Todos los proyectos"
-          [allowClear]="true"
-          (valueChange)="filtroProyectoId = $event; onFilterChange()"
-        />
-      </div>
-      <div class="fb-ss-wrap" *ngIf="filtroContratistaCasa !== 'Contratista'">
-        <app-search-select
-          [options]="catalogoEmpresas"
-          valueField="id"
-          displayField="nombre"
-          [value]="filtroEmpresaId"
-          [showLabel]="false"
-          placeholder="Todas las razones sociales"
-          [allowClear]="true"
-          (valueChange)="filtroEmpresaId = $event; onFilterChange()"
-        />
-      </div>
-      <label
-        class="fb-toggle"
-        *ngIf="!loading && workers.length > 0 && !soloRetirados"
-        (click)="$event.stopPropagation()"
-      >
-        <input
-          type="checkbox"
-          class="wc-checkbox"
-          [checked]="todosSeleccionados"
-          (change)="toggleTodos()"
-        />
-        <span>Seleccionar todos</span>
-      </label>
-    </div>
-
-  </div>
-
-  <!-- Barra de selección masiva -->
-  <div class="selection-bar" *ngIf="(isAdmin() || isContratista()) && haySeleccionados && !soloRetirados">
-    <span class="sel-count">
-      {{ selectedIds.length }} trabajador{{ selectedIds.length !== 1 ? 'es' : '' }} seleccionado{{ selectedIds.length !== 1 ? 's' : '' }}
-    </span>
-    <div class="sel-actions">
-      <button type="button" class="btn-danger-sm" (click)="retirarMasivo()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6"/><path d="M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    <div class="topbar-actions">
+      <button class="btn-ghost-sm" (click)="loadWorkers(currentPage)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
         </svg>
-        Dar de baja seleccionados
+        Actualizar
       </button>
-      <button type="button" class="btn-ghost-sm" (click)="limpiarSeleccion()">Limpiar selección</button>
+      <button class="btn-ghost-sm btn-induccion" (click)="mostrarProgramarInduccion = true">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <line x1="12" y1="14" x2="12" y2="18"/>
+          <line x1="10" y1="16" x2="14" y2="16"/>
+        </svg>
+        Programar Inducción
+      </button>
+      <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Nuevo Trabajador
+      </button>
     </div>
   </div>
 
-  <!-- ── Grid principal ──────────────────────────────────────── -->
-  <div class="hab-layout">
+  <!-- ── Main body layout ─────────────────────────────────── -->
+  <div class="body-layout">
 
-    <!-- Columna izquierda: solo lista de trabajadores -->
-    <aside class="col-workers">
+    <!-- Columna izquierda: lista de trabajadores -->
+    <aside class="col-left">
+
+      <!-- Seleccionar todos -->
+      <div class="workers-sel-header"
+           *ngIf="isAdmin() && !loading && workers.length > 0 && !soloRetirados"
+           (click)="$event.stopPropagation()">
+        <label class="sel-all-label">
+          <input type="checkbox" class="wc-checkbox" [checked]="todosSeleccionados" (change)="toggleTodos()" />
+          <span>Seleccionar todos</span>
+        </label>
+      </div>
+
       <div class="workers-list">
         <div *ngIf="loading" class="list-msg">Cargando…</div>
         <div *ngIf="!loading && workers.length === 0" class="list-msg">
@@ -145,29 +66,33 @@
           [class.worker-card--checked]="selectedIds.includes(w.workerId)"
           (click)="selectWorker(w)"
         >
-          <div
-            *ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
-            class="wc-check"
-            (click)="$event.stopPropagation()"
-          >
-            <input
-              type="checkbox"
-              class="wc-checkbox"
-              [checked]="selectedIds.includes(w.workerId)"
-              (change)="toggleSeleccion(w.workerId)"
-            />
-          </div>
-
-          <div class="wc-top">
+          <!-- Fila 1: checkbox + nombre -->
+          <div class="wc-row1">
+            <div
+              *ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
+              class="wc-check-inline"
+              (click)="$event.stopPropagation()"
+            >
+              <input
+                type="checkbox"
+                class="wc-checkbox"
+                [checked]="selectedIds.includes(w.workerId)"
+                (change)="toggleSeleccion(w.workerId)"
+              />
+            </div>
             <span class="wc-name">{{ w.apellidoNombre }}</span>
-            <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
           </div>
+          <!-- Fila 2: DNI · empresa -->
           <div class="wc-meta">
             <span class="wc-dni">{{ w.dni }}</span>
             <span class="wc-empresa" *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
           </div>
+          <!-- Fila 3: proyecto · badge estado + acciones -->
           <div class="wc-foot">
-            <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
+            <div class="wc-foot-left">
+              <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
+              <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
+            </div>
             <div class="wc-actions">
               <button
                 *ngIf="(isAdmin() || isContratista()) && !soloRetirados && w.estadoWorker !== 'RETIRADO'"
@@ -230,7 +155,7 @@
         </div>
       </div>
 
-      <div class="paginator-wrap" *ngIf="totalPages > 1">
+      <div class="workers-pager" *ngIf="totalPages > 1">
         <app-paginator
           [totalRecords]="totalRecords"
           [currentPage]="currentPage"
@@ -240,9 +165,95 @@
       </div>
     </aside>
 
-    <!-- Columna derecha: entregables + proyectos -->
-    <main class="col-entregables">
-      <ng-container *ngIf="selectedWorker; else noWorkerTpl">
+    <!-- Columna derecha: filtros + contenido del trabajador -->
+    <div class="col-right">
+
+      <!-- Filtros -->
+      <div class="filter-bar">
+        <div class="filter-row">
+          <div class="fb-search">
+            <svg class="fb-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              class="fb-search-input"
+              placeholder="Buscar nombre o DNI…"
+              [(ngModel)]="search"
+              (input)="onSearch()"
+            />
+          </div>
+          <ng-container *ngIf="isAdmin() || isContratista()">
+            <div class="fb-pills" *ngIf="!isContratista()">
+              <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === ''"
+                (click)="filtroContratistaCasa = ''; onFilterChange()">Todos</button>
+              <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === 'Contratista'"
+                (click)="filtroContratistaCasa = 'Contratista'; onFilterChange()">Contratistas</button>
+              <button class="radio-pill" [class.radio-pill--on]="filtroContratistaCasa === 'Casa'"
+                (click)="filtroContratistaCasa = 'Casa'; onFilterChange()">Casa</button>
+            </div>
+            <label class="fb-toggle">
+              <input type="checkbox" [(ngModel)]="soloRetirados" (change)="onFilterChange()" />
+              <span>Ver retirados</span>
+            </label>
+          </ng-container>
+        </div>
+        <div class="filter-row" *ngIf="isAdmin()">
+          <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
+            <option value="">Todos los estados</option>
+            <option value="Habilitado">Habilitado</option>
+            <option value="No Autorizado">No Autorizado</option>
+          </select>
+          <div class="fb-ss-wrap">
+            <app-search-select
+              [options]="catalogoProyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="filtroProyectoId"
+              [showLabel]="false"
+              placeholder="Todos los proyectos"
+              [allowClear]="true"
+              (valueChange)="filtroProyectoId = $event; onFilterChange()"
+            />
+          </div>
+          <div class="fb-ss-wrap" *ngIf="filtroContratistaCasa !== 'Contratista'">
+            <app-search-select
+              [options]="catalogoEmpresas"
+              valueField="id"
+              displayField="nombre"
+              [value]="filtroEmpresaId"
+              [showLabel]="false"
+              placeholder="Todas las razones sociales"
+              [allowClear]="true"
+              (valueChange)="filtroEmpresaId = $event; onFilterChange()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Selección masiva -->
+      <div class="selection-bar" *ngIf="(isAdmin() || isContratista()) && haySeleccionados && !soloRetirados">
+        <span class="sel-count">
+          {{ selectedIds.length }} trabajador{{ selectedIds.length !== 1 ? 'es' : '' }} seleccionado{{ selectedIds.length !== 1 ? 's' : '' }}
+        </span>
+        <div class="sel-actions">
+          <button type="button" class="btn-danger-sm" (click)="retirarMasivo()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Dar de baja seleccionados
+          </button>
+          <button type="button" class="btn-ghost-sm" (click)="limpiarSeleccion()">Limpiar selección</button>
+        </div>
+      </div>
+
+      <!-- Contenido del trabajador seleccionado -->
+      <div class="worker-content">
+        <ng-container *ngIf="selectedWorker; else noWorkerTpl">
 
         <div class="worker-hdr">
           <div class="worker-hdr-left">
@@ -275,7 +286,7 @@
           </div>
         </div>
 
-        <div class="table-scroll">
+        <div class="ent-wrap">
           <div *ngIf="loadingEntregables" class="list-msg">Cargando entregables…</div>
 
           <table *ngIf="!loadingEntregables" class="ent-table">
@@ -334,45 +345,6 @@
               </tr>
             </tbody>
           </table>
-
-        </div>
-
-        <!-- Proyectos asignados — panel fijo debajo del scroll de entregables -->
-        <div class="proyectos-section" *ngIf="!loadingEntregables">
-          <div class="proyectos-hdr">
-            <h3 class="proyectos-title">Proyectos asignados</h3>
-            <button
-              type="button"
-              class="btn-link"
-              (click)="abrirAgregarProyecto(selectedWorker!)"
-            >+ Agregar proyecto</button>
-          </div>
-          <div *ngIf="workerSeleccionadoProyectos.length === 0" class="proyectos-empty">
-            Sin proyectos adicionales asignados
-          </div>
-          <ul class="proyectos-list" *ngIf="workerSeleccionadoProyectos.length > 0">
-            <li *ngFor="let p of workerSeleccionadoProyectos" class="proyecto-item" [title]="p.proyectoNombre ?? ('Proyecto #' + p.proyectoId)">
-              <div class="proyecto-row">
-                <span class="proyecto-nombre">{{ p.proyectoNombre ?? ('Proyecto #' + p.proyectoId) }}</span>
-                <span class="proyecto-fecha">{{ p.fechaInicio | date: 'dd/MM/yy' }}</span>
-              </div>
-              <div class="proyecto-badges">
-                <span class="mini-chip chip-green" *ngIf="p.induccionCompletada" title="Inducción completada">Ind. ✓</span>
-                <span class="mini-chip chip-orange" *ngIf="!p.induccionCompletada" title="Inducción pendiente">Ind. ✗</span>
-                <button
-                  *ngIf="!p.induccionCompletada && !isContratista()"
-                  type="button"
-                  class="ind-btn"
-                  title="Marcar inducción completada"
-                  (click)="marcarInduccion(p.proyectoId)"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-              </div>
-            </li>
-          </ul>
         </div>
 
       </ng-container>
@@ -388,35 +360,76 @@
           <p class="center-empty-text">Selecciona un trabajador para ver sus entregables.</p>
         </div>
       </ng-template>
-    </main>
+      </div><!-- /worker-content -->
 
-  </div>
+      <!-- Proyectos asignados (standalone card) -->
+      <div class="proyectos-section" *ngIf="selectedWorker && !loadingEntregables">
+        <div class="proyectos-hdr">
+          <span class="proyectos-title">Proyectos asignados</span>
+          <button
+            *ngIf="!isContratista()"
+            type="button"
+            class="btn-link proyectos-add-btn"
+            (click)="abrirAgregarProyecto(selectedWorker!)"
+          >+ Agregar proyecto</button>
+        </div>
+        <div *ngIf="workerSeleccionadoProyectos.length === 0" class="proyectos-empty">
+          Sin proyectos adicionales asignados
+        </div>
+        <ul class="proyectos-list" *ngIf="workerSeleccionadoProyectos.length > 0">
+          <li *ngFor="let p of workerSeleccionadoProyectos" class="proyecto-item" [title]="p.proyectoNombre ?? ('Proyecto #' + p.proyectoId)">
+            <div class="proyecto-row">
+              <span class="proyecto-nombre">{{ p.proyectoNombre ?? ('Proyecto #' + p.proyectoId) }}</span>
+              <span class="proyecto-fecha">{{ p.fechaInicio | date: 'dd/MM/yy' }}</span>
+            </div>
+            <div class="proyecto-badges">
+              <span *ngIf="p.induccionCompletada" class="proyecto-ind-ok">Ind. ✓</span>
+              <span *ngIf="!p.induccionCompletada" class="proyecto-ind-pend">Ind. ✗</span>
+              <button
+                *ngIf="!p.induccionCompletada && !isContratista()"
+                type="button"
+                class="ind-btn"
+                title="Marcar inducción completada"
+                (click)="marcarInduccion(p.proyectoId)"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div><!-- /proyectos-section -->
+
+    </div><!-- /col-right -->
+
+  </div><!-- /body-layout -->
 </div>
 
-<!-- Drawer overlay -->
-<div class="drawer-overlay" [class.open]="drawerOpen" (click)="closeDrawer()"></div>
+<!-- Modal overlay -->
+<div class="modal-overlay" [class.open]="drawerOpen" (click)="closeDrawer()"></div>
 
-<!-- Drawer -->
-<div class="drawer" [class.open]="drawerOpen">
+<!-- Modal entregable -->
+<div class="modal-entregable" [class.open]="drawerOpen">
   <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
 
   <ng-container *ngIf="selectedEntregable">
 
-    <div class="drawer-hdr">
-      <div class="drawer-hdr-info">
-        <h3 class="drawer-title">{{ selectedEntregable.nombreItem }}</h3>
+    <div class="modal-hdr">
+      <div class="modal-hdr-info">
+        <h3 class="modal-title">{{ selectedEntregable.nombreItem }}</h3>
         <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
           {{ selectedEntregable.estado }}
         </span>
       </div>
-      <button class="drawer-close" title="Cerrar" (click)="closeDrawer()">
+      <button class="modal-close" title="Cerrar" (click)="closeDrawer()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
 
-    <div class="drawer-body">
+    <div class="modal-body">
 
       <ng-container *ngIf="esSoloLecturaPanel(selectedEntregable)">
         <div class="panel-note" *ngIf="esSctrVidaley(selectedEntregable)">
@@ -430,79 +443,34 @@
         </div>
       </ng-container>
 
+      <!-- CONTRATISTA: estado editable + vigencia condicional, sin upload -->
       <ng-container *ngIf="!esSoloLecturaPanel(selectedEntregable) && isContratista()">
 
-        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
+        <div class="field-grp">
+          <label class="field-lbl">ESTADO</label>
+          <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+            <option value="Falta">Falta</option>
+            <option value="No Aplica">No Aplica</option>
+            <option value="En Plazo">En Plazo</option>
+            <option value="Vencido">Vencido</option>
+          </select>
+        </div>
+
+        <div class="field-grp">
           <label class="field-lbl">VIGENCIA</label>
           <input
             type="date"
             class="field-input"
             [(ngModel)]="panelVigencia"
-            [readonly]="!selectedEntregable.requiereVigencia"
+            [disabled]="panelEstado !== 'En Plazo'"
+            [class.field-input--error]="panelEstado === 'En Plazo' && !panelVigencia"
           />
-          <span *ngIf="selectedEntregable.requiereVigencia && !panelVigencia"
+          <span *ngIf="panelEstado === 'En Plazo' && !panelVigencia"
                 style="color:#ef4444;font-size:0.75rem;margin-top:4px;display:block;">
-            * Ingresa la fecha de vigencia para poder adjuntar el documento
+            * Ingresa la fecha de vigencia para guardar
           </span>
-        </div>
-
-        <div class="field-grp" *ngIf="selectedEntregable?.itemId !== 12">
-          <label class="field-lbl">DOCUMENTO ADJUNTO</label>
-          <div class="upload-zone" [class.upload-zone--active]="!(selectedEntregable.requiereVigencia && !panelVigencia)" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="!(selectedEntregable.requiereVigencia && !panelVigencia) && triggerFileInput()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
-          </div>
-          <div class="upload-zone" *ngIf="uploadingFile">
-            <span class="upload-spinner"></span>
-            <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
-          </div>
-          <div class="upload-file-card" *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
-            <div class="ufc-name">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
-              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
-            </div>
-            <div class="ufc-actions">
-              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Visualizar
-              </button>
-              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Descargar
-              </button>
-            </div>
-            <button type="button" class="ufc-replace"
-                    [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
-                    (click)="clearArchivo(); triggerFileInput()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-              </svg>
-              Reemplazar archivo
-            </button>
-          </div>
-          <div class="upload-state" *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
-            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
-            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
         </div>
 
         <div class="field-grp">
@@ -520,11 +488,12 @@
 
       </ng-container>
 
+      <!-- CASA / ADMIN: estado editable con auto-save, vigencia siempre visible, upload -->
       <ng-container *ngIf="!esSoloLecturaPanel(selectedEntregable) && !isContratista() && puedeEditar(selectedEntregable)">
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
-          <select class="field-input" [(ngModel)]="panelEstado">
+          <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
             <option value="Aprobado">Aprobado</option>
             <option value="Rechazado">Rechazado</option>
             <option value="Falta">Falta</option>
@@ -534,7 +503,7 @@
           </select>
         </div>
 
-        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
+        <div class="field-grp">
           <label class="field-lbl">VIGENCIA</label>
           <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
@@ -613,31 +582,16 @@
         <div class="panel-note">No tienes permisos para editar este entregable.</div>
       </ng-container>
 
-    </div>
-
-    <div class="drawer-footer" *ngIf="!esSoloLecturaPanel(selectedEntregable)">
       <button
-        *ngIf="!isContratista() && puedeEditar(selectedEntregable)"
+        *ngIf="!esSoloLecturaPanel(selectedEntregable)"
         type="button"
-        class="btn-primary"
-        [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
-        (click)="guardarEntregable()"
-      >GUARDAR</button>
-      <button
-        *ngIf="!isContratista() && isAdmin()"
-        type="button"
-        class="btn-approve"
-        (click)="aprobarEntregable()"
-      >✓ APROBAR</button>
-      <button
-        *ngIf="!isContratista() && isAdmin()"
-        type="button"
-        class="btn-reject-act"
-        (click)="rechazarEntregable()"
-      >✕ RECHAZAR</button>
-      <button type="button" class="btn-link drawer-footer-link" (click)="verVersiones()">
+        class="btn-link"
+        style="text-align:center;width:100%;margin-top:4px"
+        (click)="verVersiones()"
+      >
         Ver historial de versiones
       </button>
+
     </div>
 
   </ng-container>

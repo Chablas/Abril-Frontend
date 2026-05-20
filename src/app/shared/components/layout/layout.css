@@ -1,0 +1,7 @@
+.full-page-wrapper,
+.full-page-wrapper > div {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
