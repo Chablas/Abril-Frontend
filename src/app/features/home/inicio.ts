@@ -1,28 +1,33 @@
-import { Component, HostListener } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation/navigation.service';
-import { NavIcon } from '../../shared/components/nav-icon/nav-icon';
+import { NavModule } from '../../core/navigation/nav.model';
 
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, RouterModule, NavIcon],
+  imports: [CommonModule, RouterModule],
   templateUrl: './inicio.html',
   styleUrl: './inicio.css',
 })
 export class Inicio {
-  openMenu: string | null = null;
-
   constructor(public navService: NavigationService) {}
 
-  toggleMenu(key: string, event: MouseEvent): void {
-    event.stopPropagation();
-    this.openMenu = this.openMenu === key ? null : key;
+  get habilitacionModule(): NavModule | undefined {
+    return this.navService.getModules().find((m) => m.key === 'habilitacion');
   }
 
-  @HostListener('document:click')
-  closeMenu(): void {
-    this.openMenu = null;
+  getGroupCols(groupLabel: string): number {
+    return groupLabel === 'Gestión' ? 5 : 3;
+  }
+
+  getGroupAccent(groupLabel: string): { iconBg: string; iconColor: string; hoverBorder: string } {
+    const map: Record<string, { iconBg: string; iconColor: string; hoverBorder: string }> = {
+      'Gestión':        { iconBg: '#eef2ff', iconColor: '#4f46e5', hoverBorder: '#c7d2fe' },
+      'Operaciones':    { iconBg: '#f0fdf4', iconColor: '#16a34a', hoverBorder: '#bbf7d0' },
+      'Administración': { iconBg: '#fff7ed', iconColor: '#ea580c', hoverBorder: '#fed7aa' },
+    };
+    return map[groupLabel] ?? { iconBg: '#f2f2f2', iconColor: '#6b7280', hoverBorder: '#e0e0e0' };
   }
 }

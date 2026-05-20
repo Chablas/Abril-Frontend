@@ -155,20 +155,28 @@ export class NavigationService {
         {
           label: 'Operaciones',
           items: [
-            { label: 'Control de Acceso',       route: '/habilitacion/control-acceso',         featureKey: 'habilitacion.control-acceso' },
-            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                featureKey: 'habilitacion.bandeja' },
-            { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',       featureKey: 'habilitacion.registros-modelo' },
-            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
+            { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
+            { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
+            { label: 'Clínicas',              route: '/habilitacion/clinicas',  featureKey: 'habilitacion.clinicas' },
           ],
         },
         {
           label: 'Administración',
           items: [
-            { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
-            { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
-            { label: 'Clínicas',              route: '/habilitacion/clinicas', featureKey: 'habilitacion.clinicas' },
+            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                 featureKey: 'habilitacion.bandeja' },
+            { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',        featureKey: 'habilitacion.registros-modelo' },
+            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
           ],
         },
+      ],
+    },
+    {
+      key: 'control-acceso',
+      label: 'Control de Acceso',
+      iconKey: 'security',
+      baseRoute: '/habilitacion/control-acceso',
+      items: [
+        { label: 'Control de Acceso', route: '/habilitacion/control-acceso', featureKey: 'habilitacion.control-acceso' },
       ],
     },
     {
