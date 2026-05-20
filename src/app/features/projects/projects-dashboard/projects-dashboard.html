@@ -1,0 +1,133 @@
+<div class="page-wrapper">
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Total Proyectos</span>
+      <span class="kpi-value">{{ data?.totalProyectos ?? '—' }}</span>
+    </div>
+    <div class="kpi-card kpi-green">
+      <span class="kpi-label">Al Día</span>
+      <span class="kpi-value kpi-value-green">{{ data?.alDia ?? '—' }}</span>
+      <span class="kpi-sub">Sin retraso</span>
+    </div>
+    <div class="kpi-card kpi-alert">
+      <span class="kpi-label">Con Retraso</span>
+      <span class="kpi-value kpi-value-red">{{ data?.conRetraso ?? '—' }}</span>
+      <span class="kpi-sub">Requieren atención</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Avance Promedio</span>
+      <span class="kpi-value">{{ data !== null ? (data.avancePromedio | number: '1.0-1') + '%' : '—' }}</span>
+      <div class="kpi-progress-bar" *ngIf="data !== null">
+        <div class="kpi-progress-fill" [style.width]="avanceBarWidth(data.avancePromedio)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card filters-card">
+    <div class="section-bar" style="margin-bottom: 0.75rem;">
+      <span class="section-title">Filtros</span>
+    </div>
+    <div class="filters-grid">
+      <div>
+        <label class="field-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectos"
+          displayField="nombre"
+          valueField="id"
+          placeholder="Todos los proyectos"
+          [value]="selectedProyectoId"
+          (valueChange)="selectedProyectoId = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Estado</label>
+        <select class="field-input" [(ngModel)]="selectedEstado">
+          <option value="">Todos los estados</option>
+          <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Responsable Arq. Comercial</label>
+        <app-search-select
+          [options]="responsablesArqCom"
+          displayField="nombre"
+          valueField="id"
+          placeholder="Todos los responsables"
+          [value]="selectedResponsableId"
+          (valueChange)="selectedResponsableId = $event"
+        ></app-search-select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-primary" (click)="applyFilters()" [disabled]="loading">Buscar</button>
+        <button class="btn-ghost" (click)="clearFilters()" [disabled]="loading">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de detalle -->
+  <div class="card">
+    <div style="padding: 1rem 1.25rem 0.5rem;">
+      <span class="section-title">Detalle por Proyecto</span>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Estado</th>
+            <th>Responsable</th>
+            <th style="width: 160px;">Avance Programado</th>
+            <th style="width: 160px;">Avance Real</th>
+            <th style="width: 100px; text-align: center;">Retraso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="!loading && data && data.proyectos.length > 0">
+            <tr *ngFor="let item of data.proyectos">
+              <td>{{ item.proyectoNombre }}</td>
+              <td>
+                <span class="badge chip-blue">{{ item.estado }}</span>
+              </td>
+              <td>{{ item.responsableArqCom || '—' }}</td>
+              <td>
+                <div class="avance-cell">
+                  <div class="avance-bar-bg">
+                    <div class="avance-bar-fill avance-programado" [style.width]="avanceBarWidth(item.avanceProgramado)"></div>
+                  </div>
+                  <span class="avance-label">{{ item.avanceProgramado | number: '1.0-1' }}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="avance-cell">
+                  <div class="avance-bar-bg">
+                    <div
+                      class="avance-bar-fill"
+                      [class.avance-real-ok]="!item.tieneRetraso"
+                      [class.avance-real-late]="item.tieneRetraso"
+                      [style.width]="avanceBarWidth(item.avanceReal)"
+                    ></div>
+                  </div>
+                  <span class="avance-label">{{ item.avanceReal | number: '1.0-1' }}%</span>
+                </div>
+              </td>
+              <td style="text-align: center;">
+                <span *ngIf="item.tieneRetraso" class="badge chip-orange">Con retraso</span>
+                <span *ngIf="!item.tieneRetraso" class="badge chip-green">Al día</span>
+              </td>
+            </tr>
+          </ng-container>
+          <tr *ngIf="!loading && (!data || data.proyectos.length === 0)">
+            <td colspan="6" class="empty-row">No hay proyectos para los filtros seleccionados.</td>
+          </tr>
+          <tr *ngIf="loading">
+            <td colspan="6" class="empty-row">Cargando...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

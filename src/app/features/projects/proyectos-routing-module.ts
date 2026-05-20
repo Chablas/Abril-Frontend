@@ -7,12 +7,23 @@ import { ConstructionLogbookControl } from '../projects/construction-logbook-con
 import { ReportResponseControl } from './report-response-control/report-response-control';
 import { roleGuard } from '../../core/guards/role.guard';
 import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
+import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
 
 const routes: Routes = [
   {
     path: '',
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      {
+        path: 'projects-dashboard',
+        children: [
+          {
+            path: '',
+            component: ProjectsDashboard,
+            data: { titulo: 'DASHBOARD DE PROYECTOS' },
+          },
+        ],
+      },
       {
         path: 'dashboard',
         children: [

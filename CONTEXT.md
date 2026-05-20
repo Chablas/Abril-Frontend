@@ -376,6 +376,8 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged` |
 | — | `/api/v1/projectResident` | `ProjectResidentService` |
 | — | `/api/v1/userProject` | `UserProjectService` |
+| GET | `/api/v1/projects-dashboard/filters` | `ProjectsDashboardService.getFilters` |
+| GET | `/api/v1/projects-dashboard?proyectoId=&estado=&responsableArqComId=` | `ProjectsDashboardService.getDashboard` |
 
 ### Configuración (proyectos)
 | Endpoint | Servicio |
@@ -488,6 +490,8 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
 Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cuaderno obra, informes, seguimiento residentes, configuración (áreas/fases/etapas/etc.). Todos completados. Proyectos incluye botón **"Emails SSOMA"** → modal `ProjectEmailsForm` (PATCH `/api/v1/project/{id}/emails`).
+
+**`projects-dashboard`** — página nueva en `features/projects/projects-dashboard/`. KPIs (total proyectos, al día, con retraso, % avance promedio), filtros por proyecto/estado/responsable ArqCom, tabla de detalle con barras de avance dobles (programado en azul, real en verde/naranja según retraso) y badges de estado. Ruta: `/projects/projects-dashboard`. **Pendiente**: restaurar `canActivate: [roleGuard]` y `featureKey: 'projects.projects-dashboard'` en `proyectos-routing-module.ts` y en navigation.service.ts una vez confirmado que carga correctamente.
 
 ### `features/costs/` — ⚠️ Solo Adjudicaciones
 - `/costs/adjudicaciones`. Rol: `ADMINISTRADOR DEL SISTEMA`.
@@ -1136,3 +1140,25 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 
 ### Pitfall N+1
 `load()` dispara 1 + N requests (1 listClinicas + N getClinicaEmails). Aceptable para catálogos de clínicas (volumen bajo). Si el backend crece, considerar endpoint `/catalogos/clinicas/con-emails`.
+
+---
+
+## Sesión 2026-05-20 — Dashboard de Proyectos
+
+### Nuevos archivos creados
+- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs: `ProjectsDashboardFilterItemDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`
+- `core/services/projects-dashboard.service.ts` — `getFilters()` y `getDashboard(params)`. Patrón SSR-safe con `buildAuthHeaders()` defensivo. Interfaz `ProjectsDashboardParams` exportada.
+- `features/projects/projects-dashboard/projects-dashboard.ts` — Componente standalone. `forkJoin` en `ngOnInit` para cargar filtros + datos en paralelo. Arrays de filtros declarados como propiedades planas (`proyectos`, `estados`, `responsablesArqCom`) inicializadas a `[]` para evitar `undefined` en `SearchSelect`.
+- `features/projects/projects-dashboard/projects-dashboard.html` — 4 KPI cards, filtros con `SearchSelect` (proyecto, responsable) y `<select>` nativo (estado), tabla con barras de avance dobles y badges de retraso.
+- `features/projects/projects-dashboard/projects-dashboard.css` — Sistema de diseño completo: `.card`, `.kpi-card`, `.kpi-alert`, `.kpi-green`, `.btn-primary`, `.btn-ghost`, `.field-label`, `.field-input`, `.data-table`, `.badge`, chips, barras `.avance-bar-fill`, responsive en 1024px y 640px.
+
+### Cambios en archivos existentes
+- `features/projects/proyectos-routing-module.ts` — Ruta `projects-dashboard` añadida. **Sin `canActivate: [roleGuard]` y sin `featureKey` temporalmente** (para pruebas). Restaurar cuando esté validado.
+- `core/navigation/navigation.service.ts` — Item "Dashboard de Proyectos" añadido como primer ítem del módulo `proyectos`, con `featureKey: 'projects.projects-dashboard'`.
+
+### Pitfall SearchSelect
+`SearchSelect` lanza `Cannot read properties of undefined (reading 'length')` si `[options]` recibe `undefined`. Solución: declarar los arrays como propiedades planas del componente con valor inicial `[]`, y al asignar desde la API usar `?? []`. **No** usar `filters.proyectos` directamente en `[options]` si `filters` puede llegar con campos nulos del backend.
+
+### Pendiente para prod
+- Restaurar `canActivate: [roleGuard]` y `data: { ..., featureKey: 'projects.projects-dashboard' }` en `proyectos-routing-module.ts`.
+- El sidebar ya tiene `featureKey: 'projects.projects-dashboard'` → el backend debe agregar ese feature key al rol correspondiente en `allowed_features`.
