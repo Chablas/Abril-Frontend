@@ -9,10 +9,9 @@
     <button type="button" class="tipo-tab" [class.tab-active-gray]="filtroTipo === 'EQUIPO'" (click)="setTipo('EQUIPO')">Equipos</button>
   </div>
 
-  <!-- ── Columnas principales ───────────────────────────────── -->
-  <div class="bandeja-columns">
+  <!-- ── Columnas estándar (Todos / Trabajadores / Empresas / Equipos) ── -->
+  <div class="bandeja-columns" *ngIf="filtroTipo !== 'INDUCCION'">
 
-    <!-- Panel izquierdo: lista de items -->
     <div class="col-items card">
       <div class="filters-card">
         <select class="field-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
@@ -57,7 +56,6 @@
       </div>
     </div>
 
-    <!-- Panel derecho: visor PDF -->
     <ng-container *ngIf="selectedItem; else noItemSelected">
       <div class="col-detalle card">
         <div class="detalle-header">
@@ -105,4 +103,63 @@
     </ng-template>
 
   </div>
+
+  <!-- ── Tab Inducciones: tarjetas agrupadas ─────────────────── -->
+  <div class="ind-grupos-wrap" *ngIf="filtroTipo === 'INDUCCION'">
+    <div *ngIf="loadingInducciones" class="empty-list">Cargando inducciones…</div>
+    <div *ngIf="!loadingInducciones && induccionGrupos.length === 0" class="empty-list">
+      No hay inducciones pendientes de aprobación.
+    </div>
+
+    <div *ngFor="let grupo of induccionGrupos" class="ind-grupo-card card">
+
+      <div class="ind-grupo-header">
+        <div class="ind-grupo-info">
+          <span class="ind-proyecto">{{ grupo.proyectoNombre }}</span>
+          <span class="ind-meta">
+            {{ grupo.empresaNombre }} · {{ grupo.fechaProgramada | date:'dd/MM/yyyy' }}
+            <span *ngIf="grupo.trabajoAltura" class="btn-chip chip-orange ind-flag">Altura</span>
+            <span *ngIf="grupo.equipoElectrico" class="btn-chip chip-blue ind-flag">Eléctrico</span>
+          </span>
+        </div>
+        <span class="ind-asistieron">{{ nAsistieron(grupo) }} / {{ grupo.items.length }} asistieron</span>
+      </div>
+
+      <div class="ind-select-all" *ngIf="nAsistieron(grupo) > 0">
+        <label class="ind-check-row">
+          <input type="checkbox"
+                 [checked]="allSelected(grupo)"
+                 (change)="toggleSelectAll(grupo, $any($event.target).checked)" />
+          <span>Seleccionar todos los asistentes</span>
+        </label>
+      </div>
+
+      <div class="ind-chips-wrap">
+        <div *ngFor="let item of grupo.items"
+             class="ind-chip"
+             [class.ind-chip-green]="item.ingresoConfirmado"
+             [class.ind-chip-gray]="!item.ingresoConfirmado">
+          <input *ngIf="item.ingresoConfirmado" type="checkbox"
+                 [checked]="grupo.seleccionados.has(item.id)"
+                 (change)="toggleWorker(grupo, item)" />
+          <div class="ind-chip-body">
+            <span class="ind-chip-name">{{ item.apellidoNombre }}</span>
+            <span class="ind-chip-sub">
+              {{ item.empresaNombre }}<ng-container *ngIf="item.contrataCasa"> · {{ item.contrataCasa }}</ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ind-grupo-footer" *ngIf="nAsistieron(grupo) > 0">
+        <button type="button" class="btn-primary"
+                [disabled]="grupo.seleccionados.size === 0"
+                (click)="aprobarGrupo(grupo)">
+          Aprobar seleccionados ({{ grupo.seleccionados.size }})
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </div>

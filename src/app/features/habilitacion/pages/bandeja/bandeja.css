@@ -298,3 +298,164 @@
   background: #dbeafe;
   color: #1d4ed8;
 }
+
+/* ── Tab Inducciones agrupadas ───────────────────────────── */
+
+.ind-grupos-wrap {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+  padding-bottom: 1rem;
+}
+
+.ind-grupo-card {
+  padding: 1rem 1.25rem;
+  flex-shrink: 0;
+}
+
+.ind-grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.ind-grupo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ind-proyecto {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ind-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.ind-flag {
+  font-size: 0.68rem !important;
+  padding: 0.15rem 0.45rem !important;
+}
+
+.ind-asistieron {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  background: #f3f4f6;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.ind-select-all {
+  margin-bottom: 0.6rem;
+}
+
+.ind-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.ind-check-row input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.ind-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.ind-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.ind-chip-green {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.ind-chip-gray {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.6;
+}
+
+.ind-chip input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ind-chip-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.ind-chip-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.ind-chip-sub {
+  font-size: 0.7rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.ind-grupo-footer {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-primary {
+  background: #64bc04;
+  color: #ffffff;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5aa904;
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

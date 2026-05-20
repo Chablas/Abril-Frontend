@@ -9,8 +9,23 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { BandejaService } from '../../services/bandeja.service';
+import { InduccionService } from '../../services/induccion.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { BandejaAprobarDto, BandejaItemDto } from '../../dtos/bandeja.model';
+import { InduccionListDto } from '../../dtos/induccion.model';
+
+interface InduccionGrupo {
+  key: string;
+  proyectoId: number;
+  proyectoNombre: string;
+  empresaId: number;
+  empresaNombre: string;
+  fechaProgramada: string;
+  trabajoAltura: boolean;
+  equipoElectrico: boolean;
+  items: InduccionListDto[];
+  seleccionados: Set<number>;
+}
 
 @Component({
   selector: 'app-hab-bandeja',
@@ -37,11 +52,16 @@ export class Bandeja implements OnInit, OnDestroy {
   loadingDoc = false;
   private docBlobUrl = '';
 
+  // ── Inducciones agrupadas ─────────────────────────────────
+  induccionGrupos: InduccionGrupo[] = [];
+  loadingInducciones = false;
+
   private filterChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
     private bandejaService: BandejaService,
+    private induccionService: InduccionService,
     private sharepointService: SharepointUploadService,
     private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
@@ -62,7 +82,7 @@ export class Bandeja implements OnInit, OnDestroy {
     this.revokeDocBlobUrl();
   }
 
-  // ── Lista ─────────────────────────────────────────────────
+  // ── Lista estándar ────────────────────────────────────────
 
   loadItems(page: number = this.currentPage): void {
     this.loading = true;
@@ -97,7 +117,11 @@ export class Bandeja implements OnInit, OnDestroy {
 
   setTipo(tipo: string): void {
     this.filtroTipo = tipo;
-    this.loadItems(1);
+    if (tipo === 'INDUCCION') {
+      this.loadInducciones();
+    } else {
+      this.loadItems(1);
+    }
   }
 
   onFilter(): void {
@@ -106,6 +130,110 @@ export class Bandeja implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.loadItems(page);
+  }
+
+  // ── Inducciones agrupadas ─────────────────────────────────
+
+  loadInducciones(): void {
+    this.loadingInducciones = true;
+    this.loaderService.show();
+    this.induccionService.getList({ estado: 'PROGRAMADA' }).subscribe({
+      next: (items) => {
+        this.induccionGrupos = this.groupInducciones(items);
+        this.loadingInducciones = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingInducciones = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private groupInducciones(items: InduccionListDto[]): InduccionGrupo[] {
+    const map = new Map<string, InduccionGrupo>();
+    for (const item of items) {
+      const key = `${item.proyectoId}-${item.empresaId}-${item.fechaProgramada.substring(0, 10)}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          proyectoId: item.proyectoId,
+          proyectoNombre: item.proyectoNombre,
+          empresaId: item.empresaId,
+          empresaNombre: item.empresaNombre,
+          fechaProgramada: item.fechaProgramada,
+          trabajoAltura: item.trabajoAltura,
+          equipoElectrico: item.equipoElectrico,
+          items: [],
+          seleccionados: new Set<number>(),
+        });
+      }
+      const grupo = map.get(key)!;
+      grupo.items.push(item);
+      if (item.ingresoConfirmado) grupo.seleccionados.add(item.id);
+    }
+    return Array.from(map.values());
+  }
+
+  nAsistieron(grupo: InduccionGrupo): number {
+    return grupo.items.filter((i) => i.ingresoConfirmado).length;
+  }
+
+  allSelected(grupo: InduccionGrupo): boolean {
+    const asistentes = grupo.items.filter((i) => i.ingresoConfirmado);
+    return asistentes.length > 0 && asistentes.every((i) => grupo.seleccionados.has(i.id));
+  }
+
+  toggleWorker(grupo: InduccionGrupo, item: InduccionListDto): void {
+    if (!item.ingresoConfirmado) return;
+    if (grupo.seleccionados.has(item.id)) {
+      grupo.seleccionados.delete(item.id);
+    } else {
+      grupo.seleccionados.add(item.id);
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleSelectAll(grupo: InduccionGrupo, checked: boolean): void {
+    grupo.seleccionados.clear();
+    if (checked) {
+      grupo.items.filter((i) => i.ingresoConfirmado).forEach((i) => grupo.seleccionados.add(i.id));
+    }
+    this.cdr.detectChanges();
+  }
+
+  aprobarGrupo(grupo: InduccionGrupo): void {
+    if (grupo.seleccionados.size === 0) return;
+    const ids = Array.from(grupo.seleccionados);
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${ids.length} inducción(es)?`,
+      html: `<div style="text-align:left;font-size:0.9rem">
+              <strong>${grupo.proyectoNombre}</strong><br/>
+              <span style="color:#6b7280">${grupo.empresaNombre} · ${grupo.fechaProgramada.substring(0, 10)}</span>
+            </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      this.induccionService.aprobarBatch(ids).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+          this.loadInducciones();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
   }
 
   // ── Selección y visor PDF ─────────────────────────────────
@@ -166,65 +294,25 @@ export class Bandeja implements OnInit, OnDestroy {
 
   getTipoClass(tipo: string): string {
     switch (tipo) {
-      case 'TRABAJADOR':
-        return 'chip-blue';
-      case 'EMPRESA':
-        return 'chip-green';
-      case 'EQUIPO':
-        return 'chip-gray';
-      case 'INDUCCION':
-        return 'chip-orange';
-      default:
-        return 'chip-gray';
+      case 'TRABAJADOR': return 'chip-blue';
+      case 'EMPRESA':    return 'chip-green';
+      case 'EQUIPO':     return 'chip-gray';
+      case 'INDUCCION':  return 'chip-orange';
+      default:           return 'chip-gray';
     }
   }
 
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
-    if (item.tipo === 'INDUCCION') {
-      Swal.fire({
-        icon: 'question',
-        title: '¿Aprobar inducción?',
-        html: `<div style="text-align:left;font-size:0.9rem">
-                <strong>${item.nombreEntregable}</strong><br/>
-                <span style="color:#6b7280">${item.entidadNombre}</span>
-              </div>`,
-        showCancelButton: true,
-        confirmButtonText: 'Aprobar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#64bc04',
-        cancelButtonColor: '#6b7280',
-      }).then((res) => {
-        if (!res.isConfirmed) return;
-        this.loaderService.show();
-        this.bandejaService.aprobarInduccion(item.id).subscribe({
-          next: () => {
-            this.loaderService.hide();
-            this.selectedItem = null;
-            this.clearDocPanel();
-            Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1500, showConfirmButton: false });
-            this.loadItems(this.currentPage);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-      });
-      return;
-    }
-
     Swal.fire({
       icon: 'question',
       title: '¿Aprobar entregable?',
       html: `<div style="text-align:left;font-size:0.9rem">
               <strong>${item.nombreEntregable}</strong><br/>
               <span style="color:#6b7280">${item.entidadNombre}</span>
+              ${item.vigencia ? `<div style="margin-top:0.75rem"><label style="font-size:0.75rem;color:#6b7280;text-transform:uppercase">Vigencia</label><input type="date" value="${item.vigencia.substring(0, 10)}" readonly style="display:block;width:100%;margin-top:4px;padding:0.45rem 0.65rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.875rem;background:#f9fafb;color:#374151;cursor:default"/></div>` : ''}
             </div>`,
-      input: 'date',
-      inputLabel: 'Vigencia (opcional)',
-      inputValue: item.vigencia ? item.vigencia.substring(0, 10) : '',
       showCancelButton: true,
       confirmButtonText: 'Aprobar',
       cancelButtonText: 'Cancelar',
@@ -232,7 +320,7 @@ export class Bandeja implements OnInit, OnDestroy {
       cancelButtonColor: '#6b7280',
     }).then((res) => {
       if (!res.isConfirmed) return;
-      this.executeAction(item, { estado: 'Aprobado', vigencia: res.value || undefined }, 'Aprobado');
+      this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
     });
   }
 

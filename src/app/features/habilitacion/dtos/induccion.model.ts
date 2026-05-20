@@ -40,6 +40,7 @@ export interface InduccionListDto {
   proyectoNombre: string;
   empresaId: number;
   empresaNombre: string;
+  contrataCasa?: string;
   fechaProgramada: string;
   trabajoAltura: boolean;
   equipoElectrico: boolean;
