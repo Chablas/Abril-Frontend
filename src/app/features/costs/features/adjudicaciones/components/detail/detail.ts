@@ -68,7 +68,7 @@ export class Detail implements OnInit {
       { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
       { key: 'ServiceOrder',      label: 'Orden de Servicio' },
       { key: 'Instructivo',          label: 'Instructivo' },
-      { key: 'NonConformingOutput',  label: 'Causales de Conformidad' },
+      { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
     ];
     if (this.item.paymentMethodId === 2) {
