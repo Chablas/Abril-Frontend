@@ -205,7 +205,9 @@ export class ContractorRegistration implements OnInit {
     if (!this.logoFile)                                   errors.push('Logo / imagen de la empresa');
 
     // Representante legal
-    if (!this.form.legalRepresentativeDni?.trim())        errors.push('DNI del representante legal');
+    // Se acepta el DNI si fue consultado (form) o simplemente escrito (dniInput)
+    if (!this.form.legalRepresentativeDni?.trim() && !this.dniInput?.trim())
+      errors.push('DNI del representante legal');
     if (!this.form.legalRepresentativeFullName?.trim())   errors.push('Nombre completo del representante legal');
     if (!this.form.legalEntityRegistryNumber?.trim())     errors.push('N° de partida registral');
 
@@ -241,6 +243,11 @@ export class ContractorRegistration implements OnInit {
     }
 
     this.loaderService.show();
+
+    // Si el usuario escribió el DNI sin consultar RENIEC, sincronizarlo al form
+    if (!this.form.legalRepresentativeDni?.trim() && this.dniInput?.trim()) {
+      this.form.legalRepresentativeDni = this.dniInput.trim();
+    }
 
     const formData = new FormData();
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
