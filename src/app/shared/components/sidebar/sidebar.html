@@ -9,7 +9,7 @@
           'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
           'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
         }"
-        (click)="toggleMenu(module.key)"
+        (click)="onModuleClick(module)"
       >
         <!-- Icono -->
         <app-nav-icon [key]="module.iconKey" [size]="28" />

@@ -304,6 +304,12 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.resetPanel();
   }
 
+  onEstadoChange(): void {
+    if (!this.selectedEntregable) return;
+    if (this.isContratista() && this.panelEstado === 'En Plazo' && !this.panelVigencia) return;
+    this.guardarEntregable();
+  }
+
   private extractFileName(url: string): string {
     try {
       const parts = url.split(/[\\/]/);

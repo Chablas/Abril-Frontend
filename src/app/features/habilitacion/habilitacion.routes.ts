@@ -10,7 +10,8 @@ export const HABILITACION_ROUTES: Routes = [
       import('./pages/trabajadores/trabajadores').then((m) => m.Trabajadores),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'HABILITACIÓN - TRABAJADORES',
+      titulo: '',
+      hideHeader: true,
       featureKey: 'habilitacion.trabajadores',
       roles: ['CONTRATISTA'],
     },

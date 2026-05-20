@@ -1,3 +1,4 @@
+<ng-container *ngIf="!hideHeader">
 <div class="hidden sm:block sm:flex sm:h-[70px] sm:items-center sm:justify-center sm:bg-[#f2f5f2] sm:px-[20px]">
     <a class="hidden sm:block sm:h-full" routerLink="/">
         <img class="h-full" src="/images/abril-logo.png" alt="Logo" />
@@ -49,8 +50,9 @@
       </div>
     </div>
 </div>
+</ng-container>
 <div class="sm:hidden">
-    <div class="p-[20px] flex items-center gap-[20px] border border-gray-200">
+    <div *ngIf="!hideHeader" class="p-[20px] flex items-center gap-[20px] border border-gray-200">
         <button (click)="menuOpen = !menuOpen">
             <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 xmlns="http://www.w3.org/2000/svg">

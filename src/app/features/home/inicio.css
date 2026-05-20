@@ -1,0 +1,3 @@
+.bento-card:hover {
+  border-color: var(--hover-border) !important;
+}

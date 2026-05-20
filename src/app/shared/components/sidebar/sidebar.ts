@@ -102,7 +102,19 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isActiveModule(baseRoute: string): boolean {
+    if (baseRoute === '/habilitacion') {
+      return this.router.url === '/' || this.router.url.startsWith('/habilitacion');
+    }
     return this.router.url.startsWith(baseRoute);
+  }
+
+  onModuleClick(module: NavModule): void {
+    if (module.key === 'habilitacion') {
+      this.router.navigate(['/']);
+      this.activeMenu = null;
+      return;
+    }
+    this.toggleMenu(module.key);
   }
 
   toggleMenu(key: string): void {
