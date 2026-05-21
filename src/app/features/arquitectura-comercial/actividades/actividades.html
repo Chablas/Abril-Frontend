@@ -317,8 +317,8 @@
                   {{ a.encargado1 || '—' }}
                 </td>
                 <td class="px-2 py-1.5">
-                  <select [ngModel]="a.userId"
-                          (ngModelChange)="onResponsableChange(a, $event)"
+                  <select [ngModel]="a.userId2"
+                          (ngModelChange)="onResponsable2Change(a, $event)"
                           [disabled]="!a.activo"
                           class="w-full text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100">
                     <option [ngValue]="null">— sin responsable —</option>

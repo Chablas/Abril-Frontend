@@ -24,6 +24,7 @@ interface EditarActividadForm {
   tipo: string;
   etapaId: number | null;
   userId: number | null;
+  userId2: number | null;
   inicioProgramado: string;
   finProgramado: string;
   diasHabiliesProg: number | null;
@@ -73,6 +74,7 @@ export class EditarActividad implements OnChanges {
       tipo: '',
       etapaId: null,
       userId: null,
+      userId2: null,
       inicioProgramado: '',
       finProgramado: '',
       diasHabiliesProg: null,
@@ -94,6 +96,7 @@ export class EditarActividad implements OnChanges {
       tipo: this.actividad.partidaDeControl ?? '',
       etapaId: this.actividad.etapaId,
       userId: this.actividad.userId,
+      userId2: this.actividad.userId2,
       inicioProgramado: ini,
       finProgramado: fin,
       diasHabiliesProg: ini && fin ? this.contarDiasHabiles(ini, fin) : null,
@@ -232,6 +235,7 @@ export class EditarActividad implements OnChanges {
       tipo: this.model.tipo || null,
       etapaId: this.model.etapaId,
       userId: this.model.userId,
+      userId2: this.model.userId2,
       inicioProgramado: this.model.inicioProgramado || null,
       finProgramado: this.model.finProgramado || null,
       inicioEfectivo: this.model.inicioEfectivo || null,

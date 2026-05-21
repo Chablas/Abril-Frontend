@@ -1537,3 +1537,32 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 - Labels visibles en home: "Habilitación" → "Gestión de Ingresos", "SSOMA" → "Salud" (solo en inicio.ts, rutas y sidebar sin cambio)
 - navigation.service.ts: key 'ssoma' label → 'Salud', key 'habilitacion' label → 'Gestión de Ingresos' (keys y rutas sin cambio)
 - Orden grupos bento: ADMINISTRACIÓN → OPERACIONES → GESTIÓN (getter `orderedGroups` en inicio.ts reordena sin tocar NavigationService ni sidebar)
+
+---
+
+## Sesión 2026-05-21 — Arquitectura Comercial: Responsable 2, nombre personalizado en hito/entregable
+
+### `actividades.model.ts` — campos Responsable 2
+- `ActividadListItemDTO`: añadidos `userId2: number | null` y `responsableNombre2: string | null`.
+- `ActividadPatchBody`: añadido `userId2?: number | null`.
+- `UpdateActividadBody`: añadido `userId2: number | null`.
+
+### `actividades.html` y `actividades.ts` — dropdown Responsable 2
+- Columna "Responsable 2" en la tabla usa `[ngModel]="a.userId2"` y `(ngModelChange)="onResponsable2Change(a, $event)"`.
+- `onResponsable2Change(a, userId2)` añadido en `actividades.ts` → llama `patchField(a.id, 'userId2', userId2)` → PATCH `/actividades/{id}`.
+- Columna "Responsable 1" conserva su comportamiento (texto `a.encargado1`, solo lectura).
+
+### `components/editar-actividad/` — campo Responsable 2
+- `EditarActividadForm` interface: añadido `userId2: number | null`.
+- `empty()`: inicializa `userId2: null`.
+- `populateForm()`: asigna `userId2: this.actividad.userId2`.
+- `submit()`: incluye `userId2: this.model.userId2` en `UpdateActividadBody`.
+- `editar-actividad.html`: campo "Responsable" dividido en dos selects en grid-2: **"Responsable 1"** (`model.userId`) y **"Responsable 2"** (`model.userId2`), ambos con la lista `supervisores`.
+
+### `components/nuevo-entregable/` y `components/nuevo-hito/` — nombre personalizado
+- Dos propiedades nuevas en cada componente: `nombrePersonalizado = false` y `nombreLibre = ''`.
+- Se resetean a `false`/`''` en `ngOnChanges` al abrir el modal.
+- `canSubmit`: si `nombrePersonalizado` → solo exige `nombreLibre.trim()` no vacío; si OFF → lógica original de campos requeridos.
+- `submit()`: `nombre = nombrePersonalizado ? nombreLibre.trim() : nombreCalculado`.
+- HTML: campo "Nombre generado" muestra `readonly` cuando `!nombrePersonalizado` y input libre cuando `nombrePersonalizado`. Checkbox "Nombre personalizado" debajo de ambos inputs con `[(ngModel)]="nombrePersonalizado"`.
+- El campo `nombreCalculado` sigue calculándose en segundo plano aunque no se use cuando el checkbox está ON.

@@ -23,9 +23,19 @@
         </select>
       </div>
 
-      <div class="col-span-2">
-        <label class="field-label">Responsable</label>
+      <div>
+        <label class="field-label">Responsable 1</label>
         <select class="field-input" [(ngModel)]="model.userId">
+          <option [ngValue]="null">— sin responsable —</option>
+          <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
+            {{ s.apellidoNombre }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Responsable 2</label>
+        <select class="field-input" [(ngModel)]="model.userId2">
           <option [ngValue]="null">— sin responsable —</option>
           <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
             {{ s.apellidoNombre }}
