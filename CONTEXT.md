@@ -461,7 +461,11 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 | Método | Endpoint | Servicio |
 |--------|----------|----------|
-| GET | `/dashboard` | `getDashboardData` |
+| GET | `/dashboard` | `getDashboardData` (v1 — legado) |
+| GET | `/dashboard-v2?categoriaId=&proyectoId=&userId=&semana=&mes=&anio=` | `getDashboardV2(DashboardFiltroDTO)` |
+| GET | `/proyectos` | `getProyectos` — lista simple `{ id, nombre }` |
+| GET | `/alertas/{tipoAlerta}?...` | `getActividadesPorAlerta(tipo, filtro)` → `ActividadAlertaDTO[]` |
+| POST | `/alertas/enviar` | `enviarAlertasActividades(EnviarAlertaRequestDTO)` |
 | GET | `/filters` | `getFilters` |
 | GET | `/proyectos-con-actividades` | `getProyectosConActividades` |
 | GET | `/supervisores-ac` | `getSupervisoresAc` |
@@ -481,13 +485,23 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 | GET | `/etapas` | `getEtapas` |
 | GET | `/gantt` | `getGantt` |
 
+**DTOs nuevos** (`core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model.ts`):
+- `DashboardFiltroDTO { categoriaId, proyectoId, userId, semana, mes, anio }` — filtro unificado del dashboard.
+- `ActividadAlertaDTO { id, nombre, proyecto, responsable1/2, emailResp1/2, fechaInicio/Fin, estado, spi, tipo, categoria, diasRestantes }`.
+- `EnviarAlertaRequestDTO { actividadIds: number[], tipoAlerta: string }`.
+
+**Extensiones en** `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts`:
+- `HitoCriticoDTO`: añadido `id: number`.
+- `ArqComercialDashboardDTO`: añadidos `tareasPorArquitectoDetalle`, `avanceSemanal`, `eficienciaSpi`, `categorias`.
+- Nuevos interfaces: `TareasPorArquitectoDTO { userId, nombre, hitos, entregables, consultas, total, avancePct }`, `AvanceSemanalDTO { semana, programado, real }`, `EficienciaSpiDTO { semana, spi }`, `CategoriaItemDTO { id, nombre }`.
+
 **DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
-- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días). Campo `tipo` renombrado a `partidaDeControl: string | null`. Campos añadidos: `categoriaId`, `categoriaNombre`, `especialidadId`, `especialidadNombre`.
-- `ActividadPatchBody` — solo fechas programadas/efectivas, userId, observaciones.
-- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
-- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
+- `ActividadListItemDTO` — fila de tabla. Campos clave: `orden` (ex `indice`), `spi?: number | null`, `partidaDeControl: string | null` (ex `tipo`), `categoriaId/Nombre`, `especialidadId/Nombre`, `userId`, `responsableNombre`, `userId2: number | null`, `responsableNombre2: string | null`, `encargado1`, `estado`, `retraso`.
+- `ActividadPatchBody` — campos opcionales: fechas programadas/efectivas, `userId`, `userId2`, `observaciones`, `estado`, `activo`.
+- `CreateActividadBody` — `nombre, tipo, projectId, etapaId, userId, inicioProgramado, finProgramado`. Opcionales: `categoriaId`, `especialidadId`.
+- `UpdateActividadBody` — igual que Create más `userId2: number | null`, `inicioEfectivo`, `finEfectivo`, `observaciones`. Opcionales: `categoriaId`, `especialidadId`.
 - `AcEtapaDTO { id, nombre }` — catálogo de etapas del backend.
-- **Nota**: `GanttActividadDTO` conserva `tipo: string | null` (NO renombrado).
+- **Nota**: `GanttActividadDTO` conserva `tipo: string | null` (NO renombrado) y usa `orden` en vez de `indice`.
 
 ---
 
@@ -523,13 +537,13 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - **`empresaId` en JWT contratista** = `contributor_id` (no `contractor_id`).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
-- Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
+- Dashboard (v2 enterprise con modales de alertas, hitos y 4 charts — ver §17), Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
 - **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta/hito/entregable (POST).
-- **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`). Colspan separadores = 18.
+- **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`), **SPI** (verde/naranja/rojo según ≥1/≥0.8/<0.8), **Responsable 1** (texto read-only `encargado1`), **Responsable 2** (dropdown `[ngModel]="a.userId2"` → `patchActividad`). Colspan separadores = 19. Columna acciones sticky: `.th-actions-sticky` + `.td-actions-sticky` (`position:sticky; right:0`).
 - **Botón "+ Nueva Consulta"**: visible cuando `tipoFiltro === 'CONSULTA'`. Abre `components/nueva-consulta/`. Body fijo: `categoriaId: 2, especialidadId: 2`.
-- **Botón "+ Nuevo Hito"**: visible cuando `tipoFiltro === 'HITO'`. Abre `components/nuevo-hito/`. Campos: etapaNombre, actividad (3 opciones), mes (12 opciones), correlativo, especialidadId (1=EJECUCIÓN / 2=CONTROL). Fijos: `categoriaId: 3 (POST VENTA), tipo: 'HITO'`. Nombre: `${etapaNombre}_${actividad}  (${mes}) ${correlativo.padStart(2,'0')}`.
-- **Botón "+ Nuevo Entregable"**: visible cuando `tipoFiltro === 'ENTREGABLE'`. Abre `components/nuevo-entregable/`. Campos: etapaNombre, reporte (5 opciones), categoriaId (3=POST VENTA / 4=ALMACENES). Fijos: `especialidadId: 2, tipo: 'ENTREGABLE'`. Nombre: `${etapaNombre}_${reporte}`.
+- **Botón "+ Nuevo Hito"**: visible cuando `tipoFiltro === 'HITO'`. Abre `components/nuevo-hito/`. Campos: etapaNombre, actividad (3 opciones), mes (12 opciones), correlativo, especialidadId (1=EJECUCIÓN / 2=CONTROL). Fijos: `categoriaId: 3 (POST VENTA), tipo: 'HITO'`. Nombre generado: `${etapaNombre}_${actividad}  (${mes}) ${correlativo.padStart(2,'0')}`. **Checkbox "Nombre personalizado"**: `nombrePersonalizado = false` por defecto; cuando ON, `canSubmit` solo exige `nombreLibre.trim()` no vacío y `submit()` usa `nombreLibre` en vez del nombre calculado.
+- **Botón "+ Nuevo Entregable"**: visible cuando `tipoFiltro === 'ENTREGABLE'`. Abre `components/nuevo-entregable/`. Campos: etapaNombre, reporte (5 opciones), categoriaId (3=POST VENTA / 4=ALMACENES). Fijos: `especialidadId: 2, tipo: 'ENTREGABLE'`. Nombre generado: `${etapaNombre}_${reporte}`. **Checkbox "Nombre personalizado"**: igual que Nuevo Hito — `nombrePersonalizado`/`nombreLibre` con misma lógica de `canSubmit`/`submit()`.
 - **Modales Nuevo Hito / Nuevo Entregable**: auto-seleccionan etapa "POST VENTA Y EXPERIENCIA" al abrir. Etapas cacheadas en el componente (guard `etapas.length > 0` + `applyDefaultEtapa()` en cada apertura).
 - **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
 - **Modal Editar Actividad**: `components/editar-actividad/`. Campo `tipo` del form mapea a `partidaDeControl` de `ActividadListItemDTO` (campo local del form sigue llamándose `tipo` para el body del backend).
@@ -1586,4 +1600,115 @@ Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 1. **Merge y deploy**: merge `feature/arquitectura-comercial` → `master` → deploy backend primero → deploy frontend. Verificar migraciones de BD (`userId2` en tabla `ac_actividades`).
 2. **Cron / recálculo automático SPI**: el backend debe calcular `spi` periódicamente (o en cada PATCH de fechas). Acordar frecuencia con backend: sugerido cron diario + recálculo on-demand al actualizar `finEfectivo` o `finProgramado`.
 3. **Curva S**: nueva vista en el módulo AC — gráfico de avance programado vs avance real acumulado por semana/mes. Datos: `inicioProgramado`/`finProgramado` para la curva base y `inicioEfectivo`/`finEfectivo` para la curva real. Implementar en `features/arquitectura-comercial/curva-s/` con Chart.js (línea doble + área fill).
-4. **Rediseño dashboard AC**: el dashboard actual (`dashboard/`) tiene KPIs básicos y gráficos de barras/dona. Rediseño propuesto: agregar panel de curva S en columna izquierda, mover ranking de eficiencia a columna derecha, añadir filtro por responsable (userId / userId2), y mostrar alerta de actividades sin Responsable 2 asignado.
+
+---
+
+## §17 — Dashboard Arquitectura Comercial v2 Enterprise (2026-05-21)
+
+### Archivos clave
+- `features/arquitectura-comercial/dashboard/dashboard.ts` — lógica completa (Charts, modales, filtros, helpers)
+- `features/arquitectura-comercial/dashboard/dashboard.html` — template completo
+- `features/arquitectura-comercial/dashboard/dashboard.css` — sistema de diseño flat
+- `core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model.ts` — DTOs nuevos de alertas
+- `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts` — extendido con 4 interfaces nuevas
+
+### Paleta y diseño general
+- Fondo raíz: `#F0F2F5`. Cards: `background:#fff; border:0.5px solid #E2E8F0; border-radius:10px`. Sin sombras (flat design).
+- Colores semánticos: Culminadas `#1B6B3A`, En Proceso `#2E6DB4`, Vencidas `#C0392B`, Pendientes `#D97706`, base `#1E3A5F`.
+
+### Modo full-screen (sin header global)
+- `layout.ts` `isFullPage()` incluye `/arquitectura-comercial/dashboard` → renderiza solo `<router-outlet>` sin `<app-header>`.
+- Ruta `dashboard` en routing module lleva `hideHeader: true` como refuerzo secundario.
+
+### Flujo de datos — `cargar()`
+```ts
+forkJoin({
+  dashboard: this.service.getDashboardV2(f),
+  proyectos : this.service.getProyectos().pipe(catchError(() => of([]))),
+  workers   : this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
+})
+```
+`getProyectos()` y `getSupervisoresAc()` llevan `catchError(() => of([]))` — si fallan, el dashboard igual carga con arrays vacíos en los selectores. `filtro.anio` se inicializa al año actual en `generarFiltrosTiempo()`.
+
+### Header
+- 4 selects: arquitecto (`filtro.userId`), semana, mes, proyecto.
+- Botón Buscar llama `buscar()` → solo recarga `getDashboardV2`.
+
+### Category pills
+- `.cat-pills` — fila de pills: "TODOS" (null) + `*ngFor categorias` desde `dashboard.categorias`.
+- Pill activo: `background:#1E3A5F; color:#fff`. Punto de color: `cat-pill-dot` con `background:#fff !important` cuando activo.
+- `seleccionarCategoria(id)` actualiza `categoriaActiva` + `filtro.categoriaId` y llama `buscar()`.
+
+### KPI Grid y Alertas
+- `repeat(7, 1fr)` / `repeat(4, 1fr)`.
+- Alert cards llevan `.alert-clickable` (cursor:pointer, hover translateY-1px + box-shadow). Click → `abrirModalAlerta('VENCIDA'|'VENCE_SEMANA'|'ARRANQUE'|'HITO_PROXIMO')`.
+
+### Main Grid — 3 columnas
+
+**Col izquierda — Ranking Eficiencia**
+- `*ngFor supervisores let i = index`: número de posición `.rank-pos`, avatar 34px con iniciales, doble barra `.dual-bar-track` (`.bar-real` 8px / `.bar-proyectada` 4px opacity:0.45).
+- Badge `.rank-badge` con comentario inteligente vs `promedioEficiencia`.
+- Footer `.equilibrio-tag`: verde/rojo según `equipoEquilibrado` (varianza ≤30pp).
+
+**Col centro — 4 charts**
+1. **Distribución donut** (`#distribucionCanvas` 100×100px en `.donut-canvas-wrap`) + leyenda vertical `.donut-legend-v`.
+2. **Avance semanal** (`#avanceCanvas`, `.chart-wrap-md` height:120px) — bar chart barras dobles: Programado (azul claro) + Real (verde).
+3. **Eficiencia SPI** (`#eficienciaCanvas`, `.chart-wrap-md`) — line chart últimas 3 semanas. SPI × 100 = %. Datalabels `anchor:'end'`.
+
+**Col derecha — Hitos + Tareas**
+- Hitos Críticos: vista top 6 `.hitos-preview` (sin scroll). Botón "Ver todos (N)" → `abrirModalHitos()`.
+- Tareas por arquitecto (`#tareasCanvas`, `.chart-wrap-lg` height:160px) — bar stacked: Hitos (azul), Entregables (verde), Consultas (naranja). Top 8 por `primerApellido(nombre)`.
+
+### Modal Alertas
+- `abrirModalAlerta(tipo)` → `GET /alertas/{tipo}?...` → tabla `ActividadAlertaDTO[]` con checkboxes.
+- `.modal-backdrop` (backdrop-filter:blur(2px)) + `.modal-box` (max-width:820px, max-height:88vh, animación `slideUp`).
+- Toolbar: "Seleccionar todos" (`toggleTodos`) + contador `seleccionados.size`.
+- Tabla sticky thead: nombre, proyecto, tipo (badge coloreado), responsable1/2, fechaFin, estado, SPI, días.
+- Footer: botón "Enviar alerta (N)" → `enviarAlertasActividades({ actividadIds: [...seleccionados], tipoAlerta })` → POST `/alertas/enviar`.
+
+### Modal Hitos
+- `abrirModalHitos()` — muestra los 3 tabs con getters: `hitosIniciar` (diasRestantes 0-7), `hitosVencer` (8-30), `hitosVencidos` (<0).
+- `.hito-tabs` con `.hito-tab.active` (border-bottom `#1E3A5F`). `.tab-badge` por tab.
+- Botón "Alertar" por fila → `alertarHito(hito)` → POST `/alertas/enviar` con `[hito.id]`.
+- `.btn-alert-urgent` en tab Vencidos (rojo).
+
+### Métodos y getters en `dashboard.ts`
+
+| Símbolo | Descripción |
+|---------|-------------|
+| `categoriaActiva: number\|null` | Pill activa. null = TODOS |
+| `filtro: DashboardFiltroDTO` | Filtro unificado (userId, proyectoId, semana, mes, anio, categoriaId) |
+| `getFiltroActual()` | Spread de `filtro` + `categoriaId: categoriaActiva` |
+| `aplicarDashboard(d)` | Llena todos los arrays y llama `renderCharts()` con `setTimeout(50)` |
+| `destruirCharts()` | Destruye los 4 charts antes de re-renderizar |
+| `getInitials(nombre)` | 2 iniciales (primer y último token) |
+| `primerApellido(nombre)` | Primer token — etiqueta eje X del chart de tareas |
+| `getAvatarBg/Color(p)` | Verde/azul/rojo por progreso |
+| `getComentario/Bg/Color(sup)` | Badge vs promedio |
+| `promedioEficiencia` | Media aritmética de `supervisores[].progreso` |
+| `equipoEquilibrado` | max - min ≤ 30pp |
+| `getProyectada(p)` | `min(100, p * 1.12)` |
+| `getHitoColor(dias)` | Rojo (≤3 o <0) / naranja (≤7) / azul (resto) |
+| `hitosUrgentesCnt/EstaSemanaCnt/ProximosCnt` | Contadores footer hitos |
+| `diasLabel(dias)` | "Vencido Xd" / "Hoy" / "Xd" |
+| `getSpiColor/Label(spi)` | Color e string del SPI |
+| `getSubtitulo()` | "Semana N · MesNombre YYYY" |
+| `todosMarcados` getter | Todos los items del modal alertas están en `seleccionados` |
+| `hitosIniciar/hitosVencer/hitosVencidos` | Getters filtrando `hitosCriticos` por rango de días |
+
+### CSS clave
+- `.cat-pills` / `.cat-pill` / `.cat-pill.active` / `.cat-pill-dot`.
+- `.alert-clickable` — cursor:pointer, hover translateY(-1px) + box-shadow.
+- `.alert-top` — flex row space-between (número + ícono SVG).
+- `.donut-canvas-wrap` — 100×100px, `canvas { width:100%!important; height:100%!important }`.
+- `.donut-legend-v` — flex-col gap:6px.
+- `.chart-wrap-md` (h:120px) / `.chart-wrap-lg` (h:160px) — `position:relative; canvas absolute inset:0`.
+- `.right-col` — flex-col gap:10px.
+- `.hitos-preview` — flex-col gap:6px, overflow:hidden (top 6, sin scroll).
+- `.btn-ver-todos` — fondo `#EFF6FF`, color `#2E6DB4`.
+- `.modal-backdrop` — fixed inset:0 rgba(15,23,42,0.55) backdrop-filter:blur(2px) `@keyframes fadeIn`.
+- `.modal-box` — border-radius:12px, max-width:820px, max-height:88vh, `@keyframes slideUp`.
+- `.modal-table thead` — `position:sticky; top:0; background:#F8FAFC`.
+- `.row-selected` — background `#EFF6FF`.
+- `.hito-tabs` / `.hito-tab.active` (border-bottom `#1E3A5F`) / `.tab-badge`.
+- `.btn-alert-row` / `.btn-alert-urgent` / `.btn-enviar` / `.btn-cancelar`.

@@ -16,7 +16,7 @@ const routes: Routes = [
         path: 'dashboard',
         component: Dashboard,
         canActivate: [roleGuard],
-        data: { titulo: 'ARQUITECTURA COMERCIAL - DASHBOARD', featureKey: 'arquitectura-comercial.dashboard' },
+        data: { titulo: 'ARQUITECTURA COMERCIAL - DASHBOARD', featureKey: 'arquitectura-comercial.dashboard', hideHeader: true },
       },
       {
         path: 'actividades',
