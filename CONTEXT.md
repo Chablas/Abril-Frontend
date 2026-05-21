@@ -1540,7 +1540,7 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 
 ---
 
-## Sesión 2026-05-21 — Arquitectura Comercial: Responsable 2, nombre personalizado en hito/entregable
+## Sesión 2026-05-21 — Arquitectura Comercial: Responsable 2, roles AC, nombre personalizado
 
 ### `actividades.model.ts` — campos Responsable 2
 - `ActividadListItemDTO`: añadidos `userId2: number | null` y `responsableNombre2: string | null`.
@@ -1566,3 +1566,24 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 - `submit()`: `nombre = nombrePersonalizado ? nombreLibre.trim() : nombreCalculado`.
 - HTML: campo "Nombre generado" muestra `readonly` cuando `!nombrePersonalizado` y input libre cuando `nombrePersonalizado`. Checkbox "Nombre personalizado" debajo de ambos inputs con `[(ngModel)]="nombrePersonalizado"`.
 - El campo `nombreCalculado` sigue calculándose en segundo plano aunque no se use cuando el checkbox está ON.
+
+### Roles Arquitectura Comercial — diseño acordado (pendiente implementar)
+
+Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
+
+| Rol (string exacto) | Acceso |
+|---------------------|--------|
+| `GESTOR AC` | Ve todos los proyectos y todas las actividades sin filtro de empresa/usuario. Puede editar cualquier actividad. |
+| `USUARIO AC` | Ve solo los proyectos/actividades donde `userId === su propio userId` o `userId2 === su propio userId`. Dropdowns Responsable 1 y 2 solo muestran su propio nombre o vacío. |
+
+**Implementación pendiente (frontend)**:
+- `ArquitecturaComercialService` deberá pasar el userId del JWT como query param cuando el rol sea `USUARIO AC` — el backend filtrará server-side.
+- El sidebar y `roleGuard` usarán `featureKey: 'arquitectura-comercial.*'` para ambos roles.
+- `getSupervisoresAc()` seguirá devolviendo la lista completa; el filtrado de qué puede editar se controla en el backend.
+
+### Pendientes módulo Arquitectura Comercial
+
+1. **Merge y deploy**: merge `feature/arquitectura-comercial` → `master` → deploy backend primero → deploy frontend. Verificar migraciones de BD (`userId2` en tabla `ac_actividades`).
+2. **Cron / recálculo automático SPI**: el backend debe calcular `spi` periódicamente (o en cada PATCH de fechas). Acordar frecuencia con backend: sugerido cron diario + recálculo on-demand al actualizar `finEfectivo` o `finProgramado`.
+3. **Curva S**: nueva vista en el módulo AC — gráfico de avance programado vs avance real acumulado por semana/mes. Datos: `inicioProgramado`/`finProgramado` para la curva base y `inicioEfectivo`/`finEfectivo` para la curva real. Implementar en `features/arquitectura-comercial/curva-s/` con Chart.js (línea doble + área fill).
+4. **Rediseño dashboard AC**: el dashboard actual (`dashboard/`) tiene KPIs básicos y gráficos de barras/dona. Rediseño propuesto: agregar panel de curva S en columna izquierda, mover ranking de eficiencia a columna derecha, añadir filtro por responsable (userId / userId2), y mostrar alerta de actividades sin Responsable 2 asignado.
