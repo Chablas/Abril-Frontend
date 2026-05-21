@@ -1,391 +1,493 @@
-import { Component, AfterViewInit, ChangeDetectorRef, ElementRef, ViewChild, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  Component, AfterViewInit, ChangeDetectorRef,
+  ElementRef, ViewChild, OnDestroy,
+} from '@angular/core';
+import { CommonModule }   from '@angular/common';
+import { FormsModule }    from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartDataLabels    from 'chartjs-plugin-datalabels';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of }   from 'rxjs';
+import { catchError }     from 'rxjs/operators';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
-import { ErrorService } from '../../../core/services/error.service';
-import { LoaderService } from '../../../core/services/loader.service';
+import { ErrorService }   from '../../../core/services/error.service';
 import {
   ArqComercialDashboardDTO,
-  ArqComercialFiltersDTO,
-  ArqComercialSelectedFilters,
   ArqComercialKpiDTO,
   ArqComercialAlertDTO,
-  ProyeccionAvanceDTO,
-  ChartItemDTO,
-  EficienciaSemanalDTO,
   SupervisorProgresoDTO,
   HitoCriticoDTO,
+  TareasPorArquitectoDTO,
+  AvanceSemanalDTO,
+  EficienciaSpiDTO,
+  CategoriaItemDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
+import {
+  ActividadAlertaDTO,
+  DashboardFiltroDTO,
+  EnviarAlertaRequestDTO,
+} from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model';
 
 Chart.register(...registerables, ChartDataLabels);
 
+// ─── tipos locales ───────────────────────────────────────────────
+type TipoAlerta = 'VENCIDA' | 'VENCE_SEMANA' | 'ARRANQUE' | 'HITO_PROXIMO';
+type TabHito    = 'INICIAR' | 'VENCER' | 'VENCIDOS';
+
 @Component({
-  selector: 'app-arq-comercial-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  selector   : 'app-arq-comercial-dashboard',
+  standalone : true,
+  imports    : [CommonModule, FormsModule],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css',
+  styleUrl   : './dashboard.css',
 })
 export class Dashboard implements AfterViewInit, OnDestroy {
-  loader = true;
 
+  // ─── estado global ──────────────────────────────────────────────
+  loader = true;
+  enviandoAlerta = false;
+
+  // ─── categoría activa (pill principal) ─────────────────────────
+  categoriaActiva: number | null = null;   // null = TODOS
+
+  // ─── filtros secundarios ────────────────────────────────────────
+  filtro: DashboardFiltroDTO = {
+    categoriaId : null,
+    proyectoId  : null,
+    userId      : null,
+    semana      : null,
+    mes         : null,
+    anio        : null,
+  };
+
+  // ─── datos del dashboard ────────────────────────────────────────
   kpis: ArqComercialKpiDTO = {
     totalActividades: 0, culminadas: 0, enProceso: 0,
     vencidas: 0, pendientes: 0, eficienciaMedia: 0, progresoGlobal: 0,
   };
-
   alertas: ArqComercialAlertDTO = {
     vencidasSinCerrar: 0, vencenEstaSemana: 0,
     arrancanEstaSemana: 0, hitosProximos14Dias: 0,
   };
+  supervisores       : SupervisorProgresoDTO[]     = [];
+  hitosCriticos      : HitoCriticoDTO[]            = [];
+  tareasPorArquitecto: TareasPorArquitectoDTO[]    = [];
+  avanceSemanal      : AvanceSemanalDTO[]          = [];
+  eficienciaSpi      : EficienciaSpiDTO[]          = [];
+  categorias         : CategoriaItemDTO[]          = [];
 
-  supervisores: SupervisorProgresoDTO[] = [];
-  hitosCriticos: HitoCriticoDTO[] = [];
+  // ─── catálogos para filtros ────────────────────────────────────
+  proyectos  : { id: number; nombre: string }[]     = [];
+  arquitectos: { id: number; nombre: string }[]     = [];
+  semanas    : { value: number; label: string }[]   = [];
+  meses      : { value: number; label: string }[]   = [];
 
-  filters: ArqComercialFiltersDTO = { semanas: [], meses: [], proyectos: [] };
-  selectedFilters: ArqComercialSelectedFilters = {
-    semana: null, mes: null, proyectoId: 0,
-  };
+  // ─── modal de alertas ──────────────────────────────────────────
+  modalAlertaVisible    = false;
+  modalAlertaTitulo     = '';
+  modalAlertaTipo       : TipoAlerta | null = null;
+  modalAlertaActividades: ActividadAlertaDTO[] = [];
+  modalAlertaLoading    = false;
+  seleccionados         = new Set<number>();
 
-  private proyeccionChart?: Chart;
-  private rankingChart?: Chart;
+  // ─── modal hitos ───────────────────────────────────────────────
+  modalHitosVisible = false;
+  tabHito           : TabHito = 'VENCER';
+
+  // ─── charts ───────────────────────────────────────────────────
+  private avanceChart    ?: Chart;
+  private eficienciaChart?: Chart;
   private distribucionChart?: Chart;
-  private tendenciaChart?: Chart;
+  private tareasChart    ?: Chart;
 
-  @ViewChild('proyeccionCanvas') proyeccionRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('rankingCanvas') rankingRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
+  @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('distribucionCanvas') distribucionRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('tendenciaCanvas') tendenciaRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('tareasCanvas')     tareasRef    !: ElementRef<HTMLCanvasElement>;
 
   constructor(
-    private service: ArquitecturaComercialService,
+    private service     : ArquitecturaComercialService,
     private errorService: ErrorService,
-    private loaderService: LoaderService,
-    private cdr: ChangeDetectorRef,
+    private cdr         : ChangeDetectorRef,
   ) {}
 
-  ngAfterViewInit() {
-    this.loadInitialData();
-  }
+  // ─── lifecycle ────────────────────────────────────────────────
+  ngAfterViewInit() { this.generarFiltrosTiempo(); this.cargar(); }
+  ngOnDestroy()     { this.destruirCharts(); }
 
-  ngOnDestroy() {
-    this.proyeccionChart?.destroy();
-    this.rankingChart?.destroy();
-    this.distribucionChart?.destroy();
-    this.tendenciaChart?.destroy();
-  }
-
-  loadInitialData() {
+  // ─── carga principal ──────────────────────────────────────────
+  cargar() {
     this.loader = true;
+    const f = this.getFiltroActual();
     forkJoin({
-      dashboard: this.service.getDashboardData(this.selectedFilters),
-      filters: this.service.getFilters(),
+      dashboard: this.service.getDashboardV2(f),
+      proyectos : this.service.getProyectos().pipe(catchError(() => of([]))),
+      workers   : this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ dashboard, filters }) => {
-        this.filters = filters;
-        this.applyDashboardData(dashboard);
+      next: ({ dashboard, proyectos, workers }) => {
+        this.proyectos   = proyectos.map((p: any) => ({ id: p.projectId ?? p.id, nombre: p.projectDescription ?? p.nombre }));
+        this.arquitectos = workers.map((w: any) => ({ id: w.userId ?? w.id, nombre: w.nombre ?? w.fullName }));
+        if (dashboard.categorias?.length) this.categorias = dashboard.categorias;
+        this.aplicarDashboard(dashboard);
         this.loader = false;
         this.cdr.detectChanges();
       },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.loader = false; },
     });
   }
 
-  search() {
+  buscar() {
     this.loader = true;
     this.cdr.detectChanges();
-    this.service.getDashboardData(this.selectedFilters).subscribe({
-      next: (dashboard) => {
-        this.applyDashboardData(dashboard);
-        this.loader = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
+    this.service.getDashboardV2(this.getFiltroActual()).subscribe({
+      next : (d) => { this.aplicarDashboard(d); this.loader = false; this.cdr.detectChanges(); },
+      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.loader = false; },
     });
   }
 
-  private applyDashboardData(d: ArqComercialDashboardDTO) {
-    this.kpis = d.kpis;
-    this.alertas = d.alertas;
-    this.supervisores = d.supervisores;
-    this.hitosCriticos = d.hitosCriticos;
-    this.cdr.detectChanges();
-
-    this.createProyeccionChart(d.proyeccionAvance);
-    this.createRankingChart(d.rankingEficiencia);
-    this.createDistribucionChart(d.distribucionEstado);
-    this.createTendenciaChart(d.tendenciaEficiencia);
+  seleccionarCategoria(id: number | null) {
+    this.categoriaActiva = id;
+    this.filtro.categoriaId = id;
+    this.buscar();
   }
 
-  // --- Charts ---
+  private getFiltroActual(): DashboardFiltroDTO {
+    return { ...this.filtro, categoriaId: this.categoriaActiva };
+  }
 
-  private createProyeccionChart(data: ProyeccionAvanceDTO) {
-    this.proyeccionChart?.destroy();
-    this.proyeccionChart = new Chart(this.proyeccionRef.nativeElement, {
+  private aplicarDashboard(d: ArqComercialDashboardDTO) {
+    this.kpis               = d.kpis;
+    this.alertas            = d.alertas;
+    this.supervisores       = d.supervisores       ?? [];
+    this.hitosCriticos      = d.hitosCriticos      ?? [];
+    this.tareasPorArquitecto= d.tareasPorArquitectoDetalle ?? [];
+    this.avanceSemanal      = d.avanceSemanal       ?? [];
+    this.eficienciaSpi      = d.eficienciaSpi       ?? [];
+    this.cdr.detectChanges();
+    this.destruirCharts();
+    setTimeout(() => { this.renderCharts(); this.cdr.detectChanges(); }, 50);
+  }
+
+  // ─── charts ──────────────────────────────────────────────────
+  private destruirCharts() {
+    this.avanceChart?.destroy();
+    this.eficienciaChart?.destroy();
+    this.distribucionChart?.destroy();
+    this.tareasChart?.destroy();
+  }
+
+  private renderCharts() {
+    this.renderAvanceChart();
+    this.renderEficienciaChart();
+    this.renderDistribucionChart();
+    this.renderTareasChart();
+  }
+
+  private renderAvanceChart() {
+    if (!this.avanceRef?.nativeElement) return;
+    const data = this.avanceSemanal;
+    this.avanceChart = new Chart(this.avanceRef.nativeElement, {
       type: 'bar',
       data: {
-        labels: data.labels,
+        labels  : data.map(s => s.semana),
         datasets: [
           {
-            label: 'Programado',
-            data: data.programado,
-            backgroundColor: '#93c5fd',
-            borderColor: '#2563eb',
-            borderWidth: 1,
+            label          : 'Programado %',
+            data           : data.map(s => s.programado),
+            backgroundColor: 'rgba(147,197,253,0.5)',
+            borderColor    : '#2E6DB4',
+            borderWidth    : 1,
+            borderRadius   : 4,
           },
           {
-            label: 'Real',
-            data: data.real,
-            backgroundColor: '#86efac',
-            borderColor: '#16a34a',
-            borderWidth: 1,
+            label          : 'Real %',
+            data           : data.map(s => s.real),
+            backgroundColor: 'rgba(27,107,58,0.75)',
+            borderColor    : '#1B6B3A',
+            borderWidth    : 1,
+            borderRadius   : 4,
           },
         ],
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           datalabels: { display: false },
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          legend    : { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
         },
         scales: {
-          y: { beginAtZero: true, ticks: { precision: 0 } },
-        },
-      },
-    });
-  }
-
-  private createRankingChart(data: ChartItemDTO[]) {
-    this.rankingChart?.destroy();
-    const sorted = [...data].sort((a, b) => b.value - a.value);
-    this.rankingChart = new Chart(this.rankingRef.nativeElement, {
-      type: 'bar',
-      data: {
-        labels: sorted.map(i => i.label),
-        datasets: [{
-          label: 'Eficiencia %',
-          data: sorted.map(i => i.value),
-          backgroundColor: sorted.map(i =>
-            i.value >= 80 ? '#16a34a' : i.value >= 50 ? '#ea580c' : '#dc2626'
-          ),
-          borderWidth: 0,
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: {
-          legend: { display: false },
-          datalabels: {
-            display: true,
-            anchor: 'end',
-            align: 'right',
-            color: '#6b7280',
-            font: { weight: 'bold', size: 11 },
-            formatter: (v) => `${v}%`,
-          },
-        },
-        scales: {
-          x: { display: false, max: 110 },
-          y: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        },
-      },
-    });
-  }
-
-  private createDistribucionChart(data: ChartItemDTO[]) {
-    this.distribucionChart?.destroy();
-    const colorMap: Record<string, string> = {
-      'Culminado': '#16a34a', 'Culminada': '#16a34a', 'Culminadas': '#16a34a',
-      'En proceso': '#2563eb', 'En Proceso': '#2563eb',
-      'Vencido': '#dc2626', 'Vencida': '#dc2626', 'Vencidas': '#dc2626',
-      'Pendiente': '#ea580c', 'Pendientes': '#ea580c',
-    };
-    this.distribucionChart = new Chart(this.distribucionRef.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels: data.map(i => i.label),
-        datasets: [{
-          data: data.map(i => i.value),
-          backgroundColor: data.map(i => colorMap[i.label] ?? '#9ca3af'),
-          borderWidth: 2,
-          borderColor: '#fff',
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '60%',
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-          datalabels: {
-            color: '#fff',
-            font: { weight: 'bold', size: 12 },
-            formatter: (v) => v > 0 ? v : '',
-          },
-        },
-      },
-    });
-  }
-
-  private createTendenciaChart(data: EficienciaSemanalDTO[]) {
-    this.tendenciaChart?.destroy();
-    this.tendenciaChart = new Chart(this.tendenciaRef.nativeElement, {
-      type: 'bar',
-      data: {
-        labels: data.map(i => i.semana),
-        datasets: [{
-          label: 'Eficiencia %',
-          data: data.map(i => i.valor),
-          backgroundColor: data.map(i =>
-            i.valor >= 80 ? '#86efac' : i.valor >= 50 ? '#fde68a' : '#fca5a5'
-          ),
-          borderColor: data.map(i =>
-            i.valor >= 80 ? '#16a34a' : i.valor >= 50 ? '#ea580c' : '#dc2626'
-          ),
-          borderWidth: 1,
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          datalabels: {
-            anchor: 'end',
-            align: 'top',
-            color: '#6b7280',
-            font: { weight: 'bold', size: 11 },
-            formatter: (v) => `${v}%`,
-          },
-        },
-        scales: {
-          y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } },
+          y: { beginAtZero: true, max: 100, ticks: { callback: v => `${v}%`, font: { size: 10 } } },
           x: { grid: { display: false }, ticks: { font: { size: 10 } } },
         },
       },
     });
   }
 
-  // --- Helpers ---
+  private renderEficienciaChart() {
+    if (!this.eficienciaRef?.nativeElement) return;
+    const data = this.eficienciaSpi.slice(-3);
+    this.eficienciaChart = new Chart(this.eficienciaRef.nativeElement, {
+      type: 'line',
+      data: {
+        labels  : data.map(s => s.semana),
+        datasets: [{
+          label          : 'SPI Promedio',
+          data           : data.map(s => Number((s.spi * 100).toFixed(1))),
+          borderColor    : '#2E6DB4',
+          backgroundColor: 'rgba(46,109,180,0.12)',
+          borderWidth    : 2,
+          pointRadius    : 5,
+          pointBackgroundColor: '#2E6DB4',
+          fill           : true,
+          tension        : 0.4,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            anchor: 'end', align: 'end', color: '#1E3A5F',
+            font: { weight: 'bold', size: 11 },
+            formatter: v => `${v}%`,
+          },
+          legend: { display: false },
+        },
+        scales: {
+          y: {
+            beginAtZero: true, max: 130,
+            ticks: { callback: v => `${v}%`, font: { size: 10 } },
+          },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+  }
 
-  getEstadoColor(estado: string): string {
-    const map: Record<string, string> = {
-      'Culminado': '#16a34a', 'Culminada': '#16a34a',
-      'En proceso': '#2563eb', 'En Proceso': '#2563eb',
-      'Vencido': '#dc2626', 'Vencida': '#dc2626',
-      'Pendiente': '#ea580c',
+  private renderDistribucionChart() {
+    if (!this.distribucionRef?.nativeElement) return;
+    this.distribucionChart = new Chart(this.distribucionRef.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels  : ['Culminadas', 'En Proceso', 'Vencidas', 'Pendientes'],
+        datasets: [{
+          data           : [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes],
+          backgroundColor: ['#1B6B3A', '#2E6DB4', '#C0392B', '#D97706'],
+          borderWidth    : 2,
+          borderColor    : '#fff',
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend    : { display: false },
+          datalabels: {
+            color: '#fff', font: { weight: 'bold', size: 11 },
+            formatter: v => v > 0 ? v : '',
+          },
+        },
+      },
+    });
+  }
+
+  private renderTareasChart() {
+    if (!this.tareasRef?.nativeElement) return;
+    const data = this.tareasPorArquitecto.slice(0, 8);
+    const labels = data.map(d => this.primerApellido(d.nombre));
+    this.tareasChart = new Chart(this.tareasRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label          : 'Hitos',
+            data           : data.map(d => d.hitos),
+            backgroundColor: '#2E6DB4',
+            borderRadius   : 3,
+            stack          : 'stack',
+          },
+          {
+            label          : 'Entregables',
+            data           : data.map(d => d.entregables),
+            backgroundColor: '#1B6B3A',
+            borderRadius   : 3,
+            stack          : 'stack',
+          },
+          {
+            label          : 'Consultas',
+            data           : data.map(d => d.consultas),
+            backgroundColor: '#D97706',
+            borderRadius   : 3,
+            stack          : 'stack',
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          datalabels: { display: false },
+          legend    : { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+          y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+        },
+      },
+    });
+  }
+
+  // ─── modal alertas ────────────────────────────────────────────
+  private tituloAlerta: Record<TipoAlerta, string> = {
+    VENCIDA      : 'Vencidas Sin Cerrar',
+    VENCE_SEMANA : 'Vencen Esta Semana',
+    ARRANQUE     : 'Arrancan Esta Semana',
+    HITO_PROXIMO : 'Hitos Próximos (14d)',
+  };
+
+  abrirModalAlerta(tipo: TipoAlerta) {
+    this.modalAlertaTipo       = tipo;
+    this.modalAlertaTitulo     = this.tituloAlerta[tipo];
+    this.modalAlertaActividades= [];
+    this.seleccionados         = new Set();
+    this.modalAlertaVisible    = true;
+    this.modalAlertaLoading    = true;
+    this.service.getActividadesPorAlerta(tipo, this.getFiltroActual()).subscribe({
+      next : (list) => { this.modalAlertaActividades = list; this.modalAlertaLoading = false; this.cdr.detectChanges(); },
+      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.modalAlertaLoading = false; },
+    });
+  }
+
+  cerrarModalAlerta() { this.modalAlertaVisible = false; this.modalAlertaTipo = null; }
+
+  toggleSeleccion(id: number) {
+    this.seleccionados.has(id) ? this.seleccionados.delete(id) : this.seleccionados.add(id);
+  }
+
+  toggleTodos(ev: Event) {
+    const checked = (ev.target as HTMLInputElement).checked;
+    if (checked) this.modalAlertaActividades.forEach(a => this.seleccionados.add(a.id));
+    else this.seleccionados.clear();
+  }
+
+  get todosMarcados(): boolean {
+    return this.modalAlertaActividades.length > 0 &&
+           this.modalAlertaActividades.every(a => this.seleccionados.has(a.id));
+  }
+
+  enviarAlertas() {
+    if (!this.seleccionados.size || !this.modalAlertaTipo) return;
+    this.enviandoAlerta = true;
+    const req: EnviarAlertaRequestDTO = {
+      actividadIds: [...this.seleccionados],
+      tipoAlerta  : this.modalAlertaTipo,
     };
-    return map[estado] ?? '#9ca3af';
+    this.service.enviarAlertasActividades(req).subscribe({
+      next : () => { this.enviandoAlerta = false; this.cerrarModalAlerta(); },
+      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.enviandoAlerta = false; },
+    });
   }
 
-  getHitoUrgencia(dias: number): string {
-    if (dias < 0) return 'text-red-600 font-bold';
-    if (dias <= 3) return 'text-orange-600 font-semibold';
-    if (dias <= 7) return 'text-yellow-600';
-    return 'text-gray-600';
+  // ─── modal hitos ────────────────────────────────────────────
+  abrirModalHitos() { this.modalHitosVisible = true; }
+  cerrarModalHitos() { this.modalHitosVisible = false; }
+
+  get hitosIniciar(): HitoCriticoDTO[] {
+    return this.hitosCriticos.filter(h => h.diasRestantes >= 0 && h.diasRestantes <= 7);
+  }
+  get hitosVencer(): HitoCriticoDTO[] {
+    return this.hitosCriticos.filter(h => h.diasRestantes > 7 && h.diasRestantes <= 30);
+  }
+  get hitosVencidos(): HitoCriticoDTO[] {
+    return this.hitosCriticos.filter(h => h.diasRestantes < 0);
   }
 
-  // ── UI helpers (ranking + hitos rediseño) ──
-
-  getInitials(nombre: string): string {
-    const parts = nombre.trim().split(/\s+/);
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : nombre.substring(0, 2).toUpperCase();
+  alertarHito(hito: HitoCriticoDTO) {
+    if (!hito.id) return;
+    const req: EnviarAlertaRequestDTO = { actividadIds: [hito.id], tipoAlerta: 'HITO_PROXIMO' };
+    this.service.enviarAlertasActividades(req).subscribe({
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
   }
 
-  getAvatarBg(progreso: number): string {
-    if (progreso >= 80) return '#D1FAE5';
-    if (progreso >= 60) return '#DBEAFE';
-    return '#FEE2E2';
-  }
-
-  getAvatarTextColor(progreso: number): string {
-    if (progreso >= 80) return '#1B6B3A';
-    if (progreso >= 60) return '#2E6DB4';
-    return '#C0392B';
-  }
-
+  // ─── helpers UI ──────────────────────────────────────────────
   get promedioEficiencia(): number {
     if (!this.supervisores.length) return 0;
-    return Math.round(
-      this.supervisores.reduce((s, x) => s + x.progreso, 0) / this.supervisores.length,
-    );
-  }
-
-  getComentario(sup: SupervisorProgresoDTO): string {
-    const diff = sup.progreso - this.promedioEficiencia;
-    if (sup.progreso >= 90) return 'Top equipo';
-    if (diff >= 15) return `+${Math.round(diff)}pp vs prom`;
-    if (diff >= 5) return 'Sobre promedio';
-    if (diff >= -5) return 'En promedio';
-    if (diff >= -15) return 'Bajo promedio';
-    return 'Crítico';
-  }
-
-  getComentarioBg(sup: SupervisorProgresoDTO): string {
-    const diff = sup.progreso - this.promedioEficiencia;
-    if (diff >= 5) return '#D1FAE5';
-    if (diff >= -5) return '#DBEAFE';
-    return '#FEE2E2';
-  }
-
-  getComentarioColor(sup: SupervisorProgresoDTO): string {
-    const diff = sup.progreso - this.promedioEficiencia;
-    if (diff >= 5) return '#1B6B3A';
-    if (diff >= -5) return '#2E6DB4';
-    return '#C0392B';
+    return Math.round(this.supervisores.reduce((s, x) => s + x.progreso, 0) / this.supervisores.length);
   }
 
   get equipoEquilibrado(): boolean {
     if (this.supervisores.length < 2) return true;
-    const values = this.supervisores.map(s => s.progreso);
-    return Math.max(...values) - Math.min(...values) <= 30;
+    const v = this.supervisores.map(s => s.progreso);
+    return Math.max(...v) - Math.min(...v) <= 30;
   }
 
-  getProyectada(progreso: number): number {
-    return Math.min(100, Math.round(progreso * 1.12));
+  getInitials(nombre: string): string {
+    const p = nombre.trim().split(/\s+/);
+    return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : nombre.substring(0, 2).toUpperCase();
   }
 
-  getHitoAccentColor(dias: number): string {
+  primerApellido(nombre: string): string {
+    return nombre.trim().split(/\s+/)[0] ?? nombre;
+  }
+
+  getAvatarBg(p: number)        { return p >= 80 ? '#D1FAE5' : p >= 60 ? '#DBEAFE' : '#FEE2E2'; }
+  getAvatarColor(p: number)     { return p >= 80 ? '#1B6B3A' : p >= 60 ? '#2E6DB4' : '#C0392B'; }
+
+  getComentario(sup: SupervisorProgresoDTO): string {
+    const d = sup.progreso - this.promedioEficiencia;
+    if (sup.progreso >= 90) return 'Top equipo';
+    if (d >= 15) return `+${Math.round(d)}pp`;
+    if (d >= 5)  return 'Sobre prom.';
+    if (d >= -5) return 'En promedio';
+    if (d >= -15)return 'Bajo prom.';
+    return 'Crítico';
+  }
+  getComentarioBg(sup: SupervisorProgresoDTO)    { const d = sup.progreso - this.promedioEficiencia; return d >= 5 ? '#D1FAE5' : d >= -5 ? '#DBEAFE' : '#FEE2E2'; }
+  getComentarioColor(sup: SupervisorProgresoDTO) { const d = sup.progreso - this.promedioEficiencia; return d >= 5 ? '#1B6B3A' : d >= -5 ? '#2E6DB4' : '#C0392B'; }
+  getProyectada(p: number)     { return Math.min(100, Math.round(p * 1.12)); }
+
+  getHitoColor(dias: number): string {
     if (dias < 0 || dias <= 3) return '#C0392B';
-    if (dias <= 7) return '#D97706';
+    if (dias <= 7)             return '#D97706';
     return '#2E6DB4';
   }
 
-  get hitosUrgentesCnt(): number {
-    return this.hitosCriticos.filter(h => h.diasRestantes <= 3).length;
+  get hitosUrgentesCnt()  { return this.hitosCriticos.filter(h => h.diasRestantes <= 3).length; }
+  get hitosEstaSemanaCnt(){ return this.hitosCriticos.filter(h => h.diasRestantes > 3 && h.diasRestantes <= 7).length; }
+  get hitosProximosCnt()  { return this.hitosCriticos.filter(h => h.diasRestantes > 7).length; }
+
+  getSubtitulo(): string {
+    const n = new Date();
+    const mes = n.toLocaleString('es-PE', { month: 'long' });
+    const anio = n.getFullYear();
+    const w = Math.ceil(((n.getTime() - new Date(anio, 0, 1).getTime()) / 86400000 + new Date(anio, 0, 1).getDay() + 1) / 7);
+    return `Semana ${w} · ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
   }
 
-  get hitosEstaSemanaCnt(): number {
-    return this.hitosCriticos.filter(h => h.diasRestantes > 3 && h.diasRestantes <= 7).length;
+  getSpiColor(spi: number | null | undefined): string {
+    if (!spi) return '#9CA3AF';
+    if (spi >= 0.95) return '#1B6B3A';
+    if (spi >= 0.80) return '#D97706';
+    return '#C0392B';
   }
 
-  get hitosProximosCnt(): number {
-    return this.hitosCriticos.filter(h => h.diasRestantes > 7).length;
+  getSpiLabel(spi: number | null | undefined): string {
+    if (!spi) return '—';
+    return spi.toFixed(2);
   }
 
-  getSubtituloDashboard(): string {
+  diasLabel(dias: number): string {
+    if (dias < 0)  return `Vencido ${dias * -1}d`;
+    if (dias === 0)return 'Hoy';
+    return `${dias}d`;
+  }
+
+  private generarFiltrosTiempo() {
     const now = new Date();
-    const mes = now.toLocaleString('es-PE', { month: 'long' });
     const anio = now.getFullYear();
-    const start = new Date(anio, 0, 1);
-    const weekNum = Math.ceil(
-      ((now.getTime() - start.getTime()) / 86400000 + start.getDay() + 1) / 7,
-    );
-    return `Semana ${weekNum} · ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
+    this.filtro.anio = anio;
+    this.semanas = Array.from({ length: 52 }, (_, i) => ({ value: i + 1, label: `Semana ${i + 1}` }));
+    const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                          'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    this.meses = mesesNombres.map((m, i) => ({ value: i + 1, label: m }));
   }
 }

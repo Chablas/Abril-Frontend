@@ -4,23 +4,27 @@
   <div class="dash-header">
     <div class="dash-header-left">
       <h1 class="dash-title">Dashboard Arquitectura Comercial</h1>
-      <p class="dash-subtitle">{{ getSubtituloDashboard() }}</p>
+      <p class="dash-subtitle">{{ getSubtitulo() }}</p>
     </div>
     <div class="dash-filters">
-      <select class="dash-select" [(ngModel)]="selectedFilters.semana" name="semana">
+      <select class="dash-select" [(ngModel)]="filtro.userId" name="userId">
+        <option [ngValue]="null">Todos los arquitectos</option>
+        <option *ngFor="let a of arquitectos" [ngValue]="a.id">{{ a.nombre }}</option>
+      </select>
+      <select class="dash-select" [(ngModel)]="filtro.semana" name="semana">
         <option [ngValue]="null">Todas las semanas</option>
-        <option *ngFor="let s of filters.semanas" [ngValue]="s.value">{{ s.label }}</option>
+        <option *ngFor="let s of semanas" [ngValue]="s.value">{{ s.label }}</option>
       </select>
-      <select class="dash-select" [(ngModel)]="selectedFilters.mes" name="mes">
+      <select class="dash-select" [(ngModel)]="filtro.mes" name="mes">
         <option [ngValue]="null">Todos los meses</option>
-        <option *ngFor="let m of filters.meses" [ngValue]="m.value">{{ m.label }}</option>
+        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
       </select>
-      <select class="dash-select" [(ngModel)]="selectedFilters.proyectoId" name="proyectoId">
-        <option [ngValue]="0">Todos los proyectos</option>
-        <option *ngFor="let p of filters.proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+      <select class="dash-select" [(ngModel)]="filtro.proyectoId" name="proyectoId">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
       </select>
-      <button class="dash-search-btn" (click)="search()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <button class="dash-search-btn" (click)="buscar()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
           <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z" fill="white"/>
         </svg>
         Buscar
@@ -28,12 +32,28 @@
     </div>
   </div>
 
+  <!-- ══ CATEGORÍA PILLS ══ -->
+  <div class="cat-pills">
+    <button class="cat-pill" [class.active]="categoriaActiva === null" (click)="seleccionarCategoria(null)">
+      <span class="cat-pill-dot" style="background:#1E3A5F"></span>TODOS
+    </button>
+    <button
+      *ngFor="let c of categorias"
+      class="cat-pill"
+      [class.active]="categoriaActiva === c.id"
+      (click)="seleccionarCategoria(c.id)">
+      <span class="cat-pill-dot"
+        [style.background]="c.id===1?'#2E6DB4':c.id===2?'#1B6B3A':c.id===3?'#D97706':'#9CA3AF'"></span>
+      {{ c.nombre }}
+    </button>
+  </div>
+
   <!-- ══ KPI GRID ══ -->
   <div class="kpi-grid">
     <div class="kpi-card">
-      <span class="kpi-label">Total Actividades</span>
+      <span class="kpi-label">Total</span>
       <span class="kpi-value" style="color:#1E3A5F">{{ kpis.totalActividades }}</span>
-      <span class="kpi-sub">Registradas</span>
+      <span class="kpi-sub">Actividades</span>
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Culminadas</span>
@@ -56,67 +76,101 @@
       <span class="kpi-sub">Por iniciar</span>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">Eficiencia Media</span>
+      <span class="kpi-label">Eficiencia</span>
       <span class="kpi-value" style="color:#1E3A5F">{{ kpis.eficienciaMedia }}%</span>
-      <span class="kpi-sub">Promedio general</span>
+      <span class="kpi-sub">Media SPI</span>
     </div>
     <div class="kpi-card">
-      <span class="kpi-label">Progreso Global</span>
+      <span class="kpi-label">Progreso</span>
       <span class="kpi-value" style="color:#1E3A5F">{{ kpis.progresoGlobal }}%</span>
-      <span class="kpi-sub">Avance acumulado</span>
+      <span class="kpi-sub">Global</span>
     </div>
   </div>
 
-  <!-- ══ ALERTAS ══ -->
+  <!-- ══ ALERTAS (clickeables) ══ -->
   <div class="alert-grid">
-    <div class="alert-card" style="border-left-color:#C0392B; background:#FFF5F5">
-      <div class="alert-num" style="color:#C0392B">{{ alertas.vencidasSinCerrar }}</div>
+    <div class="alert-card alert-clickable"
+         style="border-left-color:#C0392B;background:#FFF5F5"
+         (click)="abrirModalAlerta('VENCIDA')"
+         title="Ver actividades vencidas">
+      <div class="alert-top">
+        <div class="alert-num" style="color:#C0392B">{{ alertas.vencidasSinCerrar }}</div>
+        <svg class="alert-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#C0392B" stroke-width="2"/>
+          <path d="M12 8V12M12 16H12.01" stroke="#C0392B" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
       <div class="alert-label">Vencidas sin cerrar</div>
-      <div class="alert-action">Requieren atención inmediata</div>
+      <div class="alert-action">Click para ver detalles →</div>
     </div>
-    <div class="alert-card" style="border-left-color:#D97706; background:#FFFBEB">
-      <div class="alert-num" style="color:#D97706">{{ alertas.vencenEstaSemana }}</div>
+
+    <div class="alert-card alert-clickable"
+         style="border-left-color:#D97706;background:#FFFBEB"
+         (click)="abrirModalAlerta('VENCE_SEMANA')"
+         title="Ver actividades que vencen esta semana">
+      <div class="alert-top">
+        <div class="alert-num" style="color:#D97706">{{ alertas.vencenEstaSemana }}</div>
+        <svg class="alert-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M8 2V5M16 2V5M3 8H21M3 6C3 4.89543 3.89543 4 5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6Z" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
       <div class="alert-label">Vencen esta semana</div>
-      <div class="alert-action">Hacer seguimiento hoy</div>
+      <div class="alert-action">Click para ver detalles →</div>
     </div>
-    <div class="alert-card" style="border-left-color:#2E6DB4; background:#EFF6FF">
-      <div class="alert-num" style="color:#2E6DB4">{{ alertas.arrancanEstaSemana }}</div>
+
+    <div class="alert-card alert-clickable"
+         style="border-left-color:#2E6DB4;background:#EFF6FF"
+         (click)="abrirModalAlerta('ARRANQUE')"
+         title="Ver actividades que arrancan esta semana">
+      <div class="alert-top">
+        <div class="alert-num" style="color:#2E6DB4">{{ alertas.arrancanEstaSemana }}</div>
+        <svg class="alert-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M5 3L19 12L5 21V3Z" stroke="#2E6DB4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="alert-label">Arrancan esta semana</div>
-      <div class="alert-action">Confirmar responsables</div>
+      <div class="alert-action">Click para ver detalles →</div>
     </div>
-    <div class="alert-card" style="border-left-color:#D97706; background:#FFFBEB">
-      <div class="alert-num" style="color:#D97706">{{ alertas.hitosProximos14Dias }}</div>
+
+    <div class="alert-card alert-clickable"
+         style="border-left-color:#D97706;background:#FFFBEB"
+         (click)="abrirModalAlerta('HITO_PROXIMO')"
+         title="Ver hitos próximos en 14 días">
+      <div class="alert-top">
+        <div class="alert-num" style="color:#D97706">{{ alertas.hitosProximos14Dias }}</div>
+        <svg class="alert-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M3 3L21 3M3 3L7 8L3 13H21M3 3V13" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="alert-label">Hitos próximos (14d)</div>
-      <div class="alert-action">Revisar entregables</div>
+      <div class="alert-action">Click para ver detalles →</div>
     </div>
   </div>
 
   <!-- ══ MAIN GRID 3 COLS ══ -->
   <div class="main-grid">
 
-    <!-- ── COL IZQUIERDA: Ranking Supervisores ── -->
+    <!-- ── COL IZQUIERDA: Ranking ── -->
     <div class="dash-card rank-card">
       <div class="card-header">
         <span class="card-title">RANKING EFICIENCIA</span>
         <span class="prom-tag">Prom: {{ promedioEficiencia }}%</span>
       </div>
-
       <div class="rank-list">
-        <div *ngFor="let sup of supervisores" class="rank-item">
+        <div *ngFor="let sup of supervisores; let i = index" class="rank-item">
+          <div class="rank-pos">{{ i + 1 }}</div>
           <div class="rank-left">
             <div class="sup-avatar"
                  [style.background]="getAvatarBg(sup.progreso)"
-                 [style.color]="getAvatarTextColor(sup.progreso)">
+                 [style.color]="getAvatarColor(sup.progreso)">
               {{ getInitials(sup.nombre) }}
             </div>
             <div class="rank-info">
               <span class="rank-nombre">{{ sup.nombre }}</span>
-              <span class="rank-avance">Avance: {{ sup.progreso }}% · {{ sup.completadas }}/{{ sup.total }}</span>
+              <span class="rank-avance">{{ sup.completadas }}/{{ sup.total }} · {{ sup.progreso }}%</span>
               <div class="dual-bar-track">
                 <div class="bar-proyectada" [style.width.%]="getProyectada(sup.progreso)"></div>
-                <div class="bar-real"
-                     [style.width.%]="sup.progreso"
-                     [style.background]="getAvatarTextColor(sup.progreso)"></div>
+                <div class="bar-real" [style.width.%]="sup.progreso" [style.background]="getAvatarColor(sup.progreso)"></div>
               </div>
             </div>
           </div>
@@ -126,128 +180,352 @@
             {{ getComentario(sup) }}
           </span>
         </div>
-        <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos de supervisores</p>
+        <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
       </div>
-
       <div class="rank-footer">
         <span class="equilibrio-tag"
               [class.eq-verde]="equipoEquilibrado"
               [class.eq-rojo]="!equipoEquilibrado">
-          {{ equipoEquilibrado
-              ? '● Equilibrado · Promedio: ' + promedioEficiencia + '%'
-              : '⚠ Desbalance · Promedio: ' + promedioEficiencia + '%' }}
+          {{ equipoEquilibrado ? '● Equilibrado' : '⚠ Desbalance' }} · Prom: {{ promedioEficiencia }}%
         </span>
-      </div>
-
-      <!-- Canvas off-screen para @ViewChild — no remover -->
-      <div class="rank-canvas-offscreen">
-        <canvas #rankingCanvas></canvas>
       </div>
     </div>
 
-    <!-- ── COL CENTRO: Charts ── -->
+    <!-- ── COL CENTRO: 4 gráficas ── -->
     <div class="center-col">
 
       <!-- Distribución por Estado -->
-      <div class="dash-card">
+      <div class="dash-card chart-card-sm">
         <div class="card-header">
           <span class="card-title">DISTRIBUCIÓN POR ESTADO</span>
         </div>
-        <div class="relative" style="height:150px">
-          <canvas #distribucionCanvas class="absolute inset-0 w-full h-full"></canvas>
-        </div>
-        <!-- Leyenda custom HTML -->
-        <div class="donut-legend">
-          <span class="leg-item"><span class="leg-dot" style="background:#1B6B3A"></span>Culminadas · <b>{{ kpis.culminadas }}</b></span>
-          <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>En Proceso · <b>{{ kpis.enProceso }}</b></span>
-          <span class="leg-item"><span class="leg-dot" style="background:#C0392B"></span>Vencidas · <b>{{ kpis.vencidas }}</b></span>
-          <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>Pendientes · <b>{{ kpis.pendientes }}</b></span>
-        </div>
-        <!-- Barra stacked -->
-        <div class="stacked-bar" *ngIf="kpis.totalActividades > 0">
-          <div class="stack-seg" [style.flex]="kpis.culminadas" style="background:#1B6B3A"></div>
-          <div class="stack-seg" [style.flex]="kpis.enProceso"  style="background:#2E6DB4"></div>
-          <div class="stack-seg" [style.flex]="kpis.vencidas"   style="background:#C0392B"></div>
-          <div class="stack-seg" [style.flex]="kpis.pendientes" style="background:#D97706"></div>
+        <div class="donut-wrapper">
+          <div class="donut-canvas-wrap">
+            <canvas #distribucionCanvas></canvas>
+          </div>
+          <div class="donut-legend-v">
+            <span class="leg-item"><span class="leg-dot" style="background:#1B6B3A"></span>Culminadas <b>{{ kpis.culminadas }}</b></span>
+            <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>En Proceso <b>{{ kpis.enProceso }}</b></span>
+            <span class="leg-item"><span class="leg-dot" style="background:#C0392B"></span>Vencidas <b>{{ kpis.vencidas }}</b></span>
+            <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>Pendientes <b>{{ kpis.pendientes }}</b></span>
+          </div>
         </div>
       </div>
 
-      <!-- Tendencia Eficiencia -->
-      <div class="dash-card">
+      <!-- Proyección Avance Semanal -->
+      <div class="dash-card chart-card-md">
         <div class="card-header">
-          <span class="card-title">TENDENCIA EFICIENCIA</span>
-          <span class="card-sub">Últimas 5 semanas</span>
+          <span class="card-title">AVANCE SEMANAL %</span>
+          <span class="card-sub">Últimas 8 semanas</span>
         </div>
-        <div class="relative" style="height:140px">
-          <canvas #tendenciaCanvas class="absolute inset-0 w-full h-full"></canvas>
+        <div class="chart-wrap-md">
+          <canvas #avanceCanvas></canvas>
         </div>
       </div>
 
-      <!-- Proyección de Avance -->
-      <div class="dash-card">
+      <!-- Eficiencia SPI -->
+      <div class="dash-card chart-card-md">
         <div class="card-header">
-          <span class="card-title">PROYECCIÓN DE AVANCE</span>
+          <span class="card-title">EFICIENCIA SPI</span>
+          <span class="card-sub">Últimas 3 semanas</span>
+        </div>
+        <div class="chart-wrap-md">
+          <canvas #eficienciaCanvas></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── COL DERECHA: Hitos + Tareas por arquitecto ── -->
+    <div class="right-col">
+
+      <!-- Hitos Críticos -->
+      <div class="dash-card hitos-card">
+        <div class="card-header">
+          <span class="card-title">HITOS CRÍTICOS</span>
+          <button class="btn-ver-todos" (click)="abrirModalHitos()">
+            Ver todos ({{ hitosCriticos.length }})
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Vista rápida top 6 -->
+        <div class="hitos-preview">
+          <div *ngFor="let h of hitosCriticos.slice(0,6)"
+               class="hito-item"
+               [style.borderLeftColor]="getHitoColor(h.diasRestantes)">
+            <div class="hito-body">
+              <span class="hito-nombre">{{ h.nombre }}</span>
+              <span class="hito-meta">{{ h.proyecto }}</span>
+            </div>
+            <div class="hito-right">
+              <span class="hito-dias" [style.color]="getHitoColor(h.diasRestantes)">
+                {{ diasLabel(h.diasRestantes) }}
+              </span>
+            </div>
+          </div>
+          <p *ngIf="hitosCriticos.length === 0" class="empty-msg">Sin hitos críticos</p>
+        </div>
+        <div class="hitos-footer">
+          <div class="mini-counter">
+            <span class="mini-num" style="color:#C0392B">{{ hitosUrgentesCnt }}</span>
+            <span class="mini-label">Urgente</span>
+          </div>
+          <div class="mini-counter">
+            <span class="mini-num" style="color:#D97706">{{ hitosEstaSemanaCnt }}</span>
+            <span class="mini-label">Esta sem.</span>
+          </div>
+          <div class="mini-counter">
+            <span class="mini-num" style="color:#2E6DB4">{{ hitosProximosCnt }}</span>
+            <span class="mini-label">Próximos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tareas por Arquitecto (stacked) -->
+      <div class="dash-card chart-card-lg">
+        <div class="card-header">
+          <span class="card-title">TAREAS POR ARQUITECTO</span>
           <div class="chart-legend-row">
-            <span class="leg-item"><span class="leg-dot" style="background:#93c5fd"></span>Programado</span>
-            <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>Real</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>Hitos</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#1B6B3A"></span>Entregables</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>Consultas</span>
           </div>
         </div>
-        <div class="relative" style="height:140px">
-          <canvas #proyeccionCanvas class="absolute inset-0 w-full h-full"></canvas>
+        <div class="chart-wrap-lg">
+          <canvas #tareasCanvas></canvas>
         </div>
       </div>
+
     </div>
-
-    <!-- ── COL DERECHA: Hitos Críticos ── -->
-    <div class="dash-card hitos-card">
-      <div class="card-header">
-        <span class="card-title">HITOS CRÍTICOS</span>
-        <span class="card-sub">{{ hitosCriticos.length }} hitos</span>
-      </div>
-
-      <div class="hitos-list">
-        <div *ngFor="let hito of hitosCriticos"
-             class="hito-item"
-             [style.borderLeftColor]="getHitoAccentColor(hito.diasRestantes)">
-          <div class="hito-body">
-            <span class="hito-nombre">{{ hito.nombre }}</span>
-            <span class="hito-meta">{{ hito.proyecto }} · {{ hito.estado }}</span>
-          </div>
-          <div class="hito-right">
-            <span class="hito-fecha">{{ hito.fechaLimite }}</span>
-            <span class="hito-dias" [style.color]="getHitoAccentColor(hito.diasRestantes)">
-              {{ hito.diasRestantes < 0
-                  ? 'Vencido ' + (hito.diasRestantes * -1) + 'd'
-                  : hito.diasRestantes === 0
-                    ? 'Hoy'
-                    : hito.diasRestantes + 'd' }}
-            </span>
-          </div>
-        </div>
-        <p *ngIf="hitosCriticos.length === 0" class="empty-msg">Sin hitos críticos</p>
-      </div>
-
-      <div class="hitos-footer">
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#C0392B">{{ hitosUrgentesCnt }}</span>
-          <span class="mini-label">Urgente</span>
-        </div>
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#D97706">{{ hitosEstaSemanaCnt }}</span>
-          <span class="mini-label">Esta sem.</span>
-        </div>
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#2E6DB4">{{ hitosProximosCnt }}</span>
-          <span class="mini-label">Próximos</span>
-        </div>
-      </div>
-    </div>
-
   </div><!-- /main-grid -->
 
 </div><!-- /dash-root -->
 
-<!-- Loader -->
+<!-- ══ LOADER ══ -->
 <div *ngIf="loader" class="loader-overlay">
   <div class="loader-spinner"></div>
+</div>
+
+<!-- ══ MODAL ALERTAS ══ -->
+<div *ngIf="modalAlertaVisible" class="modal-backdrop" (click)="cerrarModalAlerta()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#fff" stroke-width="2"/>
+            <path d="M12 8V12M12 16H12.01" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">{{ modalAlertaTitulo }}</h2>
+          <p class="modal-sub">{{ modalAlertaActividades.length }} actividad(es) encontradas</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalAlerta()">✕</button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="modalAlertaLoading" class="modal-loading">
+      <div class="loader-spinner" style="width:32px;height:32px;border-width:2px"></div>
+      <span>Cargando actividades...</span>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!modalAlertaLoading" class="modal-body">
+      <div class="modal-toolbar">
+        <label class="check-todos">
+          <input type="checkbox" [checked]="todosMarcados" (change)="toggleTodos($event)">
+          <span>Seleccionar todos</span>
+        </label>
+        <span class="sel-count">{{ seleccionados.size }} seleccionados</span>
+      </div>
+
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>Actividad</th>
+              <th>Proyecto</th>
+              <th>Tipo</th>
+              <th>Responsable 1</th>
+              <th>Responsable 2</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>SPI</th>
+              <th>Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of modalAlertaActividades"
+                [class.row-selected]="seleccionados.has(a.id)"
+                (click)="toggleSeleccion(a.id)">
+              <td><input type="checkbox" [checked]="seleccionados.has(a.id)" (click)="$event.stopPropagation()" (change)="toggleSeleccion(a.id)"></td>
+              <td class="td-nombre">{{ a.nombre }}</td>
+              <td class="td-muted">{{ a.proyecto }}</td>
+              <td>
+                <span class="tipo-badge"
+                  [style.background]="a.tipo==='HITO'?'#DBEAFE':a.tipo==='ENTREGABLE'?'#D1FAE5':'#FEF3C7'"
+                  [style.color]="a.tipo==='HITO'?'#2E6DB4':a.tipo==='ENTREGABLE'?'#1B6B3A':'#92400E'">
+                  {{ a.tipo }}
+                </span>
+              </td>
+              <td class="td-muted">{{ a.responsable1 ?? '—' }}</td>
+              <td class="td-muted">{{ a.responsable2 ?? '—' }}</td>
+              <td class="td-muted">{{ a.fechaFin ?? '—' }}</td>
+              <td>
+                <span class="estado-badge" [style.color]="a.estado==='CULMINADO'?'#1B6B3A':a.diasRestantes<0?'#C0392B':'#D97706'">
+                  {{ a.estado ?? '—' }}
+                </span>
+              </td>
+              <td>
+                <span class="spi-val" [style.color]="getSpiColor(a.spi)">{{ getSpiLabel(a.spi) }}</span>
+              </td>
+              <td>
+                <span class="dias-badge" [style.color]="getHitoColor(a.diasRestantes)">
+                  {{ diasLabel(a.diasRestantes) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="modalAlertaActividades.length === 0" class="empty-msg" style="padding:24px">Sin actividades para mostrar</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalAlerta()">Cerrar</button>
+      <button class="btn-enviar"
+              [disabled]="seleccionados.size === 0 || enviandoAlerta"
+              (click)="enviarAlertas()">
+        <svg *ngIf="!enviandoAlerta" width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div *ngIf="enviandoAlerta" class="loader-spinner" style="width:14px;height:14px;border-width:2px;border-top-color:#fff"></div>
+        {{ enviandoAlerta ? 'Enviando...' : 'Enviar alerta (' + seleccionados.size + ')' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL HITOS ══ -->
+<div *ngIf="modalHitosVisible" class="modal-backdrop" (click)="cerrarModalHitos()">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3L21 3M3 3L7 8L3 13H21M3 3V13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Hitos Críticos</h2>
+          <p class="modal-sub">{{ hitosCriticos.length }} hitos en seguimiento</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalHitos()">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="hito-tabs">
+      <button class="hito-tab" [class.active]="tabHito==='INICIAR'" (click)="tabHito='INICIAR'">
+        Por Iniciar
+        <span class="tab-badge" style="background:#FEE2E2;color:#C0392B">{{ hitosIniciar.length }}</span>
+      </button>
+      <button class="hito-tab" [class.active]="tabHito==='VENCER'" (click)="tabHito='VENCER'">
+        Por Vencer
+        <span class="tab-badge" style="background:#FEF3C7;color:#D97706">{{ hitosVencer.length }}</span>
+      </button>
+      <button class="hito-tab" [class.active]="tabHito==='VENCIDOS'" (click)="tabHito='VENCIDOS'">
+        Vencidos
+        <span class="tab-badge" style="background:#FEE2E2;color:#C0392B">{{ hitosVencidos.length }}</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Hito</th>
+              <th>Proyecto</th>
+              <th>Estado</th>
+              <th>Fecha Límite</th>
+              <th>Días</th>
+              <th style="width:90px">Alerta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="tabHito==='INICIAR'">
+              <tr *ngFor="let h of hitosIniciar">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#D97706">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <ng-container *ngIf="tabHito==='VENCER'">
+              <tr *ngFor="let h of hitosVencer">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#2E6DB4">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <ng-container *ngIf="tabHito==='VENCIDOS'">
+              <tr *ngFor="let h of hitosVencidos">
+                <td class="td-nombre">{{ h.nombre }}</td>
+                <td class="td-muted">{{ h.proyecto }}</td>
+                <td><span class="estado-badge" style="color:#C0392B">{{ h.estado }}</span></td>
+                <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td><span class="dias-badge" style="color:#C0392B">{{ diasLabel(h.diasRestantes) }}</span></td>
+                <td>
+                  <button class="btn-alert-row btn-alert-urgent" (click)="alertarHito(h)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Alertar
+                  </button>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="(tabHito==='INICIAR' && hitosIniciar.length===0) ||
+                       (tabHito==='VENCER'  && hitosVencer.length===0)  ||
+                       (tabHito==='VENCIDOS'&& hitosVencidos.length===0)">
+              <td colspan="6" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalHitos()">Cerrar</button>
+    </div>
+
+  </div>
 </div>

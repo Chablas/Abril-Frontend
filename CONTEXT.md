@@ -461,7 +461,11 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 | Método | Endpoint | Servicio |
 |--------|----------|----------|
-| GET | `/dashboard` | `getDashboardData` |
+| GET | `/dashboard` | `getDashboardData` (v1 — legado) |
+| GET | `/dashboard-v2?categoriaId=&proyectoId=&userId=&semana=&mes=&anio=` | `getDashboardV2(DashboardFiltroDTO)` |
+| GET | `/proyectos` | `getProyectos` — lista simple `{ id, nombre }` |
+| GET | `/alertas/{tipoAlerta}?...` | `getActividadesPorAlerta(tipo, filtro)` → `ActividadAlertaDTO[]` |
+| POST | `/alertas/enviar` | `enviarAlertasActividades(EnviarAlertaRequestDTO)` |
 | GET | `/filters` | `getFilters` |
 | GET | `/proyectos-con-actividades` | `getProyectosConActividades` |
 | GET | `/supervisores-ac` | `getSupervisoresAc` |
@@ -480,6 +484,16 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 | GET | `/especialidades` | `getEspecialidades` |
 | GET | `/etapas` | `getEtapas` |
 | GET | `/gantt` | `getGantt` |
+
+**DTOs nuevos** (`core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model.ts`):
+- `DashboardFiltroDTO { categoriaId, proyectoId, userId, semana, mes, anio }` — filtro unificado del dashboard.
+- `ActividadAlertaDTO { id, nombre, proyecto, responsable1/2, emailResp1/2, fechaInicio/Fin, estado, spi, tipo, categoria, diasRestantes }`.
+- `EnviarAlertaRequestDTO { actividadIds: number[], tipoAlerta: string }`.
+
+**Extensiones en** `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts`:
+- `HitoCriticoDTO`: añadido `id: number`.
+- `ArqComercialDashboardDTO`: añadidos `tareasPorArquitectoDetalle`, `avanceSemanal`, `eficienciaSpi`, `categorias`.
+- Nuevos interfaces: `TareasPorArquitectoDTO { userId, nombre, hitos, entregables, consultas, total, avancePct }`, `AvanceSemanalDTO { semana, programado, real }`, `EficienciaSpiDTO { semana, spi }`, `CategoriaItemDTO { id, nombre }`.
 
 **DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
 - `ActividadListItemDTO` — fila de tabla. Campos clave: `orden` (ex `indice`), `spi?: number | null`, `partidaDeControl: string | null` (ex `tipo`), `categoriaId/Nombre`, `especialidadId/Nombre`, `userId`, `responsableNombre`, `userId2: number | null`, `responsableNombre2: string | null`, `encargado1`, `estado`, `retraso`.
@@ -523,7 +537,7 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - **`empresaId` en JWT contratista** = `contributor_id` (no `contractor_id`).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
-- Dashboard (rediseño enterprise — ver §17 dashboard), Actividades (CRUD completo), Gantt, Plantilla.
+- Dashboard (v2 enterprise con modales de alertas, hitos y 4 charts — ver §17), Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
 - **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta/hito/entregable (POST).
 - **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`), **SPI** (verde/naranja/rojo según ≥1/≥0.8/<0.8), **Responsable 1** (texto read-only `encargado1`), **Responsable 2** (dropdown `[ngModel]="a.userId2"` → `patchActividad`). Colspan separadores = 19. Columna acciones sticky: `.th-actions-sticky` + `.td-actions-sticky` (`position:sticky; right:0`).
@@ -1589,85 +1603,112 @@ Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 
 ---
 
-## §17 — Dashboard Arquitectura Comercial — Rediseño Enterprise (2026-05-21)
+## §17 — Dashboard Arquitectura Comercial v2 Enterprise (2026-05-21)
 
-### Archivos modificados
-- `features/arquitectura-comercial/dashboard/dashboard.ts` — helper methods añadidos (no cambia lógica de datos ni Chart.js)
-- `features/arquitectura-comercial/dashboard/dashboard.html` — reescritura completa
-- `features/arquitectura-comercial/dashboard/dashboard.css` — reescritura completa
+### Archivos clave
+- `features/arquitectura-comercial/dashboard/dashboard.ts` — lógica completa (Charts, modales, filtros, helpers)
+- `features/arquitectura-comercial/dashboard/dashboard.html` — template completo
+- `features/arquitectura-comercial/dashboard/dashboard.css` — sistema de diseño flat
+- `core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model.ts` — DTOs nuevos de alertas
+- `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts` — extendido con 4 interfaces nuevas
 
 ### Paleta y diseño general
-- Fondo raíz: `#F8F9FA`. Cards: `background:#fff; border:0.5px solid #E2E8F0; border-radius:10px`. Sin sombras (flat design).
+- Fondo raíz: `#F0F2F5`. Cards: `background:#fff; border:0.5px solid #E2E8F0; border-radius:10px`. Sin sombras (flat design).
 - Colores semánticos: Culminadas `#1B6B3A`, En Proceso `#2E6DB4`, Vencidas `#C0392B`, Pendientes `#D97706`, base `#1E3A5F`.
-- Scrollbars ocultos globalmente (`scrollbar-width:none` + `::-webkit-scrollbar { display:none }`).
-
-### Header
-- `background:#1E3A5F; border-radius:10px; padding:14px 20px`.
-- Izquierda: título "Dashboard Arquitectura Comercial" (14px bold blanco) + subtítulo dinámico en `#93C5FD` (semana + mes actual via `getSubtituloDashboard()`).
-- Derecha: 3 selects `[(ngModel)]` con fondo `rgba(255,255,255,0.1)` + botón Buscar verde `#64BC04`.
-
-### KPI Grid
-- `grid-template-columns: repeat(7, 1fr)`. Cada card: label 9px uppercase `#94A3B8`, valor 20px bold (color semántico), subtexto 9px muted.
-
-### Alertas
-- `grid-template-columns: repeat(4, 1fr)`. Cada card: `border-left: 3px solid <color>` + fondo tenue correspondiente. Rojo/Naranja/Azul/Naranja. Número 22px bold, label, subtexto de acción.
-
-### Columna izquierda — Ranking Eficiencia
-**Componente visual** (reemplaza los 2 charts de proyección+ranking del diseño anterior):
-- `*ngFor supervisores`: avatar circular 36px con iniciales (`getInitials(nombre)`) coloreado por eficiencia.
-- Doble barra dentro de `.dual-bar-track` (height 9px): barra gruesa `.bar-real` (height 9px, color semántico) encima de barra delgada `.bar-proyectada` (height 5px, `#CBD5E1`, 45% opacity) — proyectada = `getProyectada(progreso)` = `min(100, progreso * 1.12)`.
-- Badge comentario inteligente `.rank-badge`: compara vs `promedioEficiencia` → "Top equipo" / "+Xpp vs prom" / "Sobre promedio" / "En promedio" / "Bajo promedio" / "Crítico".
-- Footer: `.equilibrio-tag` → verde "● Equilibrado · Promedio: X%" o rojo "⚠ Desbalance · Promedio: X%" según `equipoEquilibrado` (varianza max-min ≤30pp).
-- **`#rankingCanvas` se mantiene** en `.rank-canvas-offscreen` (`position:fixed; left:-9999px; top:-9999px; width:200px; height:120px`) para que `@ViewChild('rankingCanvas')` resuelva sin romper Chart.js.
-
-### Columna centro — 3 charts
-1. **Distribución por estado**: canvas `#distribucionCanvas` (height:150px) + leyenda HTML custom `.donut-legend` (4 `leg-item` con `leg-dot` coloreados desde `kpis.*`) + barra stacked `.stacked-bar` con `[style.flex]="kpis.culminadas"` etc.
-2. **Tendencia eficiencia**: canvas `#tendenciaCanvas` (height:140px). Sin cambios en config Chart.js.
-3. **Proyección de avance**: canvas `#proyeccionCanvas` (height:140px) con leyenda fila HTML custom (Programado + Real).
-
-### Columna derecha — Hitos Críticos
-- `*ngFor hitosCriticos`: cada `.hito-item` con `[style.borderLeftColor]="getHitoAccentColor(hito.diasRestantes)"` (3px solid) + fondo `#F8FAFC`. Acento: rojo `#C0392B` (≤3d o vencido), naranja `#D97706` (≤7d), azul `#2E6DB4` (resto).
-- Contenido: nombre (truncado), `proyecto · estado`, fecha, días ("Vencido Xd" / "Hoy" / "Xd").
-- Footer: 3 mini-contadores horizontales usando `hitosUrgentesCnt`, `hitosEstaSemanaCnt`, `hitosProximosCnt`.
-
-### Métodos helper añadidos a `dashboard.ts`
-
-| Método / getter | Descripción |
-|----------------|-------------|
-| `getInitials(nombre)` | 2 iniciales de apellidoNombre (primera letra de primer y último token) |
-| `getAvatarBg(progreso)` | `#D1FAE5` ≥80 / `#DBEAFE` ≥60 / `#FEE2E2` <60 |
-| `getAvatarTextColor(progreso)` | `#1B6B3A` / `#2E6DB4` / `#C0392B` |
-| `promedioEficiencia` (getter) | Media aritmética de `supervisores[].progreso` |
-| `getComentario(sup)` | Badge text inteligente vs promedio |
-| `getComentarioBg(sup)` | Fondo del badge (verde/azul/rojo) |
-| `getComentarioColor(sup)` | Color texto del badge |
-| `equipoEquilibrado` (getter) | `max - min ≤ 30` entre progresos |
-| `getProyectada(progreso)` | `min(100, progreso * 1.12)` |
-| `getHitoAccentColor(dias)` | Rojo/naranja/azul por días restantes |
-| `hitosUrgentesCnt` (getter) | Hitos con `diasRestantes ≤ 3` |
-| `hitosEstaSemanaCnt` (getter) | Hitos con `diasRestantes > 3 && ≤ 7` |
-| `hitosProximosCnt` (getter) | Hitos con `diasRestantes > 7` |
-| `getSubtituloDashboard()` | "Semana N · Mes YYYY" calculado con `Date` |
-
-### CSS clave (clases nuevas)
-- `.dash-root` — flex-col, overflow-y:auto, scrollbar oculto, fondo `#F8F9FA`, gap 12px, padding 16px.
-- `.dash-header` — background `#1E3A5F`, border-radius 10px, flex row space-between.
-- `.dash-select` — fondo rgba blanco, sin select nativo arrow (`appearance:none`), opciones sobre fondo `#1E3A5F`.
-- `.dual-bar-track` — relative, height 9px, `.bar-proyectada` absolute top:2px height:5px opacity:0.45, `.bar-real` absolute top:0 height:9px.
-- `.rank-canvas-offscreen` — `position:fixed; left:-9999px; top:-9999px; width:200px; height:120px`.
-- `.equilibrio-tag` + `.eq-verde` / `.eq-rojo`.
-- `.stacked-bar` — flex, height 5px, `.stack-seg` con `[style.flex]` proporcional.
-- `.hito-item` — `border-left:3px solid` (color vía binding), border-radius `0 7px 7px 0`, fondo `#F8FAFC`.
-- `.mini-counter` + `.mini-num` (18px bold) + `.mini-label` (9px uppercase).
-- `.loader-spinner` — border-top-color `#1E3A5F` (antes era `#64BC04`).
-
-### KPI y Alert cards — ajuste de compacidad (post-rediseño)
-- `.kpi-card`: padding `7px 6px` (antes `12px 8px`), gap interno `0`.
-- `.kpi-label` / `.kpi-sub`: `8px` (antes `9px`).
-- `.kpi-value`: `16px bold` (antes `20px`), margin `2px 0 1px`.
-- `.alert-card`: padding `8px 12px` (antes `12px 14px`).
-- `.alert-num`: `17px bold` (antes `22px`), margin-bottom `2px`.
 
 ### Modo full-screen (sin header global)
-- **`layout.ts` `isFullPage()`**: extendido con `|| this.router.url.includes('/arquitectura-comercial/dashboard')`. El layout renderiza solo `<router-outlet>` (sin `<app-header>`), aplica `.full-page-wrapper` (quita bg-white y padding) y `p-0`/`overflow-hidden` en `<main>`. El sidebar sigue visible.
-- **`arquitectura-comercial-routing-module.ts`** — ruta `dashboard` añade `hideHeader: true` en `data` como refuerzo secundario (Header component oculta su contenido vía `*ngIf="!hideHeader"`).
+- `layout.ts` `isFullPage()` incluye `/arquitectura-comercial/dashboard` → renderiza solo `<router-outlet>` sin `<app-header>`.
+- Ruta `dashboard` en routing module lleva `hideHeader: true` como refuerzo secundario.
+
+### Flujo de datos — `cargar()`
+```ts
+forkJoin({
+  dashboard: this.service.getDashboardV2(f),
+  proyectos : this.service.getProyectos().pipe(catchError(() => of([]))),
+  workers   : this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
+})
+```
+`getProyectos()` y `getSupervisoresAc()` llevan `catchError(() => of([]))` — si fallan, el dashboard igual carga con arrays vacíos en los selectores. `filtro.anio` se inicializa al año actual en `generarFiltrosTiempo()`.
+
+### Header
+- 4 selects: arquitecto (`filtro.userId`), semana, mes, proyecto.
+- Botón Buscar llama `buscar()` → solo recarga `getDashboardV2`.
+
+### Category pills
+- `.cat-pills` — fila de pills: "TODOS" (null) + `*ngFor categorias` desde `dashboard.categorias`.
+- Pill activo: `background:#1E3A5F; color:#fff`. Punto de color: `cat-pill-dot` con `background:#fff !important` cuando activo.
+- `seleccionarCategoria(id)` actualiza `categoriaActiva` + `filtro.categoriaId` y llama `buscar()`.
+
+### KPI Grid y Alertas
+- `repeat(7, 1fr)` / `repeat(4, 1fr)`.
+- Alert cards llevan `.alert-clickable` (cursor:pointer, hover translateY-1px + box-shadow). Click → `abrirModalAlerta('VENCIDA'|'VENCE_SEMANA'|'ARRANQUE'|'HITO_PROXIMO')`.
+
+### Main Grid — 3 columnas
+
+**Col izquierda — Ranking Eficiencia**
+- `*ngFor supervisores let i = index`: número de posición `.rank-pos`, avatar 34px con iniciales, doble barra `.dual-bar-track` (`.bar-real` 8px / `.bar-proyectada` 4px opacity:0.45).
+- Badge `.rank-badge` con comentario inteligente vs `promedioEficiencia`.
+- Footer `.equilibrio-tag`: verde/rojo según `equipoEquilibrado` (varianza ≤30pp).
+
+**Col centro — 4 charts**
+1. **Distribución donut** (`#distribucionCanvas` 100×100px en `.donut-canvas-wrap`) + leyenda vertical `.donut-legend-v`.
+2. **Avance semanal** (`#avanceCanvas`, `.chart-wrap-md` height:120px) — bar chart barras dobles: Programado (azul claro) + Real (verde).
+3. **Eficiencia SPI** (`#eficienciaCanvas`, `.chart-wrap-md`) — line chart últimas 3 semanas. SPI × 100 = %. Datalabels `anchor:'end'`.
+
+**Col derecha — Hitos + Tareas**
+- Hitos Críticos: vista top 6 `.hitos-preview` (sin scroll). Botón "Ver todos (N)" → `abrirModalHitos()`.
+- Tareas por arquitecto (`#tareasCanvas`, `.chart-wrap-lg` height:160px) — bar stacked: Hitos (azul), Entregables (verde), Consultas (naranja). Top 8 por `primerApellido(nombre)`.
+
+### Modal Alertas
+- `abrirModalAlerta(tipo)` → `GET /alertas/{tipo}?...` → tabla `ActividadAlertaDTO[]` con checkboxes.
+- `.modal-backdrop` (backdrop-filter:blur(2px)) + `.modal-box` (max-width:820px, max-height:88vh, animación `slideUp`).
+- Toolbar: "Seleccionar todos" (`toggleTodos`) + contador `seleccionados.size`.
+- Tabla sticky thead: nombre, proyecto, tipo (badge coloreado), responsable1/2, fechaFin, estado, SPI, días.
+- Footer: botón "Enviar alerta (N)" → `enviarAlertasActividades({ actividadIds: [...seleccionados], tipoAlerta })` → POST `/alertas/enviar`.
+
+### Modal Hitos
+- `abrirModalHitos()` — muestra los 3 tabs con getters: `hitosIniciar` (diasRestantes 0-7), `hitosVencer` (8-30), `hitosVencidos` (<0).
+- `.hito-tabs` con `.hito-tab.active` (border-bottom `#1E3A5F`). `.tab-badge` por tab.
+- Botón "Alertar" por fila → `alertarHito(hito)` → POST `/alertas/enviar` con `[hito.id]`.
+- `.btn-alert-urgent` en tab Vencidos (rojo).
+
+### Métodos y getters en `dashboard.ts`
+
+| Símbolo | Descripción |
+|---------|-------------|
+| `categoriaActiva: number\|null` | Pill activa. null = TODOS |
+| `filtro: DashboardFiltroDTO` | Filtro unificado (userId, proyectoId, semana, mes, anio, categoriaId) |
+| `getFiltroActual()` | Spread de `filtro` + `categoriaId: categoriaActiva` |
+| `aplicarDashboard(d)` | Llena todos los arrays y llama `renderCharts()` con `setTimeout(50)` |
+| `destruirCharts()` | Destruye los 4 charts antes de re-renderizar |
+| `getInitials(nombre)` | 2 iniciales (primer y último token) |
+| `primerApellido(nombre)` | Primer token — etiqueta eje X del chart de tareas |
+| `getAvatarBg/Color(p)` | Verde/azul/rojo por progreso |
+| `getComentario/Bg/Color(sup)` | Badge vs promedio |
+| `promedioEficiencia` | Media aritmética de `supervisores[].progreso` |
+| `equipoEquilibrado` | max - min ≤ 30pp |
+| `getProyectada(p)` | `min(100, p * 1.12)` |
+| `getHitoColor(dias)` | Rojo (≤3 o <0) / naranja (≤7) / azul (resto) |
+| `hitosUrgentesCnt/EstaSemanaCnt/ProximosCnt` | Contadores footer hitos |
+| `diasLabel(dias)` | "Vencido Xd" / "Hoy" / "Xd" |
+| `getSpiColor/Label(spi)` | Color e string del SPI |
+| `getSubtitulo()` | "Semana N · MesNombre YYYY" |
+| `todosMarcados` getter | Todos los items del modal alertas están en `seleccionados` |
+| `hitosIniciar/hitosVencer/hitosVencidos` | Getters filtrando `hitosCriticos` por rango de días |
+
+### CSS clave
+- `.cat-pills` / `.cat-pill` / `.cat-pill.active` / `.cat-pill-dot`.
+- `.alert-clickable` — cursor:pointer, hover translateY(-1px) + box-shadow.
+- `.alert-top` — flex row space-between (número + ícono SVG).
+- `.donut-canvas-wrap` — 100×100px, `canvas { width:100%!important; height:100%!important }`.
+- `.donut-legend-v` — flex-col gap:6px.
+- `.chart-wrap-md` (h:120px) / `.chart-wrap-lg` (h:160px) — `position:relative; canvas absolute inset:0`.
+- `.right-col` — flex-col gap:10px.
+- `.hitos-preview` — flex-col gap:6px, overflow:hidden (top 6, sin scroll).
+- `.btn-ver-todos` — fondo `#EFF6FF`, color `#2E6DB4`.
+- `.modal-backdrop` — fixed inset:0 rgba(15,23,42,0.55) backdrop-filter:blur(2px) `@keyframes fadeIn`.
+- `.modal-box` — border-radius:12px, max-width:820px, max-height:88vh, `@keyframes slideUp`.
+- `.modal-table thead` — `position:sticky; top:0; background:#F8FAFC`.
+- `.row-selected` — background `#EFF6FF`.
+- `.hito-tabs` / `.hito-tab.active` (border-bottom `#1E3A5F`) / `.tab-badge`.
+- `.btn-alert-row` / `.btn-alert-urgent` / `.btn-enviar` / `.btn-cancelar`.
