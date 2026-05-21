@@ -16,6 +16,9 @@ export class Layout {
   constructor(private router: Router) {}
 
   isFullPage(): boolean {
-    return this.router.url.includes('/habilitacion/trabajadores');
+    return (
+      this.router.url.includes('/habilitacion/trabajadores') ||
+      this.router.url.includes('/arquitectura-comercial/dashboard')
+    );
   }
 }

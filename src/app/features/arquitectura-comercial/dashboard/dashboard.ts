@@ -297,4 +297,95 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     if (dias <= 7) return 'text-yellow-600';
     return 'text-gray-600';
   }
+
+  // ── UI helpers (ranking + hitos rediseño) ──
+
+  getInitials(nombre: string): string {
+    const parts = nombre.trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : nombre.substring(0, 2).toUpperCase();
+  }
+
+  getAvatarBg(progreso: number): string {
+    if (progreso >= 80) return '#D1FAE5';
+    if (progreso >= 60) return '#DBEAFE';
+    return '#FEE2E2';
+  }
+
+  getAvatarTextColor(progreso: number): string {
+    if (progreso >= 80) return '#1B6B3A';
+    if (progreso >= 60) return '#2E6DB4';
+    return '#C0392B';
+  }
+
+  get promedioEficiencia(): number {
+    if (!this.supervisores.length) return 0;
+    return Math.round(
+      this.supervisores.reduce((s, x) => s + x.progreso, 0) / this.supervisores.length,
+    );
+  }
+
+  getComentario(sup: SupervisorProgresoDTO): string {
+    const diff = sup.progreso - this.promedioEficiencia;
+    if (sup.progreso >= 90) return 'Top equipo';
+    if (diff >= 15) return `+${Math.round(diff)}pp vs prom`;
+    if (diff >= 5) return 'Sobre promedio';
+    if (diff >= -5) return 'En promedio';
+    if (diff >= -15) return 'Bajo promedio';
+    return 'Crítico';
+  }
+
+  getComentarioBg(sup: SupervisorProgresoDTO): string {
+    const diff = sup.progreso - this.promedioEficiencia;
+    if (diff >= 5) return '#D1FAE5';
+    if (diff >= -5) return '#DBEAFE';
+    return '#FEE2E2';
+  }
+
+  getComentarioColor(sup: SupervisorProgresoDTO): string {
+    const diff = sup.progreso - this.promedioEficiencia;
+    if (diff >= 5) return '#1B6B3A';
+    if (diff >= -5) return '#2E6DB4';
+    return '#C0392B';
+  }
+
+  get equipoEquilibrado(): boolean {
+    if (this.supervisores.length < 2) return true;
+    const values = this.supervisores.map(s => s.progreso);
+    return Math.max(...values) - Math.min(...values) <= 30;
+  }
+
+  getProyectada(progreso: number): number {
+    return Math.min(100, Math.round(progreso * 1.12));
+  }
+
+  getHitoAccentColor(dias: number): string {
+    if (dias < 0 || dias <= 3) return '#C0392B';
+    if (dias <= 7) return '#D97706';
+    return '#2E6DB4';
+  }
+
+  get hitosUrgentesCnt(): number {
+    return this.hitosCriticos.filter(h => h.diasRestantes <= 3).length;
+  }
+
+  get hitosEstaSemanaCnt(): number {
+    return this.hitosCriticos.filter(h => h.diasRestantes > 3 && h.diasRestantes <= 7).length;
+  }
+
+  get hitosProximosCnt(): number {
+    return this.hitosCriticos.filter(h => h.diasRestantes > 7).length;
+  }
+
+  getSubtituloDashboard(): string {
+    const now = new Date();
+    const mes = now.toLocaleString('es-PE', { month: 'long' });
+    const anio = now.getFullYear();
+    const start = new Date(anio, 0, 1);
+    const weekNum = Math.ceil(
+      ((now.getTime() - start.getTime()) / 86400000 + start.getDay() + 1) / 7,
+    );
+    return `Semana ${weekNum} · ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
+  }
 }

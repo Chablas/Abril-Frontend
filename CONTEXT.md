@@ -482,12 +482,12 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 | GET | `/gantt` | `getGantt` |
 
 **DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
-- `ActividadListItemDTO` — fila de tabla (incluye `estado` computado y `retraso` días). Campo `tipo` renombrado a `partidaDeControl: string | null`. Campos añadidos: `categoriaId`, `categoriaNombre`, `especialidadId`, `especialidadNombre`.
-- `ActividadPatchBody` — solo fechas programadas/efectivas, userId, observaciones.
-- `CreateActividadBody` — nombre, tipo, projectId, etapaId, userId, fechas programadas. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
-- `UpdateActividadBody` — igual que Create más inicioEfectivo, finEfectivo, observaciones. Campos opcionales: `categoriaId?: number | null`, `especialidadId?: number | null`.
+- `ActividadListItemDTO` — fila de tabla. Campos clave: `orden` (ex `indice`), `spi?: number | null`, `partidaDeControl: string | null` (ex `tipo`), `categoriaId/Nombre`, `especialidadId/Nombre`, `userId`, `responsableNombre`, `userId2: number | null`, `responsableNombre2: string | null`, `encargado1`, `estado`, `retraso`.
+- `ActividadPatchBody` — campos opcionales: fechas programadas/efectivas, `userId`, `userId2`, `observaciones`, `estado`, `activo`.
+- `CreateActividadBody` — `nombre, tipo, projectId, etapaId, userId, inicioProgramado, finProgramado`. Opcionales: `categoriaId`, `especialidadId`.
+- `UpdateActividadBody` — igual que Create más `userId2: number | null`, `inicioEfectivo`, `finEfectivo`, `observaciones`. Opcionales: `categoriaId`, `especialidadId`.
 - `AcEtapaDTO { id, nombre }` — catálogo de etapas del backend.
-- **Nota**: `GanttActividadDTO` conserva `tipo: string | null` (NO renombrado).
+- **Nota**: `GanttActividadDTO` conserva `tipo: string | null` (NO renombrado) y usa `orden` en vez de `indice`.
 
 ---
 
@@ -523,13 +523,13 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - **`empresaId` en JWT contratista** = `contributor_id` (no `contractor_id`).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
-- Dashboard, Actividades (CRUD completo), Gantt, Plantilla.
+- Dashboard (rediseño enterprise — ver §17 dashboard), Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
 - **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta/hito/entregable (POST).
-- **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`). Colspan separadores = 18.
+- **Tabla actividades**: columnas Etapa, **Partida de Control**, **Categoría**, **Especialidad** (badges pill `bg-gray-100`), **SPI** (verde/naranja/rojo según ≥1/≥0.8/<0.8), **Responsable 1** (texto read-only `encargado1`), **Responsable 2** (dropdown `[ngModel]="a.userId2"` → `patchActividad`). Colspan separadores = 19. Columna acciones sticky: `.th-actions-sticky` + `.td-actions-sticky` (`position:sticky; right:0`).
 - **Botón "+ Nueva Consulta"**: visible cuando `tipoFiltro === 'CONSULTA'`. Abre `components/nueva-consulta/`. Body fijo: `categoriaId: 2, especialidadId: 2`.
-- **Botón "+ Nuevo Hito"**: visible cuando `tipoFiltro === 'HITO'`. Abre `components/nuevo-hito/`. Campos: etapaNombre, actividad (3 opciones), mes (12 opciones), correlativo, especialidadId (1=EJECUCIÓN / 2=CONTROL). Fijos: `categoriaId: 3 (POST VENTA), tipo: 'HITO'`. Nombre: `${etapaNombre}_${actividad}  (${mes}) ${correlativo.padStart(2,'0')}`.
-- **Botón "+ Nuevo Entregable"**: visible cuando `tipoFiltro === 'ENTREGABLE'`. Abre `components/nuevo-entregable/`. Campos: etapaNombre, reporte (5 opciones), categoriaId (3=POST VENTA / 4=ALMACENES). Fijos: `especialidadId: 2, tipo: 'ENTREGABLE'`. Nombre: `${etapaNombre}_${reporte}`.
+- **Botón "+ Nuevo Hito"**: visible cuando `tipoFiltro === 'HITO'`. Abre `components/nuevo-hito/`. Campos: etapaNombre, actividad (3 opciones), mes (12 opciones), correlativo, especialidadId (1=EJECUCIÓN / 2=CONTROL). Fijos: `categoriaId: 3 (POST VENTA), tipo: 'HITO'`. Nombre generado: `${etapaNombre}_${actividad}  (${mes}) ${correlativo.padStart(2,'0')}`. **Checkbox "Nombre personalizado"**: `nombrePersonalizado = false` por defecto; cuando ON, `canSubmit` solo exige `nombreLibre.trim()` no vacío y `submit()` usa `nombreLibre` en vez del nombre calculado.
+- **Botón "+ Nuevo Entregable"**: visible cuando `tipoFiltro === 'ENTREGABLE'`. Abre `components/nuevo-entregable/`. Campos: etapaNombre, reporte (5 opciones), categoriaId (3=POST VENTA / 4=ALMACENES). Fijos: `especialidadId: 2, tipo: 'ENTREGABLE'`. Nombre generado: `${etapaNombre}_${reporte}`. **Checkbox "Nombre personalizado"**: igual que Nuevo Hito — `nombrePersonalizado`/`nombreLibre` con misma lógica de `canSubmit`/`submit()`.
 - **Modales Nuevo Hito / Nuevo Entregable**: auto-seleccionan etapa "POST VENTA Y EXPERIENCIA" al abrir. Etapas cacheadas en el componente (guard `etapas.length > 0` + `applyDefaultEtapa()` en cada apertura).
 - **Modal Nueva Consulta**: nombre generado como `{etapa}_RFI_{numero}_{ubicacion}`. Etapa del nombre es lista fija hardcodeada (NO carga del endpoint `/etapas`). Etapa para columna sí carga del endpoint.
 - **Modal Editar Actividad**: `components/editar-actividad/`. Campo `tipo` del form mapea a `partidaDeControl` de `ActividadListItemDTO` (campo local del form sigue llamándose `tipo` para el body del backend).
@@ -1586,4 +1586,88 @@ Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 1. **Merge y deploy**: merge `feature/arquitectura-comercial` → `master` → deploy backend primero → deploy frontend. Verificar migraciones de BD (`userId2` en tabla `ac_actividades`).
 2. **Cron / recálculo automático SPI**: el backend debe calcular `spi` periódicamente (o en cada PATCH de fechas). Acordar frecuencia con backend: sugerido cron diario + recálculo on-demand al actualizar `finEfectivo` o `finProgramado`.
 3. **Curva S**: nueva vista en el módulo AC — gráfico de avance programado vs avance real acumulado por semana/mes. Datos: `inicioProgramado`/`finProgramado` para la curva base y `inicioEfectivo`/`finEfectivo` para la curva real. Implementar en `features/arquitectura-comercial/curva-s/` con Chart.js (línea doble + área fill).
-4. **Rediseño dashboard AC**: el dashboard actual (`dashboard/`) tiene KPIs básicos y gráficos de barras/dona. Rediseño propuesto: agregar panel de curva S en columna izquierda, mover ranking de eficiencia a columna derecha, añadir filtro por responsable (userId / userId2), y mostrar alerta de actividades sin Responsable 2 asignado.
+
+---
+
+## §17 — Dashboard Arquitectura Comercial — Rediseño Enterprise (2026-05-21)
+
+### Archivos modificados
+- `features/arquitectura-comercial/dashboard/dashboard.ts` — helper methods añadidos (no cambia lógica de datos ni Chart.js)
+- `features/arquitectura-comercial/dashboard/dashboard.html` — reescritura completa
+- `features/arquitectura-comercial/dashboard/dashboard.css` — reescritura completa
+
+### Paleta y diseño general
+- Fondo raíz: `#F8F9FA`. Cards: `background:#fff; border:0.5px solid #E2E8F0; border-radius:10px`. Sin sombras (flat design).
+- Colores semánticos: Culminadas `#1B6B3A`, En Proceso `#2E6DB4`, Vencidas `#C0392B`, Pendientes `#D97706`, base `#1E3A5F`.
+- Scrollbars ocultos globalmente (`scrollbar-width:none` + `::-webkit-scrollbar { display:none }`).
+
+### Header
+- `background:#1E3A5F; border-radius:10px; padding:14px 20px`.
+- Izquierda: título "Dashboard Arquitectura Comercial" (14px bold blanco) + subtítulo dinámico en `#93C5FD` (semana + mes actual via `getSubtituloDashboard()`).
+- Derecha: 3 selects `[(ngModel)]` con fondo `rgba(255,255,255,0.1)` + botón Buscar verde `#64BC04`.
+
+### KPI Grid
+- `grid-template-columns: repeat(7, 1fr)`. Cada card: label 9px uppercase `#94A3B8`, valor 20px bold (color semántico), subtexto 9px muted.
+
+### Alertas
+- `grid-template-columns: repeat(4, 1fr)`. Cada card: `border-left: 3px solid <color>` + fondo tenue correspondiente. Rojo/Naranja/Azul/Naranja. Número 22px bold, label, subtexto de acción.
+
+### Columna izquierda — Ranking Eficiencia
+**Componente visual** (reemplaza los 2 charts de proyección+ranking del diseño anterior):
+- `*ngFor supervisores`: avatar circular 36px con iniciales (`getInitials(nombre)`) coloreado por eficiencia.
+- Doble barra dentro de `.dual-bar-track` (height 9px): barra gruesa `.bar-real` (height 9px, color semántico) encima de barra delgada `.bar-proyectada` (height 5px, `#CBD5E1`, 45% opacity) — proyectada = `getProyectada(progreso)` = `min(100, progreso * 1.12)`.
+- Badge comentario inteligente `.rank-badge`: compara vs `promedioEficiencia` → "Top equipo" / "+Xpp vs prom" / "Sobre promedio" / "En promedio" / "Bajo promedio" / "Crítico".
+- Footer: `.equilibrio-tag` → verde "● Equilibrado · Promedio: X%" o rojo "⚠ Desbalance · Promedio: X%" según `equipoEquilibrado` (varianza max-min ≤30pp).
+- **`#rankingCanvas` se mantiene** en `.rank-canvas-offscreen` (`position:fixed; left:-9999px; top:-9999px; width:200px; height:120px`) para que `@ViewChild('rankingCanvas')` resuelva sin romper Chart.js.
+
+### Columna centro — 3 charts
+1. **Distribución por estado**: canvas `#distribucionCanvas` (height:150px) + leyenda HTML custom `.donut-legend` (4 `leg-item` con `leg-dot` coloreados desde `kpis.*`) + barra stacked `.stacked-bar` con `[style.flex]="kpis.culminadas"` etc.
+2. **Tendencia eficiencia**: canvas `#tendenciaCanvas` (height:140px). Sin cambios en config Chart.js.
+3. **Proyección de avance**: canvas `#proyeccionCanvas` (height:140px) con leyenda fila HTML custom (Programado + Real).
+
+### Columna derecha — Hitos Críticos
+- `*ngFor hitosCriticos`: cada `.hito-item` con `[style.borderLeftColor]="getHitoAccentColor(hito.diasRestantes)"` (3px solid) + fondo `#F8FAFC`. Acento: rojo `#C0392B` (≤3d o vencido), naranja `#D97706` (≤7d), azul `#2E6DB4` (resto).
+- Contenido: nombre (truncado), `proyecto · estado`, fecha, días ("Vencido Xd" / "Hoy" / "Xd").
+- Footer: 3 mini-contadores horizontales usando `hitosUrgentesCnt`, `hitosEstaSemanaCnt`, `hitosProximosCnt`.
+
+### Métodos helper añadidos a `dashboard.ts`
+
+| Método / getter | Descripción |
+|----------------|-------------|
+| `getInitials(nombre)` | 2 iniciales de apellidoNombre (primera letra de primer y último token) |
+| `getAvatarBg(progreso)` | `#D1FAE5` ≥80 / `#DBEAFE` ≥60 / `#FEE2E2` <60 |
+| `getAvatarTextColor(progreso)` | `#1B6B3A` / `#2E6DB4` / `#C0392B` |
+| `promedioEficiencia` (getter) | Media aritmética de `supervisores[].progreso` |
+| `getComentario(sup)` | Badge text inteligente vs promedio |
+| `getComentarioBg(sup)` | Fondo del badge (verde/azul/rojo) |
+| `getComentarioColor(sup)` | Color texto del badge |
+| `equipoEquilibrado` (getter) | `max - min ≤ 30` entre progresos |
+| `getProyectada(progreso)` | `min(100, progreso * 1.12)` |
+| `getHitoAccentColor(dias)` | Rojo/naranja/azul por días restantes |
+| `hitosUrgentesCnt` (getter) | Hitos con `diasRestantes ≤ 3` |
+| `hitosEstaSemanaCnt` (getter) | Hitos con `diasRestantes > 3 && ≤ 7` |
+| `hitosProximosCnt` (getter) | Hitos con `diasRestantes > 7` |
+| `getSubtituloDashboard()` | "Semana N · Mes YYYY" calculado con `Date` |
+
+### CSS clave (clases nuevas)
+- `.dash-root` — flex-col, overflow-y:auto, scrollbar oculto, fondo `#F8F9FA`, gap 12px, padding 16px.
+- `.dash-header` — background `#1E3A5F`, border-radius 10px, flex row space-between.
+- `.dash-select` — fondo rgba blanco, sin select nativo arrow (`appearance:none`), opciones sobre fondo `#1E3A5F`.
+- `.dual-bar-track` — relative, height 9px, `.bar-proyectada` absolute top:2px height:5px opacity:0.45, `.bar-real` absolute top:0 height:9px.
+- `.rank-canvas-offscreen` — `position:fixed; left:-9999px; top:-9999px; width:200px; height:120px`.
+- `.equilibrio-tag` + `.eq-verde` / `.eq-rojo`.
+- `.stacked-bar` — flex, height 5px, `.stack-seg` con `[style.flex]` proporcional.
+- `.hito-item` — `border-left:3px solid` (color vía binding), border-radius `0 7px 7px 0`, fondo `#F8FAFC`.
+- `.mini-counter` + `.mini-num` (18px bold) + `.mini-label` (9px uppercase).
+- `.loader-spinner` — border-top-color `#1E3A5F` (antes era `#64BC04`).
+
+### KPI y Alert cards — ajuste de compacidad (post-rediseño)
+- `.kpi-card`: padding `7px 6px` (antes `12px 8px`), gap interno `0`.
+- `.kpi-label` / `.kpi-sub`: `8px` (antes `9px`).
+- `.kpi-value`: `16px bold` (antes `20px`), margin `2px 0 1px`.
+- `.alert-card`: padding `8px 12px` (antes `12px 14px`).
+- `.alert-num`: `17px bold` (antes `22px`), margin-bottom `2px`.
+
+### Modo full-screen (sin header global)
+- **`layout.ts` `isFullPage()`**: extendido con `|| this.router.url.includes('/arquitectura-comercial/dashboard')`. El layout renderiza solo `<router-outlet>` (sin `<app-header>`), aplica `.full-page-wrapper` (quita bg-white y padding) y `p-0`/`overflow-hidden` en `<main>`. El sidebar sigue visible.
+- **`arquitectura-comercial-routing-module.ts`** — ruta `dashboard` añade `hideHeader: true` en `data` como refuerzo secundario (Header component oculta su contenido vía `*ngIf="!hideHeader"`).
