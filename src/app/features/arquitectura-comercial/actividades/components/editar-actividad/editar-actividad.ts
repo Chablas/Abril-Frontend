@@ -26,8 +26,10 @@ interface EditarActividadForm {
   userId: number | null;
   inicioProgramado: string;
   finProgramado: string;
+  diasHabiliesProg: number | null;
   inicioEfectivo: string;
   finEfectivo: string;
+  diasHabilesEfect: number | null;
   observaciones: string;
 }
 
@@ -73,25 +75,133 @@ export class EditarActividad implements OnChanges {
       userId: null,
       inicioProgramado: '',
       finProgramado: '',
+      diasHabiliesProg: null,
       inicioEfectivo: '',
       finEfectivo: '',
+      diasHabilesEfect: null,
       observaciones: '',
     };
   }
 
   private populateForm(): void {
     if (!this.actividad) return;
+    const ini = this.actividad.inicioProgramado ?? '';
+    const fin = this.actividad.finProgramado ?? '';
+    const iniEf = this.actividad.inicioEfectivo ?? '';
+    const finEf = this.actividad.finEfectivo ?? '';
     this.model = {
       nombre: this.actividad.nombre,
       tipo: this.actividad.partidaDeControl ?? '',
       etapaId: this.actividad.etapaId,
       userId: this.actividad.userId,
-      inicioProgramado: this.actividad.inicioProgramado ?? '',
-      finProgramado: this.actividad.finProgramado ?? '',
-      inicioEfectivo: this.actividad.inicioEfectivo ?? '',
-      finEfectivo: this.actividad.finEfectivo ?? '',
+      inicioProgramado: ini,
+      finProgramado: fin,
+      diasHabiliesProg: ini && fin ? this.contarDiasHabiles(ini, fin) : null,
+      inicioEfectivo: iniEf,
+      finEfectivo: finEf,
+      diasHabilesEfect: iniEf && finEf ? this.contarDiasHabiles(iniEf, finEf) : null,
       observaciones: this.actividad.observaciones ?? '',
     };
+  }
+
+  // --- helpers días hábiles ---
+
+  private calcularFechaFin(inicioIso: string, dias: number): string {
+    if (!inicioIso || dias <= 0) return '';
+    const d = new Date(inicioIso + 'T00:00:00');
+    let restantes = dias - 1; // el inicio ya cuenta como día 1
+    while (restantes > 0) {
+      d.setDate(d.getDate() + 1);
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) restantes--;
+    }
+    return this.toIso(d);
+  }
+
+  private contarDiasHabiles(inicioIso: string, finIso: string): number {
+    const d = new Date(inicioIso + 'T00:00:00');
+    const fin = new Date(finIso + 'T00:00:00');
+    let count = 0;
+    while (d <= fin) {
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  }
+
+  private toIso(d: Date): string {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }
+
+  // --- handlers programado ---
+
+  onInicioProgChange(): void {
+    if (this.model.inicioProgramado && this.model.diasHabiliesProg) {
+      this.model.finProgramado = this.calcularFechaFin(
+        this.model.inicioProgramado,
+        this.model.diasHabiliesProg,
+      );
+    } else if (this.model.inicioProgramado && this.model.finProgramado) {
+      this.model.diasHabiliesProg = this.contarDiasHabiles(
+        this.model.inicioProgramado,
+        this.model.finProgramado,
+      );
+    }
+  }
+
+  onDiasProgChange(): void {
+    if (this.model.inicioProgramado && this.model.diasHabiliesProg) {
+      this.model.finProgramado = this.calcularFechaFin(
+        this.model.inicioProgramado,
+        this.model.diasHabiliesProg,
+      );
+    }
+  }
+
+  onFinProgChange(): void {
+    if (this.model.inicioProgramado && this.model.finProgramado) {
+      this.model.diasHabiliesProg = this.contarDiasHabiles(
+        this.model.inicioProgramado,
+        this.model.finProgramado,
+      );
+    }
+  }
+
+  // --- handlers efectivo ---
+
+  onInicioEfectChange(): void {
+    if (this.model.inicioEfectivo && this.model.diasHabilesEfect) {
+      this.model.finEfectivo = this.calcularFechaFin(
+        this.model.inicioEfectivo,
+        this.model.diasHabilesEfect,
+      );
+    } else if (this.model.inicioEfectivo && this.model.finEfectivo) {
+      this.model.diasHabilesEfect = this.contarDiasHabiles(
+        this.model.inicioEfectivo,
+        this.model.finEfectivo,
+      );
+    }
+  }
+
+  onDiasEfectChange(): void {
+    if (this.model.inicioEfectivo && this.model.diasHabilesEfect) {
+      this.model.finEfectivo = this.calcularFechaFin(
+        this.model.inicioEfectivo,
+        this.model.diasHabilesEfect,
+      );
+    }
+  }
+
+  onFinEfectChange(): void {
+    if (this.model.inicioEfectivo && this.model.finEfectivo) {
+      this.model.diasHabilesEfect = this.contarDiasHabiles(
+        this.model.inicioEfectivo,
+        this.model.finEfectivo,
+      );
+    }
   }
 
   private loadEtapas(): void {

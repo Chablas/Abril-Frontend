@@ -1492,6 +1492,32 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 
 ---
 
+## Sesión 2026-05-20 — Arquitectura Comercial: panel proyectos, SPI, sticky acciones, días hábiles
+
+### `actividades.model.ts` — cambios de DTO
+- `ActividadListItemDTO`: campo `indice` renombrado a `orden`; añadido `spi?: number | null`.
+- `GanttActividadDTO`: campo `indice` renombrado a `orden`.
+
+### `features/arquitectura-comercial/actividades/` — panel izquierdo de proyectos
+- Toggle "Sin actividades" (switch CSS puro con `peer`): OFF → muestra solo proyectos con actividades; ON → muestra solo proyectos sin actividades. Contador del header cambia según modo.
+- Footer `+ Nuevo proyecto` sticky al pie del aside (siempre visible): `routerLink="/configuracion/proyectos"`.
+- Altura del aside corregida: `:host` cambiado de `height:100%` a `flex:1; min-height:0; overflow:hidden` en `actividades.css` — evita el desborde de 70px que ocurría porque `height:100%` incluía el espacio del `<app-header>` en el `flex-col` padre del normalLayout. Estructura del aside usa inline styles garantizados (`height:100%`, `flex:1; overflow-y:auto; min-height:0`, `flex-shrink:0`).
+
+### `actividades.html` — tabla
+- **Columna SPI**: añadida entre Especialidad y Estado. Muestra valor numérico (`1.2-2`) con color inline: `>= 1` → `#16a34a` (verde), `>= 0.8 y < 1` → `#d97706` (naranja), `< 0.8` → `#dc2626` (rojo), `null/0` → "—" gris. `colspan` actualizado a 19.
+- **Columna acciones sticky**: `<th>` y `<td>` de botones lápiz/basura son `position:sticky; right:0`. Clases `.th-actions-sticky` (bg `#1a4731`) y `.td-actions-sticky` (bg `#ffffff` / `#F9FAFB` par). Definidas en `actividades.css`.
+
+### `components/editar-actividad/` — días hábiles
+- Modal ampliado a `w-[800px]`.
+- Nuevos campos locales en `EditarActividadForm`: `diasHabiliesProg` y `diasHabilesEfect` (no van al payload).
+- Grid 3 columnas (`1fr 120px 1fr`) para fechas programadas y efectivas: **Inicio | Días hábiles | Fin**.
+- `calcularFechaFin(inicio, dias)`: itera desde `inicio` sumando días saltando sábado (`getDay()===6`) y domingo (`===0`); el inicio cuenta como día 1.
+- `contarDiasHabiles(inicio, fin)`: cuenta días hábiles inclusive para recálculo inverso al editar fin manualmente.
+- Handlers: `onInicioProgChange`, `onDiasProgChange`, `onFinProgChange`, `onInicioEfectChange`, `onDiasEfectChange`, `onFinEfectChange`.
+- `populateForm()` calcula los días al abrir si ambas fechas existen. `submit()` sin cambios — el fin calculado se incluye en el payload normalmente.
+
+---
+
 ## Sesión 2026-05-20 — Rediseño Home Habilitación
 
 ### Home (inicio.ts / inicio.html / inicio.css)
