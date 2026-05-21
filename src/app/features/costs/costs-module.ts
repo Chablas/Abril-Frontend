@@ -6,6 +6,7 @@ import { StaffProjectEmail } from './features/configuration/staffProjectEmail/co
 import { WorkItemCategory } from './features/configuration/workItemCategory/components/work-item-category';
 import { WorkItem } from './features/configuration/workItem/components/work-item';
 import { ProjectLink } from './features/configuration/projectLink/components/project-link';
+import { CostosPresupuestosEmail } from './features/configuration/costosPresupuestosEmail/components/costos-presupuestos-email';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -50,6 +51,12 @@ const routes: Routes = [
             component: ProjectLink,
             canActivate: [roleGuard],
             data: { titulo: 'LINKS DE PROYECTO', featureKey: 'costs.config.project-link' },
+          },
+          {
+            path: 'costos-presupuestos-email',
+            component: CostosPresupuestosEmail,
+            canActivate: [roleGuard],
+            data: { titulo: 'CORREOS C. Y PRESUPUESTOS', featureKey: 'costs.config.costos-presupuestos-email' },
           },
         ],
       },

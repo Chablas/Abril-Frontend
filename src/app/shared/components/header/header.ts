@@ -41,6 +41,12 @@ export class Header implements OnInit {
   }
 
   ngOnInit(): void {
+    // Cubre hard refresh: leer título y datos del usuario sin esperar NavigationEnd
+    let current = this.route;
+    while (current.firstChild) {
+      current = current.firstChild;
+    }
+    this.titulo = current.snapshot.data['titulo'] ?? '';
     this.loadUserFromStorage();
   }
 

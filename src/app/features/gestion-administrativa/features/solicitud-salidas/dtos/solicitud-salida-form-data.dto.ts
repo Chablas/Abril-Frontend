@@ -1,8 +1,3 @@
-export interface HoraOpcionDto {
-  id: number;
-  etiqueta: string;
-}
-
 export interface MotivoSalidaDto {
   id: number;
   descripcion: string;
@@ -15,7 +10,7 @@ export interface LugarSalidaDto {
 }
 
 export interface SolicitudSalidaFormDataDto {
-  horas: HoraOpcionDto[];
   motivos: MotivoSalidaDto[];
   lugares: LugarSalidaDto[];
+  aprobadorEmail: string | null;
 }
