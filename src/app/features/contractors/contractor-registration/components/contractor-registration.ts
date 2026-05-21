@@ -135,7 +135,21 @@ export class ContractorRegistration implements OnInit {
   }
 
   onDniKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') this.searchReniec();
+    if (event.key === 'Enter') { this.searchReniec(); return; }
+    this.blockNonDigits(event);
+  }
+
+  onNumericKeydown(event: KeyboardEvent) {
+    this.blockNonDigits(event);
+  }
+
+  private blockNonDigits(event: KeyboardEvent): void {
+    // Permitir teclas de control: Backspace, Delete, Tab, flechas, Ctrl+A/C/V/X, etc.
+    const isControl = event.ctrlKey || event.metaKey || event.altKey;
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (isControl || allowed.includes(event.key)) return;
+    // Bloquear todo lo que no sea dígito (0-9)
+    if (!/^\d$/.test(event.key)) event.preventDefault();
   }
 
   clearReniec() {

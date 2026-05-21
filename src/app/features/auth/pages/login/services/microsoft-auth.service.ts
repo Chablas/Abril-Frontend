@@ -17,6 +17,12 @@ export class MicrosoftAuthService {
 
   private async getMsalInstance(): Promise<PublicClientApplication> {
     if (!this.msalInstance) {
+      // Limpiar estado residual de interacciones previas.
+      // Ocurre cuando el usuario refresca la página mientras el popup de Microsoft
+      // estaba abierto: MSAL deja en sessionStorage una marca "interaction.status"
+      // que bloquea futuros intentos con el error "interaction_in_progress".
+      this.clearStaleInteractionState();
+
       this.msalInstance = new PublicClientApplication({
         auth: {
           clientId: environment.azure.clientId,
@@ -33,6 +39,16 @@ export class MicrosoftAuthService {
       await this.msalInstance.initialize();
     }
     return this.msalInstance;
+  }
+
+  private clearStaleInteractionState(): void {
+    // MSAL guarda el estado de interacción en sessionStorage con claves que
+    // contienen "interaction.status" o "request.". Al refrescar la página
+    // en medio de un popup, esas claves quedan huérfanas y bloquean el siguiente intento.
+    const staleKeys = Object.keys(sessionStorage).filter(
+      k => k.includes('interaction.status') || k.includes('request.state') || k.includes('request.params')
+    );
+    staleKeys.forEach(k => sessionStorage.removeItem(k));
   }
 
   async handleRedirect(): Promise<void> {
@@ -109,7 +125,18 @@ export class MicrosoftAuthService {
   async login(): Promise<void> {
     const msal = await this.getMsalInstance();
     try {
-      const result = await msal.loginPopup(this.scopes);
+      // Si por alguna razón sigue habiendo estado residual, lo limpiamos y reintentamos.
+      let result;
+      try {
+        result = await msal.loginPopup(this.scopes);
+      } catch (innerErr: any) {
+        if (innerErr?.errorCode === 'interaction_in_progress') {
+          this.clearStaleInteractionState();
+          result = await msal.loginPopup(this.scopes);
+        } else {
+          throw innerErr;
+        }
+      }
       const microsoftToken = result.accessToken;
 
       const response = await firstValueFrom(
