@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import {
@@ -9,6 +10,7 @@ import {
   ActividadListItemDTO,
   ActividadPatchBody,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
+import { RouterModule } from '@angular/router';
 import { NuevaConsulta } from './components/nueva-consulta/nueva-consulta';
 import { EditarActividad } from './components/editar-actividad/editar-actividad';
 import { NuevoHito } from './components/nuevo-hito/nuevo-hito';
@@ -26,7 +28,7 @@ interface EtapaGroup {
 @Component({
   selector: 'app-arq-comercial-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable],
+  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable, RouterModule],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
@@ -56,6 +58,8 @@ export class Actividades implements OnInit {
   etapaNombreFiltro: string | null = null;
   searchQuery = '';
   soloActivas = false;
+
+  mostrarSinActividades = false;
 
   mostrarNuevaConsulta = false;
   mostrarNuevoHito = false;
@@ -252,6 +256,10 @@ export class Actividades implements OnInit {
 
   onResponsableChange(a: ActividadListItemDTO, userId: number | null): void {
     this.patchField(a.id, 'userId', userId);
+  }
+
+  onResponsable2Change(a: ActividadListItemDTO, userId2: number | null): void {
+    this.patchField(a.id, 'userId2', userId2);
   }
 
   onObservacionesBlur(id: number, event: Event): void {

@@ -1492,6 +1492,32 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 
 ---
 
+## Sesión 2026-05-20 — Arquitectura Comercial: panel proyectos, SPI, sticky acciones, días hábiles
+
+### `actividades.model.ts` — cambios de DTO
+- `ActividadListItemDTO`: campo `indice` renombrado a `orden`; añadido `spi?: number | null`.
+- `GanttActividadDTO`: campo `indice` renombrado a `orden`.
+
+### `features/arquitectura-comercial/actividades/` — panel izquierdo de proyectos
+- Toggle "Sin actividades" (switch CSS puro con `peer`): OFF → muestra solo proyectos con actividades; ON → muestra solo proyectos sin actividades. Contador del header cambia según modo.
+- Footer `+ Nuevo proyecto` sticky al pie del aside (siempre visible): `routerLink="/configuracion/proyectos"`.
+- Altura del aside corregida: `:host` cambiado de `height:100%` a `flex:1; min-height:0; overflow:hidden` en `actividades.css` — evita el desborde de 70px que ocurría porque `height:100%` incluía el espacio del `<app-header>` en el `flex-col` padre del normalLayout. Estructura del aside usa inline styles garantizados (`height:100%`, `flex:1; overflow-y:auto; min-height:0`, `flex-shrink:0`).
+
+### `actividades.html` — tabla
+- **Columna SPI**: añadida entre Especialidad y Estado. Muestra valor numérico (`1.2-2`) con color inline: `>= 1` → `#16a34a` (verde), `>= 0.8 y < 1` → `#d97706` (naranja), `< 0.8` → `#dc2626` (rojo), `null/0` → "—" gris. `colspan` actualizado a 19.
+- **Columna acciones sticky**: `<th>` y `<td>` de botones lápiz/basura son `position:sticky; right:0`. Clases `.th-actions-sticky` (bg `#1a4731`) y `.td-actions-sticky` (bg `#ffffff` / `#F9FAFB` par). Definidas en `actividades.css`.
+
+### `components/editar-actividad/` — días hábiles
+- Modal ampliado a `w-[800px]`.
+- Nuevos campos locales en `EditarActividadForm`: `diasHabiliesProg` y `diasHabilesEfect` (no van al payload).
+- Grid 3 columnas (`1fr 120px 1fr`) para fechas programadas y efectivas: **Inicio | Días hábiles | Fin**.
+- `calcularFechaFin(inicio, dias)`: itera desde `inicio` sumando días saltando sábado (`getDay()===6`) y domingo (`===0`); el inicio cuenta como día 1.
+- `contarDiasHabiles(inicio, fin)`: cuenta días hábiles inclusive para recálculo inverso al editar fin manualmente.
+- Handlers: `onInicioProgChange`, `onDiasProgChange`, `onFinProgChange`, `onInicioEfectChange`, `onDiasEfectChange`, `onFinEfectChange`.
+- `populateForm()` calcula los días al abrir si ambas fechas existen. `submit()` sin cambios — el fin calculado se incluye en el payload normalmente.
+
+---
+
 ## Sesión 2026-05-20 — Rediseño Home Habilitación
 
 ### Home (inicio.ts / inicio.html / inicio.css)
@@ -1511,3 +1537,53 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 - Labels visibles en home: "Habilitación" → "Gestión de Ingresos", "SSOMA" → "Salud" (solo en inicio.ts, rutas y sidebar sin cambio)
 - navigation.service.ts: key 'ssoma' label → 'Salud', key 'habilitacion' label → 'Gestión de Ingresos' (keys y rutas sin cambio)
 - Orden grupos bento: ADMINISTRACIÓN → OPERACIONES → GESTIÓN (getter `orderedGroups` en inicio.ts reordena sin tocar NavigationService ni sidebar)
+
+---
+
+## Sesión 2026-05-21 — Arquitectura Comercial: Responsable 2, roles AC, nombre personalizado
+
+### `actividades.model.ts` — campos Responsable 2
+- `ActividadListItemDTO`: añadidos `userId2: number | null` y `responsableNombre2: string | null`.
+- `ActividadPatchBody`: añadido `userId2?: number | null`.
+- `UpdateActividadBody`: añadido `userId2: number | null`.
+
+### `actividades.html` y `actividades.ts` — dropdown Responsable 2
+- Columna "Responsable 2" en la tabla usa `[ngModel]="a.userId2"` y `(ngModelChange)="onResponsable2Change(a, $event)"`.
+- `onResponsable2Change(a, userId2)` añadido en `actividades.ts` → llama `patchField(a.id, 'userId2', userId2)` → PATCH `/actividades/{id}`.
+- Columna "Responsable 1" conserva su comportamiento (texto `a.encargado1`, solo lectura).
+
+### `components/editar-actividad/` — campo Responsable 2
+- `EditarActividadForm` interface: añadido `userId2: number | null`.
+- `empty()`: inicializa `userId2: null`.
+- `populateForm()`: asigna `userId2: this.actividad.userId2`.
+- `submit()`: incluye `userId2: this.model.userId2` en `UpdateActividadBody`.
+- `editar-actividad.html`: campo "Responsable" dividido en dos selects en grid-2: **"Responsable 1"** (`model.userId`) y **"Responsable 2"** (`model.userId2`), ambos con la lista `supervisores`.
+
+### `components/nuevo-entregable/` y `components/nuevo-hito/` — nombre personalizado
+- Dos propiedades nuevas en cada componente: `nombrePersonalizado = false` y `nombreLibre = ''`.
+- Se resetean a `false`/`''` en `ngOnChanges` al abrir el modal.
+- `canSubmit`: si `nombrePersonalizado` → solo exige `nombreLibre.trim()` no vacío; si OFF → lógica original de campos requeridos.
+- `submit()`: `nombre = nombrePersonalizado ? nombreLibre.trim() : nombreCalculado`.
+- HTML: campo "Nombre generado" muestra `readonly` cuando `!nombrePersonalizado` y input libre cuando `nombrePersonalizado`. Checkbox "Nombre personalizado" debajo de ambos inputs con `[(ngModel)]="nombrePersonalizado"`.
+- El campo `nombreCalculado` sigue calculándose en segundo plano aunque no se use cuando el checkbox está ON.
+
+### Roles Arquitectura Comercial — diseño acordado (pendiente implementar)
+
+Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
+
+| Rol (string exacto) | Acceso |
+|---------------------|--------|
+| `GESTOR AC` | Ve todos los proyectos y todas las actividades sin filtro de empresa/usuario. Puede editar cualquier actividad. |
+| `USUARIO AC` | Ve solo los proyectos/actividades donde `userId === su propio userId` o `userId2 === su propio userId`. Dropdowns Responsable 1 y 2 solo muestran su propio nombre o vacío. |
+
+**Implementación pendiente (frontend)**:
+- `ArquitecturaComercialService` deberá pasar el userId del JWT como query param cuando el rol sea `USUARIO AC` — el backend filtrará server-side.
+- El sidebar y `roleGuard` usarán `featureKey: 'arquitectura-comercial.*'` para ambos roles.
+- `getSupervisoresAc()` seguirá devolviendo la lista completa; el filtrado de qué puede editar se controla en el backend.
+
+### Pendientes módulo Arquitectura Comercial
+
+1. **Merge y deploy**: merge `feature/arquitectura-comercial` → `master` → deploy backend primero → deploy frontend. Verificar migraciones de BD (`userId2` en tabla `ac_actividades`).
+2. **Cron / recálculo automático SPI**: el backend debe calcular `spi` periódicamente (o en cada PATCH de fechas). Acordar frecuencia con backend: sugerido cron diario + recálculo on-demand al actualizar `finEfectivo` o `finProgramado`.
+3. **Curva S**: nueva vista en el módulo AC — gráfico de avance programado vs avance real acumulado por semana/mes. Datos: `inicioProgramado`/`finProgramado` para la curva base y `inicioEfectivo`/`finEfectivo` para la curva real. Implementar en `features/arquitectura-comercial/curva-s/` con Chart.js (línea doble + área fill).
+4. **Rediseño dashboard AC**: el dashboard actual (`dashboard/`) tiene KPIs básicos y gráficos de barras/dona. Rediseño propuesto: agregar panel de curva S en columna izquierda, mover ranking de eficiencia a columna derecha, añadir filtro por responsable (userId / userId2), y mostrar alerta de actividades sin Responsable 2 asignado.
