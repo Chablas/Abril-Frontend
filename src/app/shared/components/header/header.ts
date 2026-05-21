@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, PLATFORM_ID, inject, HostListener } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, PLATFORM_ID, inject, HostListener } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -12,7 +12,7 @@ import { MicrosoftAuthService } from '../../../features/auth/pages/login/service
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
-export class Header {
+export class Header implements OnInit {
   titulo: string = '';
   hideHeader = false;
   menuOpen = false;
@@ -37,15 +37,24 @@ export class Header {
       }
       this.titulo = current.snapshot.data['titulo'] ?? '';
       this.hideHeader = !!current.snapshot.data['hideHeader'];
-      if (isPlatformBrowser(this.platformId)) {
-        const user = JSON.parse(localStorage.getItem('user') ?? '{}');
-        this.userPhotoSrc  = user?.photoBase64 ?? null;
-        this.userName      = user?.displayName ?? null;
-        this.userEmail     = user?.email       ?? null;
-        this.userJobTitle  = user?.jobTitle    ?? null;
-      }
+      this.loadUserFromStorage();
       this.cdr.detectChanges();
     });
+  }
+
+  ngOnInit(): void {
+    // Carga los datos del usuario al inicializar (cubre el hard refresh,
+    // donde NavigationEnd puede no haber disparado aún).
+    this.loadUserFromStorage();
+  }
+
+  private loadUserFromStorage(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+    this.userPhotoSrc = user?.photoBase64 ?? null;
+    this.userName     = user?.displayName ?? null;
+    this.userEmail    = user?.email       ?? null;
+    this.userJobTitle = user?.jobTitle    ?? null;
   }
 
   toggleUserMenu(event: MouseEvent): void {

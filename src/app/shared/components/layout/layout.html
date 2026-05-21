@@ -10,7 +10,9 @@
             <ng-template #normalLayout>
                 <div class="w-full flex flex-col overflow-hidden rounded-lg h-full">
                     <app-header></app-header>
-                    <router-outlet></router-outlet>
+                    <div class="page-content flex-1 min-h-0 overflow-y-auto flex flex-col">
+                        <router-outlet></router-outlet>
+                    </div>
                 </div>
             </ng-template>
         </main>

@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostListener,
@@ -30,6 +31,7 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   visibleModules: NavModule[] = [];
   overflowModules: NavModule[] = [];
   overflowOpen = false;
+  isReady = false;
   activeOverflowMenu: string | null = null;
   activeOverflowGroup: string | null = null;
 
@@ -45,6 +47,7 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
     public alertaSvc: ProgramacionAlertasService,
     private elementRef: ElementRef,
     private ngZone: NgZone,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -60,6 +63,8 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
         .toArray()
         .map((el) => el.nativeElement.getBoundingClientRect().height);
       this.calculateVisibleModules();
+      this.isReady = true;
+      this.cdr.detectChanges();
 
       this.resizeObserver = new ResizeObserver(() =>
         this.ngZone.run(() => this.calculateVisibleModules()),
