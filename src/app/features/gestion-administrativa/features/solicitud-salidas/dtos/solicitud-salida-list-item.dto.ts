@@ -6,6 +6,7 @@ export interface SolicitudSalidaListItemDto {
   motivo: string;
   lugarOrigen: string | null;
   lugarDestino: string | null;
-  estado: string;
+  estadoAprobacion: string;
+  estadoRendicion: string;
   createdAt: string;
 }

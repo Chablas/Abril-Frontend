@@ -25,6 +25,17 @@
       </app-search-select>
     </div>
 
+    <div class="w-[180px]">
+      <app-search-select
+        label="Rendición"
+        [options]="estadoRendicionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoRendicion"
+        (valueChange)="filters.estadoRendicion = $event">
+      </app-search-select>
+    </div>
+
     <button type="button" (click)="onSearch()"
       class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -43,6 +54,23 @@
 
   </div>
 
+  <!-- ── Acción bulk: marcar como rendidas (siempre visible) ──────────── -->
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      (click)="marcarRendidasBulk()"
+      [disabled]="selectedIds.size === 0"
+      class="h-[36px] px-4 bg-[#0086A5] text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-[#006a83] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+      </svg>
+      Marcar como rendidas<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+    </button>
+    <span *ngIf="selectedIds.size === 0" class="text-xs text-gray-400">
+      Selecciona solicitudes aprobadas desde la columna "Rendición"
+    </span>
+  </div>
+
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
   <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
     <table class="w-full text-sm">
@@ -56,7 +84,20 @@
           <th class="text-left px-[16px] py-[10px] font-semibold">Motivo</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Estado</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Aprobación</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">
+            <label class="inline-flex items-center gap-[8px] cursor-pointer"
+                   [class.cursor-not-allowed]="seleccionables.length === 0">
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="seleccionables.length === 0"
+                (change)="toggleSelectAll()"
+                class="accent-[#0086A5] cursor-pointer disabled:cursor-not-allowed"
+                title="Seleccionar todas las aprobadas no rendidas" />
+              Rendición
+            </label>
+          </th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Registrada</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Acciones</th>
         </tr>
@@ -64,7 +105,7 @@
       <tbody>
 
         <tr *ngIf="salidas.length === 0">
-          <td colspan="11" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="12" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -77,7 +118,7 @@
 
           <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.trabajador }}</td>
 
-          <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.fechaSalida }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
 
           <td class="px-[16px] py-[10px] text-gray-700">{{ s.horaSalida }}</td>
 
@@ -91,9 +132,37 @@
 
           <td class="px-[16px] py-[10px]">
             <app-status-badge
-              [text]="s.estado"
-              [bgColor]="estadoColors(s.estado).bg"
-              [textColor]="estadoColors(s.estado).text" />
+              [text]="s.estadoAprobacion"
+              [bgColor]="aprobacionColors(s.estadoAprobacion).bg"
+              [textColor]="aprobacionColors(s.estadoAprobacion).text" />
+          </td>
+
+          <td class="px-[16px] py-[10px]">
+            <!-- No aprobada → guion -->
+            <span *ngIf="s.estadoAprobacion !== 'Aprobado'" class="text-gray-300">—</span>
+
+            <!-- Aprobada y ya rendida → solo badge -->
+            <app-status-badge
+              *ngIf="s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'Rendido'"
+              [text]="s.estadoRendicion"
+              [bgColor]="rendicionColors(s.estadoRendicion).bg"
+              [textColor]="rendicionColors(s.estadoRendicion).text" />
+
+            <!-- Aprobada y no rendida → checkbox + badge clickeable -->
+            <label
+              *ngIf="esSeleccionable(s)"
+              class="inline-flex items-center gap-[8px] cursor-pointer"
+              title="Marcar para rendir">
+              <input
+                type="checkbox"
+                [checked]="selectedIds.has(s.id)"
+                (change)="toggleSelection(s)"
+                class="accent-[#0086A5] cursor-pointer" />
+              <app-status-badge
+                [text]="s.estadoRendicion"
+                [bgColor]="rendicionColors(s.estadoRendicion).bg"
+                [textColor]="rendicionColors(s.estadoRendicion).text" />
+            </label>
           </td>
 
           <td class="px-[16px] py-[10px] text-gray-400 whitespace-nowrap">
@@ -102,7 +171,7 @@
 
           <!-- Acciones -->
           <td class="px-[16px] py-[10px]">
-            <ng-container *ngIf="s.estado === 'Pendiente'; else sinAcciones">
+            <ng-container *ngIf="s.estadoAprobacion === 'Pendiente'; else sinAcciones">
               <div class="flex items-center gap-[8px]">
                 <button
                   (click)="aprobar(s)"

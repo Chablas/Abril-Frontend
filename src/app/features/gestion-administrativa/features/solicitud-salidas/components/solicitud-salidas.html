@@ -17,13 +17,14 @@
           <th class="text-left px-[16px] py-[10px] font-semibold">Motivo</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Estado</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Aprobación</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Rendición</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Registrada</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="solicitudes.length === 0">
-          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -31,7 +32,7 @@
           *ngFor="let s of solicitudes; let i = index"
           class="border-b border-[#D6DEE5] hover:bg-[#FAFAFA] transition-colors">
           <td class="px-[16px] py-[10px] text-gray-500">{{ i + 1 }}</td>
-          <td class="px-[16px] py-[10px] text-gray-700">{{ s.fechaSalida }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
           <td class="px-[16px] py-[10px] text-gray-700">{{ s.horaSalida }}</td>
           <td class="px-[16px] py-[10px] text-gray-400">{{ s.horaRetorno ?? '—' }}</td>
           <td class="px-[16px] py-[10px] text-gray-700">{{ s.motivo }}</td>
@@ -39,9 +40,19 @@
           <td class="px-[16px] py-[10px] text-gray-500">{{ s.lugarDestino ?? '—' }}</td>
           <td class="px-[16px] py-[10px]">
             <app-status-badge
-              [text]="s.estado"
-              [bgColor]="estadoColors(s.estado).bg"
-              [textColor]="estadoColors(s.estado).text" />
+              [text]="s.estadoAprobacion"
+              [bgColor]="aprobacionColors(s.estadoAprobacion).bg"
+              [textColor]="aprobacionColors(s.estadoAprobacion).text" />
+          </td>
+          <td class="px-[16px] py-[10px]">
+            <app-status-badge
+              *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
+              [text]="s.estadoRendicion"
+              [bgColor]="rendicionColors(s.estadoRendicion).bg"
+              [textColor]="rendicionColors(s.estadoRendicion).text" />
+            <ng-template #sinRendicion>
+              <span class="text-gray-300">—</span>
+            </ng-template>
           </td>
           <td class="px-[16px] py-[10px] text-gray-400 whitespace-nowrap">
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}

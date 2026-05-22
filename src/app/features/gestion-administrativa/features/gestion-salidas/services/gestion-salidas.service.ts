@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { GestionSalidaFilterDataDto, GestionSalidaListItemDto } from '../dtos/gestion-salida.dto';
@@ -15,10 +15,15 @@ export class GestionSalidasService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getAll(workerId: number | null, lugarProyectoId: number | null): Observable<GestionSalidaListItemDto[]> {
+  getAll(
+    workerId: number | null,
+    lugarProyectoId: number | null,
+    estadoRendicion: string | null = null,
+  ): Observable<GestionSalidaListItemDto[]> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
+    if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     return this.http.get<GestionSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
   }
 
@@ -40,10 +45,31 @@ export class GestionSalidasService {
     });
   }
 
-  downloadExcel(workerId: number | null, lugarProyectoId: number | null): Observable<Blob> {
+  /**
+   * Marca las solicitudes como rendidas Y descarga la planilla de gasto por movilidad.
+   * El backend responde con un .xlsx; el conteo de procesadas viene en el header X-Rendidas-Count.
+   */
+  marcarRendidasBulk(ids: number[]): Observable<HttpResponse<Blob>> {
+    return this.http.patch(
+      `${this.apiUrl}/marcar-rendidas`,
+      { ids },
+      {
+        headers: this.headers,
+        responseType: 'blob',
+        observe: 'response',
+      },
+    );
+  }
+
+  downloadExcel(
+    workerId: number | null,
+    lugarProyectoId: number | null,
+    estadoRendicion: string | null = null,
+  ): Observable<Blob> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
+    if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     return this.http.get(`${this.apiUrl}/exportar-excel`, {
       headers: this.headers,
       params,

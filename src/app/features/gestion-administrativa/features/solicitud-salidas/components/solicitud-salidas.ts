@@ -45,11 +45,17 @@ export class SolicitudSalidas implements OnInit {
     this.load();
   }
 
-  estadoColors(estado: string): { bg: string; text: string } {
+  aprobacionColors(estado: string): { bg: string; text: string } {
     switch (estado) {
       case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
       case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
       default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
     }
+  }
+
+  rendicionColors(estado: string): { bg: string; text: string } {
+    return estado === 'Rendido'
+      ? { bg: '#DBEAFE', text: '#0086A5' }
+      : { bg: '#F3F4F6', text: '#6B7280' };
   }
 }
