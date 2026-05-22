@@ -1712,3 +1712,72 @@ forkJoin({
 - `.row-selected` — background `#EFF6FF`.
 - `.hito-tabs` / `.hito-tab.active` (border-bottom `#1E3A5F`) / `.tab-badge`.
 - `.btn-alert-row` / `.btn-alert-urgent` / `.btn-enviar` / `.btn-cancelar`.
+
+---
+
+## §MIGRACIÓN MASIVA 2026-05-22
+
+### Archivos Excel preparados
+
+#### 1. Lista_contratistas_limpia.xlsx — 74 empresas → `contributor` + `contractor_email`
+- `contributor_name` ← RazonSocial, `contributor_nombre_comercial` ← NombreComercial
+- `contributor_ruc` ← RUC, `sp_password_temp` ← Password, `id_sharepoint` ← IDListaCont
+- 4 emails por empresa → `contractor_email` (Gerente, Administrador, Residente, SSOMA)
+- `es_abril = false`, `active = true` siempre
+
+#### 2. entregables_empresa_estandarizados.xlsx — 8,300 filas → `ss_hab_empresa`
+- Cols: NombreComercial, project_id_BD, item_id, estado, vigencia
+- 352 combinaciones empresa+proyecto × 25 items c/u
+- NombreComercial = llave de cruce con `contributor` post-import
+
+#### 3. trabajadores_limpios.xlsx — 2,339 trabajadores (914 Casa + 1,425 Contratistas) → `workers` + `worker_vinculaciones` + `ss_hab_worker_proyecto`
+- Cols: id_trabajador, dni, nombre_completo, email_personal, fecha_ingreso, fecha_nacimiento, categoria, ocupacion, area, subarea, obra_oficina, contrata_casa, condicion_medica, notas, puntos_infraccion, celular, sctr, project_id_BD, empresa_nombre, proyectos_habilitado
+- `empresa_nombre`: Casa → `contributor_id` BD directo (int) | Contratista → NombreComercial (cruce post-import)
+- `proyectos_habilitado`: lista de project_id_BD separados por coma → `ss_hab_worker_proyecto` (aplica a ambos tipos)
+- 0 DNI duplicados, 0 IDProyecto no mapeado ✅
+
+#### 4. entregables_trabajadores_limpios.xlsx — 26,223 filas → `ss_hab_trabajador`
+- Cols: id_trabajador, item_id, estado, vigencia
+- `id_trabajador` = llave de cruce con workers post-import
+- Lógica aplicada: `ss_item_trabajador.aplica_a` + `aplica_categoria` + `aplica_obra_oficina` + `excluye_obra_oficina` + `excluye_categoria_contratista`
+- **NOTA**: `ss_item_trabajador_regla` NO se usa — lógica hardcodeada en `ss_item_trabajador`
+- Casa: 15–17 items/trabajador | Contratistas: 8–9 items/trabajador
+
+#### Pendiente procesar
+- EMOs → `worker_emos`
+- Equipos → `ss_equipo` + `ss_hab_equipo`
+- SCTR trabajadores → `ss_sctr_vidaley_worker`
+
+### Orden de borrado (dependencias FK)
+
+**Hijos de workers** (borrar antes de reimportar workers):
+`ss_hab_trabajador`, `worker_vinculaciones`, `ss_hab_worker_proyecto`, `ss_induccion`, `worker_emos`, `ss_programacion_emos`, `ss_sctr_vidaley_worker`, `ss_alertas_emo`, `ss_eval_supervisor`, `ss_hab_bloqueo_log`, `ss_interconsultas`, `ss_seguimientos_medicos`, `worker_eventos`, `ga_solicitud_salida`
+> **⚠️ PRESERVAR**: `ss_trabajador_restringido` (178 registros — blacklist, NO borrar)
+
+**Hijos de contributor (externos)** (borrar antes de reimportar contratistas):
+`ss_hab_empresa`, `ss_empresa_proyecto`, `ss_equipo`, `ss_tareo_detalle_contratista`, `ss_sctr_vidaley`, `worker_emos(empresa_origen)`, `worker_emo_convalidaciones`, `ss_hab_documento_version`
+
+**Tablas NO tocar**:
+`ss_clinica_*`, catálogos SSOMA, Phase/Stage/Layer, AcPlantillas, `ac_categorias`, `ac_especialidades`, `ac_etapas`, `role`, `feature`, `role_feature`, `project`, `app_user`, `ss_trabajador_restringido`
+
+### Flujo activación empresa (PENDIENTE IMPLEMENTAR — frontend)
+
+**Ruta pública**: `/auth/activar-empresa`
+**Componente**: `ActivarEmpresaMigradaComponent`
+
+**Paso 1 — Validar identidad**:
+- Input: RUC (11 dígitos) + contraseña SharePoint (`sp_password_temp`)
+- `POST /api/v1/habilitacion/auth/validar-migracion { ruc, spPassword }`
+- Si válido → mostrar Paso 2
+
+**Paso 2 — Crear cuenta**:
+- Input: email + nueva contraseña (reutilizar `PasswordStrengthComponent` de `auth/`)
+- `POST /api/v1/habilitacion/auth/activar-migracion { ruc, spPassword, email, password }`
+- Backend: guarda BCrypt, limpia `sp_password_temp`
+- Si éxito → redirigir a `/auth/login` con mensaje "Cuenta activada, inicia sesión"
+
+**Login**: agregar enlace "¿Primera vez? Activa tu cuenta aquí" apuntando a `/auth/activar-empresa`
+
+### Multi-usuario por empresa (segunda fase — no implementar aún)
+Tablas: `ss_contratista_usuario`, `ss_contratista_usuario_proyecto`, `ss_contratista_auditoria`
+Roles: `OWNER` | `ADMIN` | `GESTOR` con scope `ALL` | `BY_PROJECT`
