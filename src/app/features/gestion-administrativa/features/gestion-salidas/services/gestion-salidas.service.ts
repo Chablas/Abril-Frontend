@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { GestionSalidaFilterDataDto, GestionSalidaListItemDto } from '../dtos/gestion-salida.dto';
+import {
+  GestionSalidaDetalleDto,
+  GestionSalidaFilterDataDto,
+  GestionSalidaListItemDto,
+} from '../dtos/gestion-salida.dto';
 
 @Injectable({ providedIn: 'root' })
 export class GestionSalidasService {
@@ -25,6 +29,12 @@ export class GestionSalidasService {
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     return this.http.get<GestionSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
+  }
+
+  getDetalle(id: number): Observable<GestionSalidaDetalleDto> {
+    return this.http.get<GestionSalidaDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
+      headers: this.headers,
+    });
   }
 
   getFilterData(): Observable<GestionSalidaFilterDataDto> {

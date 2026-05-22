@@ -1,198 +1,152 @@
-<app-base-modal [title]="'NUEVA SOLICITUD DE SALIDA'" width="w-[800px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'NUEVA SOLICITUD DE SALIDA'" width="w-[820px]" (closeModal)="closeModal.emit()">
 
-  <div class="flex flex-col gap-[24px] mt-[20px]">
+  <div class="flex flex-col gap-[20px] mt-[16px]">
 
-    <!-- ── SECCIÓN 1: Fechas y horas ─────────────────────────────────── -->
-    <div>
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
-        Datos de la salida
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+    <!-- ── Fecha ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+      <div class="flex flex-col gap-[4px]">
+        <label class="text-sm text-[#64BC04] font-medium">Fecha de salida</label>
+        <input
+          type="date"
+          [(ngModel)]="fechaSalida"
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+        <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+    </div>
 
-        <div class="flex flex-col gap-[4px]">
-          <label class="text-sm text-[#64BC04] font-medium">Fecha de salida</label>
-          <input
-            type="date"
-            [ngModel]="createDto.fechaSalida"
-            (ngModelChange)="onFechaSalidaChange($event)"
-            class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
-          <p *ngIf="submitted && !createDto.fechaSalida" class="text-xs text-red-500">Campo requerido</p>
-        </div>
+    <!-- ── Trayectos ─────────────────────────────────────────────────── -->
+    <div *ngFor="let t of trayectos; let i = index" class="border border-[#D6DEE5] rounded-[10px] p-[16px] flex flex-col gap-[12px]">
 
-        <div></div>
+      <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-[6px]">
+        <p class="text-xs font-semibold text-[#64BC04] uppercase tracking-widest">Trayecto {{ i + 1 }}</p>
+        <button
+          *ngIf="i > 0"
+          type="button"
+          (click)="eliminarTrayecto(i)"
+          title="Quitar trayecto"
+          class="text-red-500 hover:bg-red-50 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer text-sm">
+          ✕
+        </button>
+      </div>
 
-        <!-- Hora de salida: HH + MM -->
+      <!-- Horas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
         <div class="flex flex-col gap-[4px]">
           <label class="text-sm text-[#64BC04] font-medium">Hora de salida</label>
           <div class="flex gap-[8px]">
-            <app-search-select
-              class="flex-1"
-              [showLabel]="false"
-              placeholder="HH"
-              [options]="horasSalidaOptions"
-              valueField="valor"
-              displayField="label"
-              [allowClear]="false"
-              [value]="salidaHH"
-              (valueChange)="onSalidaHHChange($event)" />
-            <app-search-select
-              class="flex-1"
-              [showLabel]="false"
-              placeholder="MM"
-              [options]="minutosSalidaOptions"
-              valueField="valor"
-              displayField="label"
-              [allowClear]="false"
-              [value]="salidaMM"
-              (valueChange)="onSalidaMMChange($event)" />
+            <app-search-select class="flex-1" [showLabel]="false" placeholder="HH"
+              [options]="horasSalidaOptions(t)" valueField="valor" displayField="label"
+              [allowClear]="false" [(value)]="t.salidaHH" />
+            <app-search-select class="flex-1" [showLabel]="false" placeholder="MM"
+              [options]="minutosSalidaOptions(t)" valueField="valor" displayField="label"
+              [allowClear]="false" [(value)]="t.salidaMM" />
           </div>
-          <p *ngIf="submitted && !createDto.horaSalida" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && (!t.salidaHH || !t.salidaMM)" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
-        <!-- Hora de retorno: HH + MM + checkbox Sin retorno -->
         <div class="flex flex-col gap-[4px]">
           <label class="text-sm text-[#64BC04] font-medium">Hora de retorno</label>
-          <div class="flex gap-[8px]" [class.opacity-50]="sinRetorno" [class.pointer-events-none]="sinRetorno">
-            <app-search-select
-              class="flex-1"
-              [showLabel]="false"
-              placeholder="HH"
-              [options]="horasRetornoOptions"
-              valueField="valor"
-              displayField="label"
-              [allowClear]="false"
-              [value]="retornoHH"
-              (valueChange)="onRetornoHHChange($event)" />
-            <app-search-select
-              class="flex-1"
-              [showLabel]="false"
-              placeholder="MM"
-              [options]="minutosRetornoOptions"
-              valueField="valor"
-              displayField="label"
-              [allowClear]="false"
-              [value]="retornoMM"
-              (valueChange)="onRetornoMMChange($event)" />
+          <div class="flex gap-[8px]" [class.opacity-50]="t.sinRetorno" [class.pointer-events-none]="t.sinRetorno">
+            <app-search-select class="flex-1" [showLabel]="false" placeholder="HH"
+              [options]="horasRetornoOptions(t)" valueField="valor" displayField="label"
+              [allowClear]="false" [(value)]="t.retornoHH" />
+            <app-search-select class="flex-1" [showLabel]="false" placeholder="MM"
+              [options]="minutosRetornoOptions(t)" valueField="valor" displayField="label"
+              [allowClear]="false" [(value)]="t.retornoMM" />
           </div>
           <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              [ngModel]="sinRetorno"
-              (ngModelChange)="onSinRetornoChange($event)"
-              class="accent-[#64BC04]" />
+            <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)" class="accent-[#64BC04]" />
             <span class="text-xs text-gray-500">Sin retorno</span>
           </label>
-          <p *ngIf="submitted && createDto.horaRetorno === null" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && !t.sinRetorno && (!t.retornoHH || !t.retornoMM)" class="text-xs text-red-500">Campo requerido</p>
         </div>
-
       </div>
-    </div>
 
-    <div class="border-t border-[#F0F0F0]"></div>
+      <!-- Motivo -->
+      <div class="flex flex-col gap-[4px]">
+        <ng-container *ngIf="!t.motivoLibreOn">
+          <app-search-select label="Motivo" [options]="formData.motivos"
+            valueField="id" displayField="descripcion" [(value)]="t.motivoId" />
+        </ng-container>
+        <ng-container *ngIf="t.motivoLibreOn">
+          <label class="text-sm text-[#64BC04] font-medium">Motivo</label>
+          <input type="text" [(ngModel)]="t.motivoLibre" placeholder="Ingresa el motivo"
+            class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+        </ng-container>
+        <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+          <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" class="accent-[#64BC04]" />
+          <span class="text-xs text-gray-500">Otro motivo</span>
+        </label>
+        <p *ngIf="submitted && !t.motivoId && !t.motivoLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
+      </div>
 
-    <!-- ── SECCIÓN 2: Motivo y lugares ───────────────────────────────── -->
-    <div>
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[12px]">
-        Detalle de la salida
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+      <!-- Origen + Destino -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
 
-        <div class="flex flex-col gap-[4px] sm:col-span-2">
-          <ng-container *ngIf="!motivoLibreOn">
-            <app-search-select
-              label="Motivo"
-              [options]="formData.motivos"
-              valueField="id"
-              displayField="descripcion"
-              [(value)]="createDto.motivoId" />
-          </ng-container>
-          <ng-container *ngIf="motivoLibreOn">
-            <label class="text-sm text-[#64BC04] font-medium">Motivo</label>
-            <input
-              type="text"
-              [(ngModel)]="createDto.motivoLibre"
-              placeholder="Ingresa el motivo"
-              class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
-          </ng-container>
-          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              [ngModel]="motivoLibreOn"
-              (ngModelChange)="onMotivoLibreChange($event)"
-              class="accent-[#64BC04]" />
-            <span class="text-xs text-gray-500">Otro motivo</span>
-          </label>
-          <p *ngIf="submitted && !createDto.motivoId && !createDto.motivoLibre?.trim()"
-             class="text-xs text-red-500">Campo requerido</p>
-        </div>
-
-        <!-- Lugar de origen -->
+        <!-- Origen: editable solo en el primer trayecto; en los siguientes es display del destino anterior -->
         <div class="flex flex-col gap-[4px]">
-          <ng-container *ngIf="!origenLibre">
-            <app-search-select
-              label="Lugar de origen"
-              [options]="formData.lugares"
-              valueField="id"
-              displayField="nombreDisplay"
-              [(value)]="createDto.lugarOrigenId" />
+          <ng-container *ngIf="i === 0">
+            <ng-container *ngIf="!t.origenLibre">
+              <app-search-select label="Lugar de origen" [options]="formData.lugares"
+                valueField="id" displayField="nombreDisplay" [(value)]="t.lugarOrigenId" />
+            </ng-container>
+            <ng-container *ngIf="t.origenLibre">
+              <label class="text-sm text-[#64BC04] font-medium">Lugar de origen</label>
+              <input type="text" [(ngModel)]="t.lugarOrigenLibre" placeholder="Ingresa la dirección o lugar"
+                class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+            </ng-container>
+            <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+              <input type="checkbox" [ngModel]="t.origenLibre" (ngModelChange)="onOrigenLibreChange(t, $event)" class="accent-[#64BC04]" />
+              <span class="text-xs text-gray-500">Otro lugar</span>
+            </label>
+            <p *ngIf="submitted && !t.lugarOrigenId && !t.lugarOrigenLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
           </ng-container>
-          <ng-container *ngIf="origenLibre">
+
+          <ng-container *ngIf="i > 0">
             <label class="text-sm text-[#64BC04] font-medium">Lugar de origen</label>
-            <input
-              type="text"
-              [(ngModel)]="createDto.lugarOrigenLibre"
-              placeholder="Ingresa la dirección o lugar"
-              class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+            <input type="text" disabled
+              [value]="t.origenAutoLabel || '(define el destino del trayecto anterior)'"
+              class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-500 bg-gray-50" />
+            <p class="text-[11px] text-gray-400 italic">Encadenado al destino del trayecto anterior</p>
           </ng-container>
-          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              [ngModel]="origenLibre"
-              (ngModelChange)="onOrigenLibreChange($event)"
-              class="accent-[#64BC04]" />
-            <span class="text-xs text-gray-500">Otro lugar</span>
-          </label>
-          <p *ngIf="submitted && !createDto.lugarOrigenId && !createDto.lugarOrigenLibre?.trim()"
-             class="text-xs text-red-500">Campo requerido</p>
         </div>
 
-        <!-- Lugar de destino -->
+        <!-- Destino -->
         <div class="flex flex-col gap-[4px]">
-          <ng-container *ngIf="!destinoLibre">
-            <app-search-select
-              label="Lugar de destino"
-              [options]="formData.lugares"
-              valueField="id"
-              displayField="nombreDisplay"
-              [(value)]="createDto.lugarDestinoId" />
+          <ng-container *ngIf="!t.destinoLibre">
+            <app-search-select label="Lugar de destino" [options]="formData.lugares"
+              valueField="id" displayField="nombreDisplay" [value]="t.lugarDestinoId"
+              (valueChange)="t.lugarDestinoId = $event; onDestinoCambio(i)" />
           </ng-container>
-          <ng-container *ngIf="destinoLibre">
+          <ng-container *ngIf="t.destinoLibre">
             <label class="text-sm text-[#64BC04] font-medium">Lugar de destino</label>
-            <input
-              type="text"
-              [(ngModel)]="createDto.lugarDestinoLibre"
+            <input type="text" [ngModel]="t.lugarDestinoLibre"
+              (ngModelChange)="t.lugarDestinoLibre = $event; onDestinoCambio(i)"
               placeholder="Ingresa la dirección o lugar"
               class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
           </ng-container>
           <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              [ngModel]="destinoLibre"
-              (ngModelChange)="onDestinoLibreChange($event)"
-              class="accent-[#64BC04]" />
+            <input type="checkbox" [ngModel]="t.destinoLibre" (ngModelChange)="onDestinoLibreChange(t, $event)" class="accent-[#64BC04]" />
             <span class="text-xs text-gray-500">Otro lugar</span>
           </label>
-          <p *ngIf="submitted && !createDto.lugarDestinoId && !createDto.lugarDestinoLibre?.trim()"
-             class="text-xs text-red-500">Campo requerido</p>
-          <p *ngIf="submitted && mismosLugares" class="text-xs text-red-500">
-            No puede ser igual al lugar de origen
-          </p>
+          <p *ngIf="submitted && !t.lugarDestinoId && !t.lugarDestinoLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
         </div>
-
       </div>
+
     </div>
 
-    <!-- ── Aviso del aprobador ────────────────────────────────────────── -->
+    <!-- ── Agregar trayecto ─────────────────────────────────────────── -->
+    <div>
+      <button type="button" (click)="agregarTrayecto()"
+        class="h-[36px] px-4 bg-[#E5F7D1] hover:bg-[#d4f0b8] text-[#64BC04] border border-[#64BC04] rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="#64BC04"/>
+        </svg>
+        Agregar trayecto
+      </button>
+    </div>
+
+    <!-- ── Aprobador ─────────────────────────────────────────────────── -->
     <div *ngIf="formData.aprobadorEmail" class="flex items-start gap-[10px] bg-[#F0F9E8] border border-[#D6E8B8] rounded-[8px] px-[14px] py-[10px]">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="#64BC04"/>
@@ -214,11 +168,10 @@
       </p>
     </div>
 
-    <!-- ── Botón guardar ──────────────────────────────────────────────── -->
+    <!-- Botón guardar -->
     <div class="flex justify-center">
-      <button
-        (click)="save()"
-        class="w-[200px] bg-[#64BC04] py-[8px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
+      <button (click)="save()"
+        class="w-[220px] bg-[#64BC04] py-[10px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
         <p class="text-white text-base font-medium text-center">Solicitar permiso</p>
       </button>
     </div>

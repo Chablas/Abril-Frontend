@@ -9,7 +9,28 @@ import { SolicitudSalidasService } from '../../services/solicitud-salidas.servic
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SolicitudSalidaFormDataDto } from '../../dtos/solicitud-salida-form-data.dto';
-import { SolicitudSalidaCreateDto } from '../../dtos/solicitud-salida-create.dto';
+import { SolicitudSalidaCreateDto, TrayectoCreateDto } from '../../dtos/solicitud-salida-create.dto';
+
+/** Estado en memoria de un trayecto en el form (las horas se mantienen como HH/MM por separado). */
+interface TrayectoForm {
+  salidaHH: string;
+  salidaMM: string;
+  retornoHH: string;
+  retornoMM: string;
+  sinRetorno: boolean;
+  motivoId: number | null;
+  motivoLibre: string | null;
+  motivoLibreOn: boolean;
+  /** Origen solo es editable en el primer trayecto. */
+  lugarOrigenId: number | null;
+  lugarOrigenLibre: string | null;
+  origenLibre: boolean;
+  /** Texto display del origen autocalculado en trayectos posteriores (solo lectura). */
+  origenAutoLabel: string;
+  lugarDestinoId: number | null;
+  lugarDestinoLibre: string | null;
+  destinoLibre: boolean;
+}
 
 @Component({
   standalone: true,
@@ -24,32 +45,12 @@ export class SolicitudSalidaCreate implements OnInit {
 
   formData: SolicitudSalidaFormDataDto = { motivos: [], lugares: [], aprobadorEmail: null };
 
-  createDto: SolicitudSalidaCreateDto = {
-    fechaSalida: '',
-    horaSalida: '',
-    horaRetorno: null,
-    motivoId: null,
-    motivoLibre: null,
-    lugarOrigenId: null,
-    lugarOrigenLibre: null,
-    lugarDestinoId: null,
-    lugarDestinoLibre: null,
-  };
+  fechaSalida = '';
+  trayectos: TrayectoForm[] = [];
 
-  // ── Estado de los pickers de hora ─────────────────────────────────────
-  salidaHH = '';
-  salidaMM = '';
-  retornoHH = '';
-  retornoMM = '';
-  sinRetorno = false;
-
-  // ── Opciones estáticas ────────────────────────────────────────────────
   readonly TODAS_HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   readonly TODOS_MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
-  motivoLibreOn = false;
-  origenLibre = false;
-  destinoLibre = false;
   submitted = false;
 
   constructor(
@@ -59,8 +60,8 @@ export class SolicitudSalidaCreate implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.createDto.fechaSalida = this.todayStr;
-    this.setDefaultSalidaTime();
+    this.fechaSalida = this.todayStr;
+    this.trayectos.push(this.nuevoTrayecto(true));
     setTimeout(() => this.loadFormData());
   }
 
@@ -75,218 +76,183 @@ export class SolicitudSalidaCreate implements OnInit {
     });
   }
 
-  // ── Helpers de fecha/hora ─────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────
 
   private get todayStr(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  /** Establece hora de salida con la hora actual exacta. */
-  private setDefaultSalidaTime(): void {
+  private nuevoTrayecto(esPrimero: boolean): TrayectoForm {
     const now = new Date();
-    this.salidaHH = String(now.getHours()).padStart(2, '0');
-    this.salidaMM = String(now.getMinutes()).padStart(2, '0');
-    this.createDto.horaSalida = `${this.salidaHH}:${this.salidaMM}`;
+    return {
+      salidaHH: esPrimero ? String(now.getHours()).padStart(2, '0') : '',
+      salidaMM: esPrimero ? String(now.getMinutes()).padStart(2, '0') : '',
+      retornoHH: '',
+      retornoMM: '',
+      sinRetorno: false,
+      motivoId: null,
+      motivoLibre: null,
+      motivoLibreOn: false,
+      lugarOrigenId: null,
+      lugarOrigenLibre: null,
+      origenLibre: false,
+      origenAutoLabel: '',
+      lugarDestinoId: null,
+      lugarDestinoLibre: null,
+      destinoLibre: false,
+    };
   }
 
-  // ── Opciones disponibles (getters reactivos) ──────────────────────────
+  // ── Trayectos dinámicos ────────────────────────────────────────────
 
-  /** Horas válidas para salida: si es hoy, solo >= hora actual. */
-  get horasSalidaDisponibles(): string[] {
-    if (this.createDto.fechaSalida !== this.todayStr) return this.TODAS_HORAS;
-    const nowH = new Date().getHours();
-    return this.TODAS_HORAS.filter((h) => parseInt(h) >= nowH);
+  agregarTrayecto(): void {
+    const prev = this.trayectos[this.trayectos.length - 1];
+    const nuevo = this.nuevoTrayecto(false);
+    // Auto-encadenar: el origen del nuevo trayecto = destino del anterior (solo display).
+    nuevo.origenAutoLabel = this.destinoLabel(prev);
+    // Para el envío al backend usamos los IDs/libre del destino anterior:
+    nuevo.lugarOrigenId    = prev.lugarDestinoId;
+    nuevo.lugarOrigenLibre = prev.lugarDestinoLibre;
+    this.trayectos.push(nuevo);
   }
 
-  /** Minutos válidos para salida: si es hoy y misma hora actual, solo >= minuto actual. */
-  get minutosSalidaDisponibles(): string[] {
-    if (this.createDto.fechaSalida !== this.todayStr || !this.salidaHH) return this.TODOS_MINUTOS;
-    const now = new Date();
-    if (parseInt(this.salidaHH) > now.getHours()) return this.TODOS_MINUTOS;
-    return this.TODOS_MINUTOS.filter((m) => parseInt(m) >= now.getMinutes());
+  eliminarTrayecto(idx: number): void {
+    if (idx === 0) return; // no se puede borrar el primero
+    this.trayectos.splice(idx, 1);
+    // Re-encadenar origenes posteriores
+    this.recomputarOrigenes();
   }
 
-  /** Horas válidas para retorno: solo >= hora de salida. */
-  get horasRetornoDisponibles(): string[] {
-    if (!this.salidaHH) return this.TODAS_HORAS;
-    return this.TODAS_HORAS.filter((h) => parseInt(h) >= parseInt(this.salidaHH));
+  /** Cuando el destino de un trayecto cambia, el origen del siguiente debe actualizarse. */
+  onDestinoCambio(idx: number): void {
+    this.recomputarOrigenes();
   }
 
-  /** Minutos válidos para retorno: si misma hora que salida, solo > minuto de salida. */
-  get minutosRetornoDisponibles(): string[] {
-    if (!this.retornoHH || !this.salidaHH) return this.TODOS_MINUTOS;
-    if (parseInt(this.retornoHH) > parseInt(this.salidaHH)) return this.TODOS_MINUTOS;
-    const salM = parseInt(this.salidaMM || '00');
-    return this.TODOS_MINUTOS.filter((m) => parseInt(m) > salM);
+  private recomputarOrigenes(): void {
+    for (let i = 1; i < this.trayectos.length; i++) {
+      const prev = this.trayectos[i - 1];
+      const curr = this.trayectos[i];
+      curr.origenAutoLabel  = this.destinoLabel(prev);
+      curr.lugarOrigenId    = prev.lugarDestinoId;
+      curr.lugarOrigenLibre = prev.lugarDestinoLibre;
+    }
   }
 
-  // ── Opciones formateadas para app-search-select ───────────────────────
-
-  /** search-select necesita objetos con { valor, label }. */
-  private toOptions(items: string[]): { valor: string; label: string }[] {
-    return items.map((v) => ({ valor: v, label: v }));
+  private destinoLabel(t: TrayectoForm): string {
+    if (t.lugarDestinoLibre) return t.lugarDestinoLibre;
+    if (t.lugarDestinoId == null) return '';
+    const lugar = (this.formData.lugares ?? []).find((l: any) => l.id === t.lugarDestinoId);
+    return lugar?.nombreDisplay ?? '';
   }
 
-  get horasSalidaOptions()    { return this.toOptions(this.horasSalidaDisponibles); }
-  get minutosSalidaOptions()  { return this.toOptions(this.minutosSalidaDisponibles); }
-  get horasRetornoOptions()   { return this.toOptions(this.horasRetornoDisponibles); }
-  get minutosRetornoOptions() { return this.toOptions(this.minutosRetornoDisponibles); }
+  // ── Pickers de hora (mismo patrón que antes, ahora por trayecto) ───
 
-  // ── Manejadores de cambio ─────────────────────────────────────────────
+  horasSalidaOptions(t: TrayectoForm): { valor: string; label: string }[] {
+    // Si la fecha es hoy y es el primer trayecto, restringe a horas >= ahora.
+    if (this.fechaSalida === this.todayStr && t === this.trayectos[0]) {
+      const nowH = new Date().getHours();
+      return this.TODAS_HORAS.filter((h) => parseInt(h) >= nowH).map((v) => ({ valor: v, label: v }));
+    }
+    return this.TODAS_HORAS.map((v) => ({ valor: v, label: v }));
+  }
 
-  onFechaSalidaChange(fecha: string): void {
-    this.createDto.fechaSalida = fecha;
-    // Si es hoy y la hora seleccionada ya pasó, limpiar
-    if (fecha === this.todayStr && this.createDto.horaSalida) {
+  minutosSalidaOptions(t: TrayectoForm): { valor: string; label: string }[] {
+    if (this.fechaSalida === this.todayStr && t === this.trayectos[0] && t.salidaHH) {
       const now = new Date();
-      const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      if (this.createDto.horaSalida <= nowStr) {
-        this.salidaHH = '';
-        this.salidaMM = '';
-        this.createDto.horaSalida = '';
-        this.resetRetorno();
-      }
+      if (parseInt(t.salidaHH) > now.getHours())
+        return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
+      return this.TODOS_MINUTOS.filter((m) => parseInt(m) >= now.getMinutes()).map((v) => ({ valor: v, label: v }));
     }
+    return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
   }
 
-  onSalidaHHChange(hh: string): void {
-    this.salidaHH = hh;
-    // Si el minuto seleccionado ya no es válido para la nueva hora, limpiar
-    if (this.salidaMM && !this.minutosSalidaDisponibles.includes(this.salidaMM)) {
-      this.salidaMM = '';
-    }
-    this.syncSalida();
-    this.validateRetornoAfterSalidaChange();
+  horasRetornoOptions(t: TrayectoForm): { valor: string; label: string }[] {
+    if (!t.salidaHH) return this.TODAS_HORAS.map((v) => ({ valor: v, label: v }));
+    return this.TODAS_HORAS.filter((h) => parseInt(h) >= parseInt(t.salidaHH)).map((v) => ({ valor: v, label: v }));
   }
 
-  onSalidaMMChange(mm: string): void {
-    this.salidaMM = mm;
-    this.syncSalida();
-    this.validateRetornoAfterSalidaChange();
+  minutosRetornoOptions(t: TrayectoForm): { valor: string; label: string }[] {
+    if (!t.retornoHH || !t.salidaHH) return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
+    if (parseInt(t.retornoHH) > parseInt(t.salidaHH))
+      return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
+    const salM = parseInt(t.salidaMM || '00');
+    return this.TODOS_MINUTOS.filter((m) => parseInt(m) > salM).map((v) => ({ valor: v, label: v }));
   }
 
-  onRetornoHHChange(hh: string): void {
-    this.retornoHH = hh;
-    // Si el minuto ya no es válido para la nueva hora de retorno, limpiar
-    if (this.retornoMM && !this.minutosRetornoDisponibles.includes(this.retornoMM)) {
-      this.retornoMM = '';
-    }
-    this.syncRetorno();
+  onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
+    t.sinRetorno = checked;
+    if (checked) { t.retornoHH = ''; t.retornoMM = ''; }
   }
 
-  onRetornoMMChange(mm: string): void {
-    this.retornoMM = mm;
-    this.syncRetorno();
+  onMotivoLibreChange(t: TrayectoForm, checked: boolean): void {
+    t.motivoLibreOn = checked;
+    t.motivoId = null;
+    t.motivoLibre = null;
   }
 
-  onSinRetornoChange(checked: boolean): void {
-    this.sinRetorno = checked;
-    if (checked) {
-      this.retornoHH = '';
-      this.retornoMM = '';
-      this.createDto.horaRetorno = ''; // '' pasa la validación !== null; se convierte a null al guardar
-    } else {
-      this.createDto.horaRetorno = null;
-    }
+  onOrigenLibreChange(t: TrayectoForm, checked: boolean): void {
+    t.origenLibre = checked;
+    t.lugarOrigenId = null;
+    t.lugarOrigenLibre = null;
   }
 
-  onMotivoLibreChange(checked: boolean): void {
-    this.motivoLibreOn = checked;
-    this.createDto.motivoId = null;
-    this.createDto.motivoLibre = null;
+  onDestinoLibreChange(t: TrayectoForm, checked: boolean): void {
+    t.destinoLibre = checked;
+    t.lugarDestinoId = null;
+    t.lugarDestinoLibre = null;
+    this.recomputarOrigenes();
   }
 
-  onOrigenLibreChange(checked: boolean): void {
-    this.origenLibre = checked;
-    this.createDto.lugarOrigenId = null;
-    this.createDto.lugarOrigenLibre = null;
-  }
+  // ── Validación + envío ─────────────────────────────────────────────
 
-  onDestinoLibreChange(checked: boolean): void {
-    this.destinoLibre = checked;
-    this.createDto.lugarDestinoId = null;
-    this.createDto.lugarDestinoLibre = null;
-  }
+  private validarTrayecto(t: TrayectoForm, idx: number): string[] {
+    const errs: string[] = [];
+    const pref = `Trayecto ${idx + 1}`;
+    const horaSalida = t.salidaHH && t.salidaMM ? `${t.salidaHH}:${t.salidaMM}` : '';
+    const horaRetorno = !t.sinRetorno && t.retornoHH && t.retornoMM ? `${t.retornoHH}:${t.retornoMM}` : null;
 
-  private syncSalida(): void {
-    this.createDto.horaSalida =
-      this.salidaHH && this.salidaMM ? `${this.salidaHH}:${this.salidaMM}` : '';
-  }
-
-  private syncRetorno(): void {
-    if (this.sinRetorno) return;
-    this.createDto.horaRetorno =
-      this.retornoHH && this.retornoMM ? `${this.retornoHH}:${this.retornoMM}` : null;
-  }
-
-  private resetRetorno(): void {
-    this.retornoHH = '';
-    this.retornoMM = '';
-    this.sinRetorno = false;
-    this.createDto.horaRetorno = null;
-  }
-
-  /** Si la hora de retorno quedó <= hora de salida tras un cambio, la limpia. */
-  private validateRetornoAfterSalidaChange(): void {
-    if (!this.sinRetorno && this.retornoHH && this.retornoMM) {
-      const retornoStr = `${this.retornoHH}:${this.retornoMM}`;
-      if (this.createDto.horaSalida && retornoStr <= this.createDto.horaSalida) {
-        this.resetRetorno();
-      }
-    }
-  }
-
-  // ── Validación y envío ────────────────────────────────────────────────
-
-  private getMissingFields(): string[] {
-    const missing: string[] = [];
-    if (!this.createDto.fechaSalida) missing.push('Fecha de salida');
-    if (!this.createDto.horaSalida) missing.push('Hora de salida');
-    if (this.createDto.horaRetorno === null) missing.push('Hora de retorno');
-    if (!this.createDto.motivoId && !this.createDto.motivoLibre?.trim())
-      missing.push('Motivo');
-    if (!this.createDto.lugarOrigenId && !this.createDto.lugarOrigenLibre?.trim())
-      missing.push('Lugar de origen');
-    if (!this.createDto.lugarDestinoId && !this.createDto.lugarDestinoLibre?.trim())
-      missing.push('Lugar de destino');
-    return missing;
-  }
-
-  get mismosLugares(): boolean {
-    return (
-      !!this.createDto.lugarOrigenId &&
-      !!this.createDto.lugarDestinoId &&
-      this.createDto.lugarOrigenId === this.createDto.lugarDestinoId
-    );
+    if (!horaSalida) errs.push(`${pref}: hora de salida`);
+    if (!t.sinRetorno && !horaRetorno) errs.push(`${pref}: hora de retorno`);
+    if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);
+    if (!t.lugarOrigenId && !t.lugarOrigenLibre?.trim()) errs.push(`${pref}: lugar de origen`);
+    if (!t.lugarDestinoId && !t.lugarDestinoLibre?.trim()) errs.push(`${pref}: lugar de destino`);
+    if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
+      errs.push(`${pref}: origen y destino no pueden ser iguales`);
+    return errs;
   }
 
   save(): void {
     this.submitted = true;
-    const missing = this.getMissingFields();
-    if (missing.length > 0) {
-      Swal.fire({
-        title: 'Campos requeridos',
-        html: `<ul class="text-left text-sm list-disc pl-4">${missing.map((f) => `<li>${f}</li>`).join('')}</ul>`,
-        icon: 'warning',
-        confirmButtonColor: '#64BC04',
-      });
+    if (!this.fechaSalida) {
+      Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#64BC04' });
       return;
     }
-    if (this.mismosLugares) {
+
+    const errors: string[] = [];
+    this.trayectos.forEach((t, i) => errors.push(...this.validarTrayecto(t, i)));
+    if (errors.length > 0) {
       Swal.fire({
-        title: 'Lugares inválidos',
-        text: 'El lugar de origen y el lugar de destino no pueden ser iguales.',
+        title: 'Campos requeridos',
+        html: `<ul class="text-left text-sm list-disc pl-4">${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`,
         icon: 'warning',
         confirmButtonColor: '#64BC04',
       });
       return;
     }
 
-    // '' (Sin retorno) → null antes del POST
     const payload: SolicitudSalidaCreateDto = {
-      ...this.createDto,
-      horaRetorno: this.createDto.horaRetorno || null,
+      fechaSalida: this.fechaSalida,
+      trayectos: this.trayectos.map<TrayectoCreateDto>((t) => ({
+        horaSalida: `${t.salidaHH}:${t.salidaMM}`,
+        horaRetorno: t.sinRetorno ? null : `${t.retornoHH}:${t.retornoMM}`,
+        motivoId: t.motivoId,
+        motivoLibre: t.motivoLibre?.trim() || null,
+        lugarOrigenId: t.lugarOrigenId,
+        lugarOrigenLibre: t.lugarOrigenLibre?.trim() || null,
+        lugarDestinoId: t.lugarDestinoId,
+        lugarDestinoLibre: t.lugarDestinoLibre?.trim() || null,
+      })),
     };
 
     this.loaderService.show();

@@ -1,11 +1,18 @@
-export interface SolicitudSalidaCreateDto {
-  fechaSalida: string;        // 'YYYY-MM-DD'
-  horaSalida: string;         // 'HH:mm'
-  horaRetorno: string | null; // 'HH:mm' | null
+export interface TrayectoCreateDto {
+  /** "HH:mm" */
+  horaSalida: string;
+  /** "HH:mm" or null (sin retorno) */
+  horaRetorno: string | null;
   motivoId: number | null;
   motivoLibre: string | null;
   lugarOrigenId: number | null;
   lugarOrigenLibre: string | null;
   lugarDestinoId: number | null;
   lugarDestinoLibre: string | null;
+}
+
+export interface SolicitudSalidaCreateDto {
+  /** "yyyy-MM-dd" */
+  fechaSalida: string;
+  trayectos: TrayectoCreateDto[];
 }

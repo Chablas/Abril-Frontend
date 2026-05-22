@@ -6,15 +6,17 @@ import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import {
+  GestionSalidaDetalleDto,
   GestionSalidaListItemDto,
 } from '../dtos/gestion-salida.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, StatusBadge, SearchSelect],
+  imports: [CommonModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal],
   templateUrl: './gestion-salidas.html',
 })
 export class GestionSalidas implements OnInit {
@@ -36,6 +38,9 @@ export class GestionSalidas implements OnInit {
 
   /** IDs seleccionados para acción bulk. */
   selectedIds = new Set<number>();
+
+  /** Detalle abierto en modal (null = modal cerrado). */
+  detalle: GestionSalidaDetalleDto | null = null;
 
   constructor(
     private service:       GestionSalidasService,
@@ -162,9 +167,11 @@ export class GestionSalidas implements OnInit {
 
   // ── Selección bulk para rendición ────────────────────────────────────
 
-  /** Solo se pueden rendir Aprobadas + aún No rendidas. */
+  /** Solo se pueden rendir Aprobadas + No rendidas + con TODOS los trayectos teniendo capturas. */
   esSeleccionable(s: GestionSalidaListItemDto): boolean {
-    return s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'No rendido';
+    return s.estadoAprobacion === 'Aprobado'
+      && s.estadoRendicion === 'No rendido'
+      && s.puedeRendirse;
   }
 
   toggleSelection(s: GestionSalidaListItemDto): void {
@@ -241,6 +248,26 @@ export class GestionSalidas implements OnInit {
     // Soporta filename="..." y filename*=UTF-8''...
     const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(contentDisposition);
     return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  // ── Modal de detalle ────────────────────────────────────────────────
+
+  abrirDetalle(s: GestionSalidaListItemDto): void {
+    this.loaderService.show();
+    this.service.getDetalle(s.id).subscribe({
+      next: (data) => {
+        this.detalle = data;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.detalle = null;
   }
 
   // ── Colores de badges ────────────────────────────────────────────────
