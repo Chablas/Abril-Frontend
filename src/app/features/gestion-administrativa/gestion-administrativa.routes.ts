@@ -52,4 +52,14 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKey: 'gestion-administrativa.config.lugares',
     },
   },
+  {
+    path: 'configuracion/trayectos',
+    loadComponent: () =>
+      import('./features/trayectos/pages/trayectos').then((m) => m.GaTrayectos),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'TRAYECTOS',
+      featureKey: 'gestion-administrativa.config.trayectos',
+    },
+  },
 ];

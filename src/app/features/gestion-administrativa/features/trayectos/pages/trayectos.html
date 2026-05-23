@@ -1,0 +1,78 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+
+  <!-- ── Cabecera ──────────────────────────────────────────────────────── -->
+  <div>
+    <app-btn-new label="Nuevo trayecto" (clicked)="showCreateModal = true" />
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+    <table class="w-full text-sm">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
+          <th class="text-right px-[16px] py-[10px] font-semibold">Monto (S/)</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold">Estado</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="trayectos.length === 0">
+          <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            No hay trayectos registrados.
+          </td>
+        </tr>
+
+        <tr *ngFor="let t of trayectos" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+
+          <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarOrigenNombre }}</td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarDestinoNombre }}</td>
+          <td class="px-[16px] py-[10px] text-right text-gray-800 font-medium">
+            {{ t.monto | number:'1.2-2' }}
+          </td>
+
+          <td class="px-[16px] py-[10px] text-center">
+            <app-status-badge
+              [text]="t.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="t.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="t.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="px-[16px] py-[10px] text-center">
+            <div class="flex items-center justify-center gap-[10px]">
+              <button
+                (click)="toggle(t)"
+                class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
+                [ngClass]="t.activo
+                  ? 'border-red-200 text-red-600 hover:bg-red-50'
+                  : 'border-green-300 text-green-700 hover:bg-green-50'">
+                {{ t.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                (click)="openEdit(t)"
+                class="text-xs font-medium text-[#64BC04] hover:text-[#57a803] transition-colors cursor-pointer">
+                Editar
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modales ─────────────────────────────────────────────────────────── -->
+<app-ga-trayecto-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="load()" />
+
+<app-ga-trayecto-edit
+  *ngIf="showEditModal && trayectoToEdit"
+  [trayecto]="trayectoToEdit!"
+  (closeModal)="showEditModal = false; trayectoToEdit = null"
+  (saved)="load()" />

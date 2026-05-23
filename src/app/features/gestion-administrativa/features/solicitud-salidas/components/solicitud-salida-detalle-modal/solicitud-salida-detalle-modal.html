@@ -1,0 +1,108 @@
+<app-base-modal
+  [title]="'Detalle de la solicitud'"
+  width="w-[720px]"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
+
+    <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Fecha</div>
+        <div class="text-gray-800">{{ detalle.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Registrada</div>
+        <div class="text-gray-800">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Aprobación</div>
+        <app-status-badge
+          [text]="detalle.estadoAprobacion"
+          [bgColor]="aprobacionColors(detalle.estadoAprobacion).bg"
+          [textColor]="aprobacionColors(detalle.estadoAprobacion).text" />
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Rendición</div>
+        <app-status-badge
+          *ngIf="detalle.estadoAprobacion === 'Aprobado'; else sinRendicion"
+          [text]="detalle.estadoRendicion"
+          [bgColor]="rendicionColors(detalle.estadoRendicion).bg"
+          [textColor]="rendicionColors(detalle.estadoRendicion).text" />
+        <ng-template #sinRendicion>
+          <span class="text-gray-300">—</span>
+        </ng-template>
+      </div>
+      <div *ngIf="detalle.motivoRechazo" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Motivo de rechazo</div>
+        <div class="text-gray-800">{{ detalle.motivoRechazo }}</div>
+      </div>
+    </div>
+
+    <!-- ── Trayectos ──────────────────────────────────────────────────── -->
+    <div class="border-t border-[#D6DEE5] pt-4 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">
+          Trayectos
+          <span class="text-xs text-gray-400 font-normal">({{ detalle.trayectos.length }})</span>
+        </h3>
+        <div *ngIf="totalGeneral > 0" class="text-xs font-medium text-gray-700">
+          Total: S/ {{ totalGeneral | number:'1.2-2' }}
+        </div>
+      </div>
+
+      <div *ngFor="let t of detalle.trayectos" class="border border-[#D6DEE5] rounded-lg p-3 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-[#64BC04] uppercase">Trayecto {{ t.orden + 1 }}</div>
+          <div *ngIf="totalCapturas(t) > 0" class="text-xs font-medium text-gray-700">
+            S/ {{ totalCapturas(t) | number:'1.2-2' }}
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Salida</div>
+            <div class="text-gray-800">{{ t.horaSalida }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Retorno</div>
+            <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
+          </div>
+          <div class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">Motivo</div>
+            <div class="text-gray-800">{{ t.motivo }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Origen</div>
+            <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 uppercase">Destino</div>
+            <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="t.capturas.length > 0" class="mt-1 flex flex-wrap gap-2">
+          <div *ngFor="let c of t.capturas" class="flex flex-col items-center gap-1" [title]="c.filename">
+            <div class="w-[110px] h-[110px] flex items-center justify-center">
+              <app-draggable-image [src]="c.imageUrl" />
+            </div>
+            <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
+          </div>
+        </div>
+        <div *ngIf="t.capturas.length === 0" class="text-xs text-gray-400 italic">
+          Sin capturas en este trayecto.
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end pt-2">
+      <button
+        type="button"
+        (click)="cerrar()"
+        class="h-[36px] px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium cursor-pointer transition-colors">
+        Cerrar
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

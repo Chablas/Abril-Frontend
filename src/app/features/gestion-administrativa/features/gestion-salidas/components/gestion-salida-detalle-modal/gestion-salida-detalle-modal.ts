@@ -1,0 +1,49 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
+import {
+  GestionSalidaDetalleDto,
+  GestionSalidaTrayectoDto,
+} from '../../dtos/gestion-salida.dto';
+
+@Component({
+  standalone: true,
+  selector: 'app-gestion-salida-detalle-modal',
+  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage],
+  templateUrl: './gestion-salida-detalle-modal.html',
+})
+export class GestionSalidaDetalleModal {
+  @Input({ required: true }) detalle!: GestionSalidaDetalleDto;
+  @Output() close = new EventEmitter<void>();
+
+  get totalGeneral(): number {
+    return this.detalle.trayectos.reduce(
+      (acc, t) => acc + t.capturas.reduce((a, c) => a + (c.monto || 0), 0),
+      0,
+    );
+  }
+
+  totalCapturas(t: GestionSalidaTrayectoDto): number {
+    return t.capturas.reduce((acc, c) => acc + (c.monto || 0), 0);
+  }
+
+  cerrar(): void {
+    this.close.emit();
+  }
+
+  aprobacionColors(estado: string): { bg: string; text: string } {
+    switch (estado) {
+      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
+      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+      default:          return { bg: '#FEF9C3', text: '#92400E' };
+    }
+  }
+
+  rendicionColors(estado: string): { bg: string; text: string } {
+    return estado === 'Rendido'
+      ? { bg: '#DBEAFE', text: '#0086A5' }
+      : { bg: '#F3F4F6', text: '#6B7280' };
+  }
+}

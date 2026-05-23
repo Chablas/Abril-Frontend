@@ -5,6 +5,10 @@ import { environment } from '../../../../../../environments/environment';
 import { SolicitudSalidaFormDataDto } from '../dtos/solicitud-salida-form-data.dto';
 import { SolicitudSalidaCreateDto } from '../dtos/solicitud-salida-create.dto';
 import { SolicitudSalidaListItemDto } from '../dtos/solicitud-salida-list-item.dto';
+import {
+  SolicitudSalidaCapturaDto,
+  SolicitudSalidaDetalleDto,
+} from '../dtos/solicitud-salida-detalle.dto';
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudSalidasService {
@@ -31,5 +35,28 @@ export class SolicitudSalidasService {
     return this.http.post<{ id: number; message: string }>(this.apiUrl, dto, {
       headers: this.headers,
     });
+  }
+
+  getDetalle(id: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /** Sube capturas asociadas a un trayecto específico. */
+  uploadCapturasToTrayecto(
+    trayectoId: number,
+    items: { file: File; monto: number }[],
+  ): Observable<SolicitudSalidaCapturaDto[]> {
+    const formData = new FormData();
+    items.forEach((it) => {
+      formData.append('files', it.file, it.file.name);
+      formData.append('montos', it.monto.toString());
+    });
+    return this.http.post<SolicitudSalidaCapturaDto[]>(
+      `${this.apiUrl}/trayectos/${trayectoId}/capturas`,
+      formData,
+      { headers: this.headers },
+    );
   }
 }
