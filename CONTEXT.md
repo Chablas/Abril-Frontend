@@ -626,6 +626,7 @@ Plataforma completa mobile-first.
 - **Snapshot EF desfasado**: antes de aplicar migraciones, leer `Up()` operación por operación.
 - **`@microsoft.graph.downloadUrl` y `Content-Disposition`**: el endpoint `/habilitacion/archivos/url` devuelve URLs con `Content-Disposition: attachment` — usar fetch-as-blob (ver §12 "Visor de documentos PDF").
 - **`esAbril` en BD**: el campo viene `false` para todos los registros actuales (criterio `ContributorName.Contains("ABRIL")` no matchea). **No filtrar por `esAbril`** — mostrar todas las empresas.
+- **Nombres de trabajadores vienen de `person.full_name`**: la tabla `workers` tiene FK `person_id → person`. El nombre que muestra la lista de trabajadores (`apellidoNombre`, `nombre`) se resuelve desde `person.full_name`. Si un worker se importa sin crear su registro en `person` y linkearlo vía `person_id`, aparece sin nombre en la UI. **Toda migración masiva de workers DEBE crear el registro en `person` primero y asignar `workers.person_id` correctamente.**
 
 ---
 
@@ -1730,11 +1731,12 @@ forkJoin({
 - 352 combinaciones empresa+proyecto × 25 items c/u
 - NombreComercial = llave de cruce con `contributor` post-import
 
-#### 3. trabajadores_limpios.xlsx — 2,339 trabajadores (914 Casa + 1,425 Contratistas) → `workers` + `worker_vinculaciones` + `ss_hab_worker_proyecto`
+#### 3. trabajadores_limpios.xlsx — 2,339 trabajadores (914 Casa + 1,425 Contratistas) → `person` + `workers` + `worker_vinculaciones` + `ss_hab_worker_proyecto`
 - Cols: id_trabajador, dni, nombre_completo, email_personal, fecha_ingreso, fecha_nacimiento, categoria, ocupacion, area, subarea, obra_oficina, contrata_casa, condicion_medica, notas, puntos_infraccion, celular, sctr, project_id_BD, empresa_nombre, proyectos_habilitado
 - `empresa_nombre`: Casa → `contributor_id` BD directo (int) | Contratista → NombreComercial (cruce post-import)
 - `proyectos_habilitado`: lista de project_id_BD separados por coma → `ss_hab_worker_proyecto` (aplica a ambos tipos)
 - 0 DNI duplicados, 0 IDProyecto no mapeado ✅
+- ⚠️ **Orden obligatorio de inserción**: primero insertar en `person` (`full_name` ← nombre_completo), luego insertar en `workers` con `person_id` apuntando al registro creado. Si `workers.person_id` es NULL o no existe el `person`, la lista de trabajadores aparece sin nombres en la UI (el campo `apellidoNombre` viene de `person.full_name`).
 
 #### 4. entregables_trabajadores_limpios.xlsx — 26,223 filas → `ss_hab_trabajador`
 - Cols: id_trabajador, item_id, estado, vigencia
