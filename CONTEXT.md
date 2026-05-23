@@ -1760,23 +1760,29 @@ forkJoin({
 **Tablas NO tocar**:
 `ss_clinica_*`, catálogos SSOMA, Phase/Stage/Layer, AcPlantillas, `ac_categorias`, `ac_especialidades`, `ac_etapas`, `role`, `feature`, `role_feature`, `project`, `app_user`, `ss_trabajador_restringido`
 
-### Flujo activación empresa (PENDIENTE IMPLEMENTAR — frontend)
+### Flujo activación empresa — ✅ IMPLEMENTADO
 
-**Ruta pública**: `/auth/activar-empresa`
-**Componente**: `ActivarEmpresaMigradaComponent`
+**Ruta pública**: `/auth/activar-empresa` (registrada en `app.routes.ts`, fuera del shell autenticado)
+**Componente**: `ActivarEmpresaComponent` — `features/auth/pages/activar-empresa/activar-empresa.component.ts`
+**Login**: enlace "¿Primera vez? Activa tu cuenta aquí" agregado en `login.html`
 
 **Paso 1 — Validar identidad**:
-- Input: RUC (11 dígitos) + contraseña SharePoint (`sp_password_temp`)
+- Inputs: RUC (11 dígitos, validado con `/^\d{11}$/`) + `spPassword` (contraseña temporal)
 - `POST /api/v1/habilitacion/auth/validar-migracion { ruc, spPassword }`
-- Si válido → mostrar Paso 2
+- Respuesta exitosa devuelve `{ nombreComercial }` → se muestra como badge de confirmación en paso 2
+- Error → Swal `icon:'error'` con `err.error?.message ?? 'RUC o contraseña temporal incorrectos'`
 
 **Paso 2 — Crear cuenta**:
-- Input: email + nueva contraseña (reutilizar `PasswordStrengthComponent` de `auth/`)
+- Inputs: email + nueva contraseña (con `PasswordStrengthComponent`) + confirmar contraseña
+- Reglas: ≥8 chars, ≥1 mayúscula, ≥1 dígito
 - `POST /api/v1/habilitacion/auth/activar-migracion { ruc, spPassword, email, password }`
-- Backend: guarda BCrypt, limpia `sp_password_temp`
-- Si éxito → redirigir a `/auth/login` con mensaje "Cuenta activada, inicia sesión"
+- Éxito → Swal success → `router.navigate(['/auth/login'])`
+- Usa `HttpClient` directo (sin `AuthService`) — no necesita token
 
-**Login**: agregar enlace "¿Primera vez? Activa tu cuenta aquí" apuntando a `/auth/activar-empresa`
+**Notas de implementación**:
+- `paso: 1 | 2` controla el `*ngIf` entre los dos formularios
+- `ruc` y `spPassword` se conservan en memoria durante el paso 2 (se reenvían en el body de activar-migracion)
+- No usa `LoaderService` ni `ErrorService` — manejo local con `saving: boolean` y Swal inline
 
 ### Multi-usuario por empresa (segunda fase — no implementar aún)
 Tablas: `ss_contratista_usuario`, `ss_contratista_usuario_proyecto`, `ss_contratista_auditoria`
