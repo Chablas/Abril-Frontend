@@ -473,16 +473,29 @@ export class Empresa implements OnInit {
       });
   }
 
-  guardarAdmin(): void {
+  guardarEntregable(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
-    this.loaderService.show();
-    this.habEmpresaService
-      .updateEntregable(this.empresaId, this.selectedEntregable.id, {
+
+    let payload: EmpresaEntregableUpdateDto;
+
+    if (this.isContratista()) {
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
+        obsContratista: this.panelObsContratista || undefined,
+      };
+    } else {
+      payload = {
         estado: this.panelEstado || this.selectedEntregable.estado,
         vigencia: this.panelVigencia || undefined,
         archivoUrl: this.panelArchivoUrl || undefined,
         obsAbril: this.panelObsAbril || undefined,
-      })
+      };
+    }
+
+    this.loaderService.show();
+    this.habEmpresaService
+      .updateEntregable(this.empresaId, this.selectedEntregable.id, payload)
       .subscribe({
         next: () => {
           this.loaderService.hide();

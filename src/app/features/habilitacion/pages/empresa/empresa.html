@@ -502,7 +502,7 @@
           type="button"
           class="btn-primary"
           [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
-          (click)="guardarAdmin()"
+          (click)="guardarEntregable()"
         >GUARDAR</button>
         <div class="panel-actions" *ngIf="selectedEntregable.estado === 'Enviado'">
           <button type="button" class="btn-approve" (click)="aprobarEntregable()">✓ APROBAR</button>

@@ -461,31 +461,48 @@ export class Equipos implements OnInit, OnDestroy {
   guardarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedEquipo) return;
 
-    const vigencia = !this.selectedEntregable.requiereVigencia
-      ? '2040-12-31'
-      : this.panelVigencia || undefined;
+    let payload: EquipoEntregableUpdateDto;
 
-    const payload: EquipoEntregableUpdateDto = {
-      estado: this.panelEstado,
-      vigencia,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsAbril: this.panelObsAbril || undefined,
-    };
+    if (this.isContratista()) {
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
+        obsContratista: this.panelObsAbril || undefined,
+      };
+    } else {
+      const vigencia = !this.selectedEntregable.requiereVigencia
+        ? '2040-12-31'
+        : this.panelVigencia || undefined;
+      payload = {
+        estado: this.panelEstado,
+        vigencia,
+        archivoUrl: this.panelArchivoUrl || undefined,
+        obsAbril: this.panelObsAbril || undefined,
+      };
+    }
 
     this.loaderService.show();
     this.equipoService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
       next: () => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
-        const vigencia = !this.selectedEntregable?.requiereVigencia
-          ? '2040-12-31'
-          : this.panelVigencia || undefined;
-        this.actualizarEntregableLocal({
-          estado: this.panelEstado,
-          vigencia,
-          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          obsAbril: this.panelObsAbril || undefined,
-        });
+        if (this.isContratista()) {
+          this.actualizarEntregableLocal({
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            vigencia: this.panelVigencia || undefined,
+            obsContratista: this.panelObsAbril || undefined,
+          });
+        } else {
+          const vigencia = !this.selectedEntregable?.requiereVigencia
+            ? '2040-12-31'
+            : this.panelVigencia || undefined;
+          this.actualizarEntregableLocal({
+            estado: this.panelEstado,
+            vigencia,
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsAbril: this.panelObsAbril || undefined,
+          });
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
