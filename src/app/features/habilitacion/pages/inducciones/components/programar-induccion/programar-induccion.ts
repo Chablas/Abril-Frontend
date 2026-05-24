@@ -128,8 +128,13 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
       return;
     }
     this.loadingWorkers = true;
+
+    const empresaId = this.authService.isContratista()
+      ? (this.authService.getEmpresaId() ?? undefined)
+      : undefined;
+
     this.trabajadorHabService
-      .getTrabajadores({ search: term, page: 1, pageSize: 20 })
+      .getTrabajadores({ search: term, page: 1, pageSize: 20, empresaId })
       .subscribe({
         next: (res) => {
           this.workersResultados = res.data ?? [];
