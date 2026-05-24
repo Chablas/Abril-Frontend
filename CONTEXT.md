@@ -146,9 +146,10 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 - `authGuard` (`core/guards/auth.guard.ts`): SSR → `true` (¡no quitar! evita problemas con refresh); sin token → `/auth/login`; token expirado → logout + login.
 - `roleGuard` (`core/guards/role.guard.ts`): verifica acceso en dos pasos:
   1. Si `route.data.featureKey` existe → busca en `localStorage.allowed_features` (array JSON cargado al login desde BD). Si está incluido → permite.
-  2. Fallback: si `route.data.roles` existe → verifica contra JWT roles (solo para contratistas u otros casos legacy).
+  2. Fallback: si `route.data.roles` existe → verifica contra JWT roles; **además** si el array incluye `'CONTRATISTA'`, verifica `authService.isContratista()` (lee `localStorage.user.tipo`) como segundo fallback — necesario porque contratistas usan auth propio (tipo en localStorage), no claims JWT Microsoft.
   - Sin match en ninguno de los dos → redirige a `/`.
   - **Regla**: rutas nuevas deben usar `featureKey` registrado en BD, no `roles` directos.
+  - **Dos sistemas de auth conviven**: `getRoles()` lee claims JWT Microsoft; `isContratista()` lee `localStorage.user.tipo === 'CONTRATISTA'`. Son independientes. Rutas CONTRATISTA funcionales usan `featureKey` (en `allowed_features` del token contratista). Dashboard usa solo `authGuard` + redirect interno en el componente.
 
 ### Roles conocidos (string-exact, MAYÚSCULAS, español)
 ```
@@ -584,6 +585,17 @@ Plataforma completa mobile-first.
 - **`induccion.service.ts`**: `aprobarBatch()` corregido de `http.post` a `http.patch` → PATCH `/inducciones/aprobar-batch`.
 - **`bandeja` — tab Inducciones rediseñado**: reemplazada lista vertical plana por tarjetas agrupadas por `proyectoId+empresaId+fecha`. Cada tarjeta muestra: proyecto, empresa, fecha, flags Altura/Eléctrico, contador "N/M asistieron", checkbox "Seleccionar todos los asistentes", chips por worker (verde+checkbox si `ingresoConfirmado=true` pre-seleccionado, gris sin checkbox si false), botón "Aprobar seleccionados (N)" → llama `InduccionService.aprobarBatch(ids)`. Tab Inducciones no muestra el dropdown "Todos los responsables" ni el split izquierda/derecha — usa layout full-width. `InduccionListDto` añadido `contrataCasa?: string`. `bandeja.ts` inyecta `InduccionService`; `setTipo('INDUCCION')` llama `loadInducciones()` en vez de `loadItems()`; `groupInducciones()` agrupa client-side. Aprobar en tab TRABAJADOR/EMPRESA/EQUIPO: modal sin campo de fecha editable — si el item tiene vigencia se muestra como `<input type="date" readonly>`.
 
+**Cambios 2026-05-24:**
+- **`dashboard-contratista`** (NUEVO) `pages/dashboard-contratista/`: panel enterprise de resumen para CONTRATISTA. Grid 2×2 (Proyectos | Entregables Empresa / Trabajadores | Equipos). Nav superior con pills para Trabajadores, Empresa, Equipos, SCTR, Inducciones. Sin scroll externo (`height: 100%`, `overflow: hidden`). Skeleton shimmer en loading. Skeleton KPI en header. Standalone + `RouterModule`. Ruta: solo `authGuard`; `ngOnInit()` redirige a `trabajadores` si no es contratista.
+- **`roleGuard`** (`core/guards/role.guard.ts`): añadido fallback `authService.isContratista()` en el bloque `allowedRoles` cuando el array incluye `'CONTRATISTA'`. Sin esto, el guard rechazaba contratistas en rutas sin `featureKey` porque sus roles no están en JWT Microsoft.
+- **`sidebar.ts`**: `onModuleClick` para `module.key === 'habilitacion'` ahora brancha: si `isContratista()` → navega a `/habilitacion`, si no → navega a `/`. Inyectado `AuthService`.
+- **`habilitacion.routes.ts`**: redirect `''` cambiado de `'trabajadores'` a `'dashboard-contratista'`.
+- **Fixes vigencia panel contratista** (3 componentes):
+  - `trabajadores.ts`: campo vigencia editable (input date) gated por `requiereVigenciaAnteUpload`; upload bloqueado si no hay fecha; `guardarEntregable()` rama contratista incluye `vigencia: panelVigencia`.
+  - `equipos.ts`: `autoMarcarEnviado()` computa `vigencia` antes del payload y la reutiliza en `actualizarEntregableLocal`; `guardarEntregable()` tiene rama contratista con `{ archivoUrl?, vigencia?, obsContratista? }`.
+  - `empresa.ts`: `guardarAdmin()` renombrado a `guardarEntregable()` con rama contratista idéntica.
+- **Botón "ENVIAR DOCUMENTO" eliminado** de `empresa.html` y `equipos.html` — flujo auto-save al subir.
+
 ### Branches actuales
 - Working: `feature/arquitectura-comercial`.
 - Main para PRs: `master`.
@@ -683,7 +695,8 @@ Plataforma completa mobile-first.
 
 ### Sub-rutas
 ```
-/habilitacion                          → redirect 'trabajadores'
+/habilitacion                          → redirect 'dashboard-contratista'
+/habilitacion/dashboard-contratista    → Dashboard CONTRATISTA (solo authGuard; redirect interno a /habilitacion/trabajadores si no es contratista)
 /habilitacion/trabajadores             → Plataforma Trabajadores
 /habilitacion/empresa                  → Plataforma Empresa
 /habilitacion/equipos                  → Equipos y Máquinas
@@ -696,6 +709,8 @@ Plataforma completa mobile-first.
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
 ```
+
+> **Entrada CONTRATISTA**: el sidebar "Gestión de Ingresos" llama `onModuleClick({ key: 'habilitacion' })` en `sidebar.ts`. Si `isContratista()` → navega a `/habilitacion` (que redirige a `dashboard-contratista`). Si admin → navega a `/` (home). El `dashboard-contratista` a su vez redirige internamente a `trabajadores` si el visitante no es contratista (doble protección).
 
 > **Inducciones** — aparece en el sidebar del grupo Gestión **solo para CONTRATISTA** (`roles: ['CONTRATISTA']`). Es una vista de solo lectura (seguimiento de estado) para el contratista. Los admins gestionan inducciones desde Trabajadores (botón "Programar Inducción") y las aprueban desde Bandeja (tipo INDUCCION).
 
@@ -991,7 +1006,7 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
 4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
 5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
-6. Botón ENVIAR (contratista): habilitado si `panelArchivoUrl || panelObsAbril`.
+6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin. Sin botón "ENVIAR DOCUMENTO" (eliminado); flujo es auto-save en upload.
 7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
 
 **Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
