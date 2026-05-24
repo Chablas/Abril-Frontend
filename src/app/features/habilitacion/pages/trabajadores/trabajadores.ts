@@ -300,24 +300,12 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   closeDrawer(): void {
-    if (this.isContratista() && this.selectedEntregable) {
-      this.saveObsContratista(this.selectedEntregable.id, this.panelObsAbril);
+    if (this.isContratista()) {
+      this.guardarObservaciones();
     }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.resetPanel();
-  }
-
-  private saveObsContratista(id: number, obs: string): void {
-    this.trabajadorHabService
-      .updateEntregable(id, { obsContratista: obs || undefined })
-      .subscribe({
-        next: () => {
-          const e = this.entregables.find(x => x.id === id);
-          if (e) e.obsContratista = obs;
-        },
-        error: () => {},
-      });
   }
 
   onEstadoChange(): void {
@@ -548,7 +536,17 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   guardarObservaciones(): void {
     if (!this.selectedEntregable) return;
-    this.saveObsContratista(this.selectedEntregable.id, this.panelObsAbril);
+    const id = this.selectedEntregable.id;
+    const obs = this.panelObsAbril;
+    this.trabajadorHabService
+      .updateEntregable(id, { obsContratista: obs || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   clearArchivo(): void {
