@@ -496,15 +496,6 @@
     </div>
 
     <div class="drawer-footer">
-      <!-- Contratista: enviar -->
-      <button
-        *ngIf="isContratista() && !esSCTRoVidaLey"
-        type="button"
-        class="btn-primary"
-        [disabled]="!panelArchivoUrl && !panelVigencia"
-        (click)="enviarDocumento()"
-      >ENVIAR DOCUMENTO</button>
-
       <!-- Admin: guardar + aprobar/rechazar -->
       <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey">
         <button
