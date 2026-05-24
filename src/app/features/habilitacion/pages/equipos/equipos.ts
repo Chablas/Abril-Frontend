@@ -400,6 +400,7 @@ export class Equipos implements OnInit, OnDestroy {
         this.actualizarEntregableLocal({
           estado: 'Enviado',
           archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          vigencia: this.panelVigencia || undefined,
         });
         this.panelEstado = 'Enviado';
       },
@@ -447,6 +448,7 @@ export class Equipos implements OnInit, OnDestroy {
           this.actualizarEntregableLocal({
             estado: 'Enviado',
             archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            vigencia: this.panelVigencia || undefined,
           });
         },
         error: (err: HttpErrorResponse) => {

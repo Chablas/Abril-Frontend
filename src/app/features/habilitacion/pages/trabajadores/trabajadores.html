@@ -453,15 +453,20 @@
           </span>
         </div>
 
-        <div class="field-grp">
-          <label class="field-lbl">VIGENCIA</label>
-          <span class="vig-date" *ngIf="selectedEntregable.vigencia">{{ selectedEntregable.vigencia | date: 'dd/MM/yyyy' }}</span>
-          <span class="no-data" *ngIf="!selectedEntregable.vigencia">—</span>
+        <div class="field-grp" *ngIf="requiereVigenciaAnteUpload">
+          <label class="field-lbl">VIGENCIA *</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
         <div class="field-grp">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
-          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>

@@ -81,6 +81,14 @@ export class Trabajadores implements OnInit, OnDestroy {
   panelEstado = '';
   uploadingFile = false;
 
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.selectedEntregable.requiereVigencia;
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   drawerOpen = false;
   visorArchivoUrl = '';
   visorNombre = '';
