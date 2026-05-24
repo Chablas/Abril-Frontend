@@ -3,7 +3,19 @@ import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 
 export const HABILITACION_ROUTES: Routes = [
-  { path: '', redirectTo: 'trabajadores', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard-contratista', pathMatch: 'full' },
+  {
+    path: 'dashboard-contratista',
+    loadComponent: () =>
+      import('./pages/dashboard-contratista/dashboard-contratista').then(
+        (m) => m.DashboardContratista,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'HABILITACIÓN - PANEL CONTRATISTA',
+      roles: ['CONTRATISTA'],
+    },
+  },
   {
     path: 'trabajadores',
     loadComponent: () =>

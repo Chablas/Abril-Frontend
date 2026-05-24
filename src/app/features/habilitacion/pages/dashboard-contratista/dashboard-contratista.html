@@ -1,0 +1,249 @@
+<div class="dash-root" *ngIf="esContratista">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <div class="dash-header">
+    <div class="dash-header-left">
+      <h1 class="dash-title">Panel de Habilitación</h1>
+      <p class="dash-subtitle">Resumen del estado de habilitación de tu empresa</p>
+    </div>
+  </div>
+
+  <!-- ── Grid principal ─────────────────────────────────────── -->
+  <div class="dash-grid">
+
+    <!-- ── Sección 1: Proyectos ─────────────────────────────── -->
+    <section class="dash-card dash-card--full">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span class="card-hdr-title">Proyectos activos</span>
+        </div>
+        <span class="card-hdr-count">{{ proyectos.length }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="dash-loading" *ngIf="loadingProyectos">
+          <span class="spinner"></span>
+          <span>Cargando proyectos…</span>
+        </div>
+
+        <div class="proj-empty" *ngIf="!loadingProyectos && proyectos.length === 0">
+          Sin proyectos activos asignados.
+        </div>
+
+        <div class="proj-list" *ngIf="!loadingProyectos && proyectos.length > 0">
+          <div
+            *ngFor="let p of proyectos"
+            class="proj-item"
+            [class.proj-item--sel]="proyectoSeleccionado?.id === p.id"
+            (click)="seleccionarProyecto(p)"
+          >
+            <div class="proj-item-top">
+              <span class="proj-nombre">{{ p.nombre }}</span>
+              <span [class]="getBadgeClass(p.id)">{{ getBadge(p.id) }}</span>
+            </div>
+            <div class="proj-meta" *ngIf="p.fechaInicio">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Inicio: {{ p.fechaInicio | date:'dd/MM/yyyy' }}
+            </div>
+
+            <div class="proj-progreso" *ngIf="progresoPorProyecto.get(p.id) as prog">
+              <div class="proj-prog-bar">
+                <div
+                  class="proj-prog-fill"
+                  [style.width.%]="prog.total > 0 ? (prog.aprobadosEquiv / prog.total) * 100 : 0"
+                ></div>
+              </div>
+              <span class="proj-prog-txt">
+                {{ prog.aprobadosEquiv }}/{{ prog.total }} aprobados
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Sección 2: Entregables Empresa ───────────────────── -->
+    <section class="dash-card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span class="card-hdr-title">Entregables empresa</span>
+        </div>
+        <span class="card-hdr-count">{{ entregables.length }}</span>
+      </div>
+
+      <!-- Selector de proyecto si hay más de uno -->
+      <div class="ent-proj-tabs" *ngIf="proyectos.length > 1">
+        <button
+          *ngFor="let p of proyectos"
+          class="proj-tab"
+          [class.proj-tab--active]="proyectoSeleccionado?.id === p.id"
+          (click)="seleccionarProyecto(p)"
+        >{{ p.nombre }}</button>
+      </div>
+
+      <div class="card-body">
+        <div class="dash-loading" *ngIf="loadingEntregables">
+          <span class="spinner"></span>
+          <span>Cargando…</span>
+        </div>
+
+        <ng-container *ngIf="!loadingEntregables">
+          <div class="stat-list">
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--green"></span>
+              <span class="stat-lbl">Aprobado</span>
+              <span class="stat-val">{{ entAprobados }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--amber"></span>
+              <span class="stat-lbl">Enviado</span>
+              <span class="stat-val">{{ entEnviados }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--gray"></span>
+              <span class="stat-lbl">Falta</span>
+              <span class="stat-val">{{ entFalta }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--red"></span>
+              <span class="stat-lbl">Rechazado</span>
+              <span class="stat-val">{{ entRechazados }}</span>
+            </div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="progresoEntregables"></div>
+            </div>
+            <div class="progress-foot">
+              <span class="progress-label">Aprobados</span>
+              <span class="progress-pct">{{ progresoEntregables }}%</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <!-- ── Sección 3: Trabajadores ──────────────────────────── -->
+    <section class="dash-card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="card-hdr-title">Trabajadores</span>
+        </div>
+        <span class="card-hdr-count" *ngIf="!loadingTrabajadores">{{ totalTrabajadores }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="dash-loading" *ngIf="loadingTrabajadores">
+          <span class="spinner"></span>
+          <span>Cargando…</span>
+        </div>
+
+        <ng-container *ngIf="!loadingTrabajadores">
+          <div class="stat-list">
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--green"></span>
+              <span class="stat-lbl">Habilitado</span>
+              <span class="stat-val">{{ trabHabilitados }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--amber"></span>
+              <span class="stat-lbl">Pendiente</span>
+              <span class="stat-val">{{ trabPendientes }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--red"></span>
+              <span class="stat-lbl">No habilitado</span>
+              <span class="stat-val">{{ trabNoHabilitados }}</span>
+            </div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="progresoTrabajadores"></div>
+            </div>
+            <div class="progress-foot">
+              <span class="progress-label">Habilitados</span>
+              <span class="progress-pct">{{ progresoTrabajadores }}%</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <!-- ── Sección 4: Equipos ───────────────────────────────── -->
+    <section class="dash-card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="1"/>
+            <path d="M16 8h4l3 5v3h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/>
+            <circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+          <span class="card-hdr-title">Equipos y máquinas</span>
+        </div>
+        <span class="card-hdr-count" *ngIf="!loadingEquipos">{{ totalEquipos }}</span>
+      </div>
+
+      <div class="card-body">
+        <div class="dash-loading" *ngIf="loadingEquipos">
+          <span class="spinner"></span>
+          <span>Cargando…</span>
+        </div>
+
+        <ng-container *ngIf="!loadingEquipos">
+          <div class="stat-list">
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--green"></span>
+              <span class="stat-lbl">Autorizado</span>
+              <span class="stat-val">{{ equiposAutorizados }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot stat-dot--red"></span>
+              <span class="stat-lbl">No autorizado</span>
+              <span class="stat-val">{{ equiposNoAutorizados }}</span>
+            </div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="progresoEquipos"></div>
+            </div>
+            <div class="progress-foot">
+              <span class="progress-label">Autorizados</span>
+              <span class="progress-pct">{{ progresoEquipos }}%</span>
+            </div>
+          </div>
+
+          <div class="eq-empty" *ngIf="totalEquipos === 0">
+            Sin equipos registrados.
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+  </div>
+</div>
