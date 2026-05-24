@@ -228,14 +228,9 @@
 
       <ng-container *ngIf="isContratista()">
 
-        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
-          <label class="field-lbl">VIGENCIA</label>
-          <input
-            type="date"
-            class="field-input"
-            [(ngModel)]="panelVigencia"
-            [readonly]="selectedEntregable.estado !== 'Falta' && selectedEntregable.estado !== 'Rechazado'"
-          />
+        <div class="field-grp" *ngIf="requiereVigenciaAnteUpload">
+          <label class="field-lbl">VIGENCIA *</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
         <div class="field-grp">
@@ -418,7 +413,7 @@
         *ngIf="isContratista()"
         type="button"
         class="btn-primary"
-        [disabled]="!panelArchivoUrl && !panelObsAbril"
+        [disabled]="uploadBloqueadoPorVigencia || (!panelArchivoUrl && !panelObsAbril)"
         (click)="enviarDocumento()"
       >ENVIAR DOCUMENTO</button>
       <button
