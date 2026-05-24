@@ -594,33 +594,46 @@ export class Trabajadores implements OnInit, OnDestroy {
   guardarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedWorker) return;
 
-    const vigencia = !this.selectedEntregable.requiereVigencia
-      ? '2040-12-31'
-      : this.panelVigencia || undefined;
+    let payload: WorkerEntregableUpdateDto;
 
-    const payload: WorkerEntregableUpdateDto = {
-      estado: this.panelEstado,
-      vigencia,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsAbril: !this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
-      obsContratista: this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
-    };
+    if (this.isContratista()) {
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        obsContratista: this.panelObsAbril || undefined,
+      };
+    } else {
+      const vigencia = !this.selectedEntregable.requiereVigencia
+        ? '2040-12-31'
+        : this.panelVigencia || undefined;
+      payload = {
+        estado: this.panelEstado,
+        vigencia,
+        archivoUrl: this.panelArchivoUrl || undefined,
+        obsAbril: this.panelObsAbril || undefined,
+      };
+    }
 
     this.loaderService.show();
     this.trabajadorHabService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
       next: () => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
-        const vigencia = !this.selectedEntregable?.requiereVigencia
-          ? '2040-12-31'
-          : this.panelVigencia || undefined;
-        this.actualizarEntregableLocal({
-          estado: this.panelEstado,
-          vigencia,
-          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          obsAbril: !this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
-          obsContratista: this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
-        });
+        if (this.isContratista()) {
+          this.actualizarEntregableLocal({
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsContratista: this.panelObsAbril || undefined,
+          });
+        } else {
+          const vigencia = !this.selectedEntregable?.requiereVigencia
+            ? '2040-12-31'
+            : this.panelVigencia || undefined;
+          this.actualizarEntregableLocal({
+            estado: this.panelEstado,
+            vigencia,
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsAbril: this.panelObsAbril || undefined,
+          });
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
