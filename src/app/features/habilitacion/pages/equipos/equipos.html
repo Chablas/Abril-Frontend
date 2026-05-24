@@ -298,7 +298,8 @@
         <div class="field-grp">
           <label class="field-lbl">TUS OBSERVACIONES</label>
           <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"
-            placeholder="Notas que verá Abril…"></textarea>
+            placeholder="Notas que verá Abril…"
+            (blur)="guardarObservaciones()"></textarea>
         </div>
 
         <div class="field-grp" *ngIf="selectedEntregable.obsAbril">

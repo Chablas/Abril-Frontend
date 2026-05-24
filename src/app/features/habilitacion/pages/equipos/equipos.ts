@@ -195,15 +195,32 @@ export class Equipos implements OnInit, OnDestroy {
     this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
     this.panelArchivoUrl = e.archivoUrl ?? '';
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
-    this.panelObsAbril = e.obsAbril ?? '';
+    this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
   }
 
   closeDrawer(): void {
+    if (this.isContratista()) {
+      this.guardarObservaciones();
+    }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.resetPanel();
+  }
+
+  guardarObservaciones(): void {
+    if (!this.selectedEntregable) return;
+    const id = this.selectedEntregable.id;
+    const obs = this.panelObsAbril;
+    this.equipoService.updateEntregable(id, { obsContratista: obs || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   private extractFileName(url: string): string {
