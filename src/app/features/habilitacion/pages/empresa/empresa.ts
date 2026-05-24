@@ -322,10 +322,9 @@ export class Empresa implements OnInit {
   guardarObservaciones(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
     const id = this.selectedEntregable.id;
-    const estado = this.selectedEntregable.estado;
     const obs = this.panelObsContratista;
     this.habEmpresaService
-      .updateEntregable(this.empresaId, id, { estado, obsContratista: obs || undefined })
+      .updateEntregable(this.empresaId, id, { obsContratista: obs || undefined })
       .subscribe({
         next: () => {
           const e = this.entregables.find(x => x.id === id);
