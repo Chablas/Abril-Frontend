@@ -387,10 +387,14 @@ export class Equipos implements OnInit, OnDestroy {
   private autoMarcarEnviado(): void {
     if (!this.selectedEntregable || !this.selectedEquipo) return;
 
+    const vigencia = !this.selectedEntregable.requiereVigencia
+      ? '2040-12-31'
+      : this.panelVigencia || undefined;
+
     const payload: EquipoEntregableUpdateDto = {
       estado: 'Enviado',
       archivoUrl: this.panelArchivoUrl || undefined,
-      vigencia: this.panelVigencia || undefined,
+      vigencia,
       obsContratista: this.isContratista() ? this.panelObsAbril || undefined : undefined,
       obsAbril: !this.isContratista() ? this.panelObsAbril || undefined : undefined,
     };
@@ -400,7 +404,7 @@ export class Equipos implements OnInit, OnDestroy {
         this.actualizarEntregableLocal({
           estado: 'Enviado',
           archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          vigencia: this.panelVigencia || undefined,
+          vigencia,
         });
         this.panelEstado = 'Enviado';
       },
