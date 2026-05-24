@@ -311,9 +311,28 @@ export class Empresa implements OnInit {
   }
 
   closeDrawer(): void {
+    if (this.isContratista()) {
+      this.guardarObservaciones();
+    }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.panelEstado = '';
+  }
+
+  guardarObservaciones(): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    const id = this.selectedEntregable.id;
+    const estado = this.selectedEntregable.estado;
+    const obs = this.panelObsContratista;
+    this.habEmpresaService
+      .updateEntregable(this.empresaId, id, { estado, obsContratista: obs || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   descargarDocumento(archivoUrl: string): void {
