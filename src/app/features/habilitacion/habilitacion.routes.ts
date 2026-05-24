@@ -10,11 +10,8 @@ export const HABILITACION_ROUTES: Routes = [
       import('./pages/dashboard-contratista/dashboard-contratista').then(
         (m) => m.DashboardContratista,
       ),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'HABILITACIÓN - PANEL CONTRATISTA',
-      roles: ['CONTRATISTA'],
-    },
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - PANEL CONTRATISTA' },
   },
   {
     path: 'trabajadores',

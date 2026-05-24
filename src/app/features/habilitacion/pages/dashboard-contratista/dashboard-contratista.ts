@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
@@ -17,7 +18,7 @@ interface ProgresoProyecto {
 @Component({
   selector: 'app-dashboard-contratista',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard-contratista.html',
   styleUrl: './dashboard-contratista.css',
 })
@@ -58,10 +59,14 @@ export class DashboardContratista implements OnInit {
     private authService: AuthService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isContratista()) return;
+    if (!this.authService.isContratista()) {
+      this.router.navigate(['/habilitacion/trabajadores']);
+      return;
+    }
     this.empresaId = this.authService.getEmpresaId() ?? null;
     if (!this.empresaId) return;
     this.loadProyectos();
@@ -177,9 +182,9 @@ export class DashboardContratista implements OnInit {
 
   getBadgeClass(proyectoId: number): string {
     const b = this.getBadge(proyectoId);
-    if (b === 'Autorizado') return 'proj-badge proj-badge--green';
-    if (b === 'No Autorizado') return 'proj-badge proj-badge--red';
-    return 'proj-badge proj-badge--amber';
+    if (b === 'Autorizado') return 'badge badge--green';
+    if (b === 'No Autorizado') return 'badge badge--red';
+    return 'badge badge--amber';
   }
 
   // ── Sec 2 helpers ──────────────────────────────────────────

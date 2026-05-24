@@ -1,94 +1,149 @@
-<div class="dash-root" *ngIf="esContratista">
+<div class="shell" *ngIf="esContratista">
 
-  <!-- ── Header ─────────────────────────────────────────────── -->
-  <div class="dash-header">
-    <div class="dash-header-left">
-      <h1 class="dash-title">Panel de Habilitación</h1>
-      <p class="dash-subtitle">Resumen del estado de habilitación de tu empresa</p>
-    </div>
-  </div>
+  <!-- ── Navegación superior ─────────────────────────────────── -->
+  <nav class="top-nav">
+    <a class="nav-pill nav-pill--home"
+       routerLink="/habilitacion/dashboard-contratista"
+       routerLinkActive="nav-pill--active"
+       [routerLinkActiveOptions]="{ exact: true }">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Panel
+    </a>
 
-  <!-- ── Grid principal ─────────────────────────────────────── -->
+    <span class="nav-sep"></span>
+
+    <a class="nav-pill" routerLink="/habilitacion/trabajadores" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Trabajadores
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/empresa" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Empresa
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/equipos" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 5v3h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      Equipos y Máquinas
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/sctr-vidaley" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      SCTR y Vida Ley
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/inducciones" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      Inducciones
+    </a>
+  </nav>
+
+  <!-- ── Dashboard 2×2 ───────────────────────────────────────── -->
   <div class="dash-grid">
 
-    <!-- ── Sección 1: Proyectos ─────────────────────────────── -->
-    <section class="dash-card dash-card--full">
+    <!-- ══ Card 1: Proyectos ══════════════════════════════════ -->
+    <div class="card">
       <div class="card-hdr">
         <div class="card-hdr-left">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span class="card-hdr-title">Proyectos activos</span>
+          <span class="card-icon card-icon--blue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Proyectos activos</p>
+          </div>
         </div>
-        <span class="card-hdr-count">{{ proyectos.length }}</span>
+        <span class="card-kpi">{{ proyectos.length }}</span>
       </div>
 
       <div class="card-body">
-        <div class="dash-loading" *ngIf="loadingProyectos">
-          <span class="spinner"></span>
-          <span>Cargando proyectos…</span>
+        <!-- Loading -->
+        <div class="skeleton-list" *ngIf="loadingProyectos">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3]"></div>
         </div>
 
-        <div class="proj-empty" *ngIf="!loadingProyectos && proyectos.length === 0">
-          Sin proyectos activos asignados.
+        <!-- Empty -->
+        <div class="empty-state" *ngIf="!loadingProyectos && proyectos.length === 0">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p>Sin proyectos activos asignados</p>
         </div>
 
+        <!-- Project rows -->
         <div class="proj-list" *ngIf="!loadingProyectos && proyectos.length > 0">
           <div
             *ngFor="let p of proyectos"
-            class="proj-item"
-            [class.proj-item--sel]="proyectoSeleccionado?.id === p.id"
+            class="proj-row"
+            [class.proj-row--sel]="proyectoSeleccionado?.id === p.id"
             (click)="seleccionarProyecto(p)"
           >
-            <div class="proj-item-top">
-              <span class="proj-nombre">{{ p.nombre }}</span>
+            <div class="proj-row-top">
+              <span class="proj-row-name">{{ p.nombre }}</span>
               <span [class]="getBadgeClass(p.id)">{{ getBadge(p.id) }}</span>
             </div>
-            <div class="proj-meta" *ngIf="p.fechaInicio">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              Inicio: {{ p.fechaInicio | date:'dd/MM/yyyy' }}
-            </div>
-
-            <div class="proj-progreso" *ngIf="progresoPorProyecto.get(p.id) as prog">
-              <div class="proj-prog-bar">
-                <div
-                  class="proj-prog-fill"
-                  [style.width.%]="prog.total > 0 ? (prog.aprobadosEquiv / prog.total) * 100 : 0"
-                ></div>
+            <div class="proj-row-bar" *ngIf="progresoPorProyecto.get(p.id) as prog">
+              <div class="mini-track">
+                <div class="mini-fill"
+                  [style.width.%]="prog.total > 0 ? (prog.aprobadosEquiv / prog.total) * 100 : 0">
+                </div>
               </div>
-              <span class="proj-prog-txt">
-                {{ prog.aprobadosEquiv }}/{{ prog.total }} aprobados
+              <span class="mini-pct">
+                {{ prog.total > 0 ? ((prog.aprobadosEquiv / prog.total) * 100 | number:'1.0-0') : 0 }}%
               </span>
+            </div>
+            <div class="proj-row-meta" *ngIf="p.fechaInicio">
+              Inicio {{ p.fechaInicio | date:'dd/MM/yyyy' }}
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- ── Sección 2: Entregables Empresa ───────────────────── -->
-    <section class="dash-card">
+    <!-- ══ Card 2: Entregables empresa ═══════════════════════ -->
+    <div class="card">
       <div class="card-hdr">
         <div class="card-hdr-left">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          <span class="card-hdr-title">Entregables empresa</span>
+          <span class="card-icon card-icon--violet">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Entregables empresa</p>
+          </div>
         </div>
-        <span class="card-hdr-count">{{ entregables.length }}</span>
+        <span class="card-kpi">{{ entregables.length }}</span>
       </div>
 
-      <!-- Selector de proyecto si hay más de uno -->
-      <div class="ent-proj-tabs" *ngIf="proyectos.length > 1">
+      <!-- Project tabs -->
+      <div class="proj-tabs" *ngIf="proyectos.length > 1">
         <button
           *ngFor="let p of proyectos"
           class="proj-tab"
@@ -98,152 +153,245 @@
       </div>
 
       <div class="card-body">
-        <div class="dash-loading" *ngIf="loadingEntregables">
-          <span class="spinner"></span>
-          <span>Cargando…</span>
+        <div class="skeleton-list" *ngIf="loadingEntregables">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3,4]"></div>
         </div>
 
         <ng-container *ngIf="!loadingEntregables">
-          <div class="stat-list">
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--green"></span>
-              <span class="stat-lbl">Aprobado</span>
-              <span class="stat-val">{{ entAprobados }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--amber"></span>
-              <span class="stat-lbl">Enviado</span>
-              <span class="stat-val">{{ entEnviados }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--gray"></span>
-              <span class="stat-lbl">Falta</span>
-              <span class="stat-val">{{ entFalta }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--red"></span>
-              <span class="stat-lbl">Rechazado</span>
-              <span class="stat-val">{{ entRechazados }}</span>
-            </div>
+          <!-- Pct prominente -->
+          <div class="pct-hero">
+            <span class="pct-hero-num">{{ progresoEntregables }}<span class="pct-hero-sym">%</span></span>
+            <span class="pct-hero-lbl">aprobados</span>
           </div>
 
-          <div class="progress-wrap">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="progresoEntregables"></div>
+          <!-- Barra principal -->
+          <div class="main-track">
+            <div class="main-fill main-fill--green" [style.width.%]="progresoEntregables"></div>
+          </div>
+
+          <!-- Desglose -->
+          <div class="stat-breakdown">
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--green"></span>
+                <span class="stat-name">Aprobado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--green"
+                    [style.width.%]="entregables.length ? (entAprobados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entAprobados }}</span>
+              </div>
             </div>
-            <div class="progress-foot">
-              <span class="progress-label">Aprobados</span>
-              <span class="progress-pct">{{ progresoEntregables }}%</span>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--amber"></span>
+                <span class="stat-name">Enviado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--amber"
+                    [style.width.%]="entregables.length ? (entEnviados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entEnviados }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--slate"></span>
+                <span class="stat-name">Falta</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--slate"
+                    [style.width.%]="entregables.length ? (entFalta / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entFalta }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--red"></span>
+                <span class="stat-name">Rechazado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--red"
+                    [style.width.%]="entregables.length ? (entRechazados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entRechazados }}</span>
+              </div>
             </div>
           </div>
         </ng-container>
       </div>
-    </section>
+    </div>
 
-    <!-- ── Sección 3: Trabajadores ──────────────────────────── -->
-    <section class="dash-card">
+    <!-- ══ Card 3: Trabajadores ═══════════════════════════════ -->
+    <div class="card">
       <div class="card-hdr">
         <div class="card-hdr-left">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span class="card-hdr-title">Trabajadores</span>
+          <span class="card-icon card-icon--green">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Trabajadores</p>
+          </div>
         </div>
-        <span class="card-hdr-count" *ngIf="!loadingTrabajadores">{{ totalTrabajadores }}</span>
+        <span class="card-kpi" *ngIf="!loadingTrabajadores">{{ totalTrabajadores }}</span>
+        <span class="card-kpi-skeleton" *ngIf="loadingTrabajadores"></span>
       </div>
 
       <div class="card-body">
-        <div class="dash-loading" *ngIf="loadingTrabajadores">
-          <span class="spinner"></span>
-          <span>Cargando…</span>
+        <div class="skeleton-list" *ngIf="loadingTrabajadores">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3]"></div>
         </div>
 
         <ng-container *ngIf="!loadingTrabajadores">
-          <div class="stat-list">
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--green"></span>
-              <span class="stat-lbl">Habilitado</span>
-              <span class="stat-val">{{ trabHabilitados }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--amber"></span>
-              <span class="stat-lbl">Pendiente</span>
-              <span class="stat-val">{{ trabPendientes }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--red"></span>
-              <span class="stat-lbl">No habilitado</span>
-              <span class="stat-val">{{ trabNoHabilitados }}</span>
-            </div>
+          <div class="pct-hero">
+            <span class="pct-hero-num">{{ progresoTrabajadores }}<span class="pct-hero-sym">%</span></span>
+            <span class="pct-hero-lbl">habilitados</span>
           </div>
 
-          <div class="progress-wrap">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="progresoTrabajadores"></div>
+          <div class="main-track">
+            <div class="main-fill main-fill--green" [style.width.%]="progresoTrabajadores"></div>
+          </div>
+
+          <div class="stat-breakdown">
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--green"></span>
+                <span class="stat-name">Habilitado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--green"
+                    [style.width.%]="totalTrabajadores ? (trabHabilitados / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabHabilitados }}</span>
+              </div>
             </div>
-            <div class="progress-foot">
-              <span class="progress-label">Habilitados</span>
-              <span class="progress-pct">{{ progresoTrabajadores }}%</span>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--amber"></span>
+                <span class="stat-name">Pendiente</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--amber"
+                    [style.width.%]="totalTrabajadores ? (trabPendientes / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabPendientes }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--red"></span>
+                <span class="stat-name">No habilitado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--red"
+                    [style.width.%]="totalTrabajadores ? (trabNoHabilitados / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabNoHabilitados }}</span>
+              </div>
             </div>
           </div>
         </ng-container>
       </div>
-    </section>
+    </div>
 
-    <!-- ── Sección 4: Equipos ───────────────────────────────── -->
-    <section class="dash-card">
+    <!-- ══ Card 4: Equipos ════════════════════════════════════ -->
+    <div class="card">
       <div class="card-hdr">
         <div class="card-hdr-left">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="1" y="3" width="15" height="13" rx="1"/>
-            <path d="M16 8h4l3 5v3h-7V8z"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/>
-            <circle cx="18.5" cy="18.5" r="2.5"/>
-          </svg>
-          <span class="card-hdr-title">Equipos y máquinas</span>
+          <span class="card-icon card-icon--orange">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13" rx="1"/>
+              <path d="M16 8h4l3 5v3h-7V8z"/>
+              <circle cx="5.5" cy="18.5" r="2.5"/>
+              <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Equipos y Máquinas</p>
+          </div>
         </div>
-        <span class="card-hdr-count" *ngIf="!loadingEquipos">{{ totalEquipos }}</span>
+        <span class="card-kpi" *ngIf="!loadingEquipos">{{ totalEquipos }}</span>
+        <span class="card-kpi-skeleton" *ngIf="loadingEquipos"></span>
       </div>
 
       <div class="card-body">
-        <div class="dash-loading" *ngIf="loadingEquipos">
-          <span class="spinner"></span>
-          <span>Cargando…</span>
+        <div class="skeleton-list" *ngIf="loadingEquipos">
+          <div class="skeleton-row" *ngFor="let _ of [1,2]"></div>
         </div>
 
         <ng-container *ngIf="!loadingEquipos">
-          <div class="stat-list">
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--green"></span>
-              <span class="stat-lbl">Autorizado</span>
-              <span class="stat-val">{{ equiposAutorizados }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-dot stat-dot--red"></span>
-              <span class="stat-lbl">No autorizado</span>
-              <span class="stat-val">{{ equiposNoAutorizados }}</span>
-            </div>
+          <div class="empty-state" *ngIf="totalEquipos === 0">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>Sin equipos registrados</p>
           </div>
 
-          <div class="progress-wrap">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="progresoEquipos"></div>
+          <ng-container *ngIf="totalEquipos > 0">
+            <div class="pct-hero">
+              <span class="pct-hero-num">{{ progresoEquipos }}<span class="pct-hero-sym">%</span></span>
+              <span class="pct-hero-lbl">autorizados</span>
             </div>
-            <div class="progress-foot">
-              <span class="progress-label">Autorizados</span>
-              <span class="progress-pct">{{ progresoEquipos }}%</span>
-            </div>
-          </div>
 
-          <div class="eq-empty" *ngIf="totalEquipos === 0">
-            Sin equipos registrados.
-          </div>
+            <div class="main-track">
+              <div class="main-fill main-fill--green" [style.width.%]="progresoEquipos"></div>
+            </div>
+
+            <div class="stat-breakdown">
+              <div class="stat-item">
+                <div class="stat-item-left">
+                  <span class="status-dot status-dot--green"></span>
+                  <span class="stat-name">Autorizado</span>
+                </div>
+                <div class="stat-item-right">
+                  <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--green"
+                      [style.width.%]="totalEquipos ? (equiposAutorizados / totalEquipos) * 100 : 0">
+                    </div>
+                  </div>
+                  <span class="stat-val">{{ equiposAutorizados }}</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-item-left">
+                  <span class="status-dot status-dot--red"></span>
+                  <span class="stat-name">No autorizado</span>
+                </div>
+                <div class="stat-item-right">
+                  <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--red"
+                      [style.width.%]="totalEquipos ? (equiposNoAutorizados / totalEquipos) * 100 : 0">
+                    </div>
+                  </div>
+                  <span class="stat-val">{{ equiposNoAutorizados }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
         </ng-container>
       </div>
-    </section>
+    </div>
 
-  </div>
+  </div><!-- /dash-grid -->
 </div>

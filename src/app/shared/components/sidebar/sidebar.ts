@@ -13,6 +13,7 @@ import {
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
@@ -48,6 +49,7 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
     private elementRef: ElementRef,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -115,7 +117,11 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
 
   onModuleClick(module: NavModule): void {
     if (module.key === 'habilitacion') {
-      this.router.navigate(['/']);
+      if (this.authService.isContratista()) {
+        this.router.navigate(['/habilitacion']);
+      } else {
+        this.router.navigate(['/']);
+      }
       this.activeMenu = null;
       return;
     }
