@@ -96,6 +96,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarHistorial = false;
   mostrarAgregarProyecto = false;
   mostrarProgramarInduccion = false;
+  preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
   workerParaHistorial: WorkerHabilitacionListDto | null = null;
@@ -712,9 +713,11 @@ export class Trabajadores implements OnInit, OnDestroy {
     return this.selectedIds.length > 0;
   }
 
-  get programarInduccionEmpresaId(): number | null {
-    if (this.selectedIds.length === 0) return null;
-    return this.workers.find((w) => w.workerId === this.selectedIds[0])?.empresaId ?? null;
+  abrirProgramarInduccion(): void {
+    this.preselectedEmpresaId = this.authService.isContratista()
+      ? (this.authService.getEmpresaId() ?? null)
+      : null;
+    this.mostrarProgramarInduccion = true;
   }
 
   limpiarSeleccion(): void {
