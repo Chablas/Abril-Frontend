@@ -602,7 +602,8 @@ export class Trabajadores implements OnInit, OnDestroy {
       estado: this.panelEstado,
       vigencia,
       archivoUrl: this.panelArchivoUrl || undefined,
-      obsAbril: this.panelObsAbril || undefined,
+      obsAbril: !this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
+      obsContratista: this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
     };
 
     this.loaderService.show();
@@ -617,7 +618,8 @@ export class Trabajadores implements OnInit, OnDestroy {
           estado: this.panelEstado,
           vigencia,
           archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          obsAbril: this.panelObsAbril || undefined,
+          obsAbril: !this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
+          obsContratista: this.isContratista() ? (this.panelObsAbril || undefined) : undefined,
         });
       },
       error: (err: HttpErrorResponse) => {
