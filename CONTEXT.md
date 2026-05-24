@@ -1789,3 +1789,114 @@ forkJoin({
 ### Multi-usuario por empresa (segunda fase — no implementar aún)
 Tablas: `ss_contratista_usuario`, `ss_contratista_usuario_proyecto`, `ss_contratista_auditoria`
 Roles: `OWNER` | `ADMIN` | `GESTOR` con scope `ALL` | `BY_PROJECT`
+
+---
+
+## §Sesión 2026-05-24 — Panel entregables CONTRATISTA (trabajadores + empresa) y fixes
+
+### activar-empresa.component.ts — fix ChangeDetectorRef
+
+`features/auth/pages/activar-empresa/activar-empresa.component.ts`
+
+- `ChangeDetectorRef` inyectado en el constructor.
+- `submitPaso1()` callback `next`: `this.cdr.detectChanges()` llamado después de `this.paso = 2; this.saving = false`.
+- **Síntoma previo**: el backend devolvía 200 y el componente actualizaba `this.paso = 2` internamente, pero Angular no renderizaba el paso 2 — la pantalla quedaba bloqueada en el formulario de paso 1.
+
+### induccion.service.ts — getTrabajadoresPorProgramar acepta search?
+
+`features/habilitacion/services/induccion.service.ts`
+
+```ts
+getTrabajadoresPorProgramar(
+  proyectoId: number,
+  empresaId?: number | null,
+  search?: string,
+): Observable<InduccionTrabajadorDto[]>
+```
+
+`buildHabParams({ proyectoId, empresaId, search })` maneja los 3 params — `undefined` se omite automáticamente.
+
+**Endpoint actualizado** en §12: `GET /inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y&search=Z`.
+
+### programar-induccion (pages/trabajadores) — preselectedEmpresaId desde JWT
+
+`features/habilitacion/pages/trabajadores/trabajadores.ts`
+
+- Añadida propiedad `preselectedEmpresaId: number | null = null`.
+- Reemplazado getter `programarInduccionEmpresaId` (que devolvía el `empresaId` del primer worker seleccionado — incorrecto) por método:
+
+```ts
+abrirProgramarInduccion(): void {
+  this.preselectedEmpresaId = this.authService.isContratista()
+    ? (this.authService.getEmpresaId() ?? null)
+    : null;
+  this.mostrarProgramarInduccion = true;
+}
+```
+
+`trabajadores.html`: botón llama `abrirProgramarInduccion()` y binding actualizado a `[preselectedEmpresaId]="preselectedEmpresaId"`.
+
+**Componente destino** (`trabajadores/components/programar-induccion/`) ya tenía `@Input() preselectedEmpresaId` y lo usaba en `loadWorkers()` — no requirió cambios.
+
+> ⚠️ Hay **dos** componentes `ProgramarInduccion` con el mismo selector pero distintas rutas:
+> - `inducciones/components/programar-induccion/` — carga proyectos propia, busca workers vía `getTrabajadoresPorProgramar`
+> - `trabajadores/components/programar-induccion/` — recibe `[proyectos]` del padre, 2 pasos, usa `preselectedEmpresaId`
+>
+> No confundirlos al editar.
+
+### Panel entregables CONTRATISTA en Trabajadores
+
+`features/habilitacion/pages/trabajadores/trabajadores.html` — bloque `*ngIf="isContratista()"`:
+
+- **Estado**: chip read-only (`btn-chip`) — sin dropdown editable.
+- **Vigencia**: texto read-only (pipe `date`) — sin input editable.
+- **Upload zone**: idéntica al bloque admin (zona activa, spinner, file-card con visualizar/descargar/reemplazar, fallback pending-upload).
+- El contratista sube archivos → `autoMarcarEnviado()` cambia estado a `Enviado` automáticamente.
+
+`features/habilitacion/pages/trabajadores/trabajadores.ts`:
+
+- `guardarEntregable()` — bifurcado por rol:
+  - **Contratista**: payload solo `{ archivoUrl?, obsContratista? }` — sin `estado` ni `vigencia`.
+  - **Admin**: payload completo con `{ estado, vigencia, archivoUrl?, obsAbril? }`.
+- `WorkerEntregableUpdateDto.estado` cambiado a `estado?: string` (opcional) para soportar payloads parciales.
+- **Auto-save observaciones contratista**:
+  - `guardarObservaciones()`: captura `id` y `obs` como locales antes del posible reset; llama `updateEntregable(id, { obsContratista })` sin `estado`; errores a través de `errorService.handleError`.
+  - `closeDrawer()`: llama `guardarObservaciones()` ANTES de `selectedEntregable = null` — cubre overlay click, botón X, ESC y selección de nuevo trabajador.
+  - HTML: `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+### Panel entregables empresa — auto-save y reglas por itemId
+
+`features/habilitacion/pages/empresa/empresa.ts`:
+
+- `guardarObservaciones()`: captura `id` y `obs` locales; llama `updateEntregable(empresaId, id, { obsContratista })` sin `estado`; errores a `errorService.handleError`.
+- `closeDrawer()`: llama `guardarObservaciones()` antes de `selectedEntregable = null`.
+- `EmpresaEntregableUpdateDto.estado` cambiado a `estado?: string` (opcional).
+- Getters de reglas por `itemId` (`ss_item_empresa.id`):
+
+```ts
+private readonly SCTR_VIDA_LEY_IDS = [15, 16];       // bloqueados — gestión externa
+private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22]; // requieren vigencia antes de upload
+
+get esSCTRoVidaLey(): boolean { … }          // itemId ∈ [15, 16]
+get requiereVigenciaAnteUpload(): boolean { … } // itemId ∈ [11, 12, 20, 22]
+get uploadBloqueadoPorVigencia(): boolean { … } // requiereVigenciaAnteUpload && !panelVigencia
+```
+
+`features/habilitacion/pages/empresa/empresa.html`:
+
+- **IDs 15 y 16 (SCTR / Vida Ley)**: drawer muestra bloque `.info-readonly-block` con mensaje "Este entregable se gestiona en la pantalla SCTR / Vida Ley." — bloques CONTRATISTA y ADMIN ocultos con `&& !esSCTRoVidaLey`; botones de footer también ocultos.
+- **IDs 11, 12, 20, 22 (vigencia obligatoria)**: upload zone reemplazada por zona `.upload-zone--disabled` con "Ingresa la fecha de vigencia primero." mientras `uploadBloqueadoPorVigencia`. Aplica a ambos roles.
+- `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+`features/habilitacion/pages/empresa/empresa.css`:
+
+- `.upload-zone--disabled { opacity:0.55; cursor:not-allowed; background:#f8fafc }`.
+- `.info-readonly-block { flex row; gap 0.6rem; padding 0.875rem 1rem; background #f1f5f9; border #e2e8f0; border-radius 8px; font-size 0.825rem; color #475569 }`.
+
+> **Tabla de referencia rápida itemId empresa** (`ss_item_empresa`):
+> | itemId | Nombre | Regla |
+> |--------|--------|-------|
+> | 11, 12, 20, 22 | (varios) | Vigencia obligatoria antes de upload |
+> | 15, 16 | SCTR, Vida Ley | Read-only — gestión en pantalla SCTR/Vida Ley |
+>
+> No confundir con items de trabajador: en `ss_item_trabajador`, SCTR=11 y Vida Ley=13.
