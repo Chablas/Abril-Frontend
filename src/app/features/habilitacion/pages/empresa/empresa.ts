@@ -70,6 +70,21 @@ export class Empresa implements OnInit {
   panelEstado = '';
   uploadingFile = false;
 
+  private readonly SCTR_VIDA_LEY_IDS = [15, 16];
+  private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
+
+  get esSCTRoVidaLey(): boolean {
+    return !!this.selectedEntregable && this.SCTR_VIDA_LEY_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   visorArchivoUrl = '';
   visorNombre = '';
 
