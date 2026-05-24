@@ -612,6 +612,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     if (this.isContratista()) {
       payload = {
         archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
         obsContratista: this.panelObsAbril || undefined,
       };
     } else {
