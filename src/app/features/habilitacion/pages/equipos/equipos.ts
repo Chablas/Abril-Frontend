@@ -78,6 +78,16 @@ export class Equipos implements OnInit, OnDestroy {
   panelEstado = '';
   uploadingFile = false;
 
+  private readonly VIGENCIA_ANTE_UPLOAD_IDS = [1, 2, 7, 8, 9, 11];
+
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   private searchChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
