@@ -44,10 +44,11 @@ export class InduccionService {
   getTrabajadoresPorProgramar(
     proyectoId: number,
     empresaId?: number | null,
+    search?: string,
   ): Observable<InduccionTrabajadorDto[]> {
     return this.http.get<InduccionTrabajadorDto[]>(`${this.base}/trabajadores-por-programar`, {
       headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId, empresaId }),
+      params: buildHabParams({ proyectoId, empresaId, search }),
     });
   }
 

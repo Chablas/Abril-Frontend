@@ -20,7 +20,6 @@ import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { InduccionService } from '../../../../services/induccion.service';
-import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
 import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { InduccionCreateDto } from '../../../../dtos/induccion.model';
@@ -56,7 +55,6 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
 
   constructor(
     private induccionService: InduccionService,
-    private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
     private empresaContratistaService: EmpresaContratistaService,
     private authService: AuthService,
@@ -123,7 +121,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
 
   private searchWorkers(): void {
     const term = this.workersSearch.trim();
-    if (!term) {
+    if (!term || !this.proyectoId) {
       this.workersResultados = [];
       return;
     }
@@ -133,11 +131,11 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
       ? (this.authService.getEmpresaId() ?? undefined)
       : undefined;
 
-    this.trabajadorHabService
-      .getTrabajadores({ search: term, page: 1, pageSize: 20, empresaId })
+    this.induccionService
+      .getTrabajadoresPorProgramar(this.proyectoId, empresaId, term)
       .subscribe({
         next: (res) => {
-          this.workersResultados = res.data ?? [];
+          this.workersResultados = res as any;
           this.loadingWorkers = false;
           this.cdr.detectChanges();
         },
