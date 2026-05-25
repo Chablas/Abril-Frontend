@@ -23,6 +23,8 @@ export class ContratistaUsuarios implements OnInit {
   @Input() contractorId!: number;
   @Input() currentUserId: number | null = null;
 
+  private readonly CASEVIP_ID = 572;
+
   usuarios: ContratistaUsuarioDto[] = [];
   proyectos: ProyectoDisponibleDto[] = [];
   loading = true;
@@ -75,7 +77,13 @@ export class ContratistaUsuarios implements OnInit {
     const proyectosHtml = this.buildProyectosHtml([]);
     Swal.fire({
       title: 'Invitar usuario',
-      html: this.buildFormHtml({ email: true, rolNombre: '', scope: 'TODOS', proyectosHtml }),
+      html: this.buildFormHtml({
+        email: true,
+        rolNombre: '',
+        scope: 'TODOS',
+        proyectosHtml,
+        showTipoAcceso: this.contractorId === this.CASEVIP_ID,
+      }),
       showCancelButton: true,
       confirmButtonText: 'Invitar',
       cancelButtonText: 'Cancelar',
@@ -187,6 +195,7 @@ export class ContratistaUsuarios implements OnInit {
     scope: string;
     proyectosHtml: string;
     initialScope?: string;
+    showTipoAcceso?: boolean;
   }): string {
     const emailField = opts.email
       ? `<div style="margin-bottom:14px;">
@@ -212,6 +221,16 @@ export class ContratistaUsuarios implements OnInit {
 
     const showProyectos = (opts.initialScope ?? opts.scope) === 'POR_PROYECTO';
 
+    const tipoAccesoField = opts.showTipoAcceso
+      ? `<div style="margin-bottom:14px;">
+          <label style="${this.labelCss}">Tipo de acceso *</label>
+          <select id="swal-system-role" style="${this.inputCss}">
+            <option value="11">Acceso completo</option>
+            <option value="49">Solo control de acceso</option>
+          </select>
+        </div>`
+      : '';
+
     return `
       <div style="text-align:left;">
         ${emailField}
@@ -229,6 +248,7 @@ export class ContratistaUsuarios implements OnInit {
             ${opts.proyectosHtml}
           </div>
         </div>
+        ${tipoAccesoField}
       </div>`;
   }
 
@@ -265,7 +285,9 @@ export class ContratistaUsuarios implements OnInit {
       return false;
     }
     const proyectoIds = scope === 'POR_PROYECTO' ? this.getSelectedProyectoIds() : undefined;
-    return { email, rolNombre, scope, proyectoIds };
+    const systemRoleEl = document.getElementById('swal-system-role') as HTMLSelectElement | null;
+    const systemRoleId = systemRoleEl ? parseInt(systemRoleEl.value, 10) : 11;
+    return { email, rolNombre, scope, proyectoIds, systemRoleId };
   }
 
   private preConfirmEditar(): ActualizarUsuarioDto {

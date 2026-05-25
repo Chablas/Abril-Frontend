@@ -20,6 +20,7 @@ export interface InvitarUsuarioDto {
   rolNombre: string;
   scope: string;
   proyectoIds?: number[];
+  systemRoleId: number;
 }
 
 export interface ActualizarUsuarioDto {
