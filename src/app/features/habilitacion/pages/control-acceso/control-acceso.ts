@@ -47,7 +47,11 @@ export class ControlAcceso implements OnInit {
   // Inducción
   inducciones: InduccionHoyDto[] = [];
   loadingInducciones = false;
-  readonly fechaHoy = new Date().toISOString().slice(0, 10);
+  readonly fechaHoy: string = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+  readonly fechaHoyDate = new Date();
 
   // No autorizados
   noAutorizados: NoAutorizadoDto[] = [];
