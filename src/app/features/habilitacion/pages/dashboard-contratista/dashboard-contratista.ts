@@ -76,8 +76,12 @@ export class DashboardContratista implements OnInit {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const sub = decoded.sub ?? decoded.userId ?? decoded.nameid;
-        this.currentUserId = sub ? parseInt(String(sub), 10) : null;
+        const sub =
+          decoded.sub ??
+          decoded.userId ??
+          decoded.nameid ??
+          decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+        this.currentUserId = sub != null ? parseInt(String(sub), 10) : null;
       } catch { /* ignore */ }
     }
     if (!this.empresaId) return;

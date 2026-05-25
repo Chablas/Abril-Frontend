@@ -28,10 +28,9 @@ export class ContratistaUsuarios implements OnInit {
   loading = true;
 
   get esOwner(): boolean {
-    if (!this.currentUserId) return false;
-    return this.usuarios.some(
-      (u) => u.userId === this.currentUserId && u.rolNombre === 'OWNER',
-    );
+    if (this.currentUserId == null) return false;
+    const uid = this.currentUserId;
+    return this.usuarios.some((u) => u.userId === uid && u.rolNombre === 'OWNER');
   }
 
   constructor(
