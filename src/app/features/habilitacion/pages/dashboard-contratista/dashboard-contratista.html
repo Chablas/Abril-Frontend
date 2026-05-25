@@ -57,10 +57,21 @@
       </svg>
       Inducciones
     </a>
+
+    <span class="nav-sep"></span>
+
+    <button type="button" class="nav-pill" [class.nav-pill--active]="activeSection === 'usuarios'"
+      (click)="activeSection = 'usuarios'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M6 20v-1a6 6 0 0 1 12 0v1"/>
+      </svg>
+      Usuarios
+    </button>
   </nav>
 
   <!-- ── Dashboard 2×2 ───────────────────────────────────────── -->
-  <div class="dash-grid">
+  <div class="dash-grid" *ngIf="activeSection === 'resumen'">
 
     <!-- ══ Card 1: Proyectos ══════════════════════════════════ -->
     <div class="card">
@@ -394,4 +405,13 @@
     </div>
 
   </div><!-- /dash-grid -->
+
+  <!-- ── Sección Usuarios ──────────────────────────────────────── -->
+  <div class="usuarios-section" *ngIf="activeSection === 'usuarios' && empresaId">
+    <app-contratista-usuarios
+      [contractorId]="empresaId"
+      [currentUserId]="currentUserId">
+    </app-contratista-usuarios>
+  </div>
+
 </div>

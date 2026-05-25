@@ -2,12 +2,14 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { EquipoHabService } from '../../services/equipo-hab.service';
 import { ProyectoDisponibleDto, EmpresaEntregableDto } from '../../dtos/empresa.model';
+import { ContratistaUsuarios } from './components/contratista-usuarios/contratista-usuarios';
 
 interface ProgresoProyecto {
   total: number;
@@ -18,12 +20,14 @@ interface ProgresoProyecto {
 @Component({
   selector: 'app-dashboard-contratista',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ContratistaUsuarios],
   templateUrl: './dashboard-contratista.html',
   styleUrl: './dashboard-contratista.css',
 })
 export class DashboardContratista implements OnInit {
   empresaId: number | null = null;
+  currentUserId: number | null = null;
+  activeSection: 'resumen' | 'usuarios' = 'resumen';
 
   // Sec 1 — Proyectos
   proyectos: ProyectoDisponibleDto[] = [];
@@ -68,6 +72,14 @@ export class DashboardContratista implements OnInit {
       return;
     }
     this.empresaId = this.authService.getEmpresaId() ?? null;
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        const sub = decoded.sub ?? decoded.userId ?? decoded.nameid;
+        this.currentUserId = sub ? parseInt(String(sub), 10) : null;
+      } catch { /* ignore */ }
+    }
     if (!this.empresaId) return;
     this.loadProyectos();
     this.loadTrabajadores();
