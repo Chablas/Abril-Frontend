@@ -23,11 +23,13 @@ export class GestionSalidasService {
     workerId: number | null,
     lugarProyectoId: number | null,
     estadoRendicion: string | null = null,
+    estadoAprobacion: string | null = null,
   ): Observable<GestionSalidaListItemDto[]> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
+    if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
     return this.http.get<GestionSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
   }
 
@@ -47,6 +49,15 @@ export class GestionSalidasService {
     return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/aprobar`, {}, {
       headers: this.headers,
     });
+  }
+
+  /** Registra (o limpia si hora=null) la hora real de salida. Solo para rol USUARIO DE RECEPCIÓN. */
+  setHoraSalidaReal(id: number, hora: string | null): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${id}/hora-salida-real`,
+      { horaSalidaReal: hora },
+      { headers: this.headers },
+    );
   }
 
   rechazar(id: number): Observable<{ message: string }> {
@@ -75,11 +86,13 @@ export class GestionSalidasService {
     workerId: number | null,
     lugarProyectoId: number | null,
     estadoRendicion: string | null = null,
+    estadoAprobacion: string | null = null,
   ): Observable<Blob> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
+    if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
     return this.http.get(`${this.apiUrl}/exportar-excel`, {
       headers: this.headers,
       params,

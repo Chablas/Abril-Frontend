@@ -133,6 +133,20 @@
         </div>
       </div>
 
+      <!-- Indicador de monto del catálogo (solo trabajadores TI con match origen+destino) -->
+      <div *ngIf="montoCatalogoTrayecto(t) !== null"
+           class="flex items-center gap-2 text-xs text-[#0086A5] bg-[#DBEAFE] border border-[#BFDBFE] rounded-md px-3 py-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+          <circle cx="12" cy="12" r="10"/>
+          <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+        </svg>
+        <span>
+          Trayecto registrado en el catálogo —
+          <b>monto S/ {{ montoCatalogoTrayecto(t)! | number:'1.2-2' }}</b>.
+          No requieres subir captura para este trayecto.
+        </span>
+      </div>
+
     </div>
 
     <!-- ── Agregar trayecto ─────────────────────────────────────────── -->
