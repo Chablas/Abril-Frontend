@@ -206,7 +206,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
-        this.workers = res.data ?? [];
+        this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;

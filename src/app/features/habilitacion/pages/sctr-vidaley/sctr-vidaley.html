@@ -79,6 +79,10 @@
         min="2020"
         max="2100"
       />
+      <select class="field-input filter-sel" [(ngModel)]="filtroProyecto">
+        <option value="">Todos los proyectos</option>
+        <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
+      </select>
     </div>
   </div>
 
@@ -87,7 +91,7 @@
     <div class="col-docs card">
       <div class="docs-list">
         <div
-          *ngFor="let doc of documentos"
+          *ngFor="let doc of filteredDocumentos"
           class="doc-card"
           [class.selected]="selectedDoc?.id === doc.id"
           (click)="selectDoc(doc)"
@@ -161,6 +165,24 @@
                 <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
               </ng-container>
             </div>
+            <!-- Workers header: select-all + approve-all -->
+            <div class="sctr-workers-header" *ngIf="isAdmin()">
+              <input
+                type="checkbox"
+                [checked]="docAllChecked"
+                [indeterminate]="docSomeChecked && !docAllChecked"
+                (change)="toggleAllDocWorkers($any($event.target).checked)"
+              />
+              <span style="flex:1;font-size:0.78rem;font-weight:600;color:#374151">
+                {{ selectedDoc.workers.length }} trabajador(es)
+              </span>
+              <button
+                type="button"
+                class="btn-primary btn-action-sm"
+                [disabled]="savingDocAprobar || !selectedDoc.workers.length"
+                (click)="aprobarTodosDocWorkers()"
+              >Aprobar todos</button>
+            </div>
             <div class="sctr-split-workers">
               <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
                 Sin trabajadores asociados.
@@ -171,19 +193,37 @@
                 [class.selected]="selectedPolizaWorker?.workerId === w.workerId"
                 (click)="selectPolizaWorker(w)"
               >
+                <input
+                  *ngIf="isAdmin()"
+                  type="checkbox"
+                  [checked]="docWorkersSeleccionados.has(w.workerId)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleDocWorker(w.workerId)"
+                />
                 <div class="worker-info">
                   <strong>{{ w.apellidoNombre }}</strong>
                   <span class="muted-line">{{ w.dni }}</span>
+                  <span class="muted-line" *ngIf="w.vigencia">Vence: {{ w.vigencia | date:'dd/MM/yyyy' }}</span>
                 </div>
                 <div class="sctr-worker-chips">
                   <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
-                    {{ w.estadoSctr }}
+                    SCTR: {{ w.estadoSctr }}
                   </span>
                   <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">
-                    {{ w.estadoVidaLey }}
+                    VL: {{ w.estadoVidaLey }}
                   </span>
                 </div>
               </div>
+            </div>
+            <!-- Approve selected footer -->
+            <div class="sctr-split-actions-bar" *ngIf="isAdmin()">
+              <span class="muted-line">{{ docWorkersSeleccionados.size }} seleccionado(s)</span>
+              <button
+                type="button"
+                class="btn-primary btn-action-sm"
+                [disabled]="!canAprobarDoc"
+                (click)="aprobarDocWorkersSeleccionados()"
+              >{{ savingDocAprobar ? 'Guardando…' : 'Aprobar seleccionados' }}</button>
             </div>
             <div class="sctr-split-actions" *ngIf="selectedPolizaWorker?.sctrHabId">
               <button type="button" class="btn-link" (click)="verVersionesPoliza()">
@@ -208,6 +248,10 @@
     <!-- Panel izquierdo: filtros + lista -->
     <div class="card panel-wleft">
       <div class="wfilters">
+        <div class="wfilters-text-row">
+          <input type="text" class="field-input" [(ngModel)]="wFiltroNombre" placeholder="Buscar nombre…" />
+          <input type="text" class="field-input" [(ngModel)]="wFiltroEmpresaTexto" placeholder="Buscar empresa…" />
+        </div>
         <div class="wfilters-grid">
           <div class="wfilter-col2" *ngIf="isAdmin()">
             <label class="field-label">Empresa</label>
@@ -265,7 +309,7 @@
           Sin trabajadores para los filtros seleccionados
         </div>
         <div
-          *ngFor="let w of trabajadores"
+          *ngFor="let w of filteredTrabajadores"
           class="worker-row"
           [class.selected]="selectedWorker?.workerId === w.workerId"
           (click)="selectWorker(w)"
@@ -273,6 +317,7 @@
           <div class="worker-info">
             <strong>{{ w.apellidoNombre }}</strong>
             <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre }}</span>
+            <span class="muted-line" *ngIf="w.fechaVencimiento">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="worker-chips">
             <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">{{ w.estadoSctr }}</span>
@@ -401,8 +446,8 @@
                     <strong>{{ w.apellidoNombre }}</strong>
                     <span class="muted-line">DNI {{ w.dni }}</span>
                   </div>
-                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
-                    {{ w.estadoSctr }}
+                  <span class="btn-chip" [class]="getEstadoClass(wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+                    {{ wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
                   </span>
                 </div>
               </div>

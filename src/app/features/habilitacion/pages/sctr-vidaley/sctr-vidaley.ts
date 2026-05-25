@@ -62,6 +62,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   filtroAnio: number = new Date().getFullYear();
   filtroEmpresaId: number | null = null;
   filtroObraOficina = '';
+  filtroProyecto = '';
 
   modalSubirOpen = false;
   modalAprobarOpen = false;
@@ -99,6 +100,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
   wFiltroProyectoId: number | null = null;
   wFiltroEstado = 'Enviado';
   wFiltroTipo: 'SCTR' | 'VIDA_LEY' = 'SCTR';
+  wFiltroNombre = '';
+  wFiltroEmpresaTexto = '';
 
   // ── Tab Trabajadores — panel derecho ──────────────────────
   selectedPoliza: SctrVidaLeyDto | null = null;
@@ -106,8 +109,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
   polizaSafeUrl: SafeResourceUrl | null = null;
   private polizaBlobUrl = '';
   polizaWorkersSeleccionados = new Set<number>();
+  docWorkersSeleccionados = new Set<number>();
   motivoRechazo = '';
   savingAprobar = false;
+  savingDocAprobar = false;
 
   private filterChange$ = new Subject<void>();
   private workerFilterChange$ = new Subject<void>();
@@ -280,6 +285,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.docSafeUrl = null;
     this.revokeDocBlobUrl();
     this.selectedPolizaWorker = null;
+    this.docWorkersSeleccionados = new Set();
   }
 
   private revokeDocBlobUrl(): void {
@@ -512,12 +518,57 @@ export class SctrVidaley implements OnInit, OnDestroy {
     return !this.savingAprobar && this.polizaWorkersSeleccionados.size > 0 && !!this.selectedPoliza;
   }
 
+  // ── Tab Pólizas — filtro + selección panel derecho ────────
+
+  get proyectosDisponibles(): string[] {
+    const set = new Set(
+      this.documentos.map((d) => d.proyectoNombre).filter(Boolean) as string[],
+    );
+    return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get filteredDocumentos(): SctrVidaLeyDto[] {
+    if (!this.filtroProyecto) return this.documentos;
+    return this.documentos.filter((d) => d.proyectoNombre === this.filtroProyecto);
+  }
+
+  get docAllChecked(): boolean {
+    const workers = this.selectedDoc?.workers ?? [];
+    return workers.length > 0 && workers.every((w) => this.docWorkersSeleccionados.has(w.workerId));
+  }
+
+  get docSomeChecked(): boolean {
+    const workers = this.selectedDoc?.workers ?? [];
+    return workers.some((w) => this.docWorkersSeleccionados.has(w.workerId));
+  }
+
+  get canAprobarDoc(): boolean {
+    return !this.savingDocAprobar && this.docWorkersSeleccionados.size > 0 && !!this.selectedDoc;
+  }
+
+  // ── Tab Trabajadores — filtros client-side ────────────────
+
+  get filteredTrabajadores(): SctrTrabajadorEstadoDto[] {
+    let list = this.trabajadores;
+    const nombre = this.wFiltroNombre.trim().toLowerCase();
+    const empresa = this.wFiltroEmpresaTexto.trim().toLowerCase();
+    if (nombre) list = list.filter((w) => w.apellidoNombre.toLowerCase().includes(nombre));
+    if (empresa) list = list.filter((w) => (w.empresaNombre ?? '').toLowerCase().includes(empresa));
+    return [...list].sort((a, b) => {
+      if (!a.updatedAt && !b.updatedAt) return 0;
+      if (!a.updatedAt) return 1;
+      if (!b.updatedAt) return -1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
+  }
+
   aprobarSeleccionados(): void {
     if (!this.canAprobar || !this.selectedPoliza) return;
     this.savingAprobar = true;
     const dto: SctrVidaLeyAprobarDto = {
       workerIdsAprobados: Array.from(this.polizaWorkersSeleccionados),
       workerIdsRechazados: [],
+      tipo: this.wFiltroTipo,
       vigencia: this.selectedPoliza.vigencia,
     };
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
@@ -541,6 +592,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     const dto: SctrVidaLeyAprobarDto = {
       workerIdsAprobados: [],
       workerIdsRechazados: Array.from(this.polizaWorkersSeleccionados),
+      tipo: this.wFiltroTipo,
       obsAbril: this.motivoRechazo || undefined,
     };
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
@@ -593,6 +645,95 @@ export class SctrVidaley implements OnInit, OnDestroy {
         this.errorService.handleError(err);
         this.cdr.detectChanges();
       },
+    });
+  }
+
+  // ── Tab Pólizas — aprobación desde panel derecho ─────────
+
+  toggleDocWorker(workerId: number): void {
+    if (this.docWorkersSeleccionados.has(workerId)) {
+      this.docWorkersSeleccionados.delete(workerId);
+    } else {
+      this.docWorkersSeleccionados.add(workerId);
+    }
+  }
+
+  toggleAllDocWorkers(checked: boolean): void {
+    if (!this.selectedDoc) return;
+    if (checked) {
+      this.selectedDoc.workers.forEach((w) => this.docWorkersSeleccionados.add(w.workerId));
+    } else {
+      this.docWorkersSeleccionados.clear();
+    }
+  }
+
+  aprobarDocWorkersSeleccionados(): void {
+    if (!this.canAprobarDoc || !this.selectedDoc) return;
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${this.docWorkersSeleccionados.size} trabajador(es)?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+    }).then((result) => {
+      if (!result.isConfirmed || !this.selectedDoc) return;
+      this.savingDocAprobar = true;
+      const dto: SctrVidaLeyAprobarDto = {
+        workerIdsAprobados: Array.from(this.docWorkersSeleccionados),
+        workerIdsRechazados: [],
+        tipo: this.selectedDoc.tipo,
+        vigencia: this.selectedDoc.vigencia,
+      };
+      this.sctrService.aprobar(this.selectedDoc.id, dto).subscribe({
+        next: () => {
+          this.savingDocAprobar = false;
+          this.docWorkersSeleccionados.clear();
+          Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+          this.loadDocumentos(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.savingDocAprobar = false;
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
+    });
+  }
+
+  aprobarTodosDocWorkers(): void {
+    if (!this.selectedDoc || this.savingDocAprobar) return;
+    const workers = this.selectedDoc.workers;
+    if (!workers.length) return;
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar todos los ${workers.length} trabajadores?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar todos',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+    }).then((result) => {
+      if (!result.isConfirmed || !this.selectedDoc) return;
+      this.savingDocAprobar = true;
+      const dto: SctrVidaLeyAprobarDto = {
+        workerIdsAprobados: workers.map((w) => w.workerId),
+        workerIdsRechazados: [],
+        tipo: this.selectedDoc.tipo,
+        vigencia: this.selectedDoc.vigencia,
+      };
+      this.sctrService.aprobar(this.selectedDoc.id, dto).subscribe({
+        next: () => {
+          this.savingDocAprobar = false;
+          this.docWorkersSeleccionados.clear();
+          Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+          this.loadDocumentos(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.savingDocAprobar = false;
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
     });
   }
 
