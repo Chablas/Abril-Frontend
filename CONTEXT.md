@@ -878,58 +878,62 @@ onCambiarObraSaved(): void {
 - **Contratistas**: los campos "Razón social" y "Staff / Oficina" se ocultan con `*ngIf="worker?.contrataCasa === 'Casa'"`. El payload fuerza `empresaId = null` en `submit()` si `contrataCasa !== 'Casa'`.
 
 ### Bandeja de Aprobaciones — layout SCTR-style
-`pages/bandeja/bandeja.ts/.html/.css` — layout idéntico a SCTR y Vida Ley (lista izquierda + visor PDF derecho).
+`pages/bandeja/bandeja.ts/.html/.css` — lista izquierda + visor PDF derecho. Header (`app-header`) oculto al entrar via `ngOnInit` (añade `.hidden-bandeja`) y restaurado en `ngOnDestroy`. `data.titulo = ''` en la ruta.
 
 #### Tabs horizontales
 ```
 Todos | Trabajadores | Empresas | Inducciones | Equipos
 ```
-Cada tab tiene color de borde activo propio:
-- Todos: `border #111827`
-- Trabajadores: `#3b82f6` (azul)
-- Empresas: `#22c55e` (verde)
-- Inducciones: `#f59e0b` (naranja)
-- Equipos: `#9ca3af` (gris)
-
-Clases: `tab-active-all`, `tab-active-blue`, `tab-active-green`, `tab-active-orange`, `tab-active-gray`.
+Clases activas: `tab-active-all` / `tab-active-blue` / `tab-active-green` / `tab-active-orange` / `tab-active-gray`.
 
 #### Chip colors por tipo
-- `TRABAJADOR` = chip-blue
-- `EMPRESA` = chip-green
-- `EQUIPO` = chip-gray
-- `INDUCCION` = chip-orange
+`TRABAJADOR`=chip-blue · `EMPRESA`=chip-green · `EQUIPO`=chip-gray · `INDUCCION`=chip-orange
 
-#### Layout principal
+#### Layout CSS
 ```css
-.bandeja-layout { display: flex; flex-direction: column; gap: 0.75rem; height: calc(100vh - 120px); }
-.bandeja-columns { display: grid; grid-template-columns: 300px 1fr; gap: 1rem; flex: 1; overflow: hidden; min-height: 0; }
-.col-items, .col-detalle { display: flex; flex-direction: column; overflow: hidden; }
-.doc-body { flex: 1; min-height: 0; overflow: hidden; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
-.doc-body iframe { width: 100%; height: 100%; display: block; border: 0; }
+:host { display:flex; flex-direction:column; height:100%; }
+.bandeja-layout { display:flex; flex-direction:column; gap:0.75rem; height:100%; overflow:hidden; }
+.bandeja-columns { display:grid; grid-template-columns:300px 1fr; gap:1rem; flex:1; overflow:hidden; min-height:0; height:calc(100vh - 110px); }
+.col-items, .col-detalle { display:flex; flex-direction:column; overflow:hidden; height:100%; }
 ```
 
-#### Card seleccionada
-```css
-.bandeja-card.selected { background: #f0fdf4; border-color: #64bc04; }
-```
-
-#### Patrón blob URL para PDF
-Igual que SCTR: `sharepointService.getArchivoUrl(archivoUrl)` → `fetch(res.url)` → `.blob()` → `URL.createObjectURL(blob)` → `sanitizer.bypassSecurityTrustResourceUrl(blobUrl)`. Se revoca en `revokeDocBlobUrl()` al cerrar/destruir.
-
-#### Flujo de aprobación por tipo
-- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input para fecha de vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
-- **INDUCCION**: Swal simple sin campo vigencia → `bandejaService.aprobarInduccion(id)` → PATCH `/bandeja/induccion/{id}` con body `{}`.
-
-Tras aprobar/rechazar: `this.selectedItem = null; this.clearDocPanel();` y luego `loadItems()`.
-
-#### Estado
+#### Filtros client-side (fila horizontal sobre `.bandeja-columns`, oculta en tab INDUCCION)
 ```ts
-selectedItem: BandejaItemDto | null = null;
-docSafeUrl: SafeResourceUrl | null = null;
-loadingDoc = false;
-private docBlobUrl = '';
-filtroTipo = '';  // '' = Todos
+filtroTexto = '';       // búsqueda libre por entidadNombre
+filtroEmpresa = '';     // búsqueda libre por empresaNombre
+filtroProyecto = '';    // dropdown exacto por proyectoNombre
+filtroEntregable = '';  // dropdown exacto por nombreEntregable
+filtroResponsable = ''; // server-side: param del endpoint /bandeja (SSOMA | ADMINISTRACION)
 ```
+Getters: `proyectosDisponibles`, `entregablesDisponibles` — únicos de `items`, A→Z. `filteredItems` aplica los 4 filtros client-side y ordena por `entidadNombre` (localeCompare 'es'). `loadItems` limpia `selectedIds` al recargar.
+
+#### Aprobación masiva (tabs Todos/Trabajadores/Empresas/Equipos)
+```ts
+selectedIds = new Set<number>();
+get allItemsSelected(): boolean   // todos los filteredItems seleccionados
+get someItemsSelected(): boolean  // alguno seleccionado (para indeterminate)
+toggleSelect(id)                  // toggle individual
+toggleAllItems()                  // toggle todos los filteredItems
+aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
+```
+- **Tab con tipo fijo**: una sola llamada `bandejaService.bulkAprobar(ids, filtroTipo)`.
+- **Tab "Todos"**: agrupa `selectedIds` por `item.tipo` y hace `forkJoin` de una llamada por tipo.
+- Endpoint: PATCH `/bandeja/bulk-aprobar` body `{ ids, tipo }`.
+- Header de lista: checkbox "Seleccionar todos" (`[indeterminate]`) + botón "✓ Aprobar (N)" visible cuando `selectedIds.size > 0`.
+- Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
+
+#### Flujo aprobación unitaria (sin cambios)
+- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
+- **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
+
+#### Nomenclatura — colisión resuelta
+`allSelected(grupo)` de inducciones renombrado a `allInduccionSelected(grupo)` para evitar conflicto con el getter `allItemsSelected` de selección masiva.
+
+#### Patrón blob URL para PDF (sin cambios)
+`sharepointService.getArchivoUrl(archivoUrl)` → `fetch` → `.blob()` → `URL.createObjectURL` → `bypassSecurityTrustResourceUrl`. Revocado en `revokeDocBlobUrl()`.
+
+#### SCTR/Vida Ley — orden alfabético
+`sctr-subir.ts:loadWorkers()` ordena `trabajadores` por `apellidoNombre` (localeCompare 'es') al recibirlos del backend.
 
 ### Modal "Programar Inducción" — proyectos filtrados por empresa
 `pages/trabajadores/components/programar-induccion/` — 2 pasos.

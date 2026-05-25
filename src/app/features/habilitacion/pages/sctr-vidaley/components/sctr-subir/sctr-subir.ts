@@ -279,7 +279,9 @@ export class SctrSubir implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
       next: (res) => {
-        this.trabajadores = res ?? [];
+        this.trabajadores = (res ?? []).sort((a, b) =>
+          a.apellidoNombre.localeCompare(b.apellidoNombre, 'es'),
+        );
         this.loadingWorkers = false;
         this.cdr.detectChanges();
       },

@@ -48,7 +48,7 @@ export const HABILITACION_ROUTES: Routes = [
     loadComponent: () => import('./pages/bandeja/bandeja').then((m) => m.Bandeja),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'HABILITACIÓN - BANDEJA DE APROBACIONES',
+      titulo: '',
       featureKey: 'habilitacion.bandeja',
     },
   },

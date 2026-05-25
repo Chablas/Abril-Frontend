@@ -43,4 +43,10 @@ export class BandejaService {
       headers: buildHabHeaders(),
     });
   }
+
+  bulkAprobar(ids: number[], tipo: string): Observable<void> {
+    return this.http.patch<void>(`${this.base}/bulk-aprobar`, { ids, tipo }, {
+      headers: buildHabHeaders(),
+    });
+  }
 }

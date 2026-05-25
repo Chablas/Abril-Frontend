@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, debounceTime, forkJoin, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -45,6 +45,13 @@ export class Bandeja implements OnInit, OnDestroy {
 
   filtroTipo = '';
   filtroResponsable = '';
+  filtroTexto = '';
+  filtroEmpresa = '';
+  filtroProyecto = '';
+  filtroEntregable = '';
+
+  // ── Selección masiva ──────────────────────────────────────
+  selectedIds = new Set<number>();
 
   // ── Panel derecho ─────────────────────────────────────────
   selectedItem: BandejaItemDto | null = null;
@@ -59,6 +66,52 @@ export class Bandeja implements OnInit, OnDestroy {
   private filterChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
+  get proyectosDisponibles(): string[] {
+    const names = new Set<string>();
+    for (const item of this.items) {
+      if (item.proyectoNombre) names.add(item.proyectoNombre);
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get entregablesDisponibles(): string[] {
+    const names = new Set<string>();
+    for (const item of this.items) {
+      if (item.nombreEntregable) names.add(item.nombreEntregable);
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get filteredItems(): BandejaItemDto[] {
+    const texto = this.filtroTexto.trim().toLowerCase();
+    const empresa = this.filtroEmpresa.trim().toLowerCase();
+    let result = this.items;
+    if (texto) {
+      result = result.filter((i) => i.entidadNombre?.toLowerCase().includes(texto));
+    }
+    if (empresa) {
+      result = result.filter((i) => i.empresaNombre?.toLowerCase().includes(empresa));
+    }
+    if (this.filtroProyecto) {
+      result = result.filter((i) => i.proyectoNombre === this.filtroProyecto);
+    }
+    if (this.filtroEntregable) {
+      result = result.filter((i) => i.nombreEntregable === this.filtroEntregable);
+    }
+    return result.slice().sort((a, b) =>
+      (a.entidadNombre ?? '').localeCompare(b.entidadNombre ?? '', 'es'),
+    );
+  }
+
+  get allItemsSelected(): boolean {
+    const fi = this.filteredItems;
+    return fi.length > 0 && fi.every((i) => this.selectedIds.has(i.id));
+  }
+
+  get someItemsSelected(): boolean {
+    return this.filteredItems.some((i) => this.selectedIds.has(i.id));
+  }
+
   constructor(
     private bandejaService: BandejaService,
     private induccionService: InduccionService,
@@ -70,6 +123,9 @@ export class Bandeja implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (typeof document !== 'undefined') {
+      document.querySelector('app-header')?.classList.add('hidden-bandeja');
+    }
     this.filterChange$
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => this.loadItems(1));
@@ -77,6 +133,9 @@ export class Bandeja implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.querySelector('app-header')?.classList.remove('hidden-bandeja');
+    }
     this.destroy$.next();
     this.destroy$.complete();
     this.revokeDocBlobUrl();
@@ -96,6 +155,7 @@ export class Bandeja implements OnInit, OnDestroy {
     this.bandejaService.getPendientes(params).subscribe({
       next: (res) => {
         this.items = res.data ?? [];
+        this.selectedIds.clear();
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
@@ -181,7 +241,7 @@ export class Bandeja implements OnInit, OnDestroy {
     return grupo.items.filter((i) => i.ingresoConfirmado).length;
   }
 
-  allSelected(grupo: InduccionGrupo): boolean {
+  allInduccionSelected(grupo: InduccionGrupo): boolean {
     const asistentes = grupo.items.filter((i) => i.ingresoConfirmado);
     return asistentes.length > 0 && asistentes.every((i) => grupo.seleccionados.has(i.id));
   }
@@ -234,6 +294,73 @@ export class Bandeja implements OnInit, OnDestroy {
         },
       });
     });
+  }
+
+  // ── Selección masiva ──────────────────────────────────────
+
+  toggleSelect(id: number): void {
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleAllItems(): void {
+    if (this.allItemsSelected) {
+      this.filteredItems.forEach((i) => this.selectedIds.delete(i.id));
+    } else {
+      this.filteredItems.forEach((i) => this.selectedIds.add(i.id));
+    }
+    this.cdr.detectChanges();
+  }
+
+  aprobarMasivo(): void {
+    const ids = Array.from(this.selectedIds);
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${ids.length} documento(s)?`,
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+
+      if (this.filtroTipo !== '') {
+        this.bandejaService.bulkAprobar(ids, this.filtroTipo).subscribe({
+          next: () => this.onBulkSuccess(),
+          error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+        });
+      } else {
+        const byTipo = new Map<string, number[]>();
+        this.filteredItems
+          .filter((i) => this.selectedIds.has(i.id))
+          .forEach((i) => {
+            const existing = byTipo.get(i.tipo) ?? [];
+            existing.push(i.id);
+            byTipo.set(i.tipo, existing);
+          });
+        forkJoin(
+          Array.from(byTipo.entries()).map(([tipo, tIds]) =>
+            this.bandejaService.bulkAprobar(tIds, tipo),
+          ),
+        ).subscribe({
+          next: () => this.onBulkSuccess(),
+          error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+        });
+      }
+    });
+  }
+
+  private onBulkSuccess(): void {
+    this.loaderService.hide();
+    this.selectedIds.clear();
+    Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+    this.loadItems(this.currentPage);
   }
 
   // ── Selección y visor PDF ─────────────────────────────────
