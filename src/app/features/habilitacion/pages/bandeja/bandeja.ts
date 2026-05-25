@@ -302,45 +302,24 @@ export class Bandeja implements OnInit, OnDestroy {
     }
   }
 
+  getEstadoClass(estado: string): string {
+    switch (estado) {
+      case 'Pendiente':  return 'chip-yellow';
+      case 'Aprobado':   return 'chip-green';
+      case 'Rechazado':  return 'chip-red';
+      case 'Observado':  return 'chip-orange';
+      default:           return 'chip-gray';
+    }
+  }
+
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar entregable?',
-      html: `<div style="text-align:left;font-size:0.9rem">
-              <strong>${item.nombreEntregable}</strong><br/>
-              <span style="color:#6b7280">${item.entidadNombre}</span>
-              ${item.vigencia ? `<div style="margin-top:0.75rem"><label style="font-size:0.75rem;color:#6b7280;text-transform:uppercase">Vigencia</label><input type="date" value="${item.vigencia.substring(0, 10)}" readonly style="display:block;width:100%;margin-top:4px;padding:0.45rem 0.65rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.875rem;background:#f9fafb;color:#374151;cursor:default"/></div>` : ''}
-            </div>`,
-      showCancelButton: true,
-      confirmButtonText: 'Aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
-    });
+    this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
   }
 
   rechazar(item: BandejaItemDto): void {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Rechazar entregable',
-      input: 'textarea',
-      inputLabel: 'Motivo del rechazo',
-      inputPlaceholder: 'Describe el motivo…',
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      inputValidator: (value) => (!value?.trim() ? 'Debes indicar un motivo' : null),
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.executeAction(item, { estado: 'Rechazado', obsAbril: res.value }, 'Rechazado');
-    });
+    this.executeAction(item, { estado: 'Rechazado' }, 'Rechazado');
   }
 
   private executeAction(

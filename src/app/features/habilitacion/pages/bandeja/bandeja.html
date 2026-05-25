@@ -33,7 +33,10 @@
           (click)="selectItem(item)"
         >
           <div class="bc-header">
-            <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+            <div class="bc-chips">
+              <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+              <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
+            </div>
             <span class="bc-fecha">{{ item.fechaEnvio ? (item.fechaEnvio | date: 'dd/MM/yy') : '—' }}</span>
           </div>
           <div class="bc-entregable">{{ item.nombreEntregable }}</div>
