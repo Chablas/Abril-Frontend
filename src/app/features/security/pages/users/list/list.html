@@ -10,7 +10,8 @@
       <input
         type="text"
         placeholder="Buscar por nombre, DNI o correo..."
-        [(ngModel)]="searchTerm"
+        [ngModel]="searchTerm"
+        (ngModelChange)="onSearchChange($event)"
         class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
       />
     </div>
@@ -31,7 +32,7 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let item of filteredData"
+          *ngFor="let item of tableData.data"
           class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
         >
           <td class="px-4 py-3">
@@ -85,7 +86,7 @@
             </div>
           </td>
         </tr>
-        <tr *ngIf="filteredData.length === 0">
+        <tr *ngIf="tableData.data.length === 0">
           <td colspan="6" class="text-center text-gray-400 py-10 text-sm">Sin usuarios registrados.</td>
         </tr>
       </tbody>
@@ -95,7 +96,7 @@
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
     <div
-      *ngFor="let item of filteredData"
+      *ngFor="let item of tableData.data"
       class="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
     >
       <div class="flex items-start justify-between gap-2">
@@ -134,6 +135,6 @@
         </div>
       </div>
     </div>
-    <p *ngIf="filteredData.length === 0" class="text-center text-gray-400 py-10 text-sm">Sin usuarios registrados.</p>
+    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">Sin usuarios registrados.</p>
   </div>
 </div>

@@ -18,9 +18,15 @@ export class UserFeatureService {
 
   constructor(private http: HttpClient) {}
 
-  getUserPaged(page: number, pageSize = 10): Observable<PagedResponseDTO<UserListItemDto>> {
+  getUserPaged(
+    page: number,
+    pageSize = 10,
+    search?: string,
+  ): Observable<PagedResponseDTO<UserListItemDto>> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search && search.trim()) params.set('search', search.trim());
     return this.http.get<PagedResponseDTO<UserListItemDto>>(
-      `${this.apiUrl}/paged?page=${page}&pageSize=${pageSize}`,
+      `${this.apiUrl}/paged?${params.toString()}`,
       { headers: buildAuthHeaders() },
     );
   }
