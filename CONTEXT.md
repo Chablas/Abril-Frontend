@@ -512,6 +512,7 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 - Login (form propio + Microsoft via MSAL).
 - `complete-registration` (set password con token).
 - `msal-redirect` callback.
+- **Panel izquierdo del login** rediseñado: logo arriba + sección "Videos Tutoriales" con 7 cards scrollables (max ~3.8 visibles). Cada card abre el link de Loom en nueva pestaña. Array `tutorialVideos` en `login.ts` (readonly). Estilos glassmorphism en `login.css` (`.tutorial-card`, `.tutorial-play`, `.tutorial-scroll` con scrollbar delgado). Fondo y accent color (`#64bc04`) consistentes con la identidad existente.
 
 ### `features/home/` — ✅ Completo
 - Página Inicio simple post-login.

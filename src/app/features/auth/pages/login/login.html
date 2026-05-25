@@ -1,9 +1,40 @@
 <div class="flex flex-col md:flex-row w-full min-h-screen">
 
-    <!-- Panel logo -->
-    <div class="flex justify-center items-center bg-gradient-to-t from-[#182233] to-[#2a3675]
-              py-10 md:py-0 md:flex-1">
-        <img class="w-48 sm:w-72 md:w-96 lg:w-[480px]" src="/images/abril-logo-verde-letra-blanca.png" />
+    <!-- Panel izquierdo (logo + videos tutoriales) -->
+    <div class="flex flex-col bg-gradient-to-t from-[#182233] to-[#2a3675]
+              py-8 px-6 md:px-10 md:flex-1">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-8 shrink-0">
+            <img class="w-40 sm:w-52 md:w-64" src="/images/abril-logo-verde-letra-blanca.png" />
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-white/10 mb-5 shrink-0"></div>
+
+        <!-- Sección videos tutoriales -->
+        <div class="flex items-center gap-2 mb-3 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="#64bc04" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+            <span class="tutorial-section-label">Videos Tutoriales</span>
+        </div>
+
+        <div class="tutorial-scroll">
+            <a *ngFor="let v of tutorialVideos"
+               [href]="v.url" target="_blank" rel="noopener noreferrer"
+               class="tutorial-card">
+                <div class="tutorial-play">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </div>
+                <div class="tutorial-info">
+                    <p class="tutorial-title">{{ v.titulo }}</p>
+                    <span class="tutorial-link">Ver tutorial →</span>
+                </div>
+            </a>
+        </div>
     </div>
 
     <!-- Panel formulario -->
