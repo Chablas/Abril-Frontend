@@ -458,7 +458,11 @@
           <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
-        <div class="field-grp">
+        <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
+          La inducción se gestiona desde el módulo de Inducciones.
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
           <div class="upload-zone upload-zone--disabled"
             *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
@@ -556,7 +560,11 @@
           <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
-        <div class="field-grp">
+        <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
+          La inducción se gestiona desde el módulo de Inducciones.
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
           <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">

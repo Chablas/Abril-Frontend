@@ -1923,3 +1923,57 @@ get uploadBloqueadoPorVigencia(): boolean { … } // requiereVigenciaAnteUpload 
 > | 15, 16 | SCTR, Vida Ley | Read-only — gestión en pantalla SCTR/Vida Ley |
 >
 > No confundir con items de trabajador: en `ss_item_trabajador`, SCTR=11 y Vida Ley=13.
+
+---
+
+## §Sesión 2026-05-25 — SCTR/Vida Ley mejoras, fix duplicados trabajadores
+
+### sctr.model.ts — campos nuevos
+
+`SctrWorkerDto`: añadido `vigencia?: string` (fecha vencimiento por trabajador en `ss_sctr_vidaley_worker`).
+
+`SctrTrabajadorEstadoDto`: añadidos `fechaVencimiento?: string` y `updatedAt?: string` (para ordenar Tab Trabajadores por más reciente).
+
+### sctr-vidaley — filtro proyecto client-side (Tab Pólizas)
+
+`filtroProyecto = ''` en `sctr-vidaley.ts`.
+
+Getter `proyectosDisponibles: string[]` — valores únicos de `documentos.map(d => d.proyectoNombre)`, A→Z con `localeCompare('es')`.
+
+Getter `filteredDocumentos: SctrVidaLeyDto[]` — filtra por `proyectoNombre === filtroProyecto` (sin request al backend). `*ngFor` en lista de docs cambia a `filteredDocumentos`.
+
+Dropdown `<select [(ngModel)]="filtroProyecto">` al final de `.filters-row` en `sctr-vidaley.html`.
+
+### sctr-vidaley — aprobación masiva desde panel derecho (Tab Pólizas)
+
+Propiedades nuevas: `docWorkersSeleccionados = new Set<number>()`, `savingDocAprobar = false`.
+
+Getters: `docAllChecked`, `docSomeChecked`, `canAprobarDoc`.
+
+Métodos: `toggleDocWorker`, `toggleAllDocWorkers`, `aprobarDocWorkersSeleccionados` (Swal confirm → `sctrService.aprobar(selectedDoc.id, dto)` con `tipo: selectedDoc.tipo`), `aprobarTodosDocWorkers` (Swal confirm → mismo endpoint con todos los workers). `clearDocPanel()` resetea también `docWorkersSeleccionados`.
+
+`sctr-vidaley.html` — `.sctr-split-right`:
+- Header `.sctr-workers-header` (`*ngIf="isAdmin()"`) con checkbox "Seleccionar todos" (`[indeterminate]`), contador y botón "Aprobar todos".
+- Cada `.sctr-worker-item` tiene checkbox admin-only (`stopPropagation` para no interferir con `selectPolizaWorker`).
+- Footer `.sctr-split-actions-bar` (`*ngIf="isAdmin()"`) con contador + botón "Aprobar seleccionados".
+- Worker cards muestran `w.vigencia` si existe: `{{ w.vigencia | date:'dd/MM/yyyy' }}`.
+
+`sctr-vidaley.css`: nuevas clases `.sctr-workers-header` y `.sctr-split-actions-bar`. Split ratio: `.sctr-split-left { flex: 0 0 60% }` (era 70%), `.sctr-split-right { flex: 0 0 40% }` (era 30%).
+
+### sctr-vidaley — filtros client-side en Tab Trabajadores
+
+Propiedades nuevas: `wFiltroNombre = ''`, `wFiltroEmpresaTexto = ''`.
+
+Getter `filteredTrabajadores: SctrTrabajadorEstadoDto[]`: filtra por nombre y empresa (text libre case-insensitive), ordena por `updatedAt` desc (null al final). `*ngFor` cambia a `filteredTrabajadores`. Cards muestran `fechaVencimiento` si existe.
+
+Dos inputs `.wfilters-text-row` (Buscar nombre + Buscar empresa) encima del `.wfilters-grid` en `sctr-vidaley.html`. Nueva clase CSS `.wfilters-text-row { display: flex; gap: 0.5rem }`.
+
+### trabajadores — fix deduplicación por workerId (línea 209)
+
+**Causa**: el backend retorna múltiples filas para el mismo `workerId` cuando un worker tiene ≥2 proyectos activos (JOIN con proyectos). Frontend los mostraba todos como cards duplicadas.
+
+**Fix** en `loadWorkers()` después de recibir `res.data`:
+```ts
+this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
+```
+El `Map` con clave `workerId` deduplica conservando la última aparición por worker.
