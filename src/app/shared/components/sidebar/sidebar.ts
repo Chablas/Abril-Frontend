@@ -125,6 +125,11 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
+    if (module.key === 'control-acceso') {
+      this.router.navigate(['/habilitacion/control-acceso']);
+      this.activeMenu = null;
+      return;
+    }
     this.toggleMenu(module.key);
   }
 
