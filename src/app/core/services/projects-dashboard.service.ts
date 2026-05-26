@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ProjectsDashboardDTO,
   ProjectsDashboardFiltersDTO,
+  ProyectoDetalleDTO,
 } from '../dtos/projects-dashboard/projectsDashboard.model';
 
 function buildAuthHeaders(): Record<string, string> {
@@ -16,6 +17,8 @@ export interface ProjectsDashboardParams {
   proyectoId?: number | null;
   estado?: string;
   responsableArqComId?: number | null;
+  fechaDesde?: string;
+  fechaHasta?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,9 +39,17 @@ export class ProjectsDashboardService {
     if (params.estado) httpParams = httpParams.set('estado', params.estado);
     if (params.responsableArqComId)
       httpParams = httpParams.set('responsableArqComId', String(params.responsableArqComId));
+    if (params.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
+    if (params.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
     return this.http.get<ProjectsDashboardDTO>(this.base, {
       headers: buildAuthHeaders(),
       params: httpParams,
+    });
+  }
+
+  getProjectDetail(proyectoId: number): Observable<ProyectoDetalleDTO> {
+    return this.http.get<ProyectoDetalleDTO>(`${this.base}/${proyectoId}`, {
+      headers: buildAuthHeaders(),
     });
   }
 }

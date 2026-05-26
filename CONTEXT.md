@@ -1143,21 +1143,52 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 
 ---
 
-## Sesión 2026-05-20 — Dashboard de Proyectos
+## Sesión 2026-05-25 — Rediseño completo Dashboard de Proyectos (estilo Power BI)
 
-### Nuevos archivos creados
-- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs: `ProjectsDashboardFilterItemDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`
-- `core/services/projects-dashboard.service.ts` — `getFilters()` y `getDashboard(params)`. Patrón SSR-safe con `buildAuthHeaders()` defensivo. Interfaz `ProjectsDashboardParams` exportada.
-- `features/projects/projects-dashboard/projects-dashboard.ts` — Componente standalone. `forkJoin` en `ngOnInit` para cargar filtros + datos en paralelo. Arrays de filtros declarados como propiedades planas (`proyectos`, `estados`, `responsablesArqCom`) inicializadas a `[]` para evitar `undefined` en `SearchSelect`.
-- `features/projects/projects-dashboard/projects-dashboard.html` — 4 KPI cards, filtros con `SearchSelect` (proyecto, responsable) y `<select>` nativo (estado), tabla con barras de avance dobles y badges de retraso.
-- `features/projects/projects-dashboard/projects-dashboard.css` — Sistema de diseño completo: `.card`, `.kpi-card`, `.kpi-alert`, `.kpi-green`, `.btn-primary`, `.btn-ghost`, `.field-label`, `.field-input`, `.data-table`, `.badge`, chips, barras `.avance-bar-fill`, responsive en 1024px y 640px.
+Rediseño total de `features/projects/projects-dashboard/`. Los 3 endpoints del backend ya estaban listos.
 
-### Cambios en archivos existentes
-- `features/projects/proyectos-routing-module.ts` — Ruta `projects-dashboard` añadida. **Sin `canActivate: [roleGuard]` y sin `featureKey` temporalmente** (para pruebas). Restaurar cuando esté validado.
-- `core/navigation/navigation.service.ts` — Item "Dashboard de Proyectos" añadido como primer ítem del módulo `proyectos`, con `featureKey: 'projects.projects-dashboard'`.
+### Endpoints consumidos
+- `GET /api/v1/projects-dashboard/filters` → proyectos, estados, responsablesArqCom, especialidades?
+- `GET /api/v1/projects-dashboard?proyectoId=&estado=&responsableArqComId=&fechaDesde=&fechaHasta=`
+- `GET /api/v1/projects-dashboard/{proyectoId}` → detalle con Gantt y actividades críticas
 
-### Pitfall SearchSelect
-`SearchSelect` lanza `Cannot read properties of undefined (reading 'length')` si `[options]` recibe `undefined`. Solución: declarar los arrays como propiedades planas del componente con valor inicial `[]`, y al asignar desde la API usar `?? []`. **No** usar `filters.proyectos` directamente en `[options]` si `filters` puede llegar con campos nulos del backend.
+### DTOs actualizados (`core/dtos/projects-dashboard/projectsDashboard.model.ts`)
+Nuevas interfaces añadidas:
+- `DistribucionEstadoDTO { estado, cantidad, porcentaje }`
+- `RankingResponsableDTO { posicion, nombre, proyectos, completadas, vencidas, score }`
+- `HeatmapSemanaDTO { semana, cantidad }`, `HeatmapResponsableDTO { responsable, semanas[] }`
+- `ActividadCriticaDTO { nombre, responsable, fechaFin, diasRetraso }`
+- `GanttTareaDTO { id, text, start_date, duration, parent?, progress?, open? }`
+- `ProyectoDetalleDTO { proyectoId, avanceProgramado, avanceReal, diasRetraso, semaforo, actividadesVencidas[], actividadesCriticas[], gantt{tasks,links} }`
+
+`ProjectsDashboardItemDTO` ampliado: `+diasRetraso: number`, `+semaforo: 'verde'|'amarillo'|'rojo'`, `+actividadesVencidas: number`.
+`ProjectsDashboardDTO` ampliado: `+actividadesVencidas: number`, `+distribucionPorEstado[]`, `+rankingResponsables[]`, `+heatmapCarga[]`.
+
+### Servicio actualizado (`core/services/projects-dashboard.service.ts`)
+- `ProjectsDashboardParams` ampliado: `+fechaDesde?`, `+fechaHasta?`.
+- Nuevo método `getProjectDetail(proyectoId: number): Observable<ProyectoDetalleDTO>` → `GET /projects-dashboard/{id}`.
+
+### Componente (`features/projects/projects-dashboard/`)
+
+**8 secciones en el template:**
+1. **4 KPI cards** con borde superior corporativo: Total Proyectos (azul `#2596be`), Avance Promedio (verde `#63bf03`), Con Retraso (rojo), Actividades Vencidas (naranja).
+2. **Filtros** en grid 7 cols: Proyecto (SearchSelect), Responsable (SearchSelect), Estado, Especialidad, Fecha Desde, Fecha Hasta, [Buscar / Limpiar].
+3. **Donut Chart.js** — distribución por estado (`distribucionPorEstado`). `cutout: '62%'`, `chartjs-plugin-datalabels` muestra porcentaje en sectores ≥ 5%.
+4. **Barras horizontales Chart.js** — avance programado vs real, top 12 proyectos, color de la barra Real según semáforo verde/amarillo/rojo.
+5. **Heatmap** — tabla HTML con intensidad de color CSS (blanco → `#2596be`). Filas: responsables. Columnas: semanas. Se oculta con `*ngIf` si `heatmapCarga` está vacío.
+6. **Ranking de responsables** — tabla con badges posición (oro/plata/bronce para top 3).
+7. **Tabla de proyectos** — semáforo dot, barras dobles (prog/real), días retraso, actividades vencidas. Clic en fila → abre panel lateral.
+8. **Panel lateral deslizable** — `position: fixed; transform: translateX(100%)` → `.panel-open { translateX(0) }`. Contiene: KPIs del proyecto, tabs Gantt / Actividades críticas, dhtmlx-gantt (`declare const gantt: any`).
+
+**Patrones importantes del componente:**
+- Charts init: `setTimeout(80ms)` tras `cdr.detectChanges()` para garantizar que el canvas está en el DOM.
+- Gantt init: `setTimeout(200ms)` en el callback del `getProjectDetail`. `ganttInitialized = false` en `closePanel()` para re-init al abrir otro proyecto (el container se recrea vía `*ngIf="detalle && !panelLoading"`).
+- `avancePromedio` null-safe: `(data.avancePromedio ?? 0) | number:'1.0-1'` en el template para evitar `"null%"`.
+- `Chart.register(...registerables, ChartDataLabels)` al nivel de módulo (una sola vez).
+
+**Colores corporativos del dashboard:**
+- Azul: `#2596be` (CSS var `--azul`) — diferente del legacy `#0086A5`
+- Verde: `#63bf03` (CSS var `--verde`) — casi igual al verde app `#64bc04`
 
 ### Pendiente para prod
 - Restaurar `canActivate: [roleGuard]` y `data: { ..., featureKey: 'projects.projects-dashboard' }` en `proyectos-routing-module.ts`.
