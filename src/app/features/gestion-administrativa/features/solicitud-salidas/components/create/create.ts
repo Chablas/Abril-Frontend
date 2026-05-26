@@ -43,7 +43,13 @@ export class SolicitudSalidaCreate implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  formData: SolicitudSalidaFormDataDto = { motivos: [], lugares: [], aprobadorEmail: null };
+  formData: SolicitudSalidaFormDataDto = {
+    motivos: [],
+    lugares: [],
+    aprobadorEmail: null,
+    esTI: false,
+    trayectosCatalogo: [],
+  };
 
   fechaSalida = '';
   trayectos: TrayectoForm[] = [];
@@ -144,6 +150,19 @@ export class SolicitudSalidaCreate implements OnInit {
     if (t.lugarDestinoId == null) return '';
     const lugar = (this.formData.lugares ?? []).find((l: any) => l.id === t.lugarDestinoId);
     return lugar?.nombreDisplay ?? '';
+  }
+
+  /**
+   * Devuelve el monto del catálogo `ga_trayecto` para el trayecto si existe match.
+   * Solo aplica para trabajadores TI; null en cualquier otro caso.
+   */
+  montoCatalogoTrayecto(t: TrayectoForm): number | null {
+    if (!this.formData.esTI) return null;
+    if (t.lugarOrigenId == null || t.lugarDestinoId == null) return null;
+    const match = this.formData.trayectosCatalogo.find(
+      (c) => c.lugarOrigenId === t.lugarOrigenId && c.lugarDestinoId === t.lugarDestinoId,
+    );
+    return match ? match.monto : null;
   }
 
   // ── Pickers de hora (mismo patrón que antes, ahora por trayecto) ───

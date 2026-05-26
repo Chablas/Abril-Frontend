@@ -1,7 +1,9 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { UserFeatureService } from '../services/user-feature.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { UserListItemDto } from '../../../../../core/dtos/user/userListItem.model';
@@ -16,7 +18,7 @@ import Swal from 'sweetalert2';
   templateUrl: './list.html',
   styleUrl: './list.css',
 })
-export class UserList implements OnInit {
+export class UserList implements OnInit, OnDestroy {
   tableData: PagedResponseDTO<UserListItemDto> = {
     page: 0,
     pageSize: 0,
@@ -26,6 +28,10 @@ export class UserList implements OnInit {
   };
 
   searchTerm = '';
+
+  /** Stream para debouncing del input — evita fetchs en cada tecla. */
+  private search$ = new Subject<string>();
+  private destroy$ = new Subject<void>();
 
   @Output() pagedData = new EventEmitter<PagedResponseDTO<UserListItemDto>>();
   @Output() editUser = new EventEmitter<UserListItemDto>();
@@ -41,22 +47,27 @@ export class UserList implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Debounce 300ms para no disparar request por cada tecla.
+    this.search$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => this.loadUsers(1));
+
     setTimeout(() => this.loadUsers());
   }
 
-  get filteredData(): UserListItemDto[] {
-    const term = this.searchTerm.trim().toLowerCase();
-    if (!term) return this.tableData.data;
-    return this.tableData.data.filter((u) => {
-      const name = (u.displayName ?? u.email).toLowerCase();
-      const doc = (u.documentIdentityCode ?? '').toLowerCase();
-      return name.includes(term) || doc.includes(term) || u.email.toLowerCase().includes(term);
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    this.search$.next(value);
   }
 
   loadUsers(page: number = 1) {
     this.loaderService.show();
-    this.userFeatureService.getUserPaged(page).subscribe({
+    this.userFeatureService.getUserPaged(page, 10, this.searchTerm).subscribe({
       next: (response) => {
         this.tableData = response;
         this.pagedData.emit(response);

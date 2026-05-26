@@ -19,8 +19,9 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Lugares',  route: '/gestion-administrativa/configuracion/lugares',  featureKey: 'gestion-administrativa.config.lugares' },
-            { label: 'Motivos',  route: '/gestion-administrativa/configuracion/motivos',  featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
           ],
         },
       ],
