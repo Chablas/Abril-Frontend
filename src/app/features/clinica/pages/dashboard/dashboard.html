@@ -1,0 +1,70 @@
+<div class="dash-root">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div>
+      <h2 class="dash-title">Clínica Ocupacional</h2>
+      <p class="dash-sub">{{ hoy }}</p>
+    </div>
+  </div>
+
+  <!-- Nav cards -->
+  <div class="nav-cards">
+    <button (click)="ir('agenda')" class="nav-card">
+      <div class="nav-icon" style="background:#eff6ff;color:#2563eb;">📋</div>
+      <div>
+        <div class="nav-label">Agenda del Día</div>
+        <div class="nav-sub">Programaciones de hoy</div>
+      </div>
+    </button>
+    <button (click)="ir('programaciones')" class="nav-card">
+      <div class="nav-icon" style="background:#f0fdf4;color:#16a34a;">📅</div>
+      <div>
+        <div class="nav-label">Programaciones</div>
+        <div class="nav-sub">Historial y seguimiento</div>
+      </div>
+    </button>
+    <button (click)="ir('interconsultas')" class="nav-card">
+      <div class="nav-icon" style="background:#fff7ed;color:#ea580c;">🔬</div>
+      <div>
+        <div class="nav-label">Interconsultas</div>
+        <div class="nav-sub">Derivaciones pendientes</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- Métricas hoy -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Programadas hoy</div>
+      <div class="metric-value">{{ loading ? '—' : progHoy }}</div>
+      <div class="metric-sub">Total del día</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Por confirmar</div>
+      <div class="metric-value metric-orange">{{ loading ? '—' : progPendientes }}</div>
+      <div class="metric-sub">Esperan aceptación</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">En proceso</div>
+      <div class="metric-value metric-blue">{{ loading ? '—' : progEnAtencion }}</div>
+      <div class="metric-sub">Aceptadas / en atención</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Completadas hoy</div>
+      <div class="metric-value metric-green">{{ loading ? '—' : progCompletadas }}</div>
+      <div class="metric-sub">EMOs registrados</div>
+    </div>
+    <div class="metric-card metric-alert" [class.has-alert]="interconsultasPendientes > 0">
+      <div class="metric-label">Interconsultas pend.</div>
+      <div class="metric-value" [class.metric-red]="interconsultasPendientes > 0">{{ interconsultasPendientes }}</div>
+      <div class="metric-sub">Requieren seguimiento</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Esta semana</div>
+      <div class="metric-value">{{ progSemana }}</div>
+      <div class="metric-sub">Total programadas</div>
+    </div>
+  </div>
+
+</div>

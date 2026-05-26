@@ -130,6 +130,11 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
+    if (module.key === 'clinica') {
+      this.router.navigate(['/clinica/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
     this.toggleMenu(module.key);
   }
 

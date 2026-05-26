@@ -5,10 +5,9 @@
       <h2 class="section-title">Agenda del Día</h2>
       <p class="section-sub">{{ fechaHoy() }}</p>
     </div>
-    <div style="display:flex;align-items:center;gap:0.5rem;">
-      <span class="badge border bg-gray-100 text-gray-700 border-gray-200" style="font-size:0.82rem;padding:0.35rem 0.75rem;">
-        Atendidos: {{ capacidadOcupada }}
-      </span>
+    <div class="agenda-stats">
+      <span class="stat-chip">Total: {{ totalHoy }}</span>
+      <span class="stat-chip">Atendidos: {{ capacidadOcupada }}</span>
       <button class="btn-ghost" (click)="load()">↺ Actualizar</button>
     </div>
   </div>
@@ -17,73 +16,74 @@
 
   <ng-container *ngIf="!loading">
 
-    <!-- PENDIENTES DE CONFIRMAR -->
+    <!-- SIN PROGRAMACIONES -->
+    <div *ngIf="items.length === 0" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">No hay programaciones para hoy</div>
+    </div>
+
+    <!-- POR CONFIRMAR -->
     <div class="agenda-section" *ngIf="pendientes.length > 0">
-      <div class="agenda-section-label label-blue">Por confirmar ({{ pendientes.length }})</div>
+      <div class="agenda-section-label label-blue">
+        ⏳ Por confirmar ({{ pendientes.length }})
+      </div>
       <div class="agenda-card" *ngFor="let item of pendientes">
         <div class="card-top">
           <span class="worker-name">{{ item.workerNombre }}</span>
           <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="btn-chip chip-blue badge">{{ item.estado }}</span>
+          <span class="badge-chip chip-blue">{{ item.estado }}</span>
         </div>
         <div class="card-meta">
           <span>{{ item.tipoEmo }}</span>
           <span *ngIf="item.horaProgramada">· {{ item.horaProgramada }}</span>
           <span>· {{ item.empresa }}</span>
         </div>
-
-        <!-- Input rechazo inline -->
         <div class="rechazo-box" *ngIf="rechazandoId === item.id">
           <input class="field-input" [(ngModel)]="motivoRechazo" placeholder="Motivo de rechazo *" />
           <div class="rechazo-actions">
             <button class="btn-ghost" (click)="rechazandoId = null">Cancelar</button>
-            <button class="btn-primary" [disabled]="!motivoRechazo.trim()" (click)="confirmarRechazo(item)">
-              Confirmar rechazo
-            </button>
+            <button class="btn-primary" [disabled]="!motivoRechazo.trim()" (click)="confirmarRechazo(item)">Confirmar</button>
           </div>
         </div>
-
         <div class="card-actions" *ngIf="rechazandoId !== item.id">
-          <button class="btn-chip chip-green" [disabled]="accionando === item.id" (click)="aceptar(item)">
-            ✓ Aceptar
+          <button class="btn-action btn-accept" [disabled]="accionando === item.id" (click)="aceptar(item)">
+            ✓ Aceptar programación
           </button>
-          <button class="btn-chip chip-red" [disabled]="accionando === item.id" (click)="iniciarRechazo(item.id)">
+          <button class="btn-action btn-reject" [disabled]="accionando === item.id" (click)="iniciarRechazo(item.id)">
             ✕ Rechazar
           </button>
         </div>
       </div>
     </div>
 
-    <!-- EN ATENCIÓN -->
+    <!-- CONFIRMADOS / EN ATENCIÓN -->
     <div class="agenda-section" *ngIf="aceptados.length > 0">
-      <div class="agenda-section-label label-green">En atención ({{ aceptados.length }})</div>
+      <div class="agenda-section-label label-green">
+        ✓ Confirmados — en proceso ({{ aceptados.length }})
+      </div>
       <div class="agenda-card" *ngFor="let item of aceptados">
         <div class="card-top">
           <span class="worker-name">{{ item.workerNombre }}</span>
           <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="btn-chip badge" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+          <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
         </div>
         <div class="card-meta">
           <span>{{ item.tipoEmo }}</span>
           <span>· {{ item.empresa }}</span>
-          <span *ngIf="item.checkInHora">· Ingresó {{ item.checkInHora }}</span>
+          <span *ngIf="item.checkInHora" class="check-in-badge">· ✓ Ingresó {{ item.checkInHora }}</span>
         </div>
         <div class="card-actions">
-          <button
-            class="btn-chip chip-orange"
+          <button class="btn-action btn-checkin"
             *ngIf="item.estado === 'Aceptado por Clínica'"
             [disabled]="accionando === item.id"
-            (click)="checkIn(item)"
-          >
-            ⏱ Check-in
+            (click)="checkIn(item)">
+            ⏱ Registrar asistencia
           </button>
-          <button
-            class="btn-chip chip-green"
+          <button class="btn-action btn-complete"
             *ngIf="item.estado === 'En Atención'"
             [disabled]="accionando === item.id"
-            (click)="abrirCompletar(item)"
-          >
-            ✓ Registrar resultado
+            (click)="abrirCompletar(item)">
+            📋 Registrar resultado EMO
           </button>
         </div>
       </div>
@@ -91,22 +91,23 @@
 
     <!-- CERRADOS -->
     <div class="agenda-section" *ngIf="completados.length > 0">
-      <div class="agenda-section-label label-gray">Cerrados ({{ completados.length }})</div>
+      <div class="agenda-section-label label-gray">
+        Cerrados ({{ completados.length }})
+      </div>
       <div class="agenda-card card-muted" *ngFor="let item of completados">
         <div class="card-top">
           <span class="worker-name">{{ item.workerNombre }}</span>
           <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="btn-chip badge" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+          <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
         </div>
         <div class="card-meta">
           <span>{{ item.tipoEmo }}</span>
           <span>· {{ item.empresa }}</span>
           <span *ngIf="item.motivoRechazo">· {{ item.motivoRechazo }}</span>
+          <span *ngIf="item.checkInHora">· Ingresó {{ item.checkInHora }}</span>
         </div>
       </div>
     </div>
-
-    <div *ngIf="items.length === 0" class="empty-row">No hay programaciones para hoy.</div>
 
   </ng-container>
 </div>

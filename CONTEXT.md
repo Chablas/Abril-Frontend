@@ -57,7 +57,7 @@ src/app/
 └── features/
     ├── arquitectura-comercial/   # NgModule
     ├── auth/                     # NgModule (login, msal, set-password)
-    ├── clinica/                  # standalone routes (agenda, programaciones, activar cuenta pública)
+    ├── clinica/                  # standalone routes (dashboard, agenda, programaciones, interconsultas, activar cuenta pública)
     ├── configuracion/            # standalone routes (admin: empresas, proyectos, trabajadores)
     ├── contractors/              # standalone routes (pública + admin)
     ├── costs/                    # NgModule (adjudicaciones)
@@ -120,7 +120,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /ssoma                                   → SSOMA_ROUTES
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
-   /clinica                                 → CLINICA_ROUTES
+   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas)
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -553,6 +553,37 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
+### `features/clinica/` — ✅ Módulo Clínica (nuevo en 2026-05-26)
+Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey).
+
+**Sub-rutas** (`clinica.routes.ts`):
+```
+/clinica              → redirect 'dashboard'
+/clinica/dashboard    → ClinicaDashboard  (métricas hoy + nav a subrutas)
+/clinica/agenda       → Agenda            (programaciones del día + acciones)
+/clinica/programaciones → ProgramacionesClinica (historial filtrable)
+/clinica/interconsultas → InterconsultasClinica (derivaciones pendientes)
+/clinica/activar      → ActivarClinica    (público)
+```
+
+**Sidebar**: entrada única en `navigation.service.ts` (`key: 'clinica'`, 1 item → `/clinica/dashboard`). `sidebar.ts:onModuleClick` para `'clinica'` navega directo (sin dropdown) — mismo patrón que `control-acceso`.
+
+**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes.
+
+**Agenda** (`pages/agenda/`): Sections por estado: "Por confirmar" (Programado), "Confirmados/en proceso" (Aceptado/En Atención), "Cerrados". Acciones por card: Aceptar, Rechazar (con motivo inline), CheckIn, Completar (abre `CompletarEmo`). Servicios: `ClinicaProgramacionService` (GET/PATCH `clinica-accion`). CSS propio con `btn-action`, `agenda-section-label`, `stat-chip`.
+
+**Programaciones** (`pages/programaciones/`): tabla con filtros `desde/hasta/estado`. CSS propio con `prog-table-card`, `badge-chip`.
+
+**Interconsultas** (`pages/interconsultas/`): tabla con filtros `estado/search`. Modal inline para resolver (campos: estado, fechaAtencion, CIE-10, diagnóstico, resultado, urlInforme, notas). Fila `row-urgente` (borde rojo) cuando `diasPendiente >= 7`. Usa `InterconsultaService` de SSOMA (`../../../ssoma/salud-ocupacional/services/interconsulta.service`). El callback de `getInterconsultas` usa `res.items ?? res.data ?? res ?? []` (defensivo frente a formato del backend).
+
+**Servicios de Clínica** (`features/clinica/services/clinica-programacion.service.ts`):
+- Base: `${apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`
+- `getProgramacionesHoy(clinicaId?)` → GET con `desde=hoy&hasta=hoy`
+- `getProgramacionesFiltradas({ desde, hasta, estado })` → GET con filtros
+- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId? }`
+
+**DTOs** (`features/clinica/dtos/clinica.model.ts`): `ProgramacionClinicaDto`, `ClinicaAccionDto`, `EstadoProgramacionClinica`.
+
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
@@ -600,8 +631,13 @@ Plataforma completa mobile-first.
   - `empresa.ts`: `guardarAdmin()` renombrado a `guardarEntregable()` con rama contratista idéntica.
 - **Botón "ENVIAR DOCUMENTO" eliminado** de `empresa.html` y `equipos.html` — flujo auto-save al subir.
 
+**Cambios 2026-05-26 — Módulo Clínica + integración Programar EMO en Trabajadores:**
+- **`ProgramacionCreate`** (`ssoma/salud-ocupacional/programaciones/components/programacion-create/`): nuevos `@Input() preselectedWorkerId` y `@Input() preselectedWorkerNombre`. `ngOnInit` pre-carga `this.worker` con los datos del worker pasado.
+- **`trabajadores.ts`** (`habilitacion/pages/trabajadores/`): importa `ProgramacionCreate`. Propiedades `mostrarProgramarEmo`, `workerParaProgramarEmo`. Métodos `abrirProgramarEmo(worker)` y `onProgramarEmoSaved()`.
+- **`trabajadores.html`**: `<app-programacion-create *ngIf="mostrarProgramarEmo">` al final del template con `preselectedWorkerId` y `preselectedWorkerNombre` bindings.
+
 ### Branches actuales
-- Working: `feature/arquitectura-comercial`.
+- Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
 - Main para PRs: `master`.
 
 ---

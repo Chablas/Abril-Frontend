@@ -39,12 +39,13 @@ import { WorkerCreateEdit } from './components/worker-create-edit/worker-create-
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
+import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit, ProgramacionCreate],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -104,6 +105,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarHistorial = false;
   mostrarAgregarProyecto = false;
   mostrarProgramarInduccion = false;
+  mostrarProgramarEmo = false;
+  workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
@@ -920,5 +923,15 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.modalWorkerOpen = false;
     this.search = dni;
     this.loadWorkers(1);
+  }
+
+  abrirProgramarEmo(worker: WorkerHabilitacionListDto): void {
+    this.workerParaProgramarEmo = worker;
+    this.mostrarProgramarEmo = true;
+  }
+
+  onProgramarEmoSaved(): void {
+    this.mostrarProgramarEmo = false;
+    this.workerParaProgramarEmo = null;
   }
 }

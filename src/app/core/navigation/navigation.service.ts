@@ -186,15 +186,8 @@ export class NavigationService {
       label: 'Clínica',
       iconKey: 'clinica',
       baseRoute: '/clinica',
-      items: [],
-      groups: [
-        {
-          label: 'Gestión',
-          items: [
-            { label: 'Agenda del Día', route: '/clinica/agenda',           featureKey: 'clinica.agenda' },
-            { label: 'Programaciones', route: '/clinica/programaciones', featureKey: 'clinica.programaciones' },
-          ],
-        },
+      items: [
+        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
       ],
     },
     {

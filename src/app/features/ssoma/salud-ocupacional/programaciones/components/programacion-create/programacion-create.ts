@@ -35,6 +35,8 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 })
 export class ProgramacionCreate implements OnInit {
   @Input() open = false;
+  @Input() preselectedWorkerId: number | null = null;
+  @Input() preselectedWorkerNombre: string | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
@@ -80,6 +82,14 @@ export class ProgramacionCreate implements OnInit {
       this.medicos = res;
       this.cdr.detectChanges();
     });
+    if (this.preselectedWorkerId && this.preselectedWorkerNombre) {
+      this.worker = {
+        id: this.preselectedWorkerId,
+        apellidoNombre: this.preselectedWorkerNombre,
+        dni: '',
+        activo: true,
+      } as WorkerSearchItemDto;
+    }
   }
 
   onWorkerSelected(w: WorkerSearchItemDto | null): void {

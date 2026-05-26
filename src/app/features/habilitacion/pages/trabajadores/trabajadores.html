@@ -708,3 +708,11 @@
   (closed)="mostrarProgramarInduccion = false"
   (saved)="mostrarProgramarInduccion = false"
 />
+<app-programacion-create
+  *ngIf="mostrarProgramarEmo"
+  [open]="mostrarProgramarEmo"
+  [preselectedWorkerId]="workerParaProgramarEmo?.workerId ?? null"
+  [preselectedWorkerNombre]="workerParaProgramarEmo?.apellidoNombre ?? null"
+  (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
+  (saved)="onProgramarEmoSaved()"
+></app-programacion-create>
