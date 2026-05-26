@@ -55,7 +55,7 @@ export interface EmoRestriccionDto {
 export interface EmoCreateDto {
   workerId: number;
   tipoEmoId: number;
-  empresaOrigenId: number;
+  empresaOrigenId?: number;
   fechaEmo: string;
   clinicaId?: number;
   medicoId?: number;

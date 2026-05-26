@@ -46,8 +46,8 @@ export class EmoService {
     });
   }
 
-  createEmo(dto: EmoCreateDto): Observable<EmoDetalleDto> {
-    return this.http.post<EmoDetalleDto>(this.apiUrl, dto, {
+  createEmo(dto: EmoCreateDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(this.apiUrl, dto, {
       headers: buildAuthHeaders(),
     });
   }

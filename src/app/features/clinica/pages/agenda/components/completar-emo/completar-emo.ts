@@ -1,14 +1,15 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
 import { EmoCreateDto, InterconsultaInlineCreateDto, EmoRestriccionCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from '../../../../../ssoma/salud-ocupacional/services/http-base';
 import { ClinicaProgramacionService } from '../../../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto } from '../../../../dtos/clinica.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
-import { environment } from '../../../../../../../environments/environment';
 
 @Component({
   selector: 'app-completar-emo',
@@ -54,6 +55,7 @@ export class CompletarEmo implements OnChanges {
   }
 
   constructor(
+    private http: HttpClient,
     private emoSvc: EmoService,
     private progSvc: ClinicaProgramacionService,
     private errorService: ErrorService,
@@ -99,16 +101,19 @@ export class CompletarEmo implements OnChanges {
   close(): void { this.closed.emit(); }
 
   private subirDocumentos(emoId: number): void {
-    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/emos/${emoId}/documentos`;
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
-    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const url = `${SALUD_OCUPACIONAL_BASE}/emos/${emoId}/documentos`;
+    const headers = buildAuthHeaders();
     if (this.archivoAptitud) {
-      const fd = new FormData(); fd.append('file', this.archivoAptitud); fd.append('tipo', 'Aptitud');
-      fetch(base, { method: 'POST', headers, body: fd }).catch(() => {});
+      const fd = new FormData();
+      fd.append('file', this.archivoAptitud);
+      fd.append('tipo', 'Aptitud');
+      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
     }
     if (this.archivoEmo) {
-      const fd = new FormData(); fd.append('file', this.archivoEmo); fd.append('tipo', 'EMO');
-      fetch(base, { method: 'POST', headers, body: fd }).catch(() => {});
+      const fd = new FormData();
+      fd.append('file', this.archivoEmo);
+      fd.append('tipo', 'EMO');
+      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
     }
   }
 
@@ -134,7 +139,7 @@ export class CompletarEmo implements OnChanges {
     const emoDto: EmoCreateDto = {
       workerId: this.programacion.workerId,
       tipoEmoId: this.programacion.tipoEmoId ?? 0,
-      empresaOrigenId: this.programacion.empresaId ?? 0,
+      empresaOrigenId: this.programacion.empresaId ?? undefined,
       fechaEmo: new Date().toISOString().split('T')[0],
       aptitud: this.aptitud,
       requiereInterconsulta: this.requiereInterconsulta,
