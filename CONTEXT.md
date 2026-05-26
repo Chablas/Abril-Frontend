@@ -2214,3 +2214,95 @@ isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
 - **`GET /ssoma/salud-ocupacional/catalogos/empresas`** — agregar `WHERE es_abril = true` en el query de `contributor`. Actualmente devuelve todas las empresas (campo `es_abril = false` en todos los registros históricos — verificar que los registros Abril tengan el campo correcto antes de activar el filtro).
 - **Búsqueda `GET /emos/por-trabajador?search=`** — verificar que el WHERE del backend incluya `ApellidoNombre.Contains(search, OrdinalIgnoreCase)` además de DNI. El filtrado es 100% backend (no hay filtrado local en el frontend).
 - **Mapear `empresaOrigenNombre` y `proyectoNombre`** en el response del endpoint `GET /emos/por-trabajador`.
+
+---
+
+## §Sesión 2026-05-26 (segunda parte) — Clínica: CompletarEmo con interconsulta inline y restricciones
+
+### `emo.model.ts` — nuevos campos y nueva interfaz
+
+**`EmoCreateDto`**: añadidos dos campos opcionales al final:
+```ts
+fechaLectura?: string;
+interconsultaInline?: InterconsultaInlineCreateDto;
+```
+
+**`EmoRestriccionCreateDto`**: añadido campo opcional:
+```ts
+vigente?: boolean;
+```
+
+**Nueva interfaz** `InterconsultaInlineCreateDto`:
+```ts
+export interface InterconsultaInlineCreateDto {
+  especialidad: string;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
+}
+```
+Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoint separado.
+
+---
+
+### `completar-emo` — reescritura completa (clínica)
+
+**Archivo:** `features/clinica/pages/agenda/components/completar-emo/`
+
+#### Lógica de negocio (completar-emo.ts)
+
+| Getter | Condición | Efecto en UI |
+|--------|-----------|--------------|
+| `requiereRestriccion` | `aptitud === 'Apto con Restricciones'` | Muestra sección restricciones |
+| `requiereInterconsulta` | `aptitud === 'No Apto' \|\| aptitud === 'Observado'` | Muestra sección interconsulta |
+| `canSubmit` | aptitud + programacion + !saving + (si interconsulta → icEspecialidad no vacío) | Habilita botón |
+
+**Restricciones** (`restricciones: { descripcionLibre }[]`):
+- `agregarRestriccion()` — push + limpiar input (o Enter en el campo)
+- `quitarRestriccion(i)` — splice por índice
+- Mapeado a `EmoRestriccionCreateDto[]` con `vigente: true` en `submit()`
+
+**Interconsulta inline** — campos locales `icEspecialidad`, `icCentro`, `icDiagnostico`, `icCie10`, `icRequiereSeguimiento`. Construye `InterconsultaInlineCreateDto` en `submit()` solo cuando `requiereInterconsulta`.
+
+**`fechaLectura`** — fecha opcional independiente de `fechaEmo` (que sigue siendo la fecha del día del registro).
+
+**Flujo `submit()`** (sin cambios en la cadena de llamadas):
+1. `EmoService.createEmo(emoDto)` → recibe `{ id }` del EMO creado.
+2. `ClinicaProgramacionService.accionClinica(programacionId, { accion: 'Completar', emoResultadoId })`.
+
+#### Template (completar-emo.html)
+
+- `width="w-[640px]"` (antes 600px — más espacio para sección interconsulta).
+- Grid 2 columnas `.grid-2`:
+  - Row: N° Informe / URL resultado
+  - Row: Fecha lectura EMO / Notas (antes solo Notas en `col-span-2`)
+  - `*ngIf="requiereRestriccion"` — sección restricciones con input+botón+lista pills
+  - `*ngIf="requiereInterconsulta"` — sección interconsulta con `section-divider`, campos Especialidad, Centro, CIE-10, Diagnóstico, checkbox Seguimiento
+  - Alertas contextuales: roja para "No Apto", naranja para "Observado"
+
+#### Estilos nuevos (completar-emo.css)
+
+```css
+.restriccion-row   { display: flex; gap: 8px; align-items: center }
+.restriccion-list  { margin-top: 8px; flex-col; gap: 4px }
+.restriccion-item  { flex row space-between; bg #f8fafc; border #e2e8f0; radius 6px; padding 4px 10px; font-size 0.82rem }
+.btn-remove        { color: #dc2626; font-size: 0.75rem }
+.section-divider   { 0.75rem uppercase #64748b; border-bottom #e2e8f0; padding-bottom 4px; margin-top 4px }
+```
+
+### Resumen de archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `ssoma/salud-ocupacional/dtos/emo.model.ts` | `EmoCreateDto` +2 campos; `EmoRestriccionCreateDto` +`vigente?`; nueva `InterconsultaInlineCreateDto` |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.ts` | Reescritura completa (restricciones + interconsulta inline + fechaLectura) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.html` | Reescritura completa (formulario expandido, 2 secciones condicionales, alertas) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.css` | Append: 5 clases nuevas para restricciones y section-divider |
+
+### Pendiente backend
+
+- `POST /emos` — aceptar campo `interconsultaInline` en el body y crear la interconsulta en la misma transacción.
+- `POST /emos` — aceptar `fechaLectura` y persistirlo en `worker_emos.fecha_lectura`.
+- `EmoRestriccionCreateDto.vigente` — confirmar que el backend mapea este campo o lo ignora sin error.

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
-import { EmoCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { EmoCreateDto, InterconsultaInlineCreateDto, EmoRestriccionCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { ClinicaProgramacionService } from '../../../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto } from '../../../../dtos/clinica.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -26,10 +26,29 @@ export class CompletarEmo implements OnChanges {
   numeroInforme = '';
   urlResultado = '';
   notas = '';
-  requiereInterconsulta = false;
+  fechaLectura = '';
   saving = false;
 
+  // Restricciones
+  restricciones: { descripcionLibre: string }[] = [];
+  nuevaRestriccion = '';
+
+  // Interconsulta inline
+  icEspecialidad = '';
+  icCentro = '';
+  icDiagnostico = '';
+  icCie10 = '';
+  icRequiereSeguimiento = false;
+
   readonly aptitudes = ['Apto', 'Apto con Restricciones', 'No Apto', 'Observado'];
+
+  get requiereRestriccion(): boolean {
+    return this.aptitud === 'Apto con Restricciones';
+  }
+
+  get requiereInterconsulta(): boolean {
+    return this.aptitud === 'No Apto' || this.aptitud === 'Observado';
+  }
 
   constructor(
     private emoSvc: EmoService,
@@ -47,12 +66,32 @@ export class CompletarEmo implements OnChanges {
     this.numeroInforme = '';
     this.urlResultado = '';
     this.notas = '';
-    this.requiereInterconsulta = false;
+    this.fechaLectura = '';
+    this.restricciones = [];
+    this.nuevaRestriccion = '';
+    this.icEspecialidad = '';
+    this.icCentro = '';
+    this.icDiagnostico = '';
+    this.icCie10 = '';
+    this.icRequiereSeguimiento = false;
     this.saving = false;
   }
 
+  agregarRestriccion(): void {
+    const txt = this.nuevaRestriccion.trim();
+    if (!txt) return;
+    this.restricciones.push({ descripcionLibre: txt });
+    this.nuevaRestriccion = '';
+  }
+
+  quitarRestriccion(i: number): void {
+    this.restricciones.splice(i, 1);
+  }
+
   get canSubmit(): boolean {
-    return !!this.aptitud && !!this.programacion && !this.saving;
+    if (!this.aptitud || !this.programacion || this.saving) return false;
+    if (this.requiereInterconsulta && !this.icEspecialidad.trim()) return false;
+    return true;
   }
 
   close(): void {
@@ -64,40 +103,56 @@ export class CompletarEmo implements OnChanges {
     this.saving = true;
     this.loaderService.show();
 
+    const restriccionesPayload: EmoRestriccionCreateDto[] = this.restricciones.map(r => ({
+      descripcionLibre: r.descripcionLibre,
+      vigente: true,
+    }));
+
+    let interconsultaInline: InterconsultaInlineCreateDto | undefined;
+    if (this.requiereInterconsulta) {
+      interconsultaInline = {
+        especialidad: this.icEspecialidad.trim(),
+        centroAtencion: this.icCentro.trim() || undefined,
+        diagnostico: this.icDiagnostico.trim() || undefined,
+        cie10: this.icCie10.trim() || undefined,
+        requiereSeguimiento: this.icRequiereSeguimiento,
+      };
+    }
+
     const emoDto: EmoCreateDto = {
       workerId: this.programacion.workerId,
       tipoEmoId: this.programacion.tipoEmoId ?? 0,
       empresaOrigenId: this.programacion.empresaId ?? 0,
       fechaEmo: new Date().toISOString().split('T')[0],
       aptitud: this.aptitud,
-      requiereInterconsulta: this.aptitud === 'Observado' && this.requiereInterconsulta,
+      requiereInterconsulta: this.requiereInterconsulta,
       numeroInforme: this.numeroInforme || undefined,
       urlResultado: this.urlResultado || undefined,
       notas: this.notas || undefined,
+      fechaLectura: this.fechaLectura || undefined,
       examenes: [],
-      restricciones: [],
+      restricciones: restriccionesPayload,
+      interconsultaInline,
     };
 
     this.emoSvc.createEmo(emoDto).subscribe({
       next: (res) => {
-        this.progSvc
-          .accionClinica(this.programacion!.id, {
-            id: this.programacion!.id,
-            accion: 'Completar',
-            emoResultadoId: res.id,
-          })
-          .subscribe({
-            next: () => {
-              this.saving = false;
-              this.loaderService.hide();
-              this.completado.emit();
-            },
-            error: (err) => {
-              this.saving = false;
-              this.loaderService.hide();
-              this.errorService.handleError(err);
-            },
-          });
+        this.progSvc.accionClinica(this.programacion!.id, {
+          id: this.programacion!.id,
+          accion: 'Completar',
+          emoResultadoId: res.id,
+        }).subscribe({
+          next: () => {
+            this.saving = false;
+            this.loaderService.hide();
+            this.completado.emit();
+          },
+          error: (err) => {
+            this.saving = false;
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
       },
       error: (err) => {
         this.saving = false;
