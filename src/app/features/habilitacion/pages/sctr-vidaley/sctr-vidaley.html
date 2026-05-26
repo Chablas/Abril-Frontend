@@ -1,94 +1,127 @@
 <div class="sctr-layout">
-  <div class="section-bar">
-    <div>
+
+  <!-- ── Compact top bar ──────────────────────────────────── -->
+  <div class="sctr-top">
+    <div class="sctr-top-row1">
       <h2 class="section-title">SCTR Y VIDA LEY</h2>
-      <p class="section-sub">Gestión de pólizas masivas por proyecto y mes</p>
-    </div>
-    <button
-      type="button"
-      class="btn-primary"
-      *ngIf="isContratista() || isAdmin()"
-      (click)="abrirSubir()"
-    >
-      + Subir SCTR / Vida Ley
-    </button>
-  </div>
-
-  <!-- Tab bar -->
-  <div class="tab-bar">
-    <button
-      type="button"
-      class="tab-btn"
-      [class.tab-btn--active]="activeTab === 'polizas'"
-      (click)="switchTab('polizas')"
-    >
-      Pólizas
-    </button>
-    <button
-      type="button"
-      class="tab-btn"
-      [class.tab-btn--active]="activeTab === 'trabajadores'"
-      (click)="switchTab('trabajadores')"
-      *ngIf="isAdmin()"
-    >
-      Trabajadores
-    </button>
-  </div>
-
-  <!-- PÓLIZAS: barra de filtros full-width -->
-  <div class="filters-card card" *ngIf="activeTab === 'polizas'">
-    <div class="filters-row">
-      <div class="filter-ss-wrap" *ngIf="isAdmin()">
-        <app-search-select
-          [options]="empresas"
-          valueField="id"
-          displayField="nombre"
-          [value]="filtroEmpresaId"
-          (valueChange)="onPolizaEmpresaChange($event)"
-          placeholder="Todas las empresas"
-        />
+      <div class="sctr-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.tab-btn--active]="activeTab === 'polizas'"
+          (click)="switchTab('polizas')"
+        >Pólizas</button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.tab-btn--active]="activeTab === 'trabajadores'"
+          (click)="switchTab('trabajadores')"
+          *ngIf="isAdmin()"
+        >Trabajadores</button>
       </div>
-      <select class="field-input filter-sel" *ngIf="selectedEmpresaEsAbril" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
-        <option value="">Obra y Oficina</option>
-        <option value="Obra">Obra</option>
-        <option value="Staff">Staff / Oficina Central</option>
-      </select>
-      <select class="field-input filter-sel" [(ngModel)]="filtroTipo" (change)="onFilter()">
-        <option value="">Todos los tipos</option>
-        <option value="SCTR">SCTR</option>
-        <option value="VIDA_LEY">Vida Ley</option>
-      </select>
-      <select class="field-input filter-sel" [(ngModel)]="filtroEstado" (change)="onFilter()">
-        <option value="">Todos los estados</option>
-        <option value="Enviado">Enviado</option>
-        <option value="Aprobado">Aprobado</option>
-        <option value="Parcial">Parcial</option>
-        <option value="Rechazado">Rechazado</option>
-        <option value="Falta">Falta</option>
-      </select>
-      <select class="field-input filter-sel" [(ngModel)]="filtroMes" (change)="onFilter()">
-        <option [ngValue]="null">Todos los meses</option>
-        <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
-      </select>
-      <input
-        type="number"
-        class="field-input filter-year"
-        [(ngModel)]="filtroAnio"
-        (change)="onFilter()"
-        placeholder="Año"
-        min="2020"
-        max="2100"
-      />
-      <select class="field-input filter-sel" [(ngModel)]="filtroProyecto">
-        <option value="">Todos los proyectos</option>
-        <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
-      </select>
+      <div style="flex:1"></div>
+      <button
+        type="button"
+        class="btn-primary btn-action-sm"
+        *ngIf="isContratista() || isAdmin()"
+        (click)="abrirSubir()"
+      >+ Subir SCTR / Vida Ley</button>
+    </div>
+    <div class="sctr-top-filters" *ngIf="activeTab === 'polizas'">
+      <div class="filters-row">
+        <div class="filter-ss-wrap" *ngIf="isAdmin()">
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="filtroEmpresaId"
+            (valueChange)="onPolizaEmpresaChange($event)"
+            placeholder="Todas las empresas"
+          />
+        </div>
+        <select class="field-input filter-sel" *ngIf="selectedEmpresaEsAbril" [(ngModel)]="filtroObraOficina" (change)="onFilter()">
+          <option value="">Obra y Oficina</option>
+          <option value="Obra">Obra</option>
+          <option value="Staff">Staff / Oficina Central</option>
+        </select>
+        <select class="field-input filter-sel" [(ngModel)]="filtroTipo" (change)="onFilter()">
+          <option value="">Todos los tipos</option>
+          <option value="SCTR">SCTR</option>
+          <option value="VIDA_LEY">Vida Ley</option>
+        </select>
+        <select class="field-input filter-sel" [(ngModel)]="filtroEstado" (change)="onFilter()">
+          <option value="">Todos los estados</option>
+          <option value="Enviado">Enviado</option>
+          <option value="Aprobado">Aprobado</option>
+          <option value="Parcial">Parcial</option>
+          <option value="Rechazado">Rechazado</option>
+          <option value="Falta">Falta</option>
+        </select>
+        <select class="field-input filter-sel" [(ngModel)]="filtroMes" (change)="onFilter()">
+          <option [ngValue]="null">Todos los meses</option>
+          <option *ngFor="let m of meses" [ngValue]="m.num">{{ m.label }}</option>
+        </select>
+        <input
+          type="number"
+          class="field-input filter-year"
+          [(ngModel)]="filtroAnio"
+          (change)="onFilter()"
+          placeholder="Año"
+          min="2020"
+          max="2100"
+        />
+        <select class="field-input filter-sel" [(ngModel)]="filtroProyecto">
+          <option value="">Todos los proyectos</option>
+          <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="sctr-top-filters" *ngIf="activeTab === 'trabajadores'">
+      <div class="filters-row">
+        <div class="filter-ss-wrap" *ngIf="isAdmin()">
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="wFiltroEmpresaId"
+            (valueChange)="wFiltroEmpresaId = $event; onWorkerFilter()"
+            placeholder="Todas las empresas"
+          />
+        </div>
+        <div class="filter-ss-wrap">
+          <app-search-select
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="wFiltroProyectoId"
+            (valueChange)="wFiltroProyectoId = $event; onWorkerFilter()"
+            placeholder="Todos los proyectos"
+          />
+        </div>
+        <select class="field-input filter-sel" [(ngModel)]="wFiltroTipo" (change)="onTipoChange()">
+          <option value="SCTR">SCTR</option>
+          <option value="VIDA_LEY">Vida Ley</option>
+        </select>
+        <select class="field-input filter-sel" [(ngModel)]="wFiltroEstado" (change)="onWorkerFilter()">
+          <option value="">Todos los estados</option>
+          <option value="Enviado">Enviado</option>
+          <option value="Aprobado">Aprobado</option>
+          <option value="Rechazado">Rechazado</option>
+          <option value="Falta">Falta</option>
+          <option value="Vencido">Vencido</option>
+        </select>
+        <input type="text" class="field-input filter-sel" [(ngModel)]="wFiltroNombre" placeholder="Buscar nombre…" (input)="onWorkerFilter()" />
+        <input type="text" class="field-input filter-sel" *ngIf="isAdmin()" [(ngModel)]="wFiltroEmpresaTexto" placeholder="Buscar empresa…" (input)="onWorkerFilter()" />
+        <button type="button" class="btn-primary btn-action-sm" (click)="loadTrabajadores()">Buscar</button>
+      </div>
     </div>
   </div>
 
-  <!-- ── TAB PÓLIZAS ───────────────────────────────────────── -->
-  <div class="sctr-columns" *ngIf="activeTab === 'polizas'">
-    <div class="col-docs card">
+  <!-- ── TAB PÓLIZAS: 3 columnas ──────────────────────────── -->
+  <div class="sctr-3col" *ngIf="activeTab === 'polizas'">
+
+    <!-- Columna 1: lista de pólizas -->
+    <div class="col-polizas">
       <div class="docs-list">
         <div
           *ngFor="let doc of filteredDocumentos"
@@ -96,21 +129,30 @@
           [class.selected]="selectedDoc?.id === doc.id"
           (click)="selectDoc(doc)"
         >
-          <div class="doc-header">
+          <div class="doc-row1">
             <span class="doc-tipo">{{ doc.tipo }}</span>
-            <span class="btn-chip chip-green">Aprobado</span>
+            <span class="doc-empresa">{{ doc.empresaNombre }}</span>
+            <span class="btn-chip" [ngClass]="getEstadoClass(doc.estado)">{{ doc.estado }}</span>
           </div>
-          <div class="doc-empresa">{{ doc.empresaNombre }}</div>
-          <div class="doc-meta">
-            {{ doc.proyectoNombre }} — {{ getMesLabel(doc.mes) }} {{ doc.anio }}
+          <div class="doc-row2">
+            <span>{{ doc.proyectoNombre }} — {{ getMesLabel(doc.mes) }} {{ doc.anio }}</span>
+            <span class="doc-sep" *ngIf="doc.fechaInicio || doc.vigencia">|</span>
+            <span *ngIf="doc.fechaInicio">Ini: {{ doc.fechaInicio | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="doc.fechaInicio && doc.vigencia">→</span>
+            <span *ngIf="doc.vigencia">Fin: {{ doc.vigencia | date:'dd/MM/yyyy' }}</span>
+            <span class="doc-sep">|</span>
+            <span>{{ doc.workers.length }} trab.</span>
           </div>
-          <div class="doc-workers-count">{{ doc.workers.length }} trabajadores</div>
+          <div class="doc-row3" *ngIf="doc.fechaInicio || doc.vigencia">
+            <span *ngIf="doc.fechaInicio">Ini: {{ doc.fechaInicio | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="doc.fechaInicio && doc.vigencia"> — </span>
+            <span *ngIf="doc.vigencia">Fin: {{ doc.vigencia | date:'dd/MM/yyyy' }}</span>
+          </div>
         </div>
         <div *ngIf="!loading && documentos.length === 0" class="empty-list">
           No hay documentos.
         </div>
       </div>
-
       <div class="paginator-wrapper" *ngIf="totalPages > 1">
         <app-paginator
           [totalRecords]="totalRecords"
@@ -121,389 +163,267 @@
       </div>
     </div>
 
-    <ng-container *ngIf="selectedDoc; else noDocSelected">
-      <div class="col-detalle card">
-        <div class="detalle-header">
+    <!-- Columna 2: workers de la póliza seleccionada -->
+    <div class="col-workers">
+      <ng-container *ngIf="selectedDoc; else emptyWorkers">
+        <div class="sctr-workers-header" *ngIf="isAdmin()">
+          <input
+            type="checkbox"
+            [checked]="docAllChecked"
+            [indeterminate]="docSomeChecked && !docAllChecked"
+            (change)="toggleAllDocWorkers($any($event.target).checked)"
+          />
+          <span class="workers-col-title">{{ selectedDoc.workers.length }} trabajador(es)</span>
+        </div>
+        <div class="sctr-split-workers">
+          <div *ngIf="filteredDocWorkers.length === 0" class="empty-list">
+            Sin trabajadores pendientes.
+          </div>
+          <div
+            *ngFor="let w of filteredDocWorkers"
+            class="sctr-worker-item"
+            [class.selected]="selectedPolizaWorker?.workerId === w.workerId"
+            (click)="selectPolizaWorker(w)"
+          >
+            <input
+              *ngIf="isAdmin()"
+              type="checkbox"
+              [checked]="docWorkersSeleccionados.has(w.workerId)"
+              (click)="$event.stopPropagation()"
+              (change)="toggleDocWorker(w.workerId)"
+            />
+            <div class="worker-info" style="flex:1;min-width:0">
+              <strong>{{ w.apellidoNombre }}</strong>
+              <span class="muted-line">{{ w.dni }}</span>
+              <span class="muted-line" *ngIf="w.vigencia">Vence: {{ w.vigencia | date:'dd/MM/yyyy' }}</span>
+              <div *ngIf="rechazandoWorkerId === w.workerId" class="worker-rechazar-panel" (click)="$event.stopPropagation()">
+                <input type="text" class="field-input" [(ngModel)]="rechazandoMotivoInline" placeholder="Motivo (opcional)" />
+                <div class="worker-rechazar-btns">
+                  <button type="button" class="btn-danger btn-action-sm" [disabled]="savingWorkerInline" (click)="confirmarRechazarWorker(w)">
+                    {{ savingWorkerInline ? '…' : 'Confirmar rechazo' }}
+                  </button>
+                  <button type="button" class="btn-link" (click)="rechazandoWorkerId = null; $event.stopPropagation()">Cancelar</button>
+                </div>
+              </div>
+            </div>
+            <div class="sctr-worker-chips">
+              <span [ngClass]="{
+                'badge-aprobado': w.estado === 'Aprobado',
+                'badge-enviado': w.estado === 'Enviado',
+                'badge-rechazado': w.estado === 'Rechazado',
+                'badge-falta': w.estado === 'Falta' || !w.estado
+              }">{{ w.estado || 'Falta' }}</span>
+              <span *ngIf="w.fechaVencimiento" class="muted-line">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+              <span class="btn-chip" [ngClass]="getEstadoClass(selectedDoc?.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+                {{ selectedDoc?.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
+              </span>
+              <div *ngIf="isAdmin()" class="worker-inline-actions" (click)="$event.stopPropagation()">
+                <button type="button" class="btn-w-aprob" [disabled]="savingWorkerInline" title="Aprobar" (click)="aprobarWorkerIndividual(w)">✓</button>
+                <button type="button" class="btn-w-rech" [disabled]="savingWorkerInline" title="Rechazar" (click)="abrirRechazarWorker(w.workerId)">✗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="workers-footer">
+          <ng-container *ngIf="docWorkersSeleccionados.size > 0">
+            <span class="sel-count">{{ docWorkersSeleccionados.size }} seleccionado(s)</span>
+            <div style="display:flex; gap:6px; flex:1">
+              <button (click)="aprobarDocWorkersSeleccionados()" class="btn-aprobar-sel">Aprobar</button>
+              <button (click)="rechazarDocWorkersSeleccionados()" class="btn-rechazar-sel">Rechazar</button>
+            </div>
+          </ng-container>
+          <a (click)="verHistorialVersiones()" style="width:100%;text-align:center;font-size:0.7rem;color:#16a34a;cursor:pointer;display:block;margin-top:4px">
+            Ver historial de versiones
+          </a>
+        </div>
+      </ng-container>
+      <ng-template #emptyWorkers>
+        <div class="col-empty">Selecciona una póliza</div>
+      </ng-template>
+    </div>
+
+    <!-- Columna 3: visor PDF + info -->
+    <div class="col-pdf">
+      <ng-container *ngIf="selectedDoc; else emptyPdf">
+        <div class="pdf-col-header">
           <div>
-            <h3>
-              {{ selectedDoc.tipo }} — {{ getMesLabel(selectedDoc.mes) }} {{ selectedDoc.anio }}
-            </h3>
-            <p class="section-sub">
-              {{ selectedDoc.empresaNombre }} / {{ selectedDoc.proyectoNombre }}
-            </p>
+            <h3>{{ selectedDoc.tipo }} — {{ getMesLabel(selectedDoc.mes) }} {{ selectedDoc.anio }}</h3>
+            <p class="section-sub">{{ selectedDoc.empresaNombre }} / {{ selectedDoc.proyectoNombre }}</p>
           </div>
-          <span class="btn-chip chip-green">Aprobado</span>
+          <span class="btn-chip" [ngClass]="getEstadoClass(selectedDoc.estado)">{{ selectedDoc.estado }}</span>
         </div>
-
-        <!-- Split 70/30: PDF izquierda, workers derecha -->
-        <div class="sctr-detalle-split">
-          <!-- PDF inline -->
-          <div class="sctr-split-left">
-            <iframe
-              *ngIf="docSafeUrl"
-              [src]="docSafeUrl"
-              width="100%"
-              height="100%"
-              frameborder="0"
-            ></iframe>
-            <div *ngIf="!docSafeUrl" class="sctr-split-empty">
-              <span class="muted-line">Sin archivo PDF</span>
-            </div>
-          </div>
-
-          <!-- Info + lista de trabajadores -->
-          <div class="sctr-split-right">
-            <div
-              class="sctr-split-meta"
-              *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril)"
-            >
-              <span *ngIf="selectedDoc.vigencia" class="vigencia-line">
-                Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
-              </span>
-              <ng-container *ngIf="isAdmin() && selectedDoc.obsAbril">
-                <span class="obs-label">Observaciones</span>
-                <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
-              </ng-container>
-            </div>
-            <!-- Workers header: select-all + approve-all -->
-            <div class="sctr-workers-header" *ngIf="isAdmin()">
-              <input
-                type="checkbox"
-                [checked]="docAllChecked"
-                [indeterminate]="docSomeChecked && !docAllChecked"
-                (change)="toggleAllDocWorkers($any($event.target).checked)"
-              />
-              <span style="flex:1;font-size:0.78rem;font-weight:600;color:#374151">
-                {{ selectedDoc.workers.length }} trabajador(es)
-              </span>
-              <button
-                type="button"
-                class="btn-primary btn-action-sm"
-                [disabled]="savingDocAprobar || !selectedDoc.workers.length"
-                (click)="aprobarTodosDocWorkers()"
-              >Aprobar todos</button>
-            </div>
-            <div class="sctr-split-workers">
-              <div *ngIf="selectedDoc.workers.length === 0" class="empty-list">
-                Sin trabajadores asociados.
-              </div>
-              <div
-                *ngFor="let w of selectedDoc.workers"
-                class="sctr-worker-item"
-                [class.selected]="selectedPolizaWorker?.workerId === w.workerId"
-                (click)="selectPolizaWorker(w)"
-              >
-                <input
-                  *ngIf="isAdmin()"
-                  type="checkbox"
-                  [checked]="docWorkersSeleccionados.has(w.workerId)"
-                  (click)="$event.stopPropagation()"
-                  (change)="toggleDocWorker(w.workerId)"
-                />
-                <div class="worker-info">
-                  <strong>{{ w.apellidoNombre }}</strong>
-                  <span class="muted-line">{{ w.dni }}</span>
-                  <span class="muted-line" *ngIf="w.vigencia">Vence: {{ w.vigencia | date:'dd/MM/yyyy' }}</span>
-                </div>
-                <div class="sctr-worker-chips">
-                  <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">
-                    SCTR: {{ w.estadoSctr }}
-                  </span>
-                  <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">
-                    VL: {{ w.estadoVidaLey }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <!-- Approve selected footer -->
-            <div class="sctr-split-actions-bar" *ngIf="isAdmin()">
-              <span class="muted-line">{{ docWorkersSeleccionados.size }} seleccionado(s)</span>
-              <button
-                type="button"
-                class="btn-primary btn-action-sm"
-                [disabled]="!canAprobarDoc"
-                (click)="aprobarDocWorkersSeleccionados()"
-              >{{ savingDocAprobar ? 'Guardando…' : 'Aprobar seleccionados' }}</button>
-            </div>
-            <div class="sctr-split-actions" *ngIf="selectedPolizaWorker?.sctrHabId">
-              <button type="button" class="btn-link" (click)="verVersionesPoliza()">
-                Ver historial de versiones
-              </button>
-            </div>
+        <div
+          class="sctr-split-meta"
+          *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril)"
+        >
+          <span *ngIf="selectedDoc.vigencia" class="vigencia-line">
+            Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
+          </span>
+          <ng-container *ngIf="isAdmin() && selectedDoc.obsAbril">
+            <span class="obs-label">Observaciones</span>
+            <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
+          </ng-container>
+        </div>
+        <div class="pdf-col-viewer">
+          <iframe
+            *ngIf="docSafeUrl"
+            [src]="docSafeUrl"
+            width="100%"
+            height="100%"
+            frameborder="0"
+          ></iframe>
+          <div *ngIf="!docSafeUrl" class="sctr-split-empty">
+            <span class="muted-line">Sin archivo PDF</span>
           </div>
         </div>
-      </div>
-    </ng-container>
+      </ng-container>
+      <ng-template #emptyPdf>
+        <div class="col-empty">Selecciona una póliza para ver el detalle</div>
+      </ng-template>
+    </div>
 
-    <ng-template #noDocSelected>
-      <div class="col-detalle card empty-detalle">
-        <p>Selecciona un documento para ver el detalle</p>
-      </div>
-    </ng-template>
   </div>
 
   <!-- ── TAB TRABAJADORES ──────────────────────────────────── -->
-  <div class="trabajadores-layout" *ngIf="activeTab === 'trabajadores'">
+  <div class="sctr-3col" *ngIf="activeTab === 'trabajadores'">
 
-    <!-- Panel izquierdo: filtros + lista -->
-    <div class="card panel-wleft">
-      <div class="wfilters">
-        <div class="wfilters-text-row">
-          <input type="text" class="field-input" [(ngModel)]="wFiltroNombre" placeholder="Buscar nombre…" />
-          <input type="text" class="field-input" [(ngModel)]="wFiltroEmpresaTexto" placeholder="Buscar empresa…" />
-        </div>
-        <div class="wfilters-grid">
-          <div class="wfilter-col2" *ngIf="isAdmin()">
-            <label class="field-label">Empresa</label>
-            <app-search-select
-              [options]="empresas"
-              valueField="id"
-              displayField="nombre"
-              [value]="wFiltroEmpresaId"
-              (valueChange)="wFiltroEmpresaId = $event; onWorkerFilter()"
-              placeholder="Seleccionar empresa"
-            />
-          </div>
-          <div>
-            <label class="field-label">Proyecto</label>
-            <app-search-select
-              [options]="proyectos"
-              valueField="projectId"
-              displayField="projectDescription"
-              [value]="wFiltroProyectoId"
-              (valueChange)="wFiltroProyectoId = $event; onWorkerFilter()"
-              placeholder="Todos"
-            />
-          </div>
-          <div>
-            <label class="field-label">Tipo *</label>
-            <select class="field-input" [(ngModel)]="wFiltroTipo" (change)="onTipoChange()">
-              <option value="SCTR">SCTR</option>
-              <option value="VIDA_LEY">Vida Ley</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Estado</label>
-            <select class="field-input" [(ngModel)]="wFiltroEstado" (change)="onWorkerFilter()">
-              <option value="">Todos</option>
-              <option value="Enviado">Enviado</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Rechazado">Rechazado</option>
-              <option value="Falta">Falta</option>
-              <option value="Vencido">Vencido</option>
-            </select>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="btn-primary btn-buscar"
-          (click)="loadTrabajadores()"
-        >
-          Buscar
-        </button>
-      </div>
-
-      <div class="workers-list">
+    <!-- Col 1: lista de trabajadores -->
+    <div class="col-polizas">
+      <div class="docs-list">
         <div *ngIf="loadingWorkers" class="empty-list">Cargando trabajadores…</div>
-        <div *ngIf="!loadingWorkers && trabajadores.length === 0" class="empty-list">
-          Sin trabajadores para los filtros seleccionados
+        <div *ngIf="!loadingWorkers && filteredTrabajadores.length === 0" class="empty-list">
+          Sin trabajadores para los filtros seleccionados.
         </div>
         <div
           *ngFor="let w of filteredTrabajadores"
-          class="worker-row"
+          class="doc-card"
           [class.selected]="selectedWorker?.workerId === w.workerId"
           (click)="selectWorker(w)"
         >
-          <div class="worker-info">
-            <strong>{{ w.apellidoNombre }}</strong>
-            <span class="muted-line">DNI {{ w.dni }} · {{ w.empresaNombre }}</span>
-            <span class="muted-line" *ngIf="w.fechaVencimiento">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+          <div class="doc-row1">
+            <span class="btn-chip chip-gray" style="font-size:0.65rem;padding:0.1rem 0.4rem;flex-shrink:0">{{ wFiltroTipo === 'VIDA_LEY' ? 'VIDA LEY' : 'SCTR' }}</span>
+            <span class="btn-chip" [ngClass]="getEstadoClass(wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+              {{ wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
+            </span>
+            <span *ngIf="w.fechaVencimiento" style="margin-left:auto;font-size:0.7rem;color:#64748b;white-space:nowrap;flex-shrink:0">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
           </div>
-          <div class="worker-chips">
-            <span class="btn-chip" [class]="getEstadoClass(w.estadoSctr)">{{ w.estadoSctr }}</span>
-            <span class="btn-chip" [class]="getEstadoClass(w.estadoVidaLey)">{{ w.estadoVidaLey }}</span>
+          <div style="font-size:0.82rem;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:0.15rem">{{ w.apellidoNombre }}</div>
+          <div class="doc-row2"><span>DNI {{ w.dni }}</span></div>
+          <div class="doc-row2" *ngIf="w.empresaNombre || w.proyectoNombre">
+            <span *ngIf="w.empresaNombre" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.empresaNombre }}</span>
+            <span class="doc-sep" *ngIf="w.empresaNombre && w.proyectoNombre">·</span>
+            <span *ngIf="w.proyectoNombre" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.proyectoNombre }}</span>
+          </div>
+          <div *ngIf="!w.sctrId" style="margin-top:4px" (click)="$event.stopPropagation()">
+            <button type="button" [disabled]="savingAprobar"
+              style="font-size:0.7rem;padding:3px 8px;border:1.5px solid #dc2626;color:#dc2626;background:white;border-radius:4px;cursor:pointer"
+              (click)="rechazarSinPoliza(w)">
+              Rechazar
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Panel derecho -->
-    <ng-container *ngIf="selectedWorker; else noWorkerSelected">
-      <div class="card panel-wdetalle">
-
-        <!-- Header visible en casos sin póliza y cargando (no en split) -->
-        <div class="wdetalle-info" *ngIf="!selectedPoliza || loadingPoliza">
-          <span class="wdetalle-name">{{ selectedWorker.apellidoNombre }}</span>
-          <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre }}</span>
-          <div class="wdetalle-estados">
-            <span class="wdetalle-estado-label">SCTR:</span>
-            <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoSctr)">
-              {{ selectedWorker.estadoSctr }}
-            </span>
-            <span class="wdetalle-estado-label">Vida Ley:</span>
-            <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoVidaLey)">
-              {{ selectedWorker.estadoVidaLey }}
-            </span>
+    <!-- Col 2: workers de la póliza del trabajador seleccionado -->
+    <div class="col-workers">
+      <ng-container *ngIf="!selectedWorker">
+        <div class="col-empty">Selecciona un trabajador</div>
+      </ng-container>
+      <ng-container *ngIf="selectedWorker && loadingPoliza">
+        <div class="col-empty"><span class="muted-line">Cargando póliza…</span></div>
+      </ng-container>
+      <ng-container *ngIf="selectedWorker && !loadingPoliza && !selectedPoliza">
+        <div class="col-empty"><span class="muted-line">Sin póliza asociada</span></div>
+      </ng-container>
+      <ng-container *ngIf="selectedWorker && !loadingPoliza && selectedPoliza">
+        <div class="sctr-workers-header">
+          <input
+            type="checkbox"
+            [checked]="polizaAllChecked"
+            [indeterminate]="polizaSomeChecked && !polizaAllChecked"
+            (change)="toggleAllPolizaWorkers($any($event.target).checked)"
+          />
+          <span class="workers-col-title">{{ selectedPoliza.workers.length }} trabajador(es)</span>
+        </div>
+        <div class="sctr-split-workers">
+          <div *ngIf="filteredPolizaWorkers.length === 0" class="empty-list">Sin trabajadores pendientes.</div>
+          <div
+            *ngFor="let pw of filteredPolizaWorkers"
+            class="sctr-worker-item"
+            (click)="togglePolizaWorker(pw.workerId)"
+          >
+            <input
+              type="checkbox"
+              [checked]="polizaWorkersSeleccionados.has(pw.workerId)"
+              (click)="$event.stopPropagation()"
+              (change)="togglePolizaWorker(pw.workerId)"
+            />
+            <div class="worker-info" style="flex:1;min-width:0">
+              <strong>{{ pw.apellidoNombre }}</strong>
+              <span class="muted-line">{{ pw.dni }}</span>
+              <span class="muted-line" *ngIf="pw.fechaVencimiento">Vence: {{ pw.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+              <div *ngIf="rechazandoWorkerId === pw.workerId" class="worker-rechazar-panel" (click)="$event.stopPropagation()">
+                <input type="text" class="field-input" [(ngModel)]="rechazandoMotivoInline" placeholder="Motivo (opcional)" />
+                <div class="worker-rechazar-btns">
+                  <button type="button" class="btn-danger btn-action-sm" [disabled]="savingWorkerInline" (click)="confirmarRechazarPolizaWorker(pw)">
+                    {{ savingWorkerInline ? '…' : 'Confirmar rechazo' }}
+                  </button>
+                  <button type="button" class="btn-link" (click)="rechazandoWorkerId = null; $event.stopPropagation()">Cancelar</button>
+                </div>
+              </div>
+            </div>
+            <div class="sctr-worker-chips">
+              <span [ngClass]="{
+                'badge-aprobado': getPolizaWorkerEstado(pw) === 'Aprobado',
+                'badge-enviado': getPolizaWorkerEstado(pw) === 'Enviado',
+                'badge-rechazado': getPolizaWorkerEstado(pw) === 'Rechazado',
+                'badge-falta': !['Aprobado','Enviado','Rechazado'].includes(getPolizaWorkerEstado(pw))
+              }">{{ getPolizaWorkerEstado(pw) }}</span>
+              <div class="worker-inline-actions" (click)="$event.stopPropagation()">
+                <button type="button" class="btn-w-aprob" [disabled]="savingWorkerInline" title="Aprobar" (click)="aprobarPolizaWorkerIndividual(pw)">✓</button>
+                <button type="button" class="btn-w-rech" [disabled]="savingWorkerInline" title="Rechazar" (click)="abrirRechazarWorker(pw.workerId)">✗</button>
+              </div>
+            </div>
           </div>
         </div>
-
-        <!-- Sin póliza asociada -->
-        <div *ngIf="!selectedWorker.sctrId" class="wdetalle-sin-poliza">
-          <p class="muted-line">Este trabajador no tiene póliza asociada</p>
-          <ng-container *ngIf="selectedWorker.sctrHabId">
-            <div class="sin-poliza-actions">
-              <label class="field-label">Motivo rechazo (opcional)</label>
-              <div class="action-row">
-                <input
-                  type="text"
-                  class="field-input"
-                  [(ngModel)]="motivoRechazo"
-                  placeholder="Motivo"
-                />
-                <button
-                  type="button"
-                  class="btn-danger btn-action-sm"
-                  [disabled]="savingAprobar"
-                  (click)="rechazarSinPoliza()"
-                >
-                  Rechazar
-                </button>
-              </div>
+        <div class="workers-footer">
+          <ng-container *ngIf="polizaWorkersSeleccionados.size > 0">
+            <span class="sel-count">{{ polizaWorkersSeleccionados.size }} seleccionado(s)</span>
+            <div style="display:flex;gap:6px;flex:1">
+              <button (click)="aprobarSeleccionados()" [disabled]="savingAprobar" class="btn-aprobar-sel">Aprobar</button>
+              <button (click)="rechazarSeleccionados()" [disabled]="savingAprobar" class="btn-rechazar-sel">Rechazar</button>
             </div>
           </ng-container>
+          <button class="historial-link" (click)="verVersiones()">Ver historial de versiones</button>
         </div>
+      </ng-container>
+    </div>
 
-        <!-- Cargando póliza -->
-        <div *ngIf="selectedWorker.sctrId && loadingPoliza" class="wdetalle-placeholder">
-          <p class="muted-line">Cargando póliza…</p>
-        </div>
-
-        <!-- Póliza cargada — split horizontal 50/50 -->
-        <div
-          *ngIf="selectedWorker.sctrId && !loadingPoliza && selectedPoliza"
-          class="wdetalle-split"
-        >
-          <!-- Izquierda: visor PDF fijo 500px -->
-          <div class="wdetalle-split-left">
-            <iframe
-              *ngIf="polizaSafeUrl"
-              [src]="polizaSafeUrl"
-              width="100%"
-              height="100%"
-              frameborder="0"
-            ></iframe>
-            <div *ngIf="!polizaSafeUrl" class="wdetalle-split-empty">
-              <span class="muted-line">Sin archivo PDF en la póliza</span>
-            </div>
+    <!-- Col 3: visor PDF -->
+    <div class="col-pdf">
+      <ng-container *ngIf="selectedPoliza && !loadingPoliza; else emptyPdfT2">
+        <div class="pdf-col-header">
+          <div>
+            <h3>{{ selectedPoliza.tipo }} — {{ getMesLabel(selectedPoliza.mes) }} {{ selectedPoliza.anio }}</h3>
+            <p class="section-sub">{{ selectedWorker?.apellidoNombre }} · {{ selectedWorker?.empresaNombre }}</p>
           </div>
-
-          <!-- Derecha: header + workers + acciones -->
-          <div class="wdetalle-split-right">
-
-            <!-- Header del trabajador -->
-            <div class="wdetalle-info">
-              <span class="wdetalle-name">{{ selectedWorker.apellidoNombre }}</span>
-              <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre }}</span>
-              <div class="wdetalle-estados">
-                <span class="wdetalle-estado-label">SCTR:</span>
-                <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoSctr)">
-                  {{ selectedWorker.estadoSctr }}
-                </span>
-                <span class="wdetalle-estado-label">Vida Ley:</span>
-                <span class="btn-chip" [class]="getEstadoClass(selectedWorker.estadoVidaLey)">
-                  {{ selectedWorker.estadoVidaLey }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Workers de la póliza -->
-            <div class="wdetalle-workers">
-              <div class="wdetalle-workers-header">
-                <input
-                  type="checkbox"
-                  [checked]="polizaAllChecked"
-                  [indeterminate]="polizaSomeChecked && !polizaAllChecked"
-                  (change)="toggleAllPolizaWorkers($any($event.target).checked)"
-                />
-                <span class="field-label" style="margin:0">Trabajadores de la póliza</span>
-                <span class="workers-count">
-                  {{ polizaWorkersSeleccionados.size }} / {{ selectedPoliza.workers.length }}
-                </span>
-              </div>
-              <div class="wdetalle-workers-list">
-                <div
-                  *ngFor="let w of selectedPoliza.workers"
-                  class="wdetalle-worker-row"
-                  (click)="togglePolizaWorker(w.workerId)"
-                >
-                  <input
-                    type="checkbox"
-                    [checked]="polizaWorkersSeleccionados.has(w.workerId)"
-                    (click)="$event.stopPropagation()"
-                    (change)="togglePolizaWorker(w.workerId)"
-                  />
-                  <div class="worker-info">
-                    <strong>{{ w.apellidoNombre }}</strong>
-                    <span class="muted-line">DNI {{ w.dni }}</span>
-                  </div>
-                  <span class="btn-chip" [class]="getEstadoClass(wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
-                    {{ wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Acciones fijas abajo -->
-            <div class="wdetalle-actions">
-              <div class="actions-row-inline">
-                <button
-                  type="button"
-                  class="btn-primary btn-action-sm"
-                  [disabled]="!canAprobar"
-                  (click)="aprobarSeleccionados()"
-                >
-                  {{ savingAprobar ? 'Guardando…' : 'Aprobar seleccionados' }}
-                </button>
-                <div class="action-group" style="flex:1">
-                  <div class="action-row">
-                    <input
-                      type="text"
-                      class="field-input"
-                      [(ngModel)]="motivoRechazo"
-                      placeholder="Motivo rechazo (opcional)"
-                    />
-                    <button
-                      type="button"
-                      class="btn-danger btn-action-sm"
-                      [disabled]="!canRechazar"
-                      (click)="rechazarSeleccionados()"
-                    >
-                      Rechazar
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <button
-                *ngIf="selectedWorker?.sctrHabId"
-                type="button"
-                class="btn-ghost btn-action-sm"
-                (click)="verVersiones()"
-              >
-                Ver historial de versiones
-              </button>
-            </div>
-
+          <span class="btn-chip" [ngClass]="getEstadoClass(selectedPoliza.estado)">{{ selectedPoliza.estado }}</span>
+        </div>
+        <div class="sctr-split-meta" *ngIf="selectedPoliza.vigencia">
+          <span class="vigencia-line">Vigencia: {{ selectedPoliza.vigencia | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="pdf-col-viewer">
+          <iframe *ngIf="polizaSafeUrl" [src]="polizaSafeUrl" width="100%" height="100%" frameborder="0"></iframe>
+          <div *ngIf="!polizaSafeUrl" class="sctr-split-empty">
+            <span class="muted-line">Sin archivo PDF</span>
           </div>
         </div>
-
-      </div>
-    </ng-container>
-
-    <ng-template #noWorkerSelected>
-      <div class="card panel-wdetalle empty-detalle">
-        <p>Selecciona un trabajador para ver la póliza</p>
-      </div>
-    </ng-template>
+      </ng-container>
+      <ng-template #emptyPdfT2>
+        <div class="col-empty">Selecciona un trabajador para ver la póliza</div>
+      </ng-template>
+    </div>
 
   </div>
 </div>

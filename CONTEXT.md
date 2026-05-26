@@ -1977,3 +1977,332 @@ Dos inputs `.wfilters-text-row` (Buscar nombre + Buscar empresa) encima del `.wf
 this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
 ```
 El `Map` con clave `workerId` deduplica conservando la última aparición por worker.
+
+---
+
+## §Sesión 2026-05-25 (tarde) — sctr-vidaley rediseño completo panel Pólizas
+
+### Layout 3 columnas (Tab Pólizas)
+
+Rediseño total de la vista Tab Pólizas: de `sctr-columns` (2 columnas split 60/40) a `sctr-3col` con 3 columnas side-by-side dentro de un único card:
+
+- `.col-polizas` — `width: 280px; flex-shrink: 0` — lista de pólizas + paginator
+- `.col-workers` — `width: 260px; flex-shrink: 0` — panel de workers
+- `.col-pdf` — `flex: 1; min-width: 0` — visor PDF
+
+Cada columna tiene `overflow-y: auto` propio con `height: 100%`. El contenedor `.sctr-3col` es `display: flex; flex: 1; min-height: 0; overflow: hidden; border-radius: 10px`.
+
+Top bar compactada a `sctr-top` (card) con:
+- `sctr-top-row1`: título + tabs + spacer + botón "Subir SCTR/Vida Ley" (~30px)
+- `sctr-top-filters`: filtros horizontales (`*ngIf="activeTab === 'polizas'"`) (~38px)
+
+Root: `height: calc(100vh - 60px); display: flex; flex-direction: column; gap: 0.35rem`.
+
+### Doc cards — diseño compacto 2 filas + fila fechas
+
+Cada card de póliza en `.col-polizas` usa `padding: 6px 10px` y 3 filas:
+- `.doc-row1`: `[TIPO]` + empresa nombre + badge estado (`[ngClass]="getEstadoClass(doc.estado)"` sobre `class="btn-chip"` — augmenta, no reemplaza)
+- `.doc-row2`: `proyectoNombre — mes año | N trab.` (separadores `.doc-sep` color `#d1d5db`)
+- `.doc-row3` (`*ngIf="doc.fechaInicio || doc.vigencia"`): `Ini: dd/MM/yyyy — Fin: dd/MM/yyyy`
+
+Badge estado usa `getEstadoClass(doc.estado)` real, no hardcodeado a verde.
+
+`doc.fechaInicio` y `doc.vigencia` ya existían en `SctrVidaLeyDto` — no requirió cambios en el modelo.
+
+### Panel workers (col-workers) — checkbox + selección masiva
+
+- Header (`*ngIf="isAdmin()"`): checkbox "Seleccionar todos" con `[indeterminate]="docSomeChecked && !docAllChecked"` + contador workers
+- Cada `.sctr-worker-item`: checkbox individual admin-only con `$event.stopPropagation()`
+- Footer `.workers-footer` unificado: `display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border-top`
+  - `.sel-count` (0.72rem, #64748b) siempre visible
+  - Botones `btn-aprobar-sel` y `btn-rechazar-sel` envueltos en `*ngIf="docWorkersSeleccionados.size > 0"`
+  - Enlace "Ver historial de versiones" (`.historial-link`, 0.7rem, #16a34a) siempre visible
+
+### filteredDocWorkers — solo workers no aprobados
+
+```ts
+get filteredDocWorkers(): SctrWorkerDto[] {
+  if (!this.selectedDoc) return [];
+  return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+}
+```
+
+Checkboxes y botones de aprobación masiva operan sobre este subset.
+
+### SctrWorkerDto — fechaVencimiento
+
+`sctr.model.ts`: añadido `fechaVencimiento?: string` a `SctrWorkerDto`. Se muestra debajo del badge de estado en cada worker card:
+```html
+<span *ngIf="w.fechaVencimiento" class="muted-line">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+```
+
+### filtroEstado default 'Enviado'
+
+`filtroEstado = 'Enviado'` (antes `''`). La lista arranca filtrando pólizas en estado Enviado.
+
+### Aprobación directa sin Swal confirm
+
+`aprobarWorkerIndividual`, `aprobarDocWorkersSeleccionados`, `rechazarDocWorkersSeleccionados` ejecutan directo sin `Swal.fire` de confirmación.
+
+`rechazarDocWorkersSeleccionados` es método nuevo: llama `sctrService.aprobar(selectedDoc.id, { workerIdsAprobados: [], workerIdsRechazados: [...docWorkersSeleccionados], tipo, obsAbril })`.
+
+### verHistorialVersiones — stub vacío
+
+```ts
+verHistorialVersiones(): void {}
+```
+
+Añadido antes de `verVersionesPoliza()`. El enlace en el footer llama este stub; implementación pendiente.
+
+### Tipografía worker cards
+
+```css
+.sctr-worker-item .worker-info strong { font-size: 0.78rem; font-weight: 500; }
+.sctr-worker-item .worker-info .muted-line { font-size: 0.7rem; color: #64748b; }
+```
+
+---
+
+## §Sesión 2026-05-25 (noche) — sctr-vidaley Tab Trabajadores rediseño + bandeja cards
+
+### sctr-vidaley — Tab Trabajadores rediseño 3 columnas
+
+El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col` — mismo contenedor y clases CSS del Tab Pólizas.
+
+**Filtros movidos al top bar**: nueva `sctr-top-filters *ngIf="activeTab === 'trabajadores'"` con empresa SearchSelect (admin), proyecto SearchSelect, tipo select, estado select, inputs nombre y empresa texto, btn Buscar — idéntico al patrón de Tab Pólizas.
+
+**Col 1 (`.col-polizas`, 280px)**: cards de trabajadores con layout en 4 filas:
+- Fila 1: `[tipo chip SCTR/VIDA LEY]` `[estado badge]` `Vence: fecha` (alineado derecha, solo si existe)
+- Fila 2: `apellidoNombre` (0.82rem, font-weight 600)
+- Fila 3: `DNI xxx`
+- Fila 4: `empresa · proyecto` (0.72rem, gris)
+- Fila 5 (`*ngIf="!w.sctrId"`): botón "Rechazar" outline rojo (`border: 1.5px solid #dc2626; color: #dc2626; background: white; border-radius: 4px`)
+
+**Col 2 (`.col-workers`, 260px)**: workers de `selectedPoliza` no aprobados — idéntico al col-workers del Tab Pólizas:
+- Header: checkbox select-all + contador
+- Lista `.sctr-split-workers`: checkbox individual, nombre/DNI/vence, badge estado, botones ✓/✗ inline
+- Panel rechazar inline: `rechazandoWorkerId` + `rechazandoMotivoInline` (mismo estado compartido)
+- Footer `.workers-footer`: Aprobar/Rechazar seleccionados (`*ngIf="polizaWorkersSeleccionados.size > 0"`) + historial link
+
+**Col 3 (`.col-pdf`, flex:1)**: PDF viewer con header (tipo, mes, año, worker nombre + empresa, badge estado), vigencia, iframe `polizaSafeUrl`.
+
+**TS nuevos métodos y getters**:
+```ts
+getPolizaWorkerEstado(w): string    // estadoVidaLey o estadoSctr según wFiltroTipo
+get filteredPolizaWorkers()         // workers de selectedPoliza donde estado !== 'Aprobado'
+polizaAllChecked / polizaSomeChecked // ahora sobre filteredPolizaWorkers
+toggleAllPolizaWorkers()            // ahora sobre filteredPolizaWorkers
+aprobarPolizaWorkerIndividual(w)    // PATCH aprobar 1 worker en selectedPoliza
+confirmarRechazarPolizaWorker(w)    // PATCH rechazar 1 worker con motivo inline
+rechazarSeleccionados()             // simplificado — sin motivoRechazo en payload
+rechazarSinPoliza(w)                // recibe SctrTrabajadorEstadoDto directamente (no usa selectedWorker)
+clearPolizaPanel()                  // ahora también resetea rechazandoWorkerId + rechazandoMotivoInline
+```
+
+### bandeja — cards rediseño
+
+**HTML** (`bandeja.html`): `bc-fecha` reemplaza `fechaEnvio` por `vigencia`:
+```html
+<span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+```
+
+**CSS** (`bandeja.css`):
+- `.bandeja-card`: `padding: 10px 12px`
+- `.bandeja-card:hover`: `border-color: #16a34a; box-shadow: 0 2px 8px rgba(0,0,0,0.07)`
+- `.bc-fecha`: `0.7rem / #64748b / white-space: nowrap`
+- `.bc-entidad`: `0.78rem` (era 0.82rem)
+- `.bc-meta`: `0.7rem / #64748b` (era 0.75rem / #6b7280)
+
+---
+
+## §Sesión 2026-05-26 — Validaciones guardarEntregable + EMOs tabla compacta + SearchSelect compact
+
+### Validaciones en `guardarEntregable()` — 3 componentes Habilitación
+
+Dentro de la rama `if (this.isContratista())` de `guardarEntregable()` se agregaron dos guards antes de construir el payload:
+
+1. **Archivo obligatorio**: si `!panelArchivoUrl` → `Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' })` + `return`.
+2. **Vigencia obligatoria**: si `selectedEntregable.requiereVigencia && !panelVigencia` → `Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' })` + `return`.
+
+Admins no afectados — las validaciones están dentro del bloque contratista. No se hardcodean ítems específicos; `requiereVigencia` viene del DTO.
+
+**Archivos modificados:**
+- `features/habilitacion/pages/trabajadores/trabajadores.ts` — `guardarEntregable()` línea 612
+- `features/habilitacion/pages/empresa/empresa.ts` — `guardarEntregable()` línea 481
+- `features/habilitacion/pages/equipos/equipos.ts` — `guardarEntregable()` línea 470
+
+---
+
+### EMOs — nuevas columnas en tabla `emos.html`
+
+**`dtos/emo.model.ts` — `EmoPorTrabajadorDto`**: añadidos dos campos opcionales:
+```ts
+empresaOrigenNombre?: string;   // empresa con que se registró el EMO
+proyectoNombre?: string;        // proyecto actual del worker
+```
+(Ya existían `obraOficina`, `empresa`, `proyecto` — no duplicados.)
+
+**`emos.html` — columnas actualizadas:**
+
+| Antes | Después | Campo |
+|-------|---------|-------|
+| Empresa | Emp. Actual | `item.empresa` |
+| — (nueva) | Emp. Origen | `item.empresaOrigenNombre \|\| '—'` |
+| — (nueva) | Proyecto | `item.proyectoNombre \|\| '—'` |
+| — (nueva) | Tipo | `item.obraOficina \|\| '—'` |
+
+`colspan` de fila vacía: 9 → 12.
+
+`<colgroup>` con anchos fijos:
+```
+auto | 80px | 140px | 140px | 120px | 80px | 90px | 90px | 90px | 90px | 60px | 36px
+Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Días | Acc
+```
+
+> **Nota backend pendiente**: los campos `empresaOrigenNombre` y `proyectoNombre` deben ser mapeados en el endpoint `GET /emos/por-trabajador`. El frontend los muestra como `'—'` si vienen `null`/`undefined`.
+
+---
+
+### EMOs — UI compacta (`emos.html` + `emos.css`)
+
+**Header**: eliminado el bloque `<div>` con `<h2>` grande + `<p>` subtítulo. Reemplazado por una sola línea `<h2 class="text-base font-semibold">` alineada con el botón "Nuevo EMO".
+
+**Sección padding**: `<section class="p-6 space-y-4">` → `class="px-3 py-4 space-y-3"` (12px lateral).
+
+**Tabla compacta:**
+- `font-size`: `0.88rem` → `0.8rem`
+- `table-layout: fixed` activado
+- Padding `thead th` y `tbody td`: `0.75rem 1rem` → `6px 8px`
+- `th`: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
+- `td`: `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`
+- `.col-worker` (primera columna): override con `white-space: normal; overflow: visible` — el nombre del trabajador puede wrappear
+- `.worker-name`: `0.82rem` → `0.78rem`, `line-height: 1.2`
+- `.worker-dni`: `0.72rem` → `0.7rem`
+
+**Filtros compactos:**
+- `.filters-card`: `padding: 10px 12px`, `border-radius: 8px`, sin `box-shadow`, `border: #e2e8f0`
+- `.filters-grid`: `gap: 0.75rem` → `8px`
+- `.filter-label`: `0.72rem` → `0.7rem`, `color: #6b7280` → `#94a3b8`, `margin-bottom: 0.35rem` → `3px`
+- `.search-input`: `height: 32px`, `bg: #f8fafc`, `border: #e2e8f0`, `border-radius: 12px` → `6px`, `padding: 0 0.6rem`
+- `.search-input input`: `font-size: 0.9rem` → `0.78rem`
+
+---
+
+### `SearchSelect` — modo compacto (`@Input() compact`)
+
+Componente compartido en `shared/components/search-select/`. Para no romper otros usos, se añadió un input opcional:
+
+**`search-select.ts`**: `@Input() compact: boolean = false`
+
+**`search-select.html`** — el botón trigger aplica clases condicionales vía `[ngClass]`:
+```ts
+compact
+  ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
+  : 'rounded-xl bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30'
+
+// Border:
+isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+       : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
+```
+
+**`emos.html`**: los tres `app-search-select` de los filtros usan `[compact]="true"`. Todos los demás usos en la app quedan sin cambios.
+
+---
+
+### Pendiente backend (identificado en esta sesión)
+
+- **`GET /ssoma/salud-ocupacional/catalogos/empresas`** — agregar `WHERE es_abril = true` en el query de `contributor`. Actualmente devuelve todas las empresas (campo `es_abril = false` en todos los registros históricos — verificar que los registros Abril tengan el campo correcto antes de activar el filtro).
+- **Búsqueda `GET /emos/por-trabajador?search=`** — verificar que el WHERE del backend incluya `ApellidoNombre.Contains(search, OrdinalIgnoreCase)` además de DNI. El filtrado es 100% backend (no hay filtrado local en el frontend).
+- **Mapear `empresaOrigenNombre` y `proyectoNombre`** en el response del endpoint `GET /emos/por-trabajador`.
+
+---
+
+## §Sesión 2026-05-26 (segunda parte) — Clínica: CompletarEmo con interconsulta inline y restricciones
+
+### `emo.model.ts` — nuevos campos y nueva interfaz
+
+**`EmoCreateDto`**: añadidos dos campos opcionales al final:
+```ts
+fechaLectura?: string;
+interconsultaInline?: InterconsultaInlineCreateDto;
+```
+
+**`EmoRestriccionCreateDto`**: añadido campo opcional:
+```ts
+vigente?: boolean;
+```
+
+**Nueva interfaz** `InterconsultaInlineCreateDto`:
+```ts
+export interface InterconsultaInlineCreateDto {
+  especialidad: string;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
+}
+```
+Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoint separado.
+
+---
+
+### `completar-emo` — reescritura completa (clínica)
+
+**Archivo:** `features/clinica/pages/agenda/components/completar-emo/`
+
+#### Lógica de negocio (completar-emo.ts)
+
+| Getter | Condición | Efecto en UI |
+|--------|-----------|--------------|
+| `requiereRestriccion` | `aptitud === 'Apto con Restricciones'` | Muestra sección restricciones |
+| `requiereInterconsulta` | `aptitud === 'No Apto' \|\| aptitud === 'Observado'` | Muestra sección interconsulta |
+| `canSubmit` | aptitud + programacion + !saving + (si interconsulta → icEspecialidad no vacío) | Habilita botón |
+
+**Restricciones** (`restricciones: { descripcionLibre }[]`):
+- `agregarRestriccion()` — push + limpiar input (o Enter en el campo)
+- `quitarRestriccion(i)` — splice por índice
+- Mapeado a `EmoRestriccionCreateDto[]` con `vigente: true` en `submit()`
+
+**Interconsulta inline** — campos locales `icEspecialidad`, `icCentro`, `icDiagnostico`, `icCie10`, `icRequiereSeguimiento`. Construye `InterconsultaInlineCreateDto` en `submit()` solo cuando `requiereInterconsulta`.
+
+**`fechaLectura`** — fecha opcional independiente de `fechaEmo` (que sigue siendo la fecha del día del registro).
+
+**Flujo `submit()`** (sin cambios en la cadena de llamadas):
+1. `EmoService.createEmo(emoDto)` → recibe `{ id }` del EMO creado.
+2. `ClinicaProgramacionService.accionClinica(programacionId, { accion: 'Completar', emoResultadoId })`.
+
+#### Template (completar-emo.html)
+
+- `width="w-[640px]"` (antes 600px — más espacio para sección interconsulta).
+- Grid 2 columnas `.grid-2`:
+  - Row: N° Informe / URL resultado
+  - Row: Fecha lectura EMO / Notas (antes solo Notas en `col-span-2`)
+  - `*ngIf="requiereRestriccion"` — sección restricciones con input+botón+lista pills
+  - `*ngIf="requiereInterconsulta"` — sección interconsulta con `section-divider`, campos Especialidad, Centro, CIE-10, Diagnóstico, checkbox Seguimiento
+  - Alertas contextuales: roja para "No Apto", naranja para "Observado"
+
+#### Estilos nuevos (completar-emo.css)
+
+```css
+.restriccion-row   { display: flex; gap: 8px; align-items: center }
+.restriccion-list  { margin-top: 8px; flex-col; gap: 4px }
+.restriccion-item  { flex row space-between; bg #f8fafc; border #e2e8f0; radius 6px; padding 4px 10px; font-size 0.82rem }
+.btn-remove        { color: #dc2626; font-size: 0.75rem }
+.section-divider   { 0.75rem uppercase #64748b; border-bottom #e2e8f0; padding-bottom 4px; margin-top 4px }
+```
+
+### Resumen de archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `ssoma/salud-ocupacional/dtos/emo.model.ts` | `EmoCreateDto` +2 campos; `EmoRestriccionCreateDto` +`vigente?`; nueva `InterconsultaInlineCreateDto` |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.ts` | Reescritura completa (restricciones + interconsulta inline + fechaLectura) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.html` | Reescritura completa (formulario expandido, 2 secciones condicionales, alertas) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.css` | Append: 5 clases nuevas para restricciones y section-divider |
+
+### Pendiente backend
+
+- `POST /emos` — aceptar campo `interconsultaInline` en el body y crear la interconsulta en la misma transacción.
+- `POST /emos` — aceptar `fechaLectura` y persistirlo en `worker_emos.fecha_lectura`.
+- `EmoRestriccionCreateDto.vigente` — confirmar que el backend mapea este campo o lo ignora sin error.

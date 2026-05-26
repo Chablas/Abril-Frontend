@@ -1,13 +1,8 @@
-<section class="p-6 space-y-4">
-  <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">EMOs</h2>
-      <p class="text-sm text-gray-500">
-        Exámenes médicos ocupacionales y estado de aptitud por trabajador.
-      </p>
-    </div>
+<section class="px-3 py-4 space-y-3">
+  <header class="flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-800">EMOs</h2>
     <button type="button" class="btn-primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <path d="M12 5v14M5 12h14"/>
       </svg>
       Nuevo EMO
@@ -41,6 +36,7 @@
           displayField="nombre"
           [value]="filters.aptitud"
           [showLabel]="false"
+          [compact]="true"
           placeholder="Todas"
           (valueChange)="filters.aptitud = $event; onFilterChange()"
         ></app-search-select>
@@ -54,6 +50,7 @@
           displayField="nombre"
           [value]="filters.estado"
           [showLabel]="false"
+          [compact]="true"
           placeholder="Todos"
           (valueChange)="filters.estado = $event; onFilterChange()"
         ></app-search-select>
@@ -67,6 +64,7 @@
           displayField="nombre"
           [value]="filters.empresaId"
           [showLabel]="false"
+          [compact]="true"
           placeholder="Todas"
           (valueChange)="filters.empresaId = $event; onFilterChange()"
         ></app-search-select>
@@ -82,13 +80,30 @@
   <div class="card">
     <div class="table-wrapper">
       <table class="data-table">
+        <colgroup>
+          <col style="width: auto" />
+          <col style="width: 80px" />
+          <col style="width: 140px" />
+          <col style="width: 140px" />
+          <col style="width: 120px" />
+          <col style="width: 80px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 60px" />
+          <col style="width: 36px" />
+        </colgroup>
         <thead>
           <tr>
             <th>Trabajador</th>
-            <th>Tipo EMO</th>
-            <th>Empresa</th>
-            <th>Fecha EMO</th>
-            <th>Vencimiento</th>
+            <th>T.EMO</th>
+            <th>Emp. Actual</th>
+            <th>Emp. Origen</th>
+            <th>Proyecto</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Vence</th>
             <th>Aptitud</th>
             <th>Estado</th>
             <th class="text-right">Días</th>
@@ -101,7 +116,7 @@
             [class.row-clickable]="item.tieneEmo"
             (click)="onRowClick(item)"
           >
-            <td>
+            <td class="col-worker">
               <div class="worker-cell">
                 <span class="worker-name">{{ item.nombreCompleto }}</span>
                 <span class="worker-dni">DNI · {{ item.dni }}</span>
@@ -109,6 +124,9 @@
             </td>
             <td>{{ item.tieneEmo ? item.tipoEmo : '—' }}</td>
             <td class="text-gray-600">{{ item.empresa || '—' }}</td>
+            <td class="text-gray-600">{{ item.empresaOrigenNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.proyectoNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.obraOficina || '—' }}</td>
             <td>{{ item.tieneEmo ? (item.fechaEmo | date: 'dd/MM/yyyy') : '—' }}</td>
             <td>{{ item.tieneEmo ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</td>
             <td>
@@ -164,7 +182,7 @@
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="9" class="empty-row">
+            <td colspan="12" class="empty-row">
               Sin resultados para los filtros actuales.
             </td>
           </tr>

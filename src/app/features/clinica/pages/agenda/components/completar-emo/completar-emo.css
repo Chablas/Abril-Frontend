@@ -21,3 +21,43 @@
 
 .alert-red    { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
 .alert-orange { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+
+.restriccion-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.restriccion-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.restriccion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+.btn-remove {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+.section-divider {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+  margin-top: 4px;
+}
