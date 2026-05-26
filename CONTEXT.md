@@ -2112,3 +2112,105 @@ clearPolizaPanel()                  // ahora también resetea rechazandoWorkerId
 - `.bc-fecha`: `0.7rem / #64748b / white-space: nowrap`
 - `.bc-entidad`: `0.78rem` (era 0.82rem)
 - `.bc-meta`: `0.7rem / #64748b` (era 0.75rem / #6b7280)
+
+---
+
+## §Sesión 2026-05-26 — Validaciones guardarEntregable + EMOs tabla compacta + SearchSelect compact
+
+### Validaciones en `guardarEntregable()` — 3 componentes Habilitación
+
+Dentro de la rama `if (this.isContratista())` de `guardarEntregable()` se agregaron dos guards antes de construir el payload:
+
+1. **Archivo obligatorio**: si `!panelArchivoUrl` → `Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' })` + `return`.
+2. **Vigencia obligatoria**: si `selectedEntregable.requiereVigencia && !panelVigencia` → `Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' })` + `return`.
+
+Admins no afectados — las validaciones están dentro del bloque contratista. No se hardcodean ítems específicos; `requiereVigencia` viene del DTO.
+
+**Archivos modificados:**
+- `features/habilitacion/pages/trabajadores/trabajadores.ts` — `guardarEntregable()` línea 612
+- `features/habilitacion/pages/empresa/empresa.ts` — `guardarEntregable()` línea 481
+- `features/habilitacion/pages/equipos/equipos.ts` — `guardarEntregable()` línea 470
+
+---
+
+### EMOs — nuevas columnas en tabla `emos.html`
+
+**`dtos/emo.model.ts` — `EmoPorTrabajadorDto`**: añadidos dos campos opcionales:
+```ts
+empresaOrigenNombre?: string;   // empresa con que se registró el EMO
+proyectoNombre?: string;        // proyecto actual del worker
+```
+(Ya existían `obraOficina`, `empresa`, `proyecto` — no duplicados.)
+
+**`emos.html` — columnas actualizadas:**
+
+| Antes | Después | Campo |
+|-------|---------|-------|
+| Empresa | Emp. Actual | `item.empresa` |
+| — (nueva) | Emp. Origen | `item.empresaOrigenNombre \|\| '—'` |
+| — (nueva) | Proyecto | `item.proyectoNombre \|\| '—'` |
+| — (nueva) | Tipo | `item.obraOficina \|\| '—'` |
+
+`colspan` de fila vacía: 9 → 12.
+
+`<colgroup>` con anchos fijos:
+```
+auto | 80px | 140px | 140px | 120px | 80px | 90px | 90px | 90px | 90px | 60px | 36px
+Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Días | Acc
+```
+
+> **Nota backend pendiente**: los campos `empresaOrigenNombre` y `proyectoNombre` deben ser mapeados en el endpoint `GET /emos/por-trabajador`. El frontend los muestra como `'—'` si vienen `null`/`undefined`.
+
+---
+
+### EMOs — UI compacta (`emos.html` + `emos.css`)
+
+**Header**: eliminado el bloque `<div>` con `<h2>` grande + `<p>` subtítulo. Reemplazado por una sola línea `<h2 class="text-base font-semibold">` alineada con el botón "Nuevo EMO".
+
+**Sección padding**: `<section class="p-6 space-y-4">` → `class="px-3 py-4 space-y-3"` (12px lateral).
+
+**Tabla compacta:**
+- `font-size`: `0.88rem` → `0.8rem`
+- `table-layout: fixed` activado
+- Padding `thead th` y `tbody td`: `0.75rem 1rem` → `6px 8px`
+- `th`: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
+- `td`: `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`
+- `.col-worker` (primera columna): override con `white-space: normal; overflow: visible` — el nombre del trabajador puede wrappear
+- `.worker-name`: `0.82rem` → `0.78rem`, `line-height: 1.2`
+- `.worker-dni`: `0.72rem` → `0.7rem`
+
+**Filtros compactos:**
+- `.filters-card`: `padding: 10px 12px`, `border-radius: 8px`, sin `box-shadow`, `border: #e2e8f0`
+- `.filters-grid`: `gap: 0.75rem` → `8px`
+- `.filter-label`: `0.72rem` → `0.7rem`, `color: #6b7280` → `#94a3b8`, `margin-bottom: 0.35rem` → `3px`
+- `.search-input`: `height: 32px`, `bg: #f8fafc`, `border: #e2e8f0`, `border-radius: 12px` → `6px`, `padding: 0 0.6rem`
+- `.search-input input`: `font-size: 0.9rem` → `0.78rem`
+
+---
+
+### `SearchSelect` — modo compacto (`@Input() compact`)
+
+Componente compartido en `shared/components/search-select/`. Para no romper otros usos, se añadió un input opcional:
+
+**`search-select.ts`**: `@Input() compact: boolean = false`
+
+**`search-select.html`** — el botón trigger aplica clases condicionales vía `[ngClass]`:
+```ts
+compact
+  ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
+  : 'rounded-xl bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30'
+
+// Border:
+isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+       : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
+```
+
+**`emos.html`**: los tres `app-search-select` de los filtros usan `[compact]="true"`. Todos los demás usos en la app quedan sin cambios.
+
+---
+
+### Pendiente backend (identificado en esta sesión)
+
+- **`GET /ssoma/salud-ocupacional/catalogos/empresas`** — agregar `WHERE es_abril = true` en el query de `contributor`. Actualmente devuelve todas las empresas (campo `es_abril = false` en todos los registros históricos — verificar que los registros Abril tengan el campo correcto antes de activar el filtro).
+- **Búsqueda `GET /emos/por-trabajador?search=`** — verificar que el WHERE del backend incluya `ApellidoNombre.Contains(search, OrdinalIgnoreCase)` además de DNI. El filtrado es 100% backend (no hay filtrado local en el frontend).
+- **Mapear `empresaOrigenNombre` y `proyectoNombre`** en el response del endpoint `GET /emos/por-trabajador`.

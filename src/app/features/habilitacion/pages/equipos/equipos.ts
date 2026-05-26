@@ -468,6 +468,14 @@ export class Equipos implements OnInit, OnDestroy {
     let payload: EquipoEntregableUpdateDto;
 
     if (this.isContratista()) {
+      if (!this.panelArchivoUrl) {
+        Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' });
+        return;
+      }
+      if (this.selectedEntregable.requiereVigencia && !this.panelVigencia) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+        return;
+      }
       payload = {
         archivoUrl: this.panelArchivoUrl || undefined,
         vigencia: this.panelVigencia || undefined,

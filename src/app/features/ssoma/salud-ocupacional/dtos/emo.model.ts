@@ -116,8 +116,10 @@ export interface EmoPorTrabajadorDto {
   estadoWorker?: WorkerEstado;
   empresaId?: number;
   empresa?: string;
+  empresaOrigenNombre?: string;
   proyectoId?: number;
   proyecto?: string;
+  proyectoNombre?: string;
   tipoContrata?: string;
   tieneEmo: boolean;
   emoId?: number;
