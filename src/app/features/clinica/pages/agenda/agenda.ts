@@ -164,4 +164,22 @@ export class Agenda implements OnInit {
       day: 'numeric',
     });
   }
+
+  initials(nombre: string): string {
+    const parts = nombre.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  avatarBg(nombre: string): string {
+    const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1'];
+    let hash = 0;
+    for (const c of nombre) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+    return colors[hash % colors.length];
+  }
+
+  timelineDot(estado: string): string {
+    return estado === 'En Atención' ? 'dot-orange' : 'dot-green-sm';
+  }
 }

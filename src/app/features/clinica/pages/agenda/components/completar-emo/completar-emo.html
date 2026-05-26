@@ -19,35 +19,34 @@
         </select>
       </div>
 
-      <!-- N° Informe / URL -->
-      <div>
-        <label class="field-label">N° Informe</label>
-        <input type="text" class="field-input" [(ngModel)]="numeroInforme" placeholder="Ej: INF-2025-001" />
-      </div>
-      <div>
-        <label class="field-label">URL resultado</label>
-        <input type="text" class="field-input" [(ngModel)]="urlResultado" placeholder="https://..." />
-      </div>
-
-      <!-- Fecha lectura EMO -->
-      <div>
-        <label class="field-label">Fecha lectura EMO</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaLectura" />
-      </div>
-
       <!-- Notas -->
-      <div>
+      <div class="col-span-2">
         <label class="field-label">Notas</label>
         <input type="text" class="field-input" [(ngModel)]="notas" placeholder="Observaciones..." />
       </div>
 
-      <!-- RESTRICCIONES -->
+      <!-- Lectura EMO — solo Apto / Apto con Restricciones -->
+      <div class="col-span-2" *ngIf="requiereDocumentos">
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="lecturaRealizada" />
+          <span class="field-label" style="margin:0">Se realizó lectura del EMO</span>
+        </label>
+        <div *ngIf="lecturaRealizada" class="fecha-lectura-row">
+          <label class="field-label">Fecha de lectura</label>
+          <input type="date" class="field-input" [(ngModel)]="fechaLectura" />
+        </div>
+      </div>
+
+      <!-- RESTRICCIONES — obligatorio al menos 1 -->
       <div class="col-span-2" *ngIf="requiereRestriccion">
-        <label class="field-label">Restricciones</label>
+        <div class="section-divider">Restricciones *</div>
         <div class="restriccion-row">
           <input type="text" class="field-input" [(ngModel)]="nuevaRestriccion"
             placeholder="Ej: No trabajo en altura" (keyup.enter)="agregarRestriccion()" />
           <button type="button" class="btn-ghost" (click)="agregarRestriccion()">+ Agregar</button>
+        </div>
+        <div *ngIf="restricciones.length === 0" class="field-hint">
+          Debes agregar al menos una restricción.
         </div>
         <div *ngIf="restricciones.length > 0" class="restriccion-list">
           <div class="restriccion-item" *ngFor="let r of restricciones; let i = index">
@@ -57,20 +56,20 @@
         </div>
       </div>
 
-      <!-- DOCUMENTOS -->
+      <!-- DOCUMENTOS — obligatorio -->
       <div class="col-span-2" *ngIf="requiereDocumentos">
-        <div class="section-divider">Documentos</div>
+        <div class="section-divider">Documentos *</div>
       </div>
       <div *ngIf="requiereDocumentos">
-        <label class="field-label">Constancia de Aptitud (PDF)</label>
+        <label class="field-label">Constancia de Aptitud (PDF) *</label>
         <input type="file" accept=".pdf" class="field-input" (change)="onArchivoAptitud($event)" />
       </div>
       <div *ngIf="requiereDocumentos">
-        <label class="field-label">EMO Completo (PDF)</label>
+        <label class="field-label">EMO Completo (PDF) *</label>
         <input type="file" accept=".pdf" class="field-input" (change)="onArchivoEmo($event)" />
       </div>
 
-      <!-- INTERCONSULTA -->
+      <!-- INTERCONSULTA — No Apto / Observado: solo especialidad y diagnóstico -->
       <ng-container *ngIf="requiereInterconsulta">
         <div class="col-span-2">
           <div class="section-divider">Interconsulta</div>
@@ -80,19 +79,12 @@
           <input type="text" class="field-input" [(ngModel)]="icEspecialidad"
             placeholder="Ej: Cardiología, Traumatología..." />
         </div>
-        <div>
-          <label class="field-label">Centro de atención</label>
-          <input type="text" class="field-input" [(ngModel)]="icCentro" placeholder="Clínica / Hospital..." />
-        </div>
-        <div>
-          <label class="field-label">CIE-10</label>
-          <input type="text" class="field-input" [(ngModel)]="icCie10" placeholder="Ej: M54.5" />
-        </div>
         <div class="col-span-2">
           <label class="field-label">Diagnóstico</label>
-          <textarea class="field-input" rows="2" [(ngModel)]="icDiagnostico" placeholder="Descripción del diagnóstico..."></textarea>
+          <textarea class="field-input" rows="2" [(ngModel)]="icDiagnostico"
+            placeholder="Descripción del diagnóstico..."></textarea>
         </div>
-        <div class="col-span-2">
+        <div class="col-span-2" *ngIf="aptitud === 'No Apto'">
           <label style="display:flex;align-items:center;gap:0.5rem;">
             <input type="checkbox" [(ngModel)]="icRequiereSeguimiento" />
             <span class="field-label" style="margin:0">Requiere seguimiento</span>

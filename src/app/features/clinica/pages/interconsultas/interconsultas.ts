@@ -46,7 +46,15 @@ export class InterconsultasClinica implements OnInit {
       pageSize: 100,
     }).subscribe({
       next: (res: any) => {
-        this.items = res.items ?? res.data ?? res ?? [];
+        if (Array.isArray(res)) {
+          this.items = res;
+        } else if (Array.isArray(res?.items)) {
+          this.items = res.items;
+        } else if (Array.isArray(res?.data)) {
+          this.items = res.data;
+        } else {
+          this.items = [];
+        }
         this.loading = false;
         this.loaderService.hide();
       },
