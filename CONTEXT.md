@@ -1977,3 +1977,86 @@ Dos inputs `.wfilters-text-row` (Buscar nombre + Buscar empresa) encima del `.wf
 this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
 ```
 El `Map` con clave `workerId` deduplica conservando la última aparición por worker.
+
+---
+
+## §Sesión 2026-05-25 (tarde) — sctr-vidaley rediseño completo panel Pólizas
+
+### Layout 3 columnas (Tab Pólizas)
+
+Rediseño total de la vista Tab Pólizas: de `sctr-columns` (2 columnas split 60/40) a `sctr-3col` con 3 columnas side-by-side dentro de un único card:
+
+- `.col-polizas` — `width: 280px; flex-shrink: 0` — lista de pólizas + paginator
+- `.col-workers` — `width: 260px; flex-shrink: 0` — panel de workers
+- `.col-pdf` — `flex: 1; min-width: 0` — visor PDF
+
+Cada columna tiene `overflow-y: auto` propio con `height: 100%`. El contenedor `.sctr-3col` es `display: flex; flex: 1; min-height: 0; overflow: hidden; border-radius: 10px`.
+
+Top bar compactada a `sctr-top` (card) con:
+- `sctr-top-row1`: título + tabs + spacer + botón "Subir SCTR/Vida Ley" (~30px)
+- `sctr-top-filters`: filtros horizontales (`*ngIf="activeTab === 'polizas'"`) (~38px)
+
+Root: `height: calc(100vh - 60px); display: flex; flex-direction: column; gap: 0.35rem`.
+
+### Doc cards — diseño compacto 2 filas + fila fechas
+
+Cada card de póliza en `.col-polizas` usa `padding: 6px 10px` y 3 filas:
+- `.doc-row1`: `[TIPO]` + empresa nombre + badge estado (`[ngClass]="getEstadoClass(doc.estado)"` sobre `class="btn-chip"` — augmenta, no reemplaza)
+- `.doc-row2`: `proyectoNombre — mes año | N trab.` (separadores `.doc-sep` color `#d1d5db`)
+- `.doc-row3` (`*ngIf="doc.fechaInicio || doc.vigencia"`): `Ini: dd/MM/yyyy — Fin: dd/MM/yyyy`
+
+Badge estado usa `getEstadoClass(doc.estado)` real, no hardcodeado a verde.
+
+`doc.fechaInicio` y `doc.vigencia` ya existían en `SctrVidaLeyDto` — no requirió cambios en el modelo.
+
+### Panel workers (col-workers) — checkbox + selección masiva
+
+- Header (`*ngIf="isAdmin()"`): checkbox "Seleccionar todos" con `[indeterminate]="docSomeChecked && !docAllChecked"` + contador workers
+- Cada `.sctr-worker-item`: checkbox individual admin-only con `$event.stopPropagation()`
+- Footer `.workers-footer` unificado: `display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border-top`
+  - `.sel-count` (0.72rem, #64748b) siempre visible
+  - Botones `btn-aprobar-sel` y `btn-rechazar-sel` envueltos en `*ngIf="docWorkersSeleccionados.size > 0"`
+  - Enlace "Ver historial de versiones" (`.historial-link`, 0.7rem, #16a34a) siempre visible
+
+### filteredDocWorkers — solo workers no aprobados
+
+```ts
+get filteredDocWorkers(): SctrWorkerDto[] {
+  if (!this.selectedDoc) return [];
+  return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+}
+```
+
+Checkboxes y botones de aprobación masiva operan sobre este subset.
+
+### SctrWorkerDto — fechaVencimiento
+
+`sctr.model.ts`: añadido `fechaVencimiento?: string` a `SctrWorkerDto`. Se muestra debajo del badge de estado en cada worker card:
+```html
+<span *ngIf="w.fechaVencimiento" class="muted-line">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+```
+
+### filtroEstado default 'Enviado'
+
+`filtroEstado = 'Enviado'` (antes `''`). La lista arranca filtrando pólizas en estado Enviado.
+
+### Aprobación directa sin Swal confirm
+
+`aprobarWorkerIndividual`, `aprobarDocWorkersSeleccionados`, `rechazarDocWorkersSeleccionados` ejecutan directo sin `Swal.fire` de confirmación.
+
+`rechazarDocWorkersSeleccionados` es método nuevo: llama `sctrService.aprobar(selectedDoc.id, { workerIdsAprobados: [], workerIdsRechazados: [...docWorkersSeleccionados], tipo, obsAbril })`.
+
+### verHistorialVersiones — stub vacío
+
+```ts
+verHistorialVersiones(): void {}
+```
+
+Añadido antes de `verVersionesPoliza()`. El enlace en el footer llama este stub; implementación pendiente.
+
+### Tipografía worker cards
+
+```css
+.sctr-worker-item .worker-info strong { font-size: 0.78rem; font-weight: 500; }
+.sctr-worker-item .worker-info .muted-line { font-size: 0.7rem; color: #64748b; }
+```
