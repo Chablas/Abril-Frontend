@@ -8,6 +8,7 @@ import { ClinicaProgramacionService } from '../../../../services/clinica-program
 import { ProgramacionClinicaDto } from '../../../../dtos/clinica.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { environment } from '../../../../../../../environments/environment';
 
 @Component({
   selector: 'app-completar-emo',
@@ -29,6 +30,11 @@ export class CompletarEmo implements OnChanges {
   fechaLectura = '';
   saving = false;
 
+  archivoAptitud: File | null = null;
+  archivoEmo: File | null = null;
+  uploadingAptitud = false;
+  uploadingEmo = false;
+
   // Restricciones
   restricciones: { descripcionLibre: string }[] = [];
   nuevaRestriccion = '';
@@ -44,6 +50,10 @@ export class CompletarEmo implements OnChanges {
 
   get requiereRestriccion(): boolean {
     return this.aptitud === 'Apto con Restricciones';
+  }
+
+  get requiereDocumentos(): boolean {
+    return this.aptitud === 'Apto' || this.aptitud === 'Apto con Restricciones';
   }
 
   get requiereInterconsulta(): boolean {
@@ -75,6 +85,10 @@ export class CompletarEmo implements OnChanges {
     this.icCie10 = '';
     this.icRequiereSeguimiento = false;
     this.saving = false;
+    this.archivoAptitud = null;
+    this.archivoEmo = null;
+    this.uploadingAptitud = false;
+    this.uploadingEmo = false;
   }
 
   agregarRestriccion(): void {
@@ -88,6 +102,16 @@ export class CompletarEmo implements OnChanges {
     this.restricciones.splice(i, 1);
   }
 
+  onArchivoAptitud(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.archivoAptitud = input.files?.[0] ?? null;
+  }
+
+  onArchivoEmo(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.archivoEmo = input.files?.[0] ?? null;
+  }
+
   get canSubmit(): boolean {
     if (!this.aptitud || !this.programacion || this.saving) return false;
     if (this.requiereInterconsulta && !this.icEspecialidad.trim()) return false;
@@ -96,6 +120,25 @@ export class CompletarEmo implements OnChanges {
 
   close(): void {
     this.closed.emit();
+  }
+
+  private subirDocumentos(emoId: number): void {
+    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/emos/${emoId}/documentos`;
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+    if (this.archivoAptitud) {
+      const fd = new FormData();
+      fd.append('file', this.archivoAptitud);
+      fd.append('tipo', 'Aptitud');
+      fetch(base, { method: 'POST', headers, body: fd }).catch(() => {});
+    }
+    if (this.archivoEmo) {
+      const fd = new FormData();
+      fd.append('file', this.archivoEmo);
+      fd.append('tipo', 'EMO');
+      fetch(base, { method: 'POST', headers, body: fd }).catch(() => {});
+    }
   }
 
   submit(): void {
@@ -137,12 +180,14 @@ export class CompletarEmo implements OnChanges {
 
     this.emoSvc.createEmo(emoDto).subscribe({
       next: (res) => {
+        const emoId = res.id;
         this.progSvc.accionClinica(this.programacion!.id, {
           id: this.programacion!.id,
           accion: 'Completar',
-          emoResultadoId: res.id,
+          emoResultadoId: emoId,
         }).subscribe({
           next: () => {
+            this.subirDocumentos(emoId);
             this.saving = false;
             this.loaderService.hide();
             this.completado.emit();

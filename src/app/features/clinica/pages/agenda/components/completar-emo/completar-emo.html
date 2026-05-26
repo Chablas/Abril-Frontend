@@ -57,6 +57,19 @@
         </div>
       </div>
 
+      <!-- DOCUMENTOS -->
+      <div class="col-span-2" *ngIf="requiereDocumentos">
+        <div class="section-divider">Documentos</div>
+      </div>
+      <div *ngIf="requiereDocumentos">
+        <label class="field-label">Constancia de Aptitud (PDF)</label>
+        <input type="file" accept=".pdf" class="field-input" (change)="onArchivoAptitud($event)" />
+      </div>
+      <div *ngIf="requiereDocumentos">
+        <label class="field-label">EMO Completo (PDF)</label>
+        <input type="file" accept=".pdf" class="field-input" (change)="onArchivoEmo($event)" />
+      </div>
+
       <!-- INTERCONSULTA -->
       <ng-container *ngIf="requiereInterconsulta">
         <div class="col-span-2">
