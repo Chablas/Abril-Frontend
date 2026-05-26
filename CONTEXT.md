@@ -2060,3 +2060,55 @@ Añadido antes de `verVersionesPoliza()`. El enlace en el footer llama este stub
 .sctr-worker-item .worker-info strong { font-size: 0.78rem; font-weight: 500; }
 .sctr-worker-item .worker-info .muted-line { font-size: 0.7rem; color: #64748b; }
 ```
+
+---
+
+## §Sesión 2026-05-25 (noche) — sctr-vidaley Tab Trabajadores rediseño + bandeja cards
+
+### sctr-vidaley — Tab Trabajadores rediseño 3 columnas
+
+El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col` — mismo contenedor y clases CSS del Tab Pólizas.
+
+**Filtros movidos al top bar**: nueva `sctr-top-filters *ngIf="activeTab === 'trabajadores'"` con empresa SearchSelect (admin), proyecto SearchSelect, tipo select, estado select, inputs nombre y empresa texto, btn Buscar — idéntico al patrón de Tab Pólizas.
+
+**Col 1 (`.col-polizas`, 280px)**: cards de trabajadores con layout en 4 filas:
+- Fila 1: `[tipo chip SCTR/VIDA LEY]` `[estado badge]` `Vence: fecha` (alineado derecha, solo si existe)
+- Fila 2: `apellidoNombre` (0.82rem, font-weight 600)
+- Fila 3: `DNI xxx`
+- Fila 4: `empresa · proyecto` (0.72rem, gris)
+- Fila 5 (`*ngIf="!w.sctrId"`): botón "Rechazar" outline rojo (`border: 1.5px solid #dc2626; color: #dc2626; background: white; border-radius: 4px`)
+
+**Col 2 (`.col-workers`, 260px)**: workers de `selectedPoliza` no aprobados — idéntico al col-workers del Tab Pólizas:
+- Header: checkbox select-all + contador
+- Lista `.sctr-split-workers`: checkbox individual, nombre/DNI/vence, badge estado, botones ✓/✗ inline
+- Panel rechazar inline: `rechazandoWorkerId` + `rechazandoMotivoInline` (mismo estado compartido)
+- Footer `.workers-footer`: Aprobar/Rechazar seleccionados (`*ngIf="polizaWorkersSeleccionados.size > 0"`) + historial link
+
+**Col 3 (`.col-pdf`, flex:1)**: PDF viewer con header (tipo, mes, año, worker nombre + empresa, badge estado), vigencia, iframe `polizaSafeUrl`.
+
+**TS nuevos métodos y getters**:
+```ts
+getPolizaWorkerEstado(w): string    // estadoVidaLey o estadoSctr según wFiltroTipo
+get filteredPolizaWorkers()         // workers de selectedPoliza donde estado !== 'Aprobado'
+polizaAllChecked / polizaSomeChecked // ahora sobre filteredPolizaWorkers
+toggleAllPolizaWorkers()            // ahora sobre filteredPolizaWorkers
+aprobarPolizaWorkerIndividual(w)    // PATCH aprobar 1 worker en selectedPoliza
+confirmarRechazarPolizaWorker(w)    // PATCH rechazar 1 worker con motivo inline
+rechazarSeleccionados()             // simplificado — sin motivoRechazo en payload
+rechazarSinPoliza(w)                // recibe SctrTrabajadorEstadoDto directamente (no usa selectedWorker)
+clearPolizaPanel()                  // ahora también resetea rechazandoWorkerId + rechazandoMotivoInline
+```
+
+### bandeja — cards rediseño
+
+**HTML** (`bandeja.html`): `bc-fecha` reemplaza `fechaEnvio` por `vigencia`:
+```html
+<span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+```
+
+**CSS** (`bandeja.css`):
+- `.bandeja-card`: `padding: 10px 12px`
+- `.bandeja-card:hover`: `border-color: #16a34a; box-shadow: 0 2px 8px rgba(0,0,0,0.07)`
+- `.bc-fecha`: `0.7rem / #64748b / white-space: nowrap`
+- `.bc-entidad`: `0.78rem` (era 0.82rem)
+- `.bc-meta`: `0.7rem / #64748b` (era 0.75rem / #6b7280)

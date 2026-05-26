@@ -457,6 +457,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.revokeBlobUrl();
     this.polizaWorkersSeleccionados = new Set();
     this.motivoRechazo = '';
+    this.rechazandoWorkerId = null;
+    this.rechazandoMotivoInline = '';
   }
 
   private loadPolizaBlob(archivoUrl: string): void {
@@ -501,24 +503,20 @@ export class SctrVidaley implements OnInit, OnDestroy {
   }
 
   toggleAllPolizaWorkers(checked: boolean): void {
-    if (!this.selectedPoliza) return;
     if (checked) {
-      this.selectedPoliza.workers.forEach((w) => this.polizaWorkersSeleccionados.add(w.workerId));
+      this.filteredPolizaWorkers.forEach((w) => this.polizaWorkersSeleccionados.add(w.workerId));
     } else {
-      this.polizaWorkersSeleccionados.clear();
+      this.filteredPolizaWorkers.forEach((w) => this.polizaWorkersSeleccionados.delete(w.workerId));
     }
   }
 
   get polizaAllChecked(): boolean {
-    const workers = this.selectedPoliza?.workers ?? [];
-    return (
-      workers.length > 0 && workers.every((w) => this.polizaWorkersSeleccionados.has(w.workerId))
-    );
+    const workers = this.filteredPolizaWorkers;
+    return workers.length > 0 && workers.every((w) => this.polizaWorkersSeleccionados.has(w.workerId));
   }
 
   get polizaSomeChecked(): boolean {
-    const workers = this.selectedPoliza?.workers ?? [];
-    return workers.some((w) => this.polizaWorkersSeleccionados.has(w.workerId));
+    return this.filteredPolizaWorkers.some((w) => this.polizaWorkersSeleccionados.has(w.workerId));
   }
 
   get canAprobar(): boolean {
@@ -546,6 +544,11 @@ export class SctrVidaley implements OnInit, OnDestroy {
   get filteredDocWorkers(): SctrWorkerDto[] {
     if (!this.selectedDoc) return [];
     return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+  }
+
+  get filteredPolizaWorkers(): SctrWorkerDto[] {
+    if (!this.selectedPoliza) return [];
+    return this.selectedPoliza.workers.filter((w) => this.getPolizaWorkerEstado(w) !== 'Aprobado');
   }
 
   get docAllChecked(): boolean {
@@ -604,7 +607,6 @@ export class SctrVidaley implements OnInit, OnDestroy {
       workerIdsAprobados: [],
       workerIdsRechazados: Array.from(this.polizaWorkersSeleccionados),
       tipo: this.wFiltroTipo,
-      obsAbril: this.motivoRechazo || undefined,
     };
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
       next: () => {
@@ -639,14 +641,58 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.modalVersionesPolizaOpen = false;
   }
 
-  rechazarSinPoliza(): void {
-    const w = this.selectedWorker;
-    if (!w?.sctrHabId || this.savingAprobar) return;
-    this.savingAprobar = true;
-    const dto: WorkerEntregableUpdateDto = {
-      estado: 'Rechazado',
-      obsAbril: this.motivoRechazo || undefined,
+  aprobarPolizaWorkerIndividual(w: SctrWorkerDto): void {
+    if (!this.selectedPoliza || this.savingWorkerInline) return;
+    this.savingWorkerInline = true;
+    const dto: SctrVidaLeyAprobarDto = {
+      workerIdsAprobados: [w.workerId],
+      workerIdsRechazados: [],
+      tipo: this.wFiltroTipo,
+      vigencia: this.selectedPoliza.vigencia,
     };
+    this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
+      next: () => {
+        this.savingWorkerInline = false;
+        Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1200, showConfirmButton: false });
+        this.loadTrabajadores();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingWorkerInline = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  confirmarRechazarPolizaWorker(w: SctrWorkerDto): void {
+    if (!this.selectedPoliza || this.savingWorkerInline) return;
+    this.savingWorkerInline = true;
+    const dto: SctrVidaLeyAprobarDto = {
+      workerIdsAprobados: [],
+      workerIdsRechazados: [w.workerId],
+      tipo: this.wFiltroTipo,
+      obsAbril: this.rechazandoMotivoInline || undefined,
+    };
+    this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
+      next: () => {
+        this.savingWorkerInline = false;
+        this.rechazandoWorkerId = null;
+        this.rechazandoMotivoInline = '';
+        Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1200, showConfirmButton: false });
+        this.loadTrabajadores();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingWorkerInline = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  rechazarSinPoliza(w: SctrTrabajadorEstadoDto): void {
+    if (!w.sctrHabId || this.savingAprobar) return;
+    this.savingAprobar = true;
+    const dto: WorkerEntregableUpdateDto = { estado: 'Rechazado' };
     this.trabajadorHabService.updateEntregable(w.sctrHabId, dto).subscribe({
       next: () => {
         this.savingAprobar = false;
@@ -806,6 +852,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   getMesLabel(num: number): string {
     return this.meses.find((m) => m.num === num)?.label ?? String(num);
+  }
+
+  getPolizaWorkerEstado(w: SctrWorkerDto): string {
+    return this.wFiltroTipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr;
   }
 
   getEstadoClass(estado: string): string {
