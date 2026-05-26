@@ -158,4 +158,20 @@ export class CatalogosSaludService {
       .put<EmoTipoDto>(`${this.apiUrl}/emo-tipos/${id}`, dto, { headers: buildAuthHeaders() })
       .pipe(tap(() => (this.emoTipos$ = undefined)));
   }
+
+  solicitarActivacionClinica(email: string): Observable<void> {
+    return this.http.post<void>(
+      `${SALUD_OCUPACIONAL_BASE}/auth/solicitar-activacion`,
+      { email },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  crearClinicaUsuario(clinicaId: number, nombre: string, email: string): Observable<any> {
+    return this.http.post<any>(
+      `${SALUD_OCUPACIONAL_BASE}/catalogos/clinicas/${clinicaId}/usuarios`,
+      { nombre, email },
+      { headers: buildAuthHeaders() },
+    );
+  }
 }
