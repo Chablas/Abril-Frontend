@@ -150,6 +150,16 @@
                   <line x1="9" y1="14" x2="15" y2="14"/>
                 </svg>
               </button>
+              <button
+                *ngIf="isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))"
+                class="icon-btn icon-btn--emo"
+                title="Programar EMO"
+                (click)="$event.stopPropagation(); abrirProgramarEmo(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -713,6 +723,8 @@
   [open]="mostrarProgramarEmo"
   [preselectedWorkerId]="workerParaProgramarEmo?.workerId ?? null"
   [preselectedWorkerNombre]="workerParaProgramarEmo?.apellidoNombre ?? null"
+  [preselectedWorkerDni]="workerParaProgramarEmo?.dni ?? null"
+  [preselectedEmpresaId]="workerParaProgramarEmo?.empresaId ?? null"
   (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
   (saved)="onProgramarEmoSaved()"
 ></app-programacion-create>

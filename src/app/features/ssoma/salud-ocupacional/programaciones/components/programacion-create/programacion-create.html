@@ -34,10 +34,6 @@
         <input type="date" class="field-input" [(ngModel)]="fecha" />
       </div>
       <div>
-        <label class="field-label">Hora</label>
-        <input type="time" class="field-input" [(ngModel)]="hora" />
-      </div>
-      <div>
         <label class="field-label">Clínica</label>
         <app-search-select
           [options]="clinicas"
@@ -48,26 +44,6 @@
           placeholder="Selecciona clínica"
           (valueChange)="onClinicaChange($event)"
         ></app-search-select>
-      </div>
-      <div>
-        <label class="field-label">Médico</label>
-        <app-search-select
-          [options]="medicosFiltrados"
-          valueField="id"
-          displayField="apellidoNombre"
-          [value]="medicoId"
-          [showLabel]="false"
-          placeholder="Selecciona médico"
-          (valueChange)="medicoId = $event"
-        ></app-search-select>
-      </div>
-      <div class="col-span-2">
-        <label class="field-label">Motivo</label>
-        <input type="text" class="field-input" [(ngModel)]="motivo" />
-      </div>
-      <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <textarea rows="3" class="field-input" [(ngModel)]="notas"></textarea>
       </div>
     </div>
 
