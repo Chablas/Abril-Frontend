@@ -632,9 +632,16 @@ Plataforma completa mobile-first.
 - **Botón "ENVIAR DOCUMENTO" eliminado** de `empresa.html` y `equipos.html` — flujo auto-save al subir.
 
 **Cambios 2026-05-26 — Módulo Clínica + integración Programar EMO en Trabajadores:**
-- **`ProgramacionCreate`** (`ssoma/salud-ocupacional/programaciones/components/programacion-create/`): nuevos `@Input() preselectedWorkerId` y `@Input() preselectedWorkerNombre`. `ngOnInit` pre-carga `this.worker` con los datos del worker pasado.
+- **`ProgramacionCreate`** (`ssoma/salud-ocupacional/programaciones/components/programacion-create/`):
+  - `@Input()` nuevos: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`. `ngOnInit` pre-carga `this.worker` (con `dni: preselectedWorkerDni ?? ''`) y `this.empresaId` desde los inputs.
+  - Campos **eliminados** del formulario y del TS: `hora`, `medicoId`, `motivo`, `notas`. Array `medicos` y getter `medicosFiltrados` eliminados. `onClinicaChange` simplificado a solo asignar `clinicaId`.
+  - Método `onTipoEmoChange(id)` para actualizar `tipoEmoId` con log durante desarrollo.
+  - Payload: campo renombrado `fecha` → `fechaProgramada`. Mismo cambio en `ProgramacionCreateDto` (`ssoma/dtos/programacion.model.ts`).
+- **`WorkerHabilitacionListDto`** (`habilitacion/dtos/trabajador.model.ts`): añadidos `tieneEmo?: boolean` y `diasRestantesEmo?: number | null`.
 - **`trabajadores.ts`** (`habilitacion/pages/trabajadores/`): importa `ProgramacionCreate`. Propiedades `mostrarProgramarEmo`, `workerParaProgramarEmo`. Métodos `abrirProgramarEmo(worker)` y `onProgramarEmoSaved()`.
-- **`trabajadores.html`**: `<app-programacion-create *ngIf="mostrarProgramarEmo">` al final del template con `preselectedWorkerId` y `preselectedWorkerNombre` bindings.
+- **`trabajadores.html`**: botón "Programar EMO" (icono ECG) en `div.wc-actions` por worker card, condición `isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))`. `<app-programacion-create>` al final del template con 4 inputs: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`.
+- **`agenda.ts`** (`clinica/pages/agenda/`): método `aceptar()` reemplazado por `Swal.fire` con input `type="time"` (hora obligatoria, `preConfirm` valida) antes de llamar `ejecutarAccion(..., { accion: 'Aceptar', checkInHora: result.value })`. Importa `Swal`.
+- **`completar-emo.css`**: añadidos estilos para `.form-wrapper`, `.grid-2`, `.col-span-2`, `.field-label`, `.field-input`, `.form-footer`, `.btn-primary`, `.btn-ghost`, `.badge`.
 
 ### Branches actuales
 - Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).

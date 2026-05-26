@@ -90,6 +90,11 @@ export class ProgramacionCreate implements OnInit {
     }
   }
 
+  onTipoEmoChange(id: number): void {
+    this.tipoEmoId = id;
+    console.log('tipoEmoId changed:', id);
+  }
+
   onClinicaChange(id: number | null): void {
     this.clinicaId = id;
   }
@@ -112,7 +117,7 @@ export class ProgramacionCreate implements OnInit {
       workerId: this.worker.id,
       tipoEmoId: this.tipoEmoId,
       empresaId: this.empresaId,
-      fecha: this.fecha,
+      fechaProgramada: this.fecha,
       clinicaId: this.clinicaId || undefined,
     };
 
