@@ -70,6 +70,8 @@ export class Detail implements OnInit {
       { key: 'Instructivo',          label: 'Instructivo' },
       { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
+      { key: 'FichaTecnica',         label: 'Ficha Técnica' },
+      { key: 'Anexo',                label: 'Anexos' },
     ];
     if (this.item.paymentMethodId === 2) {
       return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
@@ -318,6 +320,8 @@ export class Detail implements OnInit {
       case 'Instructivo':          return this.item.instructivo          ?? undefined;
       case 'NonConformingOutput':  return this.item.nonConformingOutput  ?? undefined;
       case 'ToleranceChart':       return this.item.toleranceChart       ?? undefined;
+      case 'FichaTecnica':         return this.item.fichaTecnica         ?? undefined;
+      case 'Anexo':                return this.item.anexo                ?? undefined;
       case 'ScannedDoc1':          return this.item.scannedDoc1          ?? undefined;
       default: return undefined;
     }
@@ -435,6 +439,8 @@ export class Detail implements OnInit {
           case 'Instructivo':          this.item.instructivo          = uploaded; break;
           case 'NonConformingOutput':  this.item.nonConformingOutput  = uploaded; break;
           case 'ToleranceChart':       this.item.toleranceChart       = uploaded; break;
+          case 'FichaTecnica':         this.item.fichaTecnica         = uploaded; break;
+          case 'Anexo':                this.item.anexo                = uploaded; break;
           case 'ScannedDoc1':          this.item.scannedDoc1          = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });

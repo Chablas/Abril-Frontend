@@ -4,6 +4,7 @@ import { ContractTypeSimpleDTO } from "./contractTypeSimple.model";
 import { ContractModalitySimpleDTO } from "./contractModalitySimple.model";
 import { CurrencySimpleDTO } from "./currencySimple.model";
 import { PaymentMethodSimpleDTO } from "./paymentMethodSimple.model";
+import { PaymentFormSimpleDTO } from "./paymentFormSimple.model";
 import { WorkItemSimpleDTO } from "./workItemSimple.model";
 import { WorkItemCategorySimpleDTO } from "./workItemCategorySimple.model";
 
@@ -12,6 +13,7 @@ export interface ProjectSubContractorFormDataDTO {
     contractTypes: ContractTypeSimpleDTO[];
     contractModalities: ContractModalitySimpleDTO[];
     paymentMethods: PaymentMethodSimpleDTO[];
+    paymentForms: PaymentFormSimpleDTO[];
     currencies: CurrencySimpleDTO[];
     workItems: WorkItemSimpleDTO[];
     contributors: ContributorFactoryDTO[];
