@@ -203,6 +203,7 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos',        route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
+        { label: 'Áreas',            route: '/configuracion/area',      featureKey: 'configuracion.area' },
         { label: 'Razones Sociales', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
         { label: 'Lista de Trabajadores', route: '/configuracion/workers', featureKey: 'configuracion.workers' },
       ],

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Proyectos } from './features/proyectos/components/proyectos';
+import { Area } from './features/area/components/area';
 import { Companies } from './pages/companies/companies';
 import { Workers } from './pages/workers/workers';
 import { roleGuard } from '../../core/guards/role.guard';
@@ -16,6 +17,12 @@ const routes: Routes = [
         component: Proyectos,
         canActivate: [roleGuard],
         data: { titulo: 'PROYECTOS', featureKey: 'configuracion.proyectos' },
+      },
+      {
+        path: 'area',
+        component: Area,
+        canActivate: [roleGuard],
+        data: { titulo: 'CONFIGURACIÓN - ÁREAS', featureKey: 'configuracion.area' },
       },
       {
         path: 'companies',
