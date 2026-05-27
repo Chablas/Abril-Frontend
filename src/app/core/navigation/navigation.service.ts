@@ -51,6 +51,8 @@ export class NavigationService {
       iconKey: 'projects',
       baseRoute: '/projects',
       items: [
+        { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
+        { label: 'Cronograma de Actividades',     route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
         { label: 'Dashboard Lecciones',           route: '/projects/dashboard',                    featureKey: 'projects.dashboard' },
         { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
         { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },

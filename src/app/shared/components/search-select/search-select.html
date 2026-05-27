@@ -22,7 +22,7 @@
           : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
       ]"
     >
-      <span [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
+      <span class="ss-trigger-label" [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
         {{ selectedLabel }}
       </span>
       <span class="flex items-center gap-[8px]">
@@ -90,7 +90,7 @@
         <div
           *ngFor="let option of filteredOptions; trackBy: trackByOption"
           (click)="select(option)"
-          class="px-[12px] py-[9px] text-sm cursor-pointer transition-colors"
+          class="ss-option px-[12px] py-[9px] text-sm cursor-pointer transition-colors"
           [ngClass]="option[valueField] === value
             ? 'bg-[#E5F7D1] text-[#64BC04] font-medium hover:bg-[#d4f0b8]'
             : 'text-gray-700 hover:bg-[#F0F0F0]'"

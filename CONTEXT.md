@@ -2354,3 +2354,78 @@ Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoi
 - `POST /emos` — aceptar campo `interconsultaInline` en el body y crear la interconsulta en la misma transacción.
 - `POST /emos` — aceptar `fechaLectura` y persistirlo en `worker_emos.fecha_lectura`.
 - `EmoRestriccionCreateDto.vigente` — confirmar que el backend mapea este campo o lo ignora sin error.
+
+---
+
+## Sesión 2026-05-25 — Rediseño completo Dashboard de Proyectos (estilo Power BI)
+
+Rediseño total de `features/projects/projects-dashboard/`. Los 3 endpoints del backend ya estaban listos.
+
+### Endpoints consumidos
+```
+GET  /api/v1/projects-dashboard/filters
+GET  /api/v1/projects-dashboard?proyectoId=&estado=&responsableId=&fechaDesde=&fechaHasta=
+GET  /api/v1/projects-dashboard/{proyectoId}
+```
+
+### Archivos nuevos creados
+- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
+- `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
+- `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
+
+### Registro en routing y navegación
+- `proyectos-routing-module.ts` — ruta `projects-dashboard` con `canActivate: [roleGuard]`, `featureKey: 'projects.projects-dashboard'`.
+- `navigation.service.ts` — item `{ label: 'Dashboard de Proyectos', route: '/projects/projects-dashboard', featureKey: 'projects.projects-dashboard' }`.
+
+---
+
+## Sesión 2026-05-26 — Cronograma de Actividades + Ajustes Dashboard
+
+### 1. Nueva feature: Cronograma de Actividades
+
+Módulo completo para gestionar actividades de la tabla `project_activity`.
+
+**Archivos creados:**
+- `core/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
+
+**Endpoints:**
+```
+GET    /api/v1/cronograma-actividades/proyectos
+GET    /api/v1/cronograma-actividades/{proyectoId}/actividades
+POST   /api/v1/cronograma-actividades/{proyectoId}/actividades
+PUT    /api/v1/cronograma-actividades/actividades/{id}
+PATCH  /api/v1/cronograma-actividades/actividades/{id}/culminar
+DELETE /api/v1/cronograma-actividades/actividades/{id}
+```
+
+**DTOs:** `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`, `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order }`.
+
+**Funcionalidad:** dropdown de proyectos, tabla con barra de avance coloreada (verde/azul/amarillo/rojo por umbral), badges de estado (CULMINADO/VENCIDO/EN PROCESO/PENDIENTE), modal crear/editar con slider, botón culminar/desculminar, eliminar con Swal.
+
+**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
+
+### 2. SearchSelect — ajuste de texto
+
+`shared/components/search-select/search-select.css` (antes vacío). Clases `.ss-trigger-label` y `.ss-option`: 13px, ellipsis, `max-width: 200px`. Aplica a todas las instancias.
+
+### 3. Dashboard de Proyectos — alineación campos con backend
+
+`ProjectsDashboardItemDTO` renombrado:
+
+| Campo anterior | Campo nuevo |
+|---|---|
+| `proyectoNombre` | `projectDescription` |
+| `responsableArqCom` | `responsableNombre` |
+
+Archivos actualizados: modelo, html (tabla + panel header), ts (`initBarrasChart`). El campo `proyectoId` no cambió.
+
+### 4. Dashboard de Proyectos — Gantt mejorado
+
+- `date_format`: `'%Y-%m-%d'` → `'%d-%m-%Y %H:%i'`
+- Destroy/reinit completo en cada apertura: `gantt.destructor()` + `ganttInitialized = false`
+- Escala: `month` → `day` (`%d %M`)
+- Añadidos: `row_height:34`, `bar_height:20`, `show_grid:true`, `grid_width:200`, `min_column_width:60`
+- Columnas: Actividad (180px, tree) + Días (40px)
+- `task_class` template: `gantt-culminado/gantt-vencido/gantt-en-proceso/gantt-pendiente` por estado
+- Estilos `.gantt_task_line.gantt-*` en `styles.css` global (dhtmlx inyecta fuera del shadow del componente)

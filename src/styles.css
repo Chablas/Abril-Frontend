@@ -92,6 +92,21 @@
 
 .gantt_task_line {
   background: white !important;
-  
 }
+
 .hidden-bandeja { display: none !important; }
+
+/* Gantt task colors - global porque dhtmlx inyecta en el DOM fuera del componente */
+.gantt_task_line.gantt-culminado { background-color: #63bf03 !important; border-color: #4a9002 !important; }
+.gantt_task_line.gantt-culminado .gantt_task_progress { background-color: #4a9002 !important; }
+
+.gantt_task_line.gantt-vencido { background-color: #ef4444 !important; border-color: #cc2222 !important; }
+.gantt_task_line.gantt-vencido .gantt_task_progress { background-color: #cc2222 !important; }
+
+.gantt_task_line.gantt-en-proceso { background-color: #2596be !important; border-color: #1a7a9e !important; }
+.gantt_task_line.gantt-en-proceso .gantt_task_progress { background-color: #1a7a9e !important; }
+
+.gantt_task_line.gantt-pendiente { background-color: #9ca3af !important; border-color: #6b7280 !important; }
+.gantt_task_line.gantt-pendiente .gantt_task_progress { background-color: #6b7280 !important; }
+
+.gantt_task_content { color: #fff !important; font-size: 11px !important; }
