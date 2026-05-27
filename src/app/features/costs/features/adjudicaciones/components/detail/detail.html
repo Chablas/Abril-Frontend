@@ -253,6 +253,14 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Periodo de validez de garantía (días)</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays"
+              min="0" step="1"
+              placeholder="Ej: 365"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
           <!-- Plazo calculado automáticamente -->
           <div *ngIf="plazoEnDias !== null" class="sm:col-span-2">
             <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
@@ -318,6 +326,11 @@
           <div *ngIf="item.guaranteeFundDays != null">
             <p class="text-xs text-gray-400 mb-[2px]">Días del fondo de garantía</p>
             <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundDays }} días</p>
+          </div>
+
+          <div *ngIf="item.guaranteeValidityDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Periodo de validez de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeValidityDays }} días</p>
           </div>
 
         </div>

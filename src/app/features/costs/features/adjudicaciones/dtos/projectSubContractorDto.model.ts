@@ -46,6 +46,7 @@ export interface ProjectSubContractorDTO {
   promissoryNoteNumber?: number | null;
   guaranteeFundPercentage?: number | null;
   guaranteeFundDays?: number | null;
+  guaranteeValidityDays?: number | null;
   arrivedWithObservations?: boolean | null;
   // Documentos del contrato (paso 3)
   contract?: ProjectSubContractorFileDTO;

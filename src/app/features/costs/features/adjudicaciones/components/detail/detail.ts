@@ -46,7 +46,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -164,6 +164,7 @@ export class Detail implements OnInit {
     if (this.item.promissoryNoteNumber)  this.step2Form.promissoryNoteNumber  = this.item.promissoryNoteNumber;
     if (this.item.guaranteeFundPercentage != null) this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage;
     if (this.item.guaranteeFundDays != null)       this.step2Form.guaranteeFundDays       = this.item.guaranteeFundDays;
+    if (this.item.guaranteeValidityDays != null)   this.step2Form.guaranteeValidityDays   = this.item.guaranteeValidityDays;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -976,6 +977,12 @@ export class Detail implements OnInit {
         ? null
         : Math.trunc(Number(rawGfd));
 
+    const rawGvd = this.step2Form.guaranteeValidityDays;
+    const guaranteeValidityDays: number | null =
+      rawGvd === null || rawGvd === undefined || (rawGvd as any) === ''
+        ? null
+        : Math.trunc(Number(rawGvd));
+
     if (guaranteeFundPercentage === null) {
       Swal.fire({ icon: 'warning', title: 'El porcentaje del fondo de garantía es obligatorio.', draggable: true });
       return;
@@ -1001,6 +1008,7 @@ export class Detail implements OnInit {
       promissoryNoteNumber,
       guaranteeFundPercentage,
       guaranteeFundDays,
+      guaranteeValidityDays,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
@@ -1012,6 +1020,7 @@ export class Detail implements OnInit {
         this.item.promissoryNoteNumber     = promissoryNoteNumber;
         this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
         this.item.guaranteeFundDays        = guaranteeFundDays;
+        this.item.guaranteeValidityDays    = guaranteeValidityDays;
         this.viewStep = 3;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });
