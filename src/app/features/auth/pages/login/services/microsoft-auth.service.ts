@@ -116,7 +116,7 @@ export class MicrosoftAuthService {
       .forEach(k => localStorage.removeItem(k));
 
     // Limpiar claves de la app
-    ['access_token', 'session_token', 'token_expires_at', 'graph_access_token', 'user']
+    ['access_token', 'session_token', 'token_expires_at', 'graph_access_token', 'user', 'allowed_features']
       .forEach(key => localStorage.removeItem(key));
 
     this.msalInstance = null;
