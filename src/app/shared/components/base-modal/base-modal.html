@@ -1,5 +1,5 @@
 <div
-  class="fixed inset-0 bg-black/40 z-50"
+  class="fixed inset-0 bg-black/40 z-[1000]"
   [class.overflow-y-auto]="!height"
   [class.overflow-hidden]="!!height"
   [class.flex]="!!height"
@@ -10,7 +10,7 @@
 
   <div [class]="height ? '' : 'min-h-screen flex items-center justify-center py-10'">
     <div
-      [class]="(height ? '' : 'm-5 ') + 'bg-white rounded-xl shadow-xl relative ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : '')"
+      [class]="(height ? '' : 'm-5 ') + 'bg-white rounded-xl shadow-xl relative z-[1001] ' + width + (height ? ' ' + height + ' flex flex-col overflow-hidden' : '')"
       (mousedown)="$event.stopPropagation()"
       (click)="$event.stopPropagation()">
 

@@ -39,13 +39,31 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   totalRecords = 0;
 
   loader: boolean = false;
-  showCreateModal: boolean = false;
-  showMilestoneScheduleHistory: boolean = false;
-  showDetailModal: boolean = false;
   showMilestoneSchedule: boolean = false;
   showEditButton: boolean = false;
-  showCreateMilestoneScheduleModal: boolean = false;
-  showEditModal: boolean = false;
+
+  // Modal flags as getter/setter so every assignment (TS or template) toggles the
+  // "Hoy" line visibility — the line lives inside the gantt's own stacking context
+  // and can't be layered behind modals via z-index alone.
+  private _showCreateModal = false;
+  get showCreateModal() { return this._showCreateModal; }
+  set showCreateModal(v: boolean) { this._showCreateModal = v; this.updateTodayLineVisibility(); }
+
+  private _showMilestoneScheduleHistory = false;
+  get showMilestoneScheduleHistory() { return this._showMilestoneScheduleHistory; }
+  set showMilestoneScheduleHistory(v: boolean) { this._showMilestoneScheduleHistory = v; this.updateTodayLineVisibility(); }
+
+  private _showDetailModal = false;
+  get showDetailModal() { return this._showDetailModal; }
+  set showDetailModal(v: boolean) { this._showDetailModal = v; this.updateTodayLineVisibility(); }
+
+  private _showCreateMilestoneScheduleModal = false;
+  get showCreateMilestoneScheduleModal() { return this._showCreateMilestoneScheduleModal; }
+  set showCreateMilestoneScheduleModal(v: boolean) { this._showCreateMilestoneScheduleModal = v; this.updateTodayLineVisibility(); }
+
+  private _showEditModal = false;
+  get showEditModal() { return this._showEditModal; }
+  set showEditModal(v: boolean) { this._showEditModal = v; this.updateTodayLineVisibility(); }
 
   formdata: ScheduleFormData = {
     projects: [],
@@ -60,6 +78,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   milestoneOptions: [] = [];
   selectedTask: any;
+  searchQuery: string = '';
+  projectImages: Record<number, string> = {};
 
   private mouseDownOnBackdrop = false;
 
@@ -97,6 +117,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     milestoneSchedules: [],
     forceSave: false
   };
+  ganttTasks: any[] = [];
   editMilestoneScheduleItem = {
     id: 0,
     milestoneId: 0,
@@ -104,6 +125,67 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     plannedStartDate: '',
     plannedEndDate: '' as string | null,
   };
+
+  get kpis() {
+    let total = 0, culminados = 0, enProceso = 0;
+    this.ganttTasks.forEach((task: any) => {
+      total++;
+      if (this.getEstado(task) === 'CULMINADO') culminados++;
+      else enProceso++;
+    });
+    return { total, culminados, enProceso };
+  }
+
+  getEstado(task: any): string {
+    return task['fechaRealFin'] != null ? 'CULMINADO' : 'EN_PROCESO';
+  }
+
+  getEstadoClass(estado: string): string {
+    return estado === 'CULMINADO' ? 'estado-culminado' : 'estado-en-proceso';
+  }
+
+  getEstadoLabel(estado: string): string {
+    return estado === 'CULMINADO' ? 'Culminado' : 'En proceso';
+  }
+
+  getGanttClass(task: any): string {
+    const base = task.type === 'milestone' ? 'custom-milestone' : 'custom-task';
+    return this.getEstado(task) === 'CULMINADO'
+      ? `${base} ms-culminado`
+      : `${base} ms-en-proceso`;
+  }
+
+  get projectsFiltered(): ProjectGetDTO[] {
+    if (!this.searchQuery.trim()) return this.schedules.data;
+    const q = this.searchQuery.toLowerCase();
+    return this.schedules.data.filter((p) =>
+      p.projectDescription.toLowerCase().includes(q),
+    );
+  }
+
+  getProjectColor(name: string): string {
+    const colors = ['#4f46e5', '#0891b2', '#16a34a', '#dc2626', '#d97706', '#7c3aed', '#db2777', '#0284c7'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  getInitials(name: string): string {
+    return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  }
+
+  onProjectImageChange(projectId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.projectService.uploadProjectFoto(projectId, file).subscribe({
+      next: (res) => {
+        this.projectImages[projectId] = res.fotoUrl;
+        this.cdr.detectChanges();
+      },
+      error: (err) => this.error(err),
+    });
+  }
 
   constructor(
     private milestoneScheduleService: MilestoneScheduleService,
@@ -128,10 +210,14 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.projectService.getProjectPagedWithResidents(page).subscribe({
       next: (response) => {
         this.schedules = response;
+        console.log('Proyectos:', this.schedules.data.map((p) => ({ id: p.projectId, foto: p.fotoUrl })));
         this.currentPage = response.page;
         this.totalPages = response.totalPages;
         this.pageSize = response.pageSize;
         this.totalRecords = response.totalRecords;
+        response.data.forEach((p) => {
+          if (p.fotoUrl) this.projectImages[p.projectId] = p.fotoUrl;
+        });
         this.loader = false;
         this.cdr.detectChanges();
       },
@@ -217,7 +303,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               start_date: this.parseStringToDate(m.plannedStartDate),
               ...(m.plannedEndDate
                 ? { end_date: this.parseStringToDate(m.plannedEndDate) }
-                : { type: 'milestone', duration: 0 }),
+                : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) }),
             })),
         ),
       )
@@ -230,6 +316,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
           this.initGantt(true);
           gantt.parse({ data, links: [] });
+          this.ganttTasks = gantt.getTaskByTime();
+          setTimeout(() => this.drawTodayLine(), 50);
 
           this.loader = false;
           this.cdr.detectChanges();
@@ -260,7 +348,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
                 order: m.order,
                 ...(m.plannedEndDate
                   ? { end_date: this.parseStringToDate(m.plannedEndDate) }
-                  : { type: 'milestone', duration: 0 }),
+                  : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) }),
               })),
           ),
         )
@@ -285,6 +373,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.detectChanges();
             this.initGantt(false);
             gantt.parse({ data, links: [] });
+            this.ganttTasks = gantt.getTaskByTime();
+            setTimeout(() => this.drawTodayLine(), 50);
             this.loader = false;
             this.showEditButton = true;
             this.cdr.detectChanges();
@@ -303,7 +393,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               order: m.order,
               ...(m.plannedEndDate
                 ? { end_date: this.parseStringToDate(m.plannedEndDate) }
-                : { type: 'milestone', duration: 0 }),
+                : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) }),
             })),
           ),
         )
@@ -328,6 +418,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.detectChanges();
             this.initGantt(false);
             gantt.parse({ data, links: [] });
+            this.ganttTasks = gantt.getTaskByTime();
+            setTimeout(() => this.drawTodayLine(), 50);
             this.loader = false;
             this.showEditButton = true;
             this.cdr.detectChanges();
@@ -478,6 +570,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     gantt.config.scales = [
       { unit: 'month', step: 1, format: '%F %Y' },
       { unit: 'week', step: 1, format: 'Sem %W' },
+      { unit: 'day', step: 1, format: '' },
     ];
 
     gantt.attachEvent('onTaskClick', (id, e) => {
@@ -485,6 +578,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
       if (target?.closest('.delete-task')) {
         this.deleteTask(Number(id));
+        return false;
+      }
+
+      if (target?.closest('.culminar-task')) {
+        this.toggleCulminar(Number(id));
         return false;
       }
 
@@ -521,6 +619,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     this.destroyGantt();
 
+    (gantt.config as any).csp = false;
     gantt.config.readonly = readonly;
     gantt.config.drag_move = false;
     gantt.config.drag_resize = false;
@@ -528,42 +627,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     gantt.config['drag_tree'] = !readonly;
     gantt.config.order_branch = true;
     gantt.config.show_links = false;
+    gantt.config.row_height = 28;
+    gantt.config.bar_height = 16;
+    gantt.config.milestone_height = 16;
+    gantt.config.scale_height = 44;
 
     const columns: any[] = [];
-
-    if (!readonly) {
-      columns.push({
-        name: 'edit',
-        label: '',
-        width: 40,
-        align: 'center',
-        template: (task: any) => {
-          return `<div class="flex align-center"><button class="cursor-pointer edit-task" data-id="${task.id}">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14.06 9L15 9.94L5.92 19H5V18.08L14.06 9ZM17.66 3C17.41 3 17.15 3.1 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18.17 3.09 17.92 3 17.66 3ZM14.06 6.19L3 17.25V21H6.75L17.81 9.94L14.06 6.19Z"
-                        fill="#64BC04" />
-                    </svg>
-                  </button></div>`;
-        },
-      });
-    }
-
-    if (!readonly) {
-      columns.push({
-        name: 'delete',
-        label: '',
-        width: 40,
-        align: 'center',
-        template: (task: any) => {
-          return `<button class="cursor-pointer delete-task" data-id="${task.id}">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z"
-                        fill="#64BC04" />
-                    </svg>
-                  </button>`;
-        },
-      });
-    }
 
     columns.push(
       {
@@ -591,17 +660,46 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           return gantt.date.date_to_str('%d-%m-%y')(task.end_date);
         },
       },
+      {
+        name: 'estado',
+        label: 'Estado',
+        align: 'center',
+        width: 100,
+        template: (task: any) => {
+          const estado = this.getEstado(task);
+          return `<span class="estado-badge ${this.getEstadoClass(estado)}">${this.getEstadoLabel(estado)}</span>`;
+        },
+      },
     );
 
-    gantt.config.columns = columns;
+    console.log('Columnas:', columns.map((c) => c.name));
 
-    gantt.templates.task_class = (start, end, task) =>
-      task.type === 'milestone' ? 'custom-milestone' : 'custom-task';
+    gantt.config.columns = columns;
+    gantt.config.grid_width = 420;
+    gantt.config.scroll_size = 20;
+
+    gantt.templates.task_class = (_start: any, _end: any, task: any) => {
+      const estadoClass = this.getGanttClass(task);
+      if (task.type === 'milestone') return `gantt_milestone ${estadoClass}`;
+      return estadoClass;
+    };
     gantt.templates.task_text = () => '';
+    gantt.templates.tooltip_text = (start: any, end: any, task: any) => {
+      const fmt = gantt.date.date_to_str('%d-%m-%Y');
+      const inicio = start instanceof Date ? fmt(start) : '-';
+      const fin = task.type === 'milestone' || !(end instanceof Date) ? '-' : fmt(end);
+      return `<b>${task.text}</b><br/>Inicio: ${inicio}<br/>Fin: ${fin}`;
+    };
+    gantt.templates.task_end_date = (date: any) => {
+      return date instanceof Date ? gantt.date.date_to_str('%d-%m-%y')(date) : '';
+    };
     gantt.init(this.ganttContainer.nativeElement);
+    if (typeof (gantt as any).addMarker === 'function') {
+      (gantt as any).addMarker({ start_date: new Date(), css: 'today-line', text: 'Hoy' });
+    }
   }
 
-  private deleteTask(taskId: number) {
+  deleteTask(taskId: number) {
     const task = gantt.getTask(taskId);
 
     Swal.fire({
@@ -626,14 +724,15 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private editTask(taskId: number) {
+  editTask(taskId: number) {
     const task = gantt.getTask(taskId);
+    const isMilestone = task.type === 'milestone' || !task.end_date || task.end_date === task.start_date;
     this.editMilestoneScheduleItem = {
       id: Number(task.id),
       milestoneId: task['milestoneId'],
       text: task.text,
       plannedStartDate: task.start_date ? this.parseDateToString(task.start_date) : '',
-      plannedEndDate: task.type == 'milestone' ? null : task.end_date ? this.parseDateToString(task.end_date) : null,
+      plannedEndDate: isMilestone ? null : (task.end_date ? this.parseDateToString(task.end_date) : null),
     };
     this.showEditModal = true;
   }
@@ -651,20 +750,114 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private drawTodayLine(): void {
+    if (!this.ganttContainer) return;
+
+    const existing = this.ganttContainer.nativeElement.querySelector('#today-line-custom');
+    if (existing) existing.remove();
+
+    const state = gantt.getState();
+    const minDate: Date = state.min_date;
+    const maxDate: Date = state.max_date;
+    const today = new Date();
+
+    if (!(minDate instanceof Date) || !(maxDate instanceof Date)) return;
+
+    const totalMs = maxDate.getTime() - minDate.getTime();
+    if (totalMs <= 0 || today < minDate || today > maxDate) return;
+
+    const pct = (today.getTime() - minDate.getTime()) / totalMs;
+
+    const taskArea = this.ganttContainer.nativeElement.querySelector('.gantt_data_area') as HTMLElement;
+    if (!taskArea) return;
+
+    const left = taskArea.scrollWidth * pct;
+
+    taskArea.style.position = 'relative';
+    taskArea.style.zIndex = '0';
+
+    const line = document.createElement('div');
+    line.id = 'today-line-custom';
+    line.style.cssText = `position:absolute;left:${left}px;top:0;width:2px;height:9999px;background:#f59e0b;opacity:0.85;z-index:1;pointer-events:none;`;
+
+    const label = document.createElement('span');
+    label.textContent = 'Hoy';
+    label.style.cssText = 'font-size:10px;color:#f59e0b;position:absolute;top:2px;left:4px;white-space:nowrap;';
+    line.appendChild(label);
+
+    taskArea.appendChild(line);
+    this.updateTodayLineVisibility();
+  }
+
+  private updateTodayLineVisibility() {
+    const line = document.getElementById('today-line-custom');
+    if (!line) return;
+    const anyModalOpen =
+      this.showDetailModal ||
+      this.showCreateModal ||
+      this.showMilestoneScheduleHistory ||
+      this.showCreateMilestoneScheduleModal ||
+      this.showEditModal;
+    line.style.display = anyModalOpen ? 'none' : 'block';
+  }
+
   private destroyGantt() {
     gantt.clearAll();
+    if (this.ganttContainer) {
+      const line = this.ganttContainer.nativeElement.querySelector('#today-line-custom');
+      if (line) line.remove();
+    }
+  }
+
+  toggleCulminar(taskId: number): void {
+    const task = gantt.getTask(taskId);
+    if (task['fechaRealFin']) {
+      task['fechaRealFin'] = null;
+    } else {
+      task['fechaRealFin'] = this.parseDateToString(new Date());
+    }
+    if (!task.end_date || !(task.end_date instanceof Date)) {
+      task.end_date = task.start_date;
+      task.type = 'milestone';
+      task.duration = 0;
+    }
+    gantt.updateTask(taskId);
+    gantt.render();
+    this.ganttTasks = gantt.getTaskByTime();
+    if (this.selectedTask && this.selectedTask.id == taskId) {
+      this.selectedTask['fechaRealFin'] = task['fechaRealFin'];
+    }
+    this.cdr.detectChanges();
+
+    const dtoItem = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.find(
+      (x) => x.milestoneId == taskId,
+    );
+    if (dtoItem) {
+      (dtoItem as any).fechaRealFin = task['fechaRealFin'] ?? null;
+    }
   }
 
   saveEditTask() {
+    console.log('Editando hito:', JSON.stringify(this.editMilestoneScheduleItem));
     const item = this.editMilestoneScheduleItem;
+
+    const startClean = item.plannedStartDate ? item.plannedStartDate.substring(0, 10) : '';
+    const endClean = item.plannedEndDate ? item.plannedEndDate.substring(0, 10) : null;
+    console.log('Fechas enviadas:', startClean, endClean);
+
     const task = gantt.getTask(item.id);
 
     task.text = item.text;
-
-    task.start_date = this.parseStringToDate(item.plannedStartDate) ?? undefined;
-    task.end_date = this.parseStringToDate(this.editMilestoneScheduleItem.plannedEndDate) ?? undefined;
-    task.type = item.plannedEndDate ? undefined : 'milestone';
-    task.duration = item.plannedEndDate ? undefined : 0;
+    task.start_date = this.parseStringToDate(startClean) ?? undefined;
+    if (endClean) {
+      task.end_date = this.parseStringToDate(endClean) ?? undefined;
+      task.type = undefined;
+      task.duration = undefined;
+    } else {
+      task.end_date = task.start_date;
+      task.type = 'milestone';
+      task.duration = 0;
+    }
 
     gantt.updateTask(task.id);
     gantt.render();
@@ -677,8 +870,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     );
 
     if (dtoItem) {
-      dtoItem.plannedStartDate = task.start_date != undefined ? this.parseDateToString(task.start_date) : "";
-      task.type == 'milestone' ? (dtoItem.plannedEndDate = null) : (dtoItem.plannedEndDate = task.end_date != undefined ? this.parseDateToString(task.end_date): null);
+      dtoItem.plannedStartDate = startClean || '';
+      dtoItem.plannedEndDate = task.type === 'milestone' ? null : endClean;
     }
   }
 
