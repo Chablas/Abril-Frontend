@@ -120,7 +120,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /ssoma                                   → SSOMA_ROUTES
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
-   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas)
+   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -563,12 +563,15 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 /clinica/agenda       → Agenda            (programaciones del día + acciones)
 /clinica/programaciones → ProgramacionesClinica (historial filtrable)
 /clinica/interconsultas → InterconsultasClinica (derivaciones pendientes)
+/clinica/emos         → ClinicaEmos       (control de EMOs — solo lectura)
 /clinica/activar      → ActivarClinica    (público)
 ```
 
 **Sidebar**: entrada única en `navigation.service.ts` (`key: 'clinica'`, 1 item → `/clinica/dashboard`). `sidebar.ts:onModuleClick` para `'clinica'` navega directo (sin dropdown) — mismo patrón que `control-acceso`.
 
-**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes.
+**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes. Nav-cards: Agenda del Día, Programaciones, Interconsultas, **Control de EMOs**.
+
+**Control de EMOs** (`pages/emos/`): vista de solo lectura del endpoint `GET /emos/por-trabajador`. Reutiliza `EmoService`, `CatalogosSaludService`, DTOs (`EmoPorTrabajadorDto`, `EmoPorTrabajadorQuery`), utils (`aptitudBadgeClass`, `diasVencerBadgeClass`) y el componente `EmoDetail` directamente de `ssoma/salud-ocupacional/`. Sin botón crear ni editar. Click en fila con EMO abre `<app-emo-detail>`; botón historial navega a `/ssoma/salud-ocupacional/emos/{workerId}/historial`. `featureKey: 'clinica.agenda'`.
 
 **Agenda** (`pages/agenda/`): Sections por estado: "Por confirmar" (Programado), "Confirmados/en proceso" (Aceptado/En Atención), "Cerrados". Acciones por card: Aceptar, Rechazar (con motivo inline), CheckIn, Completar (abre `CompletarEmo`). Servicios: `ClinicaProgramacionService` (GET/PATCH `clinica-accion`). CSS propio con `btn-action`, `agenda-section-label`, `stat-chip`.
 

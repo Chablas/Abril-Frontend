@@ -1,0 +1,192 @@
+<section class="px-3 py-4 space-y-3">
+  <header class="flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-800">Control de EMOs</h2>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <div class="search-input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M21 21l-4.3-4.3"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Nombre o DNI"
+            [ngModel]="filters.search"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="filter-label">Aptitud</label>
+        <app-search-select
+          [options]="aptitudOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.aptitud"
+          [showLabel]="false"
+          [compact]="true"
+          placeholder="Todas"
+          (valueChange)="filters.aptitud = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.estado"
+          [showLabel]="false"
+          [compact]="true"
+          placeholder="Todos"
+          (valueChange)="filters.estado = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Empresa</label>
+        <app-search-select
+          [options]="empresaOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.empresaId"
+          [showLabel]="false"
+          [compact]="true"
+          placeholder="Todas"
+          (valueChange)="filters.empresaId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <colgroup>
+          <col style="width: auto" />
+          <col style="width: 80px" />
+          <col style="width: 140px" />
+          <col style="width: 140px" />
+          <col style="width: 120px" />
+          <col style="width: 80px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 90px" />
+          <col style="width: 60px" />
+          <col style="width: 36px" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>T.EMO</th>
+            <th>Emp. Actual</th>
+            <th>Emp. Origen</th>
+            <th>Proyecto</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Vence</th>
+            <th>Aptitud</th>
+            <th>Estado</th>
+            <th class="text-right">Días</th>
+            <th class="text-right"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let item of items"
+            [class.row-clickable]="item.tieneEmo"
+            (click)="onRowClick(item)"
+          >
+            <td class="col-worker">
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.nombreCompleto }}</span>
+                <span class="worker-dni">DNI · {{ item.dni }}</span>
+              </div>
+            </td>
+            <td>{{ item.tieneEmo ? item.tipoEmo : '—' }}</td>
+            <td class="text-gray-600">{{ item.empresa || '—' }}</td>
+            <td class="text-gray-600">{{ item.empresaOrigenNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.proyectoNombre || '—' }}</td>
+            <td class="text-gray-600">{{ item.obraOficina || '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaEmo | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ item.tieneEmo ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td>
+              <span
+                *ngIf="item.tieneEmo; else dashAptitud"
+                class="badge border"
+                [ngClass]="aptitudClass(item.aptitud)"
+              >
+                {{ item.aptitud }}
+              </span>
+              <ng-template #dashAptitud><span class="text-gray-400">—</span></ng-template>
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
+                {{ estadoLabel(item) }}
+              </span>
+            </td>
+            <td class="text-right">
+              <span
+                *ngIf="item.tieneEmo; else dashDias"
+                class="badge border"
+                [ngClass]="diasClass(item.diasRestantes)"
+              >
+                {{ diasLabel(item.diasRestantes) }}
+              </span>
+              <ng-template #dashDias><span class="text-gray-400">—</span></ng-template>
+            </td>
+            <td class="text-right">
+              <button
+                *ngIf="item.tieneEmo"
+                type="button"
+                class="row-action"
+                (click)="verHistorial(item, $event)"
+                title="Ver historial"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="12" class="empty-row">
+              Sin resultados para los filtros actuales.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</section>
+
+<app-emo-detail
+  *ngIf="selectedEmoId"
+  [emoId]="selectedEmoId"
+  (closed)="closeDetail()"
+  (saved)="onDetailSaved()"
+></app-emo-detail>

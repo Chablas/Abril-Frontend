@@ -43,7 +43,10 @@ export class ActivarClinica implements OnInit {
       .post(
         `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/auth/activar`,
         { token: this.token, password: this.password },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          responseType: 'json' as const,
+        },
       )
       .pipe(timeout(15000))
       .subscribe({
