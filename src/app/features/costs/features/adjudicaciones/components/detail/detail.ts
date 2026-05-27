@@ -230,7 +230,7 @@ export class Detail implements OnInit {
     if (this.actualStatus === 5 && this.viewStep === 5) return 'Confirmar recepción';
     if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar y enviar correo';
     if (this.actualStatus === 7 && this.viewStep === 7) return 'Marcar como escaneado';
-    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Oficina Técnica';
+    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Staff de Obra';
     return 'Siguiente paso';
   }
 
@@ -821,9 +821,25 @@ export class Detail implements OnInit {
     });
   }
 
-  private advanceToApproved(): void {
+  private async advanceToApproved(): Promise<void> {
     this.loaderService.show();
-    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId).subscribe({
+
+    // El correo de notificación al Staff de Obra se envía vía Graph como el usuario autenticado.
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId, graphToken).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 4;
@@ -876,7 +892,7 @@ export class Detail implements OnInit {
         this.item.projectSubContractorStatusId = 9;
         this.viewStep = 9;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Oficina Técnica', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Staff de Obra', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

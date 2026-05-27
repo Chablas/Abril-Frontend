@@ -70,11 +70,13 @@ export class AdjudicacionesService {
     });
   }
 
-  advanceToStep4(projectSubContractorId: number): Observable<ApiMessageDTO> {
+  advanceToStep4(projectSubContractorId: number, graphAccessToken: string): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/advance-to-step4`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/advance-to-step4`,
+      { graphAccessToken },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
   }
 
   updateStatus(projectSubContractorId: number, projectSubContractorStatusId: number): Observable<ApiMessageDTO> {
