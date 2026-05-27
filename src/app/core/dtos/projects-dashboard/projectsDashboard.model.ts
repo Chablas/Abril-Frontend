@@ -3,10 +3,15 @@ export interface ProjectsDashboardFilterItemDTO {
   nombre: string;
 }
 
+export interface ResponsableSimpleDTO {
+  id: number;
+  nombre: string;
+}
+
 export interface ProjectsDashboardFiltersDTO {
   proyectos: ProjectsDashboardFilterItemDTO[];
   estados: string[];
-  responsablesArqCom: ProjectsDashboardFilterItemDTO[];
+  responsables: ResponsableSimpleDTO[];
   especialidades?: string[];
 }
 
@@ -39,9 +44,9 @@ export interface HeatmapResponsableDTO {
 
 export interface ProjectsDashboardItemDTO {
   proyectoId: number;
-  proyectoNombre: string;
+  projectDescription: string;
   estado: string;
-  responsableArqCom: string | null;
+  responsableNombre: string | null;
   avanceProgramado: number;
   avanceReal: number;
   tieneRetraso: boolean;

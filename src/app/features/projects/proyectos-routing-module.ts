@@ -8,6 +8,7 @@ import { ReportResponseControl } from './report-response-control/report-response
 import { roleGuard } from '../../core/guards/role.guard';
 import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
 import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
+import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
 
 const routes: Routes = [
   {
@@ -20,7 +21,27 @@ const routes: Routes = [
           {
             path: '',
             component: ProjectsDashboard,
-            data: { titulo: 'DASHBOARD DE PROYECTOS' },
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'DASHBOARD DE PROYECTOS',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.projects-dashboard',
+            },
+          },
+        ],
+      },
+      {
+        path: 'cronograma-actividades',
+        children: [
+          {
+            path: '',
+            component: CronogramaActividades,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'CRONOGRAMA DE ACTIVIDADES',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.cronograma-actividades',
+            },
           },
         ],
       },

@@ -382,6 +382,16 @@
   font-size: 0.87rem;
 }
 
+.sin-datos-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.87rem;
+  color: #9ca3af;
+}
+
 /* ── Semáforo dot ─────────────────────────────────────────────────────────── */
 .sem-dot {
   display: inline-block;
@@ -784,6 +794,21 @@
   color: #9ca3af;
   white-space: nowrap;
 }
+
+/* ── Gantt task colors ────────────────────────────────────────────────────── */
+.gantt_task_line.gantt-culminado { background-color: #63bf03 !important; border-color: #4a9002 !important; }
+.gantt_task_line.gantt-culminado .gantt_task_progress { background-color: #4a9002 !important; }
+
+.gantt_task_line.gantt-vencido { background-color: #ef4444 !important; border-color: #cc2222 !important; }
+.gantt_task_line.gantt-vencido .gantt_task_progress { background-color: #cc2222 !important; }
+
+.gantt_task_line.gantt-en-proceso { background-color: #2596be !important; border-color: #1a7a9e !important; }
+.gantt_task_line.gantt-en-proceso .gantt_task_progress { background-color: #1a7a9e !important; }
+
+.gantt_task_line.gantt-pendiente { background-color: #9ca3af !important; border-color: #6b7280 !important; }
+.gantt_task_line.gantt-pendiente .gantt_task_progress { background-color: #6b7280 !important; }
+
+.gantt_task_content { color: #fff !important; font-size: 11px !important; }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 1280px) {

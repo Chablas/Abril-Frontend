@@ -16,6 +16,7 @@ import {
   ProjectsDashboardFilterItemDTO,
   ProjectsDashboardItemDTO,
   ProyectoDetalleDTO,
+  ResponsableSimpleDTO,
 } from '../../../core/dtos/projects-dashboard/projectsDashboard.model';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 
@@ -40,7 +41,7 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
   // Opciones de filtros
   proyectos: ProjectsDashboardFilterItemDTO[] = [];
   estados: string[] = [];
-  responsablesArqCom: ProjectsDashboardFilterItemDTO[] = [];
+  responsables: ResponsableSimpleDTO[] = [];
   especialidades: string[] = [];
 
   // Filtros seleccionados
@@ -63,6 +64,9 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
   private barrasChart: Chart | null = null;
   private ganttInitialized = false;
 
+  donutEmpty = false;
+  barrasEmpty = false;
+
   constructor(
     private service: ProjectsDashboardService,
     private loaderService: LoaderService,
@@ -80,7 +84,7 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
       next: ({ filters, data }) => {
         this.proyectos = filters.proyectos ?? [];
         this.estados = filters.estados ?? [];
-        this.responsablesArqCom = filters.responsablesArqCom ?? [];
+        this.responsables = filters.responsables ?? [];
         this.especialidades = filters.especialidades ?? [];
         this.data = data;
         this.loading = false;
@@ -204,7 +208,7 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
     const params: ProjectsDashboardParams = {
       proyectoId: this.selectedProyectoId,
       estado: this.selectedEstado || undefined,
-      responsableArqComId: this.selectedResponsableId,
+      responsableId: this.selectedResponsableId,
       fechaDesde: this.fechaDesde || undefined,
       fechaHasta: this.fechaHasta || undefined,
     };
@@ -224,6 +228,8 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
   }
 
   private scheduleChartInit(): void {
+    this.donutEmpty = false;
+    this.barrasEmpty = false;
     setTimeout(() => {
       this.initDonutChart();
       this.initBarrasChart();
@@ -241,6 +247,7 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
     if (!this.donutCanvasRef) return;
     this.donutChart?.destroy();
     const dist = this.data?.distribucionPorEstado ?? [];
+    this.donutEmpty = !dist.length;
     if (!dist.length) return;
 
     this.donutChart = new Chart(this.donutCanvasRef.nativeElement, {
@@ -294,11 +301,13 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
     if (!this.barrasCanvasRef) return;
     this.barrasChart?.destroy();
     const items = (this.data?.proyectos ?? []).slice(0, 12);
+    this.barrasEmpty = !items.length;
     if (!items.length) return;
 
-    const labels = items.map((p) =>
-      p.proyectoNombre.length > 24 ? p.proyectoNombre.slice(0, 24) + '…' : p.proyectoNombre,
-    );
+    const labels = items.map((p) => {
+      const nombre = p.projectDescription ?? '';
+      return nombre.length > 24 ? nombre.slice(0, 24) + '…' : nombre;
+    });
     const progData = items.map((p) => p.avanceProgramado ?? 0);
     const realData = items.map((p) => p.avanceReal ?? 0);
     const semColors = items.map((p) => {
@@ -370,19 +379,34 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
     const el = this.ganttPanelRef?.nativeElement;
     if (!el || !this.detalle?.gantt) return;
     try {
-      if (!this.ganttInitialized) {
-        gantt.config.date_format = '%Y-%m-%d';
-        gantt.config.readonly = true;
-        gantt.config.fit_tasks = true;
-        gantt.config.scale_unit = 'month';
-        gantt.config.date_scale = '%M %y';
-        gantt.config.min_column_width = 55;
-        gantt.config.show_grid = false;
-        gantt.init(el);
-        this.ganttInitialized = true;
-      } else {
-        gantt.clearAll();
+      gantt.clearAll();
+      if (this.ganttInitialized) {
+        gantt.destructor();
+        this.ganttInitialized = false;
       }
+      gantt.config.date_format = '%d-%m-%Y %H:%i';
+      gantt.config.readonly = true;
+      gantt.config.fit_tasks = true;
+      gantt.config.scale_unit = 'day';
+      gantt.config.date_scale = '%d %M';
+      gantt.config.min_column_width = 60;
+      gantt.config.row_height = 34;
+      gantt.config.bar_height = 20;
+      gantt.config.show_grid = true;
+      gantt.config.grid_width = 200;
+      gantt.config.columns = [
+        { name: 'text', label: 'Actividad', width: 180, tree: true },
+        { name: 'duration', label: 'Días', width: 40, align: 'center' },
+      ];
+      gantt.templates.task_class = (start: Date, end: Date, task: any) => {
+        if (task.progress >= 1) return 'gantt-culminado';
+        if (end < new Date()) return 'gantt-vencido';
+        if (start <= new Date()) return 'gantt-en-proceso';
+        return 'gantt-pendiente';
+      };
+      gantt.templates.task_text = (_start: Date, _end: Date, task: any) => task.text;
+      gantt.init(el);
+      this.ganttInitialized = true;
       gantt.parse({
         data: this.detalle.gantt.tasks,
         links: this.detalle.gantt.links ?? [],

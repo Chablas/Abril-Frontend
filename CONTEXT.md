@@ -1193,3 +1193,191 @@ Nuevas interfaces añadidas:
 ### Pendiente para prod
 - Restaurar `canActivate: [roleGuard]` y `data: { ..., featureKey: 'projects.projects-dashboard' }` en `proyectos-routing-module.ts`.
 - El sidebar ya tiene `featureKey: 'projects.projects-dashboard'` → el backend debe agregar ese feature key al rol correspondiente en `allowed_features`.
+
+---
+
+## Sesión 2026-05-26 — Finalización Dashboard de Proyectos
+
+Continuación de la sesión anterior (2026-05-25). El componente `features/projects/projects-dashboard/` quedó completamente funcional y en producción.
+
+### Resumen de la feature completa
+
+**Archivos nuevos creados en la sesión 2026-05-25:**
+- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
+- `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`. Interfaz `ProjectsDashboardParams { proyectoId?, estado?, responsableId?, fechaDesde?, fechaHasta? }`.
+- `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — componente completo con 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
+
+**Registro en routing y navegación:**
+- `features/projects/proyectos-routing-module.ts` — ruta `projects-dashboard` con `component: ProjectsDashboard`, `canActivate: [roleGuard]`, `data: { titulo: 'DASHBOARD DE PROYECTOS', roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'], featureKey: 'projects.projects-dashboard' }`.
+- `core/navigation/navigation.service.ts` — item `{ label: 'Dashboard de Proyectos', route: '/projects/projects-dashboard', featureKey: 'projects.projects-dashboard' }` en módulo `proyectos` (confirmado presente).
+
+### Cambios realizados en esta sesión (2026-05-26)
+
+#### 1. Corrección crash `initBarrasChart` (línea 299)
+`p.proyectoNombre.length` fallaba cuando el backend devuelve items sin ese campo. Corrección:
+```ts
+// antes
+p.proyectoNombre.length > 24 ? p.proyectoNombre.slice(0, 24) + '…' : p.proyectoNombre
+
+// después
+const nombre = p.proyectoNombre ?? '';
+nombre.length > 24 ? nombre.slice(0, 24) + '…' : nombre
+```
+Todos los campos de items también pasaron a usar `?? 0` / `?? ''` defensivamente.
+
+#### 2. Guards "Sin datos" en charts
+Se agregaron flags `donutEmpty: boolean` y `barrasEmpty: boolean` al componente.
+
+- `scheduleChartInit()` resetea ambas flags a `false` antes del `setTimeout`.
+- `initDonutChart()` y `initBarrasChart()` asignan el flag **antes** del early return, de modo que el template siempre refleja el estado real.
+- Template: canvas con `[hidden]="donutEmpty/barrasEmpty"` (no `*ngIf` — para que `@ViewChild` siempre encuentre el elemento). Mensaje `<div class="sin-datos-msg">` visible cuando el flag es `true` y `!loading`.
+- CSS: `.sin-datos-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.87rem; color: #9ca3af; }`.
+
+#### 3. Routing guard restaurado
+`proyectos-routing-module.ts` — ruta `projects-dashboard` tenía el componente sin guard. Se añadió:
+```ts
+canActivate: [roleGuard],
+data: {
+  titulo: 'DASHBOARD DE PROYECTOS',
+  roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+  featureKey: 'projects.projects-dashboard',
+},
+```
+
+#### 4. Renombrado responsable (alineación con backend)
+El backend cambió los nombres en sus endpoints. Cambios en cascada:
+
+| Archivo | Antes | Después |
+|---------|-------|---------|
+| `projectsDashboard.model.ts` | campo `responsablesArqCom` en `ProjectsDashboardFiltersDTO` | `responsables: ResponsableSimpleDTO[]` (nueva interface, reemplaza uso de `ProjectsDashboardFilterItemDTO`) |
+| `projects-dashboard.service.ts` | `responsableArqComId` en `ProjectsDashboardParams` y query param | `responsableId` |
+| `projects-dashboard.ts` | propiedad `responsablesArqCom`, asignación en `ngOnInit`, parámetro en `loadDashboard` | `responsables`, `filters.responsables ?? []`, `responsableId` |
+| `projects-dashboard.html` | `[options]="responsablesArqCom"` | `[options]="responsables"` |
+
+> `item.responsableArqCom` en `ProjectsDashboardItemDTO` (campo del item de lista, no del filtro) **no se tocó** — es un campo distinto.
+
+### Estado final de endpoints consumidos
+```
+GET  /api/v1/projects-dashboard/filters
+GET  /api/v1/projects-dashboard?proyectoId=&estado=&responsableId=&fechaDesde=&fechaHasta=
+GET  /api/v1/projects-dashboard/{proyectoId}
+```
+
+### Feature key asignada al rol USUARIO DE UDP
+`projects.projects-dashboard` debe estar en la lista `allowed_features` de los roles `USUARIO DE UDP` y `ADMINISTRADOR DE UDP` en el backend. Sin esto el item no aparece en el sidebar aunque la ruta sea accesible.
+
+---
+
+## Sesión 2026-05-26 — Cronograma de Actividades + Ajustes Dashboard
+
+### 1. Nueva feature: Cronograma de Actividades
+
+Módulo completo para gestionar actividades de la tabla `project_activity`.
+
+**Archivos creados:**
+- `core/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/cronograma-actividades.ts`
+- `features/projects/cronograma-actividades/cronograma-actividades.html`
+- `features/projects/cronograma-actividades/cronograma-actividades.css`
+
+**Endpoints:**
+```
+GET    /api/v1/cronograma-actividades/proyectos
+GET    /api/v1/cronograma-actividades/{proyectoId}/actividades
+POST   /api/v1/cronograma-actividades/{proyectoId}/actividades
+PUT    /api/v1/cronograma-actividades/actividades/{id}
+PATCH  /api/v1/cronograma-actividades/actividades/{id}/culminar
+DELETE /api/v1/cronograma-actividades/actividades/{id}
+```
+
+**DTOs (`cronograma-actividades.service.ts`):**
+```ts
+ProyectoSimpleDto      { projectId, projectDescription, responsableUdp }
+ActividadDto           { projectActivityId, projectId, activityDescription, plannedStartDate,
+                         plannedEndDate, actualEndDate, progressPercentage, order }
+CrearActividadRequest  { activityDescription, plannedStartDate, plannedEndDate, progressPercentage }
+EditarActividadRequest { activityDescription, plannedStartDate, plannedEndDate,
+                         actualEndDate, progressPercentage }
+```
+
+**Funcionalidad del componente:**
+- Dropdown de proyectos con `responsableUdp` en el header.
+- Tabla con columnas: #, Actividad, Inicio Prog., Fin Prog., Fin Real, Avance (barra + %), Estado, Acciones.
+- `getAvanceColor(pct)`: 100%→verde, ≥70%→azul, ≥31%→amarillo, resto→rojo.
+- `getEstado(act)`: CULMINADO (verde) / VENCIDO (rojo) / EN PROCESO (azul) / PENDIENTE (gris).
+- Modal crear/editar con slider + input numérico para avance. Campo "Fin Real" solo en modo editar.
+- Botón culminar/desculminar por fila (PATCH).
+- Eliminar con Swal confirm.
+
+**Routing y navegación:**
+- `proyectos-routing-module.ts`: ruta `cronograma-actividades` con `canActivate: [roleGuard]`, `data: { titulo: 'CRONOGRAMA DE ACTIVIDADES', roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'], featureKey: 'projects.cronograma-actividades' }`.
+- `navigation.service.ts`: item `{ label: 'Cronograma de Actividades', route: '/projects/cronograma-actividades', featureKey: 'projects.cronograma-actividades' }` (segundo ítem del módulo proyectos).
+
+---
+
+### 2. SearchSelect — ajuste de tamaño de texto
+
+`shared/components/search-select/search-select.css` (antes vacío). Se agregaron clases nombradas en el HTML y reglas CSS:
+- `.ss-trigger-label`: 13px, `white-space: nowrap`, ellipsis, `max-width: 200px`.
+- `.ss-option`: 13px, ellipsis.
+
+Aplica a todas las instancias de `app-search-select` en la app.
+
+---
+
+### 3. Dashboard de Proyectos — alineación de campos con backend
+
+`ProjectsDashboardItemDTO` renombrado para coincidir con lo que devuelve el backend:
+
+| Campo anterior | Campo nuevo | Archivos actualizados |
+|---|---|---|
+| `proyectoNombre` | `projectDescription` | modelo, html (tabla + panel header), ts (`initBarrasChart`) |
+| `responsableArqCom` | `responsableNombre` | modelo, html (tabla) |
+
+El campo `proyectoId` (usado en `openPanel → getProjectDetail(item.proyectoId)`) **no se tocó** — backend lo devuelve con ese nombre.
+
+`ProjectsDashboardFilterItemDTO` y `ResponsableSimpleDTO` ya tenían `{ id, nombre }` — no cambiaron.
+
+---
+
+### 4. Dashboard de Proyectos — Gantt mejorado
+
+**Cambios en `initGantt` (`projects-dashboard.ts`):**
+
+| Config | Antes | Después |
+|---|---|---|
+| `date_format` | `'%Y-%m-%d'` | `'%d-%m-%Y %H:%i'` |
+| `scale_unit` | `'month'` | `'day'` |
+| `date_scale` | `'%M %y'` | `'%d %M'` |
+| `min_column_width` | 55 | 60 |
+| `show_grid` | false | true |
+| `row_height` | — | 34 |
+| `bar_height` | — | 20 |
+| `grid_width` | — | 200 |
+| `columns` | — | `[{ name:'text', label:'Actividad', width:180, tree:true }, { name:'duration', label:'Días', width:40 }]` |
+
+**Destroy/reinit completo** en cada apertura de panel:
+```ts
+gantt.clearAll();
+if (this.ganttInitialized) { gantt.destructor(); this.ganttInitialized = false; }
+// ... configurar ... gantt.init(el); gantt.parse(...);
+```
+
+**Template de colores por estado** (asignado antes de `gantt.init`):
+```ts
+gantt.templates.task_class = (start, end, task) => {
+  if (task.progress >= 1) return 'gantt-culminado';
+  if (end < new Date())   return 'gantt-vencido';
+  if (start <= new Date()) return 'gantt-en-proceso';
+  return 'gantt-pendiente';
+};
+```
+
+**CSS de barras** — agregado en `styles.css` global (dhtmlx inyecta fuera del shadow del componente):
+```css
+.gantt_task_line.gantt-culminado  { background-color: #63bf03; border-color: #4a9002; }
+.gantt_task_line.gantt-vencido    { background-color: #ef4444; border-color: #cc2222; }
+.gantt_task_line.gantt-en-proceso { background-color: #2596be; border-color: #1a7a9e; }
+.gantt_task_line.gantt-pendiente  { background-color: #9ca3af; border-color: #6b7280; }
+```
+Los mismos selectores también están en `projects-dashboard.css` como fallback.

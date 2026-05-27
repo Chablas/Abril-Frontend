@@ -84,7 +84,7 @@
       <div>
         <label class="field-label">Responsable</label>
         <app-search-select
-          [options]="responsablesArqCom"
+          [options]="responsables"
           displayField="nombre"
           valueField="id"
           placeholder="Todos los responsables"
@@ -133,11 +133,12 @@
         </span>
       </div>
       <div class="donut-body">
-        <canvas #donutCanvas></canvas>
-        <div class="donut-center" *ngIf="data?.totalProyectos">
+        <canvas #donutCanvas [hidden]="donutEmpty"></canvas>
+        <div class="donut-center" *ngIf="data?.totalProyectos && !donutEmpty">
           <span class="donut-num">{{ data!.totalProyectos }}</span>
           <span class="donut-lbl">total</span>
         </div>
+        <div class="sin-datos-msg" *ngIf="donutEmpty && !loading">Sin datos</div>
       </div>
     </div>
 
@@ -148,7 +149,8 @@
         <span class="section-sub">Programado vs. Real — top 12</span>
       </div>
       <div class="barras-body">
-        <canvas #barrasCanvas></canvas>
+        <canvas #barrasCanvas [hidden]="barrasEmpty"></canvas>
+        <div class="sin-datos-msg" *ngIf="barrasEmpty && !loading">Sin datos</div>
       </div>
     </div>
 
@@ -264,8 +266,8 @@
                   <span class="sem-dot" [class]="semaforoClass(item.semaforo)"
                         [title]="semaforoLabel(item.semaforo)"></span>
                 </td>
-                <td class="proyecto-nombre">{{ item.proyectoNombre }}</td>
-                <td class="resp-cell">{{ item.responsableArqCom || '—' }}</td>
+                <td class="proyecto-nombre">{{ item.projectDescription }}</td>
+                <td class="resp-cell">{{ item.responsableNombre || '—' }}</td>
                 <td>
                   <div class="avance-stack">
                     <div class="avance-pair">
@@ -324,7 +326,7 @@
 
   <div class="panel-head">
     <div class="panel-head-info">
-      <h2 class="panel-title">{{ selectedProyecto?.proyectoNombre || 'Detalle del Proyecto' }}</h2>
+      <h2 class="panel-title">{{ selectedProyecto?.projectDescription || 'Detalle del Proyecto' }}</h2>
       <span
         *ngIf="selectedProyecto"
         class="badge"
