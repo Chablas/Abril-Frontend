@@ -30,4 +30,10 @@ export const CLINICA_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { titulo: 'CLÍNICA - INTERCONSULTAS', featureKey: 'clinica.agenda' },
   },
+  {
+    path: 'emos',
+    loadComponent: () => import('./pages/emos/emos').then(m => m.ClinicaEmos),
+    canActivate: [authGuard, roleGuard],
+    data: { titulo: 'CLÍNICA - CONTROL DE EMOs', featureKey: 'clinica.agenda' },
+  },
 ];
