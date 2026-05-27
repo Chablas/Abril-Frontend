@@ -1,4 +1,5 @@
-<div class="p-6 space-y-4">
+<div class="prog-root">
+
   <div class="section-bar">
     <div>
       <h2 class="section-title">Programaciones</h2>
@@ -23,55 +24,52 @@
           <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
         </select>
       </div>
-      <div style="display: flex; align-items: flex-end;">
+      <div style="display:flex;align-items:flex-end;">
         <button class="btn-primary" (click)="load()">Buscar</button>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Trabajador</th>
-            <th>Tipo EMO</th>
-            <th>Empresa</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Médico</th>
-            <th>Estado</th>
-            <th>Check-in</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="loading">
-            <td colspan="8" class="empty-row">Cargando...</td>
-          </tr>
-          <tr *ngIf="!loading && items.length === 0">
-            <td colspan="8" class="empty-row">No hay programaciones en el rango seleccionado.</td>
-          </tr>
-          <tr *ngFor="let item of items">
-            <td>
-              <div class="worker-cell">
-                <span class="worker-name">{{ item.workerNombre }}</span>
-                <span class="worker-dni">{{ item.workerDni }}</span>
-              </div>
-            </td>
-            <td>{{ item.tipoEmo }}</td>
-            <td>{{ item.empresa }}</td>
-            <td>{{ item.fechaProgramada }}</td>
-            <td>{{ item.horaProgramada ?? '—' }}</td>
-            <td>{{ item.medico ?? '—' }}</td>
-            <td>
-              <span class="btn-chip badge" [ngClass]="estadoClass(item.estado)">
-                {{ item.estado }}
-              </span>
-            </td>
-            <td>{{ item.checkInHora ?? '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="prog-table-card">
+    <table class="prog-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>Tipo EMO</th>
+          <th>Empresa</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Médico</th>
+          <th>Estado</th>
+          <th>Check-in</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="8" class="empty-row">Cargando...</td>
+        </tr>
+        <tr *ngIf="!loading && items.length === 0">
+          <td colspan="8" class="empty-row">No hay programaciones en el rango seleccionado.</td>
+        </tr>
+        <tr *ngFor="let item of items">
+          <td>
+            <div class="worker-cell">
+              <span class="worker-name">{{ item.workerNombre }}</span>
+              <span class="worker-dni">{{ item.workerDni }}</span>
+            </div>
+          </td>
+          <td>{{ item.tipoEmo }}</td>
+          <td>{{ item.empresa }}</td>
+          <td>{{ item.fechaProgramada }}</td>
+          <td>{{ item.horaProgramada ?? '—' }}</td>
+          <td>{{ item.medico ?? '—' }}</td>
+          <td>
+            <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+          </td>
+          <td>{{ item.checkInHora ?? '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+
 </div>

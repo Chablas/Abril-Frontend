@@ -1,0 +1,140 @@
+<div class="ic-root">
+
+  <!-- Header -->
+  <div class="ic-header">
+    <div>
+      <h2 class="section-title">Interconsultas</h2>
+      <p class="section-sub">Derivaciones médicas pendientes de atención</p>
+    </div>
+    <span *ngIf="pendientesCount > 0" class="badge-chip chip-orange">
+      {{ pendientesCount }} pendiente{{ pendientesCount !== 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <div class="ic-filters">
+      <div>
+        <label class="field-label">Estado</label>
+        <select class="field-input" [(ngModel)]="filtroEstado">
+          <option value="">Todos</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Atendida">Atendida</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Buscar trabajador</label>
+        <input type="text" class="field-input" [(ngModel)]="filtroSearch"
+          placeholder="Nombre o DNI..." (keyup.enter)="load()" />
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn-primary" (click)="load()">Buscar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="ic-table-card">
+    <table class="ic-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>Especialidad</th>
+          <th>F. Derivación</th>
+          <th>Días pend.</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="6" class="empty-row">Cargando...</td>
+        </tr>
+        <tr *ngIf="!loading && items.length === 0">
+          <td colspan="6" class="empty-row">No hay interconsultas en este estado.</td>
+        </tr>
+        <tr *ngFor="let item of items" [class.row-urgente]="item.diasPendiente >= 7 && item.estado === 'Pendiente'">
+          <td>
+            <div class="worker-cell">
+              <span class="worker-name">{{ item.workerNombre }}</span>
+              <span class="worker-dni">{{ item.workerDni }}</span>
+            </div>
+          </td>
+          <td>{{ item.especialidad }}</td>
+          <td>{{ item.fechaDerivacion }}</td>
+          <td>
+            <span [class.text-red]="item.diasPendiente >= 7">
+              {{ item.estado === 'Pendiente' ? item.diasPendiente + ' d' : '—' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+          </td>
+          <td>
+            <button class="btn-chip chip-blue" (click)="abrirResolver(item)">
+              {{ item.estado === 'Pendiente' ? 'Resolver' : 'Ver' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal resolver interconsulta -->
+<div class="modal-backdrop" *ngIf="resolviendo" (click)="cerrarModal()"></div>
+<div class="ic-modal" *ngIf="resolviendo">
+  <div class="ic-modal-header">
+    <div>
+      <div class="worker-name">{{ resolviendo.workerNombre }}</div>
+      <div class="worker-dni">{{ resolviendo.workerDni }} · {{ resolviendo.especialidad }}</div>
+    </div>
+    <button class="btn-ghost" (click)="cerrarModal()">✕</button>
+  </div>
+
+  <div class="ic-modal-body">
+    <div class="ic-form-grid">
+      <div>
+        <label class="field-label">Estado *</label>
+        <select class="field-input" [(ngModel)]="form.estado">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Atendida">Atendida</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Fecha atención</label>
+        <input type="date" class="field-input" [(ngModel)]="form.fechaAtencion" />
+      </div>
+      <div>
+        <label class="field-label">CIE-10</label>
+        <input type="text" class="field-input" [(ngModel)]="form.cie10" placeholder="Ej: M54.5" />
+      </div>
+      <div>
+        <label class="field-label">URL informe</label>
+        <input type="text" class="field-input" [(ngModel)]="form.urlInforme" placeholder="https://..." />
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Diagnóstico</label>
+        <input type="text" class="field-input" [(ngModel)]="form.diagnostico" placeholder="Descripción diagnóstico..." />
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Resultado</label>
+        <textarea class="field-input" rows="2" [(ngModel)]="form.resultado" placeholder="Resultado de la interconsulta..."></textarea>
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Notas</label>
+        <input type="text" class="field-input" [(ngModel)]="form.notas" placeholder="Observaciones adicionales..." />
+      </div>
+    </div>
+  </div>
+
+  <div class="ic-modal-footer">
+    <button class="btn-ghost" (click)="cerrarModal()">Cancelar</button>
+    <button class="btn-primary" [disabled]="saving" (click)="guardar()">
+      {{ saving ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</div>

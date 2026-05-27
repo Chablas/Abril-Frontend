@@ -40,6 +40,12 @@ export class RoleFeatureService {
     });
   }
 
+  updateRoleDescription(roleId: number, dto: { roleDescription: string }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${roleId}`, dto, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
   updateRoleFeatures(roleId: number, featureIds: number[]): Observable<any> {
     return this.http.put(`${this.apiUrl}/${roleId}/features`, { featureIds }, {
       headers: buildAuthHeaders(),

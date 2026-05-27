@@ -88,6 +88,14 @@
                 >
                   {{ item.activo ? 'Desactivar' : 'Activar' }}
                 </button>
+                <button
+                  type="button"
+                  class="btn-chip btn-activacion"
+                  title="Enviar activación de cuenta"
+                  (click)="enviarActivacion(item)"
+                >
+                  📧 Activación
+                </button>
               </div>
             </td>
           </tr>

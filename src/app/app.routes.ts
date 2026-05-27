@@ -133,6 +133,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'auth/activar-empresa',
+    loadComponent: () =>
+      import('./features/auth/pages/activar-empresa/activar-empresa.component')
+      .then(m => m.ActivarEmpresaComponent)
+  },
+
+  {
     path: 'clinica/activar',
     loadComponent: () =>
       import('./features/clinica/pages/activar/activar')

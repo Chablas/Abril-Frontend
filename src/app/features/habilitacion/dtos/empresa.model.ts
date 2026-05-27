@@ -56,6 +56,7 @@ export interface ContratistaTokenDto {
   empresaId: number;
   razonSocial: string;
   tipo: string;
+  allowedFeatures: string[];
 }
 
 export interface EmpresaEntregableDto {
@@ -74,7 +75,7 @@ export interface EmpresaEntregableDto {
 }
 
 export interface EmpresaEntregableUpdateDto {
-  estado: string;
+  estado?: string;
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;

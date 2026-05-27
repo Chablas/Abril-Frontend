@@ -38,7 +38,7 @@
           placeholder="Ej: 25 ton, 1.2 m³"
         />
       </div>
-      <div>
+      <div *ngIf="!isContratista()">
         <label class="field-label">Empresa propietaria</label>
         <select class="field-input" [(ngModel)]="model.propietarioEmpresaId">
           <option [ngValue]="null">— Seleccionar —</option>
@@ -58,11 +58,11 @@
         </select>
       </div>
 
-      <div>
+      <div *ngIf="!isContratista()">
         <label class="field-label">Email Admin</label>
         <input type="email" class="field-input" [(ngModel)]="model.emailAdmin" />
       </div>
-      <div>
+      <div *ngIf="!isContratista()">
         <label class="field-label">Email SSOMA</label>
         <input type="email" class="field-input" [(ngModel)]="model.emailSsoma" />
       </div>

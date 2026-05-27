@@ -3,14 +3,29 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, debounceTime, forkJoin, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { BandejaService } from '../../services/bandeja.service';
+import { InduccionService } from '../../services/induccion.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { BandejaAprobarDto, BandejaItemDto } from '../../dtos/bandeja.model';
+import { InduccionListDto } from '../../dtos/induccion.model';
+
+interface InduccionGrupo {
+  key: string;
+  proyectoId: number;
+  proyectoNombre: string;
+  empresaId: number;
+  empresaNombre: string;
+  fechaProgramada: string;
+  trabajoAltura: boolean;
+  equipoElectrico: boolean;
+  items: InduccionListDto[];
+  seleccionados: Set<number>;
+}
 
 @Component({
   selector: 'app-hab-bandeja',
@@ -30,6 +45,13 @@ export class Bandeja implements OnInit, OnDestroy {
 
   filtroTipo = '';
   filtroResponsable = '';
+  filtroTexto = '';
+  filtroEmpresa = '';
+  filtroProyecto = '';
+  filtroEntregable = '';
+
+  // ── Selección masiva ──────────────────────────────────────
+  selectedIds = new Set<number>();
 
   // ── Panel derecho ─────────────────────────────────────────
   selectedItem: BandejaItemDto | null = null;
@@ -37,11 +59,62 @@ export class Bandeja implements OnInit, OnDestroy {
   loadingDoc = false;
   private docBlobUrl = '';
 
+  // ── Inducciones agrupadas ─────────────────────────────────
+  induccionGrupos: InduccionGrupo[] = [];
+  loadingInducciones = false;
+
   private filterChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
+  get proyectosDisponibles(): string[] {
+    const names = new Set<string>();
+    for (const item of this.items) {
+      if (item.proyectoNombre) names.add(item.proyectoNombre);
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get entregablesDisponibles(): string[] {
+    const names = new Set<string>();
+    for (const item of this.items) {
+      if (item.nombreEntregable) names.add(item.nombreEntregable);
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  get filteredItems(): BandejaItemDto[] {
+    const texto = this.filtroTexto.trim().toLowerCase();
+    const empresa = this.filtroEmpresa.trim().toLowerCase();
+    let result = this.items;
+    if (texto) {
+      result = result.filter((i) => i.entidadNombre?.toLowerCase().includes(texto));
+    }
+    if (empresa) {
+      result = result.filter((i) => i.empresaNombre?.toLowerCase().includes(empresa));
+    }
+    if (this.filtroProyecto) {
+      result = result.filter((i) => i.proyectoNombre === this.filtroProyecto);
+    }
+    if (this.filtroEntregable) {
+      result = result.filter((i) => i.nombreEntregable === this.filtroEntregable);
+    }
+    return result.slice().sort((a, b) =>
+      (a.entidadNombre ?? '').localeCompare(b.entidadNombre ?? '', 'es'),
+    );
+  }
+
+  get allItemsSelected(): boolean {
+    const fi = this.filteredItems;
+    return fi.length > 0 && fi.every((i) => this.selectedIds.has(i.id));
+  }
+
+  get someItemsSelected(): boolean {
+    return this.filteredItems.some((i) => this.selectedIds.has(i.id));
+  }
+
   constructor(
     private bandejaService: BandejaService,
+    private induccionService: InduccionService,
     private sharepointService: SharepointUploadService,
     private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
@@ -50,6 +123,9 @@ export class Bandeja implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (typeof document !== 'undefined') {
+      document.querySelector('app-header')?.classList.add('hidden-bandeja');
+    }
     this.filterChange$
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe(() => this.loadItems(1));
@@ -57,12 +133,15 @@ export class Bandeja implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.querySelector('app-header')?.classList.remove('hidden-bandeja');
+    }
     this.destroy$.next();
     this.destroy$.complete();
     this.revokeDocBlobUrl();
   }
 
-  // ── Lista ─────────────────────────────────────────────────
+  // ── Lista estándar ────────────────────────────────────────
 
   loadItems(page: number = this.currentPage): void {
     this.loading = true;
@@ -76,6 +155,7 @@ export class Bandeja implements OnInit, OnDestroy {
     this.bandejaService.getPendientes(params).subscribe({
       next: (res) => {
         this.items = res.data ?? [];
+        this.selectedIds.clear();
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
@@ -97,7 +177,11 @@ export class Bandeja implements OnInit, OnDestroy {
 
   setTipo(tipo: string): void {
     this.filtroTipo = tipo;
-    this.loadItems(1);
+    if (tipo === 'INDUCCION') {
+      this.loadInducciones();
+    } else {
+      this.loadItems(1);
+    }
   }
 
   onFilter(): void {
@@ -106,6 +190,177 @@ export class Bandeja implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.loadItems(page);
+  }
+
+  // ── Inducciones agrupadas ─────────────────────────────────
+
+  loadInducciones(): void {
+    this.loadingInducciones = true;
+    this.loaderService.show();
+    this.induccionService.getList({ estado: 'PROGRAMADA' }).subscribe({
+      next: (items) => {
+        this.induccionGrupos = this.groupInducciones(items);
+        this.loadingInducciones = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingInducciones = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private groupInducciones(items: InduccionListDto[]): InduccionGrupo[] {
+    const map = new Map<string, InduccionGrupo>();
+    for (const item of items) {
+      const key = `${item.proyectoId}-${item.empresaId}-${item.fechaProgramada.substring(0, 10)}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          proyectoId: item.proyectoId,
+          proyectoNombre: item.proyectoNombre,
+          empresaId: item.empresaId,
+          empresaNombre: item.empresaNombre,
+          fechaProgramada: item.fechaProgramada,
+          trabajoAltura: item.trabajoAltura,
+          equipoElectrico: item.equipoElectrico,
+          items: [],
+          seleccionados: new Set<number>(),
+        });
+      }
+      const grupo = map.get(key)!;
+      grupo.items.push(item);
+      if (item.ingresoConfirmado) grupo.seleccionados.add(item.id);
+    }
+    return Array.from(map.values());
+  }
+
+  nAsistieron(grupo: InduccionGrupo): number {
+    return grupo.items.filter((i) => i.ingresoConfirmado).length;
+  }
+
+  allInduccionSelected(grupo: InduccionGrupo): boolean {
+    const asistentes = grupo.items.filter((i) => i.ingresoConfirmado);
+    return asistentes.length > 0 && asistentes.every((i) => grupo.seleccionados.has(i.id));
+  }
+
+  toggleWorker(grupo: InduccionGrupo, item: InduccionListDto): void {
+    if (!item.ingresoConfirmado) return;
+    if (grupo.seleccionados.has(item.id)) {
+      grupo.seleccionados.delete(item.id);
+    } else {
+      grupo.seleccionados.add(item.id);
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleSelectAll(grupo: InduccionGrupo, checked: boolean): void {
+    grupo.seleccionados.clear();
+    if (checked) {
+      grupo.items.filter((i) => i.ingresoConfirmado).forEach((i) => grupo.seleccionados.add(i.id));
+    }
+    this.cdr.detectChanges();
+  }
+
+  aprobarGrupo(grupo: InduccionGrupo): void {
+    if (grupo.seleccionados.size === 0) return;
+    const ids = Array.from(grupo.seleccionados);
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${ids.length} inducción(es)?`,
+      html: `<div style="text-align:left;font-size:0.9rem">
+              <strong>${grupo.proyectoNombre}</strong><br/>
+              <span style="color:#6b7280">${grupo.empresaNombre} · ${grupo.fechaProgramada.substring(0, 10)}</span>
+            </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      this.induccionService.aprobarBatch(ids).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+          this.loadInducciones();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  // ── Selección masiva ──────────────────────────────────────
+
+  toggleSelect(id: number): void {
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleAllItems(): void {
+    if (this.allItemsSelected) {
+      this.filteredItems.forEach((i) => this.selectedIds.delete(i.id));
+    } else {
+      this.filteredItems.forEach((i) => this.selectedIds.add(i.id));
+    }
+    this.cdr.detectChanges();
+  }
+
+  aprobarMasivo(): void {
+    const ids = Array.from(this.selectedIds);
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${ids.length} documento(s)?`,
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+
+      if (this.filtroTipo !== '') {
+        this.bandejaService.bulkAprobar(ids, this.filtroTipo).subscribe({
+          next: () => this.onBulkSuccess(),
+          error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+        });
+      } else {
+        const byTipo = new Map<string, number[]>();
+        this.filteredItems
+          .filter((i) => this.selectedIds.has(i.id))
+          .forEach((i) => {
+            const existing = byTipo.get(i.tipo) ?? [];
+            existing.push(i.id);
+            byTipo.set(i.tipo, existing);
+          });
+        forkJoin(
+          Array.from(byTipo.entries()).map(([tipo, tIds]) =>
+            this.bandejaService.bulkAprobar(tIds, tipo),
+          ),
+        ).subscribe({
+          next: () => this.onBulkSuccess(),
+          error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+        });
+      }
+    });
+  }
+
+  private onBulkSuccess(): void {
+    this.loaderService.hide();
+    this.selectedIds.clear();
+    Swal.fire({ icon: 'success', title: 'Aprobados', timer: 1500, showConfirmButton: false });
+    this.loadItems(this.currentPage);
   }
 
   // ── Selección y visor PDF ─────────────────────────────────
@@ -166,93 +421,32 @@ export class Bandeja implements OnInit, OnDestroy {
 
   getTipoClass(tipo: string): string {
     switch (tipo) {
-      case 'TRABAJADOR':
-        return 'chip-blue';
-      case 'EMPRESA':
-        return 'chip-green';
-      case 'EQUIPO':
-        return 'chip-gray';
-      case 'INDUCCION':
-        return 'chip-orange';
-      default:
-        return 'chip-gray';
+      case 'TRABAJADOR': return 'chip-blue';
+      case 'EMPRESA':    return 'chip-green';
+      case 'EQUIPO':     return 'chip-gray';
+      case 'INDUCCION':  return 'chip-orange';
+      default:           return 'chip-gray';
+    }
+  }
+
+  getEstadoClass(estado: string): string {
+    switch (estado) {
+      case 'Pendiente':  return 'chip-yellow';
+      case 'Aprobado':   return 'chip-green';
+      case 'Rechazado':  return 'chip-red';
+      case 'Observado':  return 'chip-orange';
+      default:           return 'chip-gray';
     }
   }
 
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
-    if (item.tipo === 'INDUCCION') {
-      Swal.fire({
-        icon: 'question',
-        title: '¿Aprobar inducción?',
-        html: `<div style="text-align:left;font-size:0.9rem">
-                <strong>${item.nombreEntregable}</strong><br/>
-                <span style="color:#6b7280">${item.entidadNombre}</span>
-              </div>`,
-        showCancelButton: true,
-        confirmButtonText: 'Aprobar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#64bc04',
-        cancelButtonColor: '#6b7280',
-      }).then((res) => {
-        if (!res.isConfirmed) return;
-        this.loaderService.show();
-        this.bandejaService.aprobarInduccion(item.id).subscribe({
-          next: () => {
-            this.loaderService.hide();
-            this.selectedItem = null;
-            this.clearDocPanel();
-            Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1500, showConfirmButton: false });
-            this.loadItems(this.currentPage);
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-      });
-      return;
-    }
-
-    Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar entregable?',
-      html: `<div style="text-align:left;font-size:0.9rem">
-              <strong>${item.nombreEntregable}</strong><br/>
-              <span style="color:#6b7280">${item.entidadNombre}</span>
-            </div>`,
-      input: 'date',
-      inputLabel: 'Vigencia (opcional)',
-      inputValue: item.vigencia ? item.vigencia.substring(0, 10) : '',
-      showCancelButton: true,
-      confirmButtonText: 'Aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.executeAction(item, { estado: 'Aprobado', vigencia: res.value || undefined }, 'Aprobado');
-    });
+    this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
   }
 
   rechazar(item: BandejaItemDto): void {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Rechazar entregable',
-      input: 'textarea',
-      inputLabel: 'Motivo del rechazo',
-      inputPlaceholder: 'Describe el motivo…',
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      inputValidator: (value) => (!value?.trim() ? 'Debes indicar un motivo' : null),
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.executeAction(item, { estado: 'Rechazado', obsAbril: res.value }, 'Rechazado');
-    });
+    this.executeAction(item, { estado: 'Rechazado' }, 'Rechazado');
   }
 
   private executeAction(

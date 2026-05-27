@@ -19,6 +19,7 @@ export class SearchSelect {
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
+  @Input() compact: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 

@@ -19,7 +19,7 @@
           <label class="field-label">Confirmar contraseña *</label>
           <input type="password" class="field-input" [(ngModel)]="confirmar" />
         </div>
-        <button class="btn-primary" [disabled]="!passwordsCoinciden || loading" (click)="submit()">
+        <button class="btn-primary" (click)="submit()">
           {{ loading ? 'Activando...' : 'Activar cuenta' }}
         </button>
       </div>

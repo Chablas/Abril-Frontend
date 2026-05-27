@@ -94,6 +94,8 @@
   background: white !important;
 }
 
+.hidden-bandeja { display: none !important; }
+
 /* Gantt task colors - global porque dhtmlx inyecta en el DOM fuera del componente */
 .gantt_task_line.gantt-culminado { background-color: #63bf03 !important; border-color: #4a9002 !important; }
 .gantt_task_line.gantt-culminado .gantt_task_progress { background-color: #4a9002 !important; }

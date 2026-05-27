@@ -19,8 +19,9 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Lugares',  route: '/gestion-administrativa/configuracion/lugares',  featureKey: 'gestion-administrativa.config.lugares' },
-            { label: 'Motivos',  route: '/gestion-administrativa/configuracion/motivos',  featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
           ],
         },
       ],
@@ -100,6 +101,7 @@ export class NavigationService {
             { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Partidas',             route: '/costs/configuration/work-item',            featureKey: 'costs.config.work-item' },
             { label: 'Links de proyecto',    route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
+            { label: 'Correos C. y Ppto.',   route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },
           ],
         },
       ],
@@ -118,7 +120,7 @@ export class NavigationService {
     },
     {
       key: 'ssoma',
-      label: 'SSOMA',
+      label: 'Salud',
       iconKey: 'ssoma',
       baseRoute: '/ssoma',
       items: [],
@@ -139,7 +141,7 @@ export class NavigationService {
     },
     {
       key: 'habilitacion',
-      label: 'Habilitación',
+      label: 'Gestión de Ingresos',
       iconKey: 'habilitacion',
       baseRoute: '/habilitacion',
       items: [],
@@ -151,25 +153,34 @@ export class NavigationService {
             { label: 'Empresa',            route: '/habilitacion/empresa',      featureKey: 'habilitacion.empresa' },
             { label: 'Equipos y Máquinas', route: '/habilitacion/equipos',      featureKey: 'habilitacion.equipos' },
             { label: 'SCTR y Vida Ley',    route: '/habilitacion/sctr-vidaley', featureKey: 'habilitacion.sctr-vidaley' },
+            { label: 'Inducciones',        route: '/habilitacion/inducciones',  featureKey: 'habilitacion.inducciones' },
           ],
         },
         {
           label: 'Operaciones',
           items: [
-            { label: 'Control de Acceso',       route: '/habilitacion/control-acceso',         featureKey: 'habilitacion.control-acceso' },
-            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                featureKey: 'habilitacion.bandeja' },
-            { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',       featureKey: 'habilitacion.registros-modelo' },
-            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
+            { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
+            { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
+            { label: 'Clínicas',              route: '/habilitacion/clinicas',  featureKey: 'habilitacion.clinicas' },
           ],
         },
         {
           label: 'Administración',
           items: [
-            { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
-            { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
-            { label: 'Clínicas',              route: '/habilitacion/clinicas' },
+            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                 featureKey: 'habilitacion.bandeja' },
+            { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',        featureKey: 'habilitacion.registros-modelo' },
+            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
           ],
         },
+      ],
+    },
+    {
+      key: 'control-acceso',
+      label: 'Control de Acceso',
+      iconKey: 'security',
+      baseRoute: '/habilitacion/control-acceso',
+      items: [
+        { label: 'Control de Acceso', route: '/habilitacion/control-acceso', featureKey: 'habilitacion.control-acceso' },
       ],
     },
     {
@@ -177,15 +188,8 @@ export class NavigationService {
       label: 'Clínica',
       iconKey: 'clinica',
       baseRoute: '/clinica',
-      items: [],
-      groups: [
-        {
-          label: 'Gestión',
-          items: [
-            { label: 'Agenda del Día', route: '/clinica/agenda',           featureKey: 'clinica.agenda' },
-            { label: 'Programaciones', route: '/clinica/programaciones', featureKey: 'clinica.programaciones' },
-          ],
-        },
+      items: [
+        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
       ],
     },
     {

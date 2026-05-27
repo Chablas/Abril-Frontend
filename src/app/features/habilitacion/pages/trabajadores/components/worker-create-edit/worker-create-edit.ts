@@ -21,6 +21,7 @@ import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { WorkerService } from '../../../../../ssoma/salud-ocupacional/services/worker.service';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
+import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { TrabajadorRestringidoService } from '../../../../services/trabajador-restringido.service';
 import { CatalogosHabService } from '../../../../services/catalogos-hab.service';
 import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
@@ -49,6 +50,10 @@ interface WorkerFormModel {
   notas: string;
   empresaId: number | null;
   proyectoId: number | null;
+  emailCorporativo: string;
+  fechaIngreso: string;
+  condicionMedica: string;
+  fechaNacimiento: string;
 }
 
 @Component({
@@ -80,6 +85,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   cargandoSubareas = false;
   categorias: { id: number; nombre: string }[] = [];
   ocupaciones: { id: number; nombre: string }[] = [];
+  empresaContratistaNombre = '';
 
   private destroy$ = new Subject<void>();
 
@@ -91,6 +97,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     private catalogosHabService: CatalogosHabService,
     private catalogosSaludService: CatalogosSaludService,
     private projectService: ProjectService,
+    private empresaContratistaService: EmpresaContratistaService,
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -121,13 +128,36 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   get canSubmit(): boolean {
-    return (
+    const base =
       !this.saving &&
       !this.verificandoDni &&
       !this.dniRestringido &&
       !!this.model.apellidoNombre.trim() &&
-      (this.mode === 'edit' || !!this.model.dni.trim())
-    );
+      (this.mode === 'edit' || !!this.model.dni.trim());
+
+    if (this.esContratista) {
+      return (
+        base &&
+        !!this.model.proyectoId &&
+        !!this.model.categoria.trim() &&
+        !!this.model.ocupacion.trim() &&
+        !!this.model.condicionMedica.trim() &&
+        !!this.model.fechaIngreso.trim()
+      );
+    }
+
+    const baseCasa =
+      base &&
+      !!this.model.obraOficina &&
+      !!this.model.fechaNacimiento.trim() &&
+      !!this.model.condicionMedica.trim() &&
+      !!this.model.empresaId;
+
+    if (this.esStaffOOficina) {
+      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim() && !!this.model.subarea.trim();
+    }
+
+    return baseCasa;
   }
 
   get mostrarProyecto(): boolean {
@@ -135,6 +165,22 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   get sctrEditable(): boolean {
+    return this.model.obraOficina === 'Oficina Central';
+  }
+
+  get esCasa(): boolean {
+    return this.model.contrataCasa === 'Casa';
+  }
+
+  get esObrero(): boolean {
+    return this.esCasa && this.model.obraOficina === 'Obra';
+  }
+
+  get esStaffOOficina(): boolean {
+    return this.esCasa && (this.model.obraOficina === 'Staff' || this.model.obraOficina === 'Oficina Central');
+  }
+
+  get esOficinaCentral(): boolean {
     return this.model.obraOficina === 'Oficina Central';
   }
 
@@ -157,6 +203,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       notas: '',
       empresaId: null,
       proyectoId: null,
+      emailCorporativo: '',
+      fechaIngreso: '',
+      condicionMedica: '',
+      fechaNacimiento: '',
     };
   }
 
@@ -166,6 +216,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.verificandoDni = false;
     this.dniRestringido = false;
     this.dniVerificado = false;
+    this.empresaContratistaNombre = '';
     this.areas = [];
     this.subareas = [];
     this.cargandoSubareas = false;
@@ -191,6 +242,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.area = det.area ?? '';
           this.model.subarea = det.subarea ?? '';
           this.model.jefatura = det.jefatura ?? '';
+          this.model.emailCorporativo = det.emailCorporativo ?? '';
+          this.model.fechaIngreso = det.fechaIngreso ?? '';
+          this.model.condicionMedica = det.condicionMedica ?? '';
+          this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
           this.loadingDetalle = false;
           if (this.model.area) {
             this.catalogosHabService.getSubareas(this.model.area).subscribe({
@@ -207,9 +262,39 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
     } else {
       this.model = this.emptyModel();
+      if (!this.esContratista) {
+        this.model.contrataCasa = 'Casa';
+      }
     }
 
-    if (!this.esContratista) {
+    if (this.esContratista) {
+      const empresaId = this.authService.getEmpresaId();
+      if (empresaId) {
+        this.catalogosSaludService.getEmpresas().subscribe({
+          next: (res) => {
+            const emp = res.find((e) => e.id === empresaId);
+            this.empresaContratistaNombre = emp?.nombre ?? '';
+            this.cdr.detectChanges();
+          },
+          error: () => {},
+        });
+        this.empresaContratistaService.getProyectos(empresaId).subscribe({
+          next: (data) => {
+            this.proyectos = data;
+            if (!data.length) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Sin proyectos afiliados',
+                text: 'Tu empresa no tiene proyectos afiliados. Debes tener al menos un proyecto activo para poder registrar trabajadores.',
+                confirmButtonColor: '#64BC04',
+              }).then(() => this.close());
+            }
+            this.cdr.detectChanges();
+          },
+          error: () => {},
+        });
+      }
+    } else {
       this.loadCatalogos();
     }
 
@@ -229,7 +314,12 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.empresas = res ?? [];
+          console.log('[worker-create-edit] empresas raw:', res?.slice(0, 3));
+          this.empresas = (res ?? []).filter((e) => {
+            const raw = e as any;
+            return !!(raw.esAbril ?? raw.es_abril ?? raw.EsAbril);
+          });
+          console.log('[worker-create-edit] empresas filtered (esAbril):', this.empresas.length, this.empresas.slice(0, 3));
           this.cdr.detectChanges();
         },
         error: () => {
@@ -289,6 +379,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     if (this.model.obraOficina !== 'Oficina Central') {
       this.model.sctr = true;
     }
+    this.model.area = '';
+    this.model.subarea = '';
+    this.model.jefatura = '';
+    this.subareas = [];
   }
 
   onTipoDocumentoChange(): void {
@@ -373,70 +467,80 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   private verificarExistenciaEnBd(dni: string): void {
-    this.trabajadorHabService.getTrabajadores({ search: dni, pageSize: 1, page: 1 }).subscribe({
-      next: (res) => {
-        const data = res.data ?? [];
+    this.trabajadorHabService
+      .getTrabajadores({ search: dni, pageSize: 1, page: 1, soloVerificacion: true })
+      .subscribe({
+        next: (res) => {
+          const data = res.data ?? [];
 
-        if (!data || data.length === 0) {
+          if (!data || data.length === 0) {
+            this.verificandoDni = false;
+            this.cdr.detectChanges();
+            return;
+          }
+
+          const worker = data[0];
+          const estaActivo = worker.estadoWorker === 'ACTIVO';
+          const mismaEmpresa =
+            worker.empresaId != null && worker.empresaId === this.authService.getEmpresaId();
+
+          let debeBloquear = false;
+          let puedeIrABuscar = false;
+          let mensajeHtml = '';
+
+          if (this.esContratista) {
+            if (estaActivo) {
+              debeBloquear = true;
+              if (mismaEmpresa) {
+                puedeIrABuscar = true;
+                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en el sistema.<br><br>Búscalo en la lista para gestionarlo.`;
+              } else {
+                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en otra empresa y no puede ser registrado.`;
+              }
+            } else if (mismaEmpresa) {
+              debeBloquear = true;
+              puedeIrABuscar = true;
+              mensajeHtml = `<b>${worker.apellidoNombre}</b> ya estuvo registrado en tu empresa.<br><br>Búscalo en la lista para reingresarlo.`;
+            }
+          } else {
+            debeBloquear = true;
+            puedeIrABuscar = true;
+            mensajeHtml = estaActivo
+              ? `<b>${worker.apellidoNombre}</b> ya está registrado y activo.<br><br>Búscalo en la lista para gestionarlo.`
+              : `<b>${worker.apellidoNombre}</b> ya existe en el sistema como trabajador retirado.<br><br>Búscalo en la lista para reingresarlo.`;
+          }
+
+          if (debeBloquear) {
+            this.model.dni = '';
+            this.model.apellidoNombre = '';
+            this.dniVerificado = false;
+          }
+
           this.verificandoDni = false;
           this.cdr.detectChanges();
-          return;
-        }
 
-        const worker = data[0];
-        const estaActivo = worker.estadoWorker === 'ACTIVO';
-        const mismaEmpresa =
-          worker.empresaId != null && worker.empresaId === this.authService.getEmpresaId();
-
-        let debeBloquear = false;
-        let mensajeHtml = '';
-
-        if (this.esContratista) {
-          if (estaActivo) {
-            debeBloquear = true;
-            mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en el sistema.<br><br>Búscalo en la lista para gestionarlo.`;
-          } else if (mismaEmpresa) {
-            debeBloquear = true;
-            mensajeHtml = `<b>${worker.apellidoNombre}</b> ya estuvo registrado en tu empresa.<br><br>Búscalo en la lista para reingresarlo.`;
+          if (debeBloquear) {
+            Swal.fire({
+              icon: 'info',
+              title: 'Trabajador ya registrado',
+              html: mensajeHtml,
+              showCancelButton: puedeIrABuscar,
+              confirmButtonText: puedeIrABuscar ? 'Ir a buscarlo' : 'Entendido',
+              cancelButtonText: 'Cerrar',
+              confirmButtonColor: '#64BC04',
+              cancelButtonColor: '#6b7280',
+            }).then((result) => {
+              if (result.isConfirmed && puedeIrABuscar) {
+                this.buscarWorker.emit(dni);
+              }
+            });
           }
-        } else {
-          debeBloquear = true;
-          mensajeHtml = estaActivo
-            ? `<b>${worker.apellidoNombre}</b> ya está registrado y activo.<br><br>Búscalo en la lista para gestionarlo.`
-            : `<b>${worker.apellidoNombre}</b> ya existe en el sistema como trabajador retirado.<br><br>Búscalo en la lista para reingresarlo.`;
-        }
-
-        if (debeBloquear) {
-          this.model.dni = '';
-          this.model.apellidoNombre = '';
-          this.dniVerificado = false;
-        }
-
-        this.verificandoDni = false;
-        this.cdr.detectChanges();
-
-        if (debeBloquear) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Trabajador ya registrado',
-            html: mensajeHtml,
-            showCancelButton: true,
-            confirmButtonText: 'Ir a buscarlo',
-            cancelButtonText: 'Cerrar',
-            confirmButtonColor: '#64BC04',
-            cancelButtonColor: '#6b7280',
-          }).then((result) => {
-            if (result.isConfirmed) {
-              this.buscarWorker.emit(dni);
-            }
-          });
-        }
-      },
-      error: () => {
-        this.verificandoDni = false;
-        this.cdr.detectChanges();
-      },
-    });
+        },
+        error: () => {
+          this.verificandoDni = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   submit(): void {
@@ -444,10 +548,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       Swal.fire({
         icon: 'warning',
         title: 'Datos incompletos',
-        text:
-          this.mode === 'create'
-            ? 'Apellido/Nombre y DNI son requeridos.'
-            : 'Falta el nombre del trabajador.',
+        text: 'Completa todos los campos obligatorios antes de guardar.',
       });
       return;
     }
@@ -460,6 +561,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       tipoDocumento: this.model.tipoDocumento,
       celular: n(this.model.celular),
       emailPersonal: n(this.model.emailPersonal),
+      emailCorporativo: n(this.model.emailCorporativo),
+      fechaIngreso: n(this.model.fechaIngreso) || undefined,
+      condicionMedica: n(this.model.condicionMedica),
       categoria: n(this.model.categoria),
       ocupacion: n(this.model.ocupacion),
       area: n(this.model.area),
@@ -470,6 +574,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       sctr: !!this.model.sctr,
       habilitadoObra: false,
       notas: n(this.model.notas),
+      empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
+      proyectoId: this.model.proyectoId ?? null,
+      fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
     };
 
     this.saving = true;

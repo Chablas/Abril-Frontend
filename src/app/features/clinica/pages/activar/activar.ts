@@ -34,7 +34,7 @@ export class ActivarClinica implements OnInit {
   }
 
   submit(): void {
-    if (!this.passwordsCoinciden) return;
+    console.log('passwords:', this.password, this.confirmar, this.passwordsCoinciden);
     this.loading = true;
     this.error = '';
     const token =

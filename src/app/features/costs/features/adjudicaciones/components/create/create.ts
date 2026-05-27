@@ -25,7 +25,6 @@ export class Create implements OnInit {
     projects: [],
     contractTypes: [],
     contractModalities: [],
-    contractOrigins: [],
     paymentMethods: [],
     currencies: [],
     workItems: [],
@@ -38,7 +37,6 @@ export class Create implements OnInit {
     contractorId: 0,
     contractTypeId: 0,
     contractModalityId: null,
-    contractOriginId: 0,
     paymentMethodId: 0,
     amount: 0,
     currencyId: 0,
@@ -139,10 +137,9 @@ export class Create implements OnInit {
     if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
     if (!this.createDto.workItemId)        missing.push('Partida');
     if (!this.createDto.contractTypeId)    missing.push('Tipo de contrato');
-    if (!this.createDto.contractOriginId)  missing.push('Origen del contrato');
     if (!this.createDto.amount)            missing.push('Monto');
     if (!this.createDto.currencyId)        missing.push('Moneda');
-    if (!this.createDto.paymentMethodId)   missing.push('Forma de pago');
+    if (!this.createDto.paymentMethodId)   missing.push('Modalidad de pago');
     if (this.createDto.paymentMethodId === 2 && !this.createDto.advancePercentage)
       missing.push('Porcentaje de adelanto');
     return missing;
@@ -167,7 +164,6 @@ export class Create implements OnInit {
     if (this.createDto.contractModalityId != null) {
       form.append('contractModalityId', this.createDto.contractModalityId.toString());
     }
-    form.append('contractOriginId', this.createDto.contractOriginId.toString());
     form.append('paymentMethodId', this.createDto.paymentMethodId.toString());
     if (this.createDto.paymentMethodId === 2 && this.createDto.advancePercentage != null) {
       form.append('advancePercentage', this.createDto.advancePercentage.toString());

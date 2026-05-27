@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import Swal from 'sweetalert2';
 import { ClinicaProgramacionService } from '../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto, ClinicaAccionDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -75,7 +76,28 @@ export class Agenda implements OnInit {
   }
 
   aceptar(item: ProgramacionClinicaDto): void {
-    this.ejecutarAccion(item.id, { id: item.id, accion: 'Aceptar' });
+    Swal.fire({
+      title: 'Confirmar programación',
+      html: `<div style="text-align:left;margin-bottom:8px">Trabajador: <b>${item.workerNombre}</b></div>
+             <label style="display:block;margin-bottom:4px;font-size:0.9rem">Hora de la cita *</label>
+             <input type="time" id="swal-hora" class="swal2-input" style="width:100%">`,
+      confirmButtonText: 'Aceptar programación',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      preConfirm: () => {
+        const hora = (document.getElementById('swal-hora') as HTMLInputElement).value;
+        if (!hora) {
+          Swal.showValidationMessage('La hora es obligatoria');
+          return false;
+        }
+        return hora;
+      },
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.ejecutarAccion(item.id, { id: item.id, accion: 'Aceptar', checkInHora: result.value });
+      }
+    });
   }
 
   iniciarRechazo(id: number): void {
@@ -141,5 +163,23 @@ export class Agenda implements OnInit {
       month: 'long',
       day: 'numeric',
     });
+  }
+
+  initials(nombre: string): string {
+    const parts = nombre.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  avatarBg(nombre: string): string {
+    const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1'];
+    let hash = 0;
+    for (const c of nombre) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+    return colors[hash % colors.length];
+  }
+
+  timelineDot(estado: string): string {
+    return estado === 'En Atención' ? 'dot-orange' : 'dot-green-sm';
   }
 }

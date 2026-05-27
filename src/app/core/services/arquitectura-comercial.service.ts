@@ -8,6 +8,11 @@ import {
   ArqComercialSelectedFilters,
 } from '../dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
+  DashboardFiltroDTO,
+  ActividadAlertaDTO,
+  EnviarAlertaRequestDTO,
+} from '../dtos/arquitectura-comercial/arquitectura-comercial-alert.model';
+import {
   ProyectoConActividadesDTO,
   SupervisorAcDTO,
   ActividadListItemDTO,
@@ -181,5 +186,47 @@ export class ArquitecturaComercialService {
       params,
       headers: this.authHeaders(),
     });
+  }
+
+  getProyectos(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(`${this.apiUrl}/proyectos`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getDashboardV2(filtro: DashboardFiltroDTO): Observable<ArqComercialDashboardDTO> {
+    const params = this.buildParams(filtro);
+    return this.http.get<ArqComercialDashboardDTO>(`${this.apiUrl}/dashboard-v2`, {
+      params,
+      headers: this.authHeaders(),
+    });
+  }
+
+  getActividadesPorAlerta(
+    tipoAlerta: string,
+    filtro: DashboardFiltroDTO,
+  ): Observable<ActividadAlertaDTO[]> {
+    const params = this.buildParams(filtro);
+    return this.http.get<ActividadAlertaDTO[]>(`${this.apiUrl}/alertas/${tipoAlerta}`, {
+      params,
+      headers: this.authHeaders(),
+    });
+  }
+
+  enviarAlertasActividades(req: EnviarAlertaRequestDTO): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/alertas/enviar`, req, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  private buildParams(filtro: DashboardFiltroDTO): Record<string, string> {
+    const p: Record<string, string> = {};
+    if (filtro.categoriaId != null) p['categoriaId'] = String(filtro.categoriaId);
+    if (filtro.proyectoId  != null) p['proyectoId']  = String(filtro.proyectoId);
+    if (filtro.userId      != null) p['userId']      = String(filtro.userId);
+    if (filtro.semana      != null) p['semana']      = String(filtro.semana);
+    if (filtro.mes         != null) p['mes']         = String(filtro.mes);
+    if (filtro.anio        != null) p['anio']        = String(filtro.anio);
+    return p;
   }
 }

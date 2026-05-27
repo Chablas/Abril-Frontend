@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" [title]="title" [width]="modalWidth" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="title" [width]="modalWidth" [height]="modalHeight" (closeModal)="close()">
   <div class="form-wrapper">
 
     <!-- Step indicator -->
@@ -30,6 +30,12 @@
             <option value="Renovacion">Renovación</option>
             <option value="Inclusion">Inclusión / Trabajador Nuevo</option>
           </select>
+          <p class="field-hint" *ngIf="model.tipoPoliza === 'Renovacion'">
+            Para trabajadores que ya cuentan con SCTR/Vida Ley aprobado y se va a renovar la póliza vigente.
+          </p>
+          <p class="field-hint" *ngIf="model.tipoPoliza === 'Inclusion'">
+            Para trabajadores nuevos, reingresados o con SCTR/Vida Ley en estado Falta o Rechazado.
+          </p>
         </div>
 
         <div class="col-span-2" *ngIf="isAdmin()">
@@ -77,7 +83,7 @@
             ⚠ Marca solo los trabajadores que figuran en el documento
           </div>
 
-          <div class="workers-filter" *ngIf="!loadingWorkers && trabajadores.length > 0">
+          <div class="workers-filter" *ngIf="!loadingWorkers && trabajadores.length > 0 && !isContratista()">
             <button
               type="button"
               class="filter-btn"
@@ -129,8 +135,8 @@
                 <strong>{{ w.apellidoNombre }}</strong>
                 <span class="muted-line">DNI {{ w.dni }}</span>
               </div>
-              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(w.estadoSctr)">
-                {{ w.estadoSctr }}
+              <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
+                {{ model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
               </span>
             </div>
           </div>

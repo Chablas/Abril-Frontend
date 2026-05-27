@@ -18,7 +18,8 @@ export interface ActividadListItemDTO {
   id: number;
   projectId: number;
   projectNombre: string | null;
-  indice: number | null;
+  orden: number | null;
+  spi?: number | null;
   nombre: string;
   partidaDeControl: string | null;
   etapaId: number | null;
@@ -29,6 +30,8 @@ export interface ActividadListItemDTO {
   especialidadNombre: string | null;
   userId: number | null;
   responsableNombre: string | null;
+  userId2: number | null;
+  responsableNombre2: string | null;
   encargado1: string | null;
   inicioProgramado: string | null;
   finProgramado: string | null;
@@ -63,6 +66,7 @@ export interface ActividadPatchBody {
   inicioEfectivo?: string | null;
   finEfectivo?: string | null;
   userId?: number | null;
+  userId2?: number | null;
   observaciones?: string | null;
   estado?: string | null;
   activo?: boolean;
@@ -84,7 +88,7 @@ export interface GenerarActividadesResultDTO {
 export interface GanttActividadDTO {
   id: number;
   projectId: number;
-  indice: number | null;
+  orden: number | null;
   nombre: string;
   tipo: string | null;
   etapaId: number | null;
@@ -159,6 +163,7 @@ export interface UpdateActividadBody {
   categoriaId?: number | null;
   especialidadId?: number | null;
   userId: number | null;
+  userId2: number | null;
   inicioProgramado: string | null;
   finProgramado: string | null;
   inicioEfectivo: string | null;

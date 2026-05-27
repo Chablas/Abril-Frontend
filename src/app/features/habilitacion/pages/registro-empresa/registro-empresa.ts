@@ -89,7 +89,7 @@ export class RegistroEmpresa {
 
     this.uploadService.subirArchivo(file, LOGO_CONTEXTO).subscribe({
       next: (result) => {
-        this.logoUrl = result.url;
+        this.logoUrl = result.path;
         this.uploadingFile = false;
         this.cdr.detectChanges();
       },

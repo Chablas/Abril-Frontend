@@ -1,6 +1,16 @@
 <app-base-modal *ngIf="open" [title]="title" width="w-[680px]" (closeModal)="close()">
   <div class="form-wrapper">
     <div>
+      <label class="field-label">Proyecto *</label>
+      <select class="field-input" [(ngModel)]="proyectoId">
+        <option [ngValue]="null">— Seleccionar proyecto —</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+          {{ p.projectDescription }}
+        </option>
+      </select>
+    </div>
+
+    <div>
       <label class="field-label">Trabajador *</label>
       <div *ngIf="selectedWorker" class="selected-worker">
         <div>
@@ -11,12 +21,14 @@
       </div>
       <div *ngIf="!selectedWorker">
         <input
+          *ngIf="proyectoId"
           type="text"
           class="field-input"
           placeholder="Buscar por nombre o DNI…"
           [(ngModel)]="workersSearch"
           (input)="onWorkersSearchChange()"
         />
+        <p *ngIf="!proyectoId" class="muted-line">Selecciona un proyecto primero.</p>
         <div class="workers-search-box" *ngIf="workersSearch">
           <div *ngIf="loadingWorkers" class="muted-line">Buscando…</div>
           <div
@@ -38,16 +50,6 @@
     </div>
 
     <div class="grid-2">
-      <div class="col-span-2">
-        <label class="field-label">Proyecto *</label>
-        <select class="field-input" [(ngModel)]="proyectoId">
-          <option [ngValue]="null">— Seleccionar proyecto —</option>
-          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
-            {{ p.projectDescription }}
-          </option>
-        </select>
-      </div>
-
       <div>
         <label class="field-label">Fecha programada *</label>
         <input type="date" class="field-input" [(ngModel)]="fechaProgramada" [min]="hoy" />

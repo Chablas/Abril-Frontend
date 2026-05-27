@@ -3,7 +3,13 @@ import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 
 export const CLINICA_ROUTES: Routes = [
-  { path: '', redirectTo: 'agenda', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.ClinicaDashboard),
+    canActivate: [authGuard, roleGuard],
+    data: { titulo: 'CLÍNICA', featureKey: 'clinica.agenda' },
+  },
   {
     path: 'agenda',
     loadComponent: () => import('./pages/agenda/agenda').then(m => m.Agenda),
@@ -16,5 +22,12 @@ export const CLINICA_ROUTES: Routes = [
       import('./pages/programaciones/programaciones').then(m => m.ProgramacionesClinica),
     canActivate: [authGuard, roleGuard],
     data: { titulo: 'CLÍNICA - PROGRAMACIONES', featureKey: 'clinica.programaciones' },
+  },
+  {
+    path: 'interconsultas',
+    loadComponent: () =>
+      import('./pages/interconsultas/interconsultas').then(m => m.InterconsultasClinica),
+    canActivate: [authGuard, roleGuard],
+    data: { titulo: 'CLÍNICA - INTERCONSULTAS', featureKey: 'clinica.agenda' },
   },
 ];

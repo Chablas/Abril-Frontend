@@ -1,0 +1,20 @@
+.full-page-wrapper,
+.full-page-wrapper > div {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Hace que el componente ruteado llene el área disponible (para páginas con h-full
+ * que manejan su propio scroll interno) y, si su contenido crece más que el
+ * contenedor, el contenedor scrollea (para páginas de altura natural).
+ *
+ * Se excluye <router-outlet> porque Angular lo renderiza como un nodo DOM vacío
+ * que también es hijo directo de .page-content; sin el :not(), el flex-grow lo
+ * haría competir por espacio con el componente real y generaría un hueco gris.
+ */
+.page-content > *:not(router-outlet) {
+  flex: 1 0 auto;
+}

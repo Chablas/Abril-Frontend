@@ -1,6 +1,5 @@
 import { ProjectSimpleDTO } from "../../../../../core/dtos/project/projectSimple.model";
 import { ContributorFactoryDTO } from "./companyFactoryDTO.model";
-import { ContractOriginSimpleDTO } from "./contractOriginSimple.model";
 import { ContractTypeSimpleDTO } from "./contractTypeSimple.model";
 import { ContractModalitySimpleDTO } from "./contractModalitySimple.model";
 import { CurrencySimpleDTO } from "./currencySimple.model";
@@ -12,7 +11,6 @@ export interface ProjectSubContractorFormDataDTO {
     projects: ProjectSimpleDTO[];
     contractTypes: ContractTypeSimpleDTO[];
     contractModalities: ContractModalitySimpleDTO[];
-    contractOrigins: ContractOriginSimpleDTO[];
     paymentMethods: PaymentMethodSimpleDTO[];
     currencies: CurrencySimpleDTO[];
     workItems: WorkItemSimpleDTO[];

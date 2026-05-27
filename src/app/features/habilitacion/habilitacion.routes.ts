@@ -3,14 +3,24 @@ import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 
 export const HABILITACION_ROUTES: Routes = [
-  { path: '', redirectTo: 'trabajadores', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard-contratista', pathMatch: 'full' },
+  {
+    path: 'dashboard-contratista',
+    loadComponent: () =>
+      import('./pages/dashboard-contratista/dashboard-contratista').then(
+        (m) => m.DashboardContratista,
+      ),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - PANEL CONTRATISTA' },
+  },
   {
     path: 'trabajadores',
     loadComponent: () =>
       import('./pages/trabajadores/trabajadores').then((m) => m.Trabajadores),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'HABILITACIÓN - TRABAJADORES',
+      titulo: '',
+      hideHeader: true,
       featureKey: 'habilitacion.trabajadores',
       roles: ['CONTRATISTA'],
     },
@@ -38,7 +48,7 @@ export const HABILITACION_ROUTES: Routes = [
     loadComponent: () => import('./pages/bandeja/bandeja').then((m) => m.Bandeja),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'HABILITACIÓN - BANDEJA DE APROBACIONES',
+      titulo: '',
       featureKey: 'habilitacion.bandeja',
     },
   },

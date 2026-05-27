@@ -3,10 +3,14 @@
 
     <!-- Nombre del rol -->
     <div class="flex flex-col gap-1">
-      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Rol</label>
-      <p class="text-[0.95rem] font-semibold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-        {{ role.roleDescription }}
-      </p>
+      <label class="text-[0.72rem] uppercase tracking-widest font-bold text-gray-500">Nombre del rol</label>
+      <input
+        type="text"
+        [(ngModel)]="editedDescription"
+        placeholder="Nombre del rol"
+        class="text-[0.95rem] font-semibold text-gray-900 border border-gray-200 rounded-lg px-3 py-2
+               focus:outline-none focus:border-[#64bc04] focus:ring-2 focus:ring-[#64bc04]/20 transition-all"
+      />
     </div>
 
     <!-- Funcionalidades -->

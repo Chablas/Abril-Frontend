@@ -8,6 +8,7 @@ import { AdjudicacionesService } from '../../services/adjudicaciones.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { MicrosoftAuthService } from '../../../../../auth/pages/login/services/microsoft-auth.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
@@ -63,12 +64,11 @@ export class Detail implements OnInit {
     const base = [
       { key: 'Contract',          label: 'Contrato' },
       { key: 'SummarySheet',      label: 'Hoja Resumen' },
-      { key: 'Budget',            label: 'Presupuesto' },
       { key: 'Schedule',          label: 'Cronograma' },
       { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
       { key: 'ServiceOrder',      label: 'Orden de Servicio' },
       { key: 'Instructivo',          label: 'Instructivo' },
-      { key: 'NonConformingOutput',  label: 'Salidas No Conforme' },
+      { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
     ];
     if (this.item.paymentMethodId === 2) {
@@ -101,29 +101,59 @@ export class Detail implements OnInit {
   generatingDoc: string | null = null;
   updatingStatusDoc: string | null = null;
   sendingObservationEmail: string | null = null;
+  sendingAllObservationsEmail = false;
+  sendingAllLevantamientoEmail = false;
 
-  /** Opciones fijas de estado para los documentos. */
-  readonly fileStatuses = [
-    { id: 1, label: 'No aplica' },
-    { id: 2, label: 'En revisión por Ofic. Centr.' },
-    { id: 3, label: 'Con observaciones' },
-    { id: 4, label: 'Aprobado' },
-  ] as const;
+  /** Opciones de estado para los documentos (varía según rol). */
+  isOfTecnica = false;
+  fileStatuses: { id: number; label: string }[] = [];
+
+  private hasOfTecnica = false;
+  private hasOfCentral = false;
 
   /** Formulario local de estado/observación por clave de documento. */
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote', 'Instructivo']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'PromissoryNote', 'Instructivo']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private microsoftAuthService: MicrosoftAuthService,
+    private authService: AuthService,
   ) {}
 
+  private static readonly ROLE_OF_TECNICA = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA TÉCNICA';
+  private static readonly ROLE_OF_CENTRAL = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA CENTRAL';
+
   ngOnInit(): void {
+    this.hasOfTecnica = this.authService.hasRole(Detail.ROLE_OF_TECNICA);
+    this.hasOfCentral = this.authService.hasRole(Detail.ROLE_OF_CENTRAL);
+
+    // Solo OF Técnica (sin Central): opciones restringidas
+    this.isOfTecnica = this.hasOfTecnica && !this.hasOfCentral;
+
+    const centralOptions = [
+      { id: 1, label: 'No aplica' },
+      { id: 2, label: 'En revisión por Ofic. Centr.' },
+      { id: 3, label: 'Con observaciones' },
+      { id: 4, label: 'Aprobado' },
+    ];
+    const levantamientoOption = { id: 5, label: 'Levantamiento de observación' };
+
+    if (this.hasOfTecnica && this.hasOfCentral) {
+      // Ambos roles → las 5 opciones
+      this.fileStatuses = [...centralOptions, levantamientoOption];
+    } else if (this.hasOfTecnica) {
+      // Solo OF Técnica → opciones se calculan por documento en getStatusOptionsForDoc()
+      this.fileStatuses = [{ id: 1, label: 'No aplica' }, levantamientoOption];
+    } else {
+      // Solo OF Central u otro rol → las 4 opciones estándar
+      this.fileStatuses = centralOptions;
+    }
+
     this.viewStep = this.item.projectSubContractorStatusId;
     if (this.item.signingDate)    this.step2Form.signingDate    = this.item.signingDate.substring(0, 10);
     if (this.item.startDate)      this.step2Form.startDate      = this.item.startDate.substring(0, 10);
@@ -281,7 +311,6 @@ export class Detail implements OnInit {
     switch (key) {
       case 'Contract':          return this.item.contract          ?? undefined;
       case 'SummarySheet':      return this.item.summarySheet      ?? undefined;
-      case 'Budget':            return this.item.budget            ?? undefined;
       case 'Schedule':          return this.item.schedule          ?? undefined;
       case 'AttachedQuotation': return this.item.attachedQuotation ?? undefined;
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
@@ -309,7 +338,6 @@ export class Detail implements OnInit {
         switch (docKey) {
           case 'Contract':          this.item.contract          = generated; break;
           case 'SummarySheet':      this.item.summarySheet      = generated; break;
-          case 'Budget':            this.item.budget            = generated; break;
           case 'Schedule':          this.item.schedule          = generated; break;
           case 'AttachedQuotation': this.item.attachedQuotation = generated; break;
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
@@ -333,13 +361,22 @@ export class Detail implements OnInit {
   private static readonly WORD_ACCEPT =
     '.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword';
 
+  /** Tipos de documento que solo admiten archivos PDF. */
+  private static readonly PDF_ONLY_DOCS = new Set(['AttachedQuotation']);
+
+  private static readonly PDF_ACCEPT = '.pdf,application/pdf';
+
   triggerUpload(docKey: string): void {
     this.currentDocType = docKey;
     this.fileInput.nativeElement.value = '';
     // Restringir el selector de archivos según el tipo de documento
-    this.fileInput.nativeElement.accept = Detail.WORD_ONLY_DOCS.has(docKey)
-      ? Detail.WORD_ACCEPT
-      : '';
+    if (Detail.WORD_ONLY_DOCS.has(docKey)) {
+      this.fileInput.nativeElement.accept = Detail.WORD_ACCEPT;
+    } else if (Detail.PDF_ONLY_DOCS.has(docKey)) {
+      this.fileInput.nativeElement.accept = Detail.PDF_ACCEPT;
+    } else {
+      this.fileInput.nativeElement.accept = '';
+    }
     this.fileInput.nativeElement.click();
   }
 
@@ -363,6 +400,20 @@ export class Detail implements OnInit {
       }
     }
 
+    // Validación extra: los documentos PDF-only solo permiten .pdf
+    if (Detail.PDF_ONLY_DOCS.has(this.currentDocType)) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'pdf') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Formato no permitido',
+          text: 'La cotización adjunta solo acepta archivos PDF (.pdf).',
+          confirmButtonColor: '#64BC04',
+        });
+        return;
+      }
+    }
+
     this.uploadDoc(this.currentDocType, file);
   }
 
@@ -377,7 +428,6 @@ export class Detail implements OnInit {
         switch (docType) {
           case 'Contract':          this.item.contract          = uploaded; break;
           case 'SummarySheet':      this.item.summarySheet      = uploaded; break;
-          case 'Budget':            this.item.budget            = uploaded; break;
           case 'Schedule':          this.item.schedule          = uploaded; break;
           case 'AttachedQuotation': this.item.attachedQuotation = uploaded; break;
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
@@ -404,7 +454,18 @@ export class Detail implements OnInit {
     this.saveDocStatus(docKey);
   }
 
+  /** Opciones de estado para un documento. Para OF Técnica devuelve las opciones restringidas. */
+  getStatusOptionsForDoc(_docKey: string): { id: number; label: string }[] {
+    return this.fileStatuses;
+  }
+
+  /** True si el usuario tiene el rol de OF Técnica (puede enviar correo de levantamiento). */
+  get canSendLevantamiento(): boolean {
+    return this.hasOfTecnica;
+  }
+
   onObservationBlur(docKey: string): void {
+    if (this.isOfTecnica) return;
     this.saveDocStatus(docKey);
   }
 
@@ -474,6 +535,84 @@ export class Detail implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
           this.sendingObservationEmail = null;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async sendAllObservationsEmailGlobal(): Promise<void> {
+    this.sendingAllObservationsEmail = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingAllObservationsEmail = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendAllObservationsEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingAllObservationsEmail = false;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingAllObservationsEmail = false;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async sendAllLevantamientoEmailGlobal(): Promise<void> {
+    this.sendingAllLevantamientoEmail = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingAllLevantamientoEmail = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendAllLevantamientoEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingAllLevantamientoEmail = false;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingAllLevantamientoEmail = false;
           this.errorService.handleError(err);
         },
       });
