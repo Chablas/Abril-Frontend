@@ -27,23 +27,23 @@
       
       <div class="w-[220px]">
         <app-search-select
-          label="Proyecto"
-          [options]="projectOptions"
-          valueField="projectId"
-          displayField="projectDescription"
-          [value]="filtersTable.projectId"
-          (valueChange)="filtersTable.projectId = $event">
-        </app-search-select>
-      </div>
-
-      <div class="w-[220px]">
-        <app-search-select
           label="Area"
           [options]="areaOptions"
           valueField="areaId"
           displayField="areaDescription"
           [value]="filtersTable.areaId"
           (valueChange)="filtersTable.areaId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="w-[220px]">
+        <app-search-select
+          label="Proyecto"
+          [options]="projectOptions"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="filtersTable.projectId"
+          (valueChange)="filtersTable.projectId = $event">
         </app-search-select>
       </div>
 

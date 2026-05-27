@@ -544,6 +544,16 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   submit(): void {
+    if (!this.model.apellidoNombre.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo obligatorio',
+        text: 'El nombre es obligatorio.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     if (!this.canSubmit) {
       Swal.fire({
         icon: 'warning',

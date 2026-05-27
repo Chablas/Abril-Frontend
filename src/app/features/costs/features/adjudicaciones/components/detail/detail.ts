@@ -46,7 +46,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -70,6 +70,8 @@ export class Detail implements OnInit {
       { key: 'Instructivo',          label: 'Instructivo' },
       { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
+      { key: 'FichaTecnica',         label: 'Ficha Técnica' },
+      { key: 'Anexo',                label: 'Anexos' },
     ];
     if (this.item.paymentMethodId === 2) {
       return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
@@ -162,6 +164,7 @@ export class Detail implements OnInit {
     if (this.item.promissoryNoteNumber)  this.step2Form.promissoryNoteNumber  = this.item.promissoryNoteNumber;
     if (this.item.guaranteeFundPercentage != null) this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage;
     if (this.item.guaranteeFundDays != null)       this.step2Form.guaranteeFundDays       = this.item.guaranteeFundDays;
+    if (this.item.guaranteeValidityDays != null)   this.step2Form.guaranteeValidityDays   = this.item.guaranteeValidityDays;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -228,7 +231,7 @@ export class Detail implements OnInit {
     if (this.actualStatus === 5 && this.viewStep === 5) return 'Confirmar recepción';
     if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar y enviar correo';
     if (this.actualStatus === 7 && this.viewStep === 7) return 'Marcar como escaneado';
-    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Oficina Técnica';
+    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Staff de Obra';
     return 'Siguiente paso';
   }
 
@@ -318,6 +321,8 @@ export class Detail implements OnInit {
       case 'Instructivo':          return this.item.instructivo          ?? undefined;
       case 'NonConformingOutput':  return this.item.nonConformingOutput  ?? undefined;
       case 'ToleranceChart':       return this.item.toleranceChart       ?? undefined;
+      case 'FichaTecnica':         return this.item.fichaTecnica         ?? undefined;
+      case 'Anexo':                return this.item.anexo                ?? undefined;
       case 'ScannedDoc1':          return this.item.scannedDoc1          ?? undefined;
       default: return undefined;
     }
@@ -435,6 +440,8 @@ export class Detail implements OnInit {
           case 'Instructivo':          this.item.instructivo          = uploaded; break;
           case 'NonConformingOutput':  this.item.nonConformingOutput  = uploaded; break;
           case 'ToleranceChart':       this.item.toleranceChart       = uploaded; break;
+          case 'FichaTecnica':         this.item.fichaTecnica         = uploaded; break;
+          case 'Anexo':                this.item.anexo                = uploaded; break;
           case 'ScannedDoc1':          this.item.scannedDoc1          = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
@@ -815,9 +822,25 @@ export class Detail implements OnInit {
     });
   }
 
-  private advanceToApproved(): void {
+  private async advanceToApproved(): Promise<void> {
     this.loaderService.show();
-    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId).subscribe({
+
+    // El correo de notificación al Staff de Obra se envía vía Graph como el usuario autenticado.
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId, graphToken).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 4;
@@ -870,7 +893,7 @@ export class Detail implements OnInit {
         this.item.projectSubContractorStatusId = 9;
         this.viewStep = 9;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Oficina Técnica', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Staff de Obra', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -954,6 +977,12 @@ export class Detail implements OnInit {
         ? null
         : Math.trunc(Number(rawGfd));
 
+    const rawGvd = this.step2Form.guaranteeValidityDays;
+    const guaranteeValidityDays: number | null =
+      rawGvd === null || rawGvd === undefined || (rawGvd as any) === ''
+        ? null
+        : Math.trunc(Number(rawGvd));
+
     if (guaranteeFundPercentage === null) {
       Swal.fire({ icon: 'warning', title: 'El porcentaje del fondo de garantía es obligatorio.', draggable: true });
       return;
@@ -979,6 +1008,7 @@ export class Detail implements OnInit {
       promissoryNoteNumber,
       guaranteeFundPercentage,
       guaranteeFundDays,
+      guaranteeValidityDays,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
@@ -990,6 +1020,7 @@ export class Detail implements OnInit {
         this.item.promissoryNoteNumber     = promissoryNoteNumber;
         this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
         this.item.guaranteeFundDays        = guaranteeFundDays;
+        this.item.guaranteeValidityDays    = guaranteeValidityDays;
         this.viewStep = 3;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });

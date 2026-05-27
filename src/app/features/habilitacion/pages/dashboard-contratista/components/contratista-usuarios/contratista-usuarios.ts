@@ -22,14 +22,17 @@ import { ProyectoDisponibleDto } from '../../../../dtos/empresa.model';
 export class ContratistaUsuarios implements OnInit {
   @Input() contractorId!: number;
   @Input() currentUserId: number | null = null;
+  @Input() forceAdminMode: boolean = false;
 
   private readonly CASEVIP_ID = 572;
+  private readonly CLINICA_CONTRACTOR_ID = 644;
 
   usuarios: ContratistaUsuarioDto[] = [];
   proyectos: ProyectoDisponibleDto[] = [];
   loading = true;
 
   get esOwner(): boolean {
+    if (this.forceAdminMode) return true;
     if (this.currentUserId == null) return false;
     const uid = this.currentUserId;
     return this.usuarios.some((u) => u.userId === uid && u.rolNombre === 'OWNER');
@@ -82,7 +85,8 @@ export class ContratistaUsuarios implements OnInit {
         rolNombre: '',
         scope: 'TODOS',
         proyectosHtml,
-        showTipoAcceso: this.contractorId === this.CASEVIP_ID,
+        showTipoAcceso: this.contractorId === this.CASEVIP_ID || this.contractorId === this.CLINICA_CONTRACTOR_ID,
+        isClinica: this.contractorId === this.CLINICA_CONTRACTOR_ID,
       }),
       showCancelButton: true,
       confirmButtonText: 'Invitar',
@@ -196,6 +200,7 @@ export class ContratistaUsuarios implements OnInit {
     proyectosHtml: string;
     initialScope?: string;
     showTipoAcceso?: boolean;
+    isClinica?: boolean;
   }): string {
     const emailField = opts.email
       ? `<div style="margin-bottom:14px;">
@@ -225,8 +230,10 @@ export class ContratistaUsuarios implements OnInit {
       ? `<div style="margin-bottom:14px;">
           <label style="${this.labelCss}">Tipo de acceso *</label>
           <select id="swal-system-role" style="${this.inputCss}">
-            <option value="11">Acceso completo</option>
-            <option value="49">Solo control de acceso</option>
+            ${opts.isClinica
+              ? '<option value="14">Clínica</option>'
+              : '<option value="11">Acceso completo</option><option value="49">Solo control de acceso</option>'
+            }
           </select>
         </div>`
       : '';

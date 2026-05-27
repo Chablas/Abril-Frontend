@@ -120,7 +120,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /ssoma                                   → SSOMA_ROUTES
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
-   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas)
+   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -576,12 +576,15 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 /clinica/agenda       → Agenda            (programaciones del día + acciones)
 /clinica/programaciones → ProgramacionesClinica (historial filtrable)
 /clinica/interconsultas → InterconsultasClinica (derivaciones pendientes)
+/clinica/emos         → ClinicaEmos       (control de EMOs — solo lectura)
 /clinica/activar      → ActivarClinica    (público)
 ```
 
 **Sidebar**: entrada única en `navigation.service.ts` (`key: 'clinica'`, 1 item → `/clinica/dashboard`). `sidebar.ts:onModuleClick` para `'clinica'` navega directo (sin dropdown) — mismo patrón que `control-acceso`.
 
-**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes.
+**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes. Nav-cards: Agenda del Día, Programaciones, Interconsultas, **Control de EMOs**.
+
+**Control de EMOs** (`pages/emos/`): vista de solo lectura del endpoint `GET /emos/por-trabajador`. Reutiliza `EmoService`, `CatalogosSaludService`, DTOs (`EmoPorTrabajadorDto`, `EmoPorTrabajadorQuery`), utils (`aptitudBadgeClass`, `diasVencerBadgeClass`) y el componente `EmoDetail` directamente de `ssoma/salud-ocupacional/`. Sin botón crear ni editar. Click en fila con EMO abre `<app-emo-detail>`; botón historial navega a `/ssoma/salud-ocupacional/emos/{workerId}/historial`. `featureKey: 'clinica.agenda'`.
 
 **Agenda** (`pages/agenda/`): Sections por estado: "Por confirmar" (Programado), "Confirmados/en proceso" (Aceptado/En Atención), "Cerrados". Acciones por card: Aceptar, Rechazar (con motivo inline), CheckIn, Completar (abre `CompletarEmo`). Servicios: `ClinicaProgramacionService` (GET/PATCH `clinica-accion`). CSS propio con `btn-action`, `agenda-section-label`, `stat-chip`.
 
@@ -660,6 +663,11 @@ Plataforma completa mobile-first.
 - **`completar-emo.html`**: reescrito — checkbox "Se realizó lectura del EMO" + campo fecha condicional; sección Restricciones* con hint "Debes agregar al menos una"; sección Documentos* (2 file inputs PDF obligatorios); interconsulta simplificada (especialidad + diagnóstico + checkbox seguimiento solo para "No Apto").
 - **`completar-emo.css`**: añadidos `.checkbox-row`, `.fecha-lectura-row`, `.field-hint`.
 - **`interconsultas.ts`** (`clinica/pages/interconsultas/`): `load()` — detección explícita de array: `Array.isArray(res)` → `Array.isArray(res?.items)` → `Array.isArray(res?.data)` → `[]`.
+
+**Cambios 2026-05-27 — Admin usuarios contratista + fixes contratista-usuarios:**
+- **`ContratistaUsuarios`** (`habilitacion/pages/dashboard-contratista/components/contratista-usuarios/`): añadido `@Input() forceAdminMode: boolean = false`. El getter `esOwner` retorna `true` directamente cuando `forceAdminMode === true`, ignorando `currentUserId` y `rolNombre`. Permite usar el componente en modo admin sin usuario logueado.
+- **`ContratistaUsuarios` — CLINICA_CONTRACTOR_ID**: constante privada `CLINICA_CONTRACTOR_ID = 644`. `buildFormHtml()` acepta `isClinica?: boolean`. Cuando `isClinica = true`, el selector `swal-system-role` muestra solo `<option value="14">Clínica</option>` en vez de las opciones 11/49. `abrirModalInvitar()` activa `showTipoAcceso` para contractor 572 o 644 y pasa `isClinica` solo para 644.
+- **`AdminContratistaUsuarios`** (NUEVO) `pages/admin-contratista-usuarios/`: página admin standalone para gestionar usuarios de cualquier empresa contratista. Carga lista de empresas via `EmpresaContratistaService.getEmpresasLogin()` (`GET api/v1/habilitacion/auth/empresas`). Selector de empresa (`EmpresaSimpleDto { id, razonSocial, nombreComercial? }`). Al seleccionar, muestra `<app-contratista-usuarios [contractorId]="..." [currentUserId]="null" [forceAdminMode]="true">`. Ruta: `admin-usuarios-contratista`, solo `authGuard`, título `HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA`.
 
 ### Branches actuales
 - Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
@@ -773,6 +781,7 @@ Plataforma completa mobile-first.
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
+/habilitacion/admin-usuarios-contratista → AdminContratistaUsuarios (solo authGuard — gestión admin de usuarios contratista)
 ```
 
 > **Entrada CONTRATISTA**: el sidebar "Gestión de Ingresos" llama `onModuleClick({ key: 'habilitacion' })` en `sidebar.ts`. Si `isContratista()` → navega a `/habilitacion` (que redirige a `dashboard-contratista`). Si admin → navega a `/` (home). El `dashboard-contratista` a su vez redirige internamente a `trabajadores` si el visitante no es contratista (doble protección).

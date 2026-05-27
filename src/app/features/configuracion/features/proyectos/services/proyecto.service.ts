@@ -22,7 +22,10 @@ export class ProyectoService {
   }
 
   getPaged(filter: ProjectFilterDto): Observable<PagedResponseDTO<ProjectDto>> {
-    const params = new HttpParams().set('page', filter.page.toString());
+    let params = new HttpParams().set('page', filter.page.toString());
+    if (filter.ruc) params = params.set('ruc', filter.ruc);
+    if (filter.razonSocial) params = params.set('razonSocial', filter.razonSocial);
+    if (filter.projectDescription) params = params.set('projectDescription', filter.projectDescription);
     return this.http.get<PagedResponseDTO<ProjectDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,
       params,
