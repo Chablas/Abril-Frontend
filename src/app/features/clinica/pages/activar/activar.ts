@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -34,7 +35,6 @@ export class ActivarClinica implements OnInit {
   }
 
   submit(): void {
-    console.log('passwords:', this.password, this.confirmar, this.passwordsCoinciden);
     this.loading = true;
     this.error = '';
     const token =
@@ -45,6 +45,7 @@ export class ActivarClinica implements OnInit {
         { token: this.token, password: this.password },
         { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       )
+      .pipe(timeout(15000))
       .subscribe({
         next: () => {
           this.exito = true;
