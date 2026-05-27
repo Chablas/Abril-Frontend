@@ -139,6 +139,15 @@ export const HABILITACION_ROUTES: Routes = [
     data: { titulo: 'HABILITACIÓN - DETALLE CLÍNICA' },
   },
   {
+    path: 'admin-usuarios-contratista',
+    loadComponent: () =>
+      import('./pages/admin-contratista-usuarios/admin-contratista-usuarios').then(
+        (m) => m.AdminContratistaUsuarios,
+      ),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA' },
+  },
+  {
     path: 'cambiar-password',
     loadComponent: () =>
       import('./pages/cambiar-password/cambiar-password').then((m) => m.CambiarPassword),
