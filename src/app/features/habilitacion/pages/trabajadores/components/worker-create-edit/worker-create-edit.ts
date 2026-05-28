@@ -24,11 +24,10 @@ import { TrabajadorHabService } from '../../../../services/trabajador-hab.servic
 import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { TrabajadorRestringidoService } from '../../../../services/trabajador-restringido.service';
 import { CatalogosHabService } from '../../../../services/catalogos-hab.service';
-import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { PersonService } from '../../../../../../core/services/person.service';
 import { WorkerUpsertDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
-import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 import { SubareaCatDto } from '../../../../dtos/catalogos.model';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 
@@ -78,7 +77,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   dniRestringido = false;
   dniVerificado = false;
 
-  empresas: EmpresaSimpleDto[] = [];
+  empresas: EmpresaContratistaListDto[] = [];
   proyectos: ProjectGetDTO[] = [];
   areas: string[] = [];
   subareas: SubareaCatDto[] = [];
@@ -95,7 +94,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     private restringidoService: TrabajadorRestringidoService,
     private personService: PersonService,
     private catalogosHabService: CatalogosHabService,
-    private catalogosSaludService: CatalogosSaludService,
     private projectService: ProjectService,
     private empresaContratistaService: EmpresaContratistaService,
     private authService: AuthService,
@@ -269,14 +267,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
     if (this.esContratista) {
       const empresaId = this.authService.getEmpresaId();
+      console.log('[worker-create-edit] esContratista=true, empresaId=', empresaId);
       if (empresaId) {
-        this.catalogosSaludService.getEmpresas().subscribe({
-          next: (res) => {
-            const emp = res.find((e) => e.id === empresaId);
-            this.empresaContratistaNombre = emp?.nombre ?? '';
+        this.empresaContratistaService.getEmpresa(empresaId).subscribe({
+          next: (emp) => {
+            console.log('[worker-create-edit] getEmpresa OK:', emp);
+            this.empresaContratistaNombre = emp?.razonSocial ?? '';
             this.cdr.detectChanges();
           },
-          error: () => {},
+          error: (err) => { console.error('[worker-create-edit] getEmpresa ERROR:', err); },
         });
         this.empresaContratistaService.getProyectos(empresaId).subscribe({
           next: (data) => {
@@ -309,12 +308,12 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   private loadCatalogos(): void {
-    this.catalogosSaludService
-      .getEmpresas()
+    this.empresaContratistaService
+      .getEmpresas({ soloContratistas: false, pageSize: 200 })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          this.empresas = res ?? [];
+          this.empresas = res.data ?? [];
           this.cdr.detectChanges();
         },
         error: () => {
