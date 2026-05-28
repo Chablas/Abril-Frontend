@@ -573,17 +573,28 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 
 **Control de EMOs** (`pages/emos/`): vista de solo lectura del endpoint `GET /emos/por-trabajador`. Reutiliza `EmoService`, `CatalogosSaludService`, DTOs (`EmoPorTrabajadorDto`, `EmoPorTrabajadorQuery`), utils (`aptitudBadgeClass`, `diasVencerBadgeClass`) y el componente `EmoDetail` directamente de `ssoma/salud-ocupacional/`. Sin botón crear ni editar. Click en fila con EMO abre `<app-emo-detail>`; botón historial navega a `/ssoma/salud-ocupacional/emos/{workerId}/historial`. `featureKey: 'clinica.agenda'`.
 
-**Agenda** (`pages/agenda/`): Sections por estado: "Por confirmar" (Programado), "Confirmados/en proceso" (Aceptado/En Atención), "Cerrados". Acciones por card: Aceptar, Rechazar (con motivo inline), CheckIn, Completar (abre `CompletarEmo`). Servicios: `ClinicaProgramacionService` (GET/PATCH `clinica-accion`). CSS propio con `btn-action`, `agenda-section-label`, `stat-chip`.
+**Agenda** (`pages/agenda/`) — rediseño enterprise 2026-05-28:
+- Layout full-screen (`:host flex-col flex-1`), header `#0f172a` con `linear-gradient`, stats-bar, controls-row, cards-zone con grid 3 columnas responsive (→2 en ≤1100px, →1 en ≤640px).
+- **Card estructura 3 zonas**: `.card-top` (nombre/DNI + badge estado + `.card-chips` con chip-groups etiquetados "Tipo"/"Categoría"/"Ocupación"/"EMO"), `.card-dates` (banda `#f8fafc` con fecha programada + hora + vence EMO + check-in), `.card-actions` (margin-top:auto).
+- **Modal aceptar**: hora obligatoria con validación triple (`!hora || trim==='' || =='--:--'`); grid 2 col fecha+hora; error inline `.dm-error-inline`.
+- **Tab system**: propiedad `activeTab: 'agenda'|'interconsultas'`. Tab Interconsultas carga `cargarInterconsultas()` en `ngOnInit` + en `cambiarTab()` si no hay datos. `ChangeDetectorRef.detectChanges()` forzado en `next`/`error` y `cambiarTab`.
+- **Tab Interconsultas**: tabla full-width con columnas Trabajador, Especialidad, F.Derivación, Días (calculados con `calcularDiasPendientes(fechaDerivacion)`), Estado, botón `ic-btn-accion` ("🔧 Gestionar"/"📋 Ver detalle"). Helpers: `icEstadoClass()`, `icDiasClass(dias)`, `calcularDiasPendientes()`. HTTP GET a `/interconsultas` con `HttpParams`.
+- **Modal levantamiento interconsulta** (`icDetalle`/`icPaso`/`icLevantamiento`): backdrop `modal-overlay`, caja centrada `ic-modal-box` 580px. Paso 1: fecha+resultado (grid 2col) + diagnóstico + archivo (upload). POST `/interconsultas/{id}/documentos` + PATCH `/interconsultas/{id}/resultado`. Paso 2: mensaje de éxito.
+- **DTOs ampliados** (`clinica.model.ts`): `ProgramacionClinicaDto` añadidos `fechaVencimientoEmo?: string|null`, `categoria?: string|null`, `tipoTrabajador?: string|null`, `ocupacion?: string|null`. `ClinicaAccionDto` añadido `horaNueva?: string`.
 
-**Programaciones** (`pages/programaciones/`): tabla con filtros `desde/hasta/estado`. CSS propio con `prog-table-card`, `badge-chip`.
+**Programaciones** (`pages/programaciones/`) — rediseño 2026-05-28:
+- Full-screen idéntico a agenda: header gradient oscuro, `.controls-row` blanca, `.table-zone` scroll. Badge de conteo `items.length` en header. Loading dots verdes, empty state `📋`. `| date:'dd/MM/yyyy'` en fecha.
 
-**Interconsultas** (`pages/interconsultas/`): tabla con filtros `estado/search`. Modal inline para resolver (campos: estado, fechaAtencion, CIE-10, diagnóstico, resultado, urlInforme, notas). Fila `row-urgente` (borde rojo) cuando `diasPendiente >= 7`. Usa `InterconsultaService` de SSOMA (`../../../ssoma/salud-ocupacional/services/interconsulta.service`). El callback de `getInterconsultas` usa `res.items ?? res.data ?? res ?? []` (defensivo frente a formato del backend).
+**Interconsultas** (`pages/interconsultas/`) — rediseño 2026-05-28:
+- Mismo estándar visual: header `linear-gradient #0f172a→#1e293b`, `.controls-row` blanca, `.table-zone` con `.table-card`. Badges días: `ic-chip-red/orange/green/muted`. Badges estado: `chip-orange/green/gray` (border-radius 6px). Modales dark conservados íntegramente.
+
+**`layout.ts` `isFullPage()`** incluye: `/clinica/dashboard`, `/clinica/agenda`, `/clinica/interconsultas`, `/clinica/programaciones` (header global oculto en todas estas rutas).
 
 **Servicios de Clínica** (`features/clinica/services/clinica-programacion.service.ts`):
 - Base: `${apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`
 - `getProgramacionesHoy(clinicaId?)` → GET con `desde=hoy&hasta=hoy`
 - `getProgramacionesFiltradas({ desde, hasta, estado })` → GET con filtros
-- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId? }`
+- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId?, horaNueva?, fechaNueva? }`
 
 **DTOs** (`features/clinica/dtos/clinica.model.ts`): `ProgramacionClinicaDto`, `ClinicaAccionDto`, `EstadoProgramacionClinica`.
 

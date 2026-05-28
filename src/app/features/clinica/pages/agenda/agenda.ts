@@ -1,12 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { lastValueFrom } from 'rxjs';
 import { ClinicaProgramacionService } from '../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto, ClinicaAccionDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
+import { environment } from '../../../../../environments/environment';
 
 type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado';
 
@@ -26,13 +29,54 @@ export class Agenda implements OnInit {
   filtroEstado: FiltroEstado = '';
   busqueda = '';
 
-  modalAceptar: { open: boolean; item: ProgramacionClinicaDto | null; nuevaFecha: string } = {
+  modalAceptar: {
+    open: boolean;
+    item: ProgramacionClinicaDto | null;
+    nuevaFecha: string;
+    horaAceptar: string;
+    horaError: string;
+  } = {
     open: false,
     item: null,
     nuevaFecha: '',
+    horaAceptar: '',
+    horaError: '',
   };
 
   completandoItem: ProgramacionClinicaDto | null = null;
+
+  activeTab: 'agenda' | 'interconsultas' = 'agenda';
+  interconsultas: any[] = [];
+  interconsultasLoading = false;
+  interconsultasFiltroEstado = 'Pendiente';
+  interconsultasBusqueda = '';
+
+  icDetalle: any = null;
+  icPaso: 1 | 2 = 1;
+  icLevantamiento = {
+    fechaAtencion: '',
+    diagnostico: '',
+    resultado: '',
+    archivoFile: null as File | null,
+    archivoError: '',
+    fechaError: '',
+    cargando: false,
+  };
+
+  modalInterconsulta = {
+    visible: false,
+    progId: 0,
+    workerId: 0,
+    emoId: null as number | null,
+    workerNombre: '',
+    workerDni: '',
+    especialidad: '',
+    observacion: '',
+    archivoFile: null as File | null,
+    archivoError: '',
+    especialidadError: '',
+    cargando: false,
+  };
 
   readonly estadosFiltro: { key: FiltroEstado; label: string }[] = [
     { key: '', label: 'Todos' },
@@ -47,10 +91,13 @@ export class Agenda implements OnInit {
     private svc: ClinicaProgramacionService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.loadAgenda(this.selectedDate);
+    this.cargarInterconsultas();
   }
 
   loadAgenda(fecha: string): void {
@@ -118,20 +165,32 @@ export class Agenda implements OnInit {
 
   // ── Modal Aceptar ────────────────────────────────────────
   abrirAceptar(item: ProgramacionClinicaDto): void {
-    this.modalAceptar = { open: true, item, nuevaFecha: item.fechaProgramada ?? '' };
+    this.modalAceptar = {
+      open: true,
+      item,
+      nuevaFecha: item.fechaProgramada ?? '',
+      horaAceptar: item.horaProgramada ?? '',
+      horaError: '',
+    };
   }
 
   cancelarAceptar(): void {
-    this.modalAceptar = { open: false, item: null, nuevaFecha: '' };
+    this.modalAceptar = { open: false, item: null, nuevaFecha: '', horaAceptar: '', horaError: '' };
   }
 
   confirmarAceptar(): void {
     const item = this.modalAceptar.item;
     if (!item) return;
+    if (!this.modalAceptar.horaAceptar || this.modalAceptar.horaAceptar.trim() === '' || this.modalAceptar.horaAceptar === '--:--') {
+      this.modalAceptar.horaError = 'La hora es obligatoria';
+      return;
+    }
+    this.modalAceptar.horaError = '';
     const body: ClinicaAccionDto = {
       id: item.id,
       accion: 'Aceptar',
       fechaNueva: this.modalAceptar.nuevaFecha,
+      horaNueva: this.modalAceptar.horaAceptar,
     };
     this.cancelarAceptar();
     this.ejecutarAccion(item.id, body);
@@ -199,6 +258,207 @@ export class Agenda implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  // ── Tabs ─────────────────────────────────────────────────
+  cambiarTab(tab: 'agenda' | 'interconsultas'): void {
+    this.activeTab = tab;
+    if (tab === 'interconsultas' && this.interconsultas.length === 0) {
+      this.cargarInterconsultas();
+    }
+    this.cdr.detectChanges();
+  }
+
+  cargarInterconsultas(): void {
+    this.interconsultasLoading = true;
+    const token = localStorage.getItem('access_token');
+    const headers = new HttpHeaders(
+      token ? { Authorization: `Bearer ${token}` } : {}
+    );
+    const params = new HttpParams()
+      .set('estado', this.interconsultasFiltroEstado)
+      .set('pageSize', '100');
+
+    this.http.get<any[]>(
+      `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/interconsultas`,
+      { headers, params }
+    ).subscribe({
+      next: (res: any) => {
+        this.interconsultas = Array.isArray(res) ? res : (res.data ?? res.items ?? []);
+        this.interconsultasLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.interconsultas = [];
+        this.interconsultasLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  calcularDiasPendientes(fechaDerivacion: string): number {
+    const hoy = new Date();
+    const fecha = new Date(fechaDerivacion);
+    return Math.floor((hoy.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  // ── Panel lateral interconsultas ─────────────────────────
+  seleccionarInterconsulta(item: any): void {
+    this.icDetalle = item;
+    this.icPaso = item.estado === 'Completado' ? 2 : 1;
+    this.icLevantamiento = {
+      fechaAtencion: '',
+      diagnostico: '',
+      resultado: '',
+      archivoFile: null,
+      archivoError: '',
+      fechaError: '',
+      cargando: false,
+    };
+    this.cdr.detectChanges();
+  }
+
+  onArchivoLevantamiento(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.icLevantamiento.archivoFile = input.files?.[0] ?? null;
+    this.icLevantamiento.archivoError = '';
+  }
+
+  async confirmarLevantamiento(): Promise<void> {
+    const lev = this.icLevantamiento;
+    lev.fechaError = '';
+    lev.archivoError = '';
+
+    if (!lev.fechaAtencion) { lev.fechaError = 'La fecha de atención es obligatoria'; return; }
+    if (!lev.archivoFile)   { lev.archivoError = 'Debes adjuntar el informe de interconsulta'; return; }
+
+    lev.cargando = true;
+    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
+    const token = localStorage.getItem('access_token');
+    const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
+
+    try {
+      const fd = new FormData();
+      fd.append('file', lev.archivoFile);
+      const uploadResp: any = await lastValueFrom(
+        this.http.post(`${base}/interconsultas/${this.icDetalle.id}/documentos`, fd, { headers }),
+      );
+      const urlInforme = uploadResp?.url ?? uploadResp?.path ?? '';
+
+      await lastValueFrom(
+        this.http.patch(`${base}/interconsultas/${this.icDetalle.id}/resultado`, {
+          estado: 'Atendida',
+          fechaAtencion: lev.fechaAtencion,
+          diagnostico: lev.diagnostico || undefined,
+          resultado: lev.resultado || undefined,
+          urlInforme: urlInforme || undefined,
+        }, { headers }),
+      );
+
+      this.icPaso = 2;
+      this.cdr.detectChanges();
+      this.cargarInterconsultas();
+    } catch (err: any) {
+      const mensaje = err?.error?.message ?? err?.message ?? 'Error al levantar la interconsulta';
+      Swal.fire('Error', mensaje, 'error');
+    } finally {
+      lev.cargando = false;
+    }
+  }
+
+  icEstadoClass(estado: string): string {
+    const map: Record<string, string> = {
+      'Pendiente': 'ic-chip-orange',
+      'Atendida':  'ic-chip-green',
+      'Cancelada': 'ic-chip-gray',
+    };
+    return map[estado] ?? 'ic-chip-gray';
+  }
+
+  icDiasClass(dias: number): string {
+    if (dias > 15) return 'ic-chip-red';
+    if (dias >= 8)  return 'ic-chip-orange';
+    return 'ic-chip-green';
+  }
+
+  // ── Interconsulta (nueva desde card) ─────────────────────
+  abrirInterconsulta(item: any): void {
+    this.modalInterconsulta = {
+      visible: true,
+      progId: item.id,
+      workerId: item.workerId,
+      emoId: item.emoId ?? null,
+      workerNombre: item.workerNombre,
+      workerDni: item.workerDni,
+      especialidad: '',
+      observacion: '',
+      archivoFile: null,
+      archivoError: '',
+      especialidadError: '',
+      cargando: false,
+    };
+  }
+
+  cancelarInterconsulta(): void {
+    this.modalInterconsulta.visible = false;
+  }
+
+  onArchivoInterconsulta(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.modalInterconsulta.archivoFile = input.files?.[0] ?? null;
+    this.modalInterconsulta.archivoError = '';
+  }
+
+  async confirmarInterconsulta(): Promise<void> {
+    const m = this.modalInterconsulta;
+    m.especialidadError = '';
+    m.archivoError = '';
+
+    if (!m.especialidad.trim()) {
+      m.especialidadError = 'La especialidad es obligatoria';
+      return;
+    }
+    if (!m.archivoFile) {
+      m.archivoError = 'Debes adjuntar la evidencia';
+      return;
+    }
+
+    m.cargando = true;
+    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
+    const token = localStorage.getItem('access_token');
+    const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
+
+    try {
+      const body = {
+        emoId: m.emoId,
+        workerId: m.workerId,
+        especialidad: m.especialidad.trim(),
+        observacion: m.observacion.trim() || undefined,
+        fechaDerivacion: new Date().toISOString().split('T')[0],
+      };
+      const resp: any = await lastValueFrom(
+        this.http.post(`${base}/interconsultas`, body, { headers }),
+      );
+      const interconsultaId = resp?.id ?? resp?.data?.id;
+
+      if (interconsultaId && m.archivoFile) {
+        const fd = new FormData();
+        fd.append('file', m.archivoFile);
+        fd.append('tipo', 'interconsulta');
+        await lastValueFrom(
+          this.http.post(`${base}/interconsultas/${interconsultaId}/documentos`, fd, { headers }),
+        );
+      }
+
+      this.cancelarInterconsulta();
+      this.loadAgenda(this.selectedDate);
+      Swal.fire('Interconsulta registrada', '', 'success');
+    } catch (err: any) {
+      const mensaje = err?.error?.message ?? err?.message ?? 'Error al registrar la interconsulta';
+      Swal.fire('Error', mensaje, 'error');
+    } finally {
+      m.cargando = false;
+    }
   }
 
   // ── CSS helpers ──────────────────────────────────────────

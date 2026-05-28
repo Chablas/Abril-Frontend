@@ -2,154 +2,307 @@
 
   <!-- ── Header ──────────────────────────────────────── -->
   <div class="agenda-header">
-    <div class="header-left">
-      <h2 class="agenda-title">Agenda del Día</h2>
-      <p class="agenda-sub" *ngIf="!loading">
-        {{ totalHoy }} programación{{ totalHoy !== 1 ? 'es' : '' }}
-      </p>
-    </div>
-    <div class="header-right">
-      <div class="date-picker-wrap">
-        <span class="date-icon">📅</span>
-        <input type="date" class="date-input" [(ngModel)]="selectedDate"
-          (change)="onDateChange()" />
+    <div class="header-main-row">
+      <div class="header-left">
+        <h2 class="agenda-title">Agenda del Día</h2>
+        <p class="agenda-sub" *ngIf="activeTab === 'agenda' && !loading">
+          {{ totalHoy }} programación{{ totalHoy !== 1 ? 'es' : '' }}
+        </p>
       </div>
-      <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
+      <div class="header-right" *ngIf="activeTab === 'agenda'">
+        <div class="date-picker-wrap">
+          <span class="date-icon">📅</span>
+          <input type="date" class="date-input" [(ngModel)]="selectedDate"
+            (change)="onDateChange()" />
+        </div>
+        <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
+      </div>
     </div>
-  </div>
-
-  <!-- ── Stats bar (C3: clickeable, sincroniza chips) ─── -->
-  <div class="stats-bar" *ngIf="!loading && totalHoy > 0">
-    <div class="stat-item stat-clickeable"
-         [class.stat-active]="filtroEstado === 'Programado'"
-         (click)="filtroEstado = 'Programado'">
-      <span class="stat-num stat-blue">{{ countProgramados }}</span>
-      <span class="stat-lbl">Por confirmar</span>
-    </div>
-    <div class="stat-sep"></div>
-    <div class="stat-item stat-clickeable"
-         [class.stat-active]="filtroEstado === 'Aceptado por Clínica'"
-         (click)="filtroEstado = 'Aceptado por Clínica'">
-      <span class="stat-num stat-violet">{{ countAceptados }}</span>
-      <span class="stat-lbl">Aceptados</span>
-    </div>
-    <div class="stat-item stat-clickeable"
-         [class.stat-active]="filtroEstado === 'En Atención'"
-         (click)="filtroEstado = 'En Atención'">
-      <span class="stat-num stat-orange">{{ countEnAtencion }}</span>
-      <span class="stat-lbl">En Atención</span>
-    </div>
-    <div class="stat-item stat-clickeable"
-         [class.stat-active]="filtroEstado === 'Completado'"
-         (click)="filtroEstado = 'Completado'">
-      <span class="stat-num stat-green">{{ countCompletados }}</span>
-      <span class="stat-lbl">Completados</span>
-    </div>
-    <div class="stat-item stat-clickeable" *ngIf="countRechazados > 0"
-         [class.stat-active]="filtroEstado === 'Rechazado'"
-         (click)="filtroEstado = 'Rechazado'">
-      <span class="stat-num stat-slate">{{ countRechazados }}</span>
-      <span class="stat-lbl">Rechazados</span>
-    </div>
-  </div>
-
-  <!-- ── Filtros + búsqueda ──────────────────────────── -->
-  <div class="controls-row">
-    <div class="pill-bar">
-      <button
-        *ngFor="let f of estadosFiltro"
-        class="pill"
-        [ngClass]="[filtroEstado === f.key ? 'pill-active ' + filtroClass(f.key) : '']"
-        (click)="filtroEstado = f.key">
-        {{ f.label }}
-        <span class="pill-count" *ngIf="f.key !== '' && countForFiltro(f.key) > 0">
-          {{ countForFiltro(f.key) }}
-        </span>
+    <div class="agenda-tabs">
+      <button class="agenda-tab"
+        [class.tab-active]="activeTab === 'agenda'"
+        (click)="cambiarTab('agenda')">
+        📋 Agenda del Día
+      </button>
+      <button class="agenda-tab"
+        [class.tab-active]="activeTab === 'interconsultas'"
+        (click)="cambiarTab('interconsultas')">
+        🔗 Interconsultas
       </button>
     </div>
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" class="search-input" placeholder="Buscar trabajador o DNI..."
-        [(ngModel)]="busqueda" />
-    </div>
   </div>
 
-  <!-- ── Zona de scroll (loading / empty / cards) ──────── -->
-  <div class="cards-zone">
+  <!-- ═══════════════════════════════════════════════════
+       TAB: AGENDA
+       ═══════════════════════════════════════════════════ -->
+  <ng-container *ngIf="activeTab === 'agenda'">
 
-    <div *ngIf="loading" class="loading-row">
-      <div class="loading-spinner"></div>
-      <span>Cargando programaciones...</span>
-    </div>
-
-    <div *ngIf="!loading && programacionesFiltradas.length === 0" class="empty-state">
-      <div class="empty-icon">📋</div>
-      <div class="empty-text">
-        Sin programaciones{{ filtroEstado ? ' para este estado' : ' para esta fecha' }}
+    <!-- Stats bar -->
+    <div class="stats-bar" *ngIf="!loading && totalHoy > 0">
+      <div class="stat-item stat-clickeable"
+           [class.stat-active]="filtroEstado === 'Programado'"
+           (click)="filtroEstado = 'Programado'">
+        <span class="stat-num stat-blue">{{ countProgramados }}</span>
+        <span class="stat-lbl">Por confirmar</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item stat-clickeable"
+           [class.stat-active]="filtroEstado === 'Aceptado por Clínica'"
+           (click)="filtroEstado = 'Aceptado por Clínica'">
+        <span class="stat-num stat-violet">{{ countAceptados }}</span>
+        <span class="stat-lbl">Aceptados</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item stat-clickeable"
+           [class.stat-active]="filtroEstado === 'En Atención'"
+           (click)="filtroEstado = 'En Atención'">
+        <span class="stat-num stat-orange">{{ countEnAtencion }}</span>
+        <span class="stat-lbl">En Atención</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-item stat-clickeable"
+           [class.stat-active]="filtroEstado === 'Completado'"
+           (click)="filtroEstado = 'Completado'">
+        <span class="stat-num stat-green">{{ countCompletados }}</span>
+        <span class="stat-lbl">Completados</span>
+      </div>
+      <div class="stat-item stat-clickeable" *ngIf="countRechazados > 0"
+           [class.stat-active]="filtroEstado === 'Rechazado'"
+           (click)="filtroEstado = 'Rechazado'">
+        <span class="stat-sep"></span>
+        <span class="stat-num stat-slate">{{ countRechazados }}</span>
+        <span class="stat-lbl">Rechazados</span>
       </div>
     </div>
 
-    <div class="cards-grid" *ngIf="!loading && programacionesFiltradas.length > 0">
-      <div
-        class="agenda-card"
-        [ngClass]="[cardBorderClass(item.estado), esTerminal(item.estado) ? 'card-muted' : '']"
-        *ngFor="let item of programacionesFiltradas">
-
-        <!-- Card top: nombre + chip estado -->
-        <div class="card-top">
-          <div class="worker-block">
-            <span class="worker-name">{{ item.workerNombre }}</span>
-            <span class="worker-dni">{{ item.workerDni }}</span>
-          </div>
-          <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
-        </div>
-
-        <!-- Meta: ocupacion + tipoEmo + empresa -->
-        <div class="card-meta">
-          <span class="ocupacion-tag" *ngIf="item.ocupacion">{{ item.ocupacion }}</span>
-          <span class="meta-txt">{{ item.tipoEmo }}</span>
-          <span class="meta-sep" *ngIf="item.empresa">·</span>
-          <span class="meta-empresa" *ngIf="item.empresa">{{ item.empresa }}</span>
-        </div>
-
-        <!-- C3: Fecha con color semáforo -->
-        <div class="card-dates">
-          <span class="fecha-tag" [ngClass]="fechaClass(item.fechaProgramada)">
-            {{ item.fechaProgramada | date: 'dd MMM yyyy' }}
+    <!-- Filtros + búsqueda -->
+    <div class="controls-row">
+      <div class="pill-bar">
+        <button
+          *ngFor="let f of estadosFiltro"
+          class="pill"
+          [ngClass]="[filtroEstado === f.key ? 'pill-active ' + filtroClass(f.key) : '']"
+          (click)="filtroEstado = f.key">
+          {{ f.label }}
+          <span class="pill-count" *ngIf="f.key !== '' && countForFiltro(f.key) > 0">
+            {{ countForFiltro(f.key) }}
           </span>
-          <span class="hora-tag" *ngIf="item.horaProgramada">· {{ item.horaProgramada }}</span>
-          <span class="checkin-tag" *ngIf="item.checkInHora">✓ Ingresó {{ item.checkInHora }}</span>
-          <span class="motivo-tag" *ngIf="item.motivoRechazo">— {{ item.motivoRechazo }}</span>
+        </button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="Buscar trabajador o DNI..."
+          [(ngModel)]="busqueda" />
+      </div>
+    </div>
+
+    <!-- Cards zone -->
+    <div class="cards-zone">
+
+      <div *ngIf="loading" class="loading-row">
+        <div class="loading-spinner"></div>
+        <span>Cargando programaciones...</span>
+      </div>
+
+      <div *ngIf="!loading && programacionesFiltradas.length === 0" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">
+          Sin programaciones{{ filtroEstado ? ' para este estado' : ' para esta fecha' }}
+        </div>
+      </div>
+
+      <div class="cards-grid" *ngIf="!loading && programacionesFiltradas.length > 0">
+        <div
+          class="agenda-card"
+          [ngClass]="[cardBorderClass(item.estado), esTerminal(item.estado) ? 'card-muted' : '']"
+          *ngFor="let item of programacionesFiltradas">
+
+          <!-- ZONA 1: nombre · estado · chips info -->
+          <div class="card-top">
+            <div class="card-top-row1">
+              <div class="worker-block">
+                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-dni">{{ item.workerDni }}</span>
+              </div>
+              <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            </div>
+            <div class="card-chips">
+              <div class="chip-group" *ngIf="item.tipoTrabajador">
+                <span class="chip-label">Tipo</span>
+                <span class="tipo-trab-badge"
+                  [class.trab-oficina]="item.tipoTrabajador === 'Oficina Central'"
+                  [class.trab-staff]="item.tipoTrabajador === 'Staff' || item.tipoTrabajador === 'Staff Obra'"
+                  [class.trab-obrero]="item.tipoTrabajador === 'Obra' || item.tipoTrabajador === 'Obrero'">
+                  {{ item.tipoTrabajador }}
+                </span>
+              </div>
+              <div class="chip-group" *ngIf="item.categoria">
+                <span class="chip-label">Categoría</span>
+                <span class="cat-badge">{{ item.categoria }}</span>
+              </div>
+              <div class="chip-group" *ngIf="item.ocupacion">
+                <span class="chip-label">Ocupación</span>
+                <span class="ocup-badge">{{ item.ocupacion }}</span>
+              </div>
+              <div class="chip-divider" *ngIf="item.tipoEmo"></div>
+              <div class="chip-group" *ngIf="item.tipoEmo">
+                <span class="chip-label">EMO</span>
+                <span class="meta-txt">{{ item.tipoEmo }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ZONA 2: fechas -->
+          <div class="card-dates">
+            <span class="fecha-tag" [ngClass]="fechaClass(item.fechaProgramada)">
+              📅 {{ item.fechaProgramada | date: 'dd MMM yyyy' }}
+            </span>
+            <span class="hora-tag" *ngIf="item.horaProgramada">
+              🕐 {{ item.horaProgramada }}
+            </span>
+            <span class="emo-fecha" *ngIf="item.fechaVencimientoEmo"
+              [ngClass]="fechaClass(item.fechaVencimientoEmo)">
+              ⚠️ {{ item.fechaVencimientoEmo | date: 'dd/MM/yyyy' }}
+            </span>
+            <span class="checkin-tag" *ngIf="item.checkInHora">
+              ✓ Ingresó {{ item.checkInHora }}
+            </span>
+            <span class="motivo-tag" *ngIf="item.motivoRechazo">— {{ item.motivoRechazo }}</span>
+          </div>
+
+          <!-- ZONA 3: acciones -->
+          <div class="card-actions" *ngIf="!esTerminal(item.estado)">
+
+            <ng-container *ngIf="item.estado === 'Programado'">
+              <button class="btn-act btn-accept" [disabled]="accionando === item.id"
+                (click)="abrirAceptar(item)">✓ Aceptar</button>
+              <button class="btn-act btn-reject" [disabled]="accionando === item.id"
+                (click)="rechazar(item)">✕ Rechazar</button>
+            </ng-container>
+
+            <ng-container *ngIf="item.estado === 'Aceptado por Clínica'">
+              <button class="btn-act btn-checkin" [disabled]="accionando === item.id"
+                (click)="checkIn(item)">⏱ Registrar ingreso</button>
+              <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
+                (click)="rechazar(item)">✕</button>
+            </ng-container>
+
+            <ng-container *ngIf="item.estado === 'En Atención'">
+              <button class="btn-act btn-complete" [disabled]="accionando === item.id"
+                (click)="abrirCompletar(item)">📋 Registrar EMO</button>
+              <button class="btn-interconsulta" [disabled]="accionando === item.id"
+                (click)="abrirInterconsulta(item)">🔗 Interconsulta</button>
+            </ng-container>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /cards-zone -->
+
+  </ng-container>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: INTERCONSULTAS
+       ═══════════════════════════════════════════════════ -->
+  <ng-container *ngIf="activeTab === 'interconsultas'">
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <div class="ic-ctrl-field">
+        <label class="ic-ctrl-label">Estado</label>
+        <select class="ic-ctrl-input ic-ctrl-select" [(ngModel)]="interconsultasFiltroEstado">
+          <option value="">Todos</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Atendida">Atendida</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="ic-ctrl-field">
+        <label class="ic-ctrl-label">Buscar trabajador</label>
+        <input type="text" class="ic-ctrl-input" [(ngModel)]="interconsultasBusqueda"
+          placeholder="Nombre o DNI..." (keyup.enter)="cargarInterconsultas()" />
+      </div>
+      <button class="btn-buscar-ic" (click)="cargarInterconsultas()" [disabled]="interconsultasLoading">
+        {{ interconsultasLoading ? 'Cargando…' : 'Buscar' }}
+      </button>
+    </div>
+
+    <!-- Table zone (ancho completo) -->
+    <div class="ic-table-zone">
+      <div class="ic-table-card">
+
+        <div class="ic-state-row" *ngIf="interconsultasLoading">
+          <div class="ic-loading-dots">
+            <span></span><span></span><span></span>
+          </div>
         </div>
 
-        <!-- Actions -->
-        <div class="card-actions" *ngIf="!esTerminal(item.estado)">
-
-          <ng-container *ngIf="item.estado === 'Programado'">
-            <button class="btn-act btn-accept" [disabled]="accionando === item.id"
-              (click)="abrirAceptar(item)">✓ Aceptar</button>
-            <button class="btn-act btn-reject" [disabled]="accionando === item.id"
-              (click)="rechazar(item)">✕ Rechazar</button>
-          </ng-container>
-
-          <ng-container *ngIf="item.estado === 'Aceptado por Clínica'">
-            <button class="btn-act btn-checkin" [disabled]="accionando === item.id"
-              (click)="checkIn(item)">⏱ Registrar ingreso</button>
-            <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
-              (click)="rechazar(item)">✕</button>
-          </ng-container>
-
-          <ng-container *ngIf="item.estado === 'En Atención'">
-            <button class="btn-act btn-complete" [disabled]="accionando === item.id"
-              (click)="abrirCompletar(item)">📋 Registrar EMO</button>
-          </ng-container>
-
+        <div class="ic-state-row ic-empty-state"
+          *ngIf="!interconsultasLoading && interconsultas.length === 0">
+          <span class="ic-empty-icon">🔗</span>
+          <p class="ic-empty-text">Sin interconsultas en este estado</p>
         </div>
+
+        <table class="ic-list-table"
+          *ngIf="!interconsultasLoading && interconsultas.length > 0">
+          <colgroup>
+            <col style="width:26%">
+            <col style="width:18%">
+            <col style="width:12%">
+            <col style="width:10%">
+            <col style="width:20%">
+            <col style="width:14%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>Especialidad</th>
+              <th>F. Derivación</th>
+              <th>Días</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of interconsultas">
+              <td>
+                <div class="worker-cell">
+                  <span class="worker-name">{{ item.workerNombre }}</span>
+                  <span class="worker-dni">{{ item.workerDni }}</span>
+                </div>
+              </td>
+              <td class="td-cell">{{ item.especialidad }}</td>
+              <td class="td-cell td-muted">{{ item.fechaDerivacion | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="ic-dias-badge"
+                  [ngClass]="item.estado === 'Pendiente'
+                    ? icDiasClass(calcularDiasPendientes(item.fechaDerivacion))
+                    : 'ic-chip-muted'">
+                  {{ item.estado === 'Pendiente'
+                    ? calcularDiasPendientes(item.fechaDerivacion) + 'd'
+                    : '—' }}
+                </span>
+              </td>
+              <td>
+                <span class="ic-estado-badge" [ngClass]="icEstadoClass(item.estado)">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td class="td-action">
+                <button class="ic-btn-accion" (click)="seleccionarInterconsulta(item)">
+                  {{ item.estado === 'Completado' ? '📋 Ver detalle' : '🔧 Gestionar' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
       </div>
     </div>
 
-  </div><!-- /cards-zone -->
+  </ng-container>
 
 </div>
 
@@ -171,20 +324,109 @@
   </div>
 
   <div class="dm-body">
-    <div class="dm-field">
-      <label class="dm-label">Fecha de atención</label>
-      <input type="date" class="dm-input" [(ngModel)]="modalAceptar.nuevaFecha" />
+    <div class="dm-field-grid">
+      <div class="dm-field">
+        <label class="dm-label">Fecha de atención</label>
+        <input type="date" class="dm-input" [(ngModel)]="modalAceptar.nuevaFecha" />
+        <p class="dm-warn"
+          *ngIf="modalAceptar.item && modalAceptar.nuevaFecha !== (modalAceptar.item.fechaProgramada ?? '')">
+          Fecha original: {{ modalAceptar.item?.fechaProgramada | date: 'dd MMM yyyy' }}
+        </p>
+      </div>
+      <div class="dm-field">
+        <label class="dm-label">
+          HORA DE ATENCIÓN <span style="color:#dc2626">*</span>
+        </label>
+        <input type="time" class="dm-input" required placeholder="HH:MM"
+          [(ngModel)]="modalAceptar.horaAceptar"
+          (ngModelChange)="modalAceptar.horaError = ''" />
+        <p class="dm-error-inline" *ngIf="modalAceptar.horaError">
+          {{ modalAceptar.horaError }}
+        </p>
+      </div>
     </div>
-    <p class="dm-warn"
-      *ngIf="modalAceptar.item && modalAceptar.nuevaFecha !== (modalAceptar.item.fechaProgramada ?? '')">
-      Fecha original: {{ modalAceptar.item?.fechaProgramada | date: 'dd MMM yyyy' }}
-    </p>
   </div>
 
   <div class="dm-footer">
     <button class="btn-ghost-dark" (click)="cancelarAceptar()">Cancelar</button>
     <button class="btn-confirmar" [disabled]="!modalAceptar.nuevaFecha" (click)="confirmarAceptar()">
       Confirmar
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     Modal — Nueva Interconsulta
+     ═══════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="modalInterconsulta.visible"
+  (click)="cancelarInterconsulta()"></div>
+<div class="dark-modal ic-modal" *ngIf="modalInterconsulta.visible"
+  (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Nueva Interconsulta</div>
+      <h3 class="dm-title">{{ modalInterconsulta.workerNombre }}</h3>
+      <p class="dm-sub">{{ modalInterconsulta.workerDni }}</p>
+    </div>
+    <button class="dm-close" (click)="cancelarInterconsulta()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field" style="grid-column:1/-1">
+        <label class="dm-label">
+          ESPECIALIDAD <span style="color:#dc2626">*</span>
+        </label>
+        <input type="text" class="dm-input"
+          placeholder="Ej: Cardiología, Neurología..."
+          [(ngModel)]="modalInterconsulta.especialidad"
+          (ngModelChange)="modalInterconsulta.especialidadError=''" />
+        <p class="dm-error-inline" *ngIf="modalInterconsulta.especialidadError">
+          {{ modalInterconsulta.especialidadError }}
+        </p>
+      </div>
+
+      <div class="dm-field" style="grid-column:1/-1">
+        <label class="dm-label">OBSERVACIÓN <span class="dm-opt">(opcional)</span></label>
+        <textarea class="dm-input dm-textarea" rows="3"
+          placeholder="Motivo de derivación, antecedentes relevantes..."
+          [(ngModel)]="modalInterconsulta.observacion"></textarea>
+      </div>
+
+      <div class="dm-field" style="grid-column:1/-1">
+        <label class="dm-label">
+          EVIDENCIA <span style="color:#dc2626">*</span>
+        </label>
+        <label class="ic-file-zone" [class.ic-has-file]="!!modalInterconsulta.archivoFile">
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
+            (change)="onArchivoInterconsulta($event)" />
+          <ng-container *ngIf="!modalInterconsulta.archivoFile">
+            <span class="ic-file-icon">📎</span>
+            <span class="ic-file-hint">PDF, JPG o PNG — máx. 10 MB</span>
+          </ng-container>
+          <ng-container *ngIf="modalInterconsulta.archivoFile">
+            <span class="ic-file-icon">✅</span>
+            <span class="ic-file-name">{{ modalInterconsulta.archivoFile.name }}</span>
+          </ng-container>
+        </label>
+        <p class="dm-error-inline" *ngIf="modalInterconsulta.archivoError">
+          {{ modalInterconsulta.archivoError }}
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarInterconsulta()"
+      [disabled]="modalInterconsulta.cargando">Cancelar</button>
+    <button class="btn-confirmar-ic"
+      [disabled]="modalInterconsulta.cargando"
+      (click)="confirmarInterconsulta()">
+      {{ modalInterconsulta.cargando ? 'Registrando...' : 'Confirmar' }}
     </button>
   </div>
 
@@ -197,3 +439,98 @@
   (closed)="completandoItem = null"
   (completado)="onCompletado()"
 ></app-completar-emo>
+
+<!-- ═══════════════════════════════════════════════════
+     Modal — Levantar / Ver interconsulta
+     ═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="icDetalle" (click)="icDetalle = null">
+  <div class="ic-modal-box" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="ic-modal-header">
+      <div>
+        <div class="ic-modal-nombre">{{ icDetalle.workerNombre }}</div>
+        <div class="ic-modal-sub">
+          {{ icDetalle.workerDni }} ·
+          {{ icDetalle.especialidad }} ·
+          {{ icDetalle.fechaDerivacion | date:'dd/MM/yyyy' }}
+        </div>
+      </div>
+      <button class="ic-modal-close" (click)="icDetalle = null">✕</button>
+    </div>
+
+    <!-- Paso 1: Levantar -->
+    <div *ngIf="icPaso === 1" class="ic-modal-body">
+      <div class="ic-modal-step-title">
+        <span class="ic-step-num">1</span>
+        Levantar interconsulta
+      </div>
+
+      <div class="ic-modal-grid">
+        <div class="ic-field">
+          <label class="ic-label">FECHA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
+          <input type="date" class="ic-input"
+            [(ngModel)]="icLevantamiento.fechaAtencion"
+            (ngModelChange)="icLevantamiento.fechaError=''">
+          <p class="ic-error" *ngIf="icLevantamiento.fechaError">
+            {{ icLevantamiento.fechaError }}</p>
+        </div>
+        <div class="ic-field">
+          <label class="ic-label">RESULTADO</label>
+          <input type="text" class="ic-input"
+            [(ngModel)]="icLevantamiento.resultado"
+            placeholder="Alta médica, Continúa tratamiento...">
+        </div>
+      </div>
+
+      <div class="ic-field">
+        <label class="ic-label">DIAGNÓSTICO</label>
+        <textarea class="ic-input ic-textarea" rows="2"
+          [(ngModel)]="icLevantamiento.diagnostico"
+          placeholder="Descripción del diagnóstico..."></textarea>
+      </div>
+
+      <div class="ic-field">
+        <label class="ic-label">EVIDENCIA — INFORME DE INTERCONSULTA <span style="color:#dc2626">*</span></label>
+        <label class="ic-file-zone" [class.ic-has-file]="icLevantamiento.archivoFile">
+          <input type="file" class="file-hidden"
+            accept=".pdf,.jpg,.jpeg,.png"
+            (change)="onArchivoLevantamiento($event)">
+          <ng-container *ngIf="!icLevantamiento.archivoFile">
+            <span>📎 Adjuntar informe de interconsulta</span>
+          </ng-container>
+          <ng-container *ngIf="icLevantamiento.archivoFile">
+            <span class="ic-file-name">✓ {{ icLevantamiento.archivoFile.name }}</span>
+          </ng-container>
+        </label>
+        <p class="ic-error" *ngIf="icLevantamiento.archivoError">
+          {{ icLevantamiento.archivoError }}</p>
+      </div>
+
+      <div class="ic-modal-footer">
+        <button class="ic-btn-cancel" (click)="icDetalle = null">Cancelar</button>
+        <button class="ic-btn-confirmar"
+          (click)="confirmarLevantamiento()"
+          [disabled]="icLevantamiento.cargando">
+          {{ icLevantamiento.cargando ? 'Guardando...' : 'Levantar interconsulta' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: Completado -->
+    <div *ngIf="icPaso === 2" class="ic-modal-body">
+      <div class="ic-modal-step-title">
+        <span class="ic-step-num ic-step-done">✓</span>
+        Interconsulta levantada
+      </div>
+      <p class="ic-paso-desc">
+        La interconsulta fue registrada correctamente.
+        El trabajador puede proceder con su EMO cuando corresponda.
+      </p>
+      <div class="ic-modal-footer">
+        <button class="ic-btn-cancel" (click)="icDetalle = null">Cerrar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
