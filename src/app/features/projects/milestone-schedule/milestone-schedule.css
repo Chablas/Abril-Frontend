@@ -1,3 +1,43 @@
+:host {
+  display: block;
+  overflow-x: hidden;
+}
+
+.kpi-cards {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpi-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #D6DEE5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-sub {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
 /* Barras normales */
 .gantt_task_line.gantt-task-future {
   background-color: #64bc04;

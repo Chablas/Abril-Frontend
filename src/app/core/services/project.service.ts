@@ -87,4 +87,16 @@ export class ProjectService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  // PATCH /api/v1/project/{projectId}/foto — conectar cuando el backend esté listo
+  uploadProjectFoto(projectId: number, file: File): Observable<{ message: string; fotoUrl: string }> {
+    const token = localStorage.getItem('access_token');
+    const formData = new FormData();
+    formData.append('foto', file);
+    return this.http.patch<{ message: string; fotoUrl: string }>(
+      `${this.apiUrl}/${projectId}/foto`,
+      formData,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

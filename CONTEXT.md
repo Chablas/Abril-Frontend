@@ -394,6 +394,7 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | DELETE | `/api/v1/project/{id}` | `ProjectService.deleteProject` |
 | GET | `/api/v1/project/{id}/emails` | `ProjectService.getProjectEmails` |
 | PATCH | `/api/v1/project/{id}/emails` | `ProjectService.patchProjectEmails` |
+| PATCH (multipart) | `/api/v1/project/{id}/foto` | `ProjectService.uploadProjectFoto` (FormData `foto`; responde `{ message, fotoUrl }`) |
 | GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged` |
 | — | `/api/v1/projectResident` | `ProjectResidentService` |
 | — | `/api/v1/userProject` | `UserProjectService` |
@@ -524,6 +525,18 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
 Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cuaderno obra, informes, seguimiento residentes, configuración (áreas/fases/etapas/etc.). Todos completados. Proyectos incluye botón **"Emails SSOMA"** → modal `ProjectEmailsForm` (PATCH `/api/v1/project/{id}/emails`).
+
+#### `milestone-schedule/` — Cronograma de Hitos (gantt) — 🔵 rediseño 2026-05-27
+Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt v9 free**. Vista de lista de proyectos → historial de cronogramas → gantt de hitos.
+
+- **Lista de proyectos = grid de cards** (no tabla). Input de búsqueda (`searchQuery` + getter `projectsFiltered`) y grid responsive 1/2/3/4 cols. Cada card: bloque de 120px con **foto del proyecto** (`projectImages[projectId]`) o **placeholder de iniciales** sobre color determinístico (`getProjectColor` hash → 8 colores, `getInitials` = 2 primeras palabras). Subida de foto vía ícono cámara (hover) → `onProjectImageChange()` → `ProjectService.uploadProjectFoto()` → guarda `fotoUrl`. `<img (error)>` cae al placeholder. `loadSchedules()` inicializa `projectImages` desde `item.fotoUrl` del DTO (`ProjectGetDTO.fotoUrl?`).
+- **KPI cards (3)**: Total / Culminados / En proceso. Getter `kpis` sobre `ganttTasks` (`gantt.getTaskByTime()`).
+- **Estados — solo 2**: `getEstado(task)` = `task['fechaRealFin'] != null ? 'CULMINADO' : 'EN_PROCESO'`. Colores gantt vía `getGanttClass` → clases `ms-culminado` (#16a34a) / `ms-en-proceso` (#2563eb). Columna "Estado" con badges (`.estado-*`). **Reglas gantt son globales en `styles.css`** (`.gantt_task_line.ms-*`, `.gantt_task_content` overlay) — dhtmlx inyecta fuera del scope del componente.
+- **Acciones (editar / eliminar / culminar)** viven en el **modal "VER HITO"**, no en columnas del grid. `toggleCulminar()` alterna `fechaRealFin` (hoy ↔ null), sincroniza `selectedTask` y el DTO. Métodos `editTask/deleteTask/toggleCulminar` son `public` (los llama el template).
+- **Milestones (sin fecha fin)**: se construyen con `{ type:'milestone', duration:0, end_date: start_date }` (NUNCA `null`/`undefined` — dhtmlx revienta con `calculateEndDate`). `gantt.templates.task_end_date` guarda contra fechas no-Date. Render como **círculo** (no rombo): `task_class` añade `gantt_milestone`; CSS global `.gantt_task_line.gantt_milestone .gantt_task_content` = 14px redondo centrado con `translate(-50%,-50%)`.
+- **Línea "Hoy"**: dhtmlx free **no tiene `addMarker`** → se dibuja `div#today-line-custom` manual en `drawTodayLine()` (posición por `gantt.getState().min/max_date`). Como vive dentro del stacking context del gantt, **no se puede poner detrás de modales solo con z-index**: las 5 flags de modal son **getter/setter** que llaman `updateTodayLineVisibility()` (oculta la línea si hay cualquier modal abierto). `BaseModal` overlay subido a `z-[1000]`/contenido `z-[1001]` (bajo SweetAlert ~1060 y loader 9998).
+- **Densidad compacta** (~zoom 80%): `row_height:28`, `bar_height:16`, `milestone_height:16`, `scale_height:44`; escala con sub-unidad `day` (format `''`) para posicionar milestones al día exacto; KPIs y botones con padding reducido; reglas `app-milestone-schedule .gantt_*` en `styles.css`.
+- **`gantt.config.csp = false`** al inicio de `initGantt()` — necesario para que dhtmlx no sanitice el SVG/HTML de los templates de columnas.
 
 ### `features/costs/` — ⚠️ Solo Adjudicaciones
 - `/costs/adjudicaciones`. Rol: `ADMINISTRADOR DEL SISTEMA`.
