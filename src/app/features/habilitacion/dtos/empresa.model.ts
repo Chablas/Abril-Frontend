@@ -16,6 +16,7 @@ export interface EmpresaContratistaListDto {
   emailSsoma?: string;
   logoUrl?: string;
   rubro?: string;
+  esAbril?: boolean;
 }
 
 export interface EmpresaContratistaDetalleDto extends EmpresaContratistaListDto {
