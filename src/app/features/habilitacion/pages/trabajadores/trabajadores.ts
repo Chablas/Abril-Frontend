@@ -70,6 +70,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   filtroEmpresaId: number | null = null;
   filtroProyectoId: number | null = null;
   soloRetirados = false;
+  soloSinEmo = false;
+  soloEmoVencido = false;
 
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
@@ -202,6 +204,8 @@ export class Trabajadores implements OnInit, OnDestroy {
       empresaId: this.filtroEmpresaId ?? undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
       soloRetirados: this.soloRetirados || undefined,
+      soloSinEmo: this.soloSinEmo || undefined,
+      soloEmoVencido: this.soloEmoVencido || undefined,
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
@@ -220,6 +224,11 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  actualizar(): void {
+    this.loadWorkers(this.currentPage);
+    if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
   }
 
   selectWorker(worker: WorkerHabilitacionListDto): void {
