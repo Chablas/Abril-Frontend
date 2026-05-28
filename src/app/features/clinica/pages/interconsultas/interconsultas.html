@@ -1,45 +1,46 @@
 <div class="ic-root">
 
-  <!-- Header -->
+  <!-- ── Header ────────────────────────────────── -->
   <div class="ic-header">
     <div>
-      <h2 class="section-title">Interconsultas</h2>
-      <p class="section-sub">Derivaciones médicas pendientes de atención</p>
+      <h2 class="ic-title">Interconsultas</h2>
+      <p class="ic-sub">Derivaciones médicas pendientes de atención</p>
     </div>
-    <span *ngIf="pendientesCount > 0" class="badge-chip chip-orange">
+    <span class="badge-pendientes" *ngIf="pendientesCount > 0">
       {{ pendientesCount }} pendiente{{ pendientesCount !== 1 ? 's' : '' }}
     </span>
   </div>
 
-  <!-- Filtros -->
+  <!-- ── Filtros ────────────────────────────────── -->
   <div class="filters-card">
-    <div class="ic-filters">
-      <div>
-        <label class="field-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filtroEstado">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Estado</label>
+        <select class="filter-input" [(ngModel)]="filtroEstado">
           <option value="">Todos</option>
           <option value="Pendiente">Pendiente</option>
           <option value="Atendida">Atendida</option>
           <option value="Cancelada">Cancelada</option>
         </select>
       </div>
-      <div>
-        <label class="field-label">Buscar trabajador</label>
-        <input type="text" class="field-input" [(ngModel)]="filtroSearch"
+      <div class="filter-group">
+        <label class="filter-label">Buscar trabajador</label>
+        <input type="text" class="filter-input" [(ngModel)]="filtroSearch"
           placeholder="Nombre o DNI..." (keyup.enter)="load()" />
       </div>
-      <div style="display:flex;align-items:flex-end;">
-        <button class="btn-primary" (click)="load()">Buscar</button>
+      <div class="filter-group filter-action">
+        <button class="btn-search" (click)="load()" [disabled]="loading">Buscar</button>
       </div>
     </div>
   </div>
 
-  <!-- Tabla -->
-  <div class="ic-table-card">
+  <!-- ── Tabla ──────────────────────────────────── -->
+  <div class="table-card">
     <table class="ic-table">
       <thead>
         <tr>
           <th>Trabajador</th>
+          <th>DNI</th>
           <th>Especialidad</th>
           <th>F. Derivación</th>
           <th>Días pend.</th>
@@ -49,31 +50,40 @@
       </thead>
       <tbody>
         <tr *ngIf="loading">
-          <td colspan="6" class="empty-row">Cargando...</td>
+          <td colspan="7" class="td-empty">Cargando...</td>
         </tr>
         <tr *ngIf="!loading && items.length === 0">
-          <td colspan="6" class="empty-row">No hay interconsultas en este estado.</td>
+          <td colspan="7" class="td-empty">Sin interconsultas en este estado.</td>
         </tr>
-        <tr *ngFor="let item of items" [class.row-urgente]="item.diasPendiente >= 7 && item.estado === 'Pendiente'">
+        <tr *ngFor="let item of items">
           <td>
-            <div class="worker-cell">
-              <span class="worker-name">{{ item.workerNombre }}</span>
-              <span class="worker-dni">{{ item.workerDni }}</span>
-            </div>
+            <span class="worker-name">{{ item.workerNombre }}</span>
           </td>
-          <td>{{ item.especialidad }}</td>
-          <td>{{ item.fechaDerivacion }}</td>
           <td>
-            <span [class.text-red]="item.diasPendiente >= 7">
-              {{ item.estado === 'Pendiente' ? item.diasPendiente + ' d' : '—' }}
+            <span class="td-muted">{{ item.workerDni }}</span>
+          </td>
+          <td>
+            <span class="td-text">{{ item.especialidad }}</span>
+          </td>
+          <td>
+            <span class="td-muted">{{ item.fechaDerivacion }}</span>
+          </td>
+          <td>
+            <span class="dias-chip" [ngClass]="diasClass(item.diasPendiente, item.estado)">
+              {{ item.estado === 'Pendiente' ? item.diasPendiente + 'd' : '—' }}
             </span>
           </td>
           <td>
-            <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
           </td>
-          <td>
-            <button class="btn-chip chip-blue" (click)="abrirResolver(item)">
-              {{ item.estado === 'Pendiente' ? 'Resolver' : 'Ver' }}
+          <td class="td-action">
+            <button class="btn-resolver" *ngIf="item.estado === 'Pendiente'"
+              (click)="abrirResolver(item)">
+              Resolver
+            </button>
+            <button class="btn-ver" *ngIf="item.estado !== 'Pendiente'"
+              (click)="abrirVer(item)">
+              Ver
             </button>
           </td>
         </tr>
@@ -83,58 +93,177 @@
 
 </div>
 
-<!-- Modal resolver interconsulta -->
-<div class="modal-backdrop" *ngIf="resolviendo" (click)="cerrarModal()"></div>
-<div class="ic-modal" *ngIf="resolviendo">
-  <div class="ic-modal-header">
+<!-- ═══════════════════════════════════════════════════════════
+     PASO 1 — Modal evidencia interconsulta
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="pasoActivo === 1" (click)="cancelarResolucion()"></div>
+<div class="dark-modal" *ngIf="pasoActivo === 1" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
     <div>
-      <div class="worker-name">{{ resolviendo.workerNombre }}</div>
-      <div class="worker-dni">{{ resolviendo.workerDni }} · {{ resolviendo.especialidad }}</div>
+      <div class="dm-step-badge">Paso 1 de 2</div>
+      <h3 class="dm-title">Evidencia de Interconsulta</h3>
+      <p class="dm-worker" *ngIf="interconsultaActiva">
+        {{ interconsultaActiva.workerNombre }}
+        <span class="dm-dni">· {{ interconsultaActiva.workerDni }}</span>
+      </p>
     </div>
-    <button class="btn-ghost" (click)="cerrarModal()">✕</button>
+    <button class="dm-close" (click)="cancelarResolucion()">✕</button>
   </div>
 
-  <div class="ic-modal-body">
-    <div class="ic-form-grid">
-      <div>
-        <label class="field-label">Estado *</label>
-        <select class="field-input" [(ngModel)]="form.estado">
+  <div class="dm-body">
+
+    <div class="dm-field-grid">
+
+      <!-- Resultado -->
+      <div class="dm-field">
+        <label class="dm-label">Resultado *</label>
+        <select class="dm-input" [(ngModel)]="paso1.resultado">
+          <option value="">Seleccionar...</option>
+          <option *ngFor="let r of resultadoOpts" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <!-- Especialidad confirmada -->
+      <div class="dm-field">
+        <label class="dm-label">Especialidad confirmada *</label>
+        <input type="text" class="dm-input" [(ngModel)]="paso1.especialidad"
+          placeholder="Cardiología, Traumatología..." />
+      </div>
+
+      <!-- Diagnóstico -->
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <textarea class="dm-input dm-textarea" rows="3" [(ngModel)]="paso1.diagnostico"
+          placeholder="Descripción del diagnóstico del especialista..."></textarea>
+      </div>
+
+      <!-- Adjuntar archivo -->
+      <div class="dm-field dm-full">
+        <label class="dm-label">Adjuntar informe (PDF / JPG / PNG — máx. 10 MB)</label>
+        <label class="file-drop-zone" [class.has-file]="!!paso1.archivo">
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
+            (change)="onArchivoPaso1($event)" />
+          <ng-container *ngIf="!paso1.archivo">
+            <span class="file-icon">📎</span>
+            <span class="file-hint">Haz click para seleccionar archivo</span>
+          </ng-container>
+          <ng-container *ngIf="paso1.archivo">
+            <span class="file-icon">✅</span>
+            <div class="file-info">
+              <span class="file-name">{{ paso1.archivoNombre }}</span>
+              <span class="file-size">{{ paso1.archivoTamano }}</span>
+            </div>
+          </ng-container>
+        </label>
+        <p class="dm-error" *ngIf="paso1.archivoError">{{ paso1.archivoError }}</p>
+      </div>
+
+      <!-- Notas -->
+      <div class="dm-field dm-full">
+        <label class="dm-label">Notas adicionales <span class="dm-opt">(opcional)</span></label>
+        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="paso1.notas"
+          placeholder="Observaciones adicionales..."></textarea>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarResolucion()">Cancelar</button>
+    <button class="btn-continuar" [disabled]="!paso1Valido" (click)="continuarPaso2()">
+      Continuar →
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PASO 2 — CompletarEmo (overlay propio del componente)
+     ═══════════════════════════════════════════════════════════ -->
+<app-completar-emo
+  [open]="pasoActivo === 2"
+  [programacion]="programacionSintetica"
+  [interconsultaId]="interconsultaActiva?.id"
+  (closed)="cancelarResolucion()"
+  (completado)="onEmoCompletado()"
+></app-completar-emo>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Modal Ver / Editar (interconsulta no pendiente)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="viendo" (click)="cerrarVer()"></div>
+<div class="dark-modal dm-ver" *ngIf="viendo" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <h3 class="dm-title">{{ viendo.workerNombre }}</h3>
+      <p class="dm-worker">
+        {{ viendo.workerDni }}
+        <span class="dm-dni">· {{ viendo.especialidad }}</span>
+        <span class="estado-chip" [ngClass]="estadoClass(viendo.estado)" style="margin-left:8px;">
+          {{ viendo.estado }}
+        </span>
+      </p>
+    </div>
+    <button class="dm-close" (click)="cerrarVer()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field">
+        <label class="dm-label">Estado</label>
+        <select class="dm-input" [(ngModel)]="form.estado">
           <option value="Pendiente">Pendiente</option>
           <option value="Atendida">Atendida</option>
           <option value="Cancelada">Cancelada</option>
         </select>
       </div>
-      <div>
-        <label class="field-label">Fecha atención</label>
-        <input type="date" class="field-input" [(ngModel)]="form.fechaAtencion" />
+
+      <div class="dm-field">
+        <label class="dm-label">Fecha atención</label>
+        <input type="date" class="dm-input" [(ngModel)]="form.fechaAtencion" />
       </div>
-      <div>
-        <label class="field-label">CIE-10</label>
-        <input type="text" class="field-input" [(ngModel)]="form.cie10" placeholder="Ej: M54.5" />
+
+      <div class="dm-field">
+        <label class="dm-label">CIE-10</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.cie10" placeholder="Ej: M54.5" />
       </div>
-      <div>
-        <label class="field-label">URL informe</label>
-        <input type="text" class="field-input" [(ngModel)]="form.urlInforme" placeholder="https://..." />
+
+      <div class="dm-field">
+        <label class="dm-label">URL Informe</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.urlInforme"
+          placeholder="https://..." />
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Diagnóstico</label>
-        <input type="text" class="field-input" [(ngModel)]="form.diagnostico" placeholder="Descripción diagnóstico..." />
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.diagnostico"
+          placeholder="Descripción del diagnóstico..." />
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Resultado</label>
-        <textarea class="field-input" rows="2" [(ngModel)]="form.resultado" placeholder="Resultado de la interconsulta..."></textarea>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Resultado</label>
+        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="form.resultado"
+          placeholder="Resultado de la interconsulta..."></textarea>
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <input type="text" class="field-input" [(ngModel)]="form.notas" placeholder="Observaciones adicionales..." />
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Notas</label>
+        <input type="text" class="dm-input" [(ngModel)]="form.notas"
+          placeholder="Observaciones adicionales..." />
       </div>
+
     </div>
   </div>
 
-  <div class="ic-modal-footer">
-    <button class="btn-ghost" (click)="cerrarModal()">Cancelar</button>
-    <button class="btn-primary" [disabled]="saving" (click)="guardar()">
-      {{ saving ? 'Guardando...' : 'Guardar' }}
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cerrarVer()">Cancelar</button>
+    <button class="btn-guardar" [disabled]="saving" (click)="guardar()">
+      {{ saving ? 'Guardando...' : 'Guardar cambios' }}
     </button>
   </div>
+
 </div>

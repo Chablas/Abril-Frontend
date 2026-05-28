@@ -1,117 +1,196 @@
 <div class="agenda-root">
 
+  <!-- ── Header ──────────────────────────────────────── -->
   <div class="agenda-header">
-    <div>
-      <h2 class="section-title">Agenda del Día</h2>
-      <p class="section-sub">{{ fechaHoy() }}</p>
+    <div class="header-left">
+      <h2 class="agenda-title">Agenda del Día</h2>
+      <p class="agenda-sub" *ngIf="!loading">
+        {{ totalHoy }} programación{{ totalHoy !== 1 ? 'es' : '' }}
+      </p>
     </div>
-    <div class="agenda-stats">
-      <span class="stat-chip">Total: {{ totalHoy }}</span>
-      <span class="stat-chip">Atendidos: {{ capacidadOcupada }}</span>
-      <button class="btn-ghost" (click)="load()">↺ Actualizar</button>
+    <div class="header-right">
+      <div class="date-picker-wrap">
+        <span class="date-icon">📅</span>
+        <input type="date" class="date-input" [(ngModel)]="selectedDate"
+          (change)="onDateChange()" />
+      </div>
+      <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
     </div>
   </div>
 
-  <div *ngIf="loading" class="empty-row">Cargando...</div>
+  <!-- ── Stats bar (C3: clickeable, sincroniza chips) ─── -->
+  <div class="stats-bar" *ngIf="!loading && totalHoy > 0">
+    <div class="stat-item stat-clickeable"
+         [class.stat-active]="filtroEstado === 'Programado'"
+         (click)="filtroEstado = 'Programado'">
+      <span class="stat-num stat-blue">{{ countProgramados }}</span>
+      <span class="stat-lbl">Por confirmar</span>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item stat-clickeable"
+         [class.stat-active]="filtroEstado === 'Aceptado por Clínica'"
+         (click)="filtroEstado = 'Aceptado por Clínica'">
+      <span class="stat-num stat-violet">{{ countAceptados }}</span>
+      <span class="stat-lbl">Aceptados</span>
+    </div>
+    <div class="stat-item stat-clickeable"
+         [class.stat-active]="filtroEstado === 'En Atención'"
+         (click)="filtroEstado = 'En Atención'">
+      <span class="stat-num stat-orange">{{ countEnAtencion }}</span>
+      <span class="stat-lbl">En Atención</span>
+    </div>
+    <div class="stat-item stat-clickeable"
+         [class.stat-active]="filtroEstado === 'Completado'"
+         (click)="filtroEstado = 'Completado'">
+      <span class="stat-num stat-green">{{ countCompletados }}</span>
+      <span class="stat-lbl">Completados</span>
+    </div>
+    <div class="stat-item stat-clickeable" *ngIf="countRechazados > 0"
+         [class.stat-active]="filtroEstado === 'Rechazado'"
+         (click)="filtroEstado = 'Rechazado'">
+      <span class="stat-num stat-slate">{{ countRechazados }}</span>
+      <span class="stat-lbl">Rechazados</span>
+    </div>
+  </div>
 
-  <ng-container *ngIf="!loading">
+  <!-- ── Filtros + búsqueda ──────────────────────────── -->
+  <div class="controls-row">
+    <div class="pill-bar">
+      <button
+        *ngFor="let f of estadosFiltro"
+        class="pill"
+        [ngClass]="[filtroEstado === f.key ? 'pill-active ' + filtroClass(f.key) : '']"
+        (click)="filtroEstado = f.key">
+        {{ f.label }}
+        <span class="pill-count" *ngIf="f.key !== '' && countForFiltro(f.key) > 0">
+          {{ countForFiltro(f.key) }}
+        </span>
+      </button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" placeholder="Buscar trabajador o DNI..."
+        [(ngModel)]="busqueda" />
+    </div>
+  </div>
 
-    <!-- SIN PROGRAMACIONES -->
-    <div *ngIf="items.length === 0" class="empty-state">
+  <!-- ── Zona de scroll (loading / empty / cards) ──────── -->
+  <div class="cards-zone">
+
+    <div *ngIf="loading" class="loading-row">
+      <div class="loading-spinner"></div>
+      <span>Cargando programaciones...</span>
+    </div>
+
+    <div *ngIf="!loading && programacionesFiltradas.length === 0" class="empty-state">
       <div class="empty-icon">📋</div>
-      <div class="empty-text">No hay programaciones para hoy</div>
+      <div class="empty-text">
+        Sin programaciones{{ filtroEstado ? ' para este estado' : ' para esta fecha' }}
+      </div>
     </div>
 
-    <!-- POR CONFIRMAR -->
-    <div class="agenda-section" *ngIf="pendientes.length > 0">
-      <div class="agenda-section-label label-blue">
-        ⏳ Por confirmar ({{ pendientes.length }})
-      </div>
-      <div class="agenda-card" *ngFor="let item of pendientes">
+    <div class="cards-grid" *ngIf="!loading && programacionesFiltradas.length > 0">
+      <div
+        class="agenda-card"
+        [ngClass]="[cardBorderClass(item.estado), esTerminal(item.estado) ? 'card-muted' : '']"
+        *ngFor="let item of programacionesFiltradas">
+
+        <!-- Card top: nombre + chip estado -->
         <div class="card-top">
-          <span class="worker-name">{{ item.workerNombre }}</span>
-          <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="badge-chip chip-blue">{{ item.estado }}</span>
-        </div>
-        <div class="card-meta">
-          <span>{{ item.tipoEmo }}</span>
-          <span *ngIf="item.horaProgramada">· {{ item.horaProgramada }}</span>
-          <span>· {{ item.empresa }}</span>
-        </div>
-        <div class="rechazo-box" *ngIf="rechazandoId === item.id">
-          <input class="field-input" [(ngModel)]="motivoRechazo" placeholder="Motivo de rechazo *" />
-          <div class="rechazo-actions">
-            <button class="btn-ghost" (click)="rechazandoId = null">Cancelar</button>
-            <button class="btn-primary" [disabled]="!motivoRechazo.trim()" (click)="confirmarRechazo(item)">Confirmar</button>
+          <div class="worker-block">
+            <span class="worker-name">{{ item.workerNombre }}</span>
+            <span class="worker-dni">{{ item.workerDni }}</span>
           </div>
+          <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
         </div>
-        <div class="card-actions" *ngIf="rechazandoId !== item.id">
-          <button class="btn-action btn-accept" [disabled]="accionando === item.id" (click)="aceptar(item)">
-            ✓ Aceptar programación
-          </button>
-          <button class="btn-action btn-reject" [disabled]="accionando === item.id" (click)="iniciarRechazo(item.id)">
-            ✕ Rechazar
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- CONFIRMADOS / EN ATENCIÓN -->
-    <div class="agenda-section" *ngIf="aceptados.length > 0">
-      <div class="agenda-section-label label-green">
-        ✓ Confirmados — en proceso ({{ aceptados.length }})
-      </div>
-      <div class="agenda-card" *ngFor="let item of aceptados">
-        <div class="card-top">
-          <span class="worker-name">{{ item.workerNombre }}</span>
-          <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
-        </div>
+        <!-- Meta: ocupacion + tipoEmo + empresa -->
         <div class="card-meta">
-          <span>{{ item.tipoEmo }}</span>
-          <span>· {{ item.empresa }}</span>
-          <span *ngIf="item.checkInHora" class="check-in-badge">· ✓ Ingresó {{ item.checkInHora }}</span>
+          <span class="ocupacion-tag" *ngIf="item.ocupacion">{{ item.ocupacion }}</span>
+          <span class="meta-txt">{{ item.tipoEmo }}</span>
+          <span class="meta-sep" *ngIf="item.empresa">·</span>
+          <span class="meta-empresa" *ngIf="item.empresa">{{ item.empresa }}</span>
         </div>
-        <div class="card-actions">
-          <button class="btn-action btn-checkin"
-            *ngIf="item.estado === 'Aceptado por Clínica'"
-            [disabled]="accionando === item.id"
-            (click)="checkIn(item)">
-            ⏱ Registrar asistencia
-          </button>
-          <button class="btn-action btn-complete"
-            *ngIf="item.estado === 'En Atención'"
-            [disabled]="accionando === item.id"
-            (click)="abrirCompletar(item)">
-            📋 Registrar resultado EMO
-          </button>
+
+        <!-- C3: Fecha con color semáforo -->
+        <div class="card-dates">
+          <span class="fecha-tag" [ngClass]="fechaClass(item.fechaProgramada)">
+            {{ item.fechaProgramada | date: 'dd MMM yyyy' }}
+          </span>
+          <span class="hora-tag" *ngIf="item.horaProgramada">· {{ item.horaProgramada }}</span>
+          <span class="checkin-tag" *ngIf="item.checkInHora">✓ Ingresó {{ item.checkInHora }}</span>
+          <span class="motivo-tag" *ngIf="item.motivoRechazo">— {{ item.motivoRechazo }}</span>
         </div>
+
+        <!-- Actions -->
+        <div class="card-actions" *ngIf="!esTerminal(item.estado)">
+
+          <ng-container *ngIf="item.estado === 'Programado'">
+            <button class="btn-act btn-accept" [disabled]="accionando === item.id"
+              (click)="abrirAceptar(item)">✓ Aceptar</button>
+            <button class="btn-act btn-reject" [disabled]="accionando === item.id"
+              (click)="rechazar(item)">✕ Rechazar</button>
+          </ng-container>
+
+          <ng-container *ngIf="item.estado === 'Aceptado por Clínica'">
+            <button class="btn-act btn-checkin" [disabled]="accionando === item.id"
+              (click)="checkIn(item)">⏱ Registrar ingreso</button>
+            <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
+              (click)="rechazar(item)">✕</button>
+          </ng-container>
+
+          <ng-container *ngIf="item.estado === 'En Atención'">
+            <button class="btn-act btn-complete" [disabled]="accionando === item.id"
+              (click)="abrirCompletar(item)">📋 Registrar EMO</button>
+          </ng-container>
+
+        </div>
+
       </div>
     </div>
 
-    <!-- CERRADOS -->
-    <div class="agenda-section" *ngIf="completados.length > 0">
-      <div class="agenda-section-label label-gray">
-        Cerrados ({{ completados.length }})
-      </div>
-      <div class="agenda-card card-muted" *ngFor="let item of completados">
-        <div class="card-top">
-          <span class="worker-name">{{ item.workerNombre }}</span>
-          <span class="worker-dni">{{ item.workerDni }}</span>
-          <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
-        </div>
-        <div class="card-meta">
-          <span>{{ item.tipoEmo }}</span>
-          <span>· {{ item.empresa }}</span>
-          <span *ngIf="item.motivoRechazo">· {{ item.motivoRechazo }}</span>
-          <span *ngIf="item.checkInHora">· Ingresó {{ item.checkInHora }}</span>
-        </div>
-      </div>
-    </div>
+  </div><!-- /cards-zone -->
 
-  </ng-container>
 </div>
 
+<!-- ═══════════════════════════════════════════════════
+     Modal — Confirmar aceptación
+     ═══════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="modalAceptar.open" (click)="cancelarAceptar()"></div>
+<div class="dark-modal" *ngIf="modalAceptar.open" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Confirmar aceptación</div>
+      <h3 class="dm-title">{{ modalAceptar.item?.workerNombre }}</h3>
+      <p class="dm-sub">{{ modalAceptar.item?.workerDni }}
+        <span *ngIf="modalAceptar.item?.tipoEmo"> · {{ modalAceptar.item?.tipoEmo }}</span>
+      </p>
+    </div>
+    <button class="dm-close" (click)="cancelarAceptar()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field">
+      <label class="dm-label">Fecha de atención</label>
+      <input type="date" class="dm-input" [(ngModel)]="modalAceptar.nuevaFecha" />
+    </div>
+    <p class="dm-warn"
+      *ngIf="modalAceptar.item && modalAceptar.nuevaFecha !== (modalAceptar.item.fechaProgramada ?? '')">
+      Fecha original: {{ modalAceptar.item?.fechaProgramada | date: 'dd MMM yyyy' }}
+    </p>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarAceptar()">Cancelar</button>
+    <button class="btn-confirmar" [disabled]="!modalAceptar.nuevaFecha" (click)="confirmarAceptar()">
+      Confirmar
+    </button>
+  </div>
+
+</div>
+
+<!-- CompletarEmo overlay -->
 <app-completar-emo
   [open]="!!completandoItem"
   [programacion]="completandoItem"

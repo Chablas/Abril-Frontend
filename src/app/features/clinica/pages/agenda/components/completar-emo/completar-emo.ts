@@ -21,6 +21,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 export class CompletarEmo implements OnChanges {
   @Input() open = false;
   @Input() programacion: ProgramacionClinicaDto | null = null;
+  @Input() interconsultaId?: number;
   @Output() closed = new EventEmitter<void>();
   @Output() completado = new EventEmitter<void>();
 
@@ -153,19 +154,28 @@ export class CompletarEmo implements OnChanges {
     this.emoSvc.createEmo(emoDto).subscribe({
       next: (res) => {
         const emoId = res.id;
-        this.progSvc.accionClinica(this.programacion!.id, {
-          id: this.programacion!.id,
-          accion: 'Completar',
-          emoResultadoId: emoId,
-        }).subscribe({
-          next: () => {
-            this.subirDocumentos(emoId);
-            this.saving = false;
-            this.loaderService.hide();
-            this.completado.emit();
-          },
-          error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
-        });
+        if (this.interconsultaId != null) {
+          // Contexto interconsultas: no hay programación real, omitir accionClinica
+          this.subirDocumentos(emoId);
+          this.saving = false;
+          this.loaderService.hide();
+          this.completado.emit();
+        } else {
+          // Contexto agenda: flujo original con accionClinica
+          this.progSvc.accionClinica(this.programacion!.id, {
+            id: this.programacion!.id,
+            accion: 'Completar',
+            emoResultadoId: emoId,
+          }).subscribe({
+            next: () => {
+              this.subirDocumentos(emoId);
+              this.saving = false;
+              this.loaderService.hide();
+              this.completado.emit();
+            },
+            error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
+          });
+        }
       },
       error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
     });

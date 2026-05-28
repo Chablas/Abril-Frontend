@@ -2438,3 +2438,113 @@ Archivos actualizados: modelo, html (tabla + panel header), ts (`initBarrasChart
 - Columnas: Actividad (180px, tree) + Días (40px)
 - `task_class` template: `gantt-culminado/gantt-vencido/gantt-en-proceso/gantt-pendiente` por estado
 - Estilos `.gantt_task_line.gantt-*` en `styles.css` global (dhtmlx inyecta fuera del shadow del componente)
+
+---
+
+## §Sesión 2026-05-27 — Rediseño Enterprise Módulo Clínica (Dashboard + Agenda)
+
+### Layout full-screen para Clínica
+
+`shared/components/layout/layout.ts` — `isFullPage()` incluye `/clinica/dashboard` y `/clinica/agenda`. Estas rutas renderizan sin `<app-header>` y sin padding del wrapper.
+
+`shared/components/layout/layout.html` — inline style bindings para forzar cero padding/fondo independientemente de Tailwind v4 specificity:
+```html
+[style.padding]="isFullPage() ? '0' : null"
+[style.background]="isFullPage() ? 'transparent' : null"
+```
+El sidebar permanece visible — `isFullPage()` solo elimina header y padding del área de contenido.
+
+### Dashboard Clínica — rediseño enterprise
+
+**Archivos:** `features/clinica/pages/dashboard/dashboard.ts/.html/.css`
+
+#### Layout CSS (`dashboard.css`)
+```css
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.dash-root { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #f0f4f8; }
+.dash-header { flex-shrink: 0; background: #0f172a; padding: 12px 24px; }
+.dash-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px 20px; gap: 10px; min-height: 0; }
+.kpi-section, .ops-section { flex-shrink: 0; }
+.bottom-section { flex: 1; display: grid; grid-template-columns: 1fr 220px; gap: 10px; overflow: hidden; min-height: 0; }
+.proximos-card { overflow-y: auto; height: 100%; min-height: 0; display: flex; flex-direction: column; }
+```
+
+#### Funcionalidades añadidas (`dashboard.ts`)
+- `Router` inyectado vía `inject(Router)`.
+- `navegarConFiltro(ruta, filtro?)` — navega con `queryParams` opcional.
+- `get pctCompletadas()` / `get pctEnProceso()` — porcentaje para progress bars.
+
+#### KPI cards clickables
+`(click)="navegarConFiltro('/clinica/agenda')"` / `"navegarConFiltro('/clinica/emos', 'sin-emo')"` etc. Clase `.kpi-card { cursor: pointer }`.
+
+#### Progress bars operativas
+```html
+<div class="ops-progress-bar">
+  <div class="ops-progress-fill fill-blue" [style.width.%]="pctCompletadas"></div>
+</div>
+```
+CSS: `.ops-progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; }` `.ops-progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }`.
+
+#### Tabla próximos EMO — columnas Vence y Días
+`<th>Vence</th><th>Días</th>` — valores `item.fechaVencimiento | date:'dd MMM yyyy'` y badge coloreado por `item.diasParaVencer`.
+
+Badges: `badge-red` (≤0), `badge-orange` (≤7), `badge-yellow` (≤30), `badge-green` (resto).
+
+#### Pulse badge "Clínica activa"
+```html
+<div class="clinica-activa-badge"><span class="pulse-dot"></span> Clínica activa</div>
+```
+```css
+.pulse-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse-green 2s infinite; }
+@keyframes pulse-green { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
+```
+
+#### Mini-stat overflow fix
+`.mini-stat-body { min-width: 0; overflow: hidden; flex: 1; }` `.mini-stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }`.
+
+### Agenda Clínica — rediseño enterprise + tema claro
+
+**Archivos:** `features/clinica/pages/agenda/agenda.ts/.html/.css`
+
+#### Layout CSS (`agenda.css`)
+```css
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.agenda-root { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #f0f4f8; }
+.agenda-header { flex-shrink: 0; background: #0f172a; padding: 14px 20px 10px; }
+.stats-bar { flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+.controls-row { flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+.cards-zone { flex: 1; overflow-y: auto; min-height: 0; padding: 14px 20px 16px; background: #f0f4f8; }
+.agenda-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid transparent; }
+.card-muted { opacity: 0.6; background: #f8fafc; }
+```
+
+#### Stats bar clickable sincronizada con chips
+Los stat-items de la stats bar tienen `(click)="filtroEstado = 'Programado'"` (etc.) y `[class.stat-active]="filtroEstado === 'Programado'"`. Compartiendo el mismo binding `filtroEstado`, click en stat = activa chip correspondiente automáticamente.
+
+#### Semáforo de fechas (`fechaClass()` en `agenda.ts`)
+```ts
+fechaClass(fecha: string): string {
+  const hoy = new Date().toISOString().split('T')[0];
+  if (fecha === hoy) return 'fecha-hoy';
+  if (fecha < hoy) return 'fecha-pasada';
+  return 'fecha-futura';
+}
+```
+Colores: `fecha-hoy: #16a34a`, `fecha-pasada: #dc2626`, `fecha-futura: #2563eb`.
+
+#### Terminal cards con opacidad
+`[ngClass]="[..., esTerminal(item.estado) ? 'card-muted' : '']"` — estados Completado/Rechazado/Cancelado/No se presentó muestran la card con `opacity: 0.6`.
+
+#### Modal confirmación aceptación (light theme)
+```css
+.dark-modal { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.dm-input { background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; color-scheme: light; }
+```
+
+### Pitfall: Tailwind v4 vs inline styles
+
+Las clases `sm:py-[20px]` y `sm:pr-[20px]` de `layout.html` tienen especificidad suficiente para sobreponer `!important` en CSS. La solución definitiva es usar bindings inline `[style.padding]` y `[style.background]` en el template — los estilos inline siempre ganan la cascada.
+
+### Pitfall: `:host { position: fixed; inset: 0 }` cubre el sidebar
+
+Cuando una página usa `position: fixed; inset: 0` en `:host`, cubre el sidebar (que tiene `z-index` menor). La solución correcta para "full-screen sin sidebar" es `flex: 1; min-height: 0; overflow: hidden` — el componente ocupa el área de contenido disponible después del sidebar sin superponerlo.

@@ -8,6 +8,8 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
 
+type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado';
+
 @Component({
   selector: 'app-clinica-agenda',
   standalone: true,
@@ -19,9 +21,27 @@ export class Agenda implements OnInit {
   items: ProgramacionClinicaDto[] = [];
   loading = false;
   accionando: number | null = null;
-  motivoRechazo = '';
-  rechazandoId: number | null = null;
+
+  selectedDate = new Date().toISOString().split('T')[0];
+  filtroEstado: FiltroEstado = '';
+  busqueda = '';
+
+  modalAceptar: { open: boolean; item: ProgramacionClinicaDto | null; nuevaFecha: string } = {
+    open: false,
+    item: null,
+    nuevaFecha: '',
+  };
+
   completandoItem: ProgramacionClinicaDto | null = null;
+
+  readonly estadosFiltro: { key: FiltroEstado; label: string }[] = [
+    { key: '', label: 'Todos' },
+    { key: 'Programado', label: 'Programado' },
+    { key: 'Aceptado por Clínica', label: 'Aceptado' },
+    { key: 'En Atención', label: 'En Atención' },
+    { key: 'Completado', label: 'Completado' },
+    { key: 'Rechazado', label: 'Rechazado' },
+  ];
 
   constructor(
     private svc: ClinicaProgramacionService,
@@ -30,13 +50,13 @@ export class Agenda implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.load();
+    this.loadAgenda(this.selectedDate);
   }
 
-  load(): void {
+  loadAgenda(fecha: string): void {
     this.loading = true;
     this.loaderService.show();
-    this.svc.getProgramacionesHoy().subscribe({
+    this.svc.getProgramacionesFiltradas({ desde: fecha, hasta: fecha }).subscribe({
       next: (data) => {
         this.items = data;
         this.loading = false;
@@ -50,91 +70,129 @@ export class Agenda implements OnInit {
     });
   }
 
-  get totalHoy(): number {
-    return this.items.length;
+  onDateChange(): void {
+    this.loadAgenda(this.selectedDate);
   }
 
-  get capacidadOcupada(): string {
-    const completados = this.items.filter((i) =>
-      ['Completado', 'En Atención'].includes(i.estado),
+  // ── Counts ───────────────────────────────────────────────
+  get totalHoy(): number { return this.items.length; }
+  get countProgramados(): number { return this.items.filter(i => i.estado === 'Programado').length; }
+  get countAceptados(): number { return this.items.filter(i => i.estado === 'Aceptado por Clínica').length; }
+  get countEnAtencion(): number { return this.items.filter(i => i.estado === 'En Atención').length; }
+  get countCompletados(): number { return this.items.filter(i => i.estado === 'Completado').length; }
+  get countRechazados(): number {
+    return this.items.filter(i =>
+      ['Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(i.estado),
     ).length;
-    return `${completados} / ${this.totalHoy}`;
   }
 
-  get pendientes(): ProgramacionClinicaDto[] {
-    return this.items.filter((i) => i.estado === 'Programado');
+  countForFiltro(key: FiltroEstado): number {
+    switch (key) {
+      case '': return this.totalHoy;
+      case 'Programado': return this.countProgramados;
+      case 'Aceptado por Clínica': return this.countAceptados;
+      case 'En Atención': return this.countEnAtencion;
+      case 'Completado': return this.countCompletados;
+      case 'Rechazado': return this.countRechazados;
+    }
   }
 
-  get aceptados(): ProgramacionClinicaDto[] {
-    return this.items.filter((i) => ['Aceptado por Clínica', 'En Atención'].includes(i.estado));
+  // ── Filter ───────────────────────────────────────────────
+  get programacionesFiltradas(): ProgramacionClinicaDto[] {
+    let base = this.items;
+    if (this.filtroEstado === 'Rechazado') {
+      base = base.filter(i =>
+        ['Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(i.estado),
+      );
+    } else if (this.filtroEstado) {
+      base = base.filter(i => i.estado === this.filtroEstado);
+    }
+    if (this.busqueda.trim()) {
+      const q = this.busqueda.trim().toLowerCase();
+      base = base.filter(i =>
+        i.workerNombre.toLowerCase().includes(q) || i.workerDni.includes(q),
+      );
+    }
+    return base;
   }
 
-  get completados(): ProgramacionClinicaDto[] {
-    return this.items.filter((i) =>
-      ['Completado', 'No se presentó', 'Cancelado', 'Rechazado por Clínica'].includes(i.estado),
-    );
+  // ── Modal Aceptar ────────────────────────────────────────
+  abrirAceptar(item: ProgramacionClinicaDto): void {
+    this.modalAceptar = { open: true, item, nuevaFecha: item.fechaProgramada ?? '' };
   }
 
-  aceptar(item: ProgramacionClinicaDto): void {
+  cancelarAceptar(): void {
+    this.modalAceptar = { open: false, item: null, nuevaFecha: '' };
+  }
+
+  confirmarAceptar(): void {
+    const item = this.modalAceptar.item;
+    if (!item) return;
+    const body: ClinicaAccionDto = {
+      id: item.id,
+      accion: 'Aceptar',
+      fechaNueva: this.modalAceptar.nuevaFecha,
+    };
+    this.cancelarAceptar();
+    this.ejecutarAccion(item.id, body);
+  }
+
+  // ── Rechazar (SweetAlert2) ───────────────────────────────
+  rechazar(item: ProgramacionClinicaDto): void {
     Swal.fire({
-      title: 'Confirmar programación',
-      html: `<div style="text-align:left;margin-bottom:8px">Trabajador: <b>${item.workerNombre}</b></div>
-             <label style="display:block;margin-bottom:4px;font-size:0.9rem">Hora de la cita *</label>
-             <input type="time" id="swal-hora" class="swal2-input" style="width:100%">`,
-      confirmButtonText: 'Aceptar programación',
-      cancelButtonText: 'Cancelar',
+      title: 'Rechazar programación',
+      html: `<span style="font-size:0.87rem;color:#94a3b8">${item.workerNombre}</span>`,
+      input: 'text',
+      inputPlaceholder: 'Motivo de rechazo *',
+      inputAttributes: { autocomplete: 'off' },
+      background: '#1e293b',
+      color: '#f1f5f9',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#334155',
       showCancelButton: true,
-      confirmButtonColor: '#64BC04',
-      preConfirm: () => {
-        const hora = (document.getElementById('swal-hora') as HTMLInputElement).value;
-        if (!hora) {
-          Swal.showValidationMessage('La hora es obligatoria');
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (motivo: string) => {
+        if (!motivo?.trim()) {
+          Swal.showValidationMessage('Ingresa el motivo de rechazo');
           return false;
         }
-        return hora;
+        return motivo.trim();
       },
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        this.ejecutarAccion(item.id, { id: item.id, accion: 'Aceptar', checkInHora: result.value });
+        this.ejecutarAccion(item.id, {
+          id: item.id,
+          accion: 'Rechazar',
+          motivoRechazo: result.value,
+        });
       }
     });
   }
 
-  iniciarRechazo(id: number): void {
-    this.rechazandoId = id;
-    this.motivoRechazo = '';
-  }
-
-  confirmarRechazo(item: ProgramacionClinicaDto): void {
-    if (!this.motivoRechazo.trim()) return;
-    this.ejecutarAccion(item.id, {
-      id: item.id,
-      accion: 'Rechazar',
-      motivoRechazo: this.motivoRechazo,
-    });
-    this.rechazandoId = null;
-  }
-
+  // ── CheckIn ──────────────────────────────────────────────
   checkIn(item: ProgramacionClinicaDto): void {
     const hora = new Date().toTimeString().slice(0, 5);
     this.ejecutarAccion(item.id, { id: item.id, accion: 'CheckIn', checkInHora: hora });
   }
 
+  // ── Completar EMO ────────────────────────────────────────
   abrirCompletar(item: ProgramacionClinicaDto): void {
     this.completandoItem = item;
   }
 
   onCompletado(): void {
     this.completandoItem = null;
-    this.load();
+    this.loadAgenda(this.selectedDate);
   }
 
+  // ── Shared ───────────────────────────────────────────────
   private ejecutarAccion(id: number, body: ClinicaAccionDto): void {
     this.accionando = id;
     this.svc.accionClinica(id, body).subscribe({
       next: () => {
         this.accionando = null;
-        this.load();
+        this.loadAgenda(this.selectedDate);
       },
       error: (err) => {
         this.accionando = null;
@@ -143,43 +201,52 @@ export class Agenda implements OnInit {
     });
   }
 
+  // ── CSS helpers ──────────────────────────────────────────
   estadoClass(estado: string): string {
     const map: Record<string, string> = {
       'Programado': 'chip-blue',
-      'Aceptado por Clínica': 'chip-green',
-      'Rechazado por Clínica': 'chip-red',
+      'Aceptado por Clínica': 'chip-violet',
       'En Atención': 'chip-orange',
       'Completado': 'chip-green',
-      'No se presentó': 'chip-gray',
-      'Cancelado': 'chip-gray',
+      'Rechazado por Clínica': 'chip-slate',
+      'Cancelado': 'chip-slate',
+      'No se presentó': 'chip-slate',
     };
-    return map[estado] ?? 'chip-gray';
+    return map[estado] ?? 'chip-slate';
   }
 
-  fechaHoy(): string {
-    return new Date().toLocaleDateString('es-PE', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  cardBorderClass(estado: string): string {
+    const map: Record<string, string> = {
+      'Programado': 'card-bl-blue',
+      'Aceptado por Clínica': 'card-bl-violet',
+      'En Atención': 'card-bl-orange',
+      'Completado': 'card-bl-green',
+      'Rechazado por Clínica': 'card-bl-slate',
+      'Cancelado': 'card-bl-slate',
+      'No se presentó': 'card-bl-slate',
+    };
+    return map[estado] ?? 'card-bl-slate';
   }
 
-  initials(nombre: string): string {
-    const parts = nombre.trim().split(' ').filter(Boolean);
-    if (parts.length === 0) return '?';
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  filtroClass(key: FiltroEstado): string {
+    const map: Record<string, string> = {
+      'Programado': 'pill-blue',
+      'Aceptado por Clínica': 'pill-violet',
+      'En Atención': 'pill-orange',
+      'Completado': 'pill-green',
+      'Rechazado': 'pill-slate',
+    };
+    return map[key] ?? '';
   }
 
-  avatarBg(nombre: string): string {
-    const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1'];
-    let hash = 0;
-    for (const c of nombre) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
-    return colors[hash % colors.length];
+  esTerminal(estado: string): boolean {
+    return ['Completado', 'Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(estado);
   }
 
-  timelineDot(estado: string): string {
-    return estado === 'En Atención' ? 'dot-orange' : 'dot-green-sm';
+  fechaClass(fecha: string): string {
+    const hoy = new Date().toISOString().split('T')[0];
+    if (fecha === hoy) return 'fecha-hoy';
+    if (fecha < hoy) return 'fecha-pasada';
+    return 'fecha-futura';
   }
 }

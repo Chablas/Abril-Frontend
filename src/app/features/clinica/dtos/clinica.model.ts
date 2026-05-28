@@ -3,6 +3,7 @@ export interface ProgramacionClinicaDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
+  ocupacion?: string;
   tipoEmo: string;
   tipoEmoId?: number;
   empresa: string;
@@ -24,6 +25,7 @@ export interface ClinicaAccionDto {
   motivoRechazo?: string;
   checkInHora?: string;
   emoResultadoId?: number;
+  fechaNueva?: string;
 }
 
 export type EstadoProgramacionClinica =
