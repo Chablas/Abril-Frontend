@@ -3,7 +3,16 @@ import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 
 export const HABILITACION_ROUTES: Routes = [
-  { path: '', redirectTo: 'trabajadores', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard-contratista', pathMatch: 'full' },
+  {
+    path: 'dashboard-contratista',
+    loadComponent: () =>
+      import('./pages/dashboard-contratista/dashboard-contratista').then(
+        (m) => m.DashboardContratista,
+      ),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - PANEL CONTRATISTA' },
+  },
   {
     path: 'trabajadores',
     loadComponent: () =>
@@ -39,7 +48,7 @@ export const HABILITACION_ROUTES: Routes = [
     loadComponent: () => import('./pages/bandeja/bandeja').then((m) => m.Bandeja),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'HABILITACIÓN - BANDEJA DE APROBACIONES',
+      titulo: '',
       featureKey: 'habilitacion.bandeja',
     },
   },
@@ -128,6 +137,15 @@ export const HABILITACION_ROUTES: Routes = [
       import('./pages/clinicas/detalle/clinica-detalle').then((m) => m.ClinicaDetalle),
     canActivate: [authGuard],
     data: { titulo: 'HABILITACIÓN - DETALLE CLÍNICA' },
+  },
+  {
+    path: 'admin-usuarios-contratista',
+    loadComponent: () =>
+      import('./pages/admin-contratista-usuarios/admin-contratista-usuarios').then(
+        (m) => m.AdminContratistaUsuarios,
+      ),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA' },
   },
   {
     path: 'cambiar-password',

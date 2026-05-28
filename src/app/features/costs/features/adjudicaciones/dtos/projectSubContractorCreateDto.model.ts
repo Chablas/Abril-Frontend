@@ -4,6 +4,7 @@ export interface ProjectSubContractorCreateDTO {
   contractTypeId: number;
   contractModalityId?: number | null;
   paymentMethodId: number;
+  paymentFormId?: number | null;
   advancePercentage?: number;
   advanceAmount?: number;
   amount: number;

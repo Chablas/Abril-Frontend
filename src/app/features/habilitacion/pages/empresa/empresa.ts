@@ -70,6 +70,21 @@ export class Empresa implements OnInit {
   panelEstado = '';
   uploadingFile = false;
 
+  private readonly SCTR_VIDA_LEY_IDS = [15, 16];
+  private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
+
+  get esSCTRoVidaLey(): boolean {
+    return !!this.selectedEntregable && this.SCTR_VIDA_LEY_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   visorArchivoUrl = '';
   visorNombre = '';
 
@@ -296,9 +311,27 @@ export class Empresa implements OnInit {
   }
 
   closeDrawer(): void {
+    if (this.isContratista()) {
+      this.guardarObservaciones();
+    }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.panelEstado = '';
+  }
+
+  guardarObservaciones(): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    const id = this.selectedEntregable.id;
+    const obs = this.panelObsContratista;
+    this.habEmpresaService
+      .updateEntregable(this.empresaId, id, { obsContratista: obs || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   descargarDocumento(archivoUrl: string): void {
@@ -440,16 +473,37 @@ export class Empresa implements OnInit {
       });
   }
 
-  guardarAdmin(): void {
+  guardarEntregable(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
-    this.loaderService.show();
-    this.habEmpresaService
-      .updateEntregable(this.empresaId, this.selectedEntregable.id, {
+
+    let payload: EmpresaEntregableUpdateDto;
+
+    if (this.isContratista()) {
+      if (!this.panelArchivoUrl) {
+        Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' });
+        return;
+      }
+      if (this.selectedEntregable.requiereVigencia && !this.panelVigencia) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+        return;
+      }
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
+        obsContratista: this.panelObsContratista || undefined,
+      };
+    } else {
+      payload = {
         estado: this.panelEstado || this.selectedEntregable.estado,
         vigencia: this.panelVigencia || undefined,
         archivoUrl: this.panelArchivoUrl || undefined,
         obsAbril: this.panelObsAbril || undefined,
-      })
+      };
+    }
+
+    this.loaderService.show();
+    this.habEmpresaService
+      .updateEntregable(this.empresaId, this.selectedEntregable.id, payload)
       .subscribe({
         next: () => {
           this.loaderService.hide();

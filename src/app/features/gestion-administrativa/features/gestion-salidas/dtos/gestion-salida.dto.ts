@@ -13,6 +13,8 @@ export interface GestionSalidaListItemDto {
   estadoRendicion: string;
   createdAt: string;
   puedeRendirse: boolean;
+  /** Hora real registrada por recepción ("HH:mm:ss") — dato extra. */
+  horaSalidaReal: string | null;
 }
 
 export interface GestionSalidaFilterDataDto {
@@ -54,6 +56,10 @@ export interface GestionSalidaTrayectoDto {
   lugarOrigen: string | null;
   lugarDestino: string | null;
   capturas: GestionSalidaCapturaDto[];
+  /** Monto del catálogo ga_trayecto (solo trabajador TI con match). */
+  montoCatalogo: number | null;
+  /** Monto efectivo: suma capturas o montoCatalogo. */
+  montoTotal: number;
 }
 
 export interface GestionSalidaDetalleDto {

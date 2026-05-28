@@ -39,12 +39,13 @@ import { WorkerCreateEdit } from './components/worker-create-edit/worker-create-
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
+import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit, ProgramacionCreate],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -81,6 +82,14 @@ export class Trabajadores implements OnInit, OnDestroy {
   panelEstado = '';
   uploadingFile = false;
 
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.selectedEntregable.requiereVigencia;
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   drawerOpen = false;
   visorArchivoUrl = '';
   visorNombre = '';
@@ -96,6 +105,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarHistorial = false;
   mostrarAgregarProyecto = false;
   mostrarProgramarInduccion = false;
+  mostrarProgramarEmo = false;
+  workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
+  preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
   workerParaHistorial: WorkerHabilitacionListDto | null = null;
@@ -197,7 +209,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
-        this.workers = res.data ?? [];
+        this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
@@ -299,6 +311,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   closeDrawer(): void {
+    if (this.isContratista()) {
+      this.guardarObservaciones();
+    }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.resetPanel();
@@ -532,12 +547,14 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   guardarObservaciones(): void {
     if (!this.selectedEntregable) return;
+    const id = this.selectedEntregable.id;
+    const obs = this.panelObsAbril;
     this.trabajadorHabService
-      .updateEntregable(this.selectedEntregable.id, { estado: this.selectedEntregable.estado, obsContratista: this.panelObsAbril || undefined })
+      .updateEntregable(id, { obsContratista: obs || undefined })
       .subscribe({
         next: () => {
-          const e = this.entregables.find(x => x.id === this.selectedEntregable!.id);
-          if (e) e.obsContratista = this.panelObsAbril;
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
         },
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
@@ -593,31 +610,55 @@ export class Trabajadores implements OnInit, OnDestroy {
   guardarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedWorker) return;
 
-    const vigencia = !this.selectedEntregable.requiereVigencia
-      ? '2040-12-31'
-      : this.panelVigencia || undefined;
+    let payload: WorkerEntregableUpdateDto;
 
-    const payload: WorkerEntregableUpdateDto = {
-      estado: this.panelEstado,
-      vigencia,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsAbril: this.panelObsAbril || undefined,
-    };
+    if (this.isContratista()) {
+      if (!this.panelArchivoUrl) {
+        Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' });
+        return;
+      }
+      if (this.selectedEntregable.requiereVigencia && !this.panelVigencia) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+        return;
+      }
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
+        obsContratista: this.panelObsAbril || undefined,
+      };
+    } else {
+      const vigencia = !this.selectedEntregable.requiereVigencia
+        ? '2040-12-31'
+        : this.panelVigencia || undefined;
+      payload = {
+        estado: this.panelEstado,
+        vigencia,
+        archivoUrl: this.panelArchivoUrl || undefined,
+        obsAbril: this.panelObsAbril || undefined,
+      };
+    }
 
     this.loaderService.show();
     this.trabajadorHabService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
       next: () => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
-        const vigencia = !this.selectedEntregable?.requiereVigencia
-          ? '2040-12-31'
-          : this.panelVigencia || undefined;
-        this.actualizarEntregableLocal({
-          estado: this.panelEstado,
-          vigencia,
-          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          obsAbril: this.panelObsAbril || undefined,
-        });
+        if (this.isContratista()) {
+          this.actualizarEntregableLocal({
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsContratista: this.panelObsAbril || undefined,
+          });
+        } else {
+          const vigencia = !this.selectedEntregable?.requiereVigencia
+            ? '2040-12-31'
+            : this.panelVigencia || undefined;
+          this.actualizarEntregableLocal({
+            estado: this.panelEstado,
+            vigencia,
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsAbril: this.panelObsAbril || undefined,
+          });
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -712,9 +753,11 @@ export class Trabajadores implements OnInit, OnDestroy {
     return this.selectedIds.length > 0;
   }
 
-  get programarInduccionEmpresaId(): number | null {
-    if (this.selectedIds.length === 0) return null;
-    return this.workers.find((w) => w.workerId === this.selectedIds[0])?.empresaId ?? null;
+  abrirProgramarInduccion(): void {
+    this.preselectedEmpresaId = this.authService.isContratista()
+      ? (this.authService.getEmpresaId() ?? null)
+      : null;
+    this.mostrarProgramarInduccion = true;
   }
 
   limpiarSeleccion(): void {
@@ -880,5 +923,15 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.modalWorkerOpen = false;
     this.search = dni;
     this.loadWorkers(1);
+  }
+
+  abrirProgramarEmo(worker: WorkerHabilitacionListDto): void {
+    this.workerParaProgramarEmo = worker;
+    this.mostrarProgramarEmo = true;
+  }
+
+  onProgramarEmoSaved(): void {
+    this.mostrarProgramarEmo = false;
+    this.workerParaProgramarEmo = null;
   }
 }

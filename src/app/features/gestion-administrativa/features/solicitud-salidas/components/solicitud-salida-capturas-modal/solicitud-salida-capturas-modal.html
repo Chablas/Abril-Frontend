@@ -36,8 +36,19 @@
           <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
         </div>
       </div>
-      <div *ngIf="t.capturas.length === 0" class="text-xs text-gray-400 italic">
+      <div *ngIf="t.capturas.length === 0 && t.montoCatalogo === null" class="text-xs text-gray-400 italic">
         Aún no hay capturas en este trayecto.
+      </div>
+      <div *ngIf="t.montoCatalogo !== null"
+           class="text-xs text-[#0086A5] bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+        </svg>
+        <span>
+          Este trayecto tiene <b>monto de catálogo S/ {{ t.montoCatalogo | number:'1.2-2' }}</b> —
+          subir capturas es opcional.
+        </span>
       </div>
 
       <!-- Filas pendientes (imagen + monto) -->

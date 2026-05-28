@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -31,6 +31,7 @@ export class ActivarEmpresaComponent {
   constructor(
     private http: HttpClient,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   get rucInvalido(): boolean {
@@ -77,6 +78,7 @@ export class ActivarEmpresaComponent {
           this.nombreComercial = res.nombreComercial;
           this.paso = 2;
           this.saving = false;
+          this.cdr.detectChanges();
         },
         error: (err: HttpErrorResponse) => {
           this.saving = false;

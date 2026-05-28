@@ -5,6 +5,8 @@ import Swal from 'sweetalert2';
 import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { FormsModule } from '@angular/forms';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaListItemDto,
@@ -16,7 +18,7 @@ import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestio
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal],
   templateUrl: './gestion-salidas.html',
 })
 export class GestionSalidas implements OnInit {
@@ -29,11 +31,18 @@ export class GestionSalidas implements OnInit {
     { value: 'No rendido',   label: 'No rendidas' },
     { value: 'Rendido',      label: 'Rendidas' },
   ];
+  readonly estadoAprobacionOptions = [
+    { value: null,        label: 'Todas' },
+    { value: 'Pendiente', label: 'Pendientes' },
+    { value: 'Aprobado',  label: 'Aprobadas' },
+    { value: 'Rechazado', label: 'Rechazadas' },
+  ];
 
   filters = {
-    workerId:         null as number | null,
-    lugarProyectoId:  null as number | null,
-    estadoRendicion:  null as string | null,
+    workerId:          null as number | null,
+    lugarProyectoId:   null as number | null,
+    estadoRendicion:   null as string | null,
+    estadoAprobacion:  null as string | null,
   };
 
   /** IDs seleccionados para acción bulk. */
@@ -46,7 +55,43 @@ export class GestionSalidas implements OnInit {
     private service:       GestionSalidasService,
     private loaderService: LoaderService,
     private errorService:  ErrorService,
+    private authService:   AuthService,
   ) {}
+
+  /** True si el usuario logueado tiene rol "USUARIO DE RECEPCIÓN" — habilita la columna extra. */
+  get esRecepcion(): boolean {
+    return this.authService.hasRole('USUARIO DE RECEPCIÓN');
+  }
+
+  guardarHoraReal(s: GestionSalidaListItemDto, valor: string, ev?: Event): void {
+    ev?.stopPropagation();
+    // input type="time" devuelve "HH:mm" o "" si está vacío. El backend acepta null para limpiar.
+    const hora = valor && valor.trim() !== '' ? valor : null;
+    if ((s.horaSalidaReal ?? '').substring(0, 5) === (hora ?? '')) return; // sin cambio
+
+    this.loaderService.show();
+    this.service.setHoraSalidaReal(s.id, hora).subscribe({
+      next: (res) => {
+        s.horaSalidaReal = hora;
+        this.loaderService.hide();
+        Swal.fire({
+          title: res.message,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Devuelve "HH:mm" listo para el input type="time" (el backend devuelve "HH:mm:ss"). */
+  horaRealInput(s: GestionSalidaListItemDto): string {
+    return s.horaSalidaReal ? s.horaSalidaReal.substring(0, 5) : '';
+  }
 
   ngOnInit(): void {
     this.loadFilterData();
@@ -76,6 +121,7 @@ export class GestionSalidas implements OnInit {
       this.filters.workerId,
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
+      this.filters.estadoAprobacion,
     ).subscribe({
       next: (data) => {
         this.salidas = data;
@@ -98,6 +144,7 @@ export class GestionSalidas implements OnInit {
       this.filters.workerId,
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
+      this.filters.estadoAprobacion,
     ).subscribe({
       next: (blob) => {
         const url  = URL.createObjectURL(blob);

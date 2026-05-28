@@ -12,6 +12,8 @@ export interface WorkerHabilitacionListDto {
   estadoWorker: string;
   contrataCasa?: string;
   obraOficina?: string;
+  tieneEmo?: boolean;
+  diasRestantesEmo?: number | null;
 }
 
 export interface WorkerEntregableDto {
@@ -29,7 +31,7 @@ export interface WorkerEntregableDto {
 }
 
 export interface WorkerEntregableUpdateDto {
-  estado: string;
+  estado?: string;
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;

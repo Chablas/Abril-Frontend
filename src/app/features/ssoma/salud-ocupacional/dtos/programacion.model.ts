@@ -40,7 +40,7 @@ export interface ProgramacionCreateDto {
   workerId: number;
   tipoEmoId: number;
   empresaId: number;
-  fecha: string;
+  fechaProgramada: string;
   hora?: string;
   clinicaId?: number;
   medicoId?: number;

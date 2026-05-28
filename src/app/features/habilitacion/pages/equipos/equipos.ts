@@ -78,6 +78,16 @@ export class Equipos implements OnInit, OnDestroy {
   panelEstado = '';
   uploadingFile = false;
 
+  private readonly VIGENCIA_ANTE_UPLOAD_IDS = [1, 2, 7, 8, 9, 11];
+
+  get requiereVigenciaAnteUpload(): boolean {
+    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+  }
+
+  get uploadBloqueadoPorVigencia(): boolean {
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
   private searchChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
@@ -195,15 +205,32 @@ export class Equipos implements OnInit, OnDestroy {
     this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
     this.panelArchivoUrl = e.archivoUrl ?? '';
     this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
-    this.panelObsAbril = e.obsAbril ?? '';
+    this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
   }
 
   closeDrawer(): void {
+    if (this.isContratista()) {
+      this.guardarObservaciones();
+    }
     this.drawerOpen = false;
     this.selectedEntregable = null;
     this.resetPanel();
+  }
+
+  guardarObservaciones(): void {
+    if (!this.selectedEntregable) return;
+    const id = this.selectedEntregable.id;
+    const obs = this.panelObsAbril;
+    this.equipoService.updateEntregable(id, { obsContratista: obs || undefined })
+      .subscribe({
+        next: () => {
+          const e = this.entregables.find(x => x.id === id);
+          if (e) e.obsContratista = obs;
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
   }
 
   private extractFileName(url: string): string {
@@ -360,10 +387,14 @@ export class Equipos implements OnInit, OnDestroy {
   private autoMarcarEnviado(): void {
     if (!this.selectedEntregable || !this.selectedEquipo) return;
 
+    const vigencia = !this.selectedEntregable.requiereVigencia
+      ? '2040-12-31'
+      : this.panelVigencia || undefined;
+
     const payload: EquipoEntregableUpdateDto = {
       estado: 'Enviado',
       archivoUrl: this.panelArchivoUrl || undefined,
-      vigencia: this.panelVigencia || undefined,
+      vigencia,
       obsContratista: this.isContratista() ? this.panelObsAbril || undefined : undefined,
       obsAbril: !this.isContratista() ? this.panelObsAbril || undefined : undefined,
     };
@@ -373,6 +404,7 @@ export class Equipos implements OnInit, OnDestroy {
         this.actualizarEntregableLocal({
           estado: 'Enviado',
           archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+          vigencia,
         });
         this.panelEstado = 'Enviado';
       },
@@ -420,6 +452,7 @@ export class Equipos implements OnInit, OnDestroy {
           this.actualizarEntregableLocal({
             estado: 'Enviado',
             archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            vigencia: this.panelVigencia || undefined,
           });
         },
         error: (err: HttpErrorResponse) => {
@@ -432,31 +465,56 @@ export class Equipos implements OnInit, OnDestroy {
   guardarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedEquipo) return;
 
-    const vigencia = !this.selectedEntregable.requiereVigencia
-      ? '2040-12-31'
-      : this.panelVigencia || undefined;
+    let payload: EquipoEntregableUpdateDto;
 
-    const payload: EquipoEntregableUpdateDto = {
-      estado: this.panelEstado,
-      vigencia,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsAbril: this.panelObsAbril || undefined,
-    };
+    if (this.isContratista()) {
+      if (!this.panelArchivoUrl) {
+        Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' });
+        return;
+      }
+      if (this.selectedEntregable.requiereVigencia && !this.panelVigencia) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+        return;
+      }
+      payload = {
+        archivoUrl: this.panelArchivoUrl || undefined,
+        vigencia: this.panelVigencia || undefined,
+        obsContratista: this.panelObsAbril || undefined,
+      };
+    } else {
+      const vigencia = !this.selectedEntregable.requiereVigencia
+        ? '2040-12-31'
+        : this.panelVigencia || undefined;
+      payload = {
+        estado: this.panelEstado,
+        vigencia,
+        archivoUrl: this.panelArchivoUrl || undefined,
+        obsAbril: this.panelObsAbril || undefined,
+      };
+    }
 
     this.loaderService.show();
     this.equipoService.updateEntregable(this.selectedEntregable.id, payload).subscribe({
       next: () => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
-        const vigencia = !this.selectedEntregable?.requiereVigencia
-          ? '2040-12-31'
-          : this.panelVigencia || undefined;
-        this.actualizarEntregableLocal({
-          estado: this.panelEstado,
-          vigencia,
-          archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          obsAbril: this.panelObsAbril || undefined,
-        });
+        if (this.isContratista()) {
+          this.actualizarEntregableLocal({
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            vigencia: this.panelVigencia || undefined,
+            obsContratista: this.panelObsAbril || undefined,
+          });
+        } else {
+          const vigencia = !this.selectedEntregable?.requiereVigencia
+            ? '2040-12-31'
+            : this.panelVigencia || undefined;
+          this.actualizarEntregableLocal({
+            estado: this.panelEstado,
+            vigencia,
+            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
+            obsAbril: this.panelObsAbril || undefined,
+          });
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

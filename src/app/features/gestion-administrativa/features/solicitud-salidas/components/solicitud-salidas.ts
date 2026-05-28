@@ -10,11 +10,12 @@ import { BtnNew } from '../../../../../shared/components/btn-new/btn-new';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
 import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/solicitud-salida-capturas-modal';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, BtnNew, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, BtnNew, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect],
   templateUrl: './solicitud-salidas.html',
 })
 export class SolicitudSalidas implements OnInit {
@@ -27,6 +28,25 @@ export class SolicitudSalidas implements OnInit {
   /** ID de la solicitud cuyo modal de subir capturas está abierto. null = cerrado. */
   capturasId: number | null = null;
 
+  // ── Filtros ────────────────────────────────────────────────────────
+  lugarProyectoOptions: any[] = [];
+  readonly estadoAprobacionOptions = [
+    { value: null,        label: 'Todas' },
+    { value: 'Pendiente', label: 'Pendientes' },
+    { value: 'Aprobado',  label: 'Aprobadas' },
+    { value: 'Rechazado', label: 'Rechazadas' },
+  ];
+  readonly estadoRendicionOptions = [
+    { value: null,         label: 'Todas' },
+    { value: 'No rendido', label: 'No rendidas' },
+    { value: 'Rendido',    label: 'Rendidas' },
+  ];
+  filters = {
+    lugarProyectoId:  null as number | null,
+    estadoAprobacion: null as string | null,
+    estadoRendicion:  null as string | null,
+  };
+
   constructor(
     private service: SolicitudSalidasService,
     private loaderService: LoaderService,
@@ -34,18 +54,39 @@ export class SolicitudSalidas implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadFilterData();
     this.load();
+  }
+
+  loadFilterData(): void {
+    this.service.getFilterData().subscribe({
+      next: (data) => {
+        this.lugarProyectoOptions = [
+          { id: null, nombreDisplay: 'Todos los proyectos' },
+          ...data.lugaresProyecto,
+        ];
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
   }
 
   load(): void {
     this.loaderService.show();
-    this.service.getMySolicitudes().subscribe({
+    this.service.getMySolicitudes(
+      this.filters.lugarProyectoId,
+      this.filters.estadoAprobacion,
+      this.filters.estadoRendicion,
+    ).subscribe({
       next: (data) => {
         this.solicitudes = data;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  onSearch(): void {
+    this.load();
   }
 
   onSaved(): void {

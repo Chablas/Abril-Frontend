@@ -57,7 +57,7 @@ src/app/
 └── features/
     ├── arquitectura-comercial/   # NgModule
     ├── auth/                     # NgModule (login, msal, set-password)
-    ├── clinica/                  # standalone routes (agenda, programaciones, activar cuenta pública)
+    ├── clinica/                  # standalone routes (dashboard, agenda, programaciones, interconsultas, activar cuenta pública)
     ├── configuracion/            # standalone routes (admin: empresas, proyectos, trabajadores)
     ├── contractors/              # standalone routes (pública + admin)
     ├── costs/                    # NgModule (adjudicaciones)
@@ -120,7 +120,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /ssoma                                   → SSOMA_ROUTES
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
-   /clinica                                 → CLINICA_ROUTES
+   /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -146,9 +146,10 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 - `authGuard` (`core/guards/auth.guard.ts`): SSR → `true` (¡no quitar! evita problemas con refresh); sin token → `/auth/login`; token expirado → logout + login.
 - `roleGuard` (`core/guards/role.guard.ts`): verifica acceso en dos pasos:
   1. Si `route.data.featureKey` existe → busca en `localStorage.allowed_features` (array JSON cargado al login desde BD). Si está incluido → permite.
-  2. Fallback: si `route.data.roles` existe → verifica contra JWT roles (solo para contratistas u otros casos legacy).
+  2. Fallback: si `route.data.roles` existe → verifica contra JWT roles; **además** si el array incluye `'CONTRATISTA'`, verifica `authService.isContratista()` (lee `localStorage.user.tipo`) como segundo fallback — necesario porque contratistas usan auth propio (tipo en localStorage), no claims JWT Microsoft.
   - Sin match en ninguno de los dos → redirige a `/`.
   - **Regla**: rutas nuevas deben usar `featureKey` registrado en BD, no `roles` directos.
+  - **Dos sistemas de auth conviven**: `getRoles()` lee claims JWT Microsoft; `isContratista()` lee `localStorage.user.tipo === 'CONTRATISTA'`. Son independientes. Rutas CONTRATISTA funcionales usan `featureKey` (en `allowed_features` del token contratista). Dashboard usa solo `authGuard` + redirect interno en el componente.
 
 ### Roles conocidos (string-exact, MAYÚSCULAS, español)
 ```
@@ -511,6 +512,7 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 - Login (form propio + Microsoft via MSAL).
 - `complete-registration` (set password con token).
 - `msal-redirect` callback.
+- **Panel izquierdo del login** rediseñado: logo arriba + sección "Videos Tutoriales" con 7 cards scrollables (max ~3.8 visibles). Cada card abre el link de Loom en nueva pestaña. Array `tutorialVideos` en `login.ts` (readonly). Estilos glassmorphism en `login.css` (`.tutorial-card`, `.tutorial-play`, `.tutorial-scroll` con scrollbar delgado). Fondo y accent color (`#64bc04`) consistentes con la identidad existente.
 
 ### `features/home/` — ✅ Completo
 - Página Inicio simple post-login.
@@ -551,6 +553,51 @@ Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cua
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
+### `features/clinica/` — ✅ Módulo Clínica (nuevo en 2026-05-26)
+Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey).
+
+**Sub-rutas** (`clinica.routes.ts`):
+```
+/clinica              → redirect 'dashboard'
+/clinica/dashboard    → ClinicaDashboard  (métricas hoy + nav a subrutas)
+/clinica/agenda       → Agenda            (programaciones del día + acciones)
+/clinica/programaciones → ProgramacionesClinica (historial filtrable)
+/clinica/interconsultas → InterconsultasClinica (derivaciones pendientes)
+/clinica/emos         → ClinicaEmos       (control de EMOs — solo lectura)
+/clinica/activar      → ActivarClinica    (público)
+```
+
+**Sidebar**: entrada única en `navigation.service.ts` (`key: 'clinica'`, 1 item → `/clinica/dashboard`). `sidebar.ts:onModuleClick` para `'clinica'` navega directo (sin dropdown) — mismo patrón que `control-acceso`.
+
+**Dashboard** (`pages/dashboard/`): carga métricas reales en `ngOnInit` vía `ClinicaProgramacionService` (programaciones hoy + semana) e `InterconsultaService` (pendientes). Grid 3-columnas nav-cards + grid 3-columnas métricas con `has-alert` cuando hay interconsultas pendientes. Nav-cards: Agenda del Día, Programaciones, Interconsultas, **Control de EMOs**.
+
+**Control de EMOs** (`pages/emos/`): vista de solo lectura del endpoint `GET /emos/por-trabajador`. Reutiliza `EmoService`, `CatalogosSaludService`, DTOs (`EmoPorTrabajadorDto`, `EmoPorTrabajadorQuery`), utils (`aptitudBadgeClass`, `diasVencerBadgeClass`) y el componente `EmoDetail` directamente de `ssoma/salud-ocupacional/`. Sin botón crear ni editar. Click en fila con EMO abre `<app-emo-detail>`; botón historial navega a `/ssoma/salud-ocupacional/emos/{workerId}/historial`. `featureKey: 'clinica.agenda'`.
+
+**Agenda** (`pages/agenda/`) — rediseño enterprise 2026-05-28:
+- Layout full-screen (`:host flex-col flex-1`), header `#0f172a` con `linear-gradient`, stats-bar, controls-row, cards-zone con grid 3 columnas responsive (→2 en ≤1100px, →1 en ≤640px).
+- **Card estructura 3 zonas**: `.card-top` (nombre/DNI + badge estado + `.card-chips` con chip-groups etiquetados "Tipo"/"Categoría"/"Ocupación"/"EMO"), `.card-dates` (banda `#f8fafc` con fecha programada + hora + vence EMO + check-in), `.card-actions` (margin-top:auto).
+- **Modal aceptar**: hora obligatoria con validación triple (`!hora || trim==='' || =='--:--'`); grid 2 col fecha+hora; error inline `.dm-error-inline`.
+- **Tab system**: propiedad `activeTab: 'agenda'|'interconsultas'`. Tab Interconsultas carga `cargarInterconsultas()` en `ngOnInit` + en `cambiarTab()` si no hay datos. `ChangeDetectorRef.detectChanges()` forzado en `next`/`error` y `cambiarTab`.
+- **Tab Interconsultas**: tabla full-width con columnas Trabajador, Especialidad, F.Derivación, Días (calculados con `calcularDiasPendientes(fechaDerivacion)`), Estado, botón `ic-btn-accion` ("🔧 Gestionar"/"📋 Ver detalle"). Helpers: `icEstadoClass()`, `icDiasClass(dias)`, `calcularDiasPendientes()`. HTTP GET a `/interconsultas` con `HttpParams`.
+- **Modal levantamiento interconsulta** (`icDetalle`/`icPaso`/`icLevantamiento`): backdrop `modal-overlay`, caja centrada `ic-modal-box` 580px. Paso 1: fecha+resultado (grid 2col) + diagnóstico + archivo (upload). POST `/interconsultas/{id}/documentos` + PATCH `/interconsultas/{id}/resultado`. Paso 2: mensaje de éxito.
+- **DTOs ampliados** (`clinica.model.ts`): `ProgramacionClinicaDto` añadidos `fechaVencimientoEmo?: string|null`, `categoria?: string|null`, `tipoTrabajador?: string|null`, `ocupacion?: string|null`. `ClinicaAccionDto` añadido `horaNueva?: string`.
+
+**Programaciones** (`pages/programaciones/`) — rediseño 2026-05-28:
+- Full-screen idéntico a agenda: header gradient oscuro, `.controls-row` blanca, `.table-zone` scroll. Badge de conteo `items.length` en header. Loading dots verdes, empty state `📋`. `| date:'dd/MM/yyyy'` en fecha.
+
+**Interconsultas** (`pages/interconsultas/`) — rediseño 2026-05-28:
+- Mismo estándar visual: header `linear-gradient #0f172a→#1e293b`, `.controls-row` blanca, `.table-zone` con `.table-card`. Badges días: `ic-chip-red/orange/green/muted`. Badges estado: `chip-orange/green/gray` (border-radius 6px). Modales dark conservados íntegramente.
+
+**`layout.ts` `isFullPage()`** incluye: `/clinica/dashboard`, `/clinica/agenda`, `/clinica/interconsultas`, `/clinica/programaciones` (header global oculto en todas estas rutas).
+
+**Servicios de Clínica** (`features/clinica/services/clinica-programacion.service.ts`):
+- Base: `${apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`
+- `getProgramacionesHoy(clinicaId?)` → GET con `desde=hoy&hasta=hoy`
+- `getProgramacionesFiltradas({ desde, hasta, estado })` → GET con filtros
+- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId?, horaNueva?, fechaNueva? }`
+
+**DTOs** (`features/clinica/dtos/clinica.model.ts`): `ProgramacionClinicaDto`, `ClinicaAccionDto`, `EstadoProgramacionClinica`.
+
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
@@ -584,8 +631,44 @@ Plataforma completa mobile-first.
 - **`induccion.service.ts`**: `aprobarBatch()` corregido de `http.post` a `http.patch` → PATCH `/inducciones/aprobar-batch`.
 - **`bandeja` — tab Inducciones rediseñado**: reemplazada lista vertical plana por tarjetas agrupadas por `proyectoId+empresaId+fecha`. Cada tarjeta muestra: proyecto, empresa, fecha, flags Altura/Eléctrico, contador "N/M asistieron", checkbox "Seleccionar todos los asistentes", chips por worker (verde+checkbox si `ingresoConfirmado=true` pre-seleccionado, gris sin checkbox si false), botón "Aprobar seleccionados (N)" → llama `InduccionService.aprobarBatch(ids)`. Tab Inducciones no muestra el dropdown "Todos los responsables" ni el split izquierda/derecha — usa layout full-width. `InduccionListDto` añadido `contrataCasa?: string`. `bandeja.ts` inyecta `InduccionService`; `setTipo('INDUCCION')` llama `loadInducciones()` en vez de `loadItems()`; `groupInducciones()` agrupa client-side. Aprobar en tab TRABAJADOR/EMPRESA/EQUIPO: modal sin campo de fecha editable — si el item tiene vigencia se muestra como `<input type="date" readonly>`.
 
+**Cambios 2026-05-24:**
+- **`dashboard-contratista`** (NUEVO) `pages/dashboard-contratista/`: panel enterprise de resumen para CONTRATISTA. Grid 2×2 (Proyectos | Entregables Empresa / Trabajadores | Equipos). Nav superior con pills para Trabajadores, Empresa, Equipos, SCTR, Inducciones. Sin scroll externo (`height: 100%`, `overflow: hidden`). Skeleton shimmer en loading. Skeleton KPI en header. Standalone + `RouterModule`. Ruta: solo `authGuard`; `ngOnInit()` redirige a `trabajadores` si no es contratista.
+- **Panel "Usuarios" en dashboard-contratista**: pill "Usuarios" en top-nav toglea `activeSection: 'resumen' | 'usuarios'`. Cuando `'usuarios'`, muestra `<app-contratista-usuarios>` a pantalla completa en `.usuarios-section`. El dashboard decodifica el JWT (`jwtDecode`, claim `sub`) para obtener `currentUserId` y lo pasa al componente.
+  - **`ContratistaUsuarioService`** (`habilitacion/services/contratista-usuario.service.ts`): CRUD contra `GET|POST /api/v1/contratista-usuarios?contractorId=`, `PUT /{id}`, `PATCH /{id}/desactivar`. DTOs: `ContratistaUsuarioDto`, `InvitarUsuarioDto`, `ActualizarUsuarioDto`. Usa `buildHabHeaders()` + `buildHabParams()`.
+  - **`ContratistaUsuarios`** (`pages/dashboard-contratista/components/contratista-usuarios/`): tabla con Nombre, Email, Rol (badge color por OWNER/ADMIN/GESTOR), Scope, Estado (chip verde/gris), Acciones (Editar | Desactivar/Activar). `@Input() contractorId`, `@Input() currentUserId`. `esOwner` getter: busca `userId === currentUserId && rolNombre === 'OWNER'`. Acciones y botón "Invitar" solo visibles si `esOwner`. Modales vía `Swal.fire({ html, didOpen, preConfirm })` con campos: Email (solo invitar), Rol (ADMIN|GESTOR), Scope (TODOS|POR_PROYECTO), checkboxes proyectos (cargados de `HabEmpresaService.getProyectosDisponibles`). CSS propio `.cu-*` en `contratista-usuarios.css`.
+- **`roleGuard`** (`core/guards/role.guard.ts`): añadido fallback `authService.isContratista()` en el bloque `allowedRoles` cuando el array incluye `'CONTRATISTA'`. Sin esto, el guard rechazaba contratistas en rutas sin `featureKey` porque sus roles no están en JWT Microsoft.
+- **`sidebar.ts`**: `onModuleClick` para `module.key === 'habilitacion'` ahora brancha: si `isContratista()` → navega a `/habilitacion`, si no → navega a `/`. Inyectado `AuthService`. `module.key === 'control-acceso'` navega directo a `/habilitacion/control-acceso` en un clic (sin dropdown intermedio).
+- **`habilitacion.routes.ts`**: redirect `''` cambiado de `'trabajadores'` a `'dashboard-contratista'`.
+- **Fixes vigencia panel contratista** (3 componentes):
+  - `trabajadores.ts`: campo vigencia editable (input date) gated por `requiereVigenciaAnteUpload`; upload bloqueado si no hay fecha; `guardarEntregable()` rama contratista incluye `vigencia: panelVigencia`.
+  - `equipos.ts`: `autoMarcarEnviado()` computa `vigencia` antes del payload y la reutiliza en `actualizarEntregableLocal`; `guardarEntregable()` tiene rama contratista con `{ archivoUrl?, vigencia?, obsContratista? }`.
+  - `empresa.ts`: `guardarAdmin()` renombrado a `guardarEntregable()` con rama contratista idéntica.
+- **Botón "ENVIAR DOCUMENTO" eliminado** de `empresa.html` y `equipos.html` — flujo auto-save al subir.
+
+**Cambios 2026-05-26 — Módulo Clínica + integración Programar EMO en Trabajadores:**
+- **`ProgramacionCreate`** (`ssoma/salud-ocupacional/programaciones/components/programacion-create/`):
+  - `@Input()` nuevos: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`. `ngOnInit` pre-carga `this.worker` (con `dni: preselectedWorkerDni ?? ''`) y `this.empresaId` desde los inputs.
+  - Campos **eliminados** del formulario y del TS: `hora`, `medicoId`, `motivo`, `notas`. Array `medicos` y getter `medicosFiltrados` eliminados. `onClinicaChange` simplificado a solo asignar `clinicaId`.
+  - Método `onTipoEmoChange(id)` para actualizar `tipoEmoId` con log durante desarrollo.
+  - Payload: campo renombrado `fecha` → `fechaProgramada`. Mismo cambio en `ProgramacionCreateDto` (`ssoma/dtos/programacion.model.ts`).
+- **`WorkerHabilitacionListDto`** (`habilitacion/dtos/trabajador.model.ts`): añadidos `tieneEmo?: boolean` y `diasRestantesEmo?: number | null`.
+- **`trabajadores.ts`** (`habilitacion/pages/trabajadores/`): importa `ProgramacionCreate`. Propiedades `mostrarProgramarEmo`, `workerParaProgramarEmo`. Métodos `abrirProgramarEmo(worker)` y `onProgramarEmoSaved()`.
+- **`trabajadores.html`**: botón "Programar EMO" (icono ECG) en `div.wc-actions` por worker card, condición `isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))`. `<app-programacion-create>` al final del template con 4 inputs: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`.
+- **`agenda.ts`** (`clinica/pages/agenda/`): método `aceptar()` reemplazado por `Swal.fire` con input `type="time"` (hora obligatoria, `preConfirm` valida) antes de llamar `ejecutarAccion(..., { accion: 'Aceptar', checkInHora: result.value })`. Importa `Swal`. Métodos añadidos: `initials(nombre)`, `avatarBg(nombre)` (color determinista por hash), `timelineDot(estado)`.
+- **`agenda.html`**: rediseño enterprise completo — stats pills (Total/Atendidos/Por confirmar + btn Refresh), secciones con dot de color, cards con avatar circular de iniciales (`[style.background]="avatarBg(...)"`) + meta-row (tipoEmo, empresa, hora, DNI) + acciones por estado, rechazo inline en card. `motivoRechazo` visible solo cuando `rechazandoId === item.id`.
+- **`agenda.css`**: reemplazado completo — `.stat-pill`, `.agenda-card`, `.card-avatar`, `.card-meta`, `.btn-action` (`.btn-accept/.btn-reject/.btn-checkin/.btn-complete`), `.badge-chip` con variantes chip-*, `.loading-dot` con animación pulse, `.empty-state`.
+- **`completar-emo.ts`**: refactorizado completo — eliminados `numeroInforme`, `urlResultado`, `icCentro`, `icCie10`, `uploadingAptitud/Emo`; añadido `lecturaRealizada: boolean` (checkbox, controla si se guarda `fechaLectura`); `canSubmit` ahora exige `archivoAptitud && archivoEmo` cuando `requiereDocumentos`, y al menos 1 restricción cuando `requiereRestriccion`; `interconsultaInline` simplificado (solo `especialidad`, `diagnostico`, `requiereSeguimiento`).
+- **`completar-emo.html`**: reescrito — checkbox "Se realizó lectura del EMO" + campo fecha condicional; sección Restricciones* con hint "Debes agregar al menos una"; sección Documentos* (2 file inputs PDF obligatorios); interconsulta simplificada (especialidad + diagnóstico + checkbox seguimiento solo para "No Apto").
+- **`completar-emo.css`**: añadidos `.checkbox-row`, `.fecha-lectura-row`, `.field-hint`.
+- **`interconsultas.ts`** (`clinica/pages/interconsultas/`): `load()` — detección explícita de array: `Array.isArray(res)` → `Array.isArray(res?.items)` → `Array.isArray(res?.data)` → `[]`.
+
+**Cambios 2026-05-27 — Admin usuarios contratista + fixes contratista-usuarios:**
+- **`ContratistaUsuarios`** (`habilitacion/pages/dashboard-contratista/components/contratista-usuarios/`): añadido `@Input() forceAdminMode: boolean = false`. El getter `esOwner` retorna `true` directamente cuando `forceAdminMode === true`, ignorando `currentUserId` y `rolNombre`. Permite usar el componente en modo admin sin usuario logueado.
+- **`ContratistaUsuarios` — CLINICA_CONTRACTOR_ID**: constante privada `CLINICA_CONTRACTOR_ID = 644`. `buildFormHtml()` acepta `isClinica?: boolean`. Cuando `isClinica = true`, el selector `swal-system-role` muestra solo `<option value="14">Clínica</option>` en vez de las opciones 11/49. `abrirModalInvitar()` activa `showTipoAcceso` para contractor 572 o 644 y pasa `isClinica` solo para 644.
+- **`AdminContratistaUsuarios`** (NUEVO) `pages/admin-contratista-usuarios/`: página admin standalone para gestionar usuarios de cualquier empresa contratista. Carga lista de empresas via `EmpresaContratistaService.getEmpresasLogin()` (`GET api/v1/habilitacion/auth/empresas`). Selector de empresa (`EmpresaSimpleDto { id, razonSocial, nombreComercial? }`). Al seleccionar, muestra `<app-contratista-usuarios [contractorId]="..." [currentUserId]="null" [forceAdminMode]="true">`. Ruta: `admin-usuarios-contratista`, solo `authGuard`, título `HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA`.
+
 ### Branches actuales
-- Working: `feature/arquitectura-comercial`.
+- Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
 - Main para PRs: `master`.
 
 ---
@@ -683,7 +766,8 @@ Plataforma completa mobile-first.
 
 ### Sub-rutas
 ```
-/habilitacion                          → redirect 'trabajadores'
+/habilitacion                          → redirect 'dashboard-contratista'
+/habilitacion/dashboard-contratista    → Dashboard CONTRATISTA (solo authGuard; redirect interno a /habilitacion/trabajadores si no es contratista)
 /habilitacion/trabajadores             → Plataforma Trabajadores
 /habilitacion/empresa                  → Plataforma Empresa
 /habilitacion/equipos                  → Equipos y Máquinas
@@ -695,7 +779,10 @@ Plataforma completa mobile-first.
 /habilitacion/evaluacion-supervisores  → Evaluación Supervisores
 /habilitacion/auditoria                → Auditoría (solo ADMINISTRADOR SSOMA)
 /habilitacion/reglas                   → Reglas de Entregables (solo ADMINISTRADOR SSOMA)
+/habilitacion/admin-usuarios-contratista → AdminContratistaUsuarios (solo authGuard — gestión admin de usuarios contratista)
 ```
+
+> **Entrada CONTRATISTA**: el sidebar "Gestión de Ingresos" llama `onModuleClick({ key: 'habilitacion' })` en `sidebar.ts`. Si `isContratista()` → navega a `/habilitacion` (que redirige a `dashboard-contratista`). Si admin → navega a `/` (home). El `dashboard-contratista` a su vez redirige internamente a `trabajadores` si el visitante no es contratista (doble protección).
 
 > **Inducciones** — aparece en el sidebar del grupo Gestión **solo para CONTRATISTA** (`roles: ['CONTRATISTA']`). Es una vista de solo lectura (seguimiento de estado) para el contratista. Los admins gestionan inducciones desde Trabajadores (botón "Programar Inducción") y las aprueban desde Bandeja (tipo INDUCCION).
 
@@ -859,58 +946,62 @@ onCambiarObraSaved(): void {
 - **Contratistas**: los campos "Razón social" y "Staff / Oficina" se ocultan con `*ngIf="worker?.contrataCasa === 'Casa'"`. El payload fuerza `empresaId = null` en `submit()` si `contrataCasa !== 'Casa'`.
 
 ### Bandeja de Aprobaciones — layout SCTR-style
-`pages/bandeja/bandeja.ts/.html/.css` — layout idéntico a SCTR y Vida Ley (lista izquierda + visor PDF derecho).
+`pages/bandeja/bandeja.ts/.html/.css` — lista izquierda + visor PDF derecho. Header (`app-header`) oculto al entrar via `ngOnInit` (añade `.hidden-bandeja`) y restaurado en `ngOnDestroy`. `data.titulo = ''` en la ruta.
 
 #### Tabs horizontales
 ```
 Todos | Trabajadores | Empresas | Inducciones | Equipos
 ```
-Cada tab tiene color de borde activo propio:
-- Todos: `border #111827`
-- Trabajadores: `#3b82f6` (azul)
-- Empresas: `#22c55e` (verde)
-- Inducciones: `#f59e0b` (naranja)
-- Equipos: `#9ca3af` (gris)
-
-Clases: `tab-active-all`, `tab-active-blue`, `tab-active-green`, `tab-active-orange`, `tab-active-gray`.
+Clases activas: `tab-active-all` / `tab-active-blue` / `tab-active-green` / `tab-active-orange` / `tab-active-gray`.
 
 #### Chip colors por tipo
-- `TRABAJADOR` = chip-blue
-- `EMPRESA` = chip-green
-- `EQUIPO` = chip-gray
-- `INDUCCION` = chip-orange
+`TRABAJADOR`=chip-blue · `EMPRESA`=chip-green · `EQUIPO`=chip-gray · `INDUCCION`=chip-orange
 
-#### Layout principal
+#### Layout CSS
 ```css
-.bandeja-layout { display: flex; flex-direction: column; gap: 0.75rem; height: calc(100vh - 120px); }
-.bandeja-columns { display: grid; grid-template-columns: 300px 1fr; gap: 1rem; flex: 1; overflow: hidden; min-height: 0; }
-.col-items, .col-detalle { display: flex; flex-direction: column; overflow: hidden; }
-.doc-body { flex: 1; min-height: 0; overflow: hidden; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
-.doc-body iframe { width: 100%; height: 100%; display: block; border: 0; }
+:host { display:flex; flex-direction:column; height:100%; }
+.bandeja-layout { display:flex; flex-direction:column; gap:0.75rem; height:100%; overflow:hidden; }
+.bandeja-columns { display:grid; grid-template-columns:300px 1fr; gap:1rem; flex:1; overflow:hidden; min-height:0; height:calc(100vh - 110px); }
+.col-items, .col-detalle { display:flex; flex-direction:column; overflow:hidden; height:100%; }
 ```
 
-#### Card seleccionada
-```css
-.bandeja-card.selected { background: #f0fdf4; border-color: #64bc04; }
-```
-
-#### Patrón blob URL para PDF
-Igual que SCTR: `sharepointService.getArchivoUrl(archivoUrl)` → `fetch(res.url)` → `.blob()` → `URL.createObjectURL(blob)` → `sanitizer.bypassSecurityTrustResourceUrl(blobUrl)`. Se revoca en `revokeDocBlobUrl()` al cerrar/destruir.
-
-#### Flujo de aprobación por tipo
-- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input para fecha de vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
-- **INDUCCION**: Swal simple sin campo vigencia → `bandejaService.aprobarInduccion(id)` → PATCH `/bandeja/induccion/{id}` con body `{}`.
-
-Tras aprobar/rechazar: `this.selectedItem = null; this.clearDocPanel();` y luego `loadItems()`.
-
-#### Estado
+#### Filtros client-side (fila horizontal sobre `.bandeja-columns`, oculta en tab INDUCCION)
 ```ts
-selectedItem: BandejaItemDto | null = null;
-docSafeUrl: SafeResourceUrl | null = null;
-loadingDoc = false;
-private docBlobUrl = '';
-filtroTipo = '';  // '' = Todos
+filtroTexto = '';       // búsqueda libre por entidadNombre
+filtroEmpresa = '';     // búsqueda libre por empresaNombre
+filtroProyecto = '';    // dropdown exacto por proyectoNombre
+filtroEntregable = '';  // dropdown exacto por nombreEntregable
+filtroResponsable = ''; // server-side: param del endpoint /bandeja (SSOMA | ADMINISTRACION)
 ```
+Getters: `proyectosDisponibles`, `entregablesDisponibles` — únicos de `items`, A→Z. `filteredItems` aplica los 4 filtros client-side y ordena por `entidadNombre` (localeCompare 'es'). `loadItems` limpia `selectedIds` al recargar.
+
+#### Aprobación masiva (tabs Todos/Trabajadores/Empresas/Equipos)
+```ts
+selectedIds = new Set<number>();
+get allItemsSelected(): boolean   // todos los filteredItems seleccionados
+get someItemsSelected(): boolean  // alguno seleccionado (para indeterminate)
+toggleSelect(id)                  // toggle individual
+toggleAllItems()                  // toggle todos los filteredItems
+aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
+```
+- **Tab con tipo fijo**: una sola llamada `bandejaService.bulkAprobar(ids, filtroTipo)`.
+- **Tab "Todos"**: agrupa `selectedIds` por `item.tipo` y hace `forkJoin` de una llamada por tipo.
+- Endpoint: PATCH `/bandeja/bulk-aprobar` body `{ ids, tipo }`.
+- Header de lista: checkbox "Seleccionar todos" (`[indeterminate]`) + botón "✓ Aprobar (N)" visible cuando `selectedIds.size > 0`.
+- Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
+
+#### Flujo aprobación unitaria (sin cambios)
+- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
+- **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
+
+#### Nomenclatura — colisión resuelta
+`allSelected(grupo)` de inducciones renombrado a `allInduccionSelected(grupo)` para evitar conflicto con el getter `allItemsSelected` de selección masiva.
+
+#### Patrón blob URL para PDF (sin cambios)
+`sharepointService.getArchivoUrl(archivoUrl)` → `fetch` → `.blob()` → `URL.createObjectURL` → `bypassSecurityTrustResourceUrl`. Revocado en `revokeDocBlobUrl()`.
+
+#### SCTR/Vida Ley — orden alfabético
+`sctr-subir.ts:loadWorkers()` ordena `trabajadores` por `apellidoNombre` (localeCompare 'es') al recibirlos del backend.
 
 ### Modal "Programar Inducción" — proyectos filtrados por empresa
 `pages/trabajadores/components/programar-induccion/` — 2 pasos.
@@ -991,7 +1082,7 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
 4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
 5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
-6. Botón ENVIAR (contratista): habilitado si `panelArchivoUrl || panelObsAbril`.
+6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin. Sin botón "ENVIAR DOCUMENTO" (eliminado); flujo es auto-save en upload.
 7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
 
 **Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
@@ -1789,3 +1880,682 @@ forkJoin({
 ### Multi-usuario por empresa (segunda fase — no implementar aún)
 Tablas: `ss_contratista_usuario`, `ss_contratista_usuario_proyecto`, `ss_contratista_auditoria`
 Roles: `OWNER` | `ADMIN` | `GESTOR` con scope `ALL` | `BY_PROJECT`
+
+---
+
+## §Sesión 2026-05-24 — Panel entregables CONTRATISTA (trabajadores + empresa) y fixes
+
+### activar-empresa.component.ts — fix ChangeDetectorRef
+
+`features/auth/pages/activar-empresa/activar-empresa.component.ts`
+
+- `ChangeDetectorRef` inyectado en el constructor.
+- `submitPaso1()` callback `next`: `this.cdr.detectChanges()` llamado después de `this.paso = 2; this.saving = false`.
+- **Síntoma previo**: el backend devolvía 200 y el componente actualizaba `this.paso = 2` internamente, pero Angular no renderizaba el paso 2 — la pantalla quedaba bloqueada en el formulario de paso 1.
+
+### induccion.service.ts — getTrabajadoresPorProgramar acepta search?
+
+`features/habilitacion/services/induccion.service.ts`
+
+```ts
+getTrabajadoresPorProgramar(
+  proyectoId: number,
+  empresaId?: number | null,
+  search?: string,
+): Observable<InduccionTrabajadorDto[]>
+```
+
+`buildHabParams({ proyectoId, empresaId, search })` maneja los 3 params — `undefined` se omite automáticamente.
+
+**Endpoint actualizado** en §12: `GET /inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y&search=Z`.
+
+### programar-induccion (pages/trabajadores) — preselectedEmpresaId desde JWT
+
+`features/habilitacion/pages/trabajadores/trabajadores.ts`
+
+- Añadida propiedad `preselectedEmpresaId: number | null = null`.
+- Reemplazado getter `programarInduccionEmpresaId` (que devolvía el `empresaId` del primer worker seleccionado — incorrecto) por método:
+
+```ts
+abrirProgramarInduccion(): void {
+  this.preselectedEmpresaId = this.authService.isContratista()
+    ? (this.authService.getEmpresaId() ?? null)
+    : null;
+  this.mostrarProgramarInduccion = true;
+}
+```
+
+`trabajadores.html`: botón llama `abrirProgramarInduccion()` y binding actualizado a `[preselectedEmpresaId]="preselectedEmpresaId"`.
+
+**Componente destino** (`trabajadores/components/programar-induccion/`) ya tenía `@Input() preselectedEmpresaId` y lo usaba en `loadWorkers()` — no requirió cambios.
+
+> ⚠️ Hay **dos** componentes `ProgramarInduccion` con el mismo selector pero distintas rutas:
+> - `inducciones/components/programar-induccion/` — carga proyectos propia, busca workers vía `getTrabajadoresPorProgramar`
+> - `trabajadores/components/programar-induccion/` — recibe `[proyectos]` del padre, 2 pasos, usa `preselectedEmpresaId`
+>
+> No confundirlos al editar.
+
+### Panel entregables CONTRATISTA en Trabajadores
+
+`features/habilitacion/pages/trabajadores/trabajadores.html` — bloque `*ngIf="isContratista()"`:
+
+- **Estado**: chip read-only (`btn-chip`) — sin dropdown editable.
+- **Vigencia**: texto read-only (pipe `date`) — sin input editable.
+- **Upload zone**: idéntica al bloque admin (zona activa, spinner, file-card con visualizar/descargar/reemplazar, fallback pending-upload).
+- El contratista sube archivos → `autoMarcarEnviado()` cambia estado a `Enviado` automáticamente.
+
+`features/habilitacion/pages/trabajadores/trabajadores.ts`:
+
+- `guardarEntregable()` — bifurcado por rol:
+  - **Contratista**: payload solo `{ archivoUrl?, obsContratista? }` — sin `estado` ni `vigencia`.
+  - **Admin**: payload completo con `{ estado, vigencia, archivoUrl?, obsAbril? }`.
+- `WorkerEntregableUpdateDto.estado` cambiado a `estado?: string` (opcional) para soportar payloads parciales.
+- **Auto-save observaciones contratista**:
+  - `guardarObservaciones()`: captura `id` y `obs` como locales antes del posible reset; llama `updateEntregable(id, { obsContratista })` sin `estado`; errores a través de `errorService.handleError`.
+  - `closeDrawer()`: llama `guardarObservaciones()` ANTES de `selectedEntregable = null` — cubre overlay click, botón X, ESC y selección de nuevo trabajador.
+  - HTML: `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+### Panel entregables empresa — auto-save y reglas por itemId
+
+`features/habilitacion/pages/empresa/empresa.ts`:
+
+- `guardarObservaciones()`: captura `id` y `obs` locales; llama `updateEntregable(empresaId, id, { obsContratista })` sin `estado`; errores a `errorService.handleError`.
+- `closeDrawer()`: llama `guardarObservaciones()` antes de `selectedEntregable = null`.
+- `EmpresaEntregableUpdateDto.estado` cambiado a `estado?: string` (opcional).
+- Getters de reglas por `itemId` (`ss_item_empresa.id`):
+
+```ts
+private readonly SCTR_VIDA_LEY_IDS = [15, 16];       // bloqueados — gestión externa
+private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22]; // requieren vigencia antes de upload
+
+get esSCTRoVidaLey(): boolean { … }          // itemId ∈ [15, 16]
+get requiereVigenciaAnteUpload(): boolean { … } // itemId ∈ [11, 12, 20, 22]
+get uploadBloqueadoPorVigencia(): boolean { … } // requiereVigenciaAnteUpload && !panelVigencia
+```
+
+`features/habilitacion/pages/empresa/empresa.html`:
+
+- **IDs 15 y 16 (SCTR / Vida Ley)**: drawer muestra bloque `.info-readonly-block` con mensaje "Este entregable se gestiona en la pantalla SCTR / Vida Ley." — bloques CONTRATISTA y ADMIN ocultos con `&& !esSCTRoVidaLey`; botones de footer también ocultos.
+- **IDs 11, 12, 20, 22 (vigencia obligatoria)**: upload zone reemplazada por zona `.upload-zone--disabled` con "Ingresa la fecha de vigencia primero." mientras `uploadBloqueadoPorVigencia`. Aplica a ambos roles.
+- `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+`features/habilitacion/pages/empresa/empresa.css`:
+
+- `.upload-zone--disabled { opacity:0.55; cursor:not-allowed; background:#f8fafc }`.
+- `.info-readonly-block { flex row; gap 0.6rem; padding 0.875rem 1rem; background #f1f5f9; border #e2e8f0; border-radius 8px; font-size 0.825rem; color #475569 }`.
+
+> **Tabla de referencia rápida itemId empresa** (`ss_item_empresa`):
+> | itemId | Nombre | Regla |
+> |--------|--------|-------|
+> | 11, 12, 20, 22 | (varios) | Vigencia obligatoria antes de upload |
+> | 15, 16 | SCTR, Vida Ley | Read-only — gestión en pantalla SCTR/Vida Ley |
+>
+> No confundir con items de trabajador: en `ss_item_trabajador`, SCTR=11 y Vida Ley=13.
+
+---
+
+## §Sesión 2026-05-25 — SCTR/Vida Ley mejoras, fix duplicados trabajadores
+
+### sctr.model.ts — campos nuevos
+
+`SctrWorkerDto`: añadido `vigencia?: string` (fecha vencimiento por trabajador en `ss_sctr_vidaley_worker`).
+
+`SctrTrabajadorEstadoDto`: añadidos `fechaVencimiento?: string` y `updatedAt?: string` (para ordenar Tab Trabajadores por más reciente).
+
+### sctr-vidaley — filtro proyecto client-side (Tab Pólizas)
+
+`filtroProyecto = ''` en `sctr-vidaley.ts`.
+
+Getter `proyectosDisponibles: string[]` — valores únicos de `documentos.map(d => d.proyectoNombre)`, A→Z con `localeCompare('es')`.
+
+Getter `filteredDocumentos: SctrVidaLeyDto[]` — filtra por `proyectoNombre === filtroProyecto` (sin request al backend). `*ngFor` en lista de docs cambia a `filteredDocumentos`.
+
+Dropdown `<select [(ngModel)]="filtroProyecto">` al final de `.filters-row` en `sctr-vidaley.html`.
+
+### sctr-vidaley — aprobación masiva desde panel derecho (Tab Pólizas)
+
+Propiedades nuevas: `docWorkersSeleccionados = new Set<number>()`, `savingDocAprobar = false`.
+
+Getters: `docAllChecked`, `docSomeChecked`, `canAprobarDoc`.
+
+Métodos: `toggleDocWorker`, `toggleAllDocWorkers`, `aprobarDocWorkersSeleccionados` (Swal confirm → `sctrService.aprobar(selectedDoc.id, dto)` con `tipo: selectedDoc.tipo`), `aprobarTodosDocWorkers` (Swal confirm → mismo endpoint con todos los workers). `clearDocPanel()` resetea también `docWorkersSeleccionados`.
+
+`sctr-vidaley.html` — `.sctr-split-right`:
+- Header `.sctr-workers-header` (`*ngIf="isAdmin()"`) con checkbox "Seleccionar todos" (`[indeterminate]`), contador y botón "Aprobar todos".
+- Cada `.sctr-worker-item` tiene checkbox admin-only (`stopPropagation` para no interferir con `selectPolizaWorker`).
+- Footer `.sctr-split-actions-bar` (`*ngIf="isAdmin()"`) con contador + botón "Aprobar seleccionados".
+- Worker cards muestran `w.vigencia` si existe: `{{ w.vigencia | date:'dd/MM/yyyy' }}`.
+
+`sctr-vidaley.css`: nuevas clases `.sctr-workers-header` y `.sctr-split-actions-bar`. Split ratio: `.sctr-split-left { flex: 0 0 60% }` (era 70%), `.sctr-split-right { flex: 0 0 40% }` (era 30%).
+
+### sctr-vidaley — filtros client-side en Tab Trabajadores
+
+Propiedades nuevas: `wFiltroNombre = ''`, `wFiltroEmpresaTexto = ''`.
+
+Getter `filteredTrabajadores: SctrTrabajadorEstadoDto[]`: filtra por nombre y empresa (text libre case-insensitive), ordena por `updatedAt` desc (null al final). `*ngFor` cambia a `filteredTrabajadores`. Cards muestran `fechaVencimiento` si existe.
+
+Dos inputs `.wfilters-text-row` (Buscar nombre + Buscar empresa) encima del `.wfilters-grid` en `sctr-vidaley.html`. Nueva clase CSS `.wfilters-text-row { display: flex; gap: 0.5rem }`.
+
+### trabajadores — fix deduplicación por workerId (línea 209)
+
+**Causa**: el backend retorna múltiples filas para el mismo `workerId` cuando un worker tiene ≥2 proyectos activos (JOIN con proyectos). Frontend los mostraba todos como cards duplicadas.
+
+**Fix** en `loadWorkers()` después de recibir `res.data`:
+```ts
+this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
+```
+El `Map` con clave `workerId` deduplica conservando la última aparición por worker.
+
+---
+
+## §Sesión 2026-05-25 (tarde) — sctr-vidaley rediseño completo panel Pólizas
+
+### Layout 3 columnas (Tab Pólizas)
+
+Rediseño total de la vista Tab Pólizas: de `sctr-columns` (2 columnas split 60/40) a `sctr-3col` con 3 columnas side-by-side dentro de un único card:
+
+- `.col-polizas` — `width: 280px; flex-shrink: 0` — lista de pólizas + paginator
+- `.col-workers` — `width: 260px; flex-shrink: 0` — panel de workers
+- `.col-pdf` — `flex: 1; min-width: 0` — visor PDF
+
+Cada columna tiene `overflow-y: auto` propio con `height: 100%`. El contenedor `.sctr-3col` es `display: flex; flex: 1; min-height: 0; overflow: hidden; border-radius: 10px`.
+
+Top bar compactada a `sctr-top` (card) con:
+- `sctr-top-row1`: título + tabs + spacer + botón "Subir SCTR/Vida Ley" (~30px)
+- `sctr-top-filters`: filtros horizontales (`*ngIf="activeTab === 'polizas'"`) (~38px)
+
+Root: `height: calc(100vh - 60px); display: flex; flex-direction: column; gap: 0.35rem`.
+
+### Doc cards — diseño compacto 2 filas + fila fechas
+
+Cada card de póliza en `.col-polizas` usa `padding: 6px 10px` y 3 filas:
+- `.doc-row1`: `[TIPO]` + empresa nombre + badge estado (`[ngClass]="getEstadoClass(doc.estado)"` sobre `class="btn-chip"` — augmenta, no reemplaza)
+- `.doc-row2`: `proyectoNombre — mes año | N trab.` (separadores `.doc-sep` color `#d1d5db`)
+- `.doc-row3` (`*ngIf="doc.fechaInicio || doc.vigencia"`): `Ini: dd/MM/yyyy — Fin: dd/MM/yyyy`
+
+Badge estado usa `getEstadoClass(doc.estado)` real, no hardcodeado a verde.
+
+`doc.fechaInicio` y `doc.vigencia` ya existían en `SctrVidaLeyDto` — no requirió cambios en el modelo.
+
+### Panel workers (col-workers) — checkbox + selección masiva
+
+- Header (`*ngIf="isAdmin()"`): checkbox "Seleccionar todos" con `[indeterminate]="docSomeChecked && !docAllChecked"` + contador workers
+- Cada `.sctr-worker-item`: checkbox individual admin-only con `$event.stopPropagation()`
+- Footer `.workers-footer` unificado: `display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border-top`
+  - `.sel-count` (0.72rem, #64748b) siempre visible
+  - Botones `btn-aprobar-sel` y `btn-rechazar-sel` envueltos en `*ngIf="docWorkersSeleccionados.size > 0"`
+  - Enlace "Ver historial de versiones" (`.historial-link`, 0.7rem, #16a34a) siempre visible
+
+### filteredDocWorkers — solo workers no aprobados
+
+```ts
+get filteredDocWorkers(): SctrWorkerDto[] {
+  if (!this.selectedDoc) return [];
+  return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+}
+```
+
+Checkboxes y botones de aprobación masiva operan sobre este subset.
+
+### SctrWorkerDto — fechaVencimiento
+
+`sctr.model.ts`: añadido `fechaVencimiento?: string` a `SctrWorkerDto`. Se muestra debajo del badge de estado en cada worker card:
+```html
+<span *ngIf="w.fechaVencimiento" class="muted-line">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+```
+
+### filtroEstado default 'Enviado'
+
+`filtroEstado = 'Enviado'` (antes `''`). La lista arranca filtrando pólizas en estado Enviado.
+
+### Aprobación directa sin Swal confirm
+
+`aprobarWorkerIndividual`, `aprobarDocWorkersSeleccionados`, `rechazarDocWorkersSeleccionados` ejecutan directo sin `Swal.fire` de confirmación.
+
+`rechazarDocWorkersSeleccionados` es método nuevo: llama `sctrService.aprobar(selectedDoc.id, { workerIdsAprobados: [], workerIdsRechazados: [...docWorkersSeleccionados], tipo, obsAbril })`.
+
+### verHistorialVersiones — stub vacío
+
+```ts
+verHistorialVersiones(): void {}
+```
+
+Añadido antes de `verVersionesPoliza()`. El enlace en el footer llama este stub; implementación pendiente.
+
+### Tipografía worker cards
+
+```css
+.sctr-worker-item .worker-info strong { font-size: 0.78rem; font-weight: 500; }
+.sctr-worker-item .worker-info .muted-line { font-size: 0.7rem; color: #64748b; }
+```
+
+---
+
+## §Sesión 2026-05-25 (noche) — sctr-vidaley Tab Trabajadores rediseño + bandeja cards
+
+### sctr-vidaley — Tab Trabajadores rediseño 3 columnas
+
+El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col` — mismo contenedor y clases CSS del Tab Pólizas.
+
+**Filtros movidos al top bar**: nueva `sctr-top-filters *ngIf="activeTab === 'trabajadores'"` con empresa SearchSelect (admin), proyecto SearchSelect, tipo select, estado select, inputs nombre y empresa texto, btn Buscar — idéntico al patrón de Tab Pólizas.
+
+**Col 1 (`.col-polizas`, 280px)**: cards de trabajadores con layout en 4 filas:
+- Fila 1: `[tipo chip SCTR/VIDA LEY]` `[estado badge]` `Vence: fecha` (alineado derecha, solo si existe)
+- Fila 2: `apellidoNombre` (0.82rem, font-weight 600)
+- Fila 3: `DNI xxx`
+- Fila 4: `empresa · proyecto` (0.72rem, gris)
+- Fila 5 (`*ngIf="!w.sctrId"`): botón "Rechazar" outline rojo (`border: 1.5px solid #dc2626; color: #dc2626; background: white; border-radius: 4px`)
+
+**Col 2 (`.col-workers`, 260px)**: workers de `selectedPoliza` no aprobados — idéntico al col-workers del Tab Pólizas:
+- Header: checkbox select-all + contador
+- Lista `.sctr-split-workers`: checkbox individual, nombre/DNI/vence, badge estado, botones ✓/✗ inline
+- Panel rechazar inline: `rechazandoWorkerId` + `rechazandoMotivoInline` (mismo estado compartido)
+- Footer `.workers-footer`: Aprobar/Rechazar seleccionados (`*ngIf="polizaWorkersSeleccionados.size > 0"`) + historial link
+
+**Col 3 (`.col-pdf`, flex:1)**: PDF viewer con header (tipo, mes, año, worker nombre + empresa, badge estado), vigencia, iframe `polizaSafeUrl`.
+
+**TS nuevos métodos y getters**:
+```ts
+getPolizaWorkerEstado(w): string    // estadoVidaLey o estadoSctr según wFiltroTipo
+get filteredPolizaWorkers()         // workers de selectedPoliza donde estado !== 'Aprobado'
+polizaAllChecked / polizaSomeChecked // ahora sobre filteredPolizaWorkers
+toggleAllPolizaWorkers()            // ahora sobre filteredPolizaWorkers
+aprobarPolizaWorkerIndividual(w)    // PATCH aprobar 1 worker en selectedPoliza
+confirmarRechazarPolizaWorker(w)    // PATCH rechazar 1 worker con motivo inline
+rechazarSeleccionados()             // simplificado — sin motivoRechazo en payload
+rechazarSinPoliza(w)                // recibe SctrTrabajadorEstadoDto directamente (no usa selectedWorker)
+clearPolizaPanel()                  // ahora también resetea rechazandoWorkerId + rechazandoMotivoInline
+```
+
+### bandeja — cards rediseño
+
+**HTML** (`bandeja.html`): `bc-fecha` reemplaza `fechaEnvio` por `vigencia`:
+```html
+<span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+```
+
+**CSS** (`bandeja.css`):
+- `.bandeja-card`: `padding: 10px 12px`
+- `.bandeja-card:hover`: `border-color: #16a34a; box-shadow: 0 2px 8px rgba(0,0,0,0.07)`
+- `.bc-fecha`: `0.7rem / #64748b / white-space: nowrap`
+- `.bc-entidad`: `0.78rem` (era 0.82rem)
+- `.bc-meta`: `0.7rem / #64748b` (era 0.75rem / #6b7280)
+
+---
+
+## §Sesión 2026-05-26 — Validaciones guardarEntregable + EMOs tabla compacta + SearchSelect compact
+
+### Validaciones en `guardarEntregable()` — 3 componentes Habilitación
+
+Dentro de la rama `if (this.isContratista())` de `guardarEntregable()` se agregaron dos guards antes de construir el payload:
+
+1. **Archivo obligatorio**: si `!panelArchivoUrl` → `Swal.fire({ icon: 'error', title: 'Debes subir un archivo antes de guardar' })` + `return`.
+2. **Vigencia obligatoria**: si `selectedEntregable.requiereVigencia && !panelVigencia` → `Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' })` + `return`.
+
+Admins no afectados — las validaciones están dentro del bloque contratista. No se hardcodean ítems específicos; `requiereVigencia` viene del DTO.
+
+**Archivos modificados:**
+- `features/habilitacion/pages/trabajadores/trabajadores.ts` — `guardarEntregable()` línea 612
+- `features/habilitacion/pages/empresa/empresa.ts` — `guardarEntregable()` línea 481
+- `features/habilitacion/pages/equipos/equipos.ts` — `guardarEntregable()` línea 470
+
+---
+
+### EMOs — nuevas columnas en tabla `emos.html`
+
+**`dtos/emo.model.ts` — `EmoPorTrabajadorDto`**: añadidos dos campos opcionales:
+```ts
+empresaOrigenNombre?: string;   // empresa con que se registró el EMO
+proyectoNombre?: string;        // proyecto actual del worker
+```
+(Ya existían `obraOficina`, `empresa`, `proyecto` — no duplicados.)
+
+**`emos.html` — columnas actualizadas:**
+
+| Antes | Después | Campo |
+|-------|---------|-------|
+| Empresa | Emp. Actual | `item.empresa` |
+| — (nueva) | Emp. Origen | `item.empresaOrigenNombre \|\| '—'` |
+| — (nueva) | Proyecto | `item.proyectoNombre \|\| '—'` |
+| — (nueva) | Tipo | `item.obraOficina \|\| '—'` |
+
+`colspan` de fila vacía: 9 → 12.
+
+`<colgroup>` con anchos fijos:
+```
+auto | 80px | 140px | 140px | 120px | 80px | 90px | 90px | 90px | 90px | 60px | 36px
+Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Días | Acc
+```
+
+> **Nota backend pendiente**: los campos `empresaOrigenNombre` y `proyectoNombre` deben ser mapeados en el endpoint `GET /emos/por-trabajador`. El frontend los muestra como `'—'` si vienen `null`/`undefined`.
+
+---
+
+### EMOs — UI compacta (`emos.html` + `emos.css`)
+
+**Header**: eliminado el bloque `<div>` con `<h2>` grande + `<p>` subtítulo. Reemplazado por una sola línea `<h2 class="text-base font-semibold">` alineada con el botón "Nuevo EMO".
+
+**Sección padding**: `<section class="p-6 space-y-4">` → `class="px-3 py-4 space-y-3"` (12px lateral).
+
+**Tabla compacta:**
+- `font-size`: `0.88rem` → `0.8rem`
+- `table-layout: fixed` activado
+- Padding `thead th` y `tbody td`: `0.75rem 1rem` → `6px 8px`
+- `th`: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
+- `td`: `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`
+- `.col-worker` (primera columna): override con `white-space: normal; overflow: visible` — el nombre del trabajador puede wrappear
+- `.worker-name`: `0.82rem` → `0.78rem`, `line-height: 1.2`
+- `.worker-dni`: `0.72rem` → `0.7rem`
+
+**Filtros compactos:**
+- `.filters-card`: `padding: 10px 12px`, `border-radius: 8px`, sin `box-shadow`, `border: #e2e8f0`
+- `.filters-grid`: `gap: 0.75rem` → `8px`
+- `.filter-label`: `0.72rem` → `0.7rem`, `color: #6b7280` → `#94a3b8`, `margin-bottom: 0.35rem` → `3px`
+- `.search-input`: `height: 32px`, `bg: #f8fafc`, `border: #e2e8f0`, `border-radius: 12px` → `6px`, `padding: 0 0.6rem`
+- `.search-input input`: `font-size: 0.9rem` → `0.78rem`
+
+---
+
+### `SearchSelect` — modo compacto (`@Input() compact`)
+
+Componente compartido en `shared/components/search-select/`. Para no romper otros usos, se añadió un input opcional:
+
+**`search-select.ts`**: `@Input() compact: boolean = false`
+
+**`search-select.html`** — el botón trigger aplica clases condicionales vía `[ngClass]`:
+```ts
+compact
+  ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
+  : 'rounded-xl bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30'
+
+// Border:
+isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+       : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
+```
+
+**`emos.html`**: los tres `app-search-select` de los filtros usan `[compact]="true"`. Todos los demás usos en la app quedan sin cambios.
+
+---
+
+### Pendiente backend (identificado en esta sesión)
+
+- **`GET /ssoma/salud-ocupacional/catalogos/empresas`** — agregar `WHERE es_abril = true` en el query de `contributor`. Actualmente devuelve todas las empresas (campo `es_abril = false` en todos los registros históricos — verificar que los registros Abril tengan el campo correcto antes de activar el filtro).
+- **Búsqueda `GET /emos/por-trabajador?search=`** — verificar que el WHERE del backend incluya `ApellidoNombre.Contains(search, OrdinalIgnoreCase)` además de DNI. El filtrado es 100% backend (no hay filtrado local en el frontend).
+- **Mapear `empresaOrigenNombre` y `proyectoNombre`** en el response del endpoint `GET /emos/por-trabajador`.
+
+---
+
+## §Sesión 2026-05-26 (segunda parte) — Clínica: CompletarEmo con interconsulta inline y restricciones
+
+### `emo.model.ts` — nuevos campos y nueva interfaz
+
+**`EmoCreateDto`**: añadidos dos campos opcionales al final:
+```ts
+fechaLectura?: string;
+interconsultaInline?: InterconsultaInlineCreateDto;
+```
+
+**`EmoRestriccionCreateDto`**: añadido campo opcional:
+```ts
+vigente?: boolean;
+```
+
+**Nueva interfaz** `InterconsultaInlineCreateDto`:
+```ts
+export interface InterconsultaInlineCreateDto {
+  especialidad: string;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
+}
+```
+Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoint separado.
+
+---
+
+### `completar-emo` — reescritura completa (clínica)
+
+**Archivo:** `features/clinica/pages/agenda/components/completar-emo/`
+
+#### Lógica de negocio (completar-emo.ts)
+
+| Getter | Condición | Efecto en UI |
+|--------|-----------|--------------|
+| `requiereRestriccion` | `aptitud === 'Apto con Restricciones'` | Muestra sección restricciones |
+| `requiereInterconsulta` | `aptitud === 'No Apto' \|\| aptitud === 'Observado'` | Muestra sección interconsulta |
+| `canSubmit` | aptitud + programacion + !saving + (si interconsulta → icEspecialidad no vacío) | Habilita botón |
+
+**Restricciones** (`restricciones: { descripcionLibre }[]`):
+- `agregarRestriccion()` — push + limpiar input (o Enter en el campo)
+- `quitarRestriccion(i)` — splice por índice
+- Mapeado a `EmoRestriccionCreateDto[]` con `vigente: true` en `submit()`
+
+**Interconsulta inline** — campos locales `icEspecialidad`, `icCentro`, `icDiagnostico`, `icCie10`, `icRequiereSeguimiento`. Construye `InterconsultaInlineCreateDto` en `submit()` solo cuando `requiereInterconsulta`.
+
+**`fechaLectura`** — fecha opcional independiente de `fechaEmo` (que sigue siendo la fecha del día del registro).
+
+**Flujo `submit()`** (sin cambios en la cadena de llamadas):
+1. `EmoService.createEmo(emoDto)` → recibe `{ id }` del EMO creado.
+2. `ClinicaProgramacionService.accionClinica(programacionId, { accion: 'Completar', emoResultadoId })`.
+
+#### Template (completar-emo.html)
+
+- `width="w-[640px]"` (antes 600px — más espacio para sección interconsulta).
+- Grid 2 columnas `.grid-2`:
+  - Row: N° Informe / URL resultado
+  - Row: Fecha lectura EMO / Notas (antes solo Notas en `col-span-2`)
+  - `*ngIf="requiereRestriccion"` — sección restricciones con input+botón+lista pills
+  - `*ngIf="requiereInterconsulta"` — sección interconsulta con `section-divider`, campos Especialidad, Centro, CIE-10, Diagnóstico, checkbox Seguimiento
+  - Alertas contextuales: roja para "No Apto", naranja para "Observado"
+
+#### Estilos nuevos (completar-emo.css)
+
+```css
+.restriccion-row   { display: flex; gap: 8px; align-items: center }
+.restriccion-list  { margin-top: 8px; flex-col; gap: 4px }
+.restriccion-item  { flex row space-between; bg #f8fafc; border #e2e8f0; radius 6px; padding 4px 10px; font-size 0.82rem }
+.btn-remove        { color: #dc2626; font-size: 0.75rem }
+.section-divider   { 0.75rem uppercase #64748b; border-bottom #e2e8f0; padding-bottom 4px; margin-top 4px }
+```
+
+### Resumen de archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `ssoma/salud-ocupacional/dtos/emo.model.ts` | `EmoCreateDto` +2 campos; `EmoRestriccionCreateDto` +`vigente?`; nueva `InterconsultaInlineCreateDto` |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.ts` | Reescritura completa (restricciones + interconsulta inline + fechaLectura) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.html` | Reescritura completa (formulario expandido, 2 secciones condicionales, alertas) |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.css` | Append: 5 clases nuevas para restricciones y section-divider |
+
+### Pendiente backend
+
+- `POST /emos` — aceptar campo `interconsultaInline` en el body y crear la interconsulta en la misma transacción.
+- `POST /emos` — aceptar `fechaLectura` y persistirlo en `worker_emos.fecha_lectura`.
+- `EmoRestriccionCreateDto.vigente` — confirmar que el backend mapea este campo o lo ignora sin error.
+
+---
+
+## Sesión 2026-05-25 — Rediseño completo Dashboard de Proyectos (estilo Power BI)
+
+Rediseño total de `features/projects/projects-dashboard/`. Los 3 endpoints del backend ya estaban listos.
+
+### Endpoints consumidos
+```
+GET  /api/v1/projects-dashboard/filters
+GET  /api/v1/projects-dashboard?proyectoId=&estado=&responsableId=&fechaDesde=&fechaHasta=
+GET  /api/v1/projects-dashboard/{proyectoId}
+```
+
+### Archivos nuevos creados
+- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
+- `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
+- `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
+
+### Registro en routing y navegación
+- `proyectos-routing-module.ts` — ruta `projects-dashboard` con `canActivate: [roleGuard]`, `featureKey: 'projects.projects-dashboard'`.
+- `navigation.service.ts` — item `{ label: 'Dashboard de Proyectos', route: '/projects/projects-dashboard', featureKey: 'projects.projects-dashboard' }`.
+
+---
+
+## Sesión 2026-05-26 — Cronograma de Actividades + Ajustes Dashboard
+
+### 1. Nueva feature: Cronograma de Actividades
+
+Módulo completo para gestionar actividades de la tabla `project_activity`.
+
+**Archivos creados:**
+- `core/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
+
+**Endpoints:**
+```
+GET    /api/v1/cronograma-actividades/proyectos
+GET    /api/v1/cronograma-actividades/{proyectoId}/actividades
+POST   /api/v1/cronograma-actividades/{proyectoId}/actividades
+PUT    /api/v1/cronograma-actividades/actividades/{id}
+PATCH  /api/v1/cronograma-actividades/actividades/{id}/culminar
+DELETE /api/v1/cronograma-actividades/actividades/{id}
+```
+
+**DTOs:** `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`, `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order }`.
+
+**Funcionalidad:** dropdown de proyectos, tabla con barra de avance coloreada (verde/azul/amarillo/rojo por umbral), badges de estado (CULMINADO/VENCIDO/EN PROCESO/PENDIENTE), modal crear/editar con slider, botón culminar/desculminar, eliminar con Swal.
+
+**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
+
+### 2. SearchSelect — ajuste de texto
+
+`shared/components/search-select/search-select.css` (antes vacío). Clases `.ss-trigger-label` y `.ss-option`: 13px, ellipsis, `max-width: 200px`. Aplica a todas las instancias.
+
+### 3. Dashboard de Proyectos — alineación campos con backend
+
+`ProjectsDashboardItemDTO` renombrado:
+
+| Campo anterior | Campo nuevo |
+|---|---|
+| `proyectoNombre` | `projectDescription` |
+| `responsableArqCom` | `responsableNombre` |
+
+Archivos actualizados: modelo, html (tabla + panel header), ts (`initBarrasChart`). El campo `proyectoId` no cambió.
+
+### 4. Dashboard de Proyectos — Gantt mejorado
+
+- `date_format`: `'%Y-%m-%d'` → `'%d-%m-%Y %H:%i'`
+- Destroy/reinit completo en cada apertura: `gantt.destructor()` + `ganttInitialized = false`
+- Escala: `month` → `day` (`%d %M`)
+- Añadidos: `row_height:34`, `bar_height:20`, `show_grid:true`, `grid_width:200`, `min_column_width:60`
+- Columnas: Actividad (180px, tree) + Días (40px)
+- `task_class` template: `gantt-culminado/gantt-vencido/gantt-en-proceso/gantt-pendiente` por estado
+- Estilos `.gantt_task_line.gantt-*` en `styles.css` global (dhtmlx inyecta fuera del shadow del componente)
+
+---
+
+## §Sesión 2026-05-27 — Rediseño Enterprise Módulo Clínica (Dashboard + Agenda)
+
+### Layout full-screen para Clínica
+
+`shared/components/layout/layout.ts` — `isFullPage()` incluye `/clinica/dashboard` y `/clinica/agenda`. Estas rutas renderizan sin `<app-header>` y sin padding del wrapper.
+
+`shared/components/layout/layout.html` — inline style bindings para forzar cero padding/fondo independientemente de Tailwind v4 specificity:
+```html
+[style.padding]="isFullPage() ? '0' : null"
+[style.background]="isFullPage() ? 'transparent' : null"
+```
+El sidebar permanece visible — `isFullPage()` solo elimina header y padding del área de contenido.
+
+### Dashboard Clínica — rediseño enterprise
+
+**Archivos:** `features/clinica/pages/dashboard/dashboard.ts/.html/.css`
+
+#### Layout CSS (`dashboard.css`)
+```css
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.dash-root { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #f0f4f8; }
+.dash-header { flex-shrink: 0; background: #0f172a; padding: 12px 24px; }
+.dash-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px 20px; gap: 10px; min-height: 0; }
+.kpi-section, .ops-section { flex-shrink: 0; }
+.bottom-section { flex: 1; display: grid; grid-template-columns: 1fr 220px; gap: 10px; overflow: hidden; min-height: 0; }
+.proximos-card { overflow-y: auto; height: 100%; min-height: 0; display: flex; flex-direction: column; }
+```
+
+#### Funcionalidades añadidas (`dashboard.ts`)
+- `Router` inyectado vía `inject(Router)`.
+- `navegarConFiltro(ruta, filtro?)` — navega con `queryParams` opcional.
+- `get pctCompletadas()` / `get pctEnProceso()` — porcentaje para progress bars.
+
+#### KPI cards clickables
+`(click)="navegarConFiltro('/clinica/agenda')"` / `"navegarConFiltro('/clinica/emos', 'sin-emo')"` etc. Clase `.kpi-card { cursor: pointer }`.
+
+#### Progress bars operativas
+```html
+<div class="ops-progress-bar">
+  <div class="ops-progress-fill fill-blue" [style.width.%]="pctCompletadas"></div>
+</div>
+```
+CSS: `.ops-progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; }` `.ops-progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }`.
+
+#### Tabla próximos EMO — columnas Vence y Días
+`<th>Vence</th><th>Días</th>` — valores `item.fechaVencimiento | date:'dd MMM yyyy'` y badge coloreado por `item.diasParaVencer`.
+
+Badges: `badge-red` (≤0), `badge-orange` (≤7), `badge-yellow` (≤30), `badge-green` (resto).
+
+#### Pulse badge "Clínica activa"
+```html
+<div class="clinica-activa-badge"><span class="pulse-dot"></span> Clínica activa</div>
+```
+```css
+.pulse-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse-green 2s infinite; }
+@keyframes pulse-green { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
+```
+
+#### Mini-stat overflow fix
+`.mini-stat-body { min-width: 0; overflow: hidden; flex: 1; }` `.mini-stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }`.
+
+### Agenda Clínica — rediseño enterprise + tema claro
+
+**Archivos:** `features/clinica/pages/agenda/agenda.ts/.html/.css`
+
+#### Layout CSS (`agenda.css`)
+```css
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.agenda-root { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #f0f4f8; }
+.agenda-header { flex-shrink: 0; background: #0f172a; padding: 14px 20px 10px; }
+.stats-bar { flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+.controls-row { flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+.cards-zone { flex: 1; overflow-y: auto; min-height: 0; padding: 14px 20px 16px; background: #f0f4f8; }
+.agenda-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid transparent; }
+.card-muted { opacity: 0.6; background: #f8fafc; }
+```
+
+#### Stats bar clickable sincronizada con chips
+Los stat-items de la stats bar tienen `(click)="filtroEstado = 'Programado'"` (etc.) y `[class.stat-active]="filtroEstado === 'Programado'"`. Compartiendo el mismo binding `filtroEstado`, click en stat = activa chip correspondiente automáticamente.
+
+#### Semáforo de fechas (`fechaClass()` en `agenda.ts`)
+```ts
+fechaClass(fecha: string): string {
+  const hoy = new Date().toISOString().split('T')[0];
+  if (fecha === hoy) return 'fecha-hoy';
+  if (fecha < hoy) return 'fecha-pasada';
+  return 'fecha-futura';
+}
+```
+Colores: `fecha-hoy: #16a34a`, `fecha-pasada: #dc2626`, `fecha-futura: #2563eb`.
+
+#### Terminal cards con opacidad
+`[ngClass]="[..., esTerminal(item.estado) ? 'card-muted' : '']"` — estados Completado/Rechazado/Cancelado/No se presentó muestran la card con `opacity: 0.6`.
+
+#### Modal confirmación aceptación (light theme)
+```css
+.dark-modal { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.dm-input { background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; color-scheme: light; }
+```
+
+### Pitfall: Tailwind v4 vs inline styles
+
+Las clases `sm:py-[20px]` y `sm:pr-[20px]` de `layout.html` tienen especificidad suficiente para sobreponer `!important` en CSS. La solución definitiva es usar bindings inline `[style.padding]` y `[style.background]` en el template — los estilos inline siempre ganan la cascada.
+
+### Pitfall: `:host { position: fixed; inset: 0 }` cubre el sidebar
+
+Cuando una página usa `position: fixed; inset: 0` en `:host`, cubre el sidebar (que tiene `z-index` menor). La solución correcta para "full-screen sin sidebar" es `flex: 1; min-height: 0; overflow: hidden` — el componente ocupa el área de contenido disponible después del sidebar sin superponerlo.

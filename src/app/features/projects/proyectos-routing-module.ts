@@ -7,12 +7,44 @@ import { ConstructionLogbookControl } from '../projects/construction-logbook-con
 import { ReportResponseControl } from './report-response-control/report-response-control';
 import { roleGuard } from '../../core/guards/role.guard';
 import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
+import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
+import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
 
 const routes: Routes = [
   {
     path: '',
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      {
+        path: 'projects-dashboard',
+        children: [
+          {
+            path: '',
+            component: ProjectsDashboard,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'DASHBOARD DE PROYECTOS',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.projects-dashboard',
+            },
+          },
+        ],
+      },
+      {
+        path: 'cronograma-actividades',
+        children: [
+          {
+            path: '',
+            component: CronogramaActividades,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'CRONOGRAMA DE ACTIVIDADES',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.cronograma-actividades',
+            },
+          },
+        ],
+      },
       {
         path: 'dashboard',
         children: [

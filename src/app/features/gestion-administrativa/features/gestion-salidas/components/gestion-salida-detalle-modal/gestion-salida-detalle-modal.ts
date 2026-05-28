@@ -19,10 +19,7 @@ export class GestionSalidaDetalleModal {
   @Output() close = new EventEmitter<void>();
 
   get totalGeneral(): number {
-    return this.detalle.trayectos.reduce(
-      (acc, t) => acc + t.capturas.reduce((a, c) => a + (c.monto || 0), 0),
-      0,
-    );
+    return this.detalle.trayectos.reduce((acc, t) => acc + (t.montoTotal || 0), 0);
   }
 
   totalCapturas(t: GestionSalidaTrayectoDto): number {

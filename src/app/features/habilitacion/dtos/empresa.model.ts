@@ -75,7 +75,7 @@ export interface EmpresaEntregableDto {
 }
 
 export interface EmpresaEntregableUpdateDto {
-  estado: string;
+  estado?: string;
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;

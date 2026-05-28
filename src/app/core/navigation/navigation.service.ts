@@ -19,8 +19,9 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Lugares',  route: '/gestion-administrativa/configuracion/lugares',  featureKey: 'gestion-administrativa.config.lugares' },
-            { label: 'Motivos',  route: '/gestion-administrativa/configuracion/motivos',  featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
           ],
         },
       ],
@@ -50,6 +51,8 @@ export class NavigationService {
       iconKey: 'projects',
       baseRoute: '/projects',
       items: [
+        { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
+        { label: 'Cronograma de Actividades',     route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
         { label: 'Dashboard Lecciones',           route: '/projects/dashboard',                    featureKey: 'projects.dashboard' },
         { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
         { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
@@ -185,15 +188,8 @@ export class NavigationService {
       label: 'Clínica',
       iconKey: 'clinica',
       baseRoute: '/clinica',
-      items: [],
-      groups: [
-        {
-          label: 'Gestión',
-          items: [
-            { label: 'Agenda del Día', route: '/clinica/agenda',           featureKey: 'clinica.agenda' },
-            { label: 'Programaciones', route: '/clinica/programaciones', featureKey: 'clinica.programaciones' },
-          ],
-        },
+      items: [
+        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
       ],
     },
     {

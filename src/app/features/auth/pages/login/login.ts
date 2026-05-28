@@ -17,6 +17,16 @@ type LoginTab = 'abril' | 'contratistas' | 'clinica';
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
+  readonly tutorialVideos = [
+    { titulo: 'Activación de cuentas para contratistas', url: 'https://www.loom.com/share/aac2201e68a54a7bb5fb15deeb91f174' },
+    { titulo: 'Gestión de trabajadores, bajas y reingresos', url: 'https://www.loom.com/share/a9993b1550f7411f8895988900decccf' },
+    { titulo: 'Gestión de empresas', url: 'https://www.loom.com/share/d9a285cd5c0f4466988ebecc089f6b4c' },
+    { titulo: 'Activar nuevos proyectos', url: 'https://www.loom.com/share/e3f1e631086d41bca2ce8290b122e04d' },
+    { titulo: 'Ingreso de nuevos equipos y máquinas', url: 'https://www.loom.com/share/7a48bd8a143a4f90816aa98efbf1f05a' },
+    { titulo: 'Subir póliza SCTR y Vida Ley', url: 'https://www.loom.com/share/3513c6a50d2c4c86b92de2c26d780348' },
+    { titulo: 'Programar inducción y validar asistencia', url: 'https://www.loom.com/share/68e3ae6cccb147c988d2056accad707c' },
+  ];
+
   token!: string;
   form!: FormGroup;
   contratistaForm!: FormGroup;

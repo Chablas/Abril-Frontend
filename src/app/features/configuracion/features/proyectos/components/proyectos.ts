@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
@@ -7,13 +8,14 @@ import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.mod
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import { ProyectoService } from '../services/proyecto.service';
 import { ProjectDto } from '../dtos/project.dto';
+import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
 import { ProyectoEmails } from './emails/proyecto-emails';
 
 @Component({
   selector: 'app-proyectos-config',
-  imports: [CommonModule, ProyectoCreate, ProyectoEdit, ProyectoEmails],
+  imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails],
   templateUrl: './proyectos.html',
   styleUrl: './proyectos.css',
 })
@@ -30,6 +32,13 @@ export class Proyectos implements OnInit {
   totalPages = 0;
   pageSize = 10;
   totalRecords = 0;
+
+  filters: ProjectFilterDto = {
+    page: 1,
+    ruc: '',
+    razonSocial: '',
+    projectDescription: '',
+  };
 
   loader = false;
   showCreateModal = false;
@@ -82,11 +91,15 @@ export class Proyectos implements OnInit {
     this.load(this.currentPage);
   }
 
+  search(): void {
+    this.load(1);
+  }
+
   load(page: number = 1): void {
     this.loader = true;
     this.cdr.detectChanges();
 
-    this.proyectoService.getPaged({ page }).subscribe({
+    this.proyectoService.getPaged({ ...this.filters, page }).subscribe({
       next: (response) => {
         this.projects = response;
         this.currentPage = response.page;

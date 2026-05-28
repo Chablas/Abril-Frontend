@@ -27,10 +27,7 @@ export class SolicitudSalidaDetalleModal implements OnInit {
 
   get totalGeneral(): number {
     if (!this.detalle) return 0;
-    return this.detalle.trayectos.reduce(
-      (acc, t) => acc + t.capturas.reduce((a, c) => a + (c.monto || 0), 0),
-      0,
-    );
+    return this.detalle.trayectos.reduce((acc, t) => acc + (t.montoTotal || 0), 0);
   }
 
   totalCapturas(t: TrayectoDetalleDto): number {

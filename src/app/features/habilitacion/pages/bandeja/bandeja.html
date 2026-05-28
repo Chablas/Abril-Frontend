@@ -9,16 +9,42 @@
     <button type="button" class="tipo-tab" [class.tab-active-gray]="filtroTipo === 'EQUIPO'" (click)="setTipo('EQUIPO')">Equipos</button>
   </div>
 
+  <!-- ── Filtros ────────────────────────────────────────────── -->
+  <div class="filters-card" *ngIf="filtroTipo !== 'INDUCCION'">
+    <input class="filter-input" type="text" placeholder="Nombre…" [(ngModel)]="filtroTexto" />
+    <input class="filter-input" type="text" placeholder="Empresa…" [(ngModel)]="filtroEmpresa" />
+    <select class="filter-input" [(ngModel)]="filtroProyecto">
+      <option value="">Todos los proyectos</option>
+      <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
+    </select>
+    <select class="filter-input" [(ngModel)]="filtroEntregable">
+      <option value="">Todos los entregables</option>
+      <option *ngFor="let e of entregablesDisponibles" [value]="e">{{ e }}</option>
+    </select>
+    <select class="filter-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
+      <option value="">Todos los responsables</option>
+      <option value="SSOMA">SSOMA</option>
+      <option value="ADMINISTRACION">Administración</option>
+    </select>
+  </div>
+
   <!-- ── Columnas estándar (Todos / Trabajadores / Empresas / Equipos) ── -->
   <div class="bandeja-columns" *ngIf="filtroTipo !== 'INDUCCION'">
 
     <div class="col-items card">
-      <div class="filters-card">
-        <select class="field-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
-          <option value="">Todos los responsables</option>
-          <option value="SSOMA">SSOMA</option>
-          <option value="ADMINISTRACION">Administración</option>
-        </select>
+      <div class="list-header">
+        <label class="sel-all-row">
+          <input
+            type="checkbox"
+            [checked]="allItemsSelected"
+            [indeterminate]="someItemsSelected && !allItemsSelected"
+            (change)="toggleAllItems()"
+          />
+          <span>Seleccionar todos</span>
+        </label>
+        <button *ngIf="selectedIds.size > 0" class="btn-aprobar-masivo" (click)="aprobarMasivo()">
+          ✓ Aprobar ({{ selectedIds.size }})
+        </button>
       </div>
 
       <div class="items-list">
@@ -27,21 +53,33 @@
           No hay documentos pendientes de aprobación.
         </div>
         <div
-          *ngFor="let item of items"
+          *ngFor="let item of filteredItems"
           class="bandeja-card"
           [class.selected]="selectedItem?.id === item.id"
           (click)="selectItem(item)"
         >
-          <div class="bc-header">
-            <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
-            <span class="bc-fecha">{{ item.fechaEnvio ? (item.fechaEnvio | date: 'dd/MM/yy') : '—' }}</span>
-          </div>
-          <div class="bc-entregable">{{ item.nombreEntregable }}</div>
-          <div class="bc-entidad">{{ item.entidadNombre }}</div>
-          <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
-            <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
-            <span *ngIf="item.empresaNombre && item.proyectoNombre"> · </span>
-            <span *ngIf="item.proyectoNombre">{{ item.proyectoNombre }}</span>
+          <input
+            type="checkbox"
+            class="card-checkbox"
+            [checked]="selectedIds.has(item.id)"
+            (change)="toggleSelect(item.id)"
+            (click)="$event.stopPropagation()"
+          />
+          <div class="bc-content">
+            <div class="bc-header">
+              <div class="bc-chips">
+                <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+                <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
+              </div>
+              <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+            <div class="bc-entidad">{{ item.entidadNombre }}</div>
+            <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
+              <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
+              <span *ngIf="item.empresaNombre && item.proyectoNombre"> · </span>
+              <span *ngIf="item.proyectoNombre">{{ item.proyectoNombre }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -128,7 +166,7 @@
       <div class="ind-select-all" *ngIf="nAsistieron(grupo) > 0">
         <label class="ind-check-row">
           <input type="checkbox"
-                 [checked]="allSelected(grupo)"
+                 [checked]="allInduccionSelected(grupo)"
                  (change)="toggleSelectAll(grupo, $any($event.target).checked)" />
           <span>Seleccionar todos los asistentes</span>
         </label>

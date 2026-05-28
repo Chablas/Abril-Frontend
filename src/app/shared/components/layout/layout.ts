@@ -18,7 +18,11 @@ export class Layout {
   isFullPage(): boolean {
     return (
       this.router.url.includes('/habilitacion/trabajadores') ||
-      this.router.url.includes('/arquitectura-comercial/dashboard')
+      this.router.url.includes('/arquitectura-comercial/dashboard') ||
+      this.router.url.includes('/clinica/dashboard') ||
+      this.router.url.includes('/clinica/agenda') ||
+      this.router.url.includes('/clinica/interconsultas') ||
+      this.router.url.includes('/clinica/programaciones')
     );
   }
 }

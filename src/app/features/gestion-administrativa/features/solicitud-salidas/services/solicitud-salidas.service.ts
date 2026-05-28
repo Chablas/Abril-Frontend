@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { SolicitudSalidaFormDataDto } from '../dtos/solicitud-salida-form-data.dto';
 import { SolicitudSalidaCreateDto } from '../dtos/solicitud-salida-create.dto';
 import { SolicitudSalidaListItemDto } from '../dtos/solicitud-salida-list-item.dto';
+import { SolicitudSalidaFilterDataDto } from '../dtos/solicitud-salida-filter-data.dto';
 import {
   SolicitudSalidaCapturaDto,
   SolicitudSalidaDetalleDto,
@@ -21,8 +22,22 @@ export class SolicitudSalidasService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getMySolicitudes(): Observable<SolicitudSalidaListItemDto[]> {
-    return this.http.get<SolicitudSalidaListItemDto[]>(this.apiUrl, { headers: this.headers });
+  getMySolicitudes(
+    lugarProyectoId: number | null = null,
+    estadoAprobacion: string | null = null,
+    estadoRendicion: string | null = null,
+  ): Observable<SolicitudSalidaListItemDto[]> {
+    let params = new HttpParams();
+    if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
+    if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
+    if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
+    return this.http.get<SolicitudSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
+  }
+
+  getFilterData(): Observable<SolicitudSalidaFilterDataDto> {
+    return this.http.get<SolicitudSalidaFilterDataDto>(`${this.apiUrl}/filter-data`, {
+      headers: this.headers,
+    });
   }
 
   getFormData(): Observable<SolicitudSalidaFormDataDto> {

@@ -61,6 +61,25 @@ export class CostosPresupuestosEmailList implements OnInit {
     this.showEditModal = true;
   }
 
+  toggleActive(item: CostosPresupuestosEmailDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.loaderService.show();
+    this.service.edit({
+      costosPresupuestosEmailId: item.costosPresupuestosEmailId,
+      email: item.email,
+      active: !item.active,
+    }).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        this.load(1);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   delete(id: number, event: MouseEvent): void {
     event.stopPropagation();
     Swal.fire({

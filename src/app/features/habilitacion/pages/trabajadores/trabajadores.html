@@ -17,7 +17,7 @@
         </svg>
         Actualizar
       </button>
-      <button class="btn-ghost-sm btn-induccion" (click)="mostrarProgramarInduccion = true">
+      <button class="btn-ghost-sm btn-induccion" (click)="abrirProgramarInduccion()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -148,6 +148,16 @@
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                   <line x1="12" y1="11" x2="12" y2="17"/>
                   <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+              </button>
+              <button
+                *ngIf="isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))"
+                class="icon-btn icon-btn--emo"
+                title="Programar EMO"
+                (click)="$event.stopPropagation(); abrirProgramarEmo(w)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                 </svg>
               </button>
             </div>
@@ -443,34 +453,86 @@
         </div>
       </ng-container>
 
-      <!-- CONTRATISTA: estado editable + vigencia condicional, sin upload -->
+      <!-- CONTRATISTA: estado y vigencia read-only, upload habilitado, obs editable -->
       <ng-container *ngIf="!esSoloLecturaPanel(selectedEntregable) && isContratista()">
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
-          <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-            <option value="Falta">Falta</option>
-            <option value="No Aplica">No Aplica</option>
-            <option value="En Plazo">En Plazo</option>
-            <option value="Vencido">Vencido</option>
-          </select>
+          <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
+            {{ selectedEntregable.estado }}
+          </span>
         </div>
 
-        <div class="field-grp">
-          <label class="field-lbl">VIGENCIA</label>
-          <input
-            type="date"
-            class="field-input"
-            [(ngModel)]="panelVigencia"
-            [disabled]="panelEstado !== 'En Plazo'"
-            [class.field-input--error]="panelEstado === 'En Plazo' && !panelVigencia"
-          />
-          <span *ngIf="panelEstado === 'En Plazo' && !panelVigencia"
-                style="color:#ef4444;font-size:0.75rem;margin-top:4px;display:block;">
-            * Ingresa la fecha de vigencia para guardar
-          </span>
+        <div class="field-grp" *ngIf="requiereVigenciaAnteUpload">
+          <label class="field-lbl">VIGENCIA *</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+        </div>
+
+        <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
+          La inducción se gestiona desde el módulo de Inducciones.
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12">
+          <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
+          </div>
+          <div class="upload-zone" *ngIf="uploadingFile">
+            <span class="upload-spinner"></span>
+            <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
+          </div>
+          <div class="upload-file-card" *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
+            <div class="ufc-name">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
+            </div>
+            <div class="ufc-actions">
+              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Visualizar
+              </button>
+              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Descargar
+              </button>
+            </div>
+            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+              </svg>
+              Reemplazar archivo
+            </button>
+          </div>
+          <div class="upload-state" *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
+            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
+            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="field-grp">
@@ -508,7 +570,11 @@
           <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
-        <div class="field-grp">
+        <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
+          La inducción se gestiona desde el módulo de Inducciones.
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
           <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
@@ -648,7 +714,17 @@
   [open]="mostrarProgramarInduccion"
   [proyectos]="catalogoProyectos"
   [empresas]="catalogoEmpresas"
-  [preselectedEmpresaId]="programarInduccionEmpresaId"
+  [preselectedEmpresaId]="preselectedEmpresaId"
   (closed)="mostrarProgramarInduccion = false"
   (saved)="mostrarProgramarInduccion = false"
 />
+<app-programacion-create
+  *ngIf="mostrarProgramarEmo"
+  [open]="mostrarProgramarEmo"
+  [preselectedWorkerId]="workerParaProgramarEmo?.workerId ?? null"
+  [preselectedWorkerNombre]="workerParaProgramarEmo?.apellidoNombre ?? null"
+  [preselectedWorkerDni]="workerParaProgramarEmo?.dni ?? null"
+  [preselectedEmpresaId]="workerParaProgramarEmo?.empresaId ?? null"
+  (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
+  (saved)="onProgramarEmoSaved()"
+></app-programacion-create>

@@ -1,0 +1,417 @@
+<div class="shell" *ngIf="esContratista">
+
+  <!-- ── Navegación superior ─────────────────────────────────── -->
+  <nav class="top-nav">
+    <a class="nav-pill nav-pill--home"
+       routerLink="/habilitacion/dashboard-contratista"
+       routerLinkActive="nav-pill--active"
+       [routerLinkActiveOptions]="{ exact: true }">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Panel
+    </a>
+
+    <span class="nav-sep"></span>
+
+    <a class="nav-pill" routerLink="/habilitacion/trabajadores" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      Trabajadores
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/empresa" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Empresa
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/equipos" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 5v3h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      Equipos y Máquinas
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/sctr-vidaley" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      SCTR y Vida Ley
+    </a>
+
+    <a class="nav-pill" routerLink="/habilitacion/inducciones" routerLinkActive="nav-pill--active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      Inducciones
+    </a>
+
+    <span class="nav-sep"></span>
+
+    <button type="button" class="nav-pill" [class.nav-pill--active]="activeSection === 'usuarios'"
+      (click)="activeSection = 'usuarios'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M6 20v-1a6 6 0 0 1 12 0v1"/>
+      </svg>
+      Usuarios
+    </button>
+  </nav>
+
+  <!-- ── Dashboard 2×2 ───────────────────────────────────────── -->
+  <div class="dash-grid" *ngIf="activeSection === 'resumen'">
+
+    <!-- ══ Card 1: Proyectos ══════════════════════════════════ -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <span class="card-icon card-icon--blue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Proyectos activos</p>
+          </div>
+        </div>
+        <span class="card-kpi">{{ proyectos.length }}</span>
+      </div>
+
+      <div class="card-body">
+        <!-- Loading -->
+        <div class="skeleton-list" *ngIf="loadingProyectos">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3]"></div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-state" *ngIf="!loadingProyectos && proyectos.length === 0">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p>Sin proyectos activos asignados</p>
+        </div>
+
+        <!-- Project rows -->
+        <div class="proj-list" *ngIf="!loadingProyectos && proyectos.length > 0">
+          <div
+            *ngFor="let p of proyectos"
+            class="proj-row"
+            [class.proj-row--sel]="proyectoSeleccionado?.id === p.id"
+            (click)="seleccionarProyecto(p)"
+          >
+            <div class="proj-row-top">
+              <span class="proj-row-name">{{ p.nombre }}</span>
+              <span [class]="getBadgeClass(p.id)">{{ getBadge(p.id) }}</span>
+            </div>
+            <div class="proj-row-bar" *ngIf="progresoPorProyecto.get(p.id) as prog">
+              <div class="mini-track">
+                <div class="mini-fill"
+                  [style.width.%]="prog.total > 0 ? (prog.aprobadosEquiv / prog.total) * 100 : 0">
+                </div>
+              </div>
+              <span class="mini-pct">
+                {{ prog.total > 0 ? ((prog.aprobadosEquiv / prog.total) * 100 | number:'1.0-0') : 0 }}%
+              </span>
+            </div>
+            <div class="proj-row-meta" *ngIf="p.fechaInicio">
+              Inicio {{ p.fechaInicio | date:'dd/MM/yyyy' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Card 2: Entregables empresa ═══════════════════════ -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <span class="card-icon card-icon--violet">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Entregables empresa</p>
+          </div>
+        </div>
+        <span class="card-kpi">{{ entregables.length }}</span>
+      </div>
+
+      <!-- Project tabs -->
+      <div class="proj-tabs" *ngIf="proyectos.length > 1">
+        <button
+          *ngFor="let p of proyectos"
+          class="proj-tab"
+          [class.proj-tab--active]="proyectoSeleccionado?.id === p.id"
+          (click)="seleccionarProyecto(p)"
+        >{{ p.nombre }}</button>
+      </div>
+
+      <div class="card-body">
+        <div class="skeleton-list" *ngIf="loadingEntregables">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3,4]"></div>
+        </div>
+
+        <ng-container *ngIf="!loadingEntregables">
+          <!-- Pct prominente -->
+          <div class="pct-hero">
+            <span class="pct-hero-num">{{ progresoEntregables }}<span class="pct-hero-sym">%</span></span>
+            <span class="pct-hero-lbl">aprobados</span>
+          </div>
+
+          <!-- Barra principal -->
+          <div class="main-track">
+            <div class="main-fill main-fill--green" [style.width.%]="progresoEntregables"></div>
+          </div>
+
+          <!-- Desglose -->
+          <div class="stat-breakdown">
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--green"></span>
+                <span class="stat-name">Aprobado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--green"
+                    [style.width.%]="entregables.length ? (entAprobados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entAprobados }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--amber"></span>
+                <span class="stat-name">Enviado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--amber"
+                    [style.width.%]="entregables.length ? (entEnviados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entEnviados }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--slate"></span>
+                <span class="stat-name">Falta</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--slate"
+                    [style.width.%]="entregables.length ? (entFalta / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entFalta }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--red"></span>
+                <span class="stat-name">Rechazado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--red"
+                    [style.width.%]="entregables.length ? (entRechazados / entregables.length) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ entRechazados }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ══ Card 3: Trabajadores ═══════════════════════════════ -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <span class="card-icon card-icon--green">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Trabajadores</p>
+          </div>
+        </div>
+        <span class="card-kpi" *ngIf="!loadingTrabajadores">{{ totalTrabajadores }}</span>
+        <span class="card-kpi-skeleton" *ngIf="loadingTrabajadores"></span>
+      </div>
+
+      <div class="card-body">
+        <div class="skeleton-list" *ngIf="loadingTrabajadores">
+          <div class="skeleton-row" *ngFor="let _ of [1,2,3]"></div>
+        </div>
+
+        <ng-container *ngIf="!loadingTrabajadores">
+          <div class="pct-hero">
+            <span class="pct-hero-num">{{ progresoTrabajadores }}<span class="pct-hero-sym">%</span></span>
+            <span class="pct-hero-lbl">habilitados</span>
+          </div>
+
+          <div class="main-track">
+            <div class="main-fill main-fill--green" [style.width.%]="progresoTrabajadores"></div>
+          </div>
+
+          <div class="stat-breakdown">
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--green"></span>
+                <span class="stat-name">Habilitado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--green"
+                    [style.width.%]="totalTrabajadores ? (trabHabilitados / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabHabilitados }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--amber"></span>
+                <span class="stat-name">Pendiente</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--amber"
+                    [style.width.%]="totalTrabajadores ? (trabPendientes / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabPendientes }}</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-item-left">
+                <span class="status-dot status-dot--red"></span>
+                <span class="stat-name">No habilitado</span>
+              </div>
+              <div class="stat-item-right">
+                <div class="stat-bar-track">
+                  <div class="stat-bar-fill stat-bar-fill--red"
+                    [style.width.%]="totalTrabajadores ? (trabNoHabilitados / totalTrabajadores) * 100 : 0">
+                  </div>
+                </div>
+                <span class="stat-val">{{ trabNoHabilitados }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ══ Card 4: Equipos ════════════════════════════════════ -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-left">
+          <span class="card-icon card-icon--orange">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="15" height="13" rx="1"/>
+              <path d="M16 8h4l3 5v3h-7V8z"/>
+              <circle cx="5.5" cy="18.5" r="2.5"/>
+              <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+          </span>
+          <div>
+            <p class="card-label">Equipos y Máquinas</p>
+          </div>
+        </div>
+        <span class="card-kpi" *ngIf="!loadingEquipos">{{ totalEquipos }}</span>
+        <span class="card-kpi-skeleton" *ngIf="loadingEquipos"></span>
+      </div>
+
+      <div class="card-body">
+        <div class="skeleton-list" *ngIf="loadingEquipos">
+          <div class="skeleton-row" *ngFor="let _ of [1,2]"></div>
+        </div>
+
+        <ng-container *ngIf="!loadingEquipos">
+          <div class="empty-state" *ngIf="totalEquipos === 0">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>Sin equipos registrados</p>
+          </div>
+
+          <ng-container *ngIf="totalEquipos > 0">
+            <div class="pct-hero">
+              <span class="pct-hero-num">{{ progresoEquipos }}<span class="pct-hero-sym">%</span></span>
+              <span class="pct-hero-lbl">autorizados</span>
+            </div>
+
+            <div class="main-track">
+              <div class="main-fill main-fill--green" [style.width.%]="progresoEquipos"></div>
+            </div>
+
+            <div class="stat-breakdown">
+              <div class="stat-item">
+                <div class="stat-item-left">
+                  <span class="status-dot status-dot--green"></span>
+                  <span class="stat-name">Autorizado</span>
+                </div>
+                <div class="stat-item-right">
+                  <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--green"
+                      [style.width.%]="totalEquipos ? (equiposAutorizados / totalEquipos) * 100 : 0">
+                    </div>
+                  </div>
+                  <span class="stat-val">{{ equiposAutorizados }}</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-item-left">
+                  <span class="status-dot status-dot--red"></span>
+                  <span class="stat-name">No autorizado</span>
+                </div>
+                <div class="stat-item-right">
+                  <div class="stat-bar-track">
+                    <div class="stat-bar-fill stat-bar-fill--red"
+                      [style.width.%]="totalEquipos ? (equiposNoAutorizados / totalEquipos) * 100 : 0">
+                    </div>
+                  </div>
+                  <span class="stat-val">{{ equiposNoAutorizados }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+  </div><!-- /dash-grid -->
+
+  <!-- ── Sección Usuarios ──────────────────────────────────────── -->
+  <div class="usuarios-section" *ngIf="activeSection === 'usuarios' && empresaId">
+    <app-contratista-usuarios
+      [contractorId]="empresaId"
+      [currentUserId]="currentUserId">
+    </app-contratista-usuarios>
+  </div>
+
+</div>

@@ -55,7 +55,7 @@ export interface EmoRestriccionDto {
 export interface EmoCreateDto {
   workerId: number;
   tipoEmoId: number;
-  empresaOrigenId: number;
+  empresaOrigenId?: number;
   fechaEmo: string;
   clinicaId?: number;
   medicoId?: number;
@@ -66,6 +66,8 @@ export interface EmoCreateDto {
   notas?: string;
   examenes: EmoExamenCreateDto[];
   restricciones: EmoRestriccionCreateDto[];
+  fechaLectura?: string;
+  interconsultaInline?: InterconsultaInlineCreateDto;
 }
 
 export interface EmoExamenCreateDto {
@@ -79,6 +81,7 @@ export interface EmoExamenCreateDto {
 export interface EmoRestriccionCreateDto {
   restriccionTipoId?: number;
   descripcionLibre?: string;
+  vigente?: boolean;
 }
 
 export interface WorkerEmoHistorialDto {
@@ -116,8 +119,10 @@ export interface EmoPorTrabajadorDto {
   estadoWorker?: WorkerEstado;
   empresaId?: number;
   empresa?: string;
+  empresaOrigenNombre?: string;
   proyectoId?: number;
   proyecto?: string;
+  proyectoNombre?: string;
   tipoContrata?: string;
   tieneEmo: boolean;
   emoId?: number;
@@ -165,6 +170,15 @@ export interface WorkerUpsertDto {
   empresaId?: number | null;
   proyectoId?: number | null;
   fechaNacimiento?: string | null;
+}
+
+export interface InterconsultaInlineCreateDto {
+  especialidad: string;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
 }
 
 export interface EmoPorTrabajadorQuery {

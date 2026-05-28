@@ -1,0 +1,256 @@
+<div class="page-wrapper">
+
+  <!-- ── Header ── -->
+  <div class="header-card card">
+    <div class="header-content">
+      <div class="header-info">
+        <span class="page-title">Cronograma de Actividades</span>
+        <span class="page-sub" *ngIf="proyecto?.responsableUdp">
+          Responsable UDP: {{ proyecto!.responsableUdp }}
+        </span>
+      </div>
+      <div class="header-select-wrapper">
+        <select
+          class="project-select"
+          [(ngModel)]="selectedProyectoId"
+          (ngModelChange)="onProyectoChange($event)"
+          [disabled]="loadingProyectos"
+        >
+          <option [ngValue]="null">— Seleccionar proyecto —</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sin proyecto seleccionado ── -->
+  <div class="empty-state" *ngIf="!selectedProyectoId && !loadingProyectos">
+    <div class="empty-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <line x1="8" y1="14" x2="8.01" y2="14"/>
+        <line x1="12" y1="14" x2="16" y2="14"/>
+        <line x1="8" y1="18" x2="8.01" y2="18"/>
+        <line x1="12" y1="18" x2="16" y2="18"/>
+      </svg>
+    </div>
+    <p class="empty-title">Selecciona un proyecto para ver su cronograma</p>
+  </div>
+
+  <!-- ── Cargando actividades ── -->
+  <div class="loading-panel" *ngIf="loadingActividades">
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="loading-text">Cargando actividades...</p>
+  </div>
+
+  <!-- ── Tabla de actividades ── -->
+  <div class="card table-card" *ngIf="selectedProyectoId && !loadingActividades">
+
+    <div class="table-toolbar">
+      <span class="toolbar-info">
+        {{ actividades.length }} actividad{{ actividades.length !== 1 ? 'es' : '' }}
+      </span>
+      <button class="btn-primary" (click)="abrirModalCrear()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:0.3rem;flex-shrink:0">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nueva Actividad
+      </button>
+    </div>
+
+    <!-- Estado vacío (sin actividades) -->
+    <div class="table-empty-state" *ngIf="!actividades.length">
+      <div class="empty-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="11" x2="12" y2="17"/>
+          <line x1="9" y1="14" x2="15" y2="14"/>
+        </svg>
+      </div>
+      <p class="empty-title">Este proyecto no tiene actividades aún</p>
+      <button class="btn-primary" (click)="abrirModalCrear()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:0.3rem;flex-shrink:0">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nueva Actividad
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-wrapper" *ngIf="actividades.length">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-order">#</th>
+            <th class="col-actividad">Actividad</th>
+            <th class="col-fecha">Inicio Prog.</th>
+            <th class="col-fecha">Fin Prog.</th>
+            <th class="col-fecha">Fin Real</th>
+            <th class="col-avance">Avance</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let act of actividades">
+            <td class="td-order">{{ act.order }}</td>
+            <td class="td-actividad">{{ act.activityDescription }}</td>
+            <td class="td-fecha">{{ formatDate(act.plannedStartDate) }}</td>
+            <td class="td-fecha">{{ formatDate(act.plannedEndDate) }}</td>
+            <td class="td-fecha" [class.td-fecha-real]="act.actualEndDate">
+              {{ formatDate(act.actualEndDate) }}
+            </td>
+            <td class="td-avance">
+              <div class="avance-wrap">
+                <div class="avance-bar-bg">
+                  <div
+                    class="avance-bar-fill"
+                    [ngClass]="getAvanceColor(act.progressPercentage)"
+                    [style.width.%]="act.progressPercentage"
+                  ></div>
+                </div>
+                <span class="avance-pct">{{ act.progressPercentage }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getEstado(act).css">
+                {{ getEstado(act).label }}
+              </span>
+            </td>
+            <td class="row-actions">
+              <!-- Culminar / desculminar -->
+              <button
+                class="btn-action"
+                [class.btn-action-done]="!!act.actualEndDate"
+                [class.btn-action-pending]="!act.actualEndDate"
+                [title]="act.actualEndDate ? 'Quitar culminación' : 'Marcar como culminado'"
+                (click)="culminar(act)"
+              >
+                <svg *ngIf="act.actualEndDate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <svg *ngIf="!act.actualEndDate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="9"/>
+                  <polyline points="16 10 11 15 8 12"/>
+                </svg>
+              </button>
+              <!-- Editar -->
+              <button class="btn-action btn-action-edit" title="Editar" (click)="abrirModalEditar(act)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <!-- Eliminar -->
+              <button class="btn-action btn-action-delete" title="Eliminar" (click)="eliminar(act)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ── Modal crear / editar ── -->
+<div class="modal-overlay" *ngIf="modalOpen" (click)="onOverlayClick($event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 class="modal-title">{{ modalMode === 'crear' ? 'Nueva Actividad' : 'Editar Actividad' }}</h3>
+      <button class="btn-modal-close" (click)="cerrarModal()" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Actividad -->
+      <div class="field">
+        <label class="field-label">Actividad *</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="formActividad"
+          placeholder="Descripción de la actividad..."
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Fechas programadas -->
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Inicio Programado</label>
+          <input type="date" class="field-input" [(ngModel)]="formPlannedStart" />
+        </div>
+        <div class="field">
+          <label class="field-label">Fin Programado</label>
+          <input type="date" class="field-input" [(ngModel)]="formPlannedEnd" />
+        </div>
+      </div>
+
+      <!-- Avance -->
+      <div class="field">
+        <label class="field-label">Avance (%) — {{ formProgress }}%</label>
+        <div class="avance-field-wrap">
+          <input
+            type="range"
+            class="avance-slider"
+            [(ngModel)]="formProgress"
+            min="0"
+            max="100"
+            step="1"
+          />
+          <input
+            type="number"
+            class="field-input avance-number"
+            [(ngModel)]="formProgress"
+            min="0"
+            max="100"
+          />
+        </div>
+        <div class="avance-preview-bar">
+          <div
+            class="avance-bar-fill"
+            [ngClass]="getAvanceColor(+formProgress)"
+            [style.width.%]="formProgress"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Fin Real (solo en editar) -->
+      <div class="field" *ngIf="modalMode === 'editar'">
+        <label class="field-label">Fecha Real de Fin</label>
+        <input type="date" class="field-input" [(ngModel)]="formActualEnd" />
+        <span class="field-hint">Dejar vacío si la actividad no ha culminado</span>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cerrarModal()" [disabled]="guardando">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+
+  </div>
+</div>

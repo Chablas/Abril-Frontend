@@ -228,19 +228,20 @@
 
       <ng-container *ngIf="isContratista()">
 
-        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
-          <label class="field-lbl">VIGENCIA</label>
-          <input
-            type="date"
-            class="field-input"
-            [(ngModel)]="panelVigencia"
-            [readonly]="selectedEntregable.estado !== 'Falta' && selectedEntregable.estado !== 'Rechazado'"
-          />
+        <div class="field-grp" *ngIf="requiereVigenciaAnteUpload">
+          <label class="field-lbl">VIGENCIA *</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
         </div>
 
         <div class="field-grp">
           <label class="field-lbl">DOCUMENTO ADJUNTO</label>
-          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -298,7 +299,8 @@
         <div class="field-grp">
           <label class="field-lbl">TUS OBSERVACIONES</label>
           <textarea class="field-input" rows="3" [(ngModel)]="panelObsAbril"
-            placeholder="Notas que verá Abril…"></textarea>
+            placeholder="Notas que verá Abril…"
+            (blur)="guardarObservaciones()"></textarea>
         </div>
 
         <div class="field-grp" *ngIf="selectedEntregable.obsAbril">
@@ -330,7 +332,13 @@
 
         <div class="field-grp">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
-          <div class="upload-zone upload-zone--active" *ngIf="!uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
+          <div class="upload-zone upload-zone--active" *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl" (click)="triggerFileInput()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -401,13 +409,6 @@
     </div>
 
     <div class="eq-drawer-footer">
-      <button
-        *ngIf="isContratista()"
-        type="button"
-        class="btn-primary"
-        [disabled]="!panelArchivoUrl && !panelObsAbril"
-        (click)="enviarDocumento()"
-      >ENVIAR DOCUMENTO</button>
       <button
         *ngIf="!isContratista()"
         type="button"

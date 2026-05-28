@@ -648,6 +648,12 @@ textarea.field-input {
   background: #f0fdf4;
 }
 
+.upload-zone--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
 .upload-state {
   display: flex;
   align-items: center;

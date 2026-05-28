@@ -19,6 +19,8 @@ export interface ProjectSubContractorDTO {
   contractModalityDescription?: string | null;
   paymentMethodId: number;
   paymentMethodDescription: string;
+  paymentFormId?: number | null;
+  paymentFormDescription?: string | null;
   advancePercentage?: number;
   advanceAmount?: number | null;
   termDays?: number | null;
@@ -44,6 +46,7 @@ export interface ProjectSubContractorDTO {
   promissoryNoteNumber?: number | null;
   guaranteeFundPercentage?: number | null;
   guaranteeFundDays?: number | null;
+  guaranteeValidityDays?: number | null;
   arrivedWithObservations?: boolean | null;
   // Documentos del contrato (paso 3)
   contract?: ProjectSubContractorFileDTO;
@@ -60,6 +63,9 @@ export interface ProjectSubContractorDTO {
   // Salidas no conforme y cuadro de tolerancias (paso 3 — solo subida)
   nonConformingOutput?: ProjectSubContractorFileDTO;
   toleranceChart?: ProjectSubContractorFileDTO;
+  // Ficha técnica y anexos (paso 3 — solo subida)
+  fichaTecnica?: ProjectSubContractorFileDTO;
+  anexo?: ProjectSubContractorFileDTO;
   // Documentos escaneados (paso 7)
   scannedDoc1?: ProjectSubContractorFileDTO;
   scannedDoc2?: ProjectSubContractorFileDTO;
