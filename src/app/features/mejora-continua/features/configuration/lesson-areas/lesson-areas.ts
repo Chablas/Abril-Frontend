@@ -1,0 +1,70 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { LessonAreaService } from './services/lesson-area.service';
+import { LessonAreaConfigItemDto } from './dtos/lesson-area.dto';
+import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+
+@Component({
+  standalone: true,
+  selector: 'app-lesson-areas',
+  imports: [CommonModule, FormsModule, StatusBadge],
+  templateUrl: './lesson-areas.html',
+})
+export class LessonAreas implements OnInit {
+  areas: LessonAreaConfigItemDto[] = [];
+  searchText = '';
+
+  constructor(
+    private service: LessonAreaService,
+    private loaderService: LoaderService,
+    private errorService: ErrorService,
+  ) {}
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.loaderService.show();
+    this.service.getAll().subscribe({
+      next: (data) => {
+        this.areas = data;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  toggle(item: LessonAreaConfigItemDto): void {
+    this.loaderService.show();
+    this.service.toggle(item.areaItemId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        item.active = res.active;
+        item.lessonAreaId = res.lessonAreaId;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  get filteredAreas(): LessonAreaConfigItemDto[] {
+    const term = this.searchText.trim().toLowerCase();
+    if (!term) return this.areas;
+    return this.areas.filter(
+      (a) =>
+        a.areaItemName.toLowerCase().includes(term) ||
+        a.areaTypeName.toLowerCase().includes(term) ||
+        (a.parentName?.toLowerCase().includes(term) ?? false),
+    );
+  }
+}

@@ -1,0 +1,70 @@
+<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+
+  <div class="flex items-center justify-between gap-4">
+    <p class="text-[0.78rem] text-gray-500">
+      Activa las áreas que estarán disponibles en
+      <span class="font-semibold">Lecciones Aprendidas</span>. Los nombres y la jerarquía
+      vienen de
+      <a class="text-[#64BC04] underline" href="/configuracion/area">Configuración → Áreas</a>.
+    </p>
+
+    <!-- Buscador -->
+    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
+                focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all w-[280px] flex-shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
+        <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input type="text" placeholder="Buscar área..." [(ngModel)]="searchText"
+        class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm" />
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+    <table class="w-full text-sm">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold w-[200px]">Tipo</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Nombre</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold w-[220px]">Área padre</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Estado</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of filteredAreas" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+          <td class="px-[16px] py-[10px]">
+            <span class="inline-block px-[8px] py-[2px] rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+              {{ a.areaTypeName }}
+            </span>
+          </td>
+          <td class="px-[16px] py-[10px] text-gray-700">{{ a.areaItemName }}</td>
+          <td class="px-[16px] py-[10px] text-gray-500">{{ a.parentName || '-' }}</td>
+          <td class="px-[16px] py-[10px] text-center">
+            <app-status-badge
+              [text]="a.active ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="a.active ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="a.active ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="px-[16px] py-[10px] text-center">
+            <button
+              (click)="toggle(a)"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
+              [ngClass]="a.active
+                ? 'border-red-200 text-red-600 hover:bg-red-50'
+                : 'border-green-300 text-green-700 hover:bg-green-50'">
+              {{ a.active ? 'Desactivar' : 'Activar' }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredAreas.length === 0">
+          <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            {{ searchText ? 'Sin resultados.' : 'No hay áreas registradas.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

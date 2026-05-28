@@ -1,6 +1,6 @@
 export interface ScopeItemDTO {
   scopeItemId: number;
-  areaSubareaId: number;
+  lessonAreaId: number;
   catalogItemId: number;
   catalogItemDescription: string;
   catalogTypeName: string;

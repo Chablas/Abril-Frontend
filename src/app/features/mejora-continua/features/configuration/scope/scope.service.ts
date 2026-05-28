@@ -3,15 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 
-export interface AreaSubareaDTO {
-  areaSubareaId: number;
-  areaId: number;
-  subAreaId: number | null;
-}
-
 export interface ScopeItemDTO {
   scopeItemId: number;
-  areaSubareaId: number;
+  lessonAreaId: number;
   catalogItemId: number;
   catalogItemDescription: string;
   catalogTypeName: string;
@@ -28,14 +22,14 @@ export interface ScopeItemNodeDTO {
 }
 
 export interface ScopeItemUpsertDTO {
-  areaSubareaId: number;
+  lessonAreaId: number;
   items: ScopeItemNodeDTO[];
 }
 
 export interface ScopeTemplateItemNodeDTO {
   catalogItemId: number;
   catalogItemDescription: string;
-  scopeTemplateItemParentId: number | null;
+  parentCatalogItemId: number | null;
   displayOrder: number;
 }
 
@@ -68,14 +62,8 @@ export class ScopeService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getOrCreateAreaSubarea(areaId: number, subAreaId?: number): Observable<AreaSubareaDTO> {
-    let url = `${this.base}/area-subarea?areaId=${areaId}`;
-    if (subAreaId) url += `&subAreaId=${subAreaId}`;
-    return this.http.get<AreaSubareaDTO>(url, { headers: this.authHeaders() });
-  }
-
-  getScopeTree(areaSubareaId: number): Observable<ScopeItemDTO[]> {
-    return this.http.get<ScopeItemDTO[]>(`${this.base}/tree/${areaSubareaId}`, {
+  getScopeTree(lessonAreaId: number): Observable<ScopeItemDTO[]> {
+    return this.http.get<ScopeItemDTO[]>(`${this.base}/tree/${lessonAreaId}`, {
       headers: this.authHeaders(),
     });
   }

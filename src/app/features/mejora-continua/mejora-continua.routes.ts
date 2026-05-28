@@ -13,18 +13,18 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
   {
     path: 'configuration/areas',
     loadComponent: () =>
-      import('./features/configuration/areas-subareas/components/areas')
-        .then((m) => m.Areas),
+      import('./features/configuration/lesson-areas/lesson-areas')
+        .then((m) => m.LessonAreas),
     canActivate: [roleGuard],
     data: { titulo: 'ÁREAS', featureKey: 'mejora-continua.config.areas' },
   },
   {
-    path: 'configuration/relations',
+    path: 'configuration/area-relations',
     loadComponent: () =>
-      import('./features/configuration/relations/relations')
-        .then((m) => m.Relations),
+      import('./features/configuration/areas-subareas/components/areas')
+        .then((m) => m.Areas),
     canActivate: [roleGuard],
-    data: { titulo: 'CONFIG. RELACIONES', featureKey: 'mejora-continua.config.relations' },
+    data: { titulo: 'RELACIONES POR ÁREA', featureKey: 'mejora-continua.config.area-relations' },
   },
   {
     path: 'configuration/templates',

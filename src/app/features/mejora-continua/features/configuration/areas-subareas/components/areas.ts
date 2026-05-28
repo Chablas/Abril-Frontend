@@ -1,79 +1,71 @@
-import { Component, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaCreate } from './area-create/area-create';
-import { AreaList } from './area-list/area-list';
-import { SubAreaCreate } from './sub-area-create/sub-area-create';
-import { SubAreaList } from './sub-area-list/sub-area-list';
-import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-import { AreaPagedDTO } from '../dtos/areaPaged.model';
-import { SubAreaPagedDTO } from '../dtos/subAreaPaged.model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { LessonAreaService } from '../../lesson-areas/services/lesson-area.service';
+import { LessonAreaConfigItemDto } from '../../lesson-areas/dtos/lesson-area.dto';
+import { LoaderService } from '../../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../../core/services/error.service';
+import { PsssScopeEdit } from './psss-scope-edit/psss-scope-edit';
 
 @Component({
   selector: 'app-areas',
-  imports: [CommonModule, FormsModule, AreaCreate, AreaList, SubAreaCreate, SubAreaList, Paginator],
+  standalone: true,
+  imports: [CommonModule, FormsModule, PsssScopeEdit],
   templateUrl: './areas.html',
   styleUrl: './areas.css',
 })
-export class Areas {
-  currentPage = 1;
-  totalPages = 0;
-  pageSize = 10;
-  totalRecords = 0;
+export class Areas implements OnInit {
+  rows: LessonAreaConfigItemDto[] = [];
+  searchText = '';
 
-  currentSubAreaPage = 1;
-  totalSubAreaPages = 0;
-  totalSubAreaRecords = 0;
+  scopeLessonAreaId?: number;
+  scopeEntityName = '';
+  showScopeModal = false;
 
-  showCreateModal = false;
-  showCreateSubAreaModal = false;
+  constructor(
+    private lessonAreaService: LessonAreaService,
+    private loaderService: LoaderService,
+    private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
-  @ViewChild(AreaList) arealist!: AreaList;
-  @ViewChild(SubAreaList) subarealist!: SubAreaList;
+  ngOnInit(): void {
+    this.load();
+  }
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  load(): void {
+    this.loaderService.show();
+    this.lessonAreaService.getAll().subscribe({
+      next: (data) => {
+        // Solo mostramos áreas habilitadas en lesson_area (active = true)
+        this.rows = data.filter((r) => r.active && r.lessonAreaId != null);
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
 
-  openCreateModal(event: MouseEvent) {
+  get filteredRows(): LessonAreaConfigItemDto[] {
+    const term = this.searchText.trim().toLowerCase();
+    if (!term) return this.rows;
+    return this.rows.filter(
+      (a) =>
+        a.areaItemName.toLowerCase().includes(term) ||
+        a.areaTypeName.toLowerCase().includes(term) ||
+        (a.parentName?.toLowerCase().includes(term) ?? false),
+    );
+  }
+
+  openScopeModal(row: LessonAreaConfigItemDto, event: MouseEvent): void {
     event.stopPropagation();
-    this.showCreateModal = true;
+    if (row.lessonAreaId == null) return;
+    this.scopeLessonAreaId = row.lessonAreaId;
+    this.scopeEntityName = row.areaItemName;
+    this.showScopeModal = true;
     this.cdr.detectChanges();
-  }
-
-  openCreateSubAreaModal(event: MouseEvent) {
-    event.stopPropagation();
-    this.showCreateSubAreaModal = true;
-    this.cdr.detectChanges();
-  }
-
-  changePage(page: number) {
-    this.currentPage = page;
-    this.arealist.loadAreas(page);
-  }
-
-  changeSubAreaPage(page: number) {
-    this.currentSubAreaPage = page;
-    this.subarealist.loadSubAreas(page);
-  }
-
-  reloadAreas() {
-    this.arealist.loadAreas(this.currentPage);
-    this.subarealist.loadAreaOptions();
-  }
-
-  reloadSubAreas() {
-    this.subarealist.loadSubAreas(this.currentSubAreaPage);
-  }
-
-  updatePagination(data: AreaPagedDTO) {
-    this.currentPage = data.page;
-    this.totalPages = data.totalPages;
-    this.pageSize = data.pageSize;
-    this.totalRecords = data.totalRecords;
-  }
-
-  updateSubAreaPagination(data: SubAreaPagedDTO) {
-    this.currentSubAreaPage = data.page;
-    this.totalSubAreaPages = data.totalPages;
-    this.totalSubAreaRecords = data.totalRecords;
   }
 }
