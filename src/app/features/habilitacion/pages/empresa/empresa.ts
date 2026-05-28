@@ -21,9 +21,9 @@ import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones
 import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empresa';
 import { DocumentoVersionDto } from '../../dtos/trabajador.model';
 import { Observable, EMPTY } from 'rxjs';
-import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
-import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 import {
+  EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
   ProyectoDisponibleDto,
@@ -47,7 +47,7 @@ export class Empresa implements OnInit {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   empresaId: number | null = null;
-  empresas: EmpresaSimpleDto[] = [];
+  empresas: EmpresaContratistaListDto[] = [];
 
   proyectosActivos: ProyectoDisponibleDto[] = [];
   loadingProyectos = false;
@@ -96,7 +96,7 @@ export class Empresa implements OnInit {
 
   constructor(
     private habEmpresaService: HabEmpresaService,
-    private catalogosService: CatalogosSaludService,
+    private empresaContratistaService: EmpresaContratistaService,
     private sharepointService: SharepointUploadService,
     private authService: AuthService,
     private loaderService: LoaderService,
@@ -142,9 +142,9 @@ export class Empresa implements OnInit {
   }
 
   private loadEmpresasAdmin(): void {
-    this.catalogosService.getEmpresas().subscribe({
+    this.empresaContratistaService.getEmpresas({ soloContratistas: false, pageSize: 200 }).subscribe({
       next: (res) => {
-        this.empresas = res ?? [];
+        this.empresas = res.data ?? [];
         this.cdr.detectChanges();
       },
       error: () => {

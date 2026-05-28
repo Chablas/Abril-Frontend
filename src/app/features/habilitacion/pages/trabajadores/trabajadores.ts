@@ -21,8 +21,8 @@ import { ProjectService } from '../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
-import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
-import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import {
   WorkerEntregableDto,
@@ -40,7 +40,6 @@ import { HistorialEventos } from './components/historial-eventos/historial-event
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
 import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
-import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 
 @Component({
   selector: 'app-hab-trabajadores',
@@ -73,7 +72,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   soloRetirados = false;
 
   catalogoProyectos: ProjectGetDTO[] = [];
-  catalogoEmpresas: EmpresaSimpleDto[] = [];
+  catalogoEmpresas: EmpresaContratistaListDto[] = [];
 
   panelVigencia = '';
   panelArchivoUrl = '';
@@ -123,7 +122,6 @@ export class Trabajadores implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private projectService: ProjectService,
-    private catalogosService: CatalogosSaludService,
     private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -175,14 +173,12 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.catalogoProyectos = [];
       },
     });
-    this.catalogosService.getEmpresas().subscribe({
+    this.empresaContratistaService.getEmpresas({ soloContratistas: false, pageSize: 200 }).subscribe({
       next: (res) => {
-        this.catalogoEmpresas = res ?? [];
-        console.log('[DIAG loadCatalogos] getEmpresas OK — items:', this.catalogoEmpresas.length);
+        this.catalogoEmpresas = res.data ?? [];
         this.cdr.detectChanges();
       },
-      error: (err: any) => {
-        console.error('[DIAG loadCatalogos] getEmpresas ERROR:', err?.status, err?.message, err);
+      error: () => {
         this.catalogoEmpresas = [];
       },
     });
