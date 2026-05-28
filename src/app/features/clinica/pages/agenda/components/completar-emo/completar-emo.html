@@ -1,53 +1,110 @@
 <app-base-modal *ngIf="open" title="Registrar Resultado EMO" width="w-[640px]" (closeModal)="close()">
   <div class="form-wrapper">
-    <div class="grid-2">
 
-      <div class="col-span-2" *ngIf="programacion">
-        <div class="worker-info-box">
-          <span class="worker-name">{{ programacion.workerNombre }}</span>
-          <span class="worker-dni">{{ programacion.workerDni }}</span>
-          <span class="badge border bg-gray-100 text-gray-600 border-gray-200">{{ programacion.tipoEmo }}</span>
+    <!-- Worker info -->
+    <div class="worker-info-box" *ngIf="programacion">
+      <span class="worker-name">{{ programacion.workerNombre }}</span>
+      <span class="worker-dni">{{ programacion.workerDni }}</span>
+      <span class="badge">{{ programacion.tipoEmo }}</span>
+    </div>
+
+    <!-- ── Sección 1: Resultado ──────────────────────────────── -->
+    <div class="emo-section">
+      <div class="emo-section-title">Resultado</div>
+      <div class="emo-section-body">
+        <div class="field-group">
+          <label class="field-label">Aptitud <span class="req">*</span></label>
+          <select class="field-input" [(ngModel)]="aptitud">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let a of aptitudes" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notas</label>
+          <input type="text" class="field-input" [(ngModel)]="notas" placeholder="Observaciones opcionales..." />
         </div>
       </div>
+    </div>
 
-      <!-- Aptitud -->
-      <div class="col-span-2">
-        <label class="field-label">Aptitud *</label>
-        <select class="field-input" [(ngModel)]="aptitud">
-          <option value="">Seleccionar...</option>
-          <option *ngFor="let a of aptitudes" [value]="a">{{ a }}</option>
-        </select>
-      </div>
+    <!-- Alertas de aptitud -->
+    <div class="alert-box alert-red" *ngIf="aptitud === 'No Apto'">
+      ⚠ Este trabajador quedará como No Apto y será bloqueado en habilitación automáticamente.
+    </div>
+    <div class="alert-box alert-orange" *ngIf="aptitud === 'Observado'">
+      ⚠ Estado Observado — requiere interconsulta para definir aptitud final.
+    </div>
 
-      <!-- Notas -->
-      <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <input type="text" class="field-input" [(ngModel)]="notas" placeholder="Observaciones..." />
-      </div>
-
-      <!-- Lectura EMO — solo Apto / Apto con Restricciones -->
-      <div class="col-span-2" *ngIf="requiereDocumentos">
+    <!-- ── Sección 2: Lectura del EMO ───────────────────────── -->
+    <div class="emo-section emo-section-lectura" *ngIf="requiereDocumentos">
+      <div class="emo-section-title">Lectura del EMO</div>
+      <div class="emo-section-body">
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="lecturaRealizada" />
-          <span class="field-label" style="margin:0">Se realizó lectura del EMO</span>
+          <span class="checkbox-label">Se realizó lectura del EMO</span>
         </label>
-        <div *ngIf="lecturaRealizada" class="fecha-lectura-row">
-          <label class="field-label">Fecha de lectura</label>
-          <input type="date" class="field-input" [(ngModel)]="fechaLectura" />
-        </div>
-      </div>
 
-      <!-- RESTRICCIONES — obligatorio al menos 1 -->
-      <div class="col-span-2" *ngIf="requiereRestriccion">
-        <div class="section-divider">Restricciones *</div>
+        <ng-container *ngIf="lecturaRealizada">
+          <div class="field-group lectura-fields">
+            <label class="field-label">Fecha de lectura <span class="req">*</span></label>
+            <input type="date" class="field-input" [(ngModel)]="fechaLectura" />
+            <p class="field-error" *ngIf="!fechaLectura">La fecha de lectura es obligatoria</p>
+          </div>
+
+          <div class="field-group lectura-fields">
+            <label class="field-label">Informe de lectura <span class="req">*</span></label>
+            <label class="file-zone" [class.file-zone-filled]="!!archivoLectura">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
+                (change)="onArchivoLectura($event)" />
+              <span class="file-zone-icon">📎</span>
+              <span *ngIf="!archivoLectura" class="file-zone-hint">PDF, JPG o PNG — clic para seleccionar</span>
+              <span *ngIf="archivoLectura" class="file-zone-name">✓ {{ archivoLectura.name }}</span>
+            </label>
+            <p class="field-error" *ngIf="!archivoLectura">Debes adjuntar el informe de lectura</p>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- ── Sección 3: Documentos ────────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereDocumentos">
+      <div class="emo-section-title">Documentos <span class="req">*</span></div>
+      <div class="emo-section-body docs-grid">
+
+        <div class="upload-card">
+          <div class="upload-card-label">Constancia de Aptitud <span class="req">*</span></div>
+          <label class="file-zone" [class.file-zone-filled]="!!archivoAptitud">
+            <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoAptitud($event)" />
+            <span class="file-zone-icon">📄</span>
+            <span *ngIf="!archivoAptitud" class="file-zone-hint">Seleccionar PDF</span>
+            <span *ngIf="archivoAptitud" class="file-zone-name">✓ {{ archivoAptitud.name }}</span>
+          </label>
+        </div>
+
+        <div class="upload-card">
+          <div class="upload-card-label">EMO Completo <span class="req">*</span></div>
+          <label class="file-zone" [class.file-zone-filled]="!!archivoEmo">
+            <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoEmo($event)" />
+            <span class="file-zone-icon">📋</span>
+            <span *ngIf="!archivoEmo" class="file-zone-hint">Seleccionar PDF</span>
+            <span *ngIf="archivoEmo" class="file-zone-name">✓ {{ archivoEmo.name }}</span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Sección 4: Restricciones ─────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereRestriccion">
+      <div class="emo-section-title">Restricciones <span class="req">*</span></div>
+      <div class="emo-section-body">
         <div class="restriccion-row">
           <input type="text" class="field-input" [(ngModel)]="nuevaRestriccion"
             placeholder="Ej: No trabajo en altura" (keyup.enter)="agregarRestriccion()" />
           <button type="button" class="btn-ghost" (click)="agregarRestriccion()">+ Agregar</button>
         </div>
-        <div *ngIf="restricciones.length === 0" class="field-hint">
+        <p *ngIf="restricciones.length === 0" class="field-hint">
           Debes agregar al menos una restricción.
-        </div>
+        </p>
         <div *ngIf="restricciones.length > 0" class="restriccion-list">
           <div class="restriccion-item" *ngFor="let r of restricciones; let i = index">
             <span>{{ r.descripcionLibre }}</span>
@@ -55,71 +112,36 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- DOCUMENTOS — obligatorio -->
-      <div class="col-span-2" *ngIf="requiereDocumentos">
-        <div class="section-divider">Documentos *</div>
-      </div>
-      <div *ngIf="requiereDocumentos">
-        <label class="field-label">Constancia de Aptitud (PDF) *</label>
-        <input type="file" accept=".pdf" class="field-input" (change)="onArchivoAptitud($event)" />
-      </div>
-      <div *ngIf="requiereDocumentos">
-        <label class="field-label">EMO Completo (PDF) *</label>
-        <input type="file" accept=".pdf" class="field-input" (change)="onArchivoEmo($event)" />
-      </div>
-
-      <!-- INTERCONSULTA — No Apto / Observado: solo especialidad y diagnóstico -->
-      <ng-container *ngIf="requiereInterconsulta">
-        <div class="col-span-2">
-          <div class="section-divider">Interconsulta</div>
-        </div>
-        <div class="col-span-2">
-          <label class="field-label">Especialidad *</label>
+    <!-- ── Sección 5: Interconsulta ──────────────────────────── -->
+    <div class="emo-section" *ngIf="requiereInterconsulta">
+      <div class="emo-section-title">Interconsulta</div>
+      <div class="emo-section-body">
+        <div class="field-group">
+          <label class="field-label">Especialidad <span class="req">*</span></label>
           <input type="text" class="field-input" [(ngModel)]="icEspecialidad"
             placeholder="Ej: Cardiología, Traumatología..." />
         </div>
-        <div class="col-span-2">
+        <div class="field-group">
           <label class="field-label">Diagnóstico</label>
           <textarea class="field-input" rows="2" [(ngModel)]="icDiagnostico"
             placeholder="Descripción del diagnóstico..."></textarea>
         </div>
-        <div class="col-span-2" *ngIf="aptitud === 'No Apto'">
-          <label style="display:flex;align-items:center;gap:0.5rem;">
-            <input type="checkbox" [(ngModel)]="icRequiereSeguimiento" />
-            <span class="field-label" style="margin:0">Requiere seguimiento</span>
-          </label>
-        </div>
-        <div class="col-span-2">
-          <label class="field-label">
-            Informe de interconsulta (PDF)
-            <span *ngIf="documentoInterconsulta" class="text-green-600 text-xs ml-1">
-              ✓ {{ documentoInterconsulta.name }}
-            </span>
-          </label>
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="field-input"
-            (change)="onDocumentoInterconsulta($event)" />
-        </div>
-      </ng-container>
-
-      <!-- Alertas -->
-      <div class="col-span-2" *ngIf="aptitud === 'No Apto'">
-        <div class="alert-box alert-red">
-          ⚠ Este trabajador quedará como No Apto y será bloqueado en habilitación automáticamente.
-        </div>
+        <label *ngIf="aptitud === 'No Apto'" class="checkbox-row" style="margin-top:0.5rem">
+          <input type="checkbox" [(ngModel)]="icRequiereSeguimiento" />
+          <span class="checkbox-label">Requiere seguimiento</span>
+        </label>
       </div>
-      <div class="col-span-2" *ngIf="aptitud === 'Observado'">
-        <div class="alert-box alert-orange">
-          ⚠ Estado Observado — requiere interconsulta para definir aptitud final.
-        </div>
-      </div>
-
     </div>
+
+    <!-- Footer -->
     <footer class="form-footer">
       <button class="btn-ghost" (click)="close()">Cancelar</button>
       <button class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
         {{ saving ? 'Guardando...' : 'Registrar resultado' }}
       </button>
     </footer>
+
   </div>
 </app-base-modal>

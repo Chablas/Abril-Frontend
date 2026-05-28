@@ -74,8 +74,6 @@ export class Agenda implements OnInit {
     especialidad: '',
     observacion: '',
     requiereSeguimiento: false,
-    archivoFile: null as File | null,
-    archivoError: '',
     especialidadError: '',
     cargando: false,
   };
@@ -396,8 +394,6 @@ export class Agenda implements OnInit {
       especialidad: '',
       observacion: '',
       requiereSeguimiento: false,
-      archivoFile: null,
-      archivoError: '',
       especialidadError: '',
       cargando: false,
     };
@@ -407,23 +403,12 @@ export class Agenda implements OnInit {
     this.modalInterconsulta.visible = false;
   }
 
-  onArchivoInterconsulta(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.modalInterconsulta.archivoFile = input.files?.[0] ?? null;
-    this.modalInterconsulta.archivoError = '';
-  }
-
   confirmarInterconsulta(): void {
     const m = this.modalInterconsulta;
     m.especialidadError = '';
-    m.archivoError = '';
 
     if (!m.especialidad.trim()) {
       m.especialidadError = 'La especialidad es obligatoria';
-      return;
-    }
-    if (!m.archivoFile) {
-      m.archivoError = 'Debes adjuntar la evidencia';
       return;
     }
 
@@ -436,10 +421,11 @@ export class Agenda implements OnInit {
       requiereSeguimiento: m.requiereSeguimiento,
     };
 
-    this.interconsultaSvc.createInterconsulta(dto, m.archivoFile).subscribe({
+    this.interconsultaSvc.createInterconsulta(dto).subscribe({
       next: () => {
         this.cancelarInterconsulta();
         this.loadAgenda(this.selectedDate);
+        this.cargarInterconsultas();
         Swal.fire('Interconsulta registrada', '', 'success');
       },
       error: (err) => {

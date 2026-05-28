@@ -20,6 +20,12 @@ export class BandejaService {
     });
   }
 
+  getEmpresasDisponibles(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/empresas`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
   aprobarTrabajador(id: number, dto: BandejaAprobarDto): Observable<void> {
     return this.http.patch<void>(`${this.base}/trabajador/${id}`, dto, {
       headers: buildHabHeaders(),
