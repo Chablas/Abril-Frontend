@@ -33,6 +33,7 @@ export class CompletarEmo implements OnChanges {
 
   archivoAptitud: File | null = null;
   archivoEmo: File | null = null;
+  documentoInterconsulta: File | null = null;
 
   restricciones: { descripcionLibre: string }[] = [];
   nuevaRestriccion = '';
@@ -80,6 +81,7 @@ export class CompletarEmo implements OnChanges {
     this.saving = false;
     this.archivoAptitud = null;
     this.archivoEmo = null;
+    this.documentoInterconsulta = null;
   }
 
   agregarRestriccion(): void {
@@ -97,6 +99,10 @@ export class CompletarEmo implements OnChanges {
 
   onArchivoEmo(event: Event): void {
     this.archivoEmo = (event.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onDocumentoInterconsulta(event: Event): void {
+    this.documentoInterconsulta = (event.target as HTMLInputElement).files?.[0] ?? null;
   }
 
   close(): void { this.closed.emit(); }
@@ -151,7 +157,7 @@ export class CompletarEmo implements OnChanges {
       interconsultaInline,
     };
 
-    this.emoSvc.createEmo(emoDto).subscribe({
+    this.emoSvc.createEmo(emoDto, this.documentoInterconsulta ?? undefined).subscribe({
       next: (res) => {
         const emoId = res.id;
         if (this.interconsultaId != null) {

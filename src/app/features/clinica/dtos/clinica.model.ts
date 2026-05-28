@@ -22,6 +22,17 @@ export interface ProgramacionClinicaDto {
   tipoTrabajador?: string | null;
 }
 
+export interface ClinicaInterconsultaCreateDto {
+  workerId: number;
+  especialidad: string;
+  programacionId: number;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
+}
+
 export interface ClinicaAccionDto {
   id: number;
   accion: 'Aceptar' | 'Rechazar' | 'CheckIn' | 'Completar';

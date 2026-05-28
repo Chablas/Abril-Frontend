@@ -5,7 +5,8 @@ import Swal from 'sweetalert2';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { ClinicaProgramacionService } from '../../services/clinica-programacion.service';
-import { ProgramacionClinicaDto, ClinicaAccionDto } from '../../dtos/clinica.model';
+import { InterconsultaClinicaService } from '../../services/interconsulta-clinica.service';
+import { ProgramacionClinicaDto, ClinicaAccionDto, ClinicaInterconsultaCreateDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
@@ -72,6 +73,7 @@ export class Agenda implements OnInit {
     workerDni: '',
     especialidad: '',
     observacion: '',
+    requiereSeguimiento: false,
     archivoFile: null as File | null,
     archivoError: '',
     especialidadError: '',
@@ -89,6 +91,7 @@ export class Agenda implements OnInit {
 
   constructor(
     private svc: ClinicaProgramacionService,
+    private interconsultaSvc: InterconsultaClinicaService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private http: HttpClient,
@@ -392,6 +395,7 @@ export class Agenda implements OnInit {
       workerDni: item.workerDni,
       especialidad: '',
       observacion: '',
+      requiereSeguimiento: false,
       archivoFile: null,
       archivoError: '',
       especialidadError: '',
@@ -409,7 +413,7 @@ export class Agenda implements OnInit {
     this.modalInterconsulta.archivoError = '';
   }
 
-  async confirmarInterconsulta(): Promise<void> {
+  confirmarInterconsulta(): void {
     const m = this.modalInterconsulta;
     m.especialidadError = '';
     m.archivoError = '';
@@ -424,41 +428,25 @@ export class Agenda implements OnInit {
     }
 
     m.cargando = true;
-    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
-    const token = localStorage.getItem('access_token');
-    const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
+    const dto: ClinicaInterconsultaCreateDto = {
+      workerId: m.workerId,
+      especialidad: m.especialidad.trim(),
+      programacionId: m.progId,
+      diagnostico: m.observacion.trim() || undefined,
+      requiereSeguimiento: m.requiereSeguimiento,
+    };
 
-    try {
-      const body = {
-        emoId: m.emoId,
-        workerId: m.workerId,
-        especialidad: m.especialidad.trim(),
-        observacion: m.observacion.trim() || undefined,
-        fechaDerivacion: new Date().toISOString().split('T')[0],
-      };
-      const resp: any = await lastValueFrom(
-        this.http.post(`${base}/interconsultas`, body, { headers }),
-      );
-      const interconsultaId = resp?.id ?? resp?.data?.id;
-
-      if (interconsultaId && m.archivoFile) {
-        const fd = new FormData();
-        fd.append('file', m.archivoFile);
-        fd.append('tipo', 'interconsulta');
-        await lastValueFrom(
-          this.http.post(`${base}/interconsultas/${interconsultaId}/documentos`, fd, { headers }),
-        );
-      }
-
-      this.cancelarInterconsulta();
-      this.loadAgenda(this.selectedDate);
-      Swal.fire('Interconsulta registrada', '', 'success');
-    } catch (err: any) {
-      const mensaje = err?.error?.message ?? err?.message ?? 'Error al registrar la interconsulta';
-      Swal.fire('Error', mensaje, 'error');
-    } finally {
-      m.cargando = false;
-    }
+    this.interconsultaSvc.createInterconsulta(dto, m.archivoFile).subscribe({
+      next: () => {
+        this.cancelarInterconsulta();
+        this.loadAgenda(this.selectedDate);
+        Swal.fire('Interconsulta registrada', '', 'success');
+      },
+      error: (err) => {
+        m.cargando = false;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── CSS helpers ──────────────────────────────────────────

@@ -90,6 +90,16 @@
             <span class="field-label" style="margin:0">Requiere seguimiento</span>
           </label>
         </div>
+        <div class="col-span-2">
+          <label class="field-label">
+            Informe de interconsulta (PDF)
+            <span *ngIf="documentoInterconsulta" class="text-green-600 text-xs ml-1">
+              ✓ {{ documentoInterconsulta.name }}
+            </span>
+          </label>
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="field-input"
+            (change)="onDocumentoInterconsulta($event)" />
+        </div>
       </ng-container>
 
       <!-- Alertas -->
