@@ -39,10 +39,14 @@ export class ProjectService {
     });
   }
 
-  getProjectPagedWithResidents(page: number): Observable<ProjectPagedDTO> {
+  getProjectPagedWithResidents(page: number, search?: string, pageSize?: number): Observable<ProjectPagedDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged-with-residents?page=${page}`, {
+    let params = new HttpParams().set('page', String(page));
+    if (pageSize) params = params.set('pageSize', String(pageSize));
+    if (search?.trim()) params = params.set('search', search.trim());
+    return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged-with-residents`, {
       headers: { Authorization: `Bearer ${token}` },
+      params,
     });
   }
 

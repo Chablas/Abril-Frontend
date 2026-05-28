@@ -4,6 +4,7 @@
         <input
             type="text"
             [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
             placeholder="Buscar proyecto..."
             class="border border-[#D6DEE5] rounded-lg px-4 py-1.5 w-full outline-none focus:border-[#64BC04]" />
 
@@ -13,7 +14,7 @@
                 class="bg-white rounded-xl border border-[#D6DEE5] overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]">
                 <div
                     class="relative h-[120px] group"
-                    (click)="openProjectGantt(item.projectId, item.projectDescription)">
+                    (click)="openMilestoneScheduleHistory(item.projectId, item.projectDescription)">
                     <img
                         *ngIf="projectImages[item.projectId]"
                         [src]="projectImages[item.projectId]"
@@ -45,7 +46,7 @@
                             (change)="onProjectImageChange(item.projectId, $event)" />
                     </label>
                 </div>
-                <div class="p-3 flex flex-col gap-1" (click)="openProjectGantt(item.projectId, item.projectDescription)">
+                <div class="p-3 flex flex-col gap-1" (click)="openMilestoneScheduleHistory(item.projectId, item.projectDescription)">
                     <p class="font-semibold truncate" [title]="item.projectDescription">
                         {{ item.projectDescription }}
                     </p>
@@ -189,8 +190,28 @@
         </div>
     </div>
 
-    <!-- Estado vacío -->
-    <div *ngIf="noMilestones"
+    <!-- Hitos sin fecha (plantilla) — pendientes de programar -->
+    <div *ngIf="noMilestones && undatedTasks.length > 0" class="bg-white rounded-lg overflow-hidden border border-[#D6DEE5]">
+        <div class="bg-[#E5F7D1] px-4 py-2 text-sm text-[#4fa003] font-medium">
+            Hitos de la plantilla — agregá fechas para programarlos en el Gantt
+        </div>
+        <table class="w-full">
+            <tbody>
+                <tr *ngFor="let task of undatedTasks" class="border-t border-[#D6DEE5]">
+                    <td class="px-4 py-2 text-sm">{{ task.text }}</td>
+                    <td class="px-4 py-2 text-right" *ngIf="showEditButton">
+                        <button (click)="editUndatedTask(task)"
+                            class="text-[#0086A5] text-xs hover:underline cursor-pointer">
+                            Agregar fecha
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Estado vacío — sin hitos ni plantilla -->
+    <div *ngIf="noMilestones && undatedTasks.length === 0"
         class="bg-white rounded-lg p-[60px] flex flex-col items-center justify-center gap-[12px] text-gray-400">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
