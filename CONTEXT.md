@@ -2753,14 +2753,16 @@ POST   /api/v1/cronograma-actividades/{proyectoId}/importar-mpp   (FormData: arc
 **Jerarquía visual:**
 - `ActividadDto` trae `hierarchyLevel` y `parentId` del backend (en orden correcto: padres antes que hijos).
 - `buildParentIds()` → `Set<number>` de IDs que son padres (para `hasChildren()` en O(1)).
-- `buildColorMap()` → `Map<id, color>` construido al cargar:
-  - Nivel 0 → color fijo `#4F46E5` (indigo).
-  - Nivel 1 → paleta `['#0891B2','#059669','#D97706','#DC2626','#7C3AED','#DB2777']` asignada por orden de aparición.
-  - Nivel 2+ → hereda color del ancestro de nivel 1 más cercano (`findLevel1Color()` recursivo).
-- `getRowStyle(act)` → `{ background-color, color }` por nivel: 0/1 texto blanco sólido; 2+ fondo `color+'26'` (15% opacidad) + texto en el color del nivel-1.
-- Filas con `[class.row-colored]` (niveles 0–1) y `[class.row-tinted]` (nivel 2+). CSS `.row-colored td { color: inherit }` fuerza herencia en todas las celdas; badges mantienen su propio color (especificidad propia).
+- `buildColorMap()` → `Map<id, colorBase>` construido al cargar: recorre en orden; nivel-1 toma el siguiente color de `LEVEL1_PALETTE`; nivel-2+ hereda el color del ancestro nivel-1 (`findLevel1Color()` recursivo por `parentId`). Guarda solo el **color base** de nivel-1; las variantes claro/oscuro se resuelven vía `SHADES`.
+  - `NIVEL0_COLOR = '#3F51B5'`.
+  - `LEVEL1_PALETTE` (8): `['#2196F3','#009688','#FF9800','#E91E63','#9C27B0','#00BCD4','#F44336','#673AB7']`.
+  - `SHADES: Record<base, {claro, oscuro}>` — par claro/oscuro Material por cada color de la paleta (ej. `#2196F3 → {claro:'#E3F2FD', oscuro:'#1565C0'}`). `shadesOf(act)` busca por el base de la actividad.
+- `getRowStyle(act)` (`[ngStyle]` en `<tr>`): nivel 0 → `#3F51B5`/blanco; nivel 1 → colorBase/blanco; nivel 2+ → `claro`/`oscuro`.
+- `getBadgeStyle(act)` (`[ngStyle]` en el badge de estado, reemplaza al `[ngClass]` anterior): nivel 0/1 → `rgba(255,255,255,0.2)`/blanco; nivel 2+ → `oscuro+'26'` (tinte 15%)/`oscuro`. La etiqueta sigue de `getEstado(act).label`.
+- Filas con `[class.row-colored]` (niveles 0–1) y `[class.row-tinted]` (nivel 2+). CSS `.row-colored td`/`.row-tinted td { color: inherit }` hace que `#`, fechas y avance hereden el color de texto del nivel. `.btn-chevron { color: inherit }` → chevron blanco en 0/1, `oscuro` en 2+.
 - **Collapse/expand**: chevron ∨ (expandido) / > (colapsado, rotación CSS -90°). `collapsedIds: Set<number>`. `isVisible(act)` recursivo: sube por `parentId` hasta que ningún ancestro esté en `collapsedIds`. `toggleCollapse(act, event)` con `stopPropagation()`.
 - Estado de jerarquía (`collapsedIds`, `parentIds`, `colorMap`) se limpia al cambiar de proyecto.
+- `getEstado(act).css` (clases `badge-verde/rojo/...`) queda sin uso en el template tras pasar el badge a `[ngStyle]`; CSS scoped inofensivo.
 
 **Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Roles permitidos en ruta: `USUARIO DE UDP`, `ADMINISTRADOR DE UDP`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
 

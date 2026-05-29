@@ -46,8 +46,22 @@ export class CronogramaActividades implements OnInit {
   // Jerarquía
   collapsedIds = new Set<number>();
   private parentIds = new Set<number>();
+  // colorMap guarda el color base de nivel-1 heredado por cada actividad
   private colorMap = new Map<number, string>();
-  private readonly LEVEL1_PALETTE = ['#0891B2', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777'];
+  private readonly NIVEL0_COLOR = '#3F51B5';
+  private readonly LEVEL1_PALETTE = [
+    '#2196F3', '#009688', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4', '#F44336', '#673AB7',
+  ];
+  private readonly SHADES: Record<string, { claro: string; oscuro: string }> = {
+    '#2196F3': { claro: '#E3F2FD', oscuro: '#1565C0' },
+    '#009688': { claro: '#E0F2F1', oscuro: '#00695C' },
+    '#FF9800': { claro: '#FFF3E0', oscuro: '#E65100' },
+    '#E91E63': { claro: '#FCE4EC', oscuro: '#880E4F' },
+    '#9C27B0': { claro: '#F3E5F5', oscuro: '#6A1B9A' },
+    '#00BCD4': { claro: '#E0F7FA', oscuro: '#006064' },
+    '#F44336': { claro: '#FFEBEE', oscuro: '#B71C1C' },
+    '#673AB7': { claro: '#EDE7F6', oscuro: '#4527A0' },
+  };
 
   // Formulario del modal
   formActividad = '';
@@ -157,17 +171,33 @@ export class CronogramaActividades implements OnInit {
     return this.findLevel1Color(parent);
   }
 
+  /** Shades (claro/oscuro) del color base de nivel-1 de una actividad. */
+  private shadesOf(act: ActividadDto): { claro: string; oscuro: string } | null {
+    const base = this.colorMap.get(act.projectActivityId);
+    return base ? (this.SHADES[base] ?? null) : null;
+  }
+
   getRowStyle(act: ActividadDto): Record<string, string> {
     if (act.hierarchyLevel === 0) {
-      return { 'background-color': '#4F46E5', color: '#ffffff' };
+      return { 'background-color': this.NIVEL0_COLOR, color: '#ffffff' };
     }
     if (act.hierarchyLevel === 1) {
       const color = this.colorMap.get(act.projectActivityId) ?? '#6b7280';
       return { 'background-color': color, color: '#ffffff' };
     }
-    const color = this.colorMap.get(act.projectActivityId);
-    if (!color) return {};
-    return { 'background-color': color + '26', color };
+    const shades = this.shadesOf(act);
+    if (!shades) return {};
+    return { 'background-color': shades.claro, color: shades.oscuro };
+  }
+
+  getBadgeStyle(act: ActividadDto): Record<string, string> {
+    if (act.hierarchyLevel <= 1) {
+      return { 'background-color': 'rgba(255, 255, 255, 0.2)', color: '#ffffff' };
+    }
+    const shades = this.shadesOf(act);
+    if (!shades) return {};
+    // colorClaro más oscuro = tinte del oscuro al 15% sobre la fila clara
+    return { 'background-color': shades.oscuro + '26', color: shades.oscuro };
   }
 
   hasChildren(act: ActividadDto): boolean {

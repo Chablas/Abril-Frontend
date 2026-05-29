@@ -158,7 +158,7 @@
               </div>
             </td>
             <td>
-              <span class="badge" [ngClass]="getEstado(act).css">
+              <span class="badge" [ngStyle]="getBadgeStyle(act)">
                 {{ getEstado(act).label }}
               </span>
             </td>
