@@ -460,8 +460,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       id: task.milestoneId,
       milestoneId: task.milestoneId,
       text: task.text,
-      plannedStartDate: '',
-      plannedEndDate: null,
+      plannedStartDate: task.plannedStart ?? '',
+      plannedEndDate: task.plannedEnd ?? null,
     };
     this.showEditModal = true;
   }
@@ -552,12 +552,71 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  private promoteUndatedTasksToGantt(): void {
+    const safeDate = (d: any): Date =>
+      d instanceof Date && !isNaN(d.getTime()) ? d : new Date();
+
+    const ganttData = this.undatedTasks.map((t) => {
+      const hasDate = t.start_date instanceof Date && !isNaN(t.start_date.getTime());
+      const startDate = safeDate(t.start_date);
+      const endDate = t.end_date instanceof Date && !isNaN(t.end_date.getTime()) ? t.end_date : null;
+      return {
+        id: t.id,
+        text: t.text,
+        milestoneId: t.milestoneId,
+        start_date: startDate,
+        end_date: endDate ?? startDate,
+        type: endDate ? undefined : 'milestone',
+        duration: endDate ? undefined : 0,
+        ...(hasDate ? {} : { sinFecha: true }),
+      };
+    });
+
+    this.undatedTasks = [];
+
+    if (this.noMilestones) {
+      // Transición desde la vista de plantilla: inicializar Gantt siempre
+      this.noMilestones = false;
+      this.cdr.detectChanges();
+      this.initGantt(false);
+      if (ganttData.length > 0) {
+        gantt.parse({ data: ganttData, links: [] });
+        gantt.showDate(new Date());
+      }
+    } else {
+      // Ya estamos en el Gantt: solo agregar si hay tareas pendientes
+      if (ganttData.length === 0) return;
+      ganttData.forEach((taskData) => gantt.addTask(taskData));
+      gantt.render();
+    }
+
+    this.ganttTasks = gantt.getTaskByTime();
+    setTimeout(() => this.drawTodayLine(), 50);
+    this.cdr.detectChanges();
+  }
+
+  private buildSavePayload(forceSave: boolean) {
+    return {
+      ...this.milestoneScheduleHistoryCreateDTO,
+      forceSave,
+      milestoneSchedules: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.filter(
+        (ms) => !!ms.plannedStartDate?.trim(),
+      ),
+    };
+  }
+
   addMilestoneScheduleOnMilestoneScheduleHistory() {
+    if (this.noMilestones && this.undatedTasks.length > 0) {
+      // Vista de plantilla: solo transicionar al Gantt, sin llamada al backend
+      this.promoteUndatedTasksToGantt();
+      return;
+    }
+
+    this.promoteUndatedTasksToGantt();
     this.loader = true;
     this.cdr.detectChanges();
-    this.milestoneScheduleHistoryCreateDTO.forceSave = false;
     this.milestoneScheduleHistoryService
-      .createMilestoneScheduleHistory(this.milestoneScheduleHistoryCreateDTO)
+      .createMilestoneScheduleHistory(this.buildSavePayload(false))
       .subscribe({
         next: (response) => {
           Swal.fire({
@@ -577,9 +636,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   forceAddMilestoneScheduleOnMilestoneScheduleHistory() {
     this.loader = true;
     this.cdr.detectChanges();
-    this.milestoneScheduleHistoryCreateDTO.forceSave = true;
     this.milestoneScheduleHistoryService
-      .createMilestoneScheduleHistory(this.milestoneScheduleHistoryCreateDTO)
+      .createMilestoneScheduleHistory(this.buildSavePayload(true))
       .subscribe({
         next: (response) => {
           Swal.fire({
@@ -909,30 +967,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     const isUndated = undatedIdx !== -1;
 
     if (isUndated) {
-      // Promover tarea sin fecha al Gantt
-      this.undatedTasks.splice(undatedIdx, 1);
-
-      const taskData = {
-        id: item.id,
-        text: item.text,
-        milestoneId: item.milestoneId,
-        start_date: startDate,
-        end_date: endDate ?? startDate,
-        type: endDate ? undefined : 'milestone',
-        duration: endDate ? undefined : 0,
-      };
-
-      if (this.noMilestones) {
-        this.noMilestones = false;
-        this.cdr.detectChanges();
-        this.initGantt(false);
-        gantt.parse({ data: [taskData], links: [] });
-        gantt.showDate(new Date());
-      } else {
-        gantt.addTask(taskData);
-        gantt.render();
-      }
-      setTimeout(() => this.drawTodayLine(), 50);
+      // Solo almacena las fechas en undatedTasks — la promoción al Gantt ocurre al presionar "Guardar"
+      const task = this.undatedTasks[undatedIdx];
+      task.start_date = startDate;
+      task.end_date = endDate;
+      task.plannedStart = startClean;
+      task.plannedEnd = endClean;
     } else {
       // Actualizar tarea existente en el Gantt
       const task = gantt.getTask(item.id);
@@ -949,10 +989,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       }
       gantt.updateTask(task.id);
       gantt.render();
+      this.ganttTasks = gantt.getTaskByTime();
     }
 
     this.showEditModal = false;
-    this.ganttTasks = gantt.getTaskByTime();
     this.cdr.detectChanges();
 
     const dtoItem = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.find(
