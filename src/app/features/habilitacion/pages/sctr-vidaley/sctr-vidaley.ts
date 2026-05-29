@@ -429,8 +429,12 @@ export class SctrVidaley implements OnInit, OnDestroy {
           this.selectedPoliza = poliza;
           const preselect =
             this.wFiltroTipo === 'VIDA_LEY'
-              ? poliza.workers.filter((w) => w.estadoVidaLey === 'Enviado').map((w) => w.workerId)
-              : poliza.workers.filter((w) => w.estadoSctr === 'Enviado').map((w) => w.workerId);
+              ? poliza.workers
+                  .filter((w) => w.estadoVidaLey === 'Enviado' || w.estadoVidaLey === 'En revision')
+                  .map((w) => w.workerId)
+              : poliza.workers
+                  .filter((w) => w.estadoSctr === 'Enviado' || w.estadoSctr === 'En revision')
+                  .map((w) => w.workerId);
           this.polizaWorkersSeleccionados = new Set(preselect);
           console.log('polizaWorkersSeleccionados (ids):', [...this.polizaWorkersSeleccionados]);
           const archivoVisor =
@@ -870,6 +874,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
         return 'chip-orange';
       case 'Vencido':
         return 'chip-red';
+      case 'En revision':
+        return 'chip-orange';
       case 'Falta':
         return 'chip-gray';
       default:
