@@ -135,7 +135,21 @@ export class ContractorRegistration implements OnInit {
   }
 
   onDniKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') this.searchReniec();
+    if (event.key === 'Enter') { this.searchReniec(); return; }
+    this.blockNonDigits(event);
+  }
+
+  onNumericKeydown(event: KeyboardEvent) {
+    this.blockNonDigits(event);
+  }
+
+  private blockNonDigits(event: KeyboardEvent): void {
+    // Permitir teclas de control: Backspace, Delete, Tab, flechas, Ctrl+A/C/V/X, etc.
+    const isControl = event.ctrlKey || event.metaKey || event.altKey;
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (isControl || allowed.includes(event.key)) return;
+    // Bloquear todo lo que no sea dígito (0-9)
+    if (!/^\d$/.test(event.key)) event.preventDefault();
   }
 
   clearReniec() {
@@ -205,7 +219,9 @@ export class ContractorRegistration implements OnInit {
     if (!this.logoFile)                                   errors.push('Logo / imagen de la empresa');
 
     // Representante legal
-    if (!this.form.legalRepresentativeDni?.trim())        errors.push('DNI del representante legal');
+    // Se acepta el DNI si fue consultado (form) o simplemente escrito (dniInput)
+    if (!this.form.legalRepresentativeDni?.trim() && !this.dniInput?.trim())
+      errors.push('DNI del representante legal');
     if (!this.form.legalRepresentativeFullName?.trim())   errors.push('Nombre completo del representante legal');
     if (!this.form.legalEntityRegistryNumber?.trim())     errors.push('N° de partida registral');
 
@@ -241,6 +257,11 @@ export class ContractorRegistration implements OnInit {
     }
 
     this.loaderService.show();
+
+    // Si el usuario escribió el DNI sin consultar RENIEC, sincronizarlo al form
+    if (!this.form.legalRepresentativeDni?.trim() && this.dniInput?.trim()) {
+      this.form.legalRepresentativeDni = this.dniInput.trim();
+    }
 
     const formData = new FormData();
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');

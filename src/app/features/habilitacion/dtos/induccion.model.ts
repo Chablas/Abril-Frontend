@@ -31,6 +31,24 @@ export interface InduccionCreateDto {
   trabajoAltura: boolean;
 }
 
+export interface InduccionListDto {
+  id: number;
+  workerId: number;
+  apellidoNombre: string;
+  dni: string;
+  proyectoId: number;
+  proyectoNombre: string;
+  empresaId: number;
+  empresaNombre: string;
+  contrataCasa?: string;
+  fechaProgramada: string;
+  trabajoAltura: boolean;
+  equipoElectrico: boolean;
+  estado: string;
+  ingresoConfirmado: boolean;
+  fechaIngreso?: string;
+}
+
 export interface InduccionBatchCreateDto {
   proyectoId: number;
   empresaId?: number;

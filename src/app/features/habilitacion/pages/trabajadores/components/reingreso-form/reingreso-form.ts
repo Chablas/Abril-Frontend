@@ -15,9 +15,11 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
+import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { WorkerHabilitacionListDto, WorkerReingresoDto } from '../../../../dtos/trabajador.model';
@@ -50,7 +52,9 @@ export class ReingresoForm implements OnChanges {
   constructor(
     private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
+    private empresaContratistaService: EmpresaContratistaService,
     private catalogosService: CatalogosSaludService,
+    private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -73,6 +77,32 @@ export class ReingresoForm implements OnChanges {
 
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
+
+    if (this.authService.isContratista()) {
+      const empresaId = this.authService.getEmpresaId();
+      if (empresaId) {
+        this.empresaContratistaService.getProyectos(empresaId).subscribe({
+          next: (res) => {
+            this.proyectos = (res ?? []).map((p) => ({
+              projectId: p.proyectoId,
+              projectDescription: p.proyectoNombre,
+            })) as unknown as ProjectGetDTO[];
+            this.loadingCatalogos = false;
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.proyectos = [];
+            this.loadingCatalogos = false;
+            this.errorService.handleError(err);
+          },
+        });
+      } else {
+        this.proyectos = [];
+        this.loadingCatalogos = false;
+      }
+      return;
+    }
+
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
         this.proyectos = res.data ?? [];

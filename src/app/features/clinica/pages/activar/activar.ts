@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { timeout } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -34,7 +35,6 @@ export class ActivarClinica implements OnInit {
   }
 
   submit(): void {
-    if (!this.passwordsCoinciden) return;
     this.loading = true;
     this.error = '';
     const token =
@@ -43,8 +43,12 @@ export class ActivarClinica implements OnInit {
       .post(
         `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/auth/activar`,
         { token: this.token, password: this.password },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          responseType: 'json' as const,
+        },
       )
+      .pipe(timeout(15000))
       .subscribe({
         next: () => {
           this.exito = true;

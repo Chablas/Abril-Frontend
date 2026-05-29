@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, forkJoin, of, takeUntil } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -198,5 +198,74 @@ export class CatalogoClinicas implements OnInit, OnDestroy {
 
   get hasActiveFilters(): boolean {
     return !!(this.filters.search || this.filters.estado);
+  }
+
+  enviarActivacion(item: ClinicaSimpleDto): void {
+    const emailsRaw = this.emailsMap.get(item.id) ?? '';
+    const emails = emailsRaw.split(',').map((e) => e.trim()).filter((e) => !!e);
+
+    if (emails.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'Sin emails', text: 'Esta clínica no tiene emails registrados.' });
+      return;
+    }
+
+    const checkboxes = emails
+      .map(
+        (e, i) => `
+        <label style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:0.9rem;">
+          <input type="checkbox" id="email_${i}" value="${e}" checked
+                 style="width:16px;height:16px;accent-color:#16a34a;">
+          ${e}
+        </label>`,
+      )
+      .join('');
+
+    Swal.fire({
+      title: 'Enviar activación de cuenta',
+      html: `
+        <p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">
+          Selecciona los emails que recibirán el link de activación:
+        </p>
+        <div style="text-align:left;">${checkboxes}</div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#16a34a',
+      preConfirm: () => {
+        const seleccionados: string[] = [];
+        emails.forEach((e, i) => {
+          const cb = document.getElementById(`email_${i}`) as HTMLInputElement;
+          if (cb?.checked) seleccionados.push(e);
+        });
+        if (seleccionados.length === 0) {
+          Swal.showValidationMessage('Selecciona al menos un email');
+        }
+        return seleccionados;
+      },
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value?.length) return;
+      this.procesarActivaciones(item.id, item.nombre, result.value);
+    });
+  }
+
+  private procesarActivaciones(clinicaId: number, clinicaNombre: string, emails: string[]): void {
+    const flujos = emails.map((email) =>
+      this.service.crearClinicaUsuario(clinicaId, clinicaNombre, email).pipe(
+        catchError(() => of(null)),
+        switchMap(() => this.service.solicitarActivacionClinica(email).pipe(catchError(() => of(null)))),
+      ),
+    );
+
+    forkJoin(flujos).subscribe(() => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Activaciones enviadas',
+        text: `Se enviaron ${emails.length} email(s) de activación.`,
+        timer: 2500,
+        showConfirmButton: false,
+      });
+    });
   }
 }

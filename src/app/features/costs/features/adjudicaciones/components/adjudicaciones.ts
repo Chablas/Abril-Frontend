@@ -13,6 +13,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ProjectSubContractorDTO } from '../dtos/projectSubContractorDto.model';
 import { ProjectSubContractorFiltersDTO } from '../dtos/projectSubContractorFilters.model';
 import { ProjectSimpleDTO } from '../../../../../core/dtos/project/projectSimple.model';
+import { ContractTypeSimpleDTO } from '../dtos/contractTypeSimple.model';
+import { ContractModalitySimpleDTO } from '../dtos/contractModalitySimple.model';
+import { PaymentMethodSimpleDTO } from '../dtos/paymentMethodSimple.model';
 
 @Component({
   standalone: true,
@@ -26,14 +29,24 @@ export class Adjudicaciones implements OnInit {
   currentPage = 1;
   totalPages = 0;
   totalRecords = 0;
+
+  // Listas para los desplegables
   projects: ProjectSimpleDTO[] = [];
+  contractTypes: ContractTypeSimpleDTO[] = [];
+  contractModalities: ContractModalitySimpleDTO[] = [];
+  paymentMethods: PaymentMethodSimpleDTO[] = [];
 
   filters: ProjectSubContractorFiltersDTO = {
     page: 1,
-    projectId: 0,
-    search: '',
+    projectId: null,
+    contributorName: '',
+    contributorRuc: '',
+    contractTypeId: null,
+    contractModalityId: null,
+    paymentMethodId: null,
   };
 
+  showAdvanced = false;
   showCreateModal = false;
   selectedItem: ProjectSubContractorDTO | null = null;
 
@@ -48,7 +61,7 @@ export class Adjudicaciones implements OnInit {
   }
 
   private loadPagedWithFilters(): void {
-    // Primera carga: obtener lista + filtros en una sola llamada
+    // Primera carga: obtener lista + listas de filtros en una sola llamada
     this.loaderService.show();
     this.adjudicacionesService.getAdjudicacionPagedWithFilters(this.filters).subscribe({
       next: (response) => {
@@ -57,6 +70,9 @@ export class Adjudicaciones implements OnInit {
         this.totalPages = response.paged.totalPages;
         this.totalRecords = response.paged.totalRecords;
         this.projects = response.filters.projects;
+        this.contractTypes = response.filters.contractTypes;
+        this.contractModalities = response.filters.contractModalities;
+        this.paymentMethods = response.filters.paymentMethods;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -84,6 +100,10 @@ export class Adjudicaciones implements OnInit {
     });
   }
 
+  search(): void {
+    this.load(1);
+  }
+
   openCreateModal(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateModal = true;
@@ -91,5 +111,33 @@ export class Adjudicaciones implements OnInit {
 
   openDetail(item: ProjectSubContractorDTO) {
     this.selectedItem = item;
+  }
+
+  /**
+   * Llamado cuando el Detail emite statusChanged (avance de paso, generación de paquete, etc.).
+   * Recarga la página actual y actualiza selectedItem para que apunte al objeto refrescado
+   * del servidor, evitando que mutaciones locales queden en un objeto huérfano.
+   */
+  onStatusChanged(): void {
+    const prevId = this.selectedItem?.projectSubContractorId;
+    this.filters.page = this.currentPage;
+    this.loaderService.show();
+    this.adjudicacionesService.getAdjudicacionPaged(this.filters).subscribe({
+      next: (response) => {
+        this.items = response.data;
+        this.currentPage = response.page;
+        this.totalPages = response.totalPages;
+        this.totalRecords = response.totalRecords;
+        if (prevId != null) {
+          const refreshed = this.items.find(i => i.projectSubContractorId === prevId);
+          if (refreshed) this.selectedItem = refreshed;
+        }
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 }

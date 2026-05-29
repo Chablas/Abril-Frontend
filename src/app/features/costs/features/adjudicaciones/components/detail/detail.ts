@@ -2,18 +2,20 @@ import { Component, Input, Output, EventEmitter, OnInit, ViewChild, ElementRef }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { MicrosoftAuthService } from '../../../../../auth/pages/login/services/microsoft-auth.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })
@@ -44,7 +46,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null };
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -62,13 +64,14 @@ export class Detail implements OnInit {
     const base = [
       { key: 'Contract',          label: 'Contrato' },
       { key: 'SummarySheet',      label: 'Hoja Resumen' },
-      { key: 'Budget',            label: 'Presupuesto' },
       { key: 'Schedule',          label: 'Cronograma' },
       { key: 'AttachedQuotation', label: 'Cotización Adjunta' },
       { key: 'ServiceOrder',      label: 'Orden de Servicio' },
       { key: 'Instructivo',          label: 'Instructivo' },
-      { key: 'NonConformingOutput',  label: 'Salidas No Conforme' },
+      { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
+      { key: 'FichaTecnica',         label: 'Ficha Técnica' },
+      { key: 'Anexo',                label: 'Anexos' },
     ];
     if (this.item.paymentMethodId === 2) {
       return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
@@ -99,29 +102,60 @@ export class Detail implements OnInit {
   uploadingDoc: string | null = null;
   generatingDoc: string | null = null;
   updatingStatusDoc: string | null = null;
+  sendingObservationEmail: string | null = null;
+  sendingAllObservationsEmail = false;
+  sendingAllLevantamientoEmail = false;
 
-  /** Opciones fijas de estado para los documentos. */
-  readonly fileStatuses = [
-    { id: 1, label: 'No aplica' },
-    { id: 2, label: 'En revisión por Ofic. Centr.' },
-    { id: 3, label: 'Con observaciones' },
-    { id: 4, label: 'Aprobado' },
-  ] as const;
+  /** Opciones de estado para los documentos (varía según rol). */
+  isOfTecnica = false;
+  fileStatuses: { id: number; label: string }[] = [];
+
+  private hasOfTecnica = false;
+  private hasOfCentral = false;
 
   /** Formulario local de estado/observación por clave de documento. */
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'Budget', 'PromissoryNote', 'Instructivo']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'PromissoryNote', 'Instructivo']);
 
   constructor(
     private adjudicacionesService: AdjudicacionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private microsoftAuthService: MicrosoftAuthService,
+    private authService: AuthService,
   ) {}
 
+  private static readonly ROLE_OF_TECNICA = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA TÉCNICA';
+  private static readonly ROLE_OF_CENTRAL = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA CENTRAL';
+
   ngOnInit(): void {
+    this.hasOfTecnica = this.authService.hasRole(Detail.ROLE_OF_TECNICA);
+    this.hasOfCentral = this.authService.hasRole(Detail.ROLE_OF_CENTRAL);
+
+    // Solo OF Técnica (sin Central): opciones restringidas
+    this.isOfTecnica = this.hasOfTecnica && !this.hasOfCentral;
+
+    const centralOptions = [
+      { id: 1, label: 'No aplica' },
+      { id: 2, label: 'En revisión por Ofic. Centr.' },
+      { id: 3, label: 'Con observaciones' },
+      { id: 4, label: 'Aprobado' },
+    ];
+    const levantamientoOption = { id: 5, label: 'Levantamiento de observación' };
+
+    if (this.hasOfTecnica && this.hasOfCentral) {
+      // Ambos roles → las 5 opciones
+      this.fileStatuses = [...centralOptions, levantamientoOption];
+    } else if (this.hasOfTecnica) {
+      // Solo OF Técnica → opciones se calculan por documento en getStatusOptionsForDoc()
+      this.fileStatuses = [{ id: 1, label: 'No aplica' }, levantamientoOption];
+    } else {
+      // Solo OF Central u otro rol → las 4 opciones estándar
+      this.fileStatuses = centralOptions;
+    }
+
     this.viewStep = this.item.projectSubContractorStatusId;
     if (this.item.signingDate)    this.step2Form.signingDate    = this.item.signingDate.substring(0, 10);
     if (this.item.startDate)      this.step2Form.startDate      = this.item.startDate.substring(0, 10);
@@ -130,6 +164,7 @@ export class Detail implements OnInit {
     if (this.item.promissoryNoteNumber)  this.step2Form.promissoryNoteNumber  = this.item.promissoryNoteNumber;
     if (this.item.guaranteeFundPercentage != null) this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage;
     if (this.item.guaranteeFundDays != null)       this.step2Form.guaranteeFundDays       = this.item.guaranteeFundDays;
+    if (this.item.guaranteeValidityDays != null)   this.step2Form.guaranteeValidityDays   = this.item.guaranteeValidityDays;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -196,7 +231,7 @@ export class Detail implements OnInit {
     if (this.actualStatus === 5 && this.viewStep === 5) return 'Confirmar recepción';
     if (this.actualStatus === 6 && this.viewStep === 6) return 'Confirmar y enviar correo';
     if (this.actualStatus === 7 && this.viewStep === 7) return 'Marcar como escaneado';
-    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Oficina Técnica';
+    if (this.actualStatus === 8 && this.viewStep === 8) return 'Enviar a Staff de Obra';
     return 'Siguiente paso';
   }
 
@@ -279,7 +314,6 @@ export class Detail implements OnInit {
     switch (key) {
       case 'Contract':          return this.item.contract          ?? undefined;
       case 'SummarySheet':      return this.item.summarySheet      ?? undefined;
-      case 'Budget':            return this.item.budget            ?? undefined;
       case 'Schedule':          return this.item.schedule          ?? undefined;
       case 'AttachedQuotation': return this.item.attachedQuotation ?? undefined;
       case 'ServiceOrder':      return this.item.serviceOrder      ?? undefined;
@@ -287,6 +321,8 @@ export class Detail implements OnInit {
       case 'Instructivo':          return this.item.instructivo          ?? undefined;
       case 'NonConformingOutput':  return this.item.nonConformingOutput  ?? undefined;
       case 'ToleranceChart':       return this.item.toleranceChart       ?? undefined;
+      case 'FichaTecnica':         return this.item.fichaTecnica         ?? undefined;
+      case 'Anexo':                return this.item.anexo                ?? undefined;
       case 'ScannedDoc1':          return this.item.scannedDoc1          ?? undefined;
       default: return undefined;
     }
@@ -307,7 +343,6 @@ export class Detail implements OnInit {
         switch (docKey) {
           case 'Contract':          this.item.contract          = generated; break;
           case 'SummarySheet':      this.item.summarySheet      = generated; break;
-          case 'Budget':            this.item.budget            = generated; break;
           case 'Schedule':          this.item.schedule          = generated; break;
           case 'AttachedQuotation': this.item.attachedQuotation = generated; break;
           case 'ServiceOrder':      this.item.serviceOrder      = generated; break;
@@ -331,13 +366,22 @@ export class Detail implements OnInit {
   private static readonly WORD_ACCEPT =
     '.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword';
 
+  /** Tipos de documento que solo admiten archivos PDF. */
+  private static readonly PDF_ONLY_DOCS = new Set(['AttachedQuotation']);
+
+  private static readonly PDF_ACCEPT = '.pdf,application/pdf';
+
   triggerUpload(docKey: string): void {
     this.currentDocType = docKey;
     this.fileInput.nativeElement.value = '';
     // Restringir el selector de archivos según el tipo de documento
-    this.fileInput.nativeElement.accept = Detail.WORD_ONLY_DOCS.has(docKey)
-      ? Detail.WORD_ACCEPT
-      : '';
+    if (Detail.WORD_ONLY_DOCS.has(docKey)) {
+      this.fileInput.nativeElement.accept = Detail.WORD_ACCEPT;
+    } else if (Detail.PDF_ONLY_DOCS.has(docKey)) {
+      this.fileInput.nativeElement.accept = Detail.PDF_ACCEPT;
+    } else {
+      this.fileInput.nativeElement.accept = '';
+    }
     this.fileInput.nativeElement.click();
   }
 
@@ -361,6 +405,20 @@ export class Detail implements OnInit {
       }
     }
 
+    // Validación extra: los documentos PDF-only solo permiten .pdf
+    if (Detail.PDF_ONLY_DOCS.has(this.currentDocType)) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'pdf') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Formato no permitido',
+          text: 'La cotización adjunta solo acepta archivos PDF (.pdf).',
+          confirmButtonColor: '#64BC04',
+        });
+        return;
+      }
+    }
+
     this.uploadDoc(this.currentDocType, file);
   }
 
@@ -375,7 +433,6 @@ export class Detail implements OnInit {
         switch (docType) {
           case 'Contract':          this.item.contract          = uploaded; break;
           case 'SummarySheet':      this.item.summarySheet      = uploaded; break;
-          case 'Budget':            this.item.budget            = uploaded; break;
           case 'Schedule':          this.item.schedule          = uploaded; break;
           case 'AttachedQuotation': this.item.attachedQuotation = uploaded; break;
           case 'ServiceOrder':      this.item.serviceOrder      = uploaded; break;
@@ -383,6 +440,8 @@ export class Detail implements OnInit {
           case 'Instructivo':          this.item.instructivo          = uploaded; break;
           case 'NonConformingOutput':  this.item.nonConformingOutput  = uploaded; break;
           case 'ToleranceChart':       this.item.toleranceChart       = uploaded; break;
+          case 'FichaTecnica':         this.item.fichaTecnica         = uploaded; break;
+          case 'Anexo':                this.item.anexo                = uploaded; break;
           case 'ScannedDoc1':          this.item.scannedDoc1          = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
@@ -402,7 +461,18 @@ export class Detail implements OnInit {
     this.saveDocStatus(docKey);
   }
 
+  /** Opciones de estado para un documento. Para OF Técnica devuelve las opciones restringidas. */
+  getStatusOptionsForDoc(_docKey: string): { id: number; label: string }[] {
+    return this.fileStatuses;
+  }
+
+  /** True si el usuario tiene el rol de OF Técnica (puede enviar correo de levantamiento). */
+  get canSendLevantamiento(): boolean {
+    return this.hasOfTecnica;
+  }
+
   onObservationBlur(docKey: string): void {
+    if (this.isOfTecnica) return;
     this.saveDocStatus(docKey);
   }
 
@@ -431,6 +501,128 @@ export class Detail implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  async sendObservationsEmail(docKey: string, docLabel: string): Promise<void> {
+    this.sendingObservationEmail = docKey;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingObservationEmail = null;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    const form = this.docForms[docKey];
+    this.adjudicacionesService
+      .sendObservationEmail(this.item.projectSubContractorId, docKey, {
+        graphAccessToken: graphToken,
+        documentLabel: docLabel,
+        observation: form.observation || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingObservationEmail = null;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingObservationEmail = null;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async sendAllObservationsEmailGlobal(): Promise<void> {
+    this.sendingAllObservationsEmail = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingAllObservationsEmail = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendAllObservationsEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingAllObservationsEmail = false;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingAllObservationsEmail = false;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async sendAllLevantamientoEmailGlobal(): Promise<void> {
+    this.sendingAllLevantamientoEmail = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingAllLevantamientoEmail = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendAllLevantamientoEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingAllLevantamientoEmail = false;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingAllLevantamientoEmail = false;
+          this.errorService.handleError(err);
+        },
+      });
   }
 
   generatePackage(): void {
@@ -630,9 +822,25 @@ export class Detail implements OnInit {
     });
   }
 
-  private advanceToApproved(): void {
+  private async advanceToApproved(): Promise<void> {
     this.loaderService.show();
-    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId).subscribe({
+
+    // El correo de notificación al Staff de Obra se envía vía Graph como el usuario autenticado.
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService.advanceToStep4(this.item.projectSubContractorId, graphToken).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 4;
@@ -685,7 +893,7 @@ export class Detail implements OnInit {
         this.item.projectSubContractorStatusId = 9;
         this.viewStep = 9;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Oficina Técnica', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado a Staff de Obra', draggable: true });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -769,6 +977,12 @@ export class Detail implements OnInit {
         ? null
         : Math.trunc(Number(rawGfd));
 
+    const rawGvd = this.step2Form.guaranteeValidityDays;
+    const guaranteeValidityDays: number | null =
+      rawGvd === null || rawGvd === undefined || (rawGvd as any) === ''
+        ? null
+        : Math.trunc(Number(rawGvd));
+
     if (guaranteeFundPercentage === null) {
       Swal.fire({ icon: 'warning', title: 'El porcentaje del fondo de garantía es obligatorio.', draggable: true });
       return;
@@ -776,6 +990,12 @@ export class Detail implements OnInit {
 
     if (guaranteeFundDays === null) {
       Swal.fire({ icon: 'warning', title: 'Los días del fondo de garantía son obligatorios.', draggable: true });
+      return;
+    }
+
+    if (this.step2Form.startDate && this.step2Form.endDate &&
+        new Date(this.step2Form.startDate) > new Date(this.step2Form.endDate)) {
+      Swal.fire({ icon: 'warning', title: 'La fecha de inicio no puede ser posterior a la fecha fin del contrato.', draggable: true });
       return;
     }
 
@@ -788,6 +1008,7 @@ export class Detail implements OnInit {
       promissoryNoteNumber,
       guaranteeFundPercentage,
       guaranteeFundDays,
+      guaranteeValidityDays,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
@@ -799,6 +1020,7 @@ export class Detail implements OnInit {
         this.item.promissoryNoteNumber     = promissoryNoteNumber;
         this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
         this.item.guaranteeFundDays        = guaranteeFundDays;
+        this.item.guaranteeValidityDays    = guaranteeValidityDays;
         this.viewStep = 3;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });

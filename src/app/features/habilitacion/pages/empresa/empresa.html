@@ -8,7 +8,7 @@
           <app-search-select
             [options]="empresas"
             valueField="id"
-            displayField="nombre"
+            displayField="razonSocial"
             [value]="empresaId"
             [showLabel]="false"
             placeholder="Seleccionar empresa"
@@ -267,8 +267,18 @@
 
     <div class="drawer-body">
 
+      <!-- SCTR / Vida Ley: gestionado en otra pantalla -->
+      <div class="info-readonly-block" *ngIf="esSCTRoVidaLey">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>Este entregable se gestiona en la pantalla SCTR / Vida Ley.</span>
+      </div>
+
       <!-- CONTRATISTA -->
-      <ng-container *ngIf="isContratista()">
+      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey">
 
         <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
           <label class="field-lbl">VIGENCIA</label>
@@ -277,8 +287,14 @@
 
         <div class="field-grp">
           <label class="field-lbl">DOCUMENTO ADJUNTO</label>
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
           <div class="upload-zone upload-zone--active"
-            *ngIf="!uploadingFile && !panelArchivoUrl"
+            *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl"
             (click)="triggerFileInput()">
             <div class="upload-empty">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
@@ -347,6 +363,7 @@
             rows="3"
             [(ngModel)]="panelObsContratista"
             placeholder="Notas que verá Abril…"
+            (blur)="guardarObservaciones()"
           ></textarea>
         </div>
 
@@ -363,7 +380,7 @@
       </ng-container>
 
       <!-- ADMIN -->
-      <ng-container *ngIf="isAdmin()">
+      <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey">
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
@@ -385,8 +402,14 @@
 
         <div class="field-grp">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
+            <div class="upload-empty">
+              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+            </div>
+          </div>
           <div class="upload-zone upload-zone--active"
-            *ngIf="!uploadingFile && !panelArchivoUrl"
+            *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl"
             (click)="triggerFileInput()">
             <div class="upload-empty">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
@@ -473,22 +496,13 @@
     </div>
 
     <div class="drawer-footer">
-      <!-- Contratista: enviar -->
-      <button
-        *ngIf="isContratista()"
-        type="button"
-        class="btn-primary"
-        [disabled]="!panelArchivoUrl && !panelVigencia"
-        (click)="enviarDocumento()"
-      >ENVIAR DOCUMENTO</button>
-
       <!-- Admin: guardar + aprobar/rechazar -->
-      <ng-container *ngIf="isAdmin()">
+      <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey">
         <button
           type="button"
           class="btn-primary"
           [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
-          (click)="guardarAdmin()"
+          (click)="guardarEntregable()"
         >GUARDAR</button>
         <div class="panel-actions" *ngIf="selectedEntregable.estado === 'Enviado'">
           <button type="button" class="btn-approve" (click)="aprobarEntregable()">✓ APROBAR</button>

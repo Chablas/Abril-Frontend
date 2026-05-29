@@ -9,7 +9,11 @@ export interface SctrWorkerDto {
   dni: string;
   estadoSctr: string;
   estadoVidaLey: string;
+  estado?: string;
+  sctrHabId?: number;
   fechaInicioCobertura?: string;
+  vigencia?: string;
+  fechaVencimiento?: string;
 }
 
 export interface SctrVidaLeyDto {
@@ -56,11 +60,14 @@ export interface SctrTrabajadorEstadoDto {
   archivoUrl?: string;
   empresaNombre?: string;
   proyectoNombre?: string;
+  fechaVencimiento?: string;
+  updatedAt?: string;
 }
 
 export interface SctrVidaLeyAprobarDto {
   workerIdsAprobados: number[];
   workerIdsRechazados: number[];
+  tipo?: string;
   obsAbril?: string;
   vigencia?: string;
 }

@@ -24,6 +24,8 @@ export const roleGuard: CanActivateFn = (route) => {
   if (allowedRoles?.length) {
     const userRoles = authService.getRoles();
     if (allowedRoles.some((r) => userRoles.includes(r))) return true;
+    // Contratistas usan sistema de auth propio (tipo en localStorage, no claim JWT)
+    if (allowedRoles.includes('CONTRATISTA') && authService.isContratista()) return true;
   }
 
   router.navigate(['/']);

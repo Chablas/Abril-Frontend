@@ -102,11 +102,6 @@
         </div>
 
         <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Origen del contrato</p>
-          <p class="text-sm text-gray-700">{{ item.contractOriginDescription }}</p>
-        </div>
-
-        <div>
           <p class="text-xs text-gray-400 mb-[2px]">Monto</p>
           <p class="text-sm font-semibold text-gray-800">
             {{ item.currencyCode }} {{ item.amount | number:'1.2-2' }}
@@ -118,8 +113,14 @@
         </div>
 
         <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Forma de pago</p>
+          <p class="text-xs text-gray-400 mb-[2px]">Modalidad de pago</p>
           <p class="text-sm text-gray-700">{{ item.paymentMethodDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Forma de pago</p>
+          <p class="text-sm text-gray-700" *ngIf="item.paymentFormDescription">{{ item.paymentFormDescription }}</p>
+          <p class="text-sm text-gray-400 italic" *ngIf="!item.paymentFormDescription">—</p>
         </div>
 
         <div>
@@ -143,11 +144,21 @@
           </ng-template>
         </div>
 
-        <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Fecha de creación</p>
-          <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
-        </div>
+      </div>
 
+      <!-- ── Datos de registro ─────────────────────────────────────────── -->
+      <div class="mt-[18px] pt-[14px] border-t border-dashed border-gray-200">
+        <p class="text-[10px] font-semibold text-gray-300 uppercase tracking-widest mb-[10px]">Datos de registro</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[8px]">
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Creado por</p>
+            <p class="text-sm text-gray-700">{{ item.createdUserFullName ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 mb-[2px]">Fecha de creación</p>
+            <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- Archivos adjuntos -->
@@ -242,6 +253,14 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Periodo de validez de garantía (días)</label>
+            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays"
+              min="0" step="1"
+              placeholder="Ej: 365"
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+          </div>
+
           <!-- Plazo calculado automáticamente -->
           <div *ngIf="plazoEnDias !== null" class="sm:col-span-2">
             <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
@@ -309,6 +328,11 @@
             <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeFundDays }} días</p>
           </div>
 
+          <div *ngIf="item.guaranteeValidityDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Periodo de validez de garantía</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeValidityDays }} días</p>
+          </div>
+
         </div>
       </ng-container>
 
@@ -360,14 +384,19 @@
 
             <!-- Desplegable de estado (siempre visible) -->
             <div class="flex items-center gap-[6px]">
-              <select
-                [(ngModel)]="docForms[doc.key].statusId"
-                (change)="onStatusChange(doc.key)"
-                [disabled]="updatingStatusDoc === doc.key"
-                class="flex-1 text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
-                <option [ngValue]="null">— Estado —</option>
-                <option *ngFor="let s of fileStatuses" [ngValue]="s.id">{{ s.label }}</option>
-              </select>
+              <div class="flex-1" [class.opacity-60]="updatingStatusDoc === doc.key"
+                [class.pointer-events-none]="updatingStatusDoc === doc.key">
+                <app-search-select
+                  [options]="$any(getStatusOptionsForDoc(doc.key))"
+                  valueField="id"
+                  displayField="label"
+                  [showLabel]="false"
+                  placeholder="— Estado —"
+                  [allowClear]="true"
+                  [value]="docForms[doc.key].statusId"
+                  (valueChange)="docForms[doc.key].statusId = $event; onStatusChange(doc.key)">
+                </app-search-select>
+              </div>
               <!-- spinner mientras guarda el estado -->
               <svg *ngIf="updatingStatusDoc === doc.key"
                 class="w-3.5 h-3.5 shrink-0 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
@@ -376,27 +405,21 @@
               </svg>
             </div>
 
-            <!-- Observación + correo (solo cuando estado = Con observaciones y hay archivo) -->
+            <!-- Observación (solo cuando estado = Con observaciones y hay archivo) -->
+            <!-- OF Técnica: lectura; OF Central: edición -->
             <ng-container *ngIf="ctx.file && docForms[doc.key].statusId === 3">
 
               <textarea
                 [(ngModel)]="docForms[doc.key].observation"
                 (blur)="onObservationBlur(doc.key)"
                 [disabled]="updatingStatusDoc === doc.key"
+                [readonly]="isOfTecnica"
                 placeholder="Observación..."
                 rows="2"
-                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed">
+                class="w-full text-xs border border-[#E2E2E2] rounded-lg px-[8px] py-[6px] text-gray-700 placeholder-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.bg-gray-50]="isOfTecnica"
+                [class.cursor-default]="isOfTecnica">
               </textarea>
-
-              <button
-                [disabled]="updatingStatusDoc === doc.key"
-                class="w-full flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-                Enviar correo con observaciones
-              </button>
 
             </ng-container>
 
@@ -464,6 +487,50 @@
           </ng-container>
         </div>
       </div>
+
+      <!-- Botones globales de correo -->
+      <div class="flex flex-wrap justify-end gap-3 mt-[16px]">
+
+        <!-- Levantamiento de observación (solo OF Técnica) -->
+        <button *ngIf="canSendLevantamiento"
+          (click)="sendAllLevantamientoEmailGlobal()"
+          [disabled]="sendingAllLevantamientoEmail"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <svg *ngIf="sendingAllLevantamientoEmail"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <svg *ngIf="!sendingAllLevantamientoEmail"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingAllLevantamientoEmail ? 'Enviando…' : 'Enviar correo de levantamiento' }}
+        </button>
+
+        <!-- Observaciones (oculto solo para OF Técnica pura; visible si tiene Central también) -->
+        <button *ngIf="!isOfTecnica"
+          (click)="sendAllObservationsEmailGlobal()"
+          [disabled]="sendingAllObservationsEmail"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <!-- spinner mientras envía -->
+          <svg *ngIf="sendingAllObservationsEmail"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <!-- ícono correo en reposo -->
+          <svg *ngIf="!sendingAllObservationsEmail"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingAllObservationsEmail ? 'Enviando…' : 'Enviar correo de observaciones' }}
+        </button>
+
+      </div><!-- /botones globales -->
+
     </div>
 
     <!-- PASO 4: Por enviar al SC -->
@@ -823,7 +890,7 @@
       <div class="flex flex-col gap-[16px] max-w-sm">
 
         <p class="text-sm text-gray-600 leading-relaxed">
-          Al confirmar se enviará un correo a los contactos de <strong>Oficina Técnica</strong> del proyecto
+          Al confirmar se enviará un correo a los contactos de <strong>Staff de Obra</strong> del proyecto
           con los documentos escaneados del paso anterior como adjuntos.
         </p>
 

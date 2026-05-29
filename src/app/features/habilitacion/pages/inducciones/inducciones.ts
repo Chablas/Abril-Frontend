@@ -1,48 +1,27 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
-import Swal from 'sweetalert2';
-import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { AuthService } from '../../../../core/services/auth.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { InduccionService } from '../../services/induccion.service';
-import { InduccionDto } from '../../dtos/induccion.model';
-import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
+import { InduccionListDto } from '../../dtos/induccion.model';
 
 @Component({
   selector: 'app-hab-inducciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, ProgramarInduccion],
+  imports: [CommonModule, FormsModule],
   templateUrl: './inducciones.html',
   styleUrl: './inducciones.css',
 })
-export class Inducciones implements OnInit, OnDestroy {
-  readonly pageSize = 20;
-
-  inducciones: InduccionDto[] = [];
+export class Inducciones implements OnInit {
+  inducciones: InduccionListDto[] = [];
   loading = false;
-  totalRecords = 0;
-  totalPages = 1;
-  currentPage = 1;
 
   filtroEstado = '';
-  filtroFecha = '';
-  filtroProyectoId: number | null = null;
-
-  modalProgramarOpen = false;
-
-  estadoOptions = [
-    { id: '', label: 'Todos' },
-    { id: 'PROGRAMADA', label: 'Programada' },
-    { id: 'COMPLETADA', label: 'Completada' },
-    { id: 'CANCELADA', label: 'Cancelada' },
-  ];
-
-  private filterChange$ = new Subject<void>();
-  private destroy$ = new Subject<void>();
+  filtroFechaDesde = '';
+  filtroFechaHasta = '';
 
   constructor(
     private induccionService: InduccionService,
@@ -53,40 +32,23 @@ export class Inducciones implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.filterChange$
-      .pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe(() => this.load(1));
-    this.load(1);
+    this.load();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  isAdmin(): boolean {
-    return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
-    );
-  }
-
-  load(page: number = this.currentPage): void {
+  load(): void {
     this.loading = true;
     this.loaderService.show();
+
     const params: Record<string, unknown> = {
-      page,
-      pageSize: this.pageSize,
-      estado: this.filtroEstado || undefined,
-      fecha: this.filtroFecha || undefined,
-      proyectoId: this.filtroProyectoId ?? undefined,
+      empresaId: this.authService.getEmpresaId(),
     };
-    this.induccionService.getInducciones(params).subscribe({
+    if (this.filtroEstado) params['estado'] = this.filtroEstado;
+    if (this.filtroFechaDesde) params['fechaDesde'] = this.filtroFechaDesde;
+    if (this.filtroFechaHasta) params['fechaHasta'] = this.filtroFechaHasta;
+
+    this.induccionService.getList(params).subscribe({
       next: (res) => {
-        this.inducciones = res.data ?? [];
-        this.currentPage = res.page;
-        this.totalPages = Math.max(res.totalPages, 1);
-        this.totalRecords = res.totalRecords;
+        this.inducciones = res ?? [];
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -99,84 +61,21 @@ export class Inducciones implements OnInit, OnDestroy {
     });
   }
 
-  onFilter(): void {
-    this.filterChange$.next();
+  onFilterChange(): void {
+    this.load();
   }
 
-  onPageChange(page: number): void {
-    this.load(page);
+  clearFilters(): void {
+    this.filtroEstado = '';
+    this.filtroFechaDesde = '';
+    this.filtroFechaHasta = '';
+    this.load();
   }
 
-  abrirProgramar(): void {
-    this.modalProgramarOpen = true;
-  }
-
-  closeProgramar(): void {
-    this.modalProgramarOpen = false;
-  }
-
-  onSaved(): void {
-    this.modalProgramarOpen = false;
-    this.load(this.currentPage);
-  }
-
-  marcarCompletada(item: InduccionDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Marcar como completada?',
-      text: `${item.workerNombre} — ${item.proyectoNombre}`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, completar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.cambiarEstado(item.id, 'COMPLETADA', 'Marcada como completada');
-    });
-  }
-
-  cancelar(item: InduccionDto): void {
-    Swal.fire({
-      icon: 'warning',
-      title: '¿Cancelar inducción?',
-      text: `${item.workerNombre} — ${item.proyectoNombre}`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'Volver',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.cambiarEstado(item.id, 'CANCELADA', 'Inducción cancelada');
-    });
-  }
-
-  private cambiarEstado(id: number, estado: string, title: string): void {
-    this.loaderService.show();
-    this.induccionService.patchEstado(id, estado).subscribe({
-      next: () => {
-        this.loaderService.hide();
-        Swal.fire({ icon: 'success', title, timer: 1500, showConfirmButton: false });
-        this.load(this.currentPage);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
-    });
-  }
-
-  getEstadoChip(estado: string): string {
-    switch (estado) {
-      case 'PROGRAMADA':
-        return 'chip-orange';
-      case 'COMPLETADA':
-        return 'chip-green';
-      case 'CANCELADA':
-        return 'chip-gray';
-      default:
-        return 'chip-gray';
-    }
+  getBadge(item: InduccionListDto): { label: string; clase: string } {
+    if (item.estado === 'REALIZADA') return { label: 'Completada', clase: 'badge-green' };
+    if (item.ingresoConfirmado) return { label: 'Ingresó', clase: 'badge-yellow' };
+    if (item.estado === 'PROGRAMADA') return { label: 'Programada', clase: 'badge-blue' };
+    return { label: item.estado ?? 'Desconocido', clase: 'badge-gray' };
   }
 }

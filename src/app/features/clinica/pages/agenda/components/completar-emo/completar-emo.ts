@@ -1,9 +1,11 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
-import { EmoCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { EmoCreateDto, InterconsultaInlineCreateDto, EmoRestriccionCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from '../../../../../ssoma/salud-ocupacional/services/http-base';
 import { ClinicaProgramacionService } from '../../../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto } from '../../../../dtos/clinica.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -19,19 +21,44 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 export class CompletarEmo implements OnChanges {
   @Input() open = false;
   @Input() programacion: ProgramacionClinicaDto | null = null;
+  @Input() interconsultaId?: number;
   @Output() closed = new EventEmitter<void>();
   @Output() completado = new EventEmitter<void>();
 
   aptitud = '';
-  numeroInforme = '';
-  urlResultado = '';
   notas = '';
-  requiereInterconsulta = false;
+  lecturaRealizada = false;
+  fechaLectura = '';
   saving = false;
+
+  archivoAptitud: File | null = null;
+  archivoEmo: File | null = null;
+  archivoLectura: File | null = null;
+
+  restricciones: { descripcionLibre: string }[] = [];
+  nuevaRestriccion = '';
+
+  icEspecialidad = '';
+  icDiagnostico = '';
+  icRequiereSeguimiento = false;
 
   readonly aptitudes = ['Apto', 'Apto con Restricciones', 'No Apto', 'Observado'];
 
+  get requiereRestriccion(): boolean { return this.aptitud === 'Apto con Restricciones'; }
+  get requiereDocumentos(): boolean { return this.aptitud === 'Apto' || this.aptitud === 'Apto con Restricciones'; }
+  get requiereInterconsulta(): boolean { return this.aptitud === 'No Apto' || this.aptitud === 'Observado'; }
+
+  get canSubmit(): boolean {
+    if (!this.aptitud || !this.programacion || this.saving) return false;
+    if (this.requiereDocumentos && (!this.archivoAptitud || !this.archivoEmo)) return false;
+    if (this.lecturaRealizada && (!this.fechaLectura || !this.archivoLectura)) return false;
+    if (this.requiereRestriccion && this.restricciones.length === 0) return false;
+    if (this.requiereInterconsulta && !this.icEspecialidad.trim()) return false;
+    return true;
+  }
+
   constructor(
+    private http: HttpClient,
     private emoSvc: EmoService,
     private progSvc: ClinicaProgramacionService,
     private errorService: ErrorService,
@@ -44,19 +71,58 @@ export class CompletarEmo implements OnChanges {
 
   reset(): void {
     this.aptitud = '';
-    this.numeroInforme = '';
-    this.urlResultado = '';
     this.notas = '';
-    this.requiereInterconsulta = false;
+    this.lecturaRealizada = false;
+    this.fechaLectura = '';
+    this.restricciones = [];
+    this.nuevaRestriccion = '';
+    this.icEspecialidad = '';
+    this.icDiagnostico = '';
+    this.icRequiereSeguimiento = false;
     this.saving = false;
+    this.archivoAptitud = null;
+    this.archivoEmo = null;
+    this.archivoLectura = null;
   }
 
-  get canSubmit(): boolean {
-    return !!this.aptitud && !!this.programacion && !this.saving;
+  agregarRestriccion(): void {
+    const txt = this.nuevaRestriccion.trim();
+    if (!txt) return;
+    this.restricciones.push({ descripcionLibre: txt });
+    this.nuevaRestriccion = '';
   }
 
-  close(): void {
-    this.closed.emit();
+  quitarRestriccion(i: number): void { this.restricciones.splice(i, 1); }
+
+  onArchivoAptitud(event: Event): void {
+    this.archivoAptitud = (event.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onArchivoEmo(event: Event): void {
+    this.archivoEmo = (event.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onArchivoLectura(event: Event): void {
+    this.archivoLectura = (event.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  close(): void { this.closed.emit(); }
+
+  private subirDocumentos(emoId: number): void {
+    const url = `${SALUD_OCUPACIONAL_BASE}/emos/${emoId}/documentos`;
+    const headers = buildAuthHeaders();
+    if (this.archivoAptitud) {
+      const fd = new FormData();
+      fd.append('file', this.archivoAptitud);
+      fd.append('tipo', 'Aptitud');
+      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
+    }
+    if (this.archivoEmo) {
+      const fd = new FormData();
+      fd.append('file', this.archivoEmo);
+      fd.append('tipo', 'EMO');
+      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
+    }
   }
 
   submit(): void {
@@ -64,46 +130,61 @@ export class CompletarEmo implements OnChanges {
     this.saving = true;
     this.loaderService.show();
 
+    const restriccionesPayload: EmoRestriccionCreateDto[] = this.restricciones.map(r => ({
+      descripcionLibre: r.descripcionLibre,
+      vigente: true,
+    }));
+
+    let interconsultaInline: InterconsultaInlineCreateDto | undefined;
+    if (this.requiereInterconsulta) {
+      interconsultaInline = {
+        especialidad: this.icEspecialidad.trim(),
+        diagnostico: this.icDiagnostico.trim() || undefined,
+        requiereSeguimiento: this.aptitud === 'No Apto' ? this.icRequiereSeguimiento : false,
+      };
+    }
+
     const emoDto: EmoCreateDto = {
       workerId: this.programacion.workerId,
       tipoEmoId: this.programacion.tipoEmoId ?? 0,
-      empresaOrigenId: this.programacion.empresaId ?? 0,
+      empresaOrigenId: this.programacion.empresaId ?? undefined,
       fechaEmo: new Date().toISOString().split('T')[0],
       aptitud: this.aptitud,
-      requiereInterconsulta: this.aptitud === 'Observado' && this.requiereInterconsulta,
-      numeroInforme: this.numeroInforme || undefined,
-      urlResultado: this.urlResultado || undefined,
+      requiereInterconsulta: this.requiereInterconsulta,
       notas: this.notas || undefined,
+      fechaLectura: this.lecturaRealizada ? (this.fechaLectura || undefined) : undefined,
       examenes: [],
-      restricciones: [],
+      restricciones: restriccionesPayload,
+      interconsultaInline,
     };
 
-    this.emoSvc.createEmo(emoDto).subscribe({
+    this.emoSvc.createEmo(emoDto, this.archivoLectura).subscribe({
       next: (res) => {
-        this.progSvc
-          .accionClinica(this.programacion!.id, {
+        const emoId = res.id;
+        if (this.interconsultaId != null) {
+          // Contexto interconsultas: no hay programación real, omitir accionClinica
+          this.subirDocumentos(emoId);
+          this.saving = false;
+          this.loaderService.hide();
+          this.completado.emit();
+        } else {
+          // Contexto agenda: flujo original con accionClinica
+          this.progSvc.accionClinica(this.programacion!.id, {
             id: this.programacion!.id,
             accion: 'Completar',
-            emoResultadoId: res.id,
-          })
-          .subscribe({
+            emoResultadoId: emoId,
+          }).subscribe({
             next: () => {
+              this.subirDocumentos(emoId);
               this.saving = false;
               this.loaderService.hide();
               this.completado.emit();
             },
-            error: (err) => {
-              this.saving = false;
-              this.loaderService.hide();
-              this.errorService.handleError(err);
-            },
+            error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
           });
+        }
       },
-      error: (err) => {
-        this.saving = false;
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
+      error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
     });
   }
 }

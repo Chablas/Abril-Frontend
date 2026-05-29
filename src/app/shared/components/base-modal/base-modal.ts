@@ -12,6 +12,7 @@ export class BaseModal {
   private mousedownOnBackdrop = false;
   @Input() title: string = '';
   @Input() width: string = 'w-[1000px]';
+  @Input() height: string = '';
   @Output() closeModal = new EventEmitter();
 
   onBackdropMousedown() {

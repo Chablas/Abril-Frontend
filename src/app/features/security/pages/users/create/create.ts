@@ -109,6 +109,10 @@ export class UserCreate implements OnInit {
     return errors;
   }
 
+  allRolesChecked(): boolean { return this.filteredRoles.length > 0 && this.filteredRoles.every(r => r.checked); }
+  someRolesChecked(): boolean { return this.filteredRoles.some(r => r.checked) && !this.allRolesChecked(); }
+
+
   saveUser() {
     const errors = this.getValidationErrors();
     if (errors.length > 0) {

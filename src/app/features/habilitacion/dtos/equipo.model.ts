@@ -38,7 +38,7 @@ export interface EquipoUpsertDto {
 }
 
 export interface EquipoEntregableUpdateDto {
-  estado: string;
+  estado?: string;
   vigencia?: string;
   archivoUrl?: string;
   obsAbril?: string;

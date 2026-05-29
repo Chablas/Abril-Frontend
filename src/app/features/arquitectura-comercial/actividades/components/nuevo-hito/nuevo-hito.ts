@@ -63,6 +63,8 @@ export class NuevoHito implements OnChanges {
   etapas: AcEtapaDTO[] = [];
   loadingEtapas = false;
   saving = false;
+  nombrePersonalizado = false;
+  nombreLibre = '';
 
   model: NuevoHitoForm = this.empty();
 
@@ -74,6 +76,8 @@ export class NuevoHito implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.model = this.empty();
+      this.nombrePersonalizado = false;
+      this.nombreLibre = '';
       this.loadEtapas();
     }
   }
@@ -124,22 +128,17 @@ export class NuevoHito implements OnChanges {
   }
 
   get canSubmit(): boolean {
+    if (!this.projectId || this.saving) return false;
+    if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
     const { etapaNombre, actividad, mes, correlativo } = this.model;
-    return (
-      !this.saving &&
-      !!this.projectId &&
-      !!etapaNombre &&
-      !!actividad &&
-      !!mes &&
-      correlativo != null
-    );
+    return !!etapaNombre && !!actividad && !!mes && correlativo != null;
   }
 
   submit(): void {
     if (!this.canSubmit || !this.projectId) return;
 
     const body: CreateActividadBody = {
-      nombre: this.nombreCalculado,
+      nombre: this.nombrePersonalizado ? this.nombreLibre.trim() : this.nombreCalculado,
       tipo: 'HITO',
       projectId: this.projectId,
       etapaId: this.model.etapaId,

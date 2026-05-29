@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WorkItemCategoryService } from '../../services/work-item-category.service';
@@ -21,11 +21,15 @@ import Swal from 'sweetalert2';
 export class WorkItemCategoryList implements OnInit {
   @Input() filters: WorkItemCategoryFilterDto = { page: 1 };
   @Output() pagedData = new EventEmitter<PagedResponseDTO<WorkItemCategoryDto>>();
+  @ViewChild('instructivoFileInput') instructivoFileInput!: ElementRef<HTMLInputElement>;
 
   items: WorkItemCategoryDto[] = [];
   showEditModal = false;
   editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true, clauses: [] };
   editingClauses: WorkItemCategoryClauseDto[] = [];
+
+  uploadingInstructivoId: number | null = null;
+  private pendingUploadId: number | null = null;
 
   constructor(
     private service: WorkItemCategoryService,
@@ -59,6 +63,34 @@ export class WorkItemCategoryList implements OnInit {
     };
     this.editingClauses = item.clauses ?? [];
     this.showEditModal = true;
+  }
+
+  triggerUploadInstructivo(id: number, event: MouseEvent): void {
+    event.stopPropagation();
+    this.pendingUploadId = id;
+    this.instructivoFileInput.nativeElement.value = '';
+    this.instructivoFileInput.nativeElement.click();
+  }
+
+  onInstructivoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.pendingUploadId == null) return;
+
+    const id = this.pendingUploadId;
+    this.uploadingInstructivoId = id;
+
+    this.service.uploadInstructivo(id, file).subscribe({
+      next: (res) => {
+        this.uploadingInstructivoId = null;
+        Swal.fire({ icon: 'success', title: res.message ?? 'Instructivo subido exitosamente.', confirmButtonColor: '#64BC04' });
+        this.load(1);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.uploadingInstructivoId = null;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   delete(id: number, event: MouseEvent): void {

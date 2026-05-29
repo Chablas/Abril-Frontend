@@ -70,11 +70,13 @@ export class AdjudicacionesService {
     });
   }
 
-  advanceToStep4(projectSubContractorId: number): Observable<ApiMessageDTO> {
+  advanceToStep4(projectSubContractorId: number, graphAccessToken: string): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/advance-to-step4`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/advance-to-step4`,
+      { graphAccessToken },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
   }
 
   updateStatus(projectSubContractorId: number, projectSubContractorStatusId: number): Observable<ApiMessageDTO> {
@@ -84,7 +86,7 @@ export class AdjudicacionesService {
     });
   }
 
-  saveDates(projectSubContractorId: number, dto: { signingDate: string; startDate: string; endDate: string; contractNumber: number | null; promissoryNoteNumber: number | null; guaranteeFundPercentage: number | null; guaranteeFundDays: number | null }): Observable<ApiMessageDTO> {
+  saveDates(projectSubContractorId: number, dto: { signingDate: string; startDate: string; endDate: string; contractNumber: number | null; promissoryNoteNumber: number | null; guaranteeFundPercentage: number | null; guaranteeFundDays: number | null; guaranteeValidityDays: number | null }): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/dates`, dto, {
       headers: { Authorization: `Bearer ${token}` },
@@ -184,6 +186,43 @@ export class AdjudicacionesService {
         fileUrl: response.headers.get('X-Package-Url') || '',
         originalFileName: decodeURIComponent(response.headers.get('X-Package-Filename') || 'package.pdf'),
       })),
+    );
+  }
+
+  sendObservationEmail(
+    projectSubContractorId: number,
+    documentType: string,
+    dto: { graphAccessToken: string; documentLabel: string; observation: string | null },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/documents/${documentType}/send-observation-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  sendAllObservationsEmail(
+    projectSubContractorId: number,
+    dto: { graphAccessToken: string },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-all-observations-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  sendAllLevantamientoEmail(
+    projectSubContractorId: number,
+    dto: { graphAccessToken: string },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-all-levantamiento-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
     );
   }
 

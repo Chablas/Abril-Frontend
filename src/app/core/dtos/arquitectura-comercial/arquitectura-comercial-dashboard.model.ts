@@ -39,6 +39,7 @@ export interface SupervisorProgresoDTO {
 }
 
 export interface HitoCriticoDTO {
+  id: number;
   nombre: string;
   proyecto: string;
   fechaLimite: string;
@@ -55,6 +56,36 @@ export interface ArqComercialDashboardDTO {
   tendenciaEficiencia: EficienciaSemanalDTO[];
   supervisores: SupervisorProgresoDTO[];
   hitosCriticos: HitoCriticoDTO[];
+  tareasPorArquitectoDetalle: TareasPorArquitectoDTO[];
+  avanceSemanal             : AvanceSemanalDTO[];
+  eficienciaSpi             : EficienciaSpiDTO[];
+  categorias                : CategoriaItemDTO[];
+}
+
+export interface TareasPorArquitectoDTO {
+  userId      : number;
+  nombre      : string;
+  hitos       : number;
+  entregables : number;
+  consultas   : number;
+  total       : number;
+  avancePct   : number;
+}
+
+export interface AvanceSemanalDTO {
+  semana     : string;
+  programado : number;
+  real       : number;
+}
+
+export interface EficienciaSpiDTO {
+  semana: string;
+  spi   : number;
+}
+
+export interface CategoriaItemDTO {
+  id    : number;
+  nombre: string;
 }
 
 export interface ArqComercialFiltersDTO {

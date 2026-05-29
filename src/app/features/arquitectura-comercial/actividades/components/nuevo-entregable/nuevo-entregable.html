@@ -25,7 +25,19 @@
           class="field-input field-readonly"
           [value]="nombreCalculado || '—'"
           readonly
+          *ngIf="!nombrePersonalizado"
         />
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="nombreLibre"
+          placeholder="Escribe el nombre personalizado"
+          *ngIf="nombrePersonalizado"
+        />
+        <label class="mt-1.5 flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" [(ngModel)]="nombrePersonalizado" class="rounded border-gray-300" />
+          <span class="text-xs text-gray-500">Nombre personalizado</span>
+        </label>
       </div>
 
       <div>

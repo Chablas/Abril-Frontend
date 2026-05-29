@@ -7,6 +7,15 @@
 
       <h4 class="section-title">Datos personales</h4>
       <div class="grid-2">
+        <div class="col-span-2" *ngIf="!esContratista">
+          <label class="field-label">Obra / Oficina</label>
+          <select class="field-input" [(ngModel)]="model.obraOficina" (change)="onObraOficinaChange()">
+            <option value="">—</option>
+            <option value="Obra">Obra</option>
+            <option value="Oficina Central">Oficina Central</option>
+            <option value="Staff">Staff</option>
+          </select>
+        </div>
         <div>
           <label class="field-label">Tipo de Documento *</label>
           <select class="field-input"
@@ -37,10 +46,6 @@
             <span *ngIf="dniVerificado && !verificandoDni" class="dni-status verified">✓ Verificado en RENIEC</span>
           </div>
         </div>
-        <div>
-          <label class="field-label">Celular</label>
-          <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
-        </div>
         <div class="col-span-2">
           <label class="field-label">Apellido / Nombre *</label>
           <input
@@ -50,78 +55,39 @@
             placeholder="Se autocompleta con RENIEC"
           />
         </div>
-        <div class="col-span-2">
+        <div *ngIf="!esContratista">
+          <label class="field-label">Fecha de nacimiento *</label>
+          <input type="date" class="field-input" [(ngModel)]="model.fechaNacimiento" />
+        </div>
+        <div class="col-span-2" *ngIf="esObrero">
           <label class="field-label">Email personal</label>
           <input type="email" class="field-input" [(ngModel)]="model.emailPersonal" />
+        </div>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Email corporativo *</label>
+          <input type="email" class="field-input" [(ngModel)]="model.emailCorporativo" />
+        </div>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Celular corporativo</label>
+          <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
         </div>
       </div>
 
       <h4 class="section-title">Asignación</h4>
       <div class="grid-2">
-        <div>
-          <label class="field-label">Categoría</label>
-          <app-search-select
-            [options]="categorias"
-            valueField="nombre"
-            displayField="nombre"
-            [value]="model.categoria"
-            [showLabel]="false"
-            placeholder="Seleccionar categoría"
-            [allowClear]="true"
-            (valueChange)="model.categoria = $event"
-          />
-        </div>
-        <div>
-          <label class="field-label">Ocupación</label>
-          <app-search-select
-            [options]="ocupaciones"
-            valueField="nombre"
-            displayField="nombre"
-            [value]="model.ocupacion"
-            [showLabel]="false"
-            placeholder="Seleccionar ocupación"
-            [allowClear]="true"
-            (valueChange)="model.ocupacion = $event"
-          />
-        </div>
 
-        <ng-container *ngIf="!esContratista">
-          <div>
-            <label class="field-label">Contrata / Casa</label>
-            <select class="field-input" [(ngModel)]="model.contrataCasa">
-              <option value="">—</option>
-              <option value="Casa">Casa</option>
-              <option value="Contratista">Contratista</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label">Obra / Oficina</label>
-            <select class="field-input" [(ngModel)]="model.obraOficina" (change)="onObraOficinaChange()">
-              <option value="">—</option>
-              <option value="Obra">Obra</option>
-              <option value="Oficina Central">Oficina Central</option>
-              <option value="Staff">Staff</option>
-            </select>
-          </div>
+        <!-- ══ CONTRATISTA ══ -->
+        <ng-container *ngIf="esContratista">
           <div class="col-span-2">
             <label class="field-label">Empresa</label>
-            <app-search-select
-              [options]="empresas"
-              valueField="id"
-              displayField="nombre"
-              [value]="model.empresaId"
-              [showLabel]="false"
-              placeholder="Seleccionar empresa"
-              [allowClear]="true"
-              (valueChange)="model.empresaId = $event"
-            />
+            <input type="text" class="field-input field-readonly" [value]="empresaContratistaNombre" readonly placeholder="Cargando…" />
           </div>
-          <div class="col-span-2" *ngIf="mostrarProyecto">
-            <label class="field-label">Proyecto</label>
+          <div class="col-span-2">
+            <label class="field-label">Proyecto *</label>
             <app-search-select
               [options]="proyectos"
-              valueField="projectId"
-              displayField="projectDescription"
+              valueField="proyectoId"
+              displayField="proyectoNombre"
               [value]="model.proyectoId"
               [showLabel]="false"
               placeholder="Seleccionar proyecto"
@@ -129,25 +95,204 @@
               (valueChange)="model.proyectoId = $event"
             />
           </div>
-          <div class="col-span-2">
-            <label class="field-label">Área</label>
-            <select class="field-input" [(ngModel)]="model.area" (change)="onAreaChange()">
+          <div>
+            <label class="field-label">Celular</label>
+            <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+          </div>
+          <div>
+            <label class="field-label">Email personal</label>
+            <input type="email" class="field-input" [(ngModel)]="model.emailPersonal" />
+          </div>
+          <div>
+            <label class="field-label">Categoría *</label>
+            <app-search-select
+              [options]="categorias"
+              valueField="nombre"
+              displayField="nombre"
+              [value]="model.categoria"
+              [showLabel]="false"
+              placeholder="Seleccionar categoría"
+              [allowClear]="true"
+              (valueChange)="model.categoria = $event"
+            />
+          </div>
+          <div>
+            <label class="field-label">Ocupación *</label>
+            <app-search-select
+              [options]="ocupaciones"
+              valueField="nombre"
+              displayField="nombre"
+              [value]="model.ocupacion"
+              [showLabel]="false"
+              placeholder="Seleccionar ocupación"
+              [allowClear]="true"
+              (valueChange)="model.ocupacion = $event"
+            />
+          </div>
+          <div>
+            <label class="field-label">Condición médica *</label>
+            <select class="field-input" [(ngModel)]="model.condicionMedica">
               <option value="">— Seleccionar —</option>
-              <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
+              <option value="Apto">Apto</option>
+              <option value="Apto con restricciones">Apto con restricciones</option>
             </select>
           </div>
-          <div class="col-span-2">
-            <label class="field-label">Subárea</label>
-            <select class="field-input" [(ngModel)]="model.subarea" (change)="onSubareaChange()" [disabled]="!model.area || cargandoSubareas">
-              <option value="">{{ cargandoSubareas ? 'Cargando…' : '— Seleccionar —' }}</option>
-              <option *ngFor="let s of subareas" [value]="s.subarea">{{ s.subarea }}</option>
-            </select>
-          </div>
-          <div class="col-span-2">
-            <label class="field-label">Jefatura</label>
-            <input type="text" class="field-input field-readonly" [value]="model.jefatura" readonly placeholder="Se completa al elegir subárea" />
+          <div>
+            <label class="field-label">Fecha de ingreso *</label>
+            <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
           </div>
         </ng-container>
+
+        <!-- ══ PERSONAL CASA ══ -->
+        <ng-container *ngIf="!esContratista">
+
+          <!-- OBRERO -->
+          <ng-container *ngIf="esObrero">
+            <div class="col-span-2">
+              <label class="field-label">Proyecto</label>
+              <app-search-select
+                [options]="proyectos"
+                valueField="projectId"
+                displayField="projectDescription"
+                [value]="model.proyectoId"
+                [showLabel]="false"
+                placeholder="Seleccionar proyecto"
+                [allowClear]="true"
+                (valueChange)="model.proyectoId = $event"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Razón social</label>
+              <app-search-select
+                [options]="empresas"
+                valueField="id"
+                displayField="razonSocial"
+                [value]="model.empresaId"
+                [showLabel]="false"
+                placeholder="Seleccionar empresa"
+                [allowClear]="true"
+                (valueChange)="model.empresaId = $event"
+              />
+            </div>
+            <div>
+              <label class="field-label">Celular</label>
+              <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+            </div>
+            <div></div>
+            <div>
+              <label class="field-label">Categoría</label>
+              <app-search-select
+                [options]="categorias"
+                valueField="nombre"
+                displayField="nombre"
+                [value]="model.categoria"
+                [showLabel]="false"
+                placeholder="Seleccionar categoría"
+                [allowClear]="true"
+                (valueChange)="model.categoria = $event"
+              />
+            </div>
+            <div>
+              <label class="field-label">Ocupación</label>
+              <app-search-select
+                [options]="ocupaciones"
+                valueField="nombre"
+                displayField="nombre"
+                [value]="model.ocupacion"
+                [showLabel]="false"
+                placeholder="Seleccionar ocupación"
+                [allowClear]="true"
+                (valueChange)="model.ocupacion = $event"
+              />
+            </div>
+            <div>
+              <label class="field-label">Fecha de ingreso</label>
+              <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
+            </div>
+          </ng-container>
+
+          <!-- STAFF / OFICINA CENTRAL -->
+          <ng-container *ngIf="esStaffOOficina">
+            <div class="col-span-2">
+              <label class="field-label">Proyecto</label>
+              <app-search-select
+                [options]="proyectos"
+                valueField="projectId"
+                displayField="projectDescription"
+                [value]="model.proyectoId"
+                [showLabel]="false"
+                placeholder="Seleccionar proyecto"
+                [allowClear]="true"
+                (valueChange)="model.proyectoId = $event"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Razón social</label>
+              <app-search-select
+                [options]="empresas"
+                valueField="id"
+                displayField="razonSocial"
+                [value]="model.empresaId"
+                [showLabel]="false"
+                placeholder="Seleccionar empresa"
+                [allowClear]="true"
+                (valueChange)="model.empresaId = $event"
+              />
+            </div>
+            <div>
+              <label class="field-label">Categoría</label>
+              <app-search-select
+                [options]="categorias"
+                valueField="nombre"
+                displayField="nombre"
+                [value]="model.categoria"
+                [showLabel]="false"
+                placeholder="Seleccionar categoría"
+                [allowClear]="true"
+                (valueChange)="model.categoria = $event"
+              />
+            </div>
+            <div>
+              <label class="field-label">Ocupación</label>
+              <app-search-select
+                [options]="ocupaciones"
+                valueField="nombre"
+                displayField="nombre"
+                [value]="model.ocupacion"
+                [showLabel]="false"
+                placeholder="Seleccionar ocupación"
+                [allowClear]="true"
+                (valueChange)="model.ocupacion = $event"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Área</label>
+              <select class="field-input" [(ngModel)]="model.area" (change)="onAreaChange()">
+                <option value="">— Seleccionar —</option>
+                <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Subárea</label>
+              <select class="field-input" [(ngModel)]="model.subarea" (change)="onSubareaChange()" [disabled]="(esOficinaCentral && !model.area) || cargandoSubareas">
+                <option value="">{{ cargandoSubareas ? 'Cargando…' : '— Seleccionar —' }}</option>
+                <option *ngFor="let s of subareas" [value]="s.subarea">{{ s.subarea }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Fecha de ingreso</label>
+              <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
+            </div>
+            <div *ngIf="esOficinaCentral">
+              <label class="check-row">
+                <input type="checkbox" [(ngModel)]="model.sctr" />
+                <span>Requiere SCTR</span>
+              </label>
+            </div>
+          </ng-container>
+
+        </ng-container>
+
       </div>
 
       <h4 class="section-title">Estado y notas</h4>
@@ -159,6 +304,15 @@
               <span>Requiere SCTR</span>
             </label>
             <span *ngIf="!sctrEditable" class="field-hint">Aplica solo para Oficina Central</span>
+          </div>
+          <div>
+            <label class="field-label">Condición médica</label>
+            <select class="field-input" [(ngModel)]="model.condicionMedica">
+              <option value="">— Seleccionar —</option>
+              <option value="Apto">Apto</option>
+              <option value="Apto con restricciones">Apto con restricciones</option>
+              <option value="Falta">Falta</option>
+            </select>
           </div>
         </ng-container>
         <div class="col-span-2">

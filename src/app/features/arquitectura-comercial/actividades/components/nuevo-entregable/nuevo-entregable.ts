@@ -59,6 +59,8 @@ export class NuevoEntregable implements OnChanges {
   etapas: AcEtapaDTO[] = [];
   loadingEtapas = false;
   saving = false;
+  nombrePersonalizado = false;
+  nombreLibre = '';
 
   model: NuevoEntregableForm = this.empty();
 
@@ -70,6 +72,8 @@ export class NuevoEntregable implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.model = this.empty();
+      this.nombrePersonalizado = false;
+      this.nombreLibre = '';
       this.loadEtapas();
     }
   }
@@ -118,14 +122,16 @@ export class NuevoEntregable implements OnChanges {
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.projectId && !!this.model.etapaNombre && !!this.model.reporte;
+    if (!this.projectId || this.saving) return false;
+    if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
+    return !!this.model.etapaNombre && !!this.model.reporte;
   }
 
   submit(): void {
     if (!this.canSubmit || !this.projectId) return;
 
     const body: CreateActividadBody = {
-      nombre: this.nombreCalculado,
+      nombre: this.nombrePersonalizado ? this.nombreLibre.trim() : this.nombreCalculado,
       tipo: 'ENTREGABLE',
       projectId: this.projectId,
       etapaId: this.model.etapaId,

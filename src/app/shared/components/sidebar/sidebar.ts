@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostListener,
@@ -12,6 +13,7 @@ import {
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
@@ -30,6 +32,7 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   visibleModules: NavModule[] = [];
   overflowModules: NavModule[] = [];
   overflowOpen = false;
+  isReady = false;
   activeOverflowMenu: string | null = null;
   activeOverflowGroup: string | null = null;
 
@@ -45,6 +48,8 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
     public alertaSvc: ProgramacionAlertasService,
     private elementRef: ElementRef,
     private ngZone: NgZone,
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -60,6 +65,8 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
         .toArray()
         .map((el) => el.nativeElement.getBoundingClientRect().height);
       this.calculateVisibleModules();
+      this.isReady = true;
+      this.cdr.detectChanges();
 
       this.resizeObserver = new ResizeObserver(() =>
         this.ngZone.run(() => this.calculateVisibleModules()),
@@ -102,7 +109,33 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isActiveModule(baseRoute: string): boolean {
+    if (baseRoute === '/habilitacion') {
+      return this.router.url === '/' || this.router.url.startsWith('/habilitacion');
+    }
     return this.router.url.startsWith(baseRoute);
+  }
+
+  onModuleClick(module: NavModule): void {
+    if (module.key === 'habilitacion') {
+      if (this.authService.isContratista()) {
+        this.router.navigate(['/habilitacion']);
+      } else {
+        this.router.navigate(['/']);
+      }
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'control-acceso') {
+      this.router.navigate(['/habilitacion/control-acceso']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'clinica') {
+      this.router.navigate(['/clinica/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
+    this.toggleMenu(module.key);
   }
 
   toggleMenu(key: string): void {
