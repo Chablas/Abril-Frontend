@@ -20,6 +20,7 @@ export interface ProgramacionClinicaDto {
   fechaVencimientoEmo?: string | null;
   categoria?: string | null;
   tipoTrabajador?: string | null;
+  interconsultaEstado?: string;
 }
 
 export interface ClinicaInterconsultaCreateDto {

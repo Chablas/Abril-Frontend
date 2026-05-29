@@ -16,7 +16,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
-import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
+import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 import { InduccionService } from '../../../../services/induccion.service';
 import { InduccionTrabajadorDto } from '../../../../dtos/induccion.model';
 
@@ -30,7 +30,7 @@ import { InduccionTrabajadorDto } from '../../../../dtos/induccion.model';
 export class ProgramarInduccion implements OnChanges {
   @Input() open = false;
   @Input() proyectos: ProjectGetDTO[] = [];
-  @Input() empresas: EmpresaSimpleDto[] = [];
+  @Input() empresas: EmpresaContratistaListDto[] = [];
   /** empresaId del primer worker seleccionado en la lista principal; null = sin filtro */
   @Input() preselectedEmpresaId: number | null = null;
   @Output() closed = new EventEmitter<void>();

@@ -20,9 +20,8 @@ import { EquipoHabService } from '../../services/equipo-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { ProjectService } from '../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
-import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
-import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 import {
   EquipoEntregableDto,
   EquipoEntregableUpdateDto,
@@ -60,7 +59,7 @@ export class Equipos implements OnInit, OnDestroy {
   filtroProyectoId: number | null = null;
   filtroEmpresaId: number | null = null;
   catalogoProyectos: ProjectGetDTO[] = [];
-  catalogoEmpresas: EmpresaSimpleDto[] = [];
+  catalogoEmpresas: EmpresaContratistaListDto[] = [];
 
   modalNuevoOpen = false;
   modalEditarEquipo: EquipoListDto | null = null;
@@ -98,7 +97,6 @@ export class Equipos implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private projectService: ProjectService,
-    private catalogosService: CatalogosSaludService,
     private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -134,9 +132,9 @@ export class Equipos implements OnInit, OnDestroy {
         },
         error: () => { this.catalogoProyectos = []; },
       });
-      this.catalogosService.getEmpresas().subscribe({
+      this.empresaContratistaService.getEmpresas({ soloContratistas: false, pageSize: 200 }).subscribe({
         next: (res) => {
-          this.catalogoEmpresas = res ?? [];
+          this.catalogoEmpresas = res.data ?? [];
           this.cdr.detectChanges();
         },
         error: () => { this.catalogoEmpresas = []; },

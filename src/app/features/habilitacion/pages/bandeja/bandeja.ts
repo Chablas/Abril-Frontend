@@ -74,6 +74,10 @@ export class Bandeja implements OnInit, OnDestroy {
     return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
   }
 
+  empresasList: string[] = [];
+
+  get empresasDisponibles(): string[] { return this.empresasList; }
+
   get entregablesDisponibles(): string[] {
     const names = new Set<string>();
     for (const item of this.items) {
@@ -83,12 +87,8 @@ export class Bandeja implements OnInit, OnDestroy {
   }
 
   get filteredItems(): BandejaItemDto[] {
-    const texto = this.filtroTexto.trim().toLowerCase();
     const empresa = this.filtroEmpresa.trim().toLowerCase();
     let result = this.items;
-    if (texto) {
-      result = result.filter((i) => i.entidadNombre?.toLowerCase().includes(texto));
-    }
     if (empresa) {
       result = result.filter((i) => i.empresaNombre?.toLowerCase().includes(empresa));
     }
@@ -127,9 +127,17 @@ export class Bandeja implements OnInit, OnDestroy {
       document.querySelector('app-header')?.classList.add('hidden-bandeja');
     }
     this.filterChange$
-      .pipe(debounceTime(250), takeUntil(this.destroy$))
+      .pipe(debounceTime(400), takeUntil(this.destroy$))
       .subscribe(() => this.loadItems(1));
     this.loadItems(1);
+    this.bandejaService.getEmpresasDisponibles().subscribe({
+      next: (list) => {
+        console.log('empresas:', list);
+        this.empresasList = list;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('error empresas:', err),
+    });
   }
 
   ngOnDestroy(): void {
@@ -151,6 +159,7 @@ export class Bandeja implements OnInit, OnDestroy {
       pageSize: this.pageSize,
       tipo: this.filtroTipo || undefined,
       responsable: this.filtroResponsable || undefined,
+      search: this.filtroTexto.trim() || undefined,
     };
     this.bandejaService.getPendientes(params).subscribe({
       next: (res) => {

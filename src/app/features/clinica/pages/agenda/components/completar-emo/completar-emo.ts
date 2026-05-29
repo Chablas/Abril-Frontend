@@ -33,7 +33,7 @@ export class CompletarEmo implements OnChanges {
 
   archivoAptitud: File | null = null;
   archivoEmo: File | null = null;
-  documentoInterconsulta: File | null = null;
+  archivoLectura: File | null = null;
 
   restricciones: { descripcionLibre: string }[] = [];
   nuevaRestriccion = '';
@@ -51,6 +51,7 @@ export class CompletarEmo implements OnChanges {
   get canSubmit(): boolean {
     if (!this.aptitud || !this.programacion || this.saving) return false;
     if (this.requiereDocumentos && (!this.archivoAptitud || !this.archivoEmo)) return false;
+    if (this.lecturaRealizada && (!this.fechaLectura || !this.archivoLectura)) return false;
     if (this.requiereRestriccion && this.restricciones.length === 0) return false;
     if (this.requiereInterconsulta && !this.icEspecialidad.trim()) return false;
     return true;
@@ -81,7 +82,7 @@ export class CompletarEmo implements OnChanges {
     this.saving = false;
     this.archivoAptitud = null;
     this.archivoEmo = null;
-    this.documentoInterconsulta = null;
+    this.archivoLectura = null;
   }
 
   agregarRestriccion(): void {
@@ -101,8 +102,8 @@ export class CompletarEmo implements OnChanges {
     this.archivoEmo = (event.target as HTMLInputElement).files?.[0] ?? null;
   }
 
-  onDocumentoInterconsulta(event: Event): void {
-    this.documentoInterconsulta = (event.target as HTMLInputElement).files?.[0] ?? null;
+  onArchivoLectura(event: Event): void {
+    this.archivoLectura = (event.target as HTMLInputElement).files?.[0] ?? null;
   }
 
   close(): void { this.closed.emit(); }
@@ -157,7 +158,7 @@ export class CompletarEmo implements OnChanges {
       interconsultaInline,
     };
 
-    this.emoSvc.createEmo(emoDto, this.documentoInterconsulta ?? undefined).subscribe({
+    this.emoSvc.createEmo(emoDto, this.archivoLectura).subscribe({
       next: (res) => {
         const emoId = res.id;
         if (this.interconsultaId != null) {

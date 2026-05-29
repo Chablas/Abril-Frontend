@@ -11,8 +11,12 @@
 
   <!-- ── Filtros ────────────────────────────────────────────── -->
   <div class="filters-card" *ngIf="filtroTipo !== 'INDUCCION'">
-    <input class="filter-input" type="text" placeholder="Nombre…" [(ngModel)]="filtroTexto" />
-    <input class="filter-input" type="text" placeholder="Empresa…" [(ngModel)]="filtroEmpresa" />
+    <input class="filter-input" type="text" placeholder="Nombre…"
+      [(ngModel)]="filtroTexto" (ngModelChange)="onFilter()" />
+    <select class="filter-input" [(ngModel)]="filtroEmpresa">
+      <option value="">Todas las empresas</option>
+      <option *ngFor="let e of empresasDisponibles" [value]="e">{{ e }}</option>
+    </select>
     <select class="filter-input" [(ngModel)]="filtroProyecto">
       <option value="">Todos los proyectos</option>
       <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>

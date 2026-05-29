@@ -191,7 +191,10 @@
               <button class="btn-act btn-complete" [disabled]="accionando === item.id"
                 (click)="abrirCompletar(item)">📋 Registrar EMO</button>
               <button class="btn-interconsulta" [disabled]="accionando === item.id"
+                *ngIf="!item.interconsultaEstado || item.interconsultaEstado === 'Pendiente'"
                 (click)="abrirInterconsulta(item)">🔗 Interconsulta</button>
+              <span class="chip-green"
+                *ngIf="item.interconsultaEstado === 'Completado'">✓ Interconsulta levantada</span>
             </ng-container>
 
           </div>
@@ -394,27 +397,6 @@
         <textarea class="dm-input dm-textarea" rows="3"
           placeholder="Motivo de derivación, antecedentes relevantes..."
           [(ngModel)]="modalInterconsulta.observacion"></textarea>
-      </div>
-
-      <div class="dm-field" style="grid-column:1/-1">
-        <label class="dm-label">
-          EVIDENCIA <span style="color:#dc2626">*</span>
-        </label>
-        <label class="ic-file-zone" [class.ic-has-file]="!!modalInterconsulta.archivoFile">
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
-            (change)="onArchivoInterconsulta($event)" />
-          <ng-container *ngIf="!modalInterconsulta.archivoFile">
-            <span class="ic-file-icon">📎</span>
-            <span class="ic-file-hint">PDF, JPG o PNG — máx. 10 MB</span>
-          </ng-container>
-          <ng-container *ngIf="modalInterconsulta.archivoFile">
-            <span class="ic-file-icon">✅</span>
-            <span class="ic-file-name">{{ modalInterconsulta.archivoFile.name }}</span>
-          </ng-container>
-        </label>
-        <p class="dm-error-inline" *ngIf="modalInterconsulta.archivoError">
-          {{ modalInterconsulta.archivoError }}
-        </p>
       </div>
 
     </div>
