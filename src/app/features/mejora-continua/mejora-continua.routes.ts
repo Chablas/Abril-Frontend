@@ -50,4 +50,12 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'ÍTEMS DE CATÁLOGO', featureKey: 'mejora-continua.config.catalog-items' },
   },
+  {
+    path: 'configuration/reminders',
+    loadComponent: () =>
+      import('./features/configuration/lesson-reminders/components/lesson-reminders')
+        .then((m) => m.LessonReminders),
+    canActivate: [roleGuard],
+    data: { titulo: 'RECORDATORIOS DE LECCIONES', featureKey: 'mejora-continua.config.reminders' },
+  },
 ];
