@@ -44,6 +44,22 @@ export class Agenda implements OnInit {
     horaError: '',
   };
 
+  modalReprogramar: {
+    open: boolean;
+    item: ProgramacionClinicaDto | null;
+    nuevaFecha: string;
+    nuevaHora: string;
+    horaError: string;
+    fechaError: string;
+  } = {
+    open: false,
+    item: null,
+    nuevaFecha: '',
+    nuevaHora: '',
+    horaError: '',
+    fechaError: '',
+  };
+
   completandoItem: ProgramacionClinicaDto | null = null;
 
   activeTab: 'agenda' | 'interconsultas' = 'agenda';
@@ -196,6 +212,58 @@ export class Agenda implements OnInit {
     };
     this.cancelarAceptar();
     this.ejecutarAccion(item.id, body);
+  }
+
+  // ── Modal Reprogramar ────────────────────────────────────
+  abrirReprogramar(item: ProgramacionClinicaDto): void {
+    this.modalReprogramar = {
+      open: true,
+      item,
+      nuevaFecha: item.fechaProgramada ?? '',
+      nuevaHora: item.horaProgramada ?? '',
+      horaError: '',
+      fechaError: '',
+    };
+  }
+
+  cancelarReprogramar(): void {
+    this.modalReprogramar = { open: false, item: null, nuevaFecha: '', nuevaHora: '', horaError: '', fechaError: '' };
+  }
+
+  confirmarReprogramar(): void {
+    const item = this.modalReprogramar.item;
+    if (!item) return;
+    this.modalReprogramar.fechaError = '';
+    this.modalReprogramar.horaError = '';
+    let valid = true;
+    if (!this.modalReprogramar.nuevaFecha) {
+      this.modalReprogramar.fechaError = 'La fecha es obligatoria';
+      valid = false;
+    }
+    if (!this.modalReprogramar.nuevaHora || this.modalReprogramar.nuevaHora === '--:--') {
+      this.modalReprogramar.horaError = 'La hora es obligatoria';
+      valid = false;
+    }
+    if (!valid) return;
+    const body: ClinicaAccionDto = {
+      id: item.id,
+      accion: 'Aceptar',
+      fechaNueva: this.modalReprogramar.nuevaFecha,
+      horaNueva: this.modalReprogramar.nuevaHora,
+    };
+    this.cancelarReprogramar();
+    this.accionando = item.id;
+    this.svc.accionClinica(item.id, body).subscribe({
+      next: () => {
+        this.accionando = null;
+        this.loadAgenda(this.selectedDate);
+        Swal.fire({ icon: 'success', title: 'Cita reprogramada', timer: 1500, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.accionando = null;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── Rechazar (SweetAlert2) ───────────────────────────────
