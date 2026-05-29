@@ -26,10 +26,18 @@ export interface ScopeItemUpsertDTO {
   items: ScopeItemNodeDTO[];
 }
 
+// Un nodo del árbol de la plantilla.
+//   • Lectura (GET): nodeId = scope_template_item_id real, parentNodeId apunta a otro nodeId real.
+//   • Escritura (POST/PUT): nodeId puede ser un id real (preservar nodo existente) o un
+//     temporal negativo (-1, -2, ...) generado por el cliente. El backend solo lo usa
+//     para resolver el árbol durante la inserción.
+//   • Un mismo `catalogItemId` puede aparecer varias veces bajo padres distintos —
+//     por eso `catalogItemId` NO sirve como clave de árbol.
 export interface ScopeTemplateItemNodeDTO {
+  nodeId: number;
+  parentNodeId: number | null;
   catalogItemId: number;
   catalogItemDescription: string;
-  parentCatalogItemId: number | null;
   displayOrder: number;
 }
 

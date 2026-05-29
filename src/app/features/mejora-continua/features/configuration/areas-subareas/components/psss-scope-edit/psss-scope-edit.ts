@@ -240,16 +240,27 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
       return;
     }
 
-    // Construir cadena raíz→hoja del ítem dentro de la plantilla
-    const tplByCat = new Map<number, ScopeTemplateItemNodeDTO>();
-    tpl.items.forEach((ti) => tplByCat.set(ti.catalogItemId, ti));
+    // Construir cadena raíz→hoja del ítem dentro de la plantilla.
+    // Un mismo catalog_item puede aparecer varias veces bajo padres distintos;
+    // si así fuese, se elige el primero (suficiente para el auto-arrange).
+    const tplByNodeId = new Map<number, ScopeTemplateItemNodeDTO>();
+    const firstNodeByCat = new Map<number, ScopeTemplateItemNodeDTO>();
+    tpl.items.forEach((ti) => {
+      tplByNodeId.set(ti.nodeId, ti);
+      if (!firstNodeByCat.has(ti.catalogItemId)) firstNodeByCat.set(ti.catalogItemId, ti);
+    });
+
+    const startNode = firstNodeByCat.get(item.catalogItemId);
+    if (!startNode) return;
 
     const chain: number[] = [];
-    let cursor: number | null = item.catalogItemId;
+    let cursorNodeId: number | null = startNode.nodeId;
     let safety = 50;
-    while (cursor !== null && safety-- > 0) {
-      chain.push(cursor);
-      cursor = tplByCat.get(cursor)?.parentCatalogItemId ?? null;
+    while (cursorNodeId !== null && safety-- > 0) {
+      const node = tplByNodeId.get(cursorNodeId);
+      if (!node) break;
+      chain.push(node.catalogItemId);
+      cursorNodeId = node.parentNodeId;
     }
     chain.reverse(); // raíz primero
 
