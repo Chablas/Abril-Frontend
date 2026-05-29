@@ -1,75 +1,104 @@
 <div class="prog-root">
 
-  <div class="section-bar">
-    <div>
-      <h2 class="section-title">Programaciones</h2>
-      <p class="section-sub">Historial de programaciones de la clínica</p>
+  <!-- ── Header ──────────────────────────────────────── -->
+  <div class="prog-header">
+    <div class="header-left">
+      <h2 class="prog-title">Programaciones</h2>
+      <p class="prog-sub">Historial de programaciones de la clínica</p>
     </div>
+    <span class="header-count" *ngIf="!loading">{{ items.length }} registros</span>
   </div>
 
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div>
-        <label class="field-label">Desde</label>
-        <input type="date" class="field-input" [(ngModel)]="filtroDesde" />
-      </div>
-      <div>
-        <label class="field-label">Hasta</label>
-        <input type="date" class="field-input" [(ngModel)]="filtroHasta" />
-      </div>
-      <div>
-        <label class="field-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filtroEstado">
-          <option value="">Todos</option>
-          <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:flex-end;">
-        <button class="btn-primary" (click)="load()">Buscar</button>
-      </div>
+  <!-- ── Controls ─────────────────────────────────────── -->
+  <div class="controls-row">
+    <div class="ctrl-field">
+      <label class="ctrl-label">Desde</label>
+      <input type="date" class="ctrl-input" [(ngModel)]="filtroDesde" />
     </div>
+    <div class="ctrl-field">
+      <label class="ctrl-label">Hasta</label>
+      <input type="date" class="ctrl-input" [(ngModel)]="filtroHasta" />
+    </div>
+    <div class="ctrl-field">
+      <label class="ctrl-label">Estado</label>
+      <select class="ctrl-input ctrl-select" [(ngModel)]="filtroEstado">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+      </select>
+    </div>
+    <button class="btn-buscar" (click)="load()" [disabled]="loading">
+      {{ loading ? 'Buscando…' : 'Buscar' }}
+    </button>
   </div>
 
-  <div class="prog-table-card">
-    <table class="prog-table">
-      <thead>
-        <tr>
-          <th>Trabajador</th>
-          <th>Tipo EMO</th>
-          <th>Empresa</th>
-          <th>Fecha</th>
-          <th>Hora</th>
-          <th>Médico</th>
-          <th>Estado</th>
-          <th>Check-in</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="loading">
-          <td colspan="8" class="empty-row">Cargando...</td>
-        </tr>
-        <tr *ngIf="!loading && items.length === 0">
-          <td colspan="8" class="empty-row">No hay programaciones en el rango seleccionado.</td>
-        </tr>
-        <tr *ngFor="let item of items">
-          <td>
-            <div class="worker-cell">
-              <span class="worker-name">{{ item.workerNombre }}</span>
-              <span class="worker-dni">{{ item.workerDni }}</span>
-            </div>
-          </td>
-          <td>{{ item.tipoEmo }}</td>
-          <td>{{ item.empresa }}</td>
-          <td>{{ item.fechaProgramada }}</td>
-          <td>{{ item.horaProgramada ?? '—' }}</td>
-          <td>{{ item.medico ?? '—' }}</td>
-          <td>
-            <span class="badge-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
-          </td>
-          <td>{{ item.checkInHora ?? '—' }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ── Table zone ────────────────────────────────────── -->
+  <div class="table-zone">
+    <div class="table-card">
+
+      <!-- Loading -->
+      <div class="state-row" *ngIf="loading">
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Vacío -->
+      <div class="state-row empty-state" *ngIf="!loading && items.length === 0">
+        <span class="empty-icon">📋</span>
+        <p class="empty-text">Sin programaciones en este rango</p>
+      </div>
+
+      <!-- Tabla -->
+      <table class="prog-table" *ngIf="!loading && items.length > 0">
+        <colgroup>
+          <col style="width:26%">
+          <col style="width:10%">
+          <col style="width:22%">
+          <col style="width:11%">
+          <col style="width:9%">
+          <col style="width:9%">
+          <col style="width:8%">
+          <col style="width:5%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>Tipo EMO</th>
+            <th>Empresa</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Médico</th>
+            <th>Estado</th>
+            <th>Check-in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-dni">{{ item.workerDni }}</span>
+              </div>
+            </td>
+            <td class="td-cell">{{ item.tipoEmo }}</td>
+            <td class="td-cell">{{ item.empresa }}</td>
+            <td class="td-cell">{{ item.fechaProgramada | date:'dd/MM/yyyy' }}</td>
+            <td class="td-cell">{{ item.horaProgramada ?? '—' }}</td>
+            <td class="td-cell" [class.td-empty-val]="!item.medico">
+              {{ item.medico ?? '—' }}
+            </td>
+            <td>
+              <span class="estado-badge" [ngClass]="estadoClass(item.estado)">
+                <ng-container *ngIf="item.estado === 'Completado'">✓ </ng-container>
+                {{ item.estado }}
+              </span>
+            </td>
+            <td class="td-cell td-checkin">{{ item.checkInHora ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
   </div>
 
 </div>

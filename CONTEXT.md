@@ -17,6 +17,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 - **UI libs**: `sweetalert2` (todos los modales/confirmaciones), `chart.js` + `chartjs-plugin-datalabels`, `dhtmlx-gantt`, `quickchart.io` (gantt), `jspdf`, `jspdf-autotable`, `xlsx`, `html2canvas`.
 
 ### Comandos
+
 ```bash
 npm start                 # ng serve --port 4200
 npm run build             # producción → dist/Abril
@@ -30,11 +31,14 @@ npm run serve:ssr:Abril   # corre dist/Abril/server/server.mjs
 - Prettier: `printWidth: 100`, `singleQuote: true`, parser `angular` para `.html` (en `package.json`).
 
 ### Environments
+
 `src/environments/environment.ts`:
+
 ```ts
 { production: false, apiUrl: 'http://localhost:5236/', ssr: false,
   azure: { tenantId, clientId } }
 ```
+
 Producción: `environment.prod.ts` (sustituido por `angular.json` fileReplacements).
 
 > **Nota**: `apiUrl` termina en `/`. Las rutas se concatenan como `${environment.apiUrl}api/v1/...` (sin `/` inicial).
@@ -83,6 +87,7 @@ src/app/
 ```
 
 ### Convención `configuracion/` (módulo nuevo, standalone routes)
+
 ```
 features/configuracion/
 ├── configuracion.routes.ts       # CONFIGURACION_ROUTES (export const)
@@ -91,15 +96,18 @@ features/configuracion/
     ├── projects/                 # Proyectos + botón Emails SSOMA (PATCH)
     └── workers/                  # Lista de Trabajadores (read-only, paged)
 ```
+
 Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoService.getEmosPorTrabajador`) y de core (`ProjectService.getProjectPaged`, `patchProjectEmails`). El modal `ProjectEmailsForm` se reutiliza por **import cross-feature** desde `features/projects/configuration/pages/proyectos/components/project-emails-form/`.
 
 ### Convención dentro de `features/<area>/`
+
 - Cada feature **NgModule-based** tiene `<area>-module.ts` + `<area>-routing-module.ts`.
 - Los **page components** se declaran como **standalone** (`imports: [CommonModule, FormsModule, ...]`) y se importan directo en el routing module — **NO se declaran en `declarations`**. Esta mezcla es intencional, no la "uniformes".
 - Subcarpetas: `pages/<page>/` (en projects/), o el page directo en la raíz del feature (en ssoma/).
 - Componentes auxiliares de un page: `<page>/components/<sub>/`.
 
 ### `core/dtos/<dominio>/`
+
 - Un dominio por recurso backend (`project/`, `lesson/`, `area/`, `phase/`, …).
 - Sufijos: `*.model.ts` (interfaces). Tipos por verbo: `XxxGetDTO`, `XxxCreateDTO`, `XxxEditDTO`, `XxxPagedDTO`, etc.
 - En SSOMA (en `features/ssoma/.../dtos/`) los nombres son sin sufijo `DTO`: `ProgramacionListDto`, `EmoDetalleDto` (PascalCase + `Dto`).
@@ -109,6 +117,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 ## 3. Auth, rutas y navegación
 
 ### Rutas raíz (`src/app/app.routes.ts`)
+
 ```
 /auth/**                                    → AuthModule (login, msal-redirect, complete-registration)
 /                                           → Layout (sidebar+header) + authGuard
@@ -135,6 +144,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 ```
 
 ### Sub-rutas `/configuracion`
+
 ```
 /configuracion              → redirect 'companies'
 /configuracion/companies    → Companies (Razones Sociales)
@@ -143,6 +153,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 ```
 
 ### Guards
+
 - `authGuard` (`core/guards/auth.guard.ts`): SSR → `true` (¡no quitar! evita problemas con refresh); sin token → `/auth/login`; token expirado → logout + login.
 - `roleGuard` (`core/guards/role.guard.ts`): verifica acceso en dos pasos:
   1. Si `route.data.featureKey` existe → busca en `localStorage.allowed_features` (array JSON cargado al login desde BD). Si está incluido → permite.
@@ -152,6 +163,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
   - **Dos sistemas de auth conviven**: `getRoles()` lee claims JWT Microsoft; `isContratista()` lee `localStorage.user.tipo === 'CONTRATISTA'`. Son independientes. Rutas CONTRATISTA funcionales usan `featureKey` (en `allowed_features` del token contratista). Dashboard usa solo `authGuard` + redirect interno en el componente.
 
 ### Roles conocidos (string-exact, MAYÚSCULAS, español)
+
 ```
 ADMINISTRADOR DEL SISTEMA
 ADMINISTRADOR DE UDP
@@ -161,12 +173,15 @@ RESIDENTE
 ```
 
 ### Cada ruta protegida debe declarar
+
 ```ts
 data: { titulo: 'TÍTULO EN MAYÚSCULAS', featureKey: 'modulo.nombre-pantalla' }
 ```
+
 El `Header` lee `data.titulo` de la ruta activa más profunda. El `featureKey` debe estar registrado en BD; mientras no lo esté, omitirlo (la ruta será accesible a todos los autenticados) o usar `roles` como fallback temporal.
 
 ### Sidebar
+
 Fuente única: `core/navigation/navigation.service.ts` (`config: NavModule[]`). Cada `NavModule` tiene `key`, `label`, `iconKey`, `baseRoute`, `items[]`, `groups[]`. Cada `NavItem` puede tener `featureKey` (primario) o `roles[]` (fallback). `isItemAllowed()` sigue la misma lógica que `roleGuard`.
 **Agregar feature al menú = wirear ruta + entry en `navigation.service.ts` con `featureKey`.**
 
@@ -175,6 +190,7 @@ Fuente única: `core/navigation/navigation.service.ts` (`config: NavModule[]`). 
 ## 4. Convenciones de código
 
 ### Componentes
+
 - **Standalone con `imports`**, naming PascalCase (`Programaciones`, `EmoHistorial`, `CatalogoClinicas`).
 - Selectors: `app-<feature>-<page>` (`app-salud-programaciones`, `app-catalogo-clinicas`).
 - Templates en archivos separados (`*.html` + `*.css`), no inline.
@@ -183,9 +199,11 @@ Fuente única: `core/navigation/navigation.service.ts` (`config: NavModule[]`). 
 - Cambios manuales con `ChangeDetectorRef.detectChanges()` después de async.
 
 ### Servicios HTTP — patrón estándar
+
 **No hay `HttpInterceptor`.** Cada servicio construye su propio header `Authorization: Bearer <token>`.
 
 Patrón canónico (en `core/services/<resource>.service.ts`):
+
 ```ts
 @Injectable({ providedIn: 'root' })
 export class XxxService {
@@ -194,7 +212,7 @@ export class XxxService {
   constructor(private http: HttpClient) {}
 
   getXxx(): Observable<XxxDTO> {
-    const token = localStorage.getItem('access_token');   // ⚠️ NO defensivo
+    const token = localStorage.getItem('access_token'); // ⚠️ NO defensivo
     return this.http.get<XxxDTO>(this.apiUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -203,6 +221,7 @@ export class XxxService {
 ```
 
 Patrón mejor (usado en SSOMA — `salud-ocupacional/services/http-base.ts`):
+
 ```ts
 export const SALUD_OCUPACIONAL_BASE = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
 
@@ -213,27 +232,34 @@ export function buildAuthHeaders(): Record<string, string> {
 
 export function buildParams(source: Record<string, unknown>): HttpParams { … }
 ```
+
 **Cuando crees un servicio nuevo**, sigue el patrón de SSOMA (defensivo SSR + helper `buildParams`).
 
 ### Manejo de errores
+
 Centralizado en `ErrorService.handleError(err: HttpErrorResponse)` (`core/services/error.service.ts`):
+
 - `401` → limpia storage, `Swal` "Sesión expirada", redirige a `/auth/login`.
 - `4xx` → `Swal` "Error".
 - `5xx` → `Swal` "Error del servidor".
 
 Usar siempre desde subscribers:
+
 ```ts
 this.service.foo().subscribe({
   next: …,
   error: (err: HttpErrorResponse) => this.errorService.handleError(err),
 });
 ```
+
 **Nota**: `handleError` ya llama a `loaderService.hide()` internamente.
 
 ### LoaderService
+
 `core/services/loader.service.ts` — `BehaviorSubject<boolean>` global. El `App` root suscribe a `loader$` y muestra spinner. Llamar `show()`/`hide()` antes y después de requests largos.
 
 ### DTO conventions
+
 - Core (`core/dtos/`): sufijo `DTO` en mayúsculas (`ProjectGetDTO`).
 - SSOMA (`features/ssoma/.../dtos/`): sufijo `Dto` en PascalCase (`ProgramacionListDto`).
 - **NO mezclar estilos** dentro del mismo dominio.
@@ -241,11 +267,13 @@ this.service.foo().subscribe({
 - Mensajes: `core/dtos/api/ApiMessage.model.ts` → `ApiMessageDTO { message }`.
 
 ### Selectores de empresa — regla de fuente de datos
+
 - **SIEMPRE** usar `CatalogosSaludService.getEmpresas()` → endpoint `GET /ssoma/salud-ocupacional/catalogos/empresas` → tabla `contributor`. `EmpresaSimpleDto { id, nombre, esAbril }`, `displayField="nombre"`.
 - **NUNCA** usar `EmpresaContratistaService.getEmpresas()` para selectores de razón social en el módulo Habilitación — esa tabla es `ss_empresa_contratista` y su FK rompe con `worker_vinculaciones.empresa_id` que referencia `contributor`.
 - **NO filtrar por `esAbril`** — el campo viene `false` para todos en BD actual (criterio `ContributorName.Contains("ABRIL")` no matchea). Mostrar todas las empresas.
 
 ### Patrón modal canónico (Habilitación)
+
 ```ts
 @Input() open = false;
 @Input() initial: XxxDto | null = null;
@@ -256,15 +284,18 @@ ngOnChanges(changes: SimpleChanges): void {
   if (changes['open'] && this.open) this.resetAndLoad();
 }
 ```
+
 Template: `<app-base-modal *ngIf="open" ... (closeModal)="close()">`. El `*ngIf="open"` monta/desmonta el modal (no `[open]` binding — `BaseModal` no tiene ese @Input).
 
 ### `soloRetirados` — modo exclusivo
+
 - `soloRetirados = false` (default) → backend filtra `Estado != 'RETIRADO'` (solo activos).
 - `soloRetirados = true` → backend filtra `Estado == 'RETIRADO'` (solo retirados).
 - No hay modo "todos" — es exclusivo.
 - Cuando `soloRetirados = true`: ocultar checkboxes, barra de baja masiva y botón "Dar de baja"; mostrar botón "Reingreso".
 
 ### Estilos
+
 - **Tailwind utilities** + **CSS por componente** (no global). Mezcla intencional.
 - Cada feature/page maneja su propio `.css`.
 - Color de marca: `#64BC04` (verde Abril) / `#5aa904` (hover) / `#E5F7D1` (light fill) / `#0086A5` (azul accent legacy).
@@ -276,12 +307,14 @@ Template: `<app-base-modal *ngIf="open" ... (closeModal)="close()">`. El `*ngIf=
 Las clases de abajo se repiten en `features/ssoma/salud-ocupacional/.../*.css` y constituyen el **lenguaje visual base** de las nuevas features. Cuando crees un page nuevo en SSOMA, **copia/pega** este set CSS.
 
 ### Layout & cards
+
 - `.card` — fondo blanco, `border-radius: 10px`, sombra suave 1px.
 - `.filters-card` — variante con padding 1rem 1.25rem.
 - `.section-bar` — flex, `align-items: end`, `justify-content: space-between`.
 - `.section-title` (1.05rem/700, `#111827`), `.section-sub` (0.82rem, `#6b7280`).
 
 ### Inputs / forms
+
 - `.field-label` — uppercase 0.72rem, gris 600.
 - `.field-input` — border `#d6dee5` 1px, radius 12px, padding 0.55rem 0.75rem; focus → border `#64bc04` + shadow rgba(100,188,4,0.18).
 - `.search-input` — wrapper con icono + input transparente.
@@ -290,6 +323,7 @@ Las clases de abajo se repiten en `features/ssoma/salud-ocupacional/.../*.css` y
 - `.form-wrapper`, `.form-footer` — patrón estándar de modales con BaseModal.
 
 ### Botones
+
 - `.btn-primary` — verde `#64bc04`, blanco, padding 0.55rem 0.95rem, radius 10px, hover `#5aa904`.
 - `.btn-ghost` — transparente, gris, hover gris claro.
 - `.btn-link` — texto verde, hover underline.
@@ -300,6 +334,7 @@ Las clases de abajo se repiten en `features/ssoma/salud-ocupacional/.../*.css` y
   - `.chip-blue` (editar/info)
 
 ### Tabla
+
 - `.table-wrapper` (overflow-x), `.data-table` (collapse, 0.88rem).
 - Thead: bg `#f9fafb`, uppercase 0.72rem, gris.
 - Tbody td: padding 0.7rem 1rem, border-bottom `#f3f4f6`.
@@ -308,13 +343,25 @@ Las clases de abajo se repiten en `features/ssoma/salud-ocupacional/.../*.css` y
 - `.paginator-wrapper` — padding 0.75rem 1rem, top-border.
 
 ### Badge
-- `.badge` — pill 999px, 0.72rem/600. Combinar con chip-* para color.
+
+- `.badge` — pill 999px, 0.72rem/600. Combinar con chip-\* para color.
 
 ### Tabs (patrón usado en `emos/components/emo-detail/` y `catalogos/`)
+
 ```css
-.tabs            { display: flex; gap: .25rem; border-bottom: 1px solid #e5e7eb; }
-.tabs button     { padding: .55rem .85rem; border-bottom: 2px solid transparent; }
-.tabs button.active { color: #111827; border-bottom-color: #64bc04; }
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.tabs button {
+  padding: 0.55rem 0.85rem;
+  border-bottom: 2px solid transparent;
+}
+.tabs button.active {
+  color: #111827;
+  border-bottom-color: #64bc04;
+}
 ```
 
 > **Pages legacy de `features/projects/configuration/pages/proyectos/`** usan Tailwind directamente (no este sistema). Cuando edites ahí, sigue su estilo Tailwind para no romper consistencia local.
@@ -325,18 +372,19 @@ Las clases de abajo se repiten en `features/ssoma/salud-ocupacional/.../*.css` y
 
 Importables como standalone desde cualquier feature.
 
-| Componente | Selector | Path | Notas |
-|------------|----------|------|-------|
-| `BaseModal` | `app-base-modal` | `shared/components/base-modal/` | Inputs: `title`, `width` (default `w-[1000px]`). Output: `closeModal`. Slot `<ng-content>`. Cierra al hacer mousedown sobre backdrop. |
-| `Paginator` | `app-paginator` | `shared/components/paginator/` | Inputs: `totalRecords`, `currentPage`, `totalPages`. Output: `pageChange`. Hasta 5 botones visibles. |
-| `SearchSelect` | `app-search-select` | `shared/components/search-select/` | Dropdown con búsqueda. Inputs: `options`, `valueField` (default `id`), `displayField` (default `name`), `value`, `placeholder`, `showLabel`, `label`, `allowClear` (default `true`). Output: `valueChange`. Botón X inline para limpiar valor cuando `allowClear = true`. |
-| `ViewToggle` | `app-view-toggle` | `shared/components/view-toggle/` | Toggle list/calendar/grid según `modes: ViewToggleMode[]`. |
-| `Layout` | — | `shared/components/layout/` | Shell autenticado. Renderiza Header + Sidebar + `<router-outlet>`. |
-| `Header`, `Sidebar`, `SidebarMobile`, `NavIcon` | — | `shared/components/header,sidebar*,nav-icon/` | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
-| `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes. |
-| `DocumentViewer` | `app-document-viewer` | `shared/components/document-viewer/` | Visor de documentos modal. Inputs: `archivoUrl` (ruta relativa o URL), `nombre`. Output: `closed`. Llama `getArchivoUrl(path)` para obtener URL firmada, luego fetch-as-blob para PDF/imagen. `archivoUrl = ''` cierra el visor. Reutilizable en cualquier feature de habilitación. |
+| Componente                                                                   | Selector              | Path                                                                                     | Notas                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BaseModal`                                                                  | `app-base-modal`      | `shared/components/base-modal/`                                                          | Inputs: `title`, `width` (default `w-[1000px]`). Output: `closeModal`. Slot `<ng-content>`. Cierra al hacer mousedown sobre backdrop.                                                                                                                                                                                                  |
+| `Paginator`                                                                  | `app-paginator`       | `shared/components/paginator/`                                                           | Inputs: `totalRecords`, `currentPage`, `totalPages`. Output: `pageChange`. Hasta 5 botones visibles.                                                                                                                                                                                                                                   |
+| `SearchSelect`                                                               | `app-search-select`   | `shared/components/search-select/`                                                       | Dropdown con búsqueda. Inputs: `options`, `valueField` (default `id`), `displayField` (default `name`), `value`, `placeholder`, `showLabel`, `label`, `allowClear` (default `true`). Output: `valueChange`. Botón X inline para limpiar valor cuando `allowClear = true`.                                                              |
+| `ViewToggle`                                                                 | `app-view-toggle`     | `shared/components/view-toggle/`                                                         | Toggle list/calendar/grid según `modes: ViewToggleMode[]`.                                                                                                                                                                                                                                                                             |
+| `Layout`                                                                     | —                     | `shared/components/layout/`                                                              | Shell autenticado. Renderiza Header + Sidebar + `<router-outlet>`.                                                                                                                                                                                                                                                                     |
+| `Header`, `Sidebar`, `SidebarMobile`, `NavIcon`                              | —                     | `shared/components/header,sidebar*,nav-icon/`                                            | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
+| `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios                | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes.                                                                                                                                                                                                                                                                                                           |
+| `DocumentViewer`                                                             | `app-document-viewer` | `shared/components/document-viewer/`                                                     | Visor de documentos modal. Inputs: `archivoUrl` (ruta relativa o URL), `nombre`. Output: `closed`. Llama `getArchivoUrl(path)` para obtener URL firmada, luego fetch-as-blob para PDF/imagen. `archivoUrl = ''` cierra el visor. Reutilizable en cualquier feature de habilitación.                                                    |
 
 **Importación correcta** (standalone):
+
 ```ts
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
 import { Paginator } from '.../paginator/paginator';
@@ -344,6 +392,7 @@ import { SearchSelect } from '.../search-select/search-select';
 ```
 
 ### Patrón de modal CRUD (canónico)
+
 ```html
 <app-base-modal *ngIf="open" [title]="title" width="w-[700px]" (closeModal)="close()">
   <div class="form-wrapper">
@@ -370,134 +419,142 @@ import { SearchSelect } from '.../search-select/search-select';
 Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 
 ### Auth & usuarios (`core/services/`)
-| Método | Endpoint | Servicio |
-|--------|----------|----------|
-| POST | `/api/v1/auth/login` | `AuthService.login` |
-| POST | `/api/v1/auth/set-password` | `AuthService.setPassword` |
-| POST | `/api/v1/auth/forgot-password` | `AuthService.forgotPassword` |
-| GET (paged) | `/api/v1/user/paged?page=N` | `UserService.getUserPaged` |
-| POST | `/api/v1/user` | `UserService.createUser` |
-| PUT | `/api/v1/user/{id}` | `UserService.updateUser` |
-| PATCH | `/api/v1/user/{id}/toggle` | `UserService.toggleUser` |
-| GET | `/api/v1/role` | `RoleService` |
-| GET | `/api/v1/person` | `PersonService` |
-| POST | `/api/v1/microsoft` | `MicrosoftAuthService` (login MS) |
+
+| Método      | Endpoint                       | Servicio                          |
+| ----------- | ------------------------------ | --------------------------------- |
+| POST        | `/api/v1/auth/login`           | `AuthService.login`               |
+| POST        | `/api/v1/auth/set-password`    | `AuthService.setPassword`         |
+| POST        | `/api/v1/auth/forgot-password` | `AuthService.forgotPassword`      |
+| GET (paged) | `/api/v1/user/paged?page=N`    | `UserService.getUserPaged`        |
+| POST        | `/api/v1/user`                 | `UserService.createUser`          |
+| PUT         | `/api/v1/user/{id}`            | `UserService.updateUser`          |
+| PATCH       | `/api/v1/user/{id}/toggle`     | `UserService.toggleUser`          |
+| GET         | `/api/v1/role`                 | `RoleService`                     |
+| GET         | `/api/v1/person`               | `PersonService`                   |
+| POST        | `/api/v1/microsoft`            | `MicrosoftAuthService` (login MS) |
 
 ### Proyectos
-| Método | Endpoint | Servicio |
-|--------|----------|----------|
-| GET | `/api/v1/project/paged?page=N` | `ProjectService.getProjectPaged` |
-| GET | `/api/v1/project/paged-with-residents?page=N` | `ProjectService.getProjectPagedWithResidents` |
-| GET | `/api/v1/project/with-resident-by-userId` | `ProjectService.getWithResidentByUserId` |
-| POST | `/api/v1/project` | `ProjectService.createProject` |
-| PUT | `/api/v1/project` | `ProjectService.editProject` |
-| DELETE | `/api/v1/project/{id}` | `ProjectService.deleteProject` |
-| GET | `/api/v1/project/{id}/emails` | `ProjectService.getProjectEmails` |
-| PATCH | `/api/v1/project/{id}/emails` | `ProjectService.patchProjectEmails` |
-| PATCH (multipart) | `/api/v1/project/{id}/foto` | `ProjectService.uploadProjectFoto` (FormData `foto`; responde `{ message, fotoUrl }`) |
-| GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged` |
-| — | `/api/v1/projectResident` | `ProjectResidentService` |
-| — | `/api/v1/userProject` | `UserProjectService` |
+
+| Método                | Endpoint                                              | Servicio                                                                        |
+| --------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| GET                   | `/api/v1/project/paged?page=N`                        | `ProjectService.getProjectPaged`                                                |
+| GET                   | `/api/v1/project/paged-with-residents?page=N`         | `ProjectService.getProjectPagedWithResidents`                                   |
+| GET                   | `/api/v1/project/with-resident-by-userId`             | `ProjectService.getWithResidentByUserId`                                        |
+| POST                  | `/api/v1/project`                                     | `ProjectService.createProject`                                                  |
+| PUT                   | `/api/v1/project`                                     | `ProjectService.editProject`                                                    |
+| DELETE                | `/api/v1/project/{id}`                                | `ProjectService.deleteProject`                                                  |
+| GET                   | `/api/v1/project/{id}/emails`                         | `ProjectService.getProjectEmails`                                               |
+| PATCH                 | `/api/v1/project/{id}/emails`                         | `ProjectService.patchProjectEmails`                                             |
+| PATCH (multipart)     | `/api/v1/project/{id}/foto`                           | `ProjectService.uploadProjectFoto` (FormData `foto`; responde `{ message, fotoUrl }`) |
+| GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged`                                               |
+| —                     | `/api/v1/projectResident`                             | `ProjectResidentService`                                                        |
+| —                     | `/api/v1/userProject`                                 | `UserProjectService`                                                            |
 
 ### Configuración (proyectos)
-| Endpoint | Servicio |
-|----------|----------|
-| `/api/v1/area` | `AreaService` |
-| `/api/v1/phase` | `PhaseService` |
-| `/api/v1/stage` | `StageService` |
-| `/api/v1/substage` | `SubStageService` |
-| `/api/v1/layer` | `LayerService` |
-| `/api/v1/subspecialty` | `SubspecialtyService` |
+
+| Endpoint                                 | Servicio                                |
+| ---------------------------------------- | --------------------------------------- |
+| `/api/v1/area`                           | `AreaService`                           |
+| `/api/v1/phase`                          | `PhaseService`                          |
+| `/api/v1/stage`                          | `StageService`                          |
+| `/api/v1/substage`                       | `SubStageService`                       |
+| `/api/v1/layer`                          | `LayerService`                          |
+| `/api/v1/subspecialty`                   | `SubspecialtyService`                   |
 | `/api/v1/phaseStageSubStageSubSpecialty` | `PhaseStageSubStageSubSpecialtyService` |
-| `/api/v1/milestone` | `MilestoneService` |
+| `/api/v1/milestone`                      | `MilestoneService`                      |
 
 ### SSOMA — Salud Ocupacional
+
 Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
-| Método | Endpoint | Servicio |
-|--------|----------|----------|
-| GET | `/dashboard` | `DashboardSaludService` |
-| GET | `/workers/search?...` | `WorkerSearchService` |
-| GET | `/workers/{id}/historial-emo` | `EmoService.getHistorial` |
-| POST | `/workers` | `WorkerService.createWorker` |
-| PUT | `/workers/{id}` | `WorkerService.updateWorker` |
-| PATCH | `/workers/{id}/retirar` | `WorkerService.retirarWorker` |
-| GET (paged) | `/emos` | `EmoService.getEmos` |
-| GET (paged) | `/emos/por-trabajador` | `EmoService.getEmosPorTrabajador` |
-| GET | `/emos/{id}` | `EmoService.getEmo` |
-| POST | `/emos` | `EmoService.createEmo` |
-| PUT | `/emos/{id}` | `EmoService.updateEmo` |
-| PATCH | `/emos/{id}/estado` | `EmoService.patchEstado` |
-| GET (paged) | `/programaciones` | `ProgramacionService.getProgramaciones` |
-| GET | `/programaciones/{id}` | `ProgramacionService.getProgramacion` |
-| POST | `/programaciones` | `ProgramacionService.createProgramacion` |
-| PUT | `/programaciones/{id}` | `ProgramacionService.updateProgramacion` |
-| PATCH | `/programaciones/{id}/estado` | `ProgramacionService.patchEstado` |
-| GET (paged) | `/interconsultas` | `InterconsultaService.getInterconsultas` |
-| GET | `/interconsultas/{id}` | `InterconsultaService.getInterconsulta` |
-| PUT | `/interconsultas/{id}` | `InterconsultaService.updateInterconsulta` |
-| GET (paged) | `/convalidaciones` | `ConvalidacionService.getConvalidaciones` |
-| GET | `/convalidaciones/{id}` | `ConvalidacionService.getConvalidacion` |
-| POST | `/convalidaciones` | `ConvalidacionService.createConvalidacion` |
-| PUT | `/convalidaciones/{id}` | `ConvalidacionService.updateConvalidacion` |
-| GET | `/catalogos/clinicas` | `CatalogosSaludService.getClinicas` (cached) |
-| POST | `/catalogos/clinicas` | `CatalogosSaludService.createClinica` |
-| PUT | `/catalogos/clinicas/{id}` | `CatalogosSaludService.updateClinica` |
-| GET | `/catalogos/clinicas/{id}/emails` | `CatalogosSaludService.getClinicaEmails` |
-| POST | `/catalogos/clinicas/{id}/emails` | `CatalogosSaludService.createClinicaEmail` |
-| DELETE | `/catalogos/clinicas/{id}/emails/{emailId}` | `CatalogosSaludService.deleteClinicaEmail` |
-| GET | `/catalogos/medicos` | `CatalogosSaludService.getMedicos` (cached) |
-| POST | `/catalogos/medicos` | `CatalogosSaludService.createMedico` |
-| PUT | `/catalogos/medicos/{id}` | `CatalogosSaludService.updateMedico` |
-| GET | `/catalogos/emo-tipos` | `CatalogosSaludService.getEmoTipos` (cached) |
-| POST | `/catalogos/emo-tipos` | `CatalogosSaludService.createEmoTipo` |
-| PUT | `/catalogos/emo-tipos/{id}` | `CatalogosSaludService.updateEmoTipo` |
-| GET | `/catalogos/examen-tipos` | `CatalogosSaludService.getExamenTipos` (cached) |
-| GET | `/catalogos/restriccion-tipos` | `CatalogosSaludService.getRestriccionTipos` (cached) |
-| GET | `/catalogos/empresas` | `CatalogosSaludService.getEmpresas` (cached) |
+| Método      | Endpoint                                    | Servicio                                             |
+| ----------- | ------------------------------------------- | ---------------------------------------------------- |
+| GET         | `/dashboard`                                | `DashboardSaludService`                              |
+| GET         | `/workers/search?...`                       | `WorkerSearchService`                                |
+| GET         | `/workers/{id}/historial-emo`               | `EmoService.getHistorial`                            |
+| POST        | `/workers`                                  | `WorkerService.createWorker`                         |
+| PUT         | `/workers/{id}`                             | `WorkerService.updateWorker`                         |
+| PATCH       | `/workers/{id}/retirar`                     | `WorkerService.retirarWorker`                        |
+| GET (paged) | `/emos`                                     | `EmoService.getEmos`                                 |
+| GET (paged) | `/emos/por-trabajador`                      | `EmoService.getEmosPorTrabajador`                    |
+| GET         | `/emos/{id}`                                | `EmoService.getEmo`                                  |
+| POST        | `/emos`                                     | `EmoService.createEmo`                               |
+| PUT         | `/emos/{id}`                                | `EmoService.updateEmo`                               |
+| PATCH       | `/emos/{id}/estado`                         | `EmoService.patchEstado`                             |
+| GET (paged) | `/programaciones`                           | `ProgramacionService.getProgramaciones`              |
+| GET         | `/programaciones/{id}`                      | `ProgramacionService.getProgramacion`                |
+| POST        | `/programaciones`                           | `ProgramacionService.createProgramacion`             |
+| PUT         | `/programaciones/{id}`                      | `ProgramacionService.updateProgramacion`             |
+| PATCH       | `/programaciones/{id}/estado`               | `ProgramacionService.patchEstado`                    |
+| GET (paged) | `/interconsultas`                           | `InterconsultaService.getInterconsultas`             |
+| GET         | `/interconsultas/{id}`                      | `InterconsultaService.getInterconsulta`              |
+| PUT         | `/interconsultas/{id}`                      | `InterconsultaService.updateInterconsulta`           |
+| GET (paged) | `/convalidaciones`                          | `ConvalidacionService.getConvalidaciones`            |
+| GET         | `/convalidaciones/{id}`                     | `ConvalidacionService.getConvalidacion`              |
+| POST        | `/convalidaciones`                          | `ConvalidacionService.createConvalidacion`           |
+| PUT         | `/convalidaciones/{id}`                     | `ConvalidacionService.updateConvalidacion`           |
+| GET         | `/catalogos/clinicas`                       | `CatalogosSaludService.getClinicas` (cached)         |
+| POST        | `/catalogos/clinicas`                       | `CatalogosSaludService.createClinica`                |
+| PUT         | `/catalogos/clinicas/{id}`                  | `CatalogosSaludService.updateClinica`                |
+| GET         | `/catalogos/clinicas/{id}/emails`           | `CatalogosSaludService.getClinicaEmails`             |
+| POST        | `/catalogos/clinicas/{id}/emails`           | `CatalogosSaludService.createClinicaEmail`           |
+| DELETE      | `/catalogos/clinicas/{id}/emails/{emailId}` | `CatalogosSaludService.deleteClinicaEmail`           |
+| GET         | `/catalogos/medicos`                        | `CatalogosSaludService.getMedicos` (cached)          |
+| POST        | `/catalogos/medicos`                        | `CatalogosSaludService.createMedico`                 |
+| PUT         | `/catalogos/medicos/{id}`                   | `CatalogosSaludService.updateMedico`                 |
+| GET         | `/catalogos/emo-tipos`                      | `CatalogosSaludService.getEmoTipos` (cached)         |
+| POST        | `/catalogos/emo-tipos`                      | `CatalogosSaludService.createEmoTipo`                |
+| PUT         | `/catalogos/emo-tipos/{id}`                 | `CatalogosSaludService.updateEmoTipo`                |
+| GET         | `/catalogos/examen-tipos`                   | `CatalogosSaludService.getExamenTipos` (cached)      |
+| GET         | `/catalogos/restriccion-tipos`              | `CatalogosSaludService.getRestriccionTipos` (cached) |
+| GET         | `/catalogos/empresas`                       | `CatalogosSaludService.getEmpresas` (cached)         |
 
 > **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns.
 
 ### Arquitectura Comercial
+
 Base: `${apiUrl}api/v1/arquitectura-comercial`
 
-| Método | Endpoint | Servicio |
-|--------|----------|----------|
-| GET | `/dashboard` | `getDashboardData` (v1 — legado) |
-| GET | `/dashboard-v2?categoriaId=&proyectoId=&userId=&semana=&mes=&anio=` | `getDashboardV2(DashboardFiltroDTO)` |
-| GET | `/proyectos` | `getProyectos` — lista simple `{ id, nombre }` |
-| GET | `/alertas/{tipoAlerta}?...` | `getActividadesPorAlerta(tipo, filtro)` → `ActividadAlertaDTO[]` |
-| POST | `/alertas/enviar` | `enviarAlertasActividades(EnviarAlertaRequestDTO)` |
-| GET | `/filters` | `getFilters` |
-| GET | `/proyectos-con-actividades` | `getProyectosConActividades` |
-| GET | `/supervisores-ac` | `getSupervisoresAc` |
-| GET | `/actividades?proyectoId=&tipo=&search=&soloActivas=&pagina=&porPagina=` | `getActividades` |
-| POST | `/actividades` | `createActividad` (body: `CreateActividadBody`) |
-| PUT | `/actividades/{id}` | `updateActividad` (body: `UpdateActividadBody`) |
-| PATCH | `/actividades/{id}` | `patchActividad` (body: `ActividadPatchBody`) |
-| DELETE | `/actividades/{id}` | `deleteActividad` |
-| POST | `/actividades/generar` | `generarActividades` (body: `{ proyectoId }`) |
-| POST | `/actividades/reasignar-encargado` | `reasignarEncargado` |
-| PATCH | `/proyectos/{id}` | `patchProyecto` |
-| GET | `/plantilla` | `getPlantilla` |
-| POST | `/plantilla` | `createPlantilla` |
-| PATCH | `/plantilla/{id}` | `patchPlantilla` |
-| GET | `/categorias` | `getCategorias` |
-| GET | `/especialidades` | `getEspecialidades` |
-| GET | `/etapas` | `getEtapas` |
-| GET | `/gantt` | `getGantt` |
+| Método | Endpoint                                                                 | Servicio                                                         |
+| ------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| GET    | `/dashboard`                                                             | `getDashboardData` (v1 — legado)                                 |
+| GET    | `/dashboard-v2?categoriaId=&proyectoId=&userId=&semana=&mes=&anio=`      | `getDashboardV2(DashboardFiltroDTO)`                             |
+| GET    | `/proyectos`                                                             | `getProyectos` — lista simple `{ id, nombre }`                   |
+| GET    | `/alertas/{tipoAlerta}?...`                                              | `getActividadesPorAlerta(tipo, filtro)` → `ActividadAlertaDTO[]` |
+| POST   | `/alertas/enviar`                                                        | `enviarAlertasActividades(EnviarAlertaRequestDTO)`               |
+| GET    | `/filters`                                                               | `getFilters`                                                     |
+| GET    | `/proyectos-con-actividades`                                             | `getProyectosConActividades`                                     |
+| GET    | `/supervisores-ac`                                                       | `getSupervisoresAc`                                              |
+| GET    | `/actividades?proyectoId=&tipo=&search=&soloActivas=&pagina=&porPagina=` | `getActividades`                                                 |
+| POST   | `/actividades`                                                           | `createActividad` (body: `CreateActividadBody`)                  |
+| PUT    | `/actividades/{id}`                                                      | `updateActividad` (body: `UpdateActividadBody`)                  |
+| PATCH  | `/actividades/{id}`                                                      | `patchActividad` (body: `ActividadPatchBody`)                    |
+| DELETE | `/actividades/{id}`                                                      | `deleteActividad`                                                |
+| POST   | `/actividades/generar`                                                   | `generarActividades` (body: `{ proyectoId }`)                    |
+| POST   | `/actividades/reasignar-encargado`                                       | `reasignarEncargado`                                             |
+| PATCH  | `/proyectos/{id}`                                                        | `patchProyecto`                                                  |
+| GET    | `/plantilla`                                                             | `getPlantilla`                                                   |
+| POST   | `/plantilla`                                                             | `createPlantilla`                                                |
+| PATCH  | `/plantilla/{id}`                                                        | `patchPlantilla`                                                 |
+| GET    | `/categorias`                                                            | `getCategorias`                                                  |
+| GET    | `/especialidades`                                                        | `getEspecialidades`                                              |
+| GET    | `/etapas`                                                                | `getEtapas`                                                      |
+| GET    | `/gantt`                                                                 | `getGantt`                                                       |
 
 **DTOs nuevos** (`core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model.ts`):
+
 - `DashboardFiltroDTO { categoriaId, proyectoId, userId, semana, mes, anio }` — filtro unificado del dashboard.
 - `ActividadAlertaDTO { id, nombre, proyecto, responsable1/2, emailResp1/2, fechaInicio/Fin, estado, spi, tipo, categoria, diasRestantes }`.
 - `EnviarAlertaRequestDTO { actividadIds: number[], tipoAlerta: string }`.
 
 **Extensiones en** `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts`:
+
 - `HitoCriticoDTO`: añadido `id: number`.
 - `ArqComercialDashboardDTO`: añadidos `tareasPorArquitectoDetalle`, `avanceSemanal`, `eficienciaSpi`, `categorias`.
 - Nuevos interfaces: `TareasPorArquitectoDTO { userId, nombre, hitos, entregables, consultas, total, avancePct }`, `AvanceSemanalDTO { semana, programado, real }`, `EficienciaSpiDTO { semana, spi }`, `CategoriaItemDTO { id, nombre }`.
 
 **DTOs clave** (`core/dtos/arquitectura-comercial/actividades.model.ts`):
+
 - `ActividadListItemDTO` — fila de tabla. Campos clave: `orden` (ex `indice`), `spi?: number | null`, `partidaDeControl: string | null` (ex `tipo`), `categoriaId/Nombre`, `especialidadId/Nombre`, `userId`, `responsableNombre`, `userId2: number | null`, `responsableNombre2: string | null`, `encargado1`, `estado`, `retraso`.
 - `ActividadPatchBody` — campos opcionales: fechas programadas/efectivas, `userId`, `userId2`, `observaciones`, `estado`, `activo`.
 - `CreateActividadBody` — `nombre, tipo, projectId, etapaId, userId, inicioProgramado, finProgramado`. Opcionales: `categoriaId`, `especialidadId`.
@@ -510,20 +567,24 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 ## 8. Estado actual de cada módulo
 
 ### `features/auth/` — ✅ Completo
+
 - Login (form propio + Microsoft via MSAL).
 - `complete-registration` (set password con token).
 - `msal-redirect` callback.
 - **Panel izquierdo del login** rediseñado: logo arriba + sección "Videos Tutoriales" con 7 cards scrollables (max ~3.8 visibles). Cada card abre el link de Loom en nueva pestaña. Array `tutorialVideos` en `login.ts` (readonly). Estilos glassmorphism en `login.css` (`.tutorial-card`, `.tutorial-play`, `.tutorial-scroll` con scrollbar delgado). Fondo y accent color (`#64bc04`) consistentes con la identidad existente.
 
 ### `features/home/` — ✅ Completo
+
 - Página Inicio simple post-login.
 
 ### `features/security/` — ✅ CRUD completo
+
 - `/security/users` (gestión de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
 - Lista paginada con búsqueda client-side. CRUD completo: crear, editar, toggle activo/inactivo.
 - Ver §13 para detalles de implementación.
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
+
 Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cuaderno obra, informes, seguimiento residentes, configuración (áreas/fases/etapas/etc.). Todos completados. Proyectos incluye botón **"Emails SSOMA"** → modal `ProjectEmailsForm` (PATCH `/api/v1/project/{id}/emails`).
 
 #### `milestone-schedule/` — Cronograma de Hitos (gantt) — 🔵 rediseño 2026-05-27
@@ -541,9 +602,11 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **`gantt.config.csp = false`** al inicio de `initGantt()` — necesario para que dhtmlx no sanitice el SVG/HTML de los templates de columnas.
 
 ### `features/costs/` — ⚠️ Solo Adjudicaciones
+
 - `/costs/adjudicaciones`. Rol: `ADMINISTRADOR DEL SISTEMA`.
 
 ### `features/contractors/` — ✅ Completo
+
 - Doble routing: `CONTRACTORS_ROUTES` (`/contractors/registro`, público) + `CONTRACTORS_ADMIN_ROUTES` (`/contractors/management`, autenticado).
 - `POST api/v1/contractorRegistration` (registro nuevo contratista): requiere auth (JWT). El backend sube archivos a SharePoint solo si se envían. Sin archivos, el registro funciona sin config SharePoint.
 - `POST /habilitacion/empresas` (registro empresa — `/habilitacion/registro-empresa`): público `[AllowAnonymous]`. Devuelve 400 con `{ message }` si el RUC ya existe en `ss_empresa_contratista` o `contributor`.
@@ -554,6 +617,7 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **`empresaId` en JWT contratista** = `contributor_id` (no `contractor_id`).
 
 ### `features/arquitectura-comercial/` — ✅ Completo
+
 - Dashboard (v2 enterprise con modales de alertas, hitos y 4 charts — ver §17), Actividades (CRUD completo), Gantt, Plantilla.
 - Gantt usa **dhtmlx-gantt** + **QuickChart** (POST cuando GET URL > `QUICKCHART_GET_LIMIT = 16000` chars).
 - **Actividades — CRUD completo**: editar actividad (PUT), eliminar actividad (DELETE con Swal confirm), crear consulta/hito/entregable (POST).
@@ -569,9 +633,11 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
 ### `features/clinica/` — ✅ Módulo Clínica (nuevo en 2026-05-26)
+
 Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey).
 
 **Sub-rutas** (`clinica.routes.ts`):
+
 ```
 /clinica              → redirect 'dashboard'
 /clinica/dashboard    → ClinicaDashboard  (métricas hoy + nav a subrutas)
@@ -588,36 +654,57 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 
 **Control de EMOs** (`pages/emos/`): vista de solo lectura del endpoint `GET /emos/por-trabajador`. Reutiliza `EmoService`, `CatalogosSaludService`, DTOs (`EmoPorTrabajadorDto`, `EmoPorTrabajadorQuery`), utils (`aptitudBadgeClass`, `diasVencerBadgeClass`) y el componente `EmoDetail` directamente de `ssoma/salud-ocupacional/`. Sin botón crear ni editar. Click en fila con EMO abre `<app-emo-detail>`; botón historial navega a `/ssoma/salud-ocupacional/emos/{workerId}/historial`. `featureKey: 'clinica.agenda'`.
 
-**Agenda** (`pages/agenda/`): Sections por estado: "Por confirmar" (Programado), "Confirmados/en proceso" (Aceptado/En Atención), "Cerrados". Acciones por card: Aceptar, Rechazar (con motivo inline), CheckIn, Completar (abre `CompletarEmo`). Servicios: `ClinicaProgramacionService` (GET/PATCH `clinica-accion`). CSS propio con `btn-action`, `agenda-section-label`, `stat-chip`.
+**Agenda** (`pages/agenda/`) — rediseño enterprise 2026-05-28:
 
-**Programaciones** (`pages/programaciones/`): tabla con filtros `desde/hasta/estado`. CSS propio con `prog-table-card`, `badge-chip`.
+- Layout full-screen (`:host flex-col flex-1`), header `#0f172a` con `linear-gradient`, stats-bar, controls-row, cards-zone con grid 3 columnas responsive (→2 en ≤1100px, →1 en ≤640px).
+- **Card estructura 3 zonas**: `.card-top` (nombre/DNI + badge estado + `.card-chips` con chip-groups etiquetados "Tipo"/"Categoría"/"Ocupación"/"EMO"), `.card-dates` (banda `#f8fafc` con fecha programada + hora + vence EMO + check-in), `.card-actions` (margin-top:auto).
+- **Modal aceptar**: hora obligatoria con validación triple (`!hora || trim==='' || =='--:--'`); grid 2 col fecha+hora; error inline `.dm-error-inline`.
+- **Tab system**: propiedad `activeTab: 'agenda'|'interconsultas'`. Tab Interconsultas carga `cargarInterconsultas()` en `ngOnInit` + en `cambiarTab()` si no hay datos. `ChangeDetectorRef.detectChanges()` forzado en `next`/`error` y `cambiarTab`.
+- **Tab Interconsultas**: tabla full-width con columnas Trabajador, Especialidad, F.Derivación, Días (calculados con `calcularDiasPendientes(fechaDerivacion)`), Estado, botón `ic-btn-accion` ("🔧 Gestionar"/"📋 Ver detalle"). Helpers: `icEstadoClass()`, `icDiasClass(dias)`, `calcularDiasPendientes()`. HTTP GET a `/interconsultas` con `HttpParams`.
+- **Modal levantamiento interconsulta** (`icDetalle`/`icPaso`/`icLevantamiento`): backdrop `modal-overlay`, caja centrada `ic-modal-box` 580px. Paso 1: fecha+resultado (grid 2col) + diagnóstico + archivo (upload). POST `/interconsultas/{id}/documentos` + PATCH `/interconsultas/{id}/resultado`. Paso 2: mensaje de éxito.
+- **DTOs ampliados** (`clinica.model.ts`): `ProgramacionClinicaDto` añadidos `fechaVencimientoEmo?: string|null`, `categoria?: string|null`, `tipoTrabajador?: string|null`, `ocupacion?: string|null`. `ClinicaAccionDto` añadido `horaNueva?: string`.
 
-**Interconsultas** (`pages/interconsultas/`): tabla con filtros `estado/search`. Modal inline para resolver (campos: estado, fechaAtencion, CIE-10, diagnóstico, resultado, urlInforme, notas). Fila `row-urgente` (borde rojo) cuando `diasPendiente >= 7`. Usa `InterconsultaService` de SSOMA (`../../../ssoma/salud-ocupacional/services/interconsulta.service`). El callback de `getInterconsultas` usa `res.items ?? res.data ?? res ?? []` (defensivo frente a formato del backend).
+**Programaciones** (`pages/programaciones/`) — rediseño 2026-05-28:
+
+- Full-screen idéntico a agenda: header gradient oscuro, `.controls-row` blanca, `.table-zone` scroll. Badge de conteo `items.length` en header. Loading dots verdes, empty state `📋`. `| date:'dd/MM/yyyy'` en fecha.
+
+**Interconsultas** (`pages/interconsultas/`) — rediseño 2026-05-28:
+
+- Mismo estándar visual: header `linear-gradient #0f172a→#1e293b`, `.controls-row` blanca, `.table-zone` con `.table-card`. Badges días: `ic-chip-red/orange/green/muted`. Badges estado: `chip-orange/green/gray` (border-radius 6px). Modales dark conservados íntegramente.
+
+**`layout.ts` `isFullPage()`** incluye: `/clinica/dashboard`, `/clinica/agenda`, `/clinica/interconsultas`, `/clinica/programaciones` (header global oculto en todas estas rutas).
 
 **Servicios de Clínica** (`features/clinica/services/clinica-programacion.service.ts`):
+
 - Base: `${apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`
 - `getProgramacionesHoy(clinicaId?)` → GET con `desde=hoy&hasta=hoy`
 - `getProgramacionesFiltradas({ desde, hasta, estado })` → GET con filtros
-- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId? }`
+- `accionClinica(id, body)` → PATCH `/{id}/clinica-accion` con `ClinicaAccionDto { accion: Aceptar|Rechazar|CheckIn|Completar, motivoRechazo?, checkInHora?, emoResultadoId?, horaNueva?, fechaNueva? }`
 
 **DTOs** (`features/clinica/dtos/clinica.model.ts`): `ProgramacionClinicaDto`, `ClinicaAccionDto`, `EstadoProgramacionClinica`.
 
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
+
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
 
 ### `features/configuracion/` — ✅ Completo
+
 Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
 
 ### `features/gestion-administrativa/` — ✅ Implementado (detalle en §14)
+
 Solicitud de Salidas, Gestión de Salidas. Configuración: Motivos de Salida, Lugares de Origen/Destino. Todas las rutas usan `featureKey`. DTOs auto-contenidos dentro del feature.
 
 ### `features/mejora-continua/` — ✅ Implementado (detalle en §15)
+
 Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relaciones, Plantillas. Todas las rutas usan solo `roleGuard` (el shell padre aplica `authGuard`).
 
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
+
 Plataforma completa mobile-first.
 **Cambios 2026-05-18/19:** `trabajadores.html` — lista y botón "Crear" visibles para rol `CONTRATISTA` (`isContratista()`); pills de filtro Casa/Contratista ocultos para contratistas; upload oculto para ítem 12 (Induccion Obra); APROBAR/RECHAZAR gated por `!isContratista() && isAdmin()`; marcarInduccion oculto para contratistas; botones "Dar de baja" y "Reingreso" + checkboxes + barra masiva visibles para `isAdmin() || isContratista()`; "Cambiar obra" sigue solo para `isAdmin()`. `onFileSelected()` usa `res.path` (ruta relativa) en vez de `res.url` para `panelArchivoUrl` — evita almacenar URL absoluta que expira en BD. **`WorkerCreateEdit` migrado desde Configuración** — modal unificado crear/editar con lógica diferenciada Casa vs Contratista, soporte DNI/CE, catálogos en cascada (Área→Subárea→Jefatura), combobox Categoría/Ocupación desde `/catalogos/categorias` y `/catalogos/ocupaciones`. `onDniBlur()` encadena 4 pasos: formato, RENIEC (solo DNI), restringidos, existencia en BD. Ver §12 para subcomponentes y endpoints.
 **Cambios 2026-05-19:**
+
 - **Componente `inducciones`** (`pages/inducciones/`): reescrito completo. Tabla de seguimiento para CONTRATISTA. Badge con 3 estados: `REALIZADA` → "Completada" (verde), `PROGRAMADA + ingresoConfirmado=true` → "Ingresó" (amarillo), `PROGRAMADA + ingresoConfirmado=false` → "Pendiente" (rojo). Llama `InduccionService.getList(params)` con `empresaId` del JWT. Filtros: estado, fechaDesde, fechaHasta. CSS usa `.badge`, `.badge-green`, `.badge-yellow`, `.badge-red`, `.badge-orange`, `.badge-gray`.
 - **Sidebar Inducciones para CONTRATISTA**: `navigation.service.ts` — entrada `{ label: 'Inducciones', route: '/habilitacion/inducciones', roles: ['CONTRATISTA'] }` en el grupo Gestión. Solo visible para CONTRATISTA (usa `roles` en vez de `featureKey`).
 - **`InduccionListDto`**: añadidos `ingresoConfirmado: boolean` y `fechaIngreso?: string` para alimentar la lógica de badges.
@@ -625,7 +712,7 @@ Plataforma completa mobile-first.
 - **`reingreso-form.ts`** (`components/reingreso-form/`): branch CONTRATISTA en `loadCatalogos()` — carga proyectos vía `EmpresaContratistaService.getProyectos(empresaId)` en vez de todos los proyectos.
 - **Fix `res.url` → `res.path`** al subir archivos (3 componentes): `empresa.ts:364`, `sctr-subir.ts:305`, `registro-empresa.ts:92`. Todos almacenaban `res.url` (URL firmada temporal) en vez de `res.path` (path relativo estable) → `archivoUrl` en BD quedaba con URL expirada. `trabajadores.ts` y `equipos.ts` ya estaban correctos.
 - **Fix dropdown proyectos en Programar Inducción** (2 componentes): `inducciones/components/programar-induccion/programar-induccion.ts` y `trabajadores/trabajadores.ts` (`loadCatalogos()`). Cuando `authService.hasRole('CONTRATISTA')`, carga proyectos vía `EmpresaContratistaService.getProyectos(empresaId)` y mapea `{ proyectoId, proyectoNombre } → { projectId, projectDescription }`. Antes cargaba todos los proyectos.
-**Cambios 2026-05-20:**
+  **Cambios 2026-05-20:**
 - **`worker-create-edit.html`**: eliminado `*ngIf="esOficinaCentral"` del div de Área — ahora visible para Staff y Oficina Central. El dropdown de Subárea ya depende de `model.area` (no de `esOficinaCentral`), así que Staff puede seleccionar área y disparar `getSubareas(area)`.
 - **`worker-create-edit.ts`**: `onObraOficinaChange()` resetea `model.area`, `model.subarea`, `model.jefatura` y `subareas = []` al cambiar tipo. `canSubmit` para `esStaffOOficina` exige `model.subarea` no vacío además de email corporativo y celular.
 - **`sctr-vidaley.ts`**: `aprobarSeleccionados()` y `rechazarSeleccionados()` ahora llaman `loadDocumentos(this.currentPage)` Y `loadTrabajadores()` después del Swal, refrescando ambos tabs.
@@ -636,6 +723,7 @@ Plataforma completa mobile-first.
 - **`bandeja` — tab Inducciones rediseñado**: reemplazada lista vertical plana por tarjetas agrupadas por `proyectoId+empresaId+fecha`. Cada tarjeta muestra: proyecto, empresa, fecha, flags Altura/Eléctrico, contador "N/M asistieron", checkbox "Seleccionar todos los asistentes", chips por worker (verde+checkbox si `ingresoConfirmado=true` pre-seleccionado, gris sin checkbox si false), botón "Aprobar seleccionados (N)" → llama `InduccionService.aprobarBatch(ids)`. Tab Inducciones no muestra el dropdown "Todos los responsables" ni el split izquierda/derecha — usa layout full-width. `InduccionListDto` añadido `contrataCasa?: string`. `bandeja.ts` inyecta `InduccionService`; `setTipo('INDUCCION')` llama `loadInducciones()` en vez de `loadItems()`; `groupInducciones()` agrupa client-side. Aprobar en tab TRABAJADOR/EMPRESA/EQUIPO: modal sin campo de fecha editable — si el item tiene vigencia se muestra como `<input type="date" readonly>`.
 
 **Cambios 2026-05-24:**
+
 - **`dashboard-contratista`** (NUEVO) `pages/dashboard-contratista/`: panel enterprise de resumen para CONTRATISTA. Grid 2×2 (Proyectos | Entregables Empresa / Trabajadores | Equipos). Nav superior con pills para Trabajadores, Empresa, Equipos, SCTR, Inducciones. Sin scroll externo (`height: 100%`, `overflow: hidden`). Skeleton shimmer en loading. Skeleton KPI en header. Standalone + `RouterModule`. Ruta: solo `authGuard`; `ngOnInit()` redirige a `trabajadores` si no es contratista.
 - **Panel "Usuarios" en dashboard-contratista**: pill "Usuarios" en top-nav toglea `activeSection: 'resumen' | 'usuarios'`. Cuando `'usuarios'`, muestra `<app-contratista-usuarios>` a pantalla completa en `.usuarios-section`. El dashboard decodifica el JWT (`jwtDecode`, claim `sub`) para obtener `currentUserId` y lo pasa al componente.
   - **`ContratistaUsuarioService`** (`habilitacion/services/contratista-usuario.service.ts`): CRUD contra `GET|POST /api/v1/contratista-usuarios?contractorId=`, `PUT /{id}`, `PATCH /{id}/desactivar`. DTOs: `ContratistaUsuarioDto`, `InvitarUsuarioDto`, `ActualizarUsuarioDto`. Usa `buildHabHeaders()` + `buildHabParams()`.
@@ -650,6 +738,7 @@ Plataforma completa mobile-first.
 - **Botón "ENVIAR DOCUMENTO" eliminado** de `empresa.html` y `equipos.html` — flujo auto-save al subir.
 
 **Cambios 2026-05-26 — Módulo Clínica + integración Programar EMO en Trabajadores:**
+
 - **`ProgramacionCreate`** (`ssoma/salud-ocupacional/programaciones/components/programacion-create/`):
   - `@Input()` nuevos: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`. `ngOnInit` pre-carga `this.worker` (con `dni: preselectedWorkerDni ?? ''`) y `this.empresaId` desde los inputs.
   - Campos **eliminados** del formulario y del TS: `hora`, `medicoId`, `motivo`, `notas`. Array `medicos` y getter `medicosFiltrados` eliminados. `onClinicaChange` simplificado a solo asignar `clinicaId`.
@@ -660,18 +749,20 @@ Plataforma completa mobile-first.
 - **`trabajadores.html`**: botón "Programar EMO" (icono ECG) en `div.wc-actions` por worker card, condición `isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))`. `<app-programacion-create>` al final del template con 4 inputs: `preselectedWorkerId`, `preselectedWorkerNombre`, `preselectedWorkerDni`, `preselectedEmpresaId`.
 - **`agenda.ts`** (`clinica/pages/agenda/`): método `aceptar()` reemplazado por `Swal.fire` con input `type="time"` (hora obligatoria, `preConfirm` valida) antes de llamar `ejecutarAccion(..., { accion: 'Aceptar', checkInHora: result.value })`. Importa `Swal`. Métodos añadidos: `initials(nombre)`, `avatarBg(nombre)` (color determinista por hash), `timelineDot(estado)`.
 - **`agenda.html`**: rediseño enterprise completo — stats pills (Total/Atendidos/Por confirmar + btn Refresh), secciones con dot de color, cards con avatar circular de iniciales (`[style.background]="avatarBg(...)"`) + meta-row (tipoEmo, empresa, hora, DNI) + acciones por estado, rechazo inline en card. `motivoRechazo` visible solo cuando `rechazandoId === item.id`.
-- **`agenda.css`**: reemplazado completo — `.stat-pill`, `.agenda-card`, `.card-avatar`, `.card-meta`, `.btn-action` (`.btn-accept/.btn-reject/.btn-checkin/.btn-complete`), `.badge-chip` con variantes chip-*, `.loading-dot` con animación pulse, `.empty-state`.
+- **`agenda.css`**: reemplazado completo — `.stat-pill`, `.agenda-card`, `.card-avatar`, `.card-meta`, `.btn-action` (`.btn-accept/.btn-reject/.btn-checkin/.btn-complete`), `.badge-chip` con variantes chip-\*, `.loading-dot` con animación pulse, `.empty-state`.
 - **`completar-emo.ts`**: refactorizado completo — eliminados `numeroInforme`, `urlResultado`, `icCentro`, `icCie10`, `uploadingAptitud/Emo`; añadido `lecturaRealizada: boolean` (checkbox, controla si se guarda `fechaLectura`); `canSubmit` ahora exige `archivoAptitud && archivoEmo` cuando `requiereDocumentos`, y al menos 1 restricción cuando `requiereRestriccion`; `interconsultaInline` simplificado (solo `especialidad`, `diagnostico`, `requiereSeguimiento`).
 - **`completar-emo.html`**: reescrito — checkbox "Se realizó lectura del EMO" + campo fecha condicional; sección Restricciones* con hint "Debes agregar al menos una"; sección Documentos* (2 file inputs PDF obligatorios); interconsulta simplificada (especialidad + diagnóstico + checkbox seguimiento solo para "No Apto").
 - **`completar-emo.css`**: añadidos `.checkbox-row`, `.fecha-lectura-row`, `.field-hint`.
 - **`interconsultas.ts`** (`clinica/pages/interconsultas/`): `load()` — detección explícita de array: `Array.isArray(res)` → `Array.isArray(res?.items)` → `Array.isArray(res?.data)` → `[]`.
 
 **Cambios 2026-05-27 — Admin usuarios contratista + fixes contratista-usuarios:**
+
 - **`ContratistaUsuarios`** (`habilitacion/pages/dashboard-contratista/components/contratista-usuarios/`): añadido `@Input() forceAdminMode: boolean = false`. El getter `esOwner` retorna `true` directamente cuando `forceAdminMode === true`, ignorando `currentUserId` y `rolNombre`. Permite usar el componente en modo admin sin usuario logueado.
 - **`ContratistaUsuarios` — CLINICA_CONTRACTOR_ID**: constante privada `CLINICA_CONTRACTOR_ID = 644`. `buildFormHtml()` acepta `isClinica?: boolean`. Cuando `isClinica = true`, el selector `swal-system-role` muestra solo `<option value="14">Clínica</option>` en vez de las opciones 11/49. `abrirModalInvitar()` activa `showTipoAcceso` para contractor 572 o 644 y pasa `isClinica` solo para 644.
 - **`AdminContratistaUsuarios`** (NUEVO) `pages/admin-contratista-usuarios/`: página admin standalone para gestionar usuarios de cualquier empresa contratista. Carga lista de empresas via `EmpresaContratistaService.getEmpresasLogin()` (`GET api/v1/habilitacion/auth/empresas`). Selector de empresa (`EmpresaSimpleDto { id, razonSocial, nombreComercial? }`). Al seleccionar, muestra `<app-contratista-usuarios [contractorId]="..." [currentUserId]="null" [forceAdminMode]="true">`. Ruta: `admin-usuarios-contratista`, solo `authGuard`, título `HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA`.
 
 ### Branches actuales
+
 - Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
 - Main para PRs: `master`.
 
@@ -680,34 +771,41 @@ Plataforma completa mobile-first.
 ## 9. Pitfalls conocidos
 
 ### SSR
+
 - **Hydration desactivado a propósito** (`app.config.ts:25`). Reactivar requiere revisar todos los accesos a `localStorage`/`window`.
 - En `authGuard:15` el SSR retorna `true` directo. **No quitar**.
 - Servicios SSOMA usan `typeof localStorage !== 'undefined'` (defensivo). Servicios en `core/services/*` no son defensivos (OK si no reactivas SSR).
 
 ### Auth & roles
+
 - Roles vienen del claim Microsoft. Match es **string exact** (uppercase español). No normalizar.
 - `getRoles()` soporta tanto JWT Microsoft (`http://schemas.microsoft.com/...role`) como JWT contratista (`role` plano).
 
 ### HTTP
+
 - **No hay interceptor.** Cada request requiere construir manualmente el header. Olvidarse = 401.
 - `ErrorService.handleError` ya esconde el loader — no llamar `loaderService.hide()` además.
 - Caches con `shareReplay(1)` → tras POST/PUT, invalida con `invalidateCache()`.
 
 ### Ruteo & nav
+
 - Cada ruta protegida **debe** declarar `data.titulo` y `data.featureKey` (o `data.roles` como fallback temporal hasta registrar en BD).
 - Para que aparezca en sidebar: agregar en `core/navigation/navigation.service.ts:config` con `featureKey` coincidente.
 
 ### DTOs
+
 - Sufijo difiere: `core/dtos/*` usa `DTO` (mayúsculas), SSOMA usa `Dto`. **No uniformizar**.
 - Páginas standalone **NO** se declaran en `declarations` del NgModule.
 
 ### Habilitación — servicios y worker-create-edit
+
 - **`buildHabHeaders()` ≠ `buildAuthHeaders()`** — son funciones en módulos distintos (`habilitacion/services/http-base.ts` vs `ssoma/.../http-base.ts`). Todos los servicios de Habilitación usan `buildHabHeaders()`. Usar `buildAuthHeaders()` genera 401 silencioso.
 - **`onDniBlur()` encadena 4 pasos sincrono→async**: (1) validación formato DNI/CE, (2) RENIEC (solo DNI, best-effort), (3) verificar restringidos, (4) verificar existencia en BD. El flag `verificandoDni` se mantiene `true` durante los 4 pasos — cada paso llama al siguiente en su callback `next`/`error`. Solo el paso 4 pone `verificandoDni = false`.
 - **Lógica Casa vs Contratista en `verificarExistenciaEnBd()`**: rol Abril siempre bloquea (activo o retirado). Contratista bloquea si activo o si retirado en su misma empresa; permite si retirado en otra empresa. Usa `authService.getEmpresaId()` (lee `localStorage.user.empresaId`).
 - **`TipoDocumento` no se guarda en BD** — campo de transporte en `WorkerUpsertDto`. El frontend lo infiere del formato del DNI existente al abrir el modal en modo edit (`/^\d{8}$/.test(dni)` → DNI, else → CE).
 
 ### Backend pitfalls (ASP.NET / PostgreSQL)
+
 - **`AuditoriaInterceptor` debe ser Singleton** (no Scoped) — usar `services.AddSingleton<AuditoriaInterceptor>()`.
 - **Columnas jsonb** en `AuditoriaCambio` requieren `.HasColumnType("jsonb")` en `OnModelCreating`.
 - **Snapshot EF desfasado**: antes de aplicar migraciones, leer `Up()` operación por operación.
@@ -764,11 +862,14 @@ Plataforma completa mobile-first.
 ## 12. Módulo Habilitación SSOMA
 
 ### Ubicación
+
 `features/habilitacion/` — standalone routes.
+
 - `iconKey: 'habilitacion'`.
 - Roles: `ADMINISTRADOR SSOMA`, `ADMINISTRADOR DE UDP`, `CONTRATISTA`.
 
 ### Sub-rutas
+
 ```
 /habilitacion                          → redirect 'dashboard-contratista'
 /habilitacion/dashboard-contratista    → Dashboard CONTRATISTA (solo authGuard; redirect interno a /habilitacion/trabajadores si no es contratista)
@@ -791,6 +892,7 @@ Plataforma completa mobile-first.
 > **Inducciones** — aparece en el sidebar del grupo Gestión **solo para CONTRATISTA** (`roles: ['CONTRATISTA']`). Es una vista de solo lectura (seguimiento de estado) para el contratista. Los admins gestionan inducciones desde Trabajadores (botón "Programar Inducción") y las aprueban desde Bandeja (tipo INDUCCION).
 
 ### Restricciones del rol CONTRATISTA
+
 - CONTRATISTA solo ve en sidebar: Trabajadores, Empresa, Equipos, SCTR y Vida Ley, **Inducciones**, Registros Modelo. No ve: Bandeja, Evaluación Supervisores, Reglas, Auditoría. (Inducciones visible por `roles: ['CONTRATISTA']` directo, sin `featureKey`.)
 - Filtro server-side por `empresaId`: el backend detecta rol CONTRATISTA en JWT y filtra automáticamente. El frontend nunca envía `empresaId` para CONTRATISTA.
 - **Panel de entregables (`trabajadores.html`)** — restricciones de UI para contratistas:
@@ -805,90 +907,96 @@ Plataforma completa mobile-first.
   - Botón "Cambiar obra": sigue siendo `*ngIf="isAdmin()"` exclusivo — contratistas no cambian obra.
 
 ### Auth contratistas
+
 - Login en `/auth/login` con selector empresa + password.
 - JWT contratista trae `role='CONTRATISTA'` y `empresaId` (= `contributor_id`, **no** `ss_empresa_contratista.id`).
 - Contratistas **NO** pueden aprobar documentos — solo dejan en estado `Enviado`.
 
 ### Base URL backend
+
 ```ts
-HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`
+HABILITACION_BASE = `${environment.apiUrl}api/v1/habilitacion`;
 ```
 
 ### Endpoints disponibles
-| Método | Endpoint |
-|--------|----------|
-| GET/POST/PUT | `/empresas` |
-| GET | `/empresas/{id}/proyectos` |
-| POST/DELETE | `/empresas/{id}/proyectos/{proyectoId}` |
-| GET | `/catalogos/items-trabajador` |
-| GET | `/catalogos/items-empresa` |
-| GET | `/catalogos/items-equipo` |
-| GET | `/catalogos/criterios` |
-| GET | `/catalogos/areas` |
-| GET | `/catalogos/subareas?area={area}` |
-| GET | `/catalogos/categorias` (cached `shareReplay(1)`) |
-| GET | `/catalogos/ocupaciones` (cached `shareReplay(1)`) |
-| GET | `/restringidos?dni=&soloActivos=` |
-| POST | `/restringidos` |
-| DELETE | `/restringidos/{id}` |
-| POST | `/auth/login` (contratista) |
-| GET | `/auth/empresas` |
-| GET | `/trabajadores` (paginado) |
-| GET | `/trabajadores/{id}` (detalle) |
-| PUT | `/trabajadores/{id}` (editar perfil) |
-| GET | `/trabajadores/{id}/entregables` |
-| PUT | `/trabajadores/entregables/{id}` |
-| GET | `/trabajadores/entregables/{id}/versiones` |
-| PATCH | `/trabajadores/{id}/cambiar-obra` |
-| PATCH | `/trabajadores/{id}/reingreso` |
-| GET | `/trabajadores/{workerId}/proyectos` |
-| POST | `/trabajadores/{workerId}/proyectos` |
-| DELETE | `/trabajadores/{workerId}/proyectos/{proyectoId}` |
-| PATCH | `/trabajadores/{workerId}/proyectos/{proyectoId}/induccion` |
-| GET | `/bandeja` (paginado) |
-| PATCH | `/bandeja/trabajador/{id}` |
-| PATCH | `/bandeja/empresa/{id}` |
-| PATCH | `/bandeja/equipo/{id}` |
-| PATCH | `/bandeja/induccion/{id}` (aprobar inducción — sin body de vigencia) |
-| GET | `/empresas/{id}/entregables` |
-| PUT | `/empresas/{id}/entregables/{itemId}` |
-| GET/POST | `/sctr-vidaley` |
-| GET | `/sctr-vidaley/{id}` |
-| PATCH | `/sctr-vidaley/{id}/aprobar` |
-| GET | `/sctr-vidaley/por-trabajador/{workerId}` |
-| GET | `/sctr-vidaley/proximos-vencer` |
-| GET | `/sctr-vidaley/trabajadores-por-empresa?proyectoId=X&tipo=Y&estadoSctr=Z&estadoVidaLey=W` |
-| GET/POST/PUT | `/equipos` |
-| GET | `/equipos/{id}/entregables` |
-| PUT | `/equipos/entregables/{id}` |
-| GET | `/equipos/entregables/{id}/versiones` |
-| GET | `/control-acceso/consulta?proyectoId=&search=` |
-| GET | `/control-acceso/inducciones-hoy` (sin params) |
-| POST | `/control-acceso/inducciones/{induccionId}/confirmar-ingreso` |
-| GET | `/control-acceso/no-autorizados?proyectoId=` |
-| GET | `/control-acceso/tareo?proyectoId=&fecha=` |
-| POST | `/control-acceso/tareo` |
-| GET | `/inducciones` (paginado) |
-| POST | `/inducciones` (batch — body `InduccionBatchCreateDto`) |
-| PATCH | `/inducciones/{id}/estado` |
-| PATCH | `/inducciones/{id}/aprobar` |
-| POST | `/inducciones/aprobar-batch` body `{ ids }` |
-| GET | `/inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y` |
-| GET/POST/PUT/DELETE | `/reglas` |
-| GET | `/auditoria` |
-| GET | `/archivos/ver?url={encodedUrl}` |
-| GET | `/archivos/descargar?url={encodedUrl}` |
+
+| Método              | Endpoint                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| GET/POST/PUT        | `/empresas`                                                                               |
+| GET                 | `/empresas/{id}/proyectos`                                                                |
+| POST/DELETE         | `/empresas/{id}/proyectos/{proyectoId}`                                                   |
+| GET                 | `/catalogos/items-trabajador`                                                             |
+| GET                 | `/catalogos/items-empresa`                                                                |
+| GET                 | `/catalogos/items-equipo`                                                                 |
+| GET                 | `/catalogos/criterios`                                                                    |
+| GET                 | `/catalogos/areas`                                                                        |
+| GET                 | `/catalogos/subareas?area={area}`                                                         |
+| GET                 | `/catalogos/categorias` (cached `shareReplay(1)`)                                         |
+| GET                 | `/catalogos/ocupaciones` (cached `shareReplay(1)`)                                        |
+| GET                 | `/restringidos?dni=&soloActivos=`                                                         |
+| POST                | `/restringidos`                                                                           |
+| DELETE              | `/restringidos/{id}`                                                                      |
+| POST                | `/auth/login` (contratista)                                                               |
+| GET                 | `/auth/empresas`                                                                          |
+| GET                 | `/trabajadores` (paginado)                                                                |
+| GET                 | `/trabajadores/{id}` (detalle)                                                            |
+| PUT                 | `/trabajadores/{id}` (editar perfil)                                                      |
+| GET                 | `/trabajadores/{id}/entregables`                                                          |
+| PUT                 | `/trabajadores/entregables/{id}`                                                          |
+| GET                 | `/trabajadores/entregables/{id}/versiones`                                                |
+| PATCH               | `/trabajadores/{id}/cambiar-obra`                                                         |
+| PATCH               | `/trabajadores/{id}/reingreso`                                                            |
+| GET                 | `/trabajadores/{workerId}/proyectos`                                                      |
+| POST                | `/trabajadores/{workerId}/proyectos`                                                      |
+| DELETE              | `/trabajadores/{workerId}/proyectos/{proyectoId}`                                         |
+| PATCH               | `/trabajadores/{workerId}/proyectos/{proyectoId}/induccion`                               |
+| GET                 | `/bandeja` (paginado)                                                                     |
+| PATCH               | `/bandeja/trabajador/{id}`                                                                |
+| PATCH               | `/bandeja/empresa/{id}`                                                                   |
+| PATCH               | `/bandeja/equipo/{id}`                                                                    |
+| PATCH               | `/bandeja/induccion/{id}` (aprobar inducción — sin body de vigencia)                      |
+| GET                 | `/empresas/{id}/entregables`                                                              |
+| PUT                 | `/empresas/{id}/entregables/{itemId}`                                                     |
+| GET/POST            | `/sctr-vidaley`                                                                           |
+| GET                 | `/sctr-vidaley/{id}`                                                                      |
+| PATCH               | `/sctr-vidaley/{id}/aprobar`                                                              |
+| GET                 | `/sctr-vidaley/por-trabajador/{workerId}`                                                 |
+| GET                 | `/sctr-vidaley/proximos-vencer`                                                           |
+| GET                 | `/sctr-vidaley/trabajadores-por-empresa?proyectoId=X&tipo=Y&estadoSctr=Z&estadoVidaLey=W` |
+| GET/POST/PUT        | `/equipos`                                                                                |
+| GET                 | `/equipos/{id}/entregables`                                                               |
+| PUT                 | `/equipos/entregables/{id}`                                                               |
+| GET                 | `/equipos/entregables/{id}/versiones`                                                     |
+| GET                 | `/control-acceso/consulta?proyectoId=&search=`                                            |
+| GET                 | `/control-acceso/inducciones-hoy` (sin params)                                            |
+| POST                | `/control-acceso/inducciones/{induccionId}/confirmar-ingreso`                             |
+| GET                 | `/control-acceso/no-autorizados?proyectoId=`                                              |
+| GET                 | `/control-acceso/tareo?proyectoId=&fecha=`                                                |
+| POST                | `/control-acceso/tareo`                                                                   |
+| GET                 | `/inducciones` (paginado)                                                                 |
+| POST                | `/inducciones` (batch — body `InduccionBatchCreateDto`)                                   |
+| PATCH               | `/inducciones/{id}/estado`                                                                |
+| PATCH               | `/inducciones/{id}/aprobar`                                                               |
+| POST                | `/inducciones/aprobar-batch` body `{ ids }`                                               |
+| GET                 | `/inducciones/trabajadores-por-programar?proyectoId=X&empresaId=Y`                        |
+| GET/POST/PUT/DELETE | `/reglas`                                                                                 |
+| GET                 | `/auditoria`                                                                              |
+| GET                 | `/archivos/ver?url={encodedUrl}`                                                          |
+| GET                 | `/archivos/descargar?url={encodedUrl}`                                                    |
 
 ### Estados de entregables
+
 `Falta` → `Enviado` → `Aprobado` / `Rechazado` / `No Aplica`
 
 Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo oscuro, No Aplica=gris.
 
 ### Estado habilitación worker
+
 - `Habilitado` = chip verde
 - `No Autorizado` = chip rojo
 
 ### Rutas públicas (FUERA del Layout autenticado)
+
 ```
 /habilitacion/registro-empresa     → RegistroEmpresa
 /auth/activar-contratista          → ActivarContratista (?token=…&tipo=activacion-contratista|reset-contratista)
@@ -897,6 +1005,7 @@ Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo os
 ```
 
 ### Subida de archivos a SharePoint
+
 `features/habilitacion/services/sharepoint-upload.service.ts` → POST `multipart/form-data` a `/api/v1/habilitacion/archivos/subir`.
 
 **`UploadResultDto`**: `{ url: string; path: string }`. El campo `path` es la ruta relativa que se almacena en `panelArchivoUrl` (y luego en `archivoUrl` del entregable). El campo `url` es la URL firmada temporal para abrir/descargar.
@@ -906,9 +1015,11 @@ Colores: Falta=rojo, Enviado=amarillo/naranja, Aprobado=verde, Rechazado=rojo os
 **Patrón fallback**: si el endpoint retorna error, guardar `panelArchivoUrl = 'pending-upload://' + file.name` y `uploadingFile: boolean` para continuar el flujo UI.
 
 ### Visor de documentos PDF — fetch como blob
+
 `shared/components/document-viewer/document-viewer.ts`: URLs de Microsoft Graph vienen con `Content-Disposition: attachment`. Solución: `fetch(url) → .blob() → URL.createObjectURL(blob) → bypassSecurityTrustResourceUrl(blobUrl)`. Los blob URLs se renderizan inline (sin `Content-Disposition`). Revocar con `URL.revokeObjectURL` en `reset()`. **No cambiar a binding directo sin entender esto.**
 
 ### Patrón loadWorkers con callback (Trabajadores)
+
 `pages/trabajadores/trabajadores.ts`: `loadWorkers(page, afterLoad?: () => void)`. El parámetro `afterLoad` se invoca dentro del `next` del subscribe, **después** de que `this.workers` está poblado. Permite re-seleccionar un worker tras reload:
 
 ```ts
@@ -927,6 +1038,7 @@ loadWorkers(page: number = this.currentPage, afterLoad?: () => void): void {
 ```
 
 Uso en `onCambiarObraSaved()`:
+
 ```ts
 onCambiarObraSaved(): void {
   this.modalCambiarObraOpen = false;
@@ -940,46 +1052,81 @@ onCambiarObraSaved(): void {
   });
 }
 ```
+
 > `prevId` se captura **antes** de `workerParaAccion = null` y antes de `limpiarSeleccion()` (que limpia `selectedWorker`).
 
 ### Modal Cambiar Obra — inicialización y lógica contratistas
+
 `pages/trabajadores/components/cambiar-obra/cambiar-obra.ts`:
+
 - `staffOficina` se inicializa con el valor actual del worker (`worker?.obraOficina ?? 'Obra'`) en `ngOnChanges`, sobreescribiendo el default `'Obra'` de `empty()`.
 - El dropdown "Razón social" usa `CatalogosSaludService.getEmpresas()` (NO `EmpresaContratistaService`).
 - Opciones de `staffOficina`: `Obra | Staff | Oficina Central`.
 - **Contratistas**: los campos "Razón social" y "Staff / Oficina" se ocultan con `*ngIf="worker?.contrataCasa === 'Casa'"`. El payload fuerza `empresaId = null` en `submit()` si `contrataCasa !== 'Casa'`.
 
 ### Bandeja de Aprobaciones — layout SCTR-style
+
 `pages/bandeja/bandeja.ts/.html/.css` — lista izquierda + visor PDF derecho. Header (`app-header`) oculto al entrar via `ngOnInit` (añade `.hidden-bandeja`) y restaurado en `ngOnDestroy`. `data.titulo = ''` en la ruta.
 
 #### Tabs horizontales
+
 ```
 Todos | Trabajadores | Empresas | Inducciones | Equipos
 ```
+
 Clases activas: `tab-active-all` / `tab-active-blue` / `tab-active-green` / `tab-active-orange` / `tab-active-gray`.
 
 #### Chip colors por tipo
+
 `TRABAJADOR`=chip-blue · `EMPRESA`=chip-green · `EQUIPO`=chip-gray · `INDUCCION`=chip-orange
 
 #### Layout CSS
+
 ```css
-:host { display:flex; flex-direction:column; height:100%; }
-.bandeja-layout { display:flex; flex-direction:column; gap:0.75rem; height:100%; overflow:hidden; }
-.bandeja-columns { display:grid; grid-template-columns:300px 1fr; gap:1rem; flex:1; overflow:hidden; min-height:0; height:calc(100vh - 110px); }
-.col-items, .col-detalle { display:flex; flex-direction:column; overflow:hidden; height:100%; }
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.bandeja-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  overflow: hidden;
+}
+.bandeja-columns {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1rem;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  height: calc(100vh - 110px);
+}
+.col-items,
+.col-detalle {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
 ```
 
 #### Filtros client-side (fila horizontal sobre `.bandeja-columns`, oculta en tab INDUCCION)
+
 ```ts
-filtroTexto = '';       // búsqueda libre por entidadNombre
-filtroEmpresa = '';     // búsqueda libre por empresaNombre
-filtroProyecto = '';    // dropdown exacto por proyectoNombre
-filtroEntregable = '';  // dropdown exacto por nombreEntregable
+filtroTexto = ''; // búsqueda libre por entidadNombre
+filtroEmpresa = ''; // búsqueda libre por empresaNombre
+filtroProyecto = ''; // dropdown exacto por proyectoNombre
+filtroEntregable = ''; // dropdown exacto por nombreEntregable
 filtroResponsable = ''; // server-side: param del endpoint /bandeja (SSOMA | ADMINISTRACION)
 ```
+
 Getters: `proyectosDisponibles`, `entregablesDisponibles` — únicos de `items`, A→Z. `filteredItems` aplica los 4 filtros client-side y ordena por `entidadNombre` (localeCompare 'es'). `loadItems` limpia `selectedIds` al recargar.
 
 #### Aprobación masiva (tabs Todos/Trabajadores/Empresas/Equipos)
+
 ```ts
 selectedIds = new Set<number>();
 get allItemsSelected(): boolean   // todos los filteredItems seleccionados
@@ -988,6 +1135,7 @@ toggleSelect(id)                  // toggle individual
 toggleAllItems()                  // toggle todos los filteredItems
 aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
 ```
+
 - **Tab con tipo fijo**: una sola llamada `bandejaService.bulkAprobar(ids, filtroTipo)`.
 - **Tab "Todos"**: agrupa `selectedIds` por `item.tipo` y hace `forkJoin` de una llamada por tipo.
 - Endpoint: PATCH `/bandeja/bulk-aprobar` body `{ ids, tipo }`.
@@ -995,19 +1143,24 @@ aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
 - Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
 
 #### Flujo aprobación unitaria (sin cambios)
+
 - **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
 - **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
 
 #### Nomenclatura — colisión resuelta
+
 `allSelected(grupo)` de inducciones renombrado a `allInduccionSelected(grupo)` para evitar conflicto con el getter `allItemsSelected` de selección masiva.
 
 #### Patrón blob URL para PDF (sin cambios)
+
 `sharepointService.getArchivoUrl(archivoUrl)` → `fetch` → `.blob()` → `URL.createObjectURL` → `bypassSecurityTrustResourceUrl`. Revocado en `revokeDocBlobUrl()`.
 
 #### SCTR/Vida Ley — orden alfabético
+
 `sctr-subir.ts:loadWorkers()` ordena `trabajadores` por `apellidoNombre` (localeCompare 'es') al recibirlos del backend.
 
 ### Modal "Programar Inducción" — proyectos filtrados por empresa
+
 `pages/trabajadores/components/programar-induccion/` — 2 pasos.
 
 > **Fuente de proyectos**: el modal recibe `[proyectos]` del padre (`trabajadores.ts`). El padre lo carga en `loadCatalogos()`: si CONTRATISTA → `EmpresaContratistaService.getProyectos(empresaId)` mapeado a `ProjectGetDTO`; si admin → `ProjectService.getProjectsPaged(200)`.
@@ -1017,6 +1170,7 @@ Hay una segunda instancia en `inducciones/components/programar-induccion/` (carg
 **Paso 1**: Proyecto (obligatorio), Fecha programada (obligatorio), Trabajo en altura (checkbox), Equipo eléctrico (checkbox).
 
 **Paso 2**: Lista de trabajadores con:
+
 - Pills Todos/Obra/Staff-Oficina Central (solo si `empresaEsAbril` — actualmente siempre oculto por bug `esAbril=false` en BD).
 - Buscador por nombre/DNI.
 - Selección individual + "Seleccionar todos".
@@ -1026,11 +1180,13 @@ Hay una segunda instancia en `inducciones/components/programar-induccion/` (carg
 Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/inducciones`.
 
 `InduccionTrabajadorDto`:
+
 ```ts
 { workerId, apellidoNombre, dni, obraOficina?, empresaId?, empresaNombre?, yaIndujo? }
 ```
 
 ### Modal WorkerCreateEdit — Crear/Editar Worker
+
 `pages/trabajadores/components/worker-create-edit/` — migrado desde `configuracion/pages/workers/`.
 
 **Inputs/Outputs**: `[open]`, `[mode: 'create'|'edit']`, `[worker: WorkerHabilitacionListDto|null]`, `(closed)`, `(saved)`, `(buscarWorker: EventEmitter<string>)`.
@@ -1040,6 +1196,7 @@ Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/ind
 **Flujo editar**: prefill desde `WorkerHabilitacionListDto` (lista) + `getWorker(workerId)` para `celular/sctr/area/subarea/jefatura` → `WorkerService.updateWorker(id, WorkerUpsertDto)`.
 
 **Diferencias Casa vs Contratista**:
+
 - Contratista: oculta campos org (Contrata/Casa, Obra/Oficina, Empresa, Proyecto, Área, Subárea, Jefatura, SCTR). Payload fuerza `contrataCasa: 'Contratista'`.
 - Rol Abril: muestra todos los campos + catálogos de empresa/proyecto/área/subárea.
 
@@ -1052,11 +1209,13 @@ Submit → `InduccionService.crearBatch(InduccionBatchCreateDto)` → POST `/ind
 **`(buscarWorker)`**: se emite cuando el usuario confirma "Ir a buscarlo" en el Swal de existencia. El padre (`trabajadores.ts`) cierra el modal, pone el DNI en `search`, y llama `loadWorkers(1)`.
 
 ### Multiproyecto (workers Casa y Contratistas)
+
 Workers Casa y Contratistas pueden estar asignados a múltiples proyectos. Gestionado vía 4 endpoints bajo `/trabajadores/{workerId}/proyectos`. UI dentro de `pages/trabajadores/` (sin nueva ruta).
 
 DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionCompletada, activo, fechaInicio, fechaFin? }`, `AgregarProyectoDto { proyectoId, empresaId?, fechaInicio? }`.
 
 **Botón "+ Agregar proyecto"**: visible para todos los workers (Casa y Contratistas). El modal `agregar-proyecto` diferencia la fuente de proyectos:
+
 - **Casa**: `ProjectService.getProjectsPaged({ page: 1, pageSize: 200 })` — todos los proyectos.
 - **Contratista**: `EmpresaContratistaService.getProyectos(empresaId)` → `GET /habilitacion/empresas/{id}/proyectos` — solo los proyectos asignados a esa empresa. El resultado (`EmpresaProyectoDto { proyectoId, proyectoNombre }`) se mapea a `{ projectId, projectDescription }` para compatibilidad con el `SearchSelect`.
 
@@ -1065,6 +1224,7 @@ DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionC
 > ⚠️ **Gate del modal agregar-proyecto**: usar flag aparte (`mostrarAgregarProyecto`) en el padre. `[workerId]="mostrarAgregarProyecto ? selectedWorker?.workerId ?? null : null"`. NO bindear directamente a `selectedWorker?.workerId` — abriría el modal cada vez que se selecciona un worker.
 
 ### Diseño Trabajadores (layout 3 columnas)
+
 - **Columna izquierda** (270px): filter-bar compacta (2 filas) + lista de worker-cards + paginator.
 - **Columna central** (flex): header del worker + tabla de entregables (ojo=viewer inline, clip=nueva pestaña) + sección proyectos asignados.
 - **Columna derecha** (360px): filtros (radio pills + select estado) o drawer de documento (upload + vigencia + acciones).
@@ -1076,11 +1236,13 @@ DTOs: `WorkerProyectoDto { id, workerId, proyectoId, proyectoNombre?, induccionC
 Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados + Actualizar + **"Programar Inducción"** (admin, `.btn-induccion`).
 
 ### Página Equipos — patrón drawer (igual a Trabajadores)
+
 `pages/equipos/equipos.ts` — mismo patrón que trabajadores pero para equipos y maquinaria.
 
 **Layout**: lista de equipo-cards (izquierda) + tabla de entregables (derecha) + drawer lateral (panel de documento).
 
 **Flujo del drawer**:
+
 1. `selectEquipo(eq)` → llama `loadEntregablesEquipo(eq.id)`.
 2. `selectEntregable(e)` → puebla `panelVigencia`, `panelArchivoUrl`, `panelArchivoNombre`, `panelObsAbril`, `panelEstado`; abre drawer.
 3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
@@ -1094,12 +1256,14 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 **`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
 
 ### Página Control de Acceso — mobile-first operaciones en obra
+
 `pages/control-acceso/control-acceso.ts/.html/.css` + subcomponente `components/tareo/`.
 Servicio: `features/habilitacion/services/control-acceso.service.ts`.
 
 **4 tabs**: Consulta | Inducción | No Autorizados | Tareo.
 
 **Tab Consulta — búsqueda de trabajadores**:
+
 - `GET /control-acceso/consulta?proyectoId=&search=` → `ConsultaResultDto[]`.
 - Un resultado → tarjeta directa. Múltiples → lista compacta; tocar → tarjeta.
 - Tarjeta: banner de estado (`.ca-status-habilitado` verde #64BC04 / `.ca-status-no-autorizado` rojo #ef4444).
@@ -1110,6 +1274,7 @@ Servicio: `features/habilitacion/services/control-acceso.service.ts`.
 - EMO (Certificado de Aptitud Médica) se obtiene desde `worker_emos`, no desde `ss_hab_trabajador`.
 
 **DTOs** (`control-acceso.service.ts`):
+
 ```ts
 EntregableResumenDto { nombre, estado, vigencia: string | null }
 ConsultaResultDto {
@@ -1128,28 +1293,33 @@ InduccionHoyDto {
 ```
 
 **`entregableIcono(e)`** (reemplaza `getEntregableClass`):
+
 - Solo se llama sobre entregables filtrados por `entregablesVigentes()` (Aprobado + no vencido).
 - vigencia ≤ 7 días → `{ icono: '⚠', color: '#eab308' }`
 - sin vigencia o > 7 días → `{ icono: '✓', color: '#22c55e' }`
 
 **Tab Inducción**:
+
 - No requiere proyecto seleccionado. `loadInducciones()` se llama en `ngOnInit` y al cambiar a ese tab.
 - `GET /control-acceso/inducciones-hoy` sin parámetros.
 - Botón "Confirmar" → `POST /control-acceso/inducciones/{induccionId}/confirmar-ingreso`. Al confirmar, muta localmente `ingresoConfirmado: true` (spread, no depende del body del response) y el botón cambia a "✓ Confirmado" deshabilitado. Contador `confirmadosCount` es getter que recuenta el array.
 - Cambiar de proyecto no resetea `inducciones`.
 
 **Diseño CSS** (§5-compatible):
+
 - Header: fondo blanco, padding compacto, título + `app-search-select` en una sola fila.
 - Tabs: patrón §5 (`.tabs button.active { border-bottom-color: #64bc04 }`).
 - Sin card wrapper en buscador — input + botón directamente en `.ca-search-row`.
 - Chips nuevos: `.chip-red` (#fee2e2/#dc2626), `.chip-yellow` (#fef9c3/#a16207).
 
 **Tab No Autorizados**:
+
 - Card por trabajador: `apellidoNombre` + `empresaNombre · DNI` + badge "No autorizado" (`#fee2e2/#dc2626`, `border-radius: 20px`).
 - Filtro client-side por empresa con `<select class="ca-select">`. Getter `empresasNA` extrae empresas únicas. Getter `noAutorizadosFiltrados` filtra el array.
 - DTO: `{ workerId, apellidoNombre, dni: string|null, empresaNombre, proyectoNombre, estadoHabilitacion }`.
 
 **Subcomponente Tareo** (`components/tareo/tareo.ts` + `tareo.html` + `tareo.css`):
+
 - `@Input() proyectoId!: number`. `OnChanges` → `loadTareo()`.
 - **Carga en 3 pasos**: `forkJoin(getPartidas(), getEmpresasTareo(proyectoId))` en paralelo → construye arrays locales con `cantidad: 0` → luego `getTareo(proyectoId, fecha)` rellena cantidades existentes y guarda `tareoId`.
 - **Endpoints**:
@@ -1164,6 +1334,7 @@ InduccionHoyDto {
 - **Pitfall CSS**: no usar `max-height + overflow-y` en contenedores internos dentro de `.tareo-lista` — genera scroll anidado que Chromium corta. Un solo scroll en `.tareo-lista`.
 
 ### Componente VersionesDoc (genérico)
+
 `pages/trabajadores/components/versiones-doc/versiones-doc.ts` — usado tanto por Trabajadores como por Equipos.
 
 ```ts
@@ -1174,6 +1345,7 @@ InduccionHoyDto {
 ```
 
 Importar como:
+
 ```ts
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 ```
@@ -1181,11 +1353,13 @@ import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones
 Selector: `app-hab-versiones-doc`.
 
 ### Notas importantes
+
 - EMO es read-only — viene del módulo SSOMA, no se puede subir.
 - SCTR/Vida Ley flujo masivo — un doc cubre múltiples workers.
 - Auditoría solo para admins.
 
 ### Pendiente
+
 - Frontend: pantalla gestión de trabajadores restringidos (listar, agregar, desactivar vía `/restringidos` endpoints — backend listo).
 - Frontend: tour guiado / onboarding para contratistas en primer acceso tras activar cuenta.
 - Seguridad: cerrar `[AllowAnonymous]` en `WorkersController` (SSOMA) antes de producción.
@@ -1199,29 +1373,34 @@ Selector: `app-hab-versiones-doc`.
 ## 13. Módulo Seguridad — Usuarios
 
 ### Ubicación
+
 `features/security/` — NgModule (`SeguridadModule`). Ruta: `/security/users`. Rol: `ADMINISTRADOR DEL SISTEMA`.
 
 ### Flujo completo
+
 1. `users.ts` es el shell: renderiza `<app-user-list>` y `<app-user-edit-form>`.
 2. `list.ts` carga usuarios paginados, filtra client-side por `apellidoNombre`/`fullName`.
 3. Toggle: confirmación Swal + PATCH `/api/v1/user/{id}/toggle`.
 4. Al guardar en modal: cierra y fuerza reload.
 
 ### Endpoints
-| Método | Endpoint |
-|--------|----------|
-| GET | `/api/v1/user/paged?page=N` |
-| POST | `/api/v1/user` |
-| PUT | `/api/v1/user/{id}` |
-| PATCH | `/api/v1/user/{id}/toggle` |
+
+| Método | Endpoint                    |
+| ------ | --------------------------- |
+| GET    | `/api/v1/user/paged?page=N` |
+| POST   | `/api/v1/user`              |
+| PUT    | `/api/v1/user/{id}`         |
+| PATCH  | `/api/v1/user/{id}/toggle`  |
 
 ### `UserService` — `buildAuthHeaders`
+
 ```ts
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 ```
+
 Nunca envía `Bearer null`.
 
 ---
@@ -1229,20 +1408,22 @@ Nunca envía `Bearer null`.
 ## Sesión 2026-05-06 — Módulo Clínica + Salud Ocupacional
 
 ### Nuevos archivos creados:
+
 - features/clinica/ — módulo completo nuevo
-  * clinica.routes.ts — rutas /agenda y /programaciones con rol CLINICA
-  * pages/agenda/agenda.ts/html/css — agenda del día con flujo completo
-  * pages/agenda/components/completar-emo/ — modal registrar resultado EMO
-  * pages/programaciones/programaciones.ts/html/css — historial programaciones
-  * pages/activar/activar.ts/html/css — activación cuenta clínica (ruta pública)
-  * services/clinica-programacion.service.ts — getProgramacionesHoy, getProgramacionesFiltradas, accionClinica
-  * dtos/clinica.model.ts — ProgramacionClinicaDto, ClinicaAccionDto, EstadoProgramacionClinica
+  - clinica.routes.ts — rutas /agenda y /programaciones con rol CLINICA
+  - pages/agenda/agenda.ts/html/css — agenda del día con flujo completo
+  - pages/agenda/components/completar-emo/ — modal registrar resultado EMO
+  - pages/programaciones/programaciones.ts/html/css — historial programaciones
+  - pages/activar/activar.ts/html/css — activación cuenta clínica (ruta pública)
+  - services/clinica-programacion.service.ts — getProgramacionesHoy, getProgramacionesFiltradas, accionClinica
+  - dtos/clinica.model.ts — ProgramacionClinicaDto, ClinicaAccionDto, EstadoProgramacionClinica
 - features/ssoma/salud-ocupacional/reportes/reportes.ts/html/css — exportar Excel SUNAFIL
 - features/ssoma/salud-ocupacional/services/reporte.service.ts — exportarSunafilMensual()
 - features/portal-trabajador/portal-trabajador.ts/html/css — portal público búsqueda por DNI
 - core/services/programacion-alertas.service.ts — BehaviorSubject rechazados$, polling 5min
 
 ### Cambios en archivos existentes:
+
 - app.routes.ts — ruta lazy /clinica + ruta pública /portal-trabajador + /clinica/activar
 - core/navigation/navigation.service.ts — módulo Clínica agregado con roles:[] temporal. Item "Reportes" en grupo Salud Ocupacional. getModules() trata roles:[] como sin restricción
 - core/services/auth.service.ts — loginClinica() + persistClinicaToken()
@@ -1250,15 +1431,16 @@ Nunca envía `Bearer null`.
 - shared/components/sidebar/ — badge rojo contador programaciones rechazadas hoy
 - shared/estado.utils.ts — 9 estados nuevos en dict PROGRAMACION
 - features/ssoma/salud-ocupacional/programaciones/:
-  * KPIs panel 7 contadores arriba de la tabla
-  * Filtro por clínica (clinicaId)
-  * Badge AUTO en lista y calendario
-  * Badge 📧 para fechaNotificacion
-  * Acciones nuevas: accionClinica para rechazar desde admin
+  - KPIs panel 7 contadores arriba de la tabla
+  - Filtro por clínica (clinicaId)
+  - Badge AUTO en lista y calendario
+  - Badge 📧 para fechaNotificacion
+  - Acciones nuevas: accionClinica para rechazar desde admin
 - features/ssoma/salud-ocupacional/dtos/programacion.model.ts — EstadoProgramacion extendido, ProgramacionListDto con origen/checkInHora/motivoRechazo/fechaNotificacion
 - features/ssoma/salud-ocupacional/services/programacion.service.ts — método accionClinica()
 
 ### Rutas nuevas:
+
 - /clinica/agenda — agenda del día (roles:[] temporal, cambiar a CLINICA en prod)
 - /clinica/programaciones — historial (roles:[] temporal)
 - /clinica/activar — activación cuenta (pública, fuera del shell)
@@ -1266,6 +1448,7 @@ Nunca envía `Bearer null`.
 - /portal-trabajador — portal público (fuera del shell)
 
 ### Pendiente para prod:
+
 - Cambiar roles:[] a roles:['CLINICA'] en navigation.service.ts módulo clínica
 - Restaurar data.roles: ['CLINICA'] en clinica.routes.ts
 - Probar login clínica con kgadea@serviperu.com.pe / Clinica2025!
@@ -1275,24 +1458,28 @@ Nunca envía `Bearer null`.
 ## Sesión 2026-05-06 — Emails múltiples por clínica (SSOMA Catálogos)
 
 ### Contexto
+
 El campo `email` único de `ss_clinica` se reemplaza por una tabla `ss_clinica_emails` con múltiples contactos. El frontend ya no usa `ClinicaSimpleDto.email` para crear/editar.
 
 ### Nuevos DTOs (`dtos/catalogos.model.ts`)
+
 ```ts
 ClinicaEmailDto        { id, email, nombre }         // respuesta GET
 ClinicaEmailCreateDto  { email, nombre }              // payload POST
 ```
 
 ### Nuevos métodos de servicio (`services/catalogos-salud.service.ts`)
-| Método | HTTP | Endpoint |
-|--------|------|----------|
-| `getClinicaEmails(clinicaId)` | GET | `/catalogos/clinicas/{id}/emails` |
-| `createClinicaEmail(clinicaId, dto)` | POST | `/catalogos/clinicas/{id}/emails` |
+
+| Método                                   | HTTP   | Endpoint                                    |
+| ---------------------------------------- | ------ | ------------------------------------------- |
+| `getClinicaEmails(clinicaId)`            | GET    | `/catalogos/clinicas/{id}/emails`           |
+| `createClinicaEmail(clinicaId, dto)`     | POST   | `/catalogos/clinicas/{id}/emails`           |
 | `deleteClinicaEmail(clinicaId, emailId)` | DELETE | `/catalogos/clinicas/{id}/emails/{emailId}` |
 
 Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 
 ### `clinica-form` — modal crear/editar clínica
+
 - Campo email único **eliminado** del formulario y del payload `ClinicaUpsertDto`.
 - Estado local: `emails: EmailEntry[]` (interfaz local `{ email, nombre, id? }`) + `deletedEmailIds: number[]` (privado).
 - `reset()`: en modo edit carga emails via `getClinicaEmails(initial.id)` (async, error silencioso).
@@ -1303,6 +1490,7 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 - UI: sección "Emails de contacto" con header flex (label + botón "+ Agregar email"), filas `email-row` (grid `1fr 1fr auto`: input email, input nombre, botón 🗑), mensaje vacío si no hay filas.
 
 ### `catalogo-clinicas` — lista de clínicas
+
 - `emailsMap: Map<number, string>` — clave `clinicaId`, valor emails separados por coma.
 - `load()`: tras `listClinicas()`, hace `forkJoin` de `getClinicaEmails(id)` por cada clínica. Cada inner observable lleva `.pipe(catchError(() => of([])))` para fallo silencioso individual. Construye el Map y luego llama `applyFilters(1)`.
 - `applyFilters()`: búsqueda ahora consulta `emailsMap.get(c.id)` en lugar de `c.email`.
@@ -1310,6 +1498,7 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 - Template: `{{ emailsMap.get(item.id) || '—' }}` en columna Email.
 
 ### Pitfall N+1
+
 `load()` dispara 1 + N requests (1 listClinicas + N getClinicaEmails). Aceptable para catálogos de clínicas (volumen bajo). Si el backend crece, considerar endpoint `/catalogos/clinicas/con-emails`.
 
 ---
@@ -1317,9 +1506,11 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 ## 14. Módulo Gestión Administrativa
 
 ### Ubicación
+
 `features/gestion-administrativa/` — standalone routes. Montado en `/gestion-administrativa`.
 
 ### Sub-rutas
+
 ```
 /gestion-administrativa                          → redirect 'solicitud-salidas'
 /gestion-administrativa/solicitud-salidas        → SolicitudSalidas  (featureKey: gestion-administrativa.solicitud-salidas)
@@ -1329,18 +1520,22 @@ Ninguno usa cache. `deleteClinicaEmail` devuelve `Observable<void>`.
 ```
 
 ### API base
+
 `api/v1/gestion-administrativa/`
 
 ### Servicios
+
 - `SolicitudSalidasService` — `getMySolicitudes()`, `getFormData()` (catálogos para el form), `create(dto)`.
 - `GestionSalidasService` — lista y gestión de solicitudes por administradores.
 - `MotivoService` — CRUD motivos de salida.
 - `LugarService` — CRUD lugares de origen/destino.
 
 ### Estructura interna
+
 Cada sub-feature tiene su propia carpeta con `dtos/`, `services/`, `components/` o `pages/`. **Los DTOs NO van a `core/dtos/` — se mantienen dentro del feature.**
 
 ### Guards
+
 Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
 
 ---
@@ -1348,9 +1543,11 @@ Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
 ## 15. Módulo Mejora Continua
 
 ### Ubicación
+
 `features/mejora-continua/` — standalone routes. Montado en `/mejora-continua`.
 
 ### Sub-rutas
+
 ```
 /mejora-continua/lessons-learned               → LeccionesAprendidas  (featureKey: mejora-continua.lessons-learned)
 /mejora-continua/configuration/areas           → Areas                (featureKey: mejora-continua.config.areas)
@@ -1361,22 +1558,27 @@ Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
 ### Sub-features internas
 
 **`features/lessons-learned/`**
+
 - Subcomponentes: `card`, `create`, `detail`, `list`.
 - DTOs: `lessonFilters`, `lessonList`, `lessonPeriod`, `phaseStageSubStageSubSpecialty`.
 - Servicio: `LeccionesAprendidasService`.
 
 **`features/configuration/areas-subareas/`**
+
 - Layout dos paneles: `area-list` (izquierdo) + `sub-area-list` (derecho). Edición inline con modales `area-edit`/`sub-area-edit`.
 - Incluye `psss-scope-edit` — edita el alcance PSSS de cada subárea.
 - Servicios: `AreaService`, `SubareaService`, `PsssScopeService`.
 
 **`features/configuration/relations/`**
+
 - Tabla de relaciones con filtros. Servicio: `RelationsService`.
 
 **`features/configuration/templates/`**
+
 - CRUD de plantillas PSSS. DTO: `psss-template.model.ts`. Servicio: `PsssTemplateService`.
 
 ### Guards
+
 Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica `authGuard` vía `canActivateChild`).
 
 ---
@@ -1388,6 +1590,7 @@ Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica 
 **Archivo:** `features/habilitacion/pages/trabajadores/components/worker-create-edit/worker-create-edit.ts`
 
 **`verificarExistenciaEnBd()`:**
+
 - Llama `getTrabajadores({ search: dni, pageSize: 1, page: 1, soloVerificacion: true })`
 - `soloVerificacion: true` bypasea el filtro de empresa en el backend → permite detectar si el DNI ya existe en cualquier empresa
 - Lógica de bloqueo para contratistas:
@@ -1398,11 +1601,13 @@ Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica 
 - El botón "Ir a buscarlo" emite `(buscarWorker)` solo cuando `puedeIrABuscar`
 
 **`canSubmit` getter:**
+
 - Contratistas requieren: `proyectoId`, `categoria`, `ocupacion`, `condicionMedica`, `fechaIngreso`
 - Staff/Oficina requieren: `emailCorporativo`
 - Celular, emailPersonal, notas nunca obligatorios
 
 **`submit()` payload:**
+
 - `empresaId`: para contratistas usa `authService.getEmpresaId()` (ContributorId del JWT); para Casa usa `model.empresaId`
 - `proyectoId`: `model.proyectoId ?? null`
 
@@ -1417,6 +1622,7 @@ Todas las rutas usan solo `[roleGuard]` con `featureKey` (el shell padre aplica 
 **Archivo:** `src/app/features/ssoma/salud-ocupacional/dtos/emo.model.ts`
 
 Añadidos a `WorkerUpsertDto`:
+
 ```typescript
 empresaId?: number | null;
 proyectoId?: number | null;
@@ -1446,34 +1652,40 @@ Fix: `this.panelArchivoUrl = res.path` — el path relativo permanente (`habilit
 ### Equipos — botón Crear y Editar visibles para CONTRATISTA
 
 **`equipos.html`**:
+
 - Botón "Nuevo equipo" (línea 43): `*ngIf="isAdmin()"` → `*ngIf="isAdmin() || isContratista()"`
 - Botón Editar en card (línea 80): misma condición — CONTRATISTA puede editar sus propios equipos
 - Filtro "Todas las razones sociales": envuelto en `*ngIf="!isContratista()"` — no visible para CONTRATISTA
 
 **`equipos.ts`**:
+
 - `EmpresaContratistaService` inyectado
 - `loadCatalogos()` bifurcado por rol: CONTRATISTA carga solo proyectos afiliados vía `getProyectos(empresaId)` con mapeo `{proyectoId, proyectoNombre} → {projectId, projectDescription}`; admin carga todos los proyectos y todas las empresas
 
 ### equipo-form — campos ocultos y auto-set para CONTRATISTA
 
 **`equipo-form.ts`**:
+
 - `isContratista()` añadido
 - `loadCatalogos()` bifurcado: CONTRATISTA auto-setea `model.propietarioEmpresaId = empresaId` desde JWT, carga proyectos afiliados con mapeo, auto-selecciona si `proyectos.length === 1`
 - `submit()`: campos `emailAdmin` y `emailSsoma` forzados a `undefined` para CONTRATISTA
 
 **`equipo-form.html`**:
+
 - "Empresa propietaria": `*ngIf="!isContratista()"` — oculto, se auto-setea desde JWT
 - "Email Admin" y "Email SSOMA": `*ngIf="!isContratista()"` — no aplica a contratistas
 
 ### SCTR/Vida Ley — lista filtrada por empresa para CONTRATISTA
 
 **`sctr-vidaley.ts`** `ngOnInit()`:
+
 ```typescript
 if (this.isContratista()) {
   const id = this.authService.getEmpresaId();
   if (id) this.filtroEmpresaId = id;
 }
 ```
+
 Sin este bloque, CONTRATISTA veía todas las pólizas del sistema.
 
 **Backend** `SctrVidaLeyController.GetPaged`: inyecta `empresaId` del JWT cuando `tipo == "CONTRATISTA"` (ver CONTEXT.md backend).
@@ -1483,26 +1695,42 @@ Sin este bloque, CONTRATISTA veía todas las pólizas del sistema.
 **`sctr-vidaley.html`**: reemplazado `filters-card` con grid de 2 columnas por `filters-row` (flex horizontal).
 
 **`sctr-vidaley.css`**:
+
 ```css
-.filters-row { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
-.filter-ss-wrap { flex: 1.5; min-width: 130px; }
-.filter-sel { flex: 1; min-width: 90px; width: auto !important; }
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.filter-ss-wrap {
+  flex: 1.5;
+  min-width: 130px;
+}
+.filter-sel {
+  flex: 1;
+  min-width: 90px;
+  width: auto !important;
+}
 ```
 
 ### sctr-subir — mejoras y fixes CONTRATISTA
 
 **`sctr-subir.ts`**:
+
 - `EmpresaContratistaService` inyectado
 - `isContratista()` añadido
 - `loadInitial()` bifurcado: CONTRATISTA auto-setea `model.empresaId` desde JWT y carga solo proyectos afiliados (con mapeo `{proyectoId, proyectoNombre} → {projectId, projectDescription}`); auto-selecciona si solo hay un proyecto
 
 **`sctr-subir.html`**:
+
 - Filtro Obra/Staff en paso 2: `*ngIf="!loadingWorkers && trabajadores.length > 0 && !isContratista()"` — oculto para CONTRATISTA
 - Tooltip dinámico bajo selector Tipo de póliza:
-  - Renovación: *"Para trabajadores que ya cuentan con SCTR/Vida Ley aprobado y se va a renovar la póliza vigente."*
-  - Inclusión: *"Para trabajadores nuevos, reingresados o con SCTR/Vida Ley en estado Falta o Rechazado."*
+  - Renovación: _"Para trabajadores que ya cuentan con SCTR/Vida Ley aprobado y se va a renovar la póliza vigente."_
+  - Inclusión: _"Para trabajadores nuevos, reingresados o con SCTR/Vida Ley en estado Falta o Rechazado."_
 
 **`sctr-subir.css`**:
+
 - `wizard-paso2 min-height`: 420px → 600px
 - `visor-frame` y `iframe` `min-height`: 320px → 500px
 - `.field-hint` añadido (font-size 0.75rem, color #64748b)
@@ -1510,6 +1738,7 @@ Sin este bloque, CONTRATISTA veía todas las pólizas del sistema.
 ### SCTR/Vida Ley — historial de versiones en Tab Trabajadores
 
 **`sctr-vidaley.ts`**:
+
 ```typescript
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 // ...
@@ -1519,11 +1748,14 @@ versionesLoader = (id: number) => this.trabajadorHabService.getVersiones(id);
 verVersiones(): void { this.modalVersionesOpen = true; }
 closeVersiones(): void { this.modalVersionesOpen = false; }
 ```
+
 `VersionesDoc` añadido al array `imports[]`.
 
 **`sctr-vidaley.html`**:
+
 - Botón "Ver historial de versiones" en `.wdetalle-actions`, visible cuando `selectedWorker?.sctrHabId` existe
 - Componente al final del template:
+
 ```html
 <app-hab-versiones-doc
   [open]="modalVersionesOpen"
@@ -1532,6 +1764,7 @@ closeVersiones(): void { this.modalVersionesOpen = false; }
   (closed)="closeVersiones()"
 />
 ```
+
 El `sctrHabId` es el `SsHabTrabajador.id` — el mismo que acepta el endpoint `GET /habilitacion/trabajadores/entregables/{id}/versiones`.
 
 ### Mapeo obligatorio para getProyectos() de EmpresaContratistaService
@@ -1539,10 +1772,13 @@ El `sctrHabId` es el `SsHabTrabajador.id` — el mismo que acepta el endpoint `G
 El backend devuelve `{ proyectoId, proyectoNombre }`. El frontend espera `ProjectGetDTO { projectId, projectDescription }`. Patrón aplicado en **3 lugares**:
 
 ```typescript
-this.proyectos = data.map((p: any) => ({
-  projectId: p.proyectoId,
-  projectDescription: p.proyectoNombre,
-}) as ProjectGetDTO);
+this.proyectos = data.map(
+  (p: any) =>
+    ({
+      projectId: p.proyectoId,
+      projectDescription: p.proyectoNombre,
+    }) as ProjectGetDTO,
+);
 if (this.proyectos.length === 1) {
   this.model.proyectoId = this.proyectos[0].projectId;
 }
@@ -1605,19 +1841,23 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 ## Sesión 2026-05-20 — Arquitectura Comercial: panel proyectos, SPI, sticky acciones, días hábiles
 
 ### `actividades.model.ts` — cambios de DTO
+
 - `ActividadListItemDTO`: campo `indice` renombrado a `orden`; añadido `spi?: number | null`.
 - `GanttActividadDTO`: campo `indice` renombrado a `orden`.
 
 ### `features/arquitectura-comercial/actividades/` — panel izquierdo de proyectos
+
 - Toggle "Sin actividades" (switch CSS puro con `peer`): OFF → muestra solo proyectos con actividades; ON → muestra solo proyectos sin actividades. Contador del header cambia según modo.
 - Footer `+ Nuevo proyecto` sticky al pie del aside (siempre visible): `routerLink="/configuracion/proyectos"`.
 - Altura del aside corregida: `:host` cambiado de `height:100%` a `flex:1; min-height:0; overflow:hidden` en `actividades.css` — evita el desborde de 70px que ocurría porque `height:100%` incluía el espacio del `<app-header>` en el `flex-col` padre del normalLayout. Estructura del aside usa inline styles garantizados (`height:100%`, `flex:1; overflow-y:auto; min-height:0`, `flex-shrink:0`).
 
 ### `actividades.html` — tabla
+
 - **Columna SPI**: añadida entre Especialidad y Estado. Muestra valor numérico (`1.2-2`) con color inline: `>= 1` → `#16a34a` (verde), `>= 0.8 y < 1` → `#d97706` (naranja), `< 0.8` → `#dc2626` (rojo), `null/0` → "—" gris. `colspan` actualizado a 19.
 - **Columna acciones sticky**: `<th>` y `<td>` de botones lápiz/basura son `position:sticky; right:0`. Clases `.th-actions-sticky` (bg `#1a4731`) y `.td-actions-sticky` (bg `#ffffff` / `#F9FAFB` par). Definidas en `actividades.css`.
 
 ### `components/editar-actividad/` — días hábiles
+
 - Modal ampliado a `w-[800px]`.
 - Nuevos campos locales en `EditarActividadForm`: `diasHabiliesProg` y `diasHabilesEfect` (no van al payload).
 - Grid 3 columnas (`1fr 120px 1fr`) para fechas programadas y efectivas: **Inicio | Días hábiles | Fin**.
@@ -1631,6 +1871,7 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 ## Sesión 2026-05-20 — Rediseño Home Habilitación
 
 ### Home (inicio.ts / inicio.html / inicio.css)
+
 - Bento grid por grupos al hacer clic en "Habilitación" en sidebar: sin submenús, clic directo a cada sección
 - 3 grupos visuales: GESTIÓN (Trabajadores, Empresa, Equipos y Máquinas, SCTR y Vida Ley, Inducciones), OPERACIONES (Reglas de Entregables, Auditoría, Clínicas), ADMINISTRACIÓN (Bandeja de Aprobaciones, Registros Modelo, Evaluación Supervisores)
 - Cards: fondo #fff, border-radius 14px, border 1px solid #ececec, hover translateY(-2px) + sombra suave
@@ -1639,10 +1880,12 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 - Labels de grupo: 11px uppercase color #6b7280 font-weight 600
 
 ### sidebar.ts / sidebar.html
+
 - onModuleClick(): clic en "habilitacion" navega a '/' y cierra dropdown; demás módulos conservan toggleMenu()
 - Estado activo visual en sidebar cuando ruta es '/'
 
 ### navigation.service.ts
+
 - "Control de Acceso" eliminado de grupos de Habilitación → nuevo módulo independiente key: 'control-acceso' apuntando a /habilitacion/control-acceso
 - Labels visibles en home: "Habilitación" → "Gestión de Ingresos", "SSOMA" → "Salud" (solo en inicio.ts, rutas y sidebar sin cambio)
 - navigation.service.ts: key 'ssoma' label → 'Salud', key 'habilitacion' label → 'Gestión de Ingresos' (keys y rutas sin cambio)
@@ -1653,16 +1896,19 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 ## Sesión 2026-05-21 — Arquitectura Comercial: Responsable 2, roles AC, nombre personalizado
 
 ### `actividades.model.ts` — campos Responsable 2
+
 - `ActividadListItemDTO`: añadidos `userId2: number | null` y `responsableNombre2: string | null`.
 - `ActividadPatchBody`: añadido `userId2?: number | null`.
 - `UpdateActividadBody`: añadido `userId2: number | null`.
 
 ### `actividades.html` y `actividades.ts` — dropdown Responsable 2
+
 - Columna "Responsable 2" en la tabla usa `[ngModel]="a.userId2"` y `(ngModelChange)="onResponsable2Change(a, $event)"`.
 - `onResponsable2Change(a, userId2)` añadido en `actividades.ts` → llama `patchField(a.id, 'userId2', userId2)` → PATCH `/actividades/{id}`.
 - Columna "Responsable 1" conserva su comportamiento (texto `a.encargado1`, solo lectura).
 
 ### `components/editar-actividad/` — campo Responsable 2
+
 - `EditarActividadForm` interface: añadido `userId2: number | null`.
 - `empty()`: inicializa `userId2: null`.
 - `populateForm()`: asigna `userId2: this.actividad.userId2`.
@@ -1670,6 +1916,7 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 - `editar-actividad.html`: campo "Responsable" dividido en dos selects en grid-2: **"Responsable 1"** (`model.userId`) y **"Responsable 2"** (`model.userId2`), ambos con la lista `supervisores`.
 
 ### `components/nuevo-entregable/` y `components/nuevo-hito/` — nombre personalizado
+
 - Dos propiedades nuevas en cada componente: `nombrePersonalizado = false` y `nombreLibre = ''`.
 - Se resetean a `false`/`''` en `ngOnChanges` al abrir el modal.
 - `canSubmit`: si `nombrePersonalizado` → solo exige `nombreLibre.trim()` no vacío; si OFF → lógica original de campos requeridos.
@@ -1681,12 +1928,13 @@ Los botones Crear y Editar equipo ahora son visibles para el rol CONTRATISTA. Fi
 
 Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 
-| Rol (string exacto) | Acceso |
-|---------------------|--------|
-| `GESTOR AC` | Ve todos los proyectos y todas las actividades sin filtro de empresa/usuario. Puede editar cualquier actividad. |
-| `USUARIO AC` | Ve solo los proyectos/actividades donde `userId === su propio userId` o `userId2 === su propio userId`. Dropdowns Responsable 1 y 2 solo muestran su propio nombre o vacío. |
+| Rol (string exacto) | Acceso                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GESTOR AC`         | Ve todos los proyectos y todas las actividades sin filtro de empresa/usuario. Puede editar cualquier actividad.                                                             |
+| `USUARIO AC`        | Ve solo los proyectos/actividades donde `userId === su propio userId` o `userId2 === su propio userId`. Dropdowns Responsable 1 y 2 solo muestran su propio nombre o vacío. |
 
 **Implementación pendiente (frontend)**:
+
 - `ArquitecturaComercialService` deberá pasar el userId del JWT como query param cuando el rol sea `USUARIO AC` — el backend filtrará server-side.
 - El sidebar y `roleGuard` usarán `featureKey: 'arquitectura-comercial.*'` para ambos roles.
 - `getSupervisoresAc()` seguirá devolviendo la lista completa; el filtrado de qué puede editar se controla en el backend.
@@ -1702,6 +1950,7 @@ Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 ## §17 — Dashboard Arquitectura Comercial v2 Enterprise (2026-05-21)
 
 ### Archivos clave
+
 - `features/arquitectura-comercial/dashboard/dashboard.ts` — lógica completa (Charts, modales, filtros, helpers)
 - `features/arquitectura-comercial/dashboard/dashboard.html` — template completo
 - `features/arquitectura-comercial/dashboard/dashboard.css` — sistema de diseño flat
@@ -1709,53 +1958,64 @@ Dos roles nuevos a registrar en BD y wiring en `roleGuard` + sidebar:
 - `core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model.ts` — extendido con 4 interfaces nuevas
 
 ### Paleta y diseño general
+
 - Fondo raíz: `#F0F2F5`. Cards: `background:#fff; border:0.5px solid #E2E8F0; border-radius:10px`. Sin sombras (flat design).
 - Colores semánticos: Culminadas `#1B6B3A`, En Proceso `#2E6DB4`, Vencidas `#C0392B`, Pendientes `#D97706`, base `#1E3A5F`.
 
 ### Modo full-screen (sin header global)
+
 - `layout.ts` `isFullPage()` incluye `/arquitectura-comercial/dashboard` → renderiza solo `<router-outlet>` sin `<app-header>`.
 - Ruta `dashboard` en routing module lleva `hideHeader: true` como refuerzo secundario.
 
 ### Flujo de datos — `cargar()`
+
 ```ts
 forkJoin({
   dashboard: this.service.getDashboardV2(f),
-  proyectos : this.service.getProyectos().pipe(catchError(() => of([]))),
-  workers   : this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
-})
+  proyectos: this.service.getProyectos().pipe(catchError(() => of([]))),
+  workers: this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
+});
 ```
+
 `getProyectos()` y `getSupervisoresAc()` llevan `catchError(() => of([]))` — si fallan, el dashboard igual carga con arrays vacíos en los selectores. `filtro.anio` se inicializa al año actual en `generarFiltrosTiempo()`.
 
 ### Header
+
 - 4 selects: arquitecto (`filtro.userId`), semana, mes, proyecto.
 - Botón Buscar llama `buscar()` → solo recarga `getDashboardV2`.
 
 ### Category pills
+
 - `.cat-pills` — fila de pills: "TODOS" (null) + `*ngFor categorias` desde `dashboard.categorias`.
 - Pill activo: `background:#1E3A5F; color:#fff`. Punto de color: `cat-pill-dot` con `background:#fff !important` cuando activo.
 - `seleccionarCategoria(id)` actualiza `categoriaActiva` + `filtro.categoriaId` y llama `buscar()`.
 
 ### KPI Grid y Alertas
+
 - `repeat(7, 1fr)` / `repeat(4, 1fr)`.
 - Alert cards llevan `.alert-clickable` (cursor:pointer, hover translateY-1px + box-shadow). Click → `abrirModalAlerta('VENCIDA'|'VENCE_SEMANA'|'ARRANQUE'|'HITO_PROXIMO')`.
 
 ### Main Grid — 3 columnas
 
 **Col izquierda — Ranking Eficiencia**
+
 - `*ngFor supervisores let i = index`: número de posición `.rank-pos`, avatar 34px con iniciales, doble barra `.dual-bar-track` (`.bar-real` 8px / `.bar-proyectada` 4px opacity:0.45).
 - Badge `.rank-badge` con comentario inteligente vs `promedioEficiencia`.
 - Footer `.equilibrio-tag`: verde/rojo según `equipoEquilibrado` (varianza ≤30pp).
 
 **Col centro — 4 charts**
+
 1. **Distribución donut** (`#distribucionCanvas` 100×100px en `.donut-canvas-wrap`) + leyenda vertical `.donut-legend-v`.
 2. **Avance semanal** (`#avanceCanvas`, `.chart-wrap-md` height:120px) — bar chart barras dobles: Programado (azul claro) + Real (verde).
 3. **Eficiencia SPI** (`#eficienciaCanvas`, `.chart-wrap-md`) — line chart últimas 3 semanas. SPI × 100 = %. Datalabels `anchor:'end'`.
 
 **Col derecha — Hitos + Tareas**
+
 - Hitos Críticos: vista top 6 `.hitos-preview` (sin scroll). Botón "Ver todos (N)" → `abrirModalHitos()`.
 - Tareas por arquitecto (`#tareasCanvas`, `.chart-wrap-lg` height:160px) — bar stacked: Hitos (azul), Entregables (verde), Consultas (naranja). Top 8 por `primerApellido(nombre)`.
 
 ### Modal Alertas
+
 - `abrirModalAlerta(tipo)` → `GET /alertas/{tipo}?...` → tabla `ActividadAlertaDTO[]` con checkboxes.
 - `.modal-backdrop` (backdrop-filter:blur(2px)) + `.modal-box` (max-width:820px, max-height:88vh, animación `slideUp`).
 - Toolbar: "Seleccionar todos" (`toggleTodos`) + contador `seleccionados.size`.
@@ -1763,6 +2023,7 @@ forkJoin({
 - Footer: botón "Enviar alerta (N)" → `enviarAlertasActividades({ actividadIds: [...seleccionados], tipoAlerta })` → POST `/alertas/enviar`.
 
 ### Modal Hitos
+
 - `abrirModalHitos()` — muestra los 3 tabs con getters: `hitosIniciar` (diasRestantes 0-7), `hitosVencer` (8-30), `hitosVencidos` (<0).
 - `.hito-tabs` con `.hito-tab.active` (border-bottom `#1E3A5F`). `.tab-badge` por tab.
 - Botón "Alertar" por fila → `alertarHito(hito)` → POST `/alertas/enviar` con `[hito.id]`.
@@ -1770,29 +2031,30 @@ forkJoin({
 
 ### Métodos y getters en `dashboard.ts`
 
-| Símbolo | Descripción |
-|---------|-------------|
-| `categoriaActiva: number\|null` | Pill activa. null = TODOS |
-| `filtro: DashboardFiltroDTO` | Filtro unificado (userId, proyectoId, semana, mes, anio, categoriaId) |
-| `getFiltroActual()` | Spread de `filtro` + `categoriaId: categoriaActiva` |
-| `aplicarDashboard(d)` | Llena todos los arrays y llama `renderCharts()` con `setTimeout(50)` |
-| `destruirCharts()` | Destruye los 4 charts antes de re-renderizar |
-| `getInitials(nombre)` | 2 iniciales (primer y último token) |
-| `primerApellido(nombre)` | Primer token — etiqueta eje X del chart de tareas |
-| `getAvatarBg/Color(p)` | Verde/azul/rojo por progreso |
-| `getComentario/Bg/Color(sup)` | Badge vs promedio |
-| `promedioEficiencia` | Media aritmética de `supervisores[].progreso` |
-| `equipoEquilibrado` | max - min ≤ 30pp |
-| `getProyectada(p)` | `min(100, p * 1.12)` |
-| `getHitoColor(dias)` | Rojo (≤3 o <0) / naranja (≤7) / azul (resto) |
-| `hitosUrgentesCnt/EstaSemanaCnt/ProximosCnt` | Contadores footer hitos |
-| `diasLabel(dias)` | "Vencido Xd" / "Hoy" / "Xd" |
-| `getSpiColor/Label(spi)` | Color e string del SPI |
-| `getSubtitulo()` | "Semana N · MesNombre YYYY" |
-| `todosMarcados` getter | Todos los items del modal alertas están en `seleccionados` |
-| `hitosIniciar/hitosVencer/hitosVencidos` | Getters filtrando `hitosCriticos` por rango de días |
+| Símbolo                                      | Descripción                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| `categoriaActiva: number\|null`              | Pill activa. null = TODOS                                             |
+| `filtro: DashboardFiltroDTO`                 | Filtro unificado (userId, proyectoId, semana, mes, anio, categoriaId) |
+| `getFiltroActual()`                          | Spread de `filtro` + `categoriaId: categoriaActiva`                   |
+| `aplicarDashboard(d)`                        | Llena todos los arrays y llama `renderCharts()` con `setTimeout(50)`  |
+| `destruirCharts()`                           | Destruye los 4 charts antes de re-renderizar                          |
+| `getInitials(nombre)`                        | 2 iniciales (primer y último token)                                   |
+| `primerApellido(nombre)`                     | Primer token — etiqueta eje X del chart de tareas                     |
+| `getAvatarBg/Color(p)`                       | Verde/azul/rojo por progreso                                          |
+| `getComentario/Bg/Color(sup)`                | Badge vs promedio                                                     |
+| `promedioEficiencia`                         | Media aritmética de `supervisores[].progreso`                         |
+| `equipoEquilibrado`                          | max - min ≤ 30pp                                                      |
+| `getProyectada(p)`                           | `min(100, p * 1.12)`                                                  |
+| `getHitoColor(dias)`                         | Rojo (≤3 o <0) / naranja (≤7) / azul (resto)                          |
+| `hitosUrgentesCnt/EstaSemanaCnt/ProximosCnt` | Contadores footer hitos                                               |
+| `diasLabel(dias)`                            | "Vencido Xd" / "Hoy" / "Xd"                                           |
+| `getSpiColor/Label(spi)`                     | Color e string del SPI                                                |
+| `getSubtitulo()`                             | "Semana N · MesNombre YYYY"                                           |
+| `todosMarcados` getter                       | Todos los items del modal alertas están en `seleccionados`            |
+| `hitosIniciar/hitosVencer/hitosVencidos`     | Getters filtrando `hitosCriticos` por rango de días                   |
 
 ### CSS clave
+
 - `.cat-pills` / `.cat-pill` / `.cat-pill.active` / `.cat-pill-dot`.
 - `.alert-clickable` — cursor:pointer, hover translateY(-1px) + box-shadow.
 - `.alert-top` — flex row space-between (número + ícono SVG).
@@ -1816,17 +2078,20 @@ forkJoin({
 ### Archivos Excel preparados
 
 #### 1. Lista_contratistas_limpia.xlsx — 74 empresas → `contributor` + `contractor_email`
+
 - `contributor_name` ← RazonSocial, `contributor_nombre_comercial` ← NombreComercial
 - `contributor_ruc` ← RUC, `sp_password_temp` ← Password, `id_sharepoint` ← IDListaCont
 - 4 emails por empresa → `contractor_email` (Gerente, Administrador, Residente, SSOMA)
 - `es_abril = false`, `active = true` siempre
 
 #### 2. entregables_empresa_estandarizados.xlsx — 8,300 filas → `ss_hab_empresa`
+
 - Cols: NombreComercial, project_id_BD, item_id, estado, vigencia
 - 352 combinaciones empresa+proyecto × 25 items c/u
 - NombreComercial = llave de cruce con `contributor` post-import
 
 #### 3. trabajadores_limpios.xlsx — 2,339 trabajadores (914 Casa + 1,425 Contratistas) → `person` + `workers` + `worker_vinculaciones` + `ss_hab_worker_proyecto`
+
 - Cols: id_trabajador, dni, nombre_completo, email_personal, fecha_ingreso, fecha_nacimiento, categoria, ocupacion, area, subarea, obra_oficina, contrata_casa, condicion_medica, notas, puntos_infraccion, celular, sctr, project_id_BD, empresa_nombre, proyectos_habilitado
 - `empresa_nombre`: Casa → `contributor_id` BD directo (int) | Contratista → NombreComercial (cruce post-import)
 - `proyectos_habilitado`: lista de project_id_BD separados por coma → `ss_hab_worker_proyecto` (aplica a ambos tipos)
@@ -1834,6 +2099,7 @@ forkJoin({
 - ⚠️ **Orden obligatorio de inserción**: primero insertar en `person` (`full_name` ← nombre_completo), luego insertar en `workers` con `person_id` apuntando al registro creado. Si `workers.person_id` es NULL o no existe el `person`, la lista de trabajadores aparece sin nombres en la UI (el campo `apellidoNombre` viene de `person.full_name`).
 
 #### 4. entregables_trabajadores_limpios.xlsx — 26,223 filas → `ss_hab_trabajador`
+
 - Cols: id_trabajador, item_id, estado, vigencia
 - `id_trabajador` = llave de cruce con workers post-import
 - Lógica aplicada: `ss_item_trabajador.aplica_a` + `aplica_categoria` + `aplica_obra_oficina` + `excluye_obra_oficina` + `excluye_categoria_contratista`
@@ -1841,6 +2107,7 @@ forkJoin({
 - Casa: 15–17 items/trabajador | Contratistas: 8–9 items/trabajador
 
 #### Pendiente procesar
+
 - EMOs → `worker_emos`
 - Equipos → `ss_equipo` + `ss_hab_equipo`
 - SCTR trabajadores → `ss_sctr_vidaley_worker`
@@ -1849,6 +2116,7 @@ forkJoin({
 
 **Hijos de workers** (borrar antes de reimportar workers):
 `ss_hab_trabajador`, `worker_vinculaciones`, `ss_hab_worker_proyecto`, `ss_induccion`, `worker_emos`, `ss_programacion_emos`, `ss_sctr_vidaley_worker`, `ss_alertas_emo`, `ss_eval_supervisor`, `ss_hab_bloqueo_log`, `ss_interconsultas`, `ss_seguimientos_medicos`, `worker_eventos`, `ga_solicitud_salida`
+
 > **⚠️ PRESERVAR**: `ss_trabajador_restringido` (178 registros — blacklist, NO borrar)
 
 **Hijos de contributor (externos)** (borrar antes de reimportar contratistas):
@@ -1864,12 +2132,14 @@ forkJoin({
 **Login**: enlace "¿Primera vez? Activa tu cuenta aquí" agregado en `login.html`
 
 **Paso 1 — Validar identidad**:
+
 - Inputs: RUC (11 dígitos, validado con `/^\d{11}$/`) + `spPassword` (contraseña temporal)
 - `POST /api/v1/habilitacion/auth/validar-migracion { ruc, spPassword }`
 - Respuesta exitosa devuelve `{ nombreComercial }` → se muestra como badge de confirmación en paso 2
 - Error → Swal `icon:'error'` con `err.error?.message ?? 'RUC o contraseña temporal incorrectos'`
 
 **Paso 2 — Crear cuenta**:
+
 - Inputs: email + nueva contraseña (con `PasswordStrengthComponent`) + confirmar contraseña
 - Reglas: ≥8 chars, ≥1 mayúscula, ≥1 dígito
 - `POST /api/v1/habilitacion/auth/activar-migracion { ruc, spPassword, email, password }`
@@ -1877,11 +2147,13 @@ forkJoin({
 - Usa `HttpClient` directo (sin `AuthService`) — no necesita token
 
 **Notas de implementación**:
+
 - `paso: 1 | 2` controla el `*ngIf` entre los dos formularios
 - `ruc` y `spPassword` se conservan en memoria durante el paso 2 (se reenvían en el body de activar-migracion)
 - No usa `LoaderService` ni `ErrorService` — manejo local con `saving: boolean` y Swal inline
 
 ### Multi-usuario por empresa (segunda fase — no implementar aún)
+
 Tablas: `ss_contratista_usuario`, `ss_contratista_usuario_proyecto`, `ss_contratista_auditoria`
 Roles: `OWNER` | `ADMIN` | `GESTOR` con scope `ALL` | `BY_PROJECT`
 
@@ -1934,6 +2206,7 @@ abrirProgramarInduccion(): void {
 **Componente destino** (`trabajadores/components/programar-induccion/`) ya tenía `@Input() preselectedEmpresaId` y lo usaba en `loadWorkers()` — no requirió cambios.
 
 > ⚠️ Hay **dos** componentes `ProgramarInduccion` con el mismo selector pero distintas rutas:
+>
 > - `inducciones/components/programar-induccion/` — carga proyectos propia, busca workers vía `getTrabajadoresPorProgramar`
 > - `trabajadores/components/programar-induccion/` — recibe `[proyectos]` del padre, 2 pasos, usa `preselectedEmpresaId`
 >
@@ -2025,6 +2298,7 @@ Getters: `docAllChecked`, `docSomeChecked`, `canAprobarDoc`.
 Métodos: `toggleDocWorker`, `toggleAllDocWorkers`, `aprobarDocWorkersSeleccionados` (Swal confirm → `sctrService.aprobar(selectedDoc.id, dto)` con `tipo: selectedDoc.tipo`), `aprobarTodosDocWorkers` (Swal confirm → mismo endpoint con todos los workers). `clearDocPanel()` resetea también `docWorkersSeleccionados`.
 
 `sctr-vidaley.html` — `.sctr-split-right`:
+
 - Header `.sctr-workers-header` (`*ngIf="isAdmin()"`) con checkbox "Seleccionar todos" (`[indeterminate]`), contador y botón "Aprobar todos".
 - Cada `.sctr-worker-item` tiene checkbox admin-only (`stopPropagation` para no interferir con `selectPolizaWorker`).
 - Footer `.sctr-split-actions-bar` (`*ngIf="isAdmin()"`) con contador + botón "Aprobar seleccionados".
@@ -2045,9 +2319,11 @@ Dos inputs `.wfilters-text-row` (Buscar nombre + Buscar empresa) encima del `.wf
 **Causa**: el backend retorna múltiples filas para el mismo `workerId` cuando un worker tiene ≥2 proyectos activos (JOIN con proyectos). Frontend los mostraba todos como cards duplicadas.
 
 **Fix** en `loadWorkers()` después de recibir `res.data`:
+
 ```ts
-this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
+this.workers = [...new Map((res.data ?? []).map((w) => [w.workerId, w])).values()];
 ```
+
 El `Map` con clave `workerId` deduplica conservando la última aparición por worker.
 
 ---
@@ -2065,6 +2341,7 @@ Rediseño total de la vista Tab Pólizas: de `sctr-columns` (2 columnas split 60
 Cada columna tiene `overflow-y: auto` propio con `height: 100%`. El contenedor `.sctr-3col` es `display: flex; flex: 1; min-height: 0; overflow: hidden; border-radius: 10px`.
 
 Top bar compactada a `sctr-top` (card) con:
+
 - `sctr-top-row1`: título + tabs + spacer + botón "Subir SCTR/Vida Ley" (~30px)
 - `sctr-top-filters`: filtros horizontales (`*ngIf="activeTab === 'polizas'"`) (~38px)
 
@@ -2073,6 +2350,7 @@ Root: `height: calc(100vh - 60px); display: flex; flex-direction: column; gap: 0
 ### Doc cards — diseño compacto 2 filas + fila fechas
 
 Cada card de póliza en `.col-polizas` usa `padding: 6px 10px` y 3 filas:
+
 - `.doc-row1`: `[TIPO]` + empresa nombre + badge estado (`[ngClass]="getEstadoClass(doc.estado)"` sobre `class="btn-chip"` — augmenta, no reemplaza)
 - `.doc-row2`: `proyectoNombre — mes año | N trab.` (separadores `.doc-sep` color `#d1d5db`)
 - `.doc-row3` (`*ngIf="doc.fechaInicio || doc.vigencia"`): `Ini: dd/MM/yyyy — Fin: dd/MM/yyyy`
@@ -2104,8 +2382,11 @@ Checkboxes y botones de aprobación masiva operan sobre este subset.
 ### SctrWorkerDto — fechaVencimiento
 
 `sctr.model.ts`: añadido `fechaVencimiento?: string` a `SctrWorkerDto`. Se muestra debajo del badge de estado en cada worker card:
+
 ```html
-<span *ngIf="w.fechaVencimiento" class="muted-line">Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span>
+<span *ngIf="w.fechaVencimiento" class="muted-line"
+  >Vence: {{ w.fechaVencimiento | date:'dd/MM/yyyy' }}</span
+>
 ```
 
 ### filtroEstado default 'Enviado'
@@ -2129,8 +2410,14 @@ Añadido antes de `verVersionesPoliza()`. El enlace en el footer llama este stub
 ### Tipografía worker cards
 
 ```css
-.sctr-worker-item .worker-info strong { font-size: 0.78rem; font-weight: 500; }
-.sctr-worker-item .worker-info .muted-line { font-size: 0.7rem; color: #64748b; }
+.sctr-worker-item .worker-info strong {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.sctr-worker-item .worker-info .muted-line {
+  font-size: 0.7rem;
+  color: #64748b;
+}
 ```
 
 ---
@@ -2144,6 +2431,7 @@ El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col
 **Filtros movidos al top bar**: nueva `sctr-top-filters *ngIf="activeTab === 'trabajadores'"` con empresa SearchSelect (admin), proyecto SearchSelect, tipo select, estado select, inputs nombre y empresa texto, btn Buscar — idéntico al patrón de Tab Pólizas.
 
 **Col 1 (`.col-polizas`, 280px)**: cards de trabajadores con layout en 4 filas:
+
 - Fila 1: `[tipo chip SCTR/VIDA LEY]` `[estado badge]` `Vence: fecha` (alineado derecha, solo si existe)
 - Fila 2: `apellidoNombre` (0.82rem, font-weight 600)
 - Fila 3: `DNI xxx`
@@ -2151,6 +2439,7 @@ El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col
 - Fila 5 (`*ngIf="!w.sctrId"`): botón "Rechazar" outline rojo (`border: 1.5px solid #dc2626; color: #dc2626; background: white; border-radius: 4px`)
 
 **Col 2 (`.col-workers`, 260px)**: workers de `selectedPoliza` no aprobados — idéntico al col-workers del Tab Pólizas:
+
 - Header: checkbox select-all + contador
 - Lista `.sctr-split-workers`: checkbox individual, nombre/DNI/vence, badge estado, botones ✓/✗ inline
 - Panel rechazar inline: `rechazandoWorkerId` + `rechazandoMotivoInline` (mismo estado compartido)
@@ -2159,6 +2448,7 @@ El tab Trabajadores reemplazó `trabajadores-layout` (grid 2 col) por `sctr-3col
 **Col 3 (`.col-pdf`, flex:1)**: PDF viewer con header (tipo, mes, año, worker nombre + empresa, badge estado), vigencia, iframe `polizaSafeUrl`.
 
 **TS nuevos métodos y getters**:
+
 ```ts
 getPolizaWorkerEstado(w): string    // estadoVidaLey o estadoSctr según wFiltroTipo
 get filteredPolizaWorkers()         // workers de selectedPoliza donde estado !== 'Aprobado'
@@ -2174,11 +2464,13 @@ clearPolizaPanel()                  // ahora también resetea rechazandoWorkerId
 ### bandeja — cards rediseño
 
 **HTML** (`bandeja.html`): `bc-fecha` reemplaza `fechaEnvio` por `vigencia`:
+
 ```html
 <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
 ```
 
 **CSS** (`bandeja.css`):
+
 - `.bandeja-card`: `padding: 10px 12px`
 - `.bandeja-card:hover`: `border-color: #16a34a; box-shadow: 0 2px 8px rgba(0,0,0,0.07)`
 - `.bc-fecha`: `0.7rem / #64748b / white-space: nowrap`
@@ -2199,6 +2491,7 @@ Dentro de la rama `if (this.isContratista())` de `guardarEntregable()` se agrega
 Admins no afectados — las validaciones están dentro del bloque contratista. No se hardcodean ítems específicos; `requiereVigencia` viene del DTO.
 
 **Archivos modificados:**
+
 - `features/habilitacion/pages/trabajadores/trabajadores.ts` — `guardarEntregable()` línea 612
 - `features/habilitacion/pages/empresa/empresa.ts` — `guardarEntregable()` línea 481
 - `features/habilitacion/pages/equipos/equipos.ts` — `guardarEntregable()` línea 470
@@ -2208,24 +2501,27 @@ Admins no afectados — las validaciones están dentro del bloque contratista. N
 ### EMOs — nuevas columnas en tabla `emos.html`
 
 **`dtos/emo.model.ts` — `EmoPorTrabajadorDto`**: añadidos dos campos opcionales:
+
 ```ts
 empresaOrigenNombre?: string;   // empresa con que se registró el EMO
 proyectoNombre?: string;        // proyecto actual del worker
 ```
+
 (Ya existían `obraOficina`, `empresa`, `proyecto` — no duplicados.)
 
 **`emos.html` — columnas actualizadas:**
 
-| Antes | Después | Campo |
-|-------|---------|-------|
-| Empresa | Emp. Actual | `item.empresa` |
+| Antes     | Después     | Campo                               |
+| --------- | ----------- | ----------------------------------- |
+| Empresa   | Emp. Actual | `item.empresa`                      |
 | — (nueva) | Emp. Origen | `item.empresaOrigenNombre \|\| '—'` |
-| — (nueva) | Proyecto | `item.proyectoNombre \|\| '—'` |
-| — (nueva) | Tipo | `item.obraOficina \|\| '—'` |
+| — (nueva) | Proyecto    | `item.proyectoNombre \|\| '—'`      |
+| — (nueva) | Tipo        | `item.obraOficina \|\| '—'`         |
 
 `colspan` de fila vacía: 9 → 12.
 
 `<colgroup>` con anchos fijos:
+
 ```
 auto | 80px | 140px | 140px | 120px | 80px | 90px | 90px | 90px | 90px | 60px | 36px
 Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Días | Acc
@@ -2242,6 +2538,7 @@ Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Día
 **Sección padding**: `<section class="p-6 space-y-4">` → `class="px-3 py-4 space-y-3"` (12px lateral).
 
 **Tabla compacta:**
+
 - `font-size`: `0.88rem` → `0.8rem`
 - `table-layout: fixed` activado
 - Padding `thead th` y `tbody td`: `0.75rem 1rem` → `6px 8px`
@@ -2252,6 +2549,7 @@ Trab | T.EMO | Emp.Act | Emp.Or | Proy | Tipo | Fecha | Vence | Apt | Est | Día
 - `.worker-dni`: `0.72rem` → `0.7rem`
 
 **Filtros compactos:**
+
 - `.filters-card`: `padding: 10px 12px`, `border-radius: 8px`, sin `box-shadow`, `border: #e2e8f0`
 - `.filters-grid`: `gap: 0.75rem` → `8px`
 - `.filter-label`: `0.72rem` → `0.7rem`, `color: #6b7280` → `#94a3b8`, `margin-bottom: 0.35rem` → `3px`
@@ -2267,14 +2565,18 @@ Componente compartido en `shared/components/search-select/`. Para no romper otro
 **`search-select.ts`**: `@Input() compact: boolean = false`
 
 **`search-select.html`** — el botón trigger aplica clases condicionales vía `[ngClass]`:
+
 ```ts
 compact
   ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
-  : 'rounded-xl bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30'
+  : 'rounded-xl bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30';
 
 // Border:
-isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
-       : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
+isOpen
+  ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+  : compact
+    ? 'border-[#e2e8f0]'
+    : 'border-[#D6DEE5]';
 ```
 
 **`emos.html`**: los tres `app-search-select` de los filtros usan `[compact]="true"`. Todos los demás usos en la app quedan sin cambios.
@@ -2294,17 +2596,20 @@ isOpen ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
 ### `emo.model.ts` — nuevos campos y nueva interfaz
 
 **`EmoCreateDto`**: añadidos dos campos opcionales al final:
+
 ```ts
 fechaLectura?: string;
 interconsultaInline?: InterconsultaInlineCreateDto;
 ```
 
 **`EmoRestriccionCreateDto`**: añadido campo opcional:
+
 ```ts
 vigente?: boolean;
 ```
 
 **Nueva interfaz** `InterconsultaInlineCreateDto`:
+
 ```ts
 export interface InterconsultaInlineCreateDto {
   especialidad: string;
@@ -2315,6 +2620,7 @@ export interface InterconsultaInlineCreateDto {
   requiereSeguimiento: boolean;
 }
 ```
+
 Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoint separado.
 
 ---
@@ -2325,13 +2631,14 @@ Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoi
 
 #### Lógica de negocio (completar-emo.ts)
 
-| Getter | Condición | Efecto en UI |
-|--------|-----------|--------------|
-| `requiereRestriccion` | `aptitud === 'Apto con Restricciones'` | Muestra sección restricciones |
-| `requiereInterconsulta` | `aptitud === 'No Apto' \|\| aptitud === 'Observado'` | Muestra sección interconsulta |
-| `canSubmit` | aptitud + programacion + !saving + (si interconsulta → icEspecialidad no vacío) | Habilita botón |
+| Getter                  | Condición                                                                       | Efecto en UI                  |
+| ----------------------- | ------------------------------------------------------------------------------- | ----------------------------- |
+| `requiereRestriccion`   | `aptitud === 'Apto con Restricciones'`                                          | Muestra sección restricciones |
+| `requiereInterconsulta` | `aptitud === 'No Apto' \|\| aptitud === 'Observado'`                            | Muestra sección interconsulta |
+| `canSubmit`             | aptitud + programacion + !saving + (si interconsulta → icEspecialidad no vacío) | Habilita botón                |
 
 **Restricciones** (`restricciones: { descripcionLibre }[]`):
+
 - `agregarRestriccion()` — push + limpiar input (o Enter en el campo)
 - `quitarRestriccion(i)` — splice por índice
 - Mapeado a `EmoRestriccionCreateDto[]` con `vigente: true` en `submit()`
@@ -2341,6 +2648,7 @@ Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoi
 **`fechaLectura`** — fecha opcional independiente de `fechaEmo` (que sigue siendo la fecha del día del registro).
 
 **Flujo `submit()`** (sin cambios en la cadena de llamadas):
+
 1. `EmoService.createEmo(emoDto)` → recibe `{ id }` del EMO creado.
 2. `ClinicaProgramacionService.accionClinica(programacionId, { accion: 'Completar', emoResultadoId })`.
 
@@ -2366,12 +2674,12 @@ Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoi
 
 ### Resumen de archivos modificados
 
-| Archivo | Cambio |
-|---------|--------|
-| `ssoma/salud-ocupacional/dtos/emo.model.ts` | `EmoCreateDto` +2 campos; `EmoRestriccionCreateDto` +`vigente?`; nueva `InterconsultaInlineCreateDto` |
-| `clinica/pages/agenda/components/completar-emo/completar-emo.ts` | Reescritura completa (restricciones + interconsulta inline + fechaLectura) |
-| `clinica/pages/agenda/components/completar-emo/completar-emo.html` | Reescritura completa (formulario expandido, 2 secciones condicionales, alertas) |
-| `clinica/pages/agenda/components/completar-emo/completar-emo.css` | Append: 5 clases nuevas para restricciones y section-divider |
+| Archivo                                                            | Cambio                                                                                                |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `ssoma/salud-ocupacional/dtos/emo.model.ts`                        | `EmoCreateDto` +2 campos; `EmoRestriccionCreateDto` +`vigente?`; nueva `InterconsultaInlineCreateDto` |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.ts`   | Reescritura completa (restricciones + interconsulta inline + fechaLectura)                            |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.html` | Reescritura completa (formulario expandido, 2 secciones condicionales, alertas)                       |
+| `clinica/pages/agenda/components/completar-emo/completar-emo.css`  | Append: 5 clases nuevas para restricciones y section-divider                                          |
 
 ### Pendiente backend
 
@@ -2386,6 +2694,7 @@ Permite registrar una interconsulta junto con el EMO en un solo POST, sin endpoi
 Rediseño total de `features/projects/projects-dashboard/`. Los 3 endpoints del backend ya estaban listos.
 
 ### Endpoints consumidos
+
 ```
 GET  /api/v1/projects-dashboard/filters
 GET  /api/v1/projects-dashboard?proyectoId=&estado=&responsableId=&fechaDesde=&fechaHasta=
@@ -2393,11 +2702,13 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 ```
 
 ### Archivos nuevos creados
+
 - `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
 - `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
 - `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
 
 ### Registro en routing y navegación
+
 - `proyectos-routing-module.ts` — ruta `projects-dashboard` con `canActivate: [roleGuard]`, `featureKey: 'projects.projects-dashboard'`.
 - `navigation.service.ts` — item `{ label: 'Dashboard de Proyectos', route: '/projects/projects-dashboard', featureKey: 'projects.projects-dashboard' }`.
 
@@ -2410,10 +2721,12 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 Módulo completo para gestionar actividades de la tabla `project_activity`.
 
 **Archivos creados:**
+
 - `core/services/cronograma-actividades.service.ts`
 - `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
 
 **Endpoints:**
+
 ```
 GET    /api/v1/cronograma-actividades/proyectos
 GET    /api/v1/cronograma-actividades/{proyectoId}/actividades
@@ -2437,10 +2750,10 @@ DELETE /api/v1/cronograma-actividades/actividades/{id}
 
 `ProjectsDashboardItemDTO` renombrado:
 
-| Campo anterior | Campo nuevo |
-|---|---|
-| `proyectoNombre` | `projectDescription` |
-| `responsableArqCom` | `responsableNombre` |
+| Campo anterior      | Campo nuevo          |
+| ------------------- | -------------------- |
+| `proyectoNombre`    | `projectDescription` |
+| `responsableArqCom` | `responsableNombre`  |
 
 Archivos actualizados: modelo, html (tabla + panel header), ts (`initBarrasChart`). El campo `proyectoId` no cambió.
 
@@ -2453,3 +2766,270 @@ Archivos actualizados: modelo, html (tabla + panel header), ts (`initBarrasChart
 - Columnas: Actividad (180px, tree) + Días (40px)
 - `task_class` template: `gantt-culminado/gantt-vencido/gantt-en-proceso/gantt-pendiente` por estado
 - Estilos `.gantt_task_line.gantt-*` en `styles.css` global (dhtmlx inyecta fuera del shadow del componente)
+
+---
+
+## §Sesión 2026-05-27 — Rediseño Enterprise Módulo Clínica (Dashboard + Agenda)
+
+### Layout full-screen para Clínica
+
+`shared/components/layout/layout.ts` — `isFullPage()` incluye `/clinica/dashboard` y `/clinica/agenda`. Estas rutas renderizan sin `<app-header>` y sin padding del wrapper.
+
+`shared/components/layout/layout.html` — inline style bindings para forzar cero padding/fondo independientemente de Tailwind v4 specificity:
+
+```html
+[style.padding]="isFullPage() ? '0' : null" [style.background]="isFullPage() ? 'transparent' : null"
+```
+
+El sidebar permanece visible — `isFullPage()` solo elimina header y padding del área de contenido.
+
+### Dashboard Clínica — rediseño enterprise
+
+**Archivos:** `features/clinica/pages/dashboard/dashboard.ts/.html/.css`
+
+#### Layout CSS (`dashboard.css`)
+
+```css
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.dash-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f0f4f8;
+}
+.dash-header {
+  flex-shrink: 0;
+  background: #0f172a;
+  padding: 12px 24px;
+}
+.dash-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px 20px;
+  gap: 10px;
+  min-height: 0;
+}
+.kpi-section,
+.ops-section {
+  flex-shrink: 0;
+}
+.bottom-section {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 0;
+}
+.proximos-card {
+  overflow-y: auto;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+```
+
+#### Funcionalidades añadidas (`dashboard.ts`)
+
+- `Router` inyectado vía `inject(Router)`.
+- `navegarConFiltro(ruta, filtro?)` — navega con `queryParams` opcional.
+- `get pctCompletadas()` / `get pctEnProceso()` — porcentaje para progress bars.
+
+#### KPI cards clickables
+
+`(click)="navegarConFiltro('/clinica/agenda')"` / `"navegarConFiltro('/clinica/emos', 'sin-emo')"` etc. Clase `.kpi-card { cursor: pointer }`.
+
+#### Progress bars operativas
+
+```html
+<div class="ops-progress-bar">
+  <div class="ops-progress-fill fill-blue" [style.width.%]="pctCompletadas"></div>
+</div>
+```
+
+CSS: `.ops-progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; }` `.ops-progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }`.
+
+#### Tabla próximos EMO — columnas Vence y Días
+
+`<th>Vence</th><th>Días</th>` — valores `item.fechaVencimiento | date:'dd MMM yyyy'` y badge coloreado por `item.diasParaVencer`.
+
+Badges: `badge-red` (≤0), `badge-orange` (≤7), `badge-yellow` (≤30), `badge-green` (resto).
+
+#### Pulse badge "Clínica activa"
+
+```html
+<div class="clinica-activa-badge"><span class="pulse-dot"></span> Clínica activa</div>
+```
+
+```css
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.4);
+  }
+}
+```
+
+#### Mini-stat overflow fix
+
+`.mini-stat-body { min-width: 0; overflow: hidden; flex: 1; }` `.mini-stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }`.
+
+### Agenda Clínica — rediseño enterprise + tema claro
+
+**Archivos:** `features/clinica/pages/agenda/agenda.ts/.html/.css`
+
+#### Layout CSS (`agenda.css`)
+
+```css
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.agenda-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f0f4f8;
+}
+.agenda-header {
+  flex-shrink: 0;
+  background: #0f172a;
+  padding: 14px 20px 10px;
+}
+.stats-bar {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.controls-row {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cards-zone {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 14px 20px 16px;
+  background: #f0f4f8;
+}
+.agenda-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid transparent;
+}
+.card-muted {
+  opacity: 0.6;
+  background: #f8fafc;
+}
+```
+
+#### Stats bar clickable sincronizada con chips
+
+Los stat-items de la stats bar tienen `(click)="filtroEstado = 'Programado'"` (etc.) y `[class.stat-active]="filtroEstado === 'Programado'"`. Compartiendo el mismo binding `filtroEstado`, click en stat = activa chip correspondiente automáticamente.
+
+#### Semáforo de fechas (`fechaClass()` en `agenda.ts`)
+
+```ts
+fechaClass(fecha: string): string {
+  const hoy = new Date().toISOString().split('T')[0];
+  if (fecha === hoy) return 'fecha-hoy';
+  if (fecha < hoy) return 'fecha-pasada';
+  return 'fecha-futura';
+}
+```
+
+Colores: `fecha-hoy: #16a34a`, `fecha-pasada: #dc2626`, `fecha-futura: #2563eb`.
+
+#### Terminal cards con opacidad
+
+`[ngClass]="[..., esTerminal(item.estado) ? 'card-muted' : '']"` — estados Completado/Rechazado/Cancelado/No se presentó muestran la card con `opacity: 0.6`.
+
+#### Modal confirmación aceptación (light theme)
+
+```css
+.dark-modal {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+.dm-input {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  color-scheme: light;
+}
+```
+
+### Pitfall: Tailwind v4 vs inline styles
+
+Las clases `sm:py-[20px]` y `sm:pr-[20px]` de `layout.html` tienen especificidad suficiente para sobreponer `!important` en CSS. La solución definitiva es usar bindings inline `[style.padding]` y `[style.background]` en el template — los estilos inline siempre ganan la cascada.
+
+### Pitfall: `:host { position: fixed; inset: 0 }` cubre el sidebar
+
+Cuando una página usa `position: fixed; inset: 0` en `:host`, cubre el sidebar (que tiene `z-index` menor). La solución correcta para "full-screen sin sidebar" es `flex: 1; min-height: 0; overflow: hidden` — el componente ocupa el área de contenido disponible después del sidebar sin superponerlo.
+Backend:
+
+InterconsultaCreateDto — ProgramacionId, Diagnostico, Cie10 agregados; EmoId nullable
+SsInterconsulta modelo — ProgramacionId, EmoId nullable
+InterconsultaRepository.Create — FechaDerivacion automática, EmoId = null, Estado = "Pendiente"
+InterconsultaController.Create — [FromBody] sin upload
+InterconsultaController.SubirDocumento — POST /{id}/documentos restaurado con [FromForm]
+EmoRepository.Create — vincula interconsulta pendiente + sube documento + asigna EmoId
+EmoCreateDto — DocumentoInterconsulta: IFormFile? con [JsonIgnore]
+EmoController.Create — recibe documentoInterconsulta como [FromForm]
+BD — emo_id nullable, programacion_id agregado en ss_interconsultas
+
+Frontend:
+
+ClinicaInterconsultaCreateDto — interface creada
+InterconsultaClinicaService — createInterconsulta() con FormData
+agenda.ts — confirmarInterconsulta() usa el nuevo servicio
+
+❌ Pendiente
+Backend:
+
+Confirmar que dotnet build pasa limpio (se colgó antes de reportar)
+
+Frontend:
+
+completar-emo.ts — agregar documentoInterconsulta: File | null = null y handler onDocumentoInterconsulta()
+completar-emo.html — agregar input file dentro de \*ngIf="requiereInterconsulta"
+EmoService.createEmo() — verificar que pasa documentoInterconsulta al backend (actualmente los documentos van en requests separados fire-and-forget)
+Después de POST /emos exitoso, llamar POST /interconsultas/{id}/documentos con el archivo — necesita que el backend retorne el interconsultaId vinculado en la respuesta del EMO, o que el frontend consulte la interconsulta activa del worker para obtener el id
+
+Punto crítico pendiente de diseño:
+
+El frontend necesita saber el id de la interconsulta vinculada para llamar POST /interconsultas/{id}/documentos
+Opciones:
+
+Opción A — EmoRepository.Create retorna el interconsultaId en la respuesta del POST /emos
+Opción B — Frontend llama GET /interconsultas?workerId=X&estado=Pendiente para obtener el id
+
+Recomendación: Opción A — modificar EmoCreateResponseDto para incluir interconsultaId?: int

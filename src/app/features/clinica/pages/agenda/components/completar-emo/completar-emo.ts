@@ -21,6 +21,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 export class CompletarEmo implements OnChanges {
   @Input() open = false;
   @Input() programacion: ProgramacionClinicaDto | null = null;
+  @Input() interconsultaId?: number;
   @Output() closed = new EventEmitter<void>();
   @Output() completado = new EventEmitter<void>();
 
@@ -32,6 +33,7 @@ export class CompletarEmo implements OnChanges {
 
   archivoAptitud: File | null = null;
   archivoEmo: File | null = null;
+  archivoLectura: File | null = null;
 
   restricciones: { descripcionLibre: string }[] = [];
   nuevaRestriccion = '';
@@ -49,6 +51,7 @@ export class CompletarEmo implements OnChanges {
   get canSubmit(): boolean {
     if (!this.aptitud || !this.programacion || this.saving) return false;
     if (this.requiereDocumentos && (!this.archivoAptitud || !this.archivoEmo)) return false;
+    if (this.lecturaRealizada && (!this.fechaLectura || !this.archivoLectura)) return false;
     if (this.requiereRestriccion && this.restricciones.length === 0) return false;
     if (this.requiereInterconsulta && !this.icEspecialidad.trim()) return false;
     return true;
@@ -79,6 +82,7 @@ export class CompletarEmo implements OnChanges {
     this.saving = false;
     this.archivoAptitud = null;
     this.archivoEmo = null;
+    this.archivoLectura = null;
   }
 
   agregarRestriccion(): void {
@@ -96,6 +100,10 @@ export class CompletarEmo implements OnChanges {
 
   onArchivoEmo(event: Event): void {
     this.archivoEmo = (event.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onArchivoLectura(event: Event): void {
+    this.archivoLectura = (event.target as HTMLInputElement).files?.[0] ?? null;
   }
 
   close(): void { this.closed.emit(); }
@@ -150,22 +158,31 @@ export class CompletarEmo implements OnChanges {
       interconsultaInline,
     };
 
-    this.emoSvc.createEmo(emoDto).subscribe({
+    this.emoSvc.createEmo(emoDto, this.archivoLectura).subscribe({
       next: (res) => {
         const emoId = res.id;
-        this.progSvc.accionClinica(this.programacion!.id, {
-          id: this.programacion!.id,
-          accion: 'Completar',
-          emoResultadoId: emoId,
-        }).subscribe({
-          next: () => {
-            this.subirDocumentos(emoId);
-            this.saving = false;
-            this.loaderService.hide();
-            this.completado.emit();
-          },
-          error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
-        });
+        if (this.interconsultaId != null) {
+          // Contexto interconsultas: no hay programación real, omitir accionClinica
+          this.subirDocumentos(emoId);
+          this.saving = false;
+          this.loaderService.hide();
+          this.completado.emit();
+        } else {
+          // Contexto agenda: flujo original con accionClinica
+          this.progSvc.accionClinica(this.programacion!.id, {
+            id: this.programacion!.id,
+            accion: 'Completar',
+            emoResultadoId: emoId,
+          }).subscribe({
+            next: () => {
+              this.subirDocumentos(emoId);
+              this.saving = false;
+              this.loaderService.hide();
+              this.completado.emit();
+            },
+            error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
+          });
+        }
       },
       error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
     });

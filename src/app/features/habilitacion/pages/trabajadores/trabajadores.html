@@ -8,7 +8,7 @@
       <span class="breadcrumb-current">Trabajadores</span>
     </div>
     <div class="topbar-actions">
-      <button class="btn-ghost-sm" (click)="loadWorkers(currentPage)">
+      <button class="btn-ghost-sm" (click)="actualizar()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>
@@ -27,6 +27,9 @@
           <line x1="10" y1="16" x2="14" y2="16"/>
         </svg>
         Programar Inducción
+      </button>
+      <button class="btn-ghost-sm btn-induccion" (click)="abrirEmosProgramados()">
+        EMOs Programados
       </button>
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -107,7 +110,7 @@
                 </svg>
               </button>
               <button
-                *ngIf="isAdmin()"
+                *ngIf="isAdmin() || isContratista()"
                 class="icon-btn"
                 title="Cambiar obra"
                 (click)="$event.stopPropagation(); abrirCambiarObra(w)"
@@ -210,6 +213,14 @@
           </ng-container>
         </div>
         <div class="filter-row" *ngIf="isAdmin()">
+          <label class="fb-toggle">
+            <input type="checkbox" [(ngModel)]="soloSinEmo" (change)="loadWorkers(1)" />
+            <span>Sin EMO</span>
+          </label>
+          <label class="fb-toggle">
+            <input type="checkbox" [(ngModel)]="soloEmoVencido" (change)="loadWorkers(1)" />
+            <span>EMO Vencido</span>
+          </label>
           <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
             <option value="">Todos los estados</option>
             <option value="Habilitado">Habilitado</option>
@@ -231,7 +242,7 @@
             <app-search-select
               [options]="catalogoEmpresas"
               valueField="id"
-              displayField="nombre"
+              displayField="razonSocial"
               [value]="filtroEmpresaId"
               [showLabel]="false"
               placeholder="Todas las razones sociales"
@@ -728,3 +739,8 @@
   (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
   (saved)="onProgramarEmoSaved()"
 ></app-programacion-create>
+<app-emos-programados
+  *ngIf="mostrarEmosProgramados"
+  [proyectos]="catalogoProyectos"
+  (closed)="mostrarEmosProgramados = false">
+</app-emos-programados>

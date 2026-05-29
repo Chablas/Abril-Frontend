@@ -3,6 +3,7 @@ export interface ProgramacionClinicaDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
+  ocupacion?: string | null;
   tipoEmo: string;
   tipoEmoId?: number;
   empresa: string;
@@ -16,6 +17,21 @@ export interface ProgramacionClinicaDto {
   checkInHora: string | null;
   motivoRechazo: string | null;
   emoResultadoId: number | null;
+  fechaVencimientoEmo?: string | null;
+  categoria?: string | null;
+  tipoTrabajador?: string | null;
+  interconsultaEstado?: string;
+}
+
+export interface ClinicaInterconsultaCreateDto {
+  workerId: number;
+  especialidad: string;
+  programacionId: number;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  medicoDerivaId?: number;
+  requiereSeguimiento: boolean;
 }
 
 export interface ClinicaAccionDto {
@@ -24,6 +40,8 @@ export interface ClinicaAccionDto {
   motivoRechazo?: string;
   checkInHora?: string;
   emoResultadoId?: number;
+  fechaNueva?: string;
+  horaNueva?: string;
 }
 
 export type EstadoProgramacionClinica =

@@ -1,6 +1,7 @@
 import { HttpParams } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 
+export const SSOMA_BASE = `${environment.apiUrl}api/v1/ssoma`;
 export const SALUD_OCUPACIONAL_BASE = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
 
 export function buildAuthHeaders(): Record<string, string> {

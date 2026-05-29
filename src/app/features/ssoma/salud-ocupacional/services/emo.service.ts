@@ -46,10 +46,32 @@ export class EmoService {
     });
   }
 
-  createEmo(dto: EmoCreateDto): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, dto, {
-      headers: buildAuthHeaders(),
-    });
+  createEmo(
+    dto: EmoCreateDto,
+    archivoLectura?: File | null,
+  ): Observable<{ id: number; message: string; interconsultaId?: number }> {
+    const fd = new FormData();
+
+    fd.append('workerId', dto.workerId.toString());
+    fd.append('tipoEmoId', dto.tipoEmoId.toString());
+    if (dto.empresaOrigenId != null) fd.append('empresaOrigenId', dto.empresaOrigenId.toString());
+    fd.append('fechaEmo', dto.fechaEmo);
+    fd.append('aptitud', dto.aptitud);
+    fd.append('requiereInterconsulta', dto.requiereInterconsulta.toString());
+    if (dto.clinicaId != null)    fd.append('clinicaId', dto.clinicaId.toString());
+    if (dto.medicoId != null)     fd.append('medicoId', dto.medicoId.toString());
+    if (dto.numeroInforme)        fd.append('numeroInforme', dto.numeroInforme);
+    if (dto.urlResultado)         fd.append('urlResultado', dto.urlResultado);
+    if (dto.notas)                fd.append('notas', dto.notas);
+    if (dto.fechaLectura)         fd.append('fechaLectura', dto.fechaLectura);
+    if (dto.examenes?.length)     fd.append('examenes', JSON.stringify(dto.examenes));
+    if (dto.restricciones?.length) fd.append('restricciones', JSON.stringify(dto.restricciones));
+    if (dto.interconsultaInline)  fd.append('interconsultaInline', JSON.stringify(dto.interconsultaInline));
+    if (archivoLectura)           fd.append('archivoLectura', archivoLectura, archivoLectura.name);
+
+    return this.http.post<{ id: number; message: string; interconsultaId?: number }>(
+      this.apiUrl, fd, { headers: buildAuthHeaders() },
+    );
   }
 
   updateEmo(id: number, dto: Partial<EmoCreateDto>): Observable<EmoDetalleDto> {
