@@ -21,7 +21,6 @@ export interface ProgramacionClinicaDto {
   categoria?: string | null;
   tipoTrabajador?: string | null;
   interconsultaEstado?: string;
-  razonSocial?: string | null;
   proyecto?: string | null;
 }
 

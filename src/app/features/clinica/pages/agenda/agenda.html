@@ -153,9 +153,9 @@
           </div>
 
           <!-- empresa / proyecto -->
-          <div class="card-meta-row" *ngIf="item.razonSocial || item.proyecto">
-            <span class="card-meta-item" *ngIf="item.razonSocial">🏢 {{ item.razonSocial }}</span>
-            <span class="card-meta-sep" *ngIf="item.razonSocial && item.proyecto">·</span>
+          <div class="card-meta-row" *ngIf="item.empresa || item.proyecto">
+            <span class="card-meta-item" *ngIf="item.empresa">🏢 {{ item.empresa }}</span>
+            <span class="card-meta-sep" *ngIf="item.empresa && item.proyecto">·</span>
             <span class="card-meta-item" *ngIf="item.proyecto">📁 {{ item.proyecto }}</span>
           </div>
 
