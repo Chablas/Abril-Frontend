@@ -2716,11 +2716,11 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 
 ## Sesión 2026-05-26 — Cronograma de Actividades + Ajustes Dashboard
 
-### 1. Nueva feature: Cronograma de Actividades
+### 1. Cronograma de Actividades
 
 Módulo completo para gestionar actividades de la tabla `project_activity`.
 
-**Archivos creados:**
+**Archivos:**
 
 - `core/services/cronograma-actividades.service.ts`
 - `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
@@ -2734,13 +2734,35 @@ POST   /api/v1/cronograma-actividades/{proyectoId}/actividades
 PUT    /api/v1/cronograma-actividades/actividades/{id}
 PATCH  /api/v1/cronograma-actividades/actividades/{id}/culminar
 DELETE /api/v1/cronograma-actividades/actividades/{id}
+POST   /api/v1/cronograma-actividades/{proyectoId}/importar-mpp   (FormData: archivo)
 ```
 
-**DTOs:** `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`, `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order }`.
+**DTOs:**
+- `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`
+- `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order, hierarchyLevel, parentId }`
 
-**Funcionalidad:** dropdown de proyectos, tabla con barra de avance coloreada (verde/azul/amarillo/rojo por umbral), badges de estado (CULMINADO/VENCIDO/EN PROCESO/PENDIENTE), modal crear/editar con slider, botón culminar/desculminar, eliminar con Swal.
+**Funcionalidad:**
+- Dropdown de proyectos → carga actividades en tabla.
+- **Avance**: `getAvance(act)` devuelve `100` si `actualEndDate != null`, o `progressPercentage` si no. Barra coloreada verde/azul/amarillo/rojo por umbral.
+- **Estado**: badges CULMINADO / VENCIDO / EN PROCESO / PENDIENTE.
+- **Clic en fila** → abre modal "Editar Actividad". No hay columna de botones de acción.
+- **Modal Editar**: footer `[Eliminar] [Culminar/Desculminar] [Cancelar] [Guardar]`. Eliminar alineado a la izquierda (btn-danger, margin-right:auto). Culminar/Desculminar con btn-ghost-verde.
+- **Modal Crear**: footer solo `[Cancelar] [Guardar]`.
+- **Importar desde MS Project**: botón visible para roles `ADMINISTRADOR DE UDP` o `ADMINISTRADOR DE RESIDENTES` (`esAdmin` getter con `authService.hasRole`). Modal con `<input type="file" accept=".mpp">`. Si el proyecto ya tiene actividades, Swal de confirmación antes de llamar al backend. Spinner mientras procesa. Al completar: cerrar modal, recargar tabla, Swal éxito.
 
-**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
+**Jerarquía visual:**
+- `ActividadDto` trae `hierarchyLevel` y `parentId` del backend (en orden correcto: padres antes que hijos).
+- `buildParentIds()` → `Set<number>` de IDs que son padres (para `hasChildren()` en O(1)).
+- `buildColorMap()` → `Map<id, color>` construido al cargar:
+  - Nivel 0 → color fijo `#4F46E5` (indigo).
+  - Nivel 1 → paleta `['#0891B2','#059669','#D97706','#DC2626','#7C3AED','#DB2777']` asignada por orden de aparición.
+  - Nivel 2+ → hereda color del ancestro de nivel 1 más cercano (`findLevel1Color()` recursivo).
+- `getRowStyle(act)` → `{ background-color, color }` por nivel: 0/1 texto blanco sólido; 2+ fondo `color+'26'` (15% opacidad) + texto en el color del nivel-1.
+- Filas con `[class.row-colored]` (niveles 0–1) y `[class.row-tinted]` (nivel 2+). CSS `.row-colored td { color: inherit }` fuerza herencia en todas las celdas; badges mantienen su propio color (especificidad propia).
+- **Collapse/expand**: chevron ∨ (expandido) / > (colapsado, rotación CSS -90°). `collapsedIds: Set<number>`. `isVisible(act)` recursivo: sube por `parentId` hasta que ningún ancestro esté en `collapsedIds`. `toggleCollapse(act, event)` con `stopPropagation()`.
+- Estado de jerarquía (`collapsedIds`, `parentIds`, `colorMap`) se limpia al cambiar de proyecto.
+
+**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Roles permitidos en ruta: `USUARIO DE UDP`, `ADMINISTRADOR DE UDP`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
 
 ### 2. SearchSelect — ajuste de texto
 

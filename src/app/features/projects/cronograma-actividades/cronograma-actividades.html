@@ -57,12 +57,22 @@
       <span class="toolbar-info">
         {{ actividades.length }} actividad{{ actividades.length !== 1 ? 'es' : '' }}
       </span>
-      <button class="btn-primary" (click)="abrirModalCrear()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:0.3rem;flex-shrink:0">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Nueva Actividad
-      </button>
+      <div class="toolbar-actions">
+        <button *ngIf="esAdmin" class="btn-secondary" (click)="abrirModalMpp()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.35rem;flex-shrink:0">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Importar desde MS Project
+        </button>
+        <button class="btn-primary" (click)="abrirModalCrear()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:0.3rem;flex-shrink:0">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Nueva Actividad
+        </button>
+      </div>
     </div>
 
     <!-- Estado vacío (sin actividades) -->
@@ -96,13 +106,40 @@
             <th class="col-fecha">Fin Real</th>
             <th class="col-avance">Avance</th>
             <th class="col-estado">Estado</th>
-            <th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let act of actividades">
+          <ng-container *ngFor="let act of actividades">
+          <tr
+            *ngIf="isVisible(act)"
+            class="row-clickable"
+            [class.row-colored]="act.hierarchyLevel <= 1"
+            [class.row-tinted]="act.hierarchyLevel >= 2"
+            [ngStyle]="getRowStyle(act)"
+            (click)="abrirModalEditar(act)"
+          >
             <td class="td-order">{{ act.order }}</td>
-            <td class="td-actividad">{{ act.activityDescription }}</td>
+            <td class="td-actividad">
+              <div class="actividad-cell" [style.padding-left.px]="act.hierarchyLevel * 20">
+                <button
+                  *ngIf="hasChildren(act)"
+                  class="btn-chevron"
+                  (click)="toggleCollapse(act, $event)"
+                  [title]="collapsedIds.has(act.projectActivityId) ? 'Expandir' : 'Colapsar'"
+                >
+                  <svg
+                    width="12" height="12" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2.5"
+                    class="chevron-icon"
+                    [class.chevron-collapsed]="collapsedIds.has(act.projectActivityId)"
+                  >
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <span *ngIf="!hasChildren(act)" class="chevron-spacer"></span>
+                <span>{{ act.activityDescription }}</span>
+              </div>
+            </td>
             <td class="td-fecha">{{ formatDate(act.plannedStartDate) }}</td>
             <td class="td-fecha">{{ formatDate(act.plannedEndDate) }}</td>
             <td class="td-fecha" [class.td-fecha-real]="act.actualEndDate">
@@ -113,11 +150,11 @@
                 <div class="avance-bar-bg">
                   <div
                     class="avance-bar-fill"
-                    [ngClass]="getAvanceColor(act.progressPercentage)"
-                    [style.width.%]="act.progressPercentage"
+                    [ngClass]="getAvanceColor(getAvance(act))"
+                    [style.width.%]="getAvance(act)"
                   ></div>
                 </div>
-                <span class="avance-pct">{{ act.progressPercentage }}%</span>
+                <span class="avance-pct">{{ getAvance(act) }}%</span>
               </div>
             </td>
             <td>
@@ -125,47 +162,56 @@
                 {{ getEstado(act).label }}
               </span>
             </td>
-            <td class="row-actions">
-              <!-- Culminar / desculminar -->
-              <button
-                class="btn-action"
-                [class.btn-action-done]="!!act.actualEndDate"
-                [class.btn-action-pending]="!act.actualEndDate"
-                [title]="act.actualEndDate ? 'Quitar culminación' : 'Marcar como culminado'"
-                (click)="culminar(act)"
-              >
-                <svg *ngIf="act.actualEndDate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                <svg *ngIf="!act.actualEndDate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9"/>
-                  <polyline points="16 10 11 15 8 12"/>
-                </svg>
-              </button>
-              <!-- Editar -->
-              <button class="btn-action btn-action-edit" title="Editar" (click)="abrirModalEditar(act)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
-              <!-- Eliminar -->
-              <button class="btn-action btn-action-delete" title="Eliminar" (click)="eliminar(act)">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              </button>
-            </td>
           </tr>
+          </ng-container>
         </tbody>
       </table>
     </div>
 
   </div>
 
+</div>
+
+<!-- ── Modal importar MPP ── -->
+<div class="modal-overlay" *ngIf="mppModalOpen" (click)="onMppOverlayClick($event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 class="modal-title">Importar desde MS Project</h3>
+      <button class="btn-modal-close" (click)="cerrarModalMpp()" [disabled]="importando" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Archivo MS Project (.mpp) *</label>
+        <input
+          type="file"
+          class="field-input"
+          accept=".mpp"
+          (change)="onMppFileChange($event)"
+          [disabled]="importando"
+        />
+        <span class="field-hint" *ngIf="mppFile">{{ mppFile.name }}</span>
+      </div>
+
+      <div class="mpp-importing" *ngIf="importando">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p class="loading-text">Procesando archivo, por favor espere...</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cerrarModalMpp()" [disabled]="importando">Cancelar</button>
+      <button class="btn-primary" (click)="importarMpp()" [disabled]="!mppFile || importando">
+        {{ importando ? 'Importando...' : 'Importar' }}
+      </button>
+    </div>
+
+  </div>
 </div>
 
 <!-- ── Modal crear / editar ── -->
@@ -246,6 +292,22 @@
     </div>
 
     <div class="modal-footer">
+      <button
+        *ngIf="modalMode === 'editar'"
+        class="btn-danger modal-btn-left"
+        (click)="eliminarDesdeModal()"
+        [disabled]="guardando"
+      >
+        Eliminar
+      </button>
+      <button
+        *ngIf="modalMode === 'editar'"
+        class="btn-ghost-verde"
+        (click)="culminarDesdeModal()"
+        [disabled]="guardando"
+      >
+        {{ editandoAct?.actualEndDate ? 'Desculminar' : 'Culminar' }}
+      </button>
       <button class="btn-ghost" (click)="cerrarModal()" [disabled]="guardando">Cancelar</button>
       <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
         {{ guardando ? 'Guardando...' : 'Guardar' }}

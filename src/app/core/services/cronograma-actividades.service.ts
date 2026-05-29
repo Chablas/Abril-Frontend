@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -18,6 +18,8 @@ export interface ActividadDto {
   actualEndDate: string | null;
   progressPercentage: number;
   order: number;
+  hierarchyLevel: number;
+  parentId: number | null;
 }
 
 export interface CrearActividadRequest {
@@ -82,5 +84,13 @@ export class CronogramaActividadesService {
     return this.http.delete<void>(`${this.base}/actividades/${id}`, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  importarMpp(proyectoId: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token ?? ''}` });
+    return this.http.post(`${this.base}/${proyectoId}/importar-mpp`, formData, { headers });
   }
 }
