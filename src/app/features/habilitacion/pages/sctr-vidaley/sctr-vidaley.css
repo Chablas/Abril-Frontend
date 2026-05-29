@@ -789,6 +789,7 @@
 .badge-aprobado,
 .badge-enviado,
 .badge-rechazado,
+.badge-revision,
 .badge-falta {
   display: inline-flex;
   align-items: center;
@@ -801,6 +802,7 @@
 .badge-aprobado  { background: #dcfce7; color: #166534; }
 .badge-enviado   { background: #fef3c7; color: #b45309; }
 .badge-rechazado { background: #fee2e2; color: #b91c1c; }
+.badge-revision  { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 .badge-falta     { background: #f3f4f6; color: #4b5563; }
 
 /* ── Inline worker actions ────────────────────────────────── */
