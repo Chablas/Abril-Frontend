@@ -10,7 +10,6 @@ import {
   AreaItemEditDto,
   AreaItemSimpleDto,
   AreaItemFilterDto,
-  AreaItemTreeDto,
 } from '../dtos/areaItem.model';
 
 @Injectable({ providedIn: 'root' })
@@ -28,8 +27,6 @@ export class AreaItemService {
     let params = new HttpParams().set('page', filter.page.toString());
     if (filter.pageSize != null) params = params.set('pageSize', filter.pageSize.toString());
     if (filter.areaTypeId != null) params = params.set('areaTypeId', filter.areaTypeId.toString());
-    if (filter.areaItemParentId != null)
-      params = params.set('areaItemParentId', filter.areaItemParentId.toString());
     if (filter.active != null) params = params.set('active', String(filter.active));
     if (filter.search) params = params.set('search', filter.search);
 
@@ -43,15 +40,6 @@ export class AreaItemService {
     let params = new HttpParams();
     if (areaTypeId != null) params = params.set('areaTypeId', areaTypeId.toString());
     return this.http.get<AreaItemSimpleDto[]>(`${this.apiUrl}/simple`, {
-      params,
-      headers: this.authHeaders(),
-    });
-  }
-
-  getTree(areaTypeId?: number | null): Observable<AreaItemTreeDto[]> {
-    let params = new HttpParams();
-    if (areaTypeId != null) params = params.set('areaTypeId', areaTypeId.toString());
-    return this.http.get<AreaItemTreeDto[]>(`${this.apiUrl}/tree`, {
       params,
       headers: this.authHeaders(),
     });

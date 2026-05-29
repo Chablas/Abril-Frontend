@@ -38,7 +38,7 @@ export class Areas implements OnInit {
     this.loaderService.show();
     this.lessonAreaService.getAll().subscribe({
       next: (data) => {
-        // Solo mostramos áreas habilitadas en lesson_area (active = true)
+        // Solo ramas habilitadas en lesson_area (active = true)
         this.rows = data.filter((r) => r.active && r.lessonAreaId != null);
         this.loaderService.hide();
       },
@@ -52,11 +52,12 @@ export class Areas implements OnInit {
   get filteredRows(): LessonAreaConfigItemDto[] {
     const term = this.searchText.trim().toLowerCase();
     if (!term) return this.rows;
-    return this.rows.filter(
-      (a) =>
-        a.areaItemName.toLowerCase().includes(term) ||
-        a.areaTypeName.toLowerCase().includes(term) ||
-        (a.parentName?.toLowerCase().includes(term) ?? false),
+    return this.rows.filter((r) =>
+      r.path.some(
+        (s) =>
+          s.areaItemName.toLowerCase().includes(term) ||
+          s.areaTypeName.toLowerCase().includes(term),
+      ),
     );
   }
 
@@ -64,7 +65,7 @@ export class Areas implements OnInit {
     event.stopPropagation();
     if (row.lessonAreaId == null) return;
     this.scopeLessonAreaId = row.lessonAreaId;
-    this.scopeEntityName = row.areaItemName;
+    this.scopeEntityName = row.path.map((s) => s.areaItemName).join(' > ');
     this.showScopeModal = true;
     this.cdr.detectChanges();
   }

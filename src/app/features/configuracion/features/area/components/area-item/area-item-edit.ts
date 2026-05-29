@@ -10,7 +10,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AreaTypeService } from '../../services/area-type.service';
 import { AreaItemService } from '../../services/area-item.service';
 import { AreaTypeSimpleDto } from '../../dtos/areaType.model';
-import { AreaItemEditDto, AreaItemSimpleDto } from '../../dtos/areaItem.model';
+import { AreaItemEditDto } from '../../dtos/areaItem.model';
 
 @Component({
   selector: 'app-area-item-edit',
@@ -29,7 +29,6 @@ export class AreaItemEdit implements OnInit {
   ];
 
   areaTypes: AreaTypeSimpleDto[] = [];
-  parentOptions: AreaItemSimpleDto[] = [];
 
   constructor(
     private areaTypeService: AreaTypeService,
@@ -43,31 +42,18 @@ export class AreaItemEdit implements OnInit {
     this.areaTypeService.getSimple().subscribe({
       next: (data) => {
         this.areaTypes = data;
-        this.loadParentOptions();
-      },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
-  }
-
-  onTypeChange(): void {
-    this.dto.areaItemParentId = null;
-    this.loadParentOptions();
-  }
-
-  private loadParentOptions(): void {
-    this.areaItemService.getSimple(this.dto.areaTypeId || null).subscribe({
-      next: (data) => {
-        // No permitir seleccionarse a sí mismo como padre
-        this.parentOptions = data.filter((p) => p.areaItemId !== this.dto.areaItemId);
         this.loaderService.hide();
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 
   save(): void {
     if (!this.dto.areaItemName.trim()) {
-      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese la descripción.' });
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese el nombre de área.' });
       return;
     }
     if (!this.dto.areaTypeId) {

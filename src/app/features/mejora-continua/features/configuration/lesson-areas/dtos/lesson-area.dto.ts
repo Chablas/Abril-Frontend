@@ -1,9 +1,12 @@
-export interface LessonAreaConfigItemDto {
-  lessonAreaId: number | null;
-  areaItemId: number;
+export interface LessonAreaSegmentDto {
   areaItemName: string;
   areaTypeName: string;
-  parentName: string | null;
+}
+
+export interface LessonAreaConfigItemDto {
+  lessonAreaId: number | null;
+  areaScopeId: number;
+  path: LessonAreaSegmentDto[];
   active: boolean;
 }
 

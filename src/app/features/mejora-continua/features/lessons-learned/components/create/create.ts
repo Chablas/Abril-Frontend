@@ -6,14 +6,18 @@ import { FileSelector, SelectedFile } from '../../../../../../shared/components/
 import { ImagePreview } from '../../../../../../shared/components/image-preview/image-preview';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LeccionesAprendidasService } from '../../services/lecciones-aprendidas.service';
-import { SubAreaService } from '../../../configuration/areas-subareas/services/subarea.service';
-import { SubAreaSimpleDTO } from '../../../configuration/areas-subareas/dtos/subAreaSimple.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LessonFiltersDTO } from '../../dtos/lessonFilters.model';
 import { ScopeItemDTO } from '../../dtos/scope-item.model';
+import { LessonAreaConfigItemDto } from '../../../configuration/lesson-areas/dtos/lesson-area.dto';
 import Swal from 'sweetalert2';
+
+interface LessonAreaOption {
+  lessonAreaId: number;
+  label: string;
+}
 
 @Component({
   selector: 'app-create-lesson',
@@ -26,15 +30,13 @@ export class CreateLesson implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  // Ubicacion
+  // Ubicación
   projectId: number = 0;
-  areaId: number = 0;
-  subAreaId: number | undefined = undefined;
-  subAreas: SubAreaSimpleDTO[] = [];
-  private allSubAreas: SubAreaSimpleDTO[] = [];
+  lessonAreaId: number = 0;
+  lessonAreaOptions: LessonAreaOption[] = [];
 
   // Árbol de scope genérico
-  // Cada índice representa un nivel: levels[0] = fases, levels[1] = etapas del fase seleccionada, etc.
+  // Cada índice representa un nivel: levels[0] = primer nivel, etc.
   scopeLevels: ScopeItemDTO[][] = [];
   selectedScopeItems: (ScopeItemDTO | undefined)[] = [];
 
@@ -52,13 +54,12 @@ export class CreateLesson implements OnInit {
 
   constructor(
     private lessonService: LeccionesAprendidasService,
-    private subAreaService: SubAreaService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
-    this.loadAllSubAreas();
+    this.loadLessonAreas();
   }
 
   // ── Helpers de árbol ────────────────────────────────────────────────────────
@@ -68,9 +69,8 @@ export class CreateLesson implements OnInit {
   }
 
   onScopeItemChange(levelIndex: number, selectedId: number | undefined): void {
-    // Encontrar el ítem seleccionado
     const selected = selectedId
-      ? this.scopeLevels[levelIndex]?.find(i => i.scopeItemId === selectedId)
+      ? this.scopeLevels[levelIndex]?.find((i) => i.scopeItemId === selectedId)
       : undefined;
 
     this.selectedScopeItems[levelIndex] = selected;
@@ -96,10 +96,29 @@ export class CreateLesson implements OnInit {
 
   // ── Carga de datos ───────────────────────────────────────────────────────────
 
-  private loadScopeData(): void {
-    if (!this.areaId) return;
+  private loadLessonAreas(): void {
     this.loaderService.show();
-    this.lessonService.getFiltersCreate(this.areaId, this.subAreaId).subscribe({
+    this.lessonService.getLessonAreasWithScope().subscribe({
+      next: (data: LessonAreaConfigItemDto[]) => {
+        this.lessonAreaOptions = data
+          .filter((d) => d.lessonAreaId != null)
+          .map((d) => ({
+            lessonAreaId: d.lessonAreaId!,
+            label: d.path.map((s) => s.areaItemName).join(' > '),
+          }));
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private loadScopeData(): void {
+    if (!this.lessonAreaId) return;
+    this.loaderService.show();
+    this.lessonService.getFiltersCreate(this.lessonAreaId).subscribe({
       next: (tree) => {
         this.scopeLevels = tree?.length ? [tree] : [];
         this.selectedScopeItems = tree?.length ? [undefined] : [];
@@ -112,22 +131,7 @@ export class CreateLesson implements OnInit {
     });
   }
 
-  private loadAllSubAreas(): void {
-    this.subAreaService.getAllSubAreaSimple().subscribe({
-      next: (data) => (this.allSubAreas = data),
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
-  }
-
-  onAreaChange(): void {
-    this.subAreaId = undefined;
-    this.subAreas = this.areaId ? this.allSubAreas.filter(sa => sa.areaId === this.areaId) : [];
-    this.scopeLevels = [];
-    this.selectedScopeItems = [];
-    this.loadScopeData();
-  }
-
-  onSubAreaChange(): void {
+  onLessonAreaChange(): void {
     this.scopeLevels = [];
     this.selectedScopeItems = [];
     this.loadScopeData();
@@ -159,7 +163,7 @@ export class CreateLesson implements OnInit {
 
   submit(): void {
     if (!this.projectId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar proyecto' }); return; }
-    if (!this.areaId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar area' }); return; }
+    if (!this.lessonAreaId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar área' }); return; }
     if (!this.problemDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese una descripcion' }); return; }
     if (!this.reasonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese las causas' }); return; }
     if (!this.lessonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese la leccion aprendida' }); return; }
@@ -167,8 +171,7 @@ export class CreateLesson implements OnInit {
 
     const form = new FormData();
     form.append('ProjectId', String(this.projectId));
-    form.append('AreaId', String(this.areaId));
-    if (this.subAreaId) form.append('SubAreaId', String(this.subAreaId));
+    form.append('LessonAreaId', String(this.lessonAreaId));
 
     const catalogItemId = this.deepestSelectedCatalogItemId;
     if (catalogItemId) form.append('CatalogItemId', String(catalogItemId));
@@ -177,8 +180,8 @@ export class CreateLesson implements OnInit {
     form.append('ReasonDescription', this.reasonDescription);
     form.append('LessonDescription', this.lessonDescription);
     form.append('ImpactDescription', this.impactDescription);
-    this.opportunityFiles.forEach(f => form.append('OpportunityImages', f));
-    this.improvementFiles.forEach(f => form.append('ImprovementImages', f));
+    this.opportunityFiles.forEach((f) => form.append('OpportunityImages', f));
+    this.improvementFiles.forEach((f) => form.append('ImprovementImages', f));
 
     this.loaderService.show();
     this.lessonService.createLesson(form).subscribe({

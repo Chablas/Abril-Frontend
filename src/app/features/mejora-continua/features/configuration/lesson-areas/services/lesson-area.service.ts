@@ -19,9 +19,9 @@ export class LessonAreaService {
     return this.http.get<LessonAreaConfigItemDto[]>(this.apiUrl, { headers: this.authHeaders() });
   }
 
-  toggle(areaItemId: number): Observable<ToggleLessonAreaResultDto> {
+  toggle(areaScopeId: number): Observable<ToggleLessonAreaResultDto> {
     return this.http.put<ToggleLessonAreaResultDto>(
-      `${this.apiUrl}/toggle/${areaItemId}`,
+      `${this.apiUrl}/toggle/${areaScopeId}`,
       {},
       { headers: this.authHeaders() },
     );

@@ -1,0 +1,42 @@
+<div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
+  <table class="w-full">
+    <thead class="bg-[#E5F7D1]">
+      <tr class="text-[#64BC04]">
+        <th class="text-left px-[16px] py-[10px] font-semibold w-[80px]"></th>
+        <th class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+        <td class="px-[16px] py-[8px]">
+          <button class="cursor-pointer" title="Eliminar" (click)="delete(row)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="#D30000" />
+            </svg>
+          </button>
+        </td>
+        <td class="px-[16px] py-[8px] text-gray-700">
+          <span *ngFor="let seg of row.segments; let i = index; let last = last">
+            <span class="inline-flex items-center gap-1.5">
+              <span>{{ seg.name }}</span>
+              <span class="text-[0.6rem] bg-gray-100 text-gray-500 border border-gray-200 rounded px-1 py-0.5 whitespace-nowrap">
+                {{ seg.areaTypeName }}
+              </span>
+            </span>
+            <span *ngIf="!last" class="text-gray-400 mx-2">&rsaquo;</span>
+          </span>
+        </td>
+      </tr>
+      <tr *ngIf="rows.length === 0">
+        <td colspan="2" class="text-center py-8 text-gray-400 text-sm">
+          Sin relaciones. Crea una con el botón superior.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-area-scope-branch
+  *ngIf="showBranchModal"
+  (closeModal)="showBranchModal = false"
+  (saved)="onBranchSaved()" />

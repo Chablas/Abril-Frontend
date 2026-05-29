@@ -48,7 +48,6 @@ export class AreaItemList implements OnInit {
     areaItemId: 0,
     areaItemName: '',
     areaTypeId: 0,
-    areaItemParentId: null,
     active: true,
   };
   showEditModal = false;
@@ -66,9 +65,16 @@ export class AreaItemList implements OnInit {
   }
 
   loadAreaTypes(): void {
+    this.loaderService.show();
     this.areaTypeService.getSimple().subscribe({
-      next: (data) => (this.areaTypes = data),
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      next: (data) => {
+        this.areaTypes = data;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 
@@ -88,7 +94,10 @@ export class AreaItemList implements OnInit {
           this.pagedData.emit(res);
           this.loaderService.hide();
         },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
       });
   }
 
@@ -107,7 +116,6 @@ export class AreaItemList implements OnInit {
       areaItemId: item.areaItemId,
       areaItemName: item.areaItemName,
       areaTypeId: item.areaTypeId,
-      areaItemParentId: item.areaItemParentId ?? null,
       active: item.active,
     };
     this.showEditModal = true;

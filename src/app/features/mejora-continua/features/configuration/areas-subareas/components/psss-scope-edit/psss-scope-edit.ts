@@ -18,6 +18,7 @@ import { ErrorService } from '../../../../../../../core/services/error.service';
 import {
   ScopeService,
   ScopeTemplateDTO,
+  ScopeTemplateItemNodeDTO,
   ScopeItemDTO,
 } from '../../../scope/scope.service';
 import { CatalogService } from '../../../scope/catalog.service';
@@ -198,37 +199,103 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   }
 
   toggleAll(checked: boolean): void {
-    this.filteredItems.forEach((i) => this.setChecked(i, checked, false));
+    if (checked) {
+      for (const i of this.filteredItems) {
+        if (!i.checked) this.checkWithAncestors(i);
+      }
+    } else {
+      this.filteredItems.forEach((i) => this.uncheckItem(i));
+    }
     this.renumberSiblings();
     this.recomputeTree();
   }
 
   toggleCheck(item: FlatCatalogItem, checked: boolean): void {
-    this.setChecked(item, checked, true);
+    if (checked) {
+      this.checkWithAncestors(item);
+    } else {
+      this.uncheckItem(item);
+    }
+    this.renumberSiblings();
     this.recomputeTree();
   }
 
-  private setChecked(item: FlatCatalogItem, checked: boolean, renumber: boolean): void {
-    if (item.checked === checked) return;
-    if (checked) {
+  /**
+   * Marca el ítem y, si tiene plantilla de origen, también marca sus ancestros
+   * posicionándolos según la jerarquía de la plantilla. Los ítems ya marcados
+   * no se reposicionan (se respeta lo que el usuario ya ordenó).
+   */
+  private checkWithAncestors(item: FlatCatalogItem): void {
+    if (item.checked) return;
+
+    const tpl = this.findTemplateFor(item.catalogItemId);
+
+    // Sin plantilla con jerarquía → comportamiento original: agregar como raíz
+    if (!tpl) {
       item.checked = true;
       item.parentCatalogItemId = null;
-      const rootsCount = this.items.filter(
+      item.displayOrder = this.items.filter(
         (i) => i.checked && i !== item && i.parentCatalogItemId === null,
-      ).length;
-      item.displayOrder = rootsCount + 1;
-    } else {
-      const newParentId = item.parentCatalogItemId;
-      for (const child of this.items) {
-        if (child.checked && child.parentCatalogItemId === item.catalogItemId) {
-          child.parentCatalogItemId = newParentId;
-        }
-      }
-      item.checked = false;
-      item.parentCatalogItemId = null;
-      item.displayOrder = 0;
+      ).length + 1;
+      return;
     }
-    if (renumber) this.renumberSiblings();
+
+    // Construir cadena raíz→hoja del ítem dentro de la plantilla
+    const tplByCat = new Map<number, ScopeTemplateItemNodeDTO>();
+    tpl.items.forEach((ti) => tplByCat.set(ti.catalogItemId, ti));
+
+    const chain: number[] = [];
+    let cursor: number | null = item.catalogItemId;
+    let safety = 50;
+    while (cursor !== null && safety-- > 0) {
+      chain.push(cursor);
+      cursor = tplByCat.get(cursor)?.parentCatalogItemId ?? null;
+    }
+    chain.reverse(); // raíz primero
+
+    // Marcar lo que falte siguiendo la cadena
+    let prevCatId: number | null = null;
+    for (const catId of chain) {
+      const flat = this.items.find((i) => i.catalogItemId === catId);
+      if (!flat) {
+        prevCatId = catId;
+        continue;
+      }
+      if (!flat.checked) {
+        flat.checked = true;
+        flat.parentCatalogItemId = prevCatId;
+        flat.displayOrder = this.items.filter(
+          (i) => i.checked && i !== flat && i.parentCatalogItemId === prevCatId,
+        ).length + 1;
+      }
+      prevCatId = catId;
+    }
+  }
+
+  /** Plantilla a usar como fuente de jerarquía: la seleccionada como filtro, o la primera que contenga el ítem. */
+  private findTemplateFor(catalogItemId: number): ScopeTemplateDTO | null {
+    if (this.selectedTemplateId !== null) {
+      const tpl = this.templates.find((t) => t.scopeTemplateId === this.selectedTemplateId);
+      if (tpl && tpl.items.some((i) => i.catalogItemId === catalogItemId)) return tpl;
+    }
+    for (const t of this.templates) {
+      if (t.items.some((i) => i.catalogItemId === catalogItemId)) return t;
+    }
+    return null;
+  }
+
+  private uncheckItem(item: FlatCatalogItem): void {
+    if (!item.checked) return;
+    // Reparenta hijos al padre del ítem que se quita
+    const newParentId = item.parentCatalogItemId;
+    for (const child of this.items) {
+      if (child.checked && child.parentCatalogItemId === item.catalogItemId) {
+        child.parentCatalogItemId = newParentId;
+      }
+    }
+    item.checked = false;
+    item.parentCatalogItemId = null;
+    item.displayOrder = 0;
   }
 
   trackByItemId(_: number, item: FlatCatalogItem): number {
@@ -296,7 +363,8 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   }
 
   removeFromTree(item: FlatCatalogItem): void {
-    this.setChecked(item, false, true);
+    this.uncheckItem(item);
+    this.renumberSiblings();
     this.recomputeTree();
   }
 

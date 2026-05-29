@@ -1,6 +1,7 @@
 import { Component, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
+import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { AreaTypeDto } from '../dtos/areaType.model';
 import { AreaItemDto } from '../dtos/areaItem.model';
@@ -8,17 +9,37 @@ import { AreaTypeList } from './area-type/area-type-list';
 import { AreaTypeCreate } from './area-type/area-type-create';
 import { AreaItemList } from './area-item/area-item-list';
 import { AreaItemCreate } from './area-item/area-item-create';
+import { AreaScopeList } from './area-scope/area-scope-list';
+
+type AreaSection = 'items' | 'scope' | 'types';
 
 @Component({
   selector: 'app-area',
   standalone: true,
-  imports: [CommonModule, Paginator, AreaTypeList, AreaTypeCreate, AreaItemList, AreaItemCreate],
+  imports: [
+    CommonModule,
+    Paginator,
+    SectionTabs,
+    AreaTypeList,
+    AreaTypeCreate,
+    AreaItemList,
+    AreaItemCreate,
+    AreaScopeList,
+  ],
   templateUrl: './area.html',
   styleUrl: './area.css',
 })
 export class Area {
   @ViewChild(AreaTypeList) typeList!: AreaTypeList;
   @ViewChild(AreaItemList) itemList!: AreaItemList;
+  @ViewChild(AreaScopeList) scopeList!: AreaScopeList;
+
+  activeSection: AreaSection = 'items';
+  readonly sectionTabs: SectionTab[] = [
+    { id: 'items', label: 'Áreas' },
+    { id: 'scope', label: 'Jerarquía' },
+    { id: 'types', label: 'Tipos de área' },
+  ];
 
   // Pagination state — tipos
   typePage = 1;
@@ -35,6 +56,10 @@ export class Area {
 
   constructor(private cdr: ChangeDetectorRef) {}
 
+  onSectionChange(id: string): void {
+    this.activeSection = id as AreaSection;
+  }
+
   openCreateType(event: MouseEvent) {
     event.stopPropagation();
     this.showCreateTypeModal = true;
@@ -45,6 +70,11 @@ export class Area {
     event.stopPropagation();
     this.showCreateItemModal = true;
     this.cdr.detectChanges();
+  }
+
+  openCreateScope(event: MouseEvent) {
+    event.stopPropagation();
+    this.scopeList?.openCreateBranch();
   }
 
   onTypePaged(data: PagedResponseDTO<AreaTypeDto>) {
@@ -70,18 +100,17 @@ export class Area {
   onTypeCreated() {
     this.showCreateTypeModal = false;
     this.typeList.load(this.typePage || 1);
-    // Refrescar lista de items por si los desplegables muestran tipos
-    this.itemList.loadAreaTypes();
+    this.itemList?.loadAreaTypes();
   }
 
   onItemCreated() {
     this.showCreateItemModal = false;
     this.itemList.load(this.itemPage || 1);
+    this.scopeList?.load();
   }
 
-  // Si se cambia/elimina un tipo, refrescar items (descripciones de tipo)
   onTypesChanged() {
-    this.itemList.loadAreaTypes();
-    this.itemList.load(this.itemPage || 1);
+    this.itemList?.loadAreaTypes();
+    this.itemList?.load(this.itemPage || 1);
   }
 }

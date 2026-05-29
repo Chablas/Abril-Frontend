@@ -5,18 +5,11 @@
     <div>
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Ubicacion</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <app-search-select label="Area" [options]="filtersData.areas" valueField="areaId"
-          displayField="areaDescription" [value]="areaId"
-          (valueChange)="areaId = $event; onAreaChange()" />
-        <div *ngIf="subAreas.length">
-          <app-search-select label="Subárea" [options]="subAreas" valueField="subAreaId"
-            displayField="subAreaDescription" [value]="subAreaId"
-            (valueChange)="subAreaId = $event; onSubAreaChange()" />
-        </div>
-        <div class="sm:col-start-1">
-          <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
-            displayField="projectDescription" [(value)]="projectId" />
-        </div>
+        <app-search-select label="Área" [options]="lessonAreaOptions" valueField="lessonAreaId"
+          displayField="label" [value]="lessonAreaId"
+          (valueChange)="lessonAreaId = $event; onLessonAreaChange()" />
+        <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
+          displayField="projectDescription" [(value)]="projectId" />
       </div>
     </div>
 

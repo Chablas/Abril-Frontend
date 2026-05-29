@@ -15,7 +15,7 @@ import { ErrorService } from '../../../../../core/services/error.service';
   templateUrl: './lesson-areas.html',
 })
 export class LessonAreas implements OnInit {
-  areas: LessonAreaConfigItemDto[] = [];
+  rows: LessonAreaConfigItemDto[] = [];
   searchText = '';
 
   constructor(
@@ -32,7 +32,7 @@ export class LessonAreas implements OnInit {
     this.loaderService.show();
     this.service.getAll().subscribe({
       next: (data) => {
-        this.areas = data;
+        this.rows = data;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -44,7 +44,7 @@ export class LessonAreas implements OnInit {
 
   toggle(item: LessonAreaConfigItemDto): void {
     this.loaderService.show();
-    this.service.toggle(item.areaItemId).subscribe({
+    this.service.toggle(item.areaScopeId).subscribe({
       next: (res) => {
         this.loaderService.hide();
         item.active = res.active;
@@ -57,14 +57,15 @@ export class LessonAreas implements OnInit {
     });
   }
 
-  get filteredAreas(): LessonAreaConfigItemDto[] {
+  get filteredRows(): LessonAreaConfigItemDto[] {
     const term = this.searchText.trim().toLowerCase();
-    if (!term) return this.areas;
-    return this.areas.filter(
-      (a) =>
-        a.areaItemName.toLowerCase().includes(term) ||
-        a.areaTypeName.toLowerCase().includes(term) ||
-        (a.parentName?.toLowerCase().includes(term) ?? false),
+    if (!term) return this.rows;
+    return this.rows.filter((r) =>
+      r.path.some(
+        (s) =>
+          s.areaItemName.toLowerCase().includes(term) ||
+          s.areaTypeName.toLowerCase().includes(term),
+      ),
     );
   }
 }
