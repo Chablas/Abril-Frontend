@@ -24,17 +24,28 @@ import {
 import { CatalogService } from '../../../scope/catalog.service';
 import Swal from 'sweetalert2';
 
-interface FlatCatalogItem {
+// Entrada del catálogo (panel izquierdo). Cada catalog_item existe UNA sola vez
+// aquí; el "checked" se deriva de si hay >=1 nodo en el árbol que lo referencia.
+interface CatalogEntry {
   catalogItemId: number;
   catalogTypeName: string;
   description: string;
-  checked: boolean;
-  parentCatalogItemId: number | null;
+}
+
+// Un nodo del árbol de relaciones (scope). Un mismo catalogItemId puede
+// repetirse bajo padres distintos; cada repetición tiene su propio nodeId
+// único (= scope_item_id real, o temporal negativo si es un nodo nuevo).
+interface TemplateNode {
+  nodeId: number;
+  parentNodeId: number | null;
+  catalogItemId: number;
+  catalogTypeName: string;
+  description: string;
   displayOrder: number;
 }
 
 interface TreeNode {
-  item: FlatCatalogItem;
+  item: TemplateNode;
   depth: number;
   canUp: boolean;
   canDown: boolean;
@@ -66,19 +77,25 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
 
   @ViewChild('treeScroll') treeScrollRef?: ElementRef<HTMLElement>;
 
-  items: FlatCatalogItem[] = [];
+  // Panel izquierdo (catálogo)
+  catalog: CatalogEntry[] = [];
   templates: ScopeTemplateDTO[] = [];
   searchTerm = '';
   selectedTemplateId: number | null = null;
   loading = true;
+  filteredCatalog: CatalogEntry[] = [];
 
-  filteredItems: FlatCatalogItem[] = [];
+  // Panel derecho (árbol)
+  treeNodes: TemplateNode[] = [];
   visibleTree: TreeNode[] = [];
   visibleTreeRows: TreeRow[] = [];
 
-  draggedItem: FlatCatalogItem | null = null;
-  dropTargetId: number | null = null;
+  draggedNode: TemplateNode | null = null;
+  dropTargetNodeId: number | null = null;
   dropGapKey: string | null = null;
+
+  // Contador para nodeIds temporales (nodos nuevos no guardados)
+  private nextTempNodeId = -1;
 
   private scrollIntervalId: number | null = null;
   private scrollDirection = 0;
@@ -100,19 +117,18 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
       templates: this.scopeService.getTemplates(),
     }).subscribe({
       next: ({ catalog, scope, templates }) => {
-        const assignedMap = this.flattenScope(scope);
-        this.items = catalog.map((item) => {
-          const assigned = assignedMap.get(item.catalogItemId);
-          return {
-            catalogItemId: item.catalogItemId,
-            catalogTypeName: item.catalogTypeName,
-            description: item.catalogItemDescription,
-            checked: !!assigned,
-            parentCatalogItemId: assigned?.parentCatalogItemId ?? null,
-            displayOrder: assigned?.displayOrder ?? 0,
-          };
-        });
+        this.catalog = catalog.map((c) => ({
+          catalogItemId: c.catalogItemId,
+          catalogTypeName: c.catalogTypeName,
+          description: c.catalogItemDescription,
+        }));
         this.templates = templates;
+
+        // Aplanar el árbol del scope preservando IDs únicos por nodo.
+        // (scope_item_id es único; catalog_item_id puede repetirse bajo
+        // padres distintos.)
+        this.treeNodes = this.flattenScopeTree(scope);
+
         this.recomputeFiltered();
         this.recomputeTree();
         this.loading = false;
@@ -128,50 +144,51 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  private flattenScope(
-    items: ScopeItemDTO[],
-  ): Map<number, { parentCatalogItemId: number | null; displayOrder: number }> {
-    const result = new Map<
-      number,
-      { parentCatalogItemId: number | null; displayOrder: number }
-    >();
-    const idToCatalog = new Map<number, number>(); // scopeItemId → catalogItemId
-    const collectIds = (list: ScopeItemDTO[]) => {
-      for (const item of list) {
-        idToCatalog.set(item.scopeItemId, item.catalogItemId);
-        if (item.children?.length) collectIds(item.children);
-      }
-    };
-    collectIds(items);
-
+  private flattenScopeTree(items: ScopeItemDTO[]): TemplateNode[] {
+    const out: TemplateNode[] = [];
     const walk = (list: ScopeItemDTO[]) => {
       for (const item of list) {
-        const parentCatalogItemId = item.scopeItemParentId
-          ? idToCatalog.get(item.scopeItemParentId) ?? null
-          : null;
-        result.set(item.catalogItemId, {
-          parentCatalogItemId,
+        out.push({
+          nodeId: item.scopeItemId,
+          parentNodeId: item.scopeItemParentId ?? null,
+          catalogItemId: item.catalogItemId,
+          catalogTypeName: item.catalogTypeName,
+          description: item.catalogItemDescription,
           displayOrder: item.displayOrder,
         });
         if (item.children?.length) walk(item.children);
       }
     };
     walk(items);
-    return result;
+    return out;
   }
 
   // ── Catálogo (izq) ─────────────────────────────────────────────────────────
 
   get typeNames(): string[] {
-    return [...new Set(this.items.map((i) => i.catalogTypeName))].sort();
+    return [...new Set(this.catalog.map((c) => c.catalogTypeName))].sort();
   }
 
+  /** Cantidad de catalog_items distintos referenciados al menos una vez en el árbol. */
   get checkedCount(): number {
-    return this.items.filter((i) => i.checked).length;
+    return new Set(this.treeNodes.map((n) => n.catalogItemId)).size;
   }
 
   get totalCount(): number {
-    return this.items.length;
+    return this.catalog.length;
+  }
+
+  isCatalogChecked(catalogItemId: number): boolean {
+    return this.treeNodes.some((n) => n.catalogItemId === catalogItemId);
+  }
+
+  allFilteredChecked(): boolean {
+    if (this.filteredCatalog.length === 0) return false;
+    return this.filteredCatalog.every((c) => this.isCatalogChecked(c.catalogItemId));
+  }
+
+  someFilteredChecked(): boolean {
+    return this.filteredCatalog.some((c) => this.isCatalogChecked(c.catalogItemId));
   }
 
   selectTemplate(id: number | null): void {
@@ -185,64 +202,114 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   }
 
   private recomputeFiltered(): void {
-    let list = this.items;
+    let list = this.catalog;
     if (this.selectedTemplateId !== null) {
       const tpl = this.templates.find((t) => t.scopeTemplateId === this.selectedTemplateId);
       if (tpl) {
         const tplIds = new Set(tpl.items.map((i) => i.catalogItemId));
-        list = list.filter((i) => tplIds.has(i.catalogItemId));
+        list = list.filter((c) => tplIds.has(c.catalogItemId));
       }
     }
     const term = this.searchTerm.trim().toLowerCase();
-    if (term) list = list.filter((i) => i.description.toLowerCase().includes(term));
-    this.filteredItems = list;
+    if (term) list = list.filter((c) => c.description.toLowerCase().includes(term));
+    this.filteredCatalog = list;
   }
 
   toggleAll(checked: boolean): void {
     if (checked) {
-      for (const i of this.filteredItems) {
-        if (!i.checked) this.checkWithAncestors(i);
+      // Si hay una plantilla seleccionada, copiar su estructura COMPLETA al
+      // árbol del scope (preservando todos los duplicados). Esto es distinto a
+      // iterar por filteredCatalog (que solo agregaría UNA posición por
+      // catalog_item).
+      if (this.selectedTemplateId !== null) {
+        const tpl = this.templates.find((t) => t.scopeTemplateId === this.selectedTemplateId);
+        if (tpl) this.copyTemplateToScope(tpl);
+      } else {
+        for (const c of this.filteredCatalog) {
+          this.checkWithAncestors(c);
+        }
       }
     } else {
-      this.filteredItems.forEach((i) => this.uncheckItem(i));
-    }
-    this.renumberSiblings();
-    this.recomputeTree();
-  }
-
-  toggleCheck(item: FlatCatalogItem, checked: boolean): void {
-    if (checked) {
-      this.checkWithAncestors(item);
-    } else {
-      this.uncheckItem(item);
+      for (const c of this.filteredCatalog) {
+        this.uncheckCatalog(c);
+      }
     }
     this.renumberSiblings();
     this.recomputeTree();
   }
 
   /**
-   * Marca el ítem y, si tiene plantilla de origen, también marca sus ancestros
-   * posicionándolos según la jerarquía de la plantilla. Los ítems ya marcados
-   * no se reposicionan (se respeta lo que el usuario ya ordenó).
+   * Replica la estructura completa de una plantilla en el árbol del scope.
+   * Para cada nodo del template, busca un nodo equivalente en el scope (mismo
+   * catalog_item bajo el mismo padre) y lo reutiliza si existe; si no, crea
+   * uno nuevo. Esto preserva los duplicados de catalog_item bajo padres
+   * distintos en la plantilla.
    */
-  private checkWithAncestors(item: FlatCatalogItem): void {
-    if (item.checked) return;
+  private copyTemplateToScope(tpl: ScopeTemplateDTO): void {
+    const tplNodeToScopeNode = new Map<number, number>();
+    let pending = [...tpl.items];
+    let safety = pending.length + 5;
 
-    const tpl = this.findTemplateFor(item.catalogItemId);
+    while (pending.length > 0 && safety-- > 0) {
+      const ready = pending.filter(
+        (n) => !n.parentNodeId || tplNodeToScopeNode.has(n.parentNodeId),
+      );
+      if (ready.length === 0) break;
 
-    // Sin plantilla con jerarquía → comportamiento original: agregar como raíz
+      for (const tplNode of ready) {
+        const parentScopeNodeId = tplNode.parentNodeId
+          ? tplNodeToScopeNode.get(tplNode.parentNodeId) ?? null
+          : null;
+
+        // Si ya existe un nodo del scope con el mismo catalog_item bajo el
+        // mismo padre, reutilizarlo. Si no, crear uno nuevo.
+        const existing = this.treeNodes.find(
+          (n) => n.catalogItemId === tplNode.catalogItemId && n.parentNodeId === parentScopeNodeId,
+        );
+
+        if (existing) {
+          tplNodeToScopeNode.set(tplNode.nodeId, existing.nodeId);
+        } else {
+          const catalogEntry = this.catalog.find((c) => c.catalogItemId === tplNode.catalogItemId);
+          if (!catalogEntry) continue;
+          const newNode = this.addNewNode(catalogEntry, parentScopeNodeId);
+          tplNodeToScopeNode.set(tplNode.nodeId, newNode.nodeId);
+        }
+      }
+
+      pending = pending.filter((n) => !tplNodeToScopeNode.has(n.nodeId));
+    }
+  }
+
+  toggleCheck(c: CatalogEntry, checked: boolean): void {
+    if (checked) {
+      this.checkWithAncestors(c);
+    } else {
+      this.uncheckCatalog(c);
+    }
+    this.renumberSiblings();
+    this.recomputeTree();
+  }
+
+  /**
+   * Si el catalog_item no está en el árbol, lo agrega como un nuevo nodo. Si
+   * hay una plantilla que lo contiene, lo posiciona dentro del árbol siguiendo
+   * la cadena de ancestros de la plantilla (creando los ancestros como nodos
+   * nuevos también, en caso falten). Si el catalog_item ya está en el árbol
+   * (al menos una vez), no hace nada.
+   */
+  private checkWithAncestors(c: CatalogEntry): void {
+    if (this.isCatalogChecked(c.catalogItemId)) return;
+
+    const tpl = this.findTemplateFor(c.catalogItemId);
+
+    // Sin plantilla con jerarquía → agregar como raíz
     if (!tpl) {
-      item.checked = true;
-      item.parentCatalogItemId = null;
-      item.displayOrder = this.items.filter(
-        (i) => i.checked && i !== item && i.parentCatalogItemId === null,
-      ).length + 1;
+      this.addNewNode(c, null);
       return;
     }
 
     // Construir cadena raíz→hoja del ítem dentro de la plantilla.
-    // Un mismo catalog_item puede aparecer varias veces bajo padres distintos;
-    // si así fuese, se elige el primero (suficiente para el auto-arrange).
     const tplByNodeId = new Map<number, ScopeTemplateItemNodeDTO>();
     const firstNodeByCat = new Map<number, ScopeTemplateItemNodeDTO>();
     tpl.items.forEach((ti) => {
@@ -250,8 +317,11 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
       if (!firstNodeByCat.has(ti.catalogItemId)) firstNodeByCat.set(ti.catalogItemId, ti);
     });
 
-    const startNode = firstNodeByCat.get(item.catalogItemId);
-    if (!startNode) return;
+    const startNode = firstNodeByCat.get(c.catalogItemId);
+    if (!startNode) {
+      this.addNewNode(c, null);
+      return;
+    }
 
     const chain: number[] = [];
     let cursorNodeId: number | null = startNode.nodeId;
@@ -264,23 +334,43 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     }
     chain.reverse(); // raíz primero
 
-    // Marcar lo que falte siguiendo la cadena
-    let prevCatId: number | null = null;
+    // Marcar siguiendo la cadena; cada paso reutiliza el primer nodo existente
+    // con ese catalog_item bajo el padre que se está construyendo, o crea uno nuevo.
+    let prevNodeId: number | null = null;
     for (const catId of chain) {
-      const flat = this.items.find((i) => i.catalogItemId === catId);
-      if (!flat) {
-        prevCatId = catId;
+      const catalogEntry = this.catalog.find((x) => x.catalogItemId === catId);
+      if (!catalogEntry) {
+        // catalog_item de la plantilla pero no en el catálogo cargado — saltar
         continue;
       }
-      if (!flat.checked) {
-        flat.checked = true;
-        flat.parentCatalogItemId = prevCatId;
-        flat.displayOrder = this.items.filter(
-          (i) => i.checked && i !== flat && i.parentCatalogItemId === prevCatId,
-        ).length + 1;
+
+      // ¿Ya existe un nodo con ese catalog_item bajo este padre?
+      const existing = this.treeNodes.find(
+        (n) => n.catalogItemId === catId && n.parentNodeId === prevNodeId,
+      );
+
+      if (existing) {
+        prevNodeId = existing.nodeId;
+      } else {
+        const newNode = this.addNewNode(catalogEntry, prevNodeId);
+        prevNodeId = newNode.nodeId;
       }
-      prevCatId = catId;
     }
+  }
+
+  /** Agrega un nuevo nodo con un nodeId temporal y lo ubica al final de su nivel. */
+  private addNewNode(c: CatalogEntry, parentNodeId: number | null): TemplateNode {
+    const siblingsCount = this.treeNodes.filter((n) => n.parentNodeId === parentNodeId).length;
+    const newNode: TemplateNode = {
+      nodeId: this.nextTempNodeId--,
+      parentNodeId,
+      catalogItemId: c.catalogItemId,
+      catalogTypeName: c.catalogTypeName,
+      description: c.description,
+      displayOrder: siblingsCount + 1,
+    };
+    this.treeNodes.push(newNode);
+    return newNode;
   }
 
   /** Plantilla a usar como fuente de jerarquía: la seleccionada como filtro, o la primera que contenga el ítem. */
@@ -295,108 +385,112 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     return null;
   }
 
-  private uncheckItem(item: FlatCatalogItem): void {
-    if (!item.checked) return;
-    // Reparenta hijos al padre del ítem que se quita
-    const newParentId = item.parentCatalogItemId;
-    for (const child of this.items) {
-      if (child.checked && child.parentCatalogItemId === item.catalogItemId) {
-        child.parentCatalogItemId = newParentId;
+  /** Quita del árbol TODAS las instancias del catalog_item + sus descendientes. */
+  private uncheckCatalog(c: CatalogEntry): void {
+    const toRemove = new Set<number>();
+    for (const n of this.treeNodes) {
+      if (n.catalogItemId === c.catalogItemId) {
+        this.collectSubtreeIds(n.nodeId, toRemove);
       }
     }
-    item.checked = false;
-    item.parentCatalogItemId = null;
-    item.displayOrder = 0;
+    if (toRemove.size === 0) return;
+    this.treeNodes = this.treeNodes.filter((n) => !toRemove.has(n.nodeId));
   }
 
-  trackByItemId(_: number, item: FlatCatalogItem): number {
-    return item.catalogItemId;
+  private collectSubtreeIds(rootNodeId: number, acc: Set<number>): void {
+    if (acc.has(rootNodeId)) return;
+    acc.add(rootNodeId);
+    for (const n of this.treeNodes) {
+      if (n.parentNodeId === rootNodeId) this.collectSubtreeIds(n.nodeId, acc);
+    }
+  }
+
+  trackByCatalogId(_: number, c: CatalogEntry): number {
+    return c.catalogItemId;
   }
 
   // ── Árbol (der) ────────────────────────────────────────────────────────────
 
   trackByNode(_: number, node: TreeNode): number {
-    return node.item.catalogItemId;
+    return node.item.nodeId;
   }
 
   trackByRow(_: number, row: TreeRow): string {
-    return row.kind === 'node' && row.node
-      ? `n:${row.node.item.catalogItemId}`
-      : `g:${row.gapKey}`;
+    return row.kind === 'node' && row.node ? `n:${row.node.item.nodeId}` : `g:${row.gapKey}`;
   }
 
-  private getSiblings(item: FlatCatalogItem): FlatCatalogItem[] {
-    return this.items
-      .filter((i) => i.checked && i.parentCatalogItemId === item.parentCatalogItemId)
+  private getSiblings(node: TemplateNode): TemplateNode[] {
+    return this.treeNodes
+      .filter((n) => n.parentNodeId === node.parentNodeId)
       .sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
-  moveUp(item: FlatCatalogItem): void {
-    const siblings = this.getSiblings(item);
-    const idx = siblings.indexOf(item);
+  moveUp(node: TemplateNode): void {
+    const siblings = this.getSiblings(node);
+    const idx = siblings.indexOf(node);
     if (idx <= 0) return;
     const prev = siblings[idx - 1];
-    [item.displayOrder, prev.displayOrder] = [prev.displayOrder, item.displayOrder];
+    [node.displayOrder, prev.displayOrder] = [prev.displayOrder, node.displayOrder];
     this.recomputeTree();
   }
 
-  moveDown(item: FlatCatalogItem): void {
-    const siblings = this.getSiblings(item);
-    const idx = siblings.indexOf(item);
+  moveDown(node: TemplateNode): void {
+    const siblings = this.getSiblings(node);
+    const idx = siblings.indexOf(node);
     if (idx === -1 || idx >= siblings.length - 1) return;
     const next = siblings[idx + 1];
-    [item.displayOrder, next.displayOrder] = [next.displayOrder, item.displayOrder];
+    [node.displayOrder, next.displayOrder] = [next.displayOrder, node.displayOrder];
     this.recomputeTree();
   }
 
-  indent(item: FlatCatalogItem): void {
-    const siblings = this.getSiblings(item);
-    const idx = siblings.indexOf(item);
+  indent(node: TemplateNode): void {
+    const siblings = this.getSiblings(node);
+    const idx = siblings.indexOf(node);
     if (idx <= 0) return;
     const newParent = siblings[idx - 1];
-    item.parentCatalogItemId = newParent.catalogItemId;
-    const newSiblings = this.items.filter(
-      (i) => i.checked && i.parentCatalogItemId === newParent.catalogItemId && i !== item,
+    node.parentNodeId = newParent.nodeId;
+    const newSiblings = this.treeNodes.filter(
+      (n) => n.parentNodeId === newParent.nodeId && n !== node,
     );
-    item.displayOrder = newSiblings.length + 1;
+    node.displayOrder = newSiblings.length + 1;
     this.renumberSiblings();
     this.recomputeTree();
   }
 
-  outdent(item: FlatCatalogItem): void {
-    if (item.parentCatalogItemId === null) return;
-    const parent = this.items.find((i) => i.catalogItemId === item.parentCatalogItemId);
+  outdent(node: TemplateNode): void {
+    if (node.parentNodeId === null) return;
+    const parent = this.treeNodes.find((n) => n.nodeId === node.parentNodeId);
     if (!parent) return;
-    item.parentCatalogItemId = parent.parentCatalogItemId;
-    item.displayOrder = parent.displayOrder + 0.5;
+    node.parentNodeId = parent.parentNodeId;
+    node.displayOrder = parent.displayOrder + 0.5;
     this.renumberSiblings();
     this.recomputeTree();
   }
 
-  removeFromTree(item: FlatCatalogItem): void {
-    this.uncheckItem(item);
+  removeFromTree(node: TemplateNode): void {
+    const toRemove = new Set<number>();
+    this.collectSubtreeIds(node.nodeId, toRemove);
+    this.treeNodes = this.treeNodes.filter((n) => !toRemove.has(n.nodeId));
     this.renumberSiblings();
     this.recomputeTree();
   }
 
-  private maxSiblingOrder(parentId: number | null, exclude: FlatCatalogItem): number {
+  private maxSiblingOrder(parentId: number | null, exclude: TemplateNode): number {
     let max = 0;
-    for (const i of this.items) {
-      if (!i.checked) continue;
-      if (i === exclude) continue;
-      if (i.parentCatalogItemId !== parentId) continue;
-      if (i.displayOrder > max) max = i.displayOrder;
+    for (const n of this.treeNodes) {
+      if (n === exclude) continue;
+      if (n.parentNodeId !== parentId) continue;
+      if (n.displayOrder > max) max = n.displayOrder;
     }
     return max;
   }
 
   private renumberSiblings(): void {
-    const groups = new Map<number | null, FlatCatalogItem[]>();
-    for (const item of this.items) {
-      if (!item.checked) continue;
-      const key = item.parentCatalogItemId;
+    const groups = new Map<number | null, TemplateNode[]>();
+    for (const node of this.treeNodes) {
+      const key = node.parentNodeId;
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(item);
+      groups.get(key)!.push(node);
     }
     for (const [, siblings] of groups) {
       siblings.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -407,8 +501,8 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   private recomputeTree(): void {
     const result: TreeNode[] = [];
     const walk = (parentId: number | null, depth: number) => {
-      const siblings = this.items
-        .filter((i) => i.checked && i.parentCatalogItemId === parentId)
+      const siblings = this.treeNodes
+        .filter((n) => n.parentNodeId === parentId)
         .sort((a, b) => a.displayOrder - b.displayOrder);
       siblings.forEach((sib, idx) => {
         result.push({
@@ -419,7 +513,7 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
           canIndent: idx > 0,
           canOutdent: parentId !== null,
         });
-        walk(sib.catalogItemId, depth + 1);
+        walk(sib.nodeId, depth + 1);
       });
     };
     walk(null, 0);
@@ -427,12 +521,12 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
 
     const rows: TreeRow[] = [];
     for (const node of result) {
-      const gapKey = `${node.item.parentCatalogItemId ?? 'r'}:${node.item.catalogItemId}`;
+      const gapKey = `${node.item.parentNodeId ?? 'r'}:${node.item.nodeId}`;
       rows.push({
         kind: 'gap',
         node: null,
-        gapParentId: node.item.parentCatalogItemId,
-        gapBeforeId: node.item.catalogItemId,
+        gapParentId: node.item.parentNodeId,
+        gapBeforeId: node.item.nodeId,
         gapDepth: node.depth,
         gapKey,
       });
@@ -456,82 +550,82 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     this.visibleTreeRows = rows;
   }
 
-  isInDraggedSubtree(item: FlatCatalogItem): boolean {
-    if (!this.draggedItem) return false;
-    if (item.catalogItemId === this.draggedItem.catalogItemId) return true;
-    return this.isDescendantOf(item, this.draggedItem);
+  isInDraggedSubtree(node: TemplateNode): boolean {
+    if (!this.draggedNode) return false;
+    if (node.nodeId === this.draggedNode.nodeId) return true;
+    return this.isDescendantOf(node, this.draggedNode);
   }
 
   // ── Drag & Drop ────────────────────────────────────────────────────────────
 
-  private isDescendantOf(item: FlatCatalogItem, ancestor: FlatCatalogItem): boolean {
-    let currentParentId: number | null = item.parentCatalogItemId;
+  private isDescendantOf(node: TemplateNode, ancestor: TemplateNode): boolean {
+    let currentParentId: number | null = node.parentNodeId;
     let safety = 200;
     while (currentParentId !== null && safety-- > 0) {
-      if (currentParentId === ancestor.catalogItemId) return true;
-      const parent = this.items.find((i) => i.catalogItemId === currentParentId);
-      currentParentId = parent?.parentCatalogItemId ?? null;
+      if (currentParentId === ancestor.nodeId) return true;
+      const parent = this.treeNodes.find((n) => n.nodeId === currentParentId);
+      currentParentId = parent?.parentNodeId ?? null;
     }
     return false;
   }
 
-  canDropOn(target: FlatCatalogItem): boolean {
-    const dragged = this.draggedItem;
+  canDropOn(target: TemplateNode): boolean {
+    const dragged = this.draggedNode;
     if (!dragged) return false;
-    if (dragged.catalogItemId === target.catalogItemId) return false;
+    if (dragged.nodeId === target.nodeId) return false;
     if (this.isDescendantOf(target, dragged)) return false;
     return true;
   }
 
   canDropOnGap(row: TreeRow): boolean {
-    const dragged = this.draggedItem;
+    const dragged = this.draggedNode;
     if (!dragged || row.kind !== 'gap') return false;
-    if (row.gapBeforeId === dragged.catalogItemId) return false;
+    if (row.gapBeforeId === dragged.nodeId) return false;
     if (row.gapParentId !== null) {
-      if (row.gapParentId === dragged.catalogItemId) return false;
-      const newParent = this.items.find((i) => i.catalogItemId === row.gapParentId);
+      if (row.gapParentId === dragged.nodeId) return false;
+      const newParent = this.treeNodes.find((n) => n.nodeId === row.gapParentId);
       if (newParent && this.isDescendantOf(newParent, dragged)) return false;
     }
     return true;
   }
 
-  onDragStart(item: FlatCatalogItem, event: DragEvent): void {
-    this.draggedItem = item;
+  onDragStart(node: TemplateNode, event: DragEvent): void {
+    this.draggedNode = node;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', String(item.catalogItemId));
+      event.dataTransfer.setData('text/plain', String(node.nodeId));
     }
   }
 
-  onDragOver(target: FlatCatalogItem, event: DragEvent): void {
+  onDragOver(target: TemplateNode, event: DragEvent): void {
     if (!this.canDropOn(target)) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    if (this.dropTargetId !== target.catalogItemId) {
-      this.dropTargetId = target.catalogItemId;
+    if (this.dropTargetNodeId !== target.nodeId) {
+      this.dropTargetNodeId = target.nodeId;
       this.dropGapKey = null;
     }
   }
 
-  onDragLeave(target: FlatCatalogItem): void {
-    if (this.dropTargetId === target.catalogItemId) this.dropTargetId = null;
+  onDragLeave(target: TemplateNode): void {
+    if (this.dropTargetNodeId === target.nodeId) this.dropTargetNodeId = null;
   }
 
-  onDrop(target: FlatCatalogItem, event: DragEvent): void {
+  onDrop(target: TemplateNode, event: DragEvent): void {
     event.preventDefault();
-    const dragged = this.draggedItem;
-    this.draggedItem = null;
-    this.dropTargetId = null;
+    const dragged = this.draggedNode;
+    this.draggedNode = null;
+    this.dropTargetNodeId = null;
     this.dropGapKey = null;
     this.stopAutoScroll();
     if (!dragged) return;
-    if (dragged.catalogItemId === target.catalogItemId) return;
+    if (dragged.nodeId === target.nodeId) return;
     if (this.isDescendantOf(target, dragged)) return;
-    if (dragged.parentCatalogItemId === target.catalogItemId) return;
+    if (dragged.parentNodeId === target.nodeId) return;
 
-    dragged.parentCatalogItemId = target.catalogItemId;
-    const newSiblings = this.items.filter(
-      (i) => i.checked && i.parentCatalogItemId === target.catalogItemId && i !== dragged,
+    dragged.parentNodeId = target.nodeId;
+    const newSiblings = this.treeNodes.filter(
+      (n) => n.parentNodeId === target.nodeId && n !== dragged,
     );
     dragged.displayOrder = newSiblings.length + 1;
     this.renumberSiblings();
@@ -544,7 +638,7 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     if (this.dropGapKey !== row.gapKey) {
       this.dropGapKey = row.gapKey;
-      this.dropTargetId = null;
+      this.dropTargetNodeId = null;
     }
   }
 
@@ -556,23 +650,23 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     event.preventDefault();
     if (row.kind !== 'gap') return;
     if (!this.canDropOnGap(row)) {
-      this.draggedItem = null;
+      this.draggedNode = null;
       this.dropGapKey = null;
-      this.dropTargetId = null;
+      this.dropTargetNodeId = null;
       this.stopAutoScroll();
       return;
     }
 
-    const dragged = this.draggedItem!;
-    this.draggedItem = null;
+    const dragged = this.draggedNode!;
+    this.draggedNode = null;
     this.dropGapKey = null;
-    this.dropTargetId = null;
+    this.dropTargetNodeId = null;
     this.stopAutoScroll();
 
-    dragged.parentCatalogItemId = row.gapParentId;
+    dragged.parentNodeId = row.gapParentId;
 
     if (row.gapBeforeId !== null) {
-      const beforeNode = this.items.find((i) => i.catalogItemId === row.gapBeforeId);
+      const beforeNode = this.treeNodes.find((n) => n.nodeId === row.gapBeforeId);
       if (beforeNode) {
         dragged.displayOrder = beforeNode.displayOrder - 0.5;
       } else {
@@ -587,8 +681,8 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   }
 
   onDragEnd(): void {
-    this.draggedItem = null;
-    this.dropTargetId = null;
+    this.draggedNode = null;
+    this.dropTargetNodeId = null;
     this.dropGapKey = null;
     this.stopAutoScroll();
   }
@@ -596,7 +690,7 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   // ── Auto-scroll ────────────────────────────────────────────────────────────
 
   onTreeContainerDragOver(event: DragEvent): void {
-    if (!this.draggedItem) return;
+    if (!this.draggedNode) return;
     const el = this.treeScrollRef?.nativeElement;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -616,7 +710,7 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
     if (this.scrollIntervalId !== null) return;
     this.scrollIntervalId = window.setInterval(() => {
       const el = this.treeScrollRef?.nativeElement;
-      if (!el || this.scrollDirection === 0 || !this.draggedItem) {
+      if (!el || this.scrollDirection === 0 || !this.draggedNode) {
         this.stopAutoScroll();
         return;
       }
@@ -637,13 +731,12 @@ export class PsssScopeEdit implements OnInit, OnDestroy {
   // ── Guardar ────────────────────────────────────────────────────────────────
 
   save(): void {
-    const items = this.items
-      .filter((i) => i.checked)
-      .map((item) => ({
-        catalogItemId: item.catalogItemId,
-        parentCatalogItemId: item.parentCatalogItemId,
-        displayOrder: item.displayOrder,
-      }));
+    const items = this.treeNodes.map((n) => ({
+      nodeId: n.nodeId,
+      parentNodeId: n.parentNodeId,
+      catalogItemId: n.catalogItemId,
+      displayOrder: n.displayOrder,
+    }));
 
     this.loaderService.show();
     this.scopeService.upsertScope({ lessonAreaId: this.lessonAreaId, items }).subscribe({

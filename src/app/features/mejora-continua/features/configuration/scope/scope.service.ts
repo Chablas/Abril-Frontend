@@ -15,9 +15,14 @@ export interface ScopeItemDTO {
   children: ScopeItemDTO[];
 }
 
+// Misma semántica que ScopeTemplateItemNodeDTO:
+//   • nodeId puede ser un scope_item_id real o un temporal negativo (-1, -2, ...).
+//   • parentNodeId apunta a otro nodeId del mismo payload.
+//   • Un mismo catalogItemId puede aparecer varias veces bajo padres distintos.
 export interface ScopeItemNodeDTO {
+  nodeId: number;
+  parentNodeId: number | null;
   catalogItemId: number;
-  parentCatalogItemId: number | null;
   displayOrder: number;
 }
 
