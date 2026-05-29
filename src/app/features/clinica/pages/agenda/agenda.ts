@@ -107,6 +107,7 @@ export class Agenda implements OnInit {
     this.svc.getProgramacionesFiltradas({ desde: fecha, hasta: fecha }).subscribe({
       next: (data) => {
         this.items = data;
+        console.log('[Agenda] items[0]:', data[0]);
         this.loading = false;
         this.loaderService.hide();
       },
@@ -234,6 +235,39 @@ export class Agenda implements OnInit {
   checkIn(item: ProgramacionClinicaDto): void {
     const hora = new Date().toTimeString().slice(0, 5);
     this.ejecutarAccion(item.id, { id: item.id, accion: 'CheckIn', checkInHora: hora });
+  }
+
+  // ── Deshacer CheckIn ────────────────────────────────────
+  deshacerCheckin(item: ProgramacionClinicaDto): void {
+    Swal.fire({
+      title: 'Deshacer ingreso',
+      html: `<span style="font-size:0.87rem;color:#94a3b8">¿Confirmas deshacer el ingreso de <strong>${item.workerNombre}</strong>?</span>`,
+      icon: 'warning',
+      background: '#1e293b',
+      color: '#f1f5f9',
+      confirmButtonColor: '#475569',
+      cancelButtonColor: '#334155',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, deshacer',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
+      this.accionando = item.id;
+      this.http
+        .patch(`${environment.apiUrl}api/v1/ssoma/salud-ocupacional/programaciones/${item.id}/deshacer-checkin`, {}, { headers })
+        .subscribe({
+          next: () => {
+            this.accionando = null;
+            this.loadAgenda(this.selectedDate);
+          },
+          error: (err) => {
+            this.accionando = null;
+            this.errorService.handleError(err);
+          },
+        });
+    });
   }
 
   // ── Completar EMO ────────────────────────────────────────

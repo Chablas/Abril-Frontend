@@ -152,6 +152,13 @@
             </div>
           </div>
 
+          <!-- empresa / proyecto -->
+          <div class="card-meta-row" *ngIf="item.razonSocial || item.proyecto">
+            <span class="card-meta-item" *ngIf="item.razonSocial">🏢 {{ item.razonSocial }}</span>
+            <span class="card-meta-sep" *ngIf="item.razonSocial && item.proyecto">·</span>
+            <span class="card-meta-item" *ngIf="item.proyecto">📁 {{ item.proyecto }}</span>
+          </div>
+
           <!-- ZONA 2: fechas -->
           <div class="card-dates">
             <span class="fecha-tag" [ngClass]="fechaClass(item.fechaProgramada)">
@@ -195,6 +202,8 @@
                 (click)="abrirInterconsulta(item)">🔗 Interconsulta</button>
               <span class="chip-green"
                 *ngIf="item.interconsultaEstado === 'Completado'">✓ Interconsulta levantada</span>
+              <button class="btn-act btn-undo" [disabled]="accionando === item.id"
+                (click)="deshacerCheckin(item)">↩ Deshacer ingreso</button>
             </ng-container>
 
           </div>
