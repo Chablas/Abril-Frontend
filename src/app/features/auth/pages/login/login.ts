@@ -110,7 +110,7 @@ export class Login implements OnInit {
       next: () => {
         this.loaderService.hide();
         this.cdr.detectChanges();
-        this.router.navigate(['/']);
+        this.router.navigate(['/habilitacion']);
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);

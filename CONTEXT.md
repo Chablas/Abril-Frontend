@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-05-30 — nuevas features mejora-continua (catalog-types/items, lesson-areas, reminders), configuracion/area, SectionTabs compartido; eliminados relations y UserProjectService. Fix sctr-subir: proyecto obligatorio + validación en submit. Fix sctr-vidaley: ocultar Rechazados en paneles de workers; recalcular estado póliza client-side si hay workers En revision/Enviado.
+> **Última actualización**: 2026-05-30 — nuevas features mejora-continua, configuracion/area, SectionTabs. Fix sctr-subir: proyecto obligatorio. Fix sctr-vidaley: ocultar Rechazados, recalcularEstadoLocal(). auth.service: getContratistaScope/ProyectoIds + persistContratistaToken guarda scope/proyectos. ContratistaTokenDto +scope/proyectoIds. login contratista navega a /habilitacion. contratista-usuarios: rolOpts GESTOR solo para CASEVIP/CLINICA. dashboard-contratista: banner WhatsApp al pie.
 
 ---
 
