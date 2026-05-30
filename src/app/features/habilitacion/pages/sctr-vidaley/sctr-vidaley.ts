@@ -239,16 +239,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     };
     this.sctrService.getList(params).subscribe({
       next: (res) => {
-        this.documentos = (res.data ?? []).map((doc) => ({
-          ...doc,
-          estado: doc.workers?.some(
-            (w) =>
-              w.estadoSctr === 'En revision' || w.estadoSctr === 'Enviado' ||
-              w.estadoVidaLey === 'En revision' || w.estadoVidaLey === 'Enviado',
-          )
-            ? 'Enviado'
-            : 'Aprobado',
-        }));
+        this.documentos = res.data ?? [];
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
