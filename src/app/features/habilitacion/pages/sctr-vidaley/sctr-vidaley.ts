@@ -239,7 +239,16 @@ export class SctrVidaley implements OnInit, OnDestroy {
     };
     this.sctrService.getList(params).subscribe({
       next: (res) => {
-        this.documentos = res.data ?? [];
+        this.documentos = (res.data ?? []).map((doc) => ({
+          ...doc,
+          estado: doc.workers?.some(
+            (w) =>
+              w.estadoSctr === 'En revision' || w.estadoSctr === 'Enviado' ||
+              w.estadoVidaLey === 'En revision' || w.estadoVidaLey === 'Enviado',
+          )
+            ? 'Enviado'
+            : doc.estado,
+        }));
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
@@ -547,12 +556,14 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   get filteredDocWorkers(): SctrWorkerDto[] {
     if (!this.selectedDoc) return [];
-    return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+    return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado' && w.estado !== 'Rechazado');
   }
 
   get filteredPolizaWorkers(): SctrWorkerDto[] {
     if (!this.selectedPoliza) return [];
-    return this.selectedPoliza.workers.filter((w) => this.getPolizaWorkerEstado(w) !== 'Aprobado');
+    return this.selectedPoliza.workers.filter(
+      (w) => this.getPolizaWorkerEstado(w) !== 'Aprobado' && this.getPolizaWorkerEstado(w) !== 'Rechazado',
+    );
   }
 
   get docAllChecked(): boolean {

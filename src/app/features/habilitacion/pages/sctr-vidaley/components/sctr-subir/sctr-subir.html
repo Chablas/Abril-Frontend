@@ -51,14 +51,14 @@
         </div>
 
         <div class="col-span-2">
-          <label class="field-label">Proyecto (opcional)</label>
+          <label class="field-label">Proyecto *</label>
           <app-search-select
             [options]="proyectos"
             valueField="projectId"
             displayField="projectDescription"
             [value]="model.proyectoId"
             (valueChange)="model.proyectoId = $event"
-            placeholder="Todos los proyectos"
+            placeholder="Selecciona un proyecto"
           />
         </div>
 
