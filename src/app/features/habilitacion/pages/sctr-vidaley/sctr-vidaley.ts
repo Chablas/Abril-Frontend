@@ -247,7 +247,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
               w.estadoVidaLey === 'En revision' || w.estadoVidaLey === 'Enviado',
           )
             ? 'Enviado'
-            : doc.estado,
+            : 'Aprobado',
         }));
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
