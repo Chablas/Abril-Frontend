@@ -1,0 +1,57 @@
+<div class="page-wrapper">
+
+  <div class="dash-card">
+
+    <!-- ── Header ── -->
+    <div class="dash-header">
+      <span class="dash-title">Cronograma de Actividades</span>
+      <span class="dash-sub">Selecciona un proyecto para ver su cronograma</span>
+    </div>
+
+    <!-- ── Cargando ── -->
+    <div class="loading-panel" *ngIf="loading">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <p class="loading-text">Cargando proyectos...</p>
+    </div>
+
+    <!-- ── Tabla ── -->
+    <div class="table-wrapper" *ngIf="!loading">
+      <table class="dash-table" *ngIf="proyectos.length">
+        <thead>
+          <tr>
+            <th class="th-no">NO</th>
+            <th class="th-proyecto">PROYECTO</th>
+            <th class="th-resp">RESPONSABLE</th>
+            <th class="th-avance">AVANCE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let p of proyectos; let i = index"
+            class="dash-row"
+            (click)="abrirCronograma(p)"
+          >
+            <td class="td-no">{{ pad(i + 1) }}</td>
+            <td class="td-proyecto">{{ p.projectDescription }}</td>
+            <td class="td-resp">{{ p.responsableUdp || '—' }}</td>
+            <td class="td-avance">
+              <div class="avance-wrap">
+                <div class="avance-bar-bg">
+                  <div class="avance-bar-fill" [style.width.%]="p.avance"></div>
+                </div>
+                <span class="avance-pct">{{ p.avance }}%</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Estado vacío -->
+      <div class="dash-empty" *ngIf="!proyectos.length">
+        <p class="empty-title">No hay proyectos disponibles</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>

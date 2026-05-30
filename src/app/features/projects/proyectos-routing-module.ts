@@ -9,6 +9,7 @@ import { roleGuard } from '../../core/guards/role.guard';
 import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
 import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
 import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
+import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cronograma-list';
 
 const routes: Routes = [
   {
@@ -35,6 +36,16 @@ const routes: Routes = [
         children: [
           {
             path: '',
+            component: ProyectosCronogramaList,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'CRONOGRAMA DE ACTIVIDADES',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.cronograma-actividades',
+            },
+          },
+          {
+            path: ':proyectoId',
             component: CronogramaActividades,
             canActivate: [roleGuard],
             data: {

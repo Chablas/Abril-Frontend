@@ -27,6 +27,13 @@ export interface CrearActividadRequest {
   plannedStartDate: string | null;
   plannedEndDate: string | null;
   progressPercentage: number;
+  hierarchyLevel: number;
+  parentId: number | null;
+}
+
+export interface ReordenarItem {
+  projectActivityId: number;
+  order: number;
 }
 
 export interface EditarActividadRequest {
@@ -84,6 +91,30 @@ export class CronogramaActividadesService {
     return this.http.delete<void>(`${this.base}/actividades/${id}`, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  reordenarActividades(proyectoId: number, items: ReordenarItem[]): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/${proyectoId}/actividades/reordenar`,
+      items,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  subirNivel(proyectoId: number, id: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/${proyectoId}/actividades/${id}/subir-nivel`,
+      {},
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  bajarNivel(proyectoId: number, id: number, parentId: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/${proyectoId}/actividades/${id}/bajar-nivel`,
+      { parentId },
+      { headers: buildAuthHeaders() },
+    );
   }
 
   importarMpp(proyectoId: number, file: File): Observable<any> {

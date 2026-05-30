@@ -39,11 +39,38 @@
   flex-wrap: wrap;
 }
 
+.header-info-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .header-info {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  min-width: 0;
 }
+
+.btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem;
+  background: #fff;
+  color: var(--azul);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px solid var(--azul);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-volver:hover { background: var(--azul-light); }
 
 .page-title {
   font-size: 1.05rem;
@@ -210,12 +237,54 @@
 .data-table tbody tr:hover td { background: #fafafa; }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
-.col-order    { width: 48px; }
+.col-order     { width: 48px; }
 .col-actividad { min-width: 200px; }
-.col-fecha    { width: 110px; }
-.col-avance   { width: 150px; }
-.col-estado   { width: 125px; }
-.col-acciones { width: 110px; }
+.col-fecha     { width: 110px; }
+.col-avance    { width: 150px; }
+.col-estado    { width: 125px; }
+.col-acciones  { width: 110px; }
+.col-jerarquia { width: 62px; }
+
+/* ── Drag handle (columna #) ──────────────────────────────────────────────── */
+.td-drag-handle { cursor: grab; user-select: none; }
+.td-drag-handle:active { cursor: grabbing; }
+
+/* ── Fila arrastrada ──────────────────────────────────────────────────────── */
+.row-dragging td { opacity: 0.4; }
+
+/* ── Indicador de drop ────────────────────────────────────────────────────── */
+.drop-above td { box-shadow: 0 -2px 0 0 var(--azul); }
+.drop-below td { box-shadow: 0 2px 0 0 var(--azul); }
+
+/* ── Botones de jerarquía ─────────────────────────────────────────────────── */
+.td-jerarquia { padding: 0.35rem 0.5rem; vertical-align: middle; }
+
+.jerarquia-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.btn-jerarquia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.btn-jerarquia:hover:not(:disabled) { opacity: 1; background: rgba(0,0,0,0.1); }
+.row-dark .btn-jerarquia:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+.btn-jerarquia:disabled { opacity: 0.2; cursor: not-allowed; }
 
 .td-order { color: #9ca3af; font-size: 0.82rem; }
 
@@ -232,9 +301,9 @@
 }
 
 .actividad-cell span:last-child {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
   font-weight: 500;
 }
 
@@ -260,7 +329,8 @@
 }
 
 .btn-chevron:hover { opacity: 1; background: rgba(0, 0, 0, 0.08); }
-.row-colored .btn-chevron:hover { background: rgba(255, 255, 255, 0.2); }
+.row-dark .btn-chevron:hover { background: rgba(255, 255, 255, 0.18); }
+.row-light .btn-chevron:hover { background: rgba(0, 0, 0, 0.08); }
 
 .chevron-icon {
   transition: transform 0.18s ease;
@@ -278,7 +348,6 @@
 }
 
 .td-fecha { font-size: 0.83rem; color: #6b7280; white-space: nowrap; }
-.td-fecha-real { color: var(--verde); font-weight: 600; }
 
 /* ── Progress bar (tabla) ─────────────────────────────────────────────────── */
 .td-avance { min-width: 140px; }
@@ -338,17 +407,37 @@
 .data-table tbody tr.row-clickable { cursor: pointer; }
 .data-table tbody tr.row-clickable:hover td { background: #f0f9ff; }
 
-/* ── Colored rows (nivel 0 y 1) ───────────────────────────────────────────── */
-.data-table tbody tr.row-colored td { color: inherit; }
-.data-table tbody tr.row-colored .avance-pct { color: inherit; }
-.data-table tbody tr.row-colored .avance-bar-bg { background: rgba(255, 255, 255, 0.28); }
-.data-table tbody tr.row-colored .actividad-cell span:last-child { font-weight: 700; }
-.data-table tbody tr.row-colored.row-clickable:hover td { background: rgba(0, 0, 0, 0.10); }
+/* ── Colored rows — shared ────────────────────────────────────────────────── */
+.data-table tbody tr.row-dark td,
+.data-table tbody tr.row-light td { color: inherit; }
 
-/* ── Tinted rows (nivel 2+) ───────────────────────────────────────────────── */
-.data-table tbody tr.row-tinted td { color: inherit; }
-.data-table tbody tr.row-tinted .avance-pct { color: inherit; }
-.data-table tbody tr.row-tinted.row-clickable:hover td { background: rgba(0, 0, 0, 0.04); }
+.data-table tbody tr.row-dark .td-order,
+.data-table tbody tr.row-light .td-order { color: inherit; opacity: 0.6; }
+
+.data-table tbody tr.row-dark .td-fecha,
+.data-table tbody tr.row-light .td-fecha { color: inherit; opacity: 0.75; }
+
+.data-table tbody tr.row-dark .avance-pct,
+.data-table tbody tr.row-light .avance-pct { color: inherit; }
+
+/* ── Dark rows (niveles 0, 1, y 2 oscuros) ────────────────────────────────── */
+.data-table tbody tr.row-dark .avance-bar-bg { background: rgba(255, 255, 255, 0.22); }
+.data-table tbody tr.row-dark.row-clickable:hover td { background: rgba(255, 255, 255, 0.08); }
+
+/* ── Light rows (niveles 2 claros y 3+) ───────────────────────────────────── */
+.data-table tbody tr.row-light .avance-bar-bg { background: rgba(0, 0, 0, 0.09); }
+.data-table tbody tr.row-light.row-clickable:hover td { background: rgba(0, 0, 0, 0.04); }
+
+/* ── Level-based font weight ─────────────────────────────────────────────── */
+.data-table tbody tr.lvl-0 .td-actividad { font-weight: 700; letter-spacing: 0.01em; }
+.data-table tbody tr.lvl-1 .td-actividad { font-weight: 600; }
+.data-table tbody tr.lvl-2 .td-actividad { font-weight: 500; }
+.data-table tbody tr.lvl-deep .td-actividad { font-weight: 400; }
+
+/* ── Nivel 3+ left accent border (via CSS variable set on TR) ─────────────── */
+.data-table tbody tr.row-bordered td:first-child {
+  border-left: 3px solid var(--lvl-border, transparent);
+}
 
 /* ── Action buttons ───────────────────────────────────────────────────────── */
 .row-actions { display: flex; align-items: center; gap: 0.35rem; }
@@ -593,37 +682,57 @@
 
 .field-hint { font-size: 0.75rem; color: #9ca3af; }
 
+.field-label-required { color: var(--rojo); margin-left: 0.15rem; }
+
+.field-input-error {
+  border-color: var(--rojo) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: var(--rojo);
+  font-weight: 500;
+}
+
 .field-input[type='file'] {
   height: auto;
   padding: 0.45rem 0.75rem;
   cursor: pointer;
 }
 
-/* ── Avance field (modal) ─────────────────────────────────────────────────── */
-.avance-field-wrap {
+/* ── Avance selector (modal) ──────────────────────────────────────────────── */
+.avance-btn-group {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
-.avance-slider {
+.avance-opt {
   flex: 1;
-  height: 4px;
-  accent-color: var(--azul);
+  height: 40px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.avance-number {
-  width: 68px;
-  flex-shrink: 0;
-  text-align: center;
-  padding: 0 0.5rem;
+.avance-opt:hover:not(.avance-opt-active) {
+  border-color: #9ca3af;
+  color: #6b7280;
 }
+
+.avance-opt-0.avance-opt-active  { background: #f3f4f6; border-color: #9ca3af; color: #374151; }
+.avance-opt-50.avance-opt-active  { background: var(--azul);  border-color: var(--azul);  color: #fff; }
+.avance-opt-100.avance-opt-active { background: var(--verde); border-color: var(--verde); color: #fff; }
 
 .avance-preview-bar {
   height: 6px;
   background: #f3f4f6;
   border-radius: 999px;
   overflow: hidden;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }

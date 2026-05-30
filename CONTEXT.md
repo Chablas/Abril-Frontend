@@ -3057,3 +3057,110 @@ Opción A — EmoRepository.Create retorna el interconsultaId en la respuesta de
 Opción B — Frontend llama GET /interconsultas?workerId=X&estado=Pendiente para obtener el id
 
 Recomendación: Opción A — modificar EmoCreateResponseDto para incluir interconsultaId?: int
+
+---
+
+## Sesión 2026-05-30 — Cronograma de Actividades: rediseño visual + jerarquía editable + master-detail
+
+Reescritura grande del módulo `features/projects/cronograma-actividades/`. Reemplaza la
+paleta Material previa (ver §Sesión 2026-05-26) y agrega navegación maestro-detalle,
+reordenamiento, cambio de jerarquía y cálculo recursivo de avance.
+
+**Archivos:**
+- `core/services/cronograma-actividades.service.ts` (nuevos endpoints + DTO ampliado)
+- `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css` (Vista 2 — detalle)
+- `features/projects/cronograma-actividades/proyectos-cronograma-list.ts/html/css` (Vista 1 — lista, **nuevo**)
+- `features/projects/proyectos-routing-module.ts` (ruta con `:proyectoId`)
+
+### Navegación maestro-detalle (router)
+
+```
+/projects/cronograma-actividades              → ProyectosCronogramaList (Vista 1)
+/projects/cronograma-actividades/:proyectoId  → CronogramaActividades  (Vista 2)
+```
+
+- **Vista 1** (`ProyectosCronogramaList`): tabla dashboard **oscura** (paleta BCS abajo). Columnas
+  NO / PROYECTO / RESPONSABLE / AVANCE. Carga proyectos con `getProyectos()` y vía `forkJoin`
+  las actividades de cada uno para calcular el avance del nodo de nivel 0 (recursivo). Proyecto
+  sin actividades o con error → 0%. Clic en fila → `router.navigate([..., projectId])`.
+- **Vista 2** (`CronogramaActividades`): lee `proyectoId` de `ActivatedRoute.snapshot`; sin id → `volver()`.
+  Header con botón **← Volver** (`volver()` → navega a la lista) + nombre del proyecto; **sin dropdown**.
+  `onProyectoChange()` quedó inerte (ya no hay selector). Resto de la lógica intacta.
+
+### Paleta BCS de jerarquía (4 niveles) — reemplaza Material
+
+`rowStyleMap: Map<id, {bg, text, border?}>` construido en `buildColorMap()`. Helpers:
+`isDarkBg(act)` (true si `text === '#E0E1DD'`), `getRowStyle`, `getChevronStyle`.
+
+- **Nivel 0**: bg `#0D1B2A`, text `#E0E1DD`.
+- **Nivel 1** (`LEVEL1_ENTRIES`, por orden de aparición): `#1B263B`, `#415A77`, `#778DA9`, `#E0E1DD`
+  (los dos primeros con texto `#E0E1DD`, los dos últimos con texto `#0D1B2A`).
+- **Nivel 2** (`NIVEL2_MAP`, derivado del ancestro nivel-1): `#2C3E56` / `#557090` / `#8fa3b8` / `#cacbc7`.
+- **Nivel 3+** (`NIVEL3_MAP`): fondo muy claro + `border-left: 3px` del color nivel-2 (vía `--lvl-border`).
+- `findAncestorBgAtLevel(act, nivel)` sube por `parentId` hasta el ancestro del nivel pedido.
+- Clases de fila: `row-dark`/`row-light` + `lvl-0..lvl-deep` (peso de fuente decreciente) + `row-bordered` (nivel 3+).
+
+### Badges adaptativos al fondo
+
+`getBadgeStyle(act)`: en filas **oscuras** devuelve colores claros semitransparentes (CULMINADO
+`#86efac`, VENCIDO `#fca5a5`, EN PROCESO `#93c5fd`, PENDIENTE `#e5e7eb`); en filas **claras**
+devuelve `{}` y el template aplica `[ngClass]="getEstado(act).css"` (clases `badge-*` estándar).
+Template: `[ngClass]="isDarkBg(act) ? '' : getEstado(act).css"`.
+
+### Columna Fin Real
+
+`getFechaRealStyle(act)`: con fecha → `#90CAF9` (fondos oscuros) / `#1565C0` (fondos claros), `opacity:1`;
+sin fecha → `{}` (hereda el color secundario de la fila con `opacity:0.75`). Reemplaza la clase `td-fecha-real`.
+La celda de actividad usa `white-space: normal; word-break: break-word` (no trunca con ellipsis).
+
+### Avance recursivo (solo visual, no se persiste)
+
+`avanceMap: Map<id, number>` reconstruido en `buildAvanceMap()` (tras cargar, culminar, eliminar).
+`calcularAvance(id)` memoizado: hoja → `progressPercentage` (o 100 si `actualEndDate`); padre →
+`Math.round(promedio simple de hijos directos)`. `getAvance(act)` lee del mapa. En fondos claros la
+barra se fuerza a `#2C3E56` (`[style.background]`); en oscuros usa las clases semáforo `fill-*`.
+
+### Drag & Drop — Order global único (Opción A)
+
+Handle en el `<td>` de orden (`td-drag-handle`, `[attr.draggable]="true"`, `(dragstart)`). Estado:
+`dragSrc`, `dragActId`, `dropTargetId`, `dropAbove`. **Regla única**: solo se reordena entre actividades
+con el **mismo `parentId`** (`mismoParentId()` / `canDropOn()` con comparación explícita de `null`).
+`onDragOver` solo hace `preventDefault()` si el destino es válido (cursor prohibido si no).
+
+`onDrop`: toma el **subárbol** de `src` (`getSubtreeSlice` — src + descendientes contiguos en el array
+depth-first), lo extrae de la lista plana, lo reinserta antes/después del destino, y recalcula `order = i+1`
+para **todas** las actividades. Envía la lista completa a `reordenarActividades`. **Éxito → actualiza el
+array local directamente** (`this.actividades = listaPlana` + rebuild de mapas, sin GET) para evitar
+parpadeo y reset de scroll; **error → solo Swal** (el array nunca se mutó, conserva el orden original).
+El mensaje de error del backend se extrae con fallback `err.error (string) ?? .message ?? .detail`.
+`recargarConEstado()` (preserva scroll de `.page-content` + `collapsedIds`) existe para recargas que sí
+hacen GET. **Nota**: el contenedor scrollable real es `.page-content` del layout, no `window`.
+
+### Botones de jerarquía (subir/bajar nivel)
+
+Columna `col-jerarquia` con dos botones `btn-jerarquia` (← / →). `canSubirNivel` (`level>0`),
+`canBajarNivel` (`level<3`). Bajar: busca hacia atrás el nodo anterior del **mismo nivel** como nuevo
+padre; si no hay → Swal "No hay un padre disponible…". Llaman `subirNivel`/`bajarNivel` con loading + recarga.
+
+### Crear actividad con nivel + padre
+
+Modal crear: selector **Nivel** (1/2/3) + selector **Padre** (visible si nivel>1, lista actividades del
+nivel inmediatamente superior vía getter `padresDisponibles`). `onFormNivelChange()` resetea el padre.
+Validación: nivel>1 sin padre → Swal. `CrearActividadRequest` ampliado con `hierarchyLevel` + `parentId`.
+
+### Selector de avance 0/50/100 + validación
+
+Modal: slider reemplazado por 3 botones (`avance-opt-0/50/100`; activo: gris/azul/verde). `onProgressChange(v)`.
+Al editar, el valor de BD se "snapea" al más cercano (`raw>=75→100`, `>=25→50`, resto `0`). **Validación**:
+en editar, avance 100% exige Fecha Real de Fin → `errorFechaReal` muestra mensaje bajo el campo y bloquea Guardar.
+
+### Endpoints nuevos (servicio)
+
+```
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/reordenar            (body: ReordenarItem[])
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/{id}/subir-nivel
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/{id}/bajar-nivel     (body: { parentId })
+```
+
+`ReordenarItem { projectActivityId, order }`. **Ojo**: subir/bajar-nivel llevan `{proyectoId}` en la ruta
+(se corrigió una versión previa sin él). `CrearActividadRequest` ahora incluye `hierarchyLevel` + `parentId`.

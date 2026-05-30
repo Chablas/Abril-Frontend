@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import {
   CronogramaActividadesService,
@@ -9,6 +10,7 @@ import {
   ActividadDto,
   CrearActividadRequest,
   EditarActividadRequest,
+  ReordenarItem,
 } from '../../../core/services/cronograma-actividades.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -46,21 +48,37 @@ export class CronogramaActividades implements OnInit {
   // Jerarquía
   collapsedIds = new Set<number>();
   private parentIds = new Set<number>();
-  // colorMap guarda el color base de nivel-1 heredado por cada actividad
-  private colorMap = new Map<number, string>();
-  private readonly NIVEL0_COLOR = '#3F51B5';
-  private readonly LEVEL1_PALETTE = [
-    '#2196F3', '#009688', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4', '#F44336', '#673AB7',
+  private rowStyleMap = new Map<number, { bg: string; text: string; border?: string }>();
+  private avanceMap = new Map<number, number>();
+
+  // Drag & Drop
+  dragSrc: ActividadDto | null = null;   // actividad siendo arrastrada
+  dragActId: number | null = null;       // id para clase CSS row-dragging
+  dropTargetId: number | null = null;
+  dropAbove = true;
+  guardandoOrden = false;
+
+  // Crear: nivel y padre
+  formNivel = 1;
+  formPadreId: number | null = null;
+  private readonly NIVEL0 = { bg: '#0D1B2A', text: '#E0E1DD' } as const;
+  private readonly LEVEL1_ENTRIES: Array<{ base: string; text: string }> = [
+    { base: '#1B263B', text: '#E0E1DD' },
+    { base: '#415A77', text: '#E0E1DD' },
+    { base: '#778DA9', text: '#0D1B2A' },
+    { base: '#E0E1DD', text: '#0D1B2A' },
   ];
-  private readonly SHADES: Record<string, { claro: string; oscuro: string }> = {
-    '#2196F3': { claro: '#E3F2FD', oscuro: '#1565C0' },
-    '#009688': { claro: '#E0F2F1', oscuro: '#00695C' },
-    '#FF9800': { claro: '#FFF3E0', oscuro: '#E65100' },
-    '#E91E63': { claro: '#FCE4EC', oscuro: '#880E4F' },
-    '#9C27B0': { claro: '#F3E5F5', oscuro: '#6A1B9A' },
-    '#00BCD4': { claro: '#E0F7FA', oscuro: '#006064' },
-    '#F44336': { claro: '#FFEBEE', oscuro: '#B71C1C' },
-    '#673AB7': { claro: '#EDE7F6', oscuro: '#4527A0' },
+  private readonly NIVEL2_MAP: Record<string, { bg: string; text: string }> = {
+    '#1B263B': { bg: '#2C3E56', text: '#E0E1DD' },
+    '#415A77': { bg: '#557090', text: '#E0E1DD' },
+    '#778DA9': { bg: '#8fa3b8', text: '#0D1B2A' },
+    '#E0E1DD': { bg: '#cacbc7', text: '#0D1B2A' },
+  };
+  private readonly NIVEL3_MAP: Record<string, { bg: string; text: string; border: string }> = {
+    '#2C3E56': { bg: '#dde3ec', text: '#1B263B', border: '#2C3E56' },
+    '#557090': { bg: '#e4eaf1', text: '#415A77', border: '#557090' },
+    '#8fa3b8': { bg: '#edf1f5', text: '#415A77', border: '#8fa3b8' },
+    '#cacbc7': { bg: '#f5f5f4', text: '#778DA9', border: '#cacbc7' },
   };
 
   // Formulario del modal
@@ -69,6 +87,7 @@ export class CronogramaActividades implements OnInit {
   formPlannedEnd = '';
   formActualEnd = '';
   formProgress = 0;
+  errorFechaReal = false;
 
   constructor(
     private service: CronogramaActividadesService,
@@ -76,6 +95,8 @@ export class CronogramaActividades implements OnInit {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   get esAdmin(): boolean {
@@ -86,7 +107,18 @@ export class CronogramaActividades implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadProyectos();
+    const id = Number(this.route.snapshot.paramMap.get('proyectoId'));
+    if (!id) {
+      this.volver();
+      return;
+    }
+    this.selectedProyectoId = id;
+    this.loadProyectos();      // para mostrar nombre + responsable del proyecto
+    this.loadActividades(id);
+  }
+
+  volver(): void {
+    this.router.navigate(['/projects/cronograma-actividades']);
   }
 
   get proyecto(): ProyectoSimpleDto | undefined {
@@ -116,7 +148,8 @@ export class CronogramaActividades implements OnInit {
     this.actividades = [];
     this.collapsedIds.clear();
     this.parentIds.clear();
-    this.colorMap.clear();
+    this.rowStyleMap.clear();
+    this.avanceMap.clear();
     if (!id) return;
     this.loadActividades(id);
   }
@@ -129,6 +162,7 @@ export class CronogramaActividades implements OnInit {
         this.actividades = res ?? [];
         this.buildParentIds();
         this.buildColorMap();
+        this.buildAvanceMap();
         this.loadingActividades = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -149,55 +183,79 @@ export class CronogramaActividades implements OnInit {
   }
 
   private buildColorMap(): void {
-    this.colorMap.clear();
+    this.rowStyleMap.clear();
     let paletteIdx = 0;
     for (const act of this.actividades) {
-      if (act.hierarchyLevel === 1) {
-        const color = this.LEVEL1_PALETTE[paletteIdx % this.LEVEL1_PALETTE.length];
-        this.colorMap.set(act.projectActivityId, color);
+      if (act.hierarchyLevel === 0) {
+        this.rowStyleMap.set(act.projectActivityId, { ...this.NIVEL0 });
+      } else if (act.hierarchyLevel === 1) {
+        const e = this.LEVEL1_ENTRIES[paletteIdx % this.LEVEL1_ENTRIES.length];
+        this.rowStyleMap.set(act.projectActivityId, { bg: e.base, text: e.text });
         paletteIdx++;
-      } else if (act.hierarchyLevel >= 2) {
-        const color = this.findLevel1Color(act);
-        if (color) this.colorMap.set(act.projectActivityId, color);
+      } else if (act.hierarchyLevel === 2) {
+        const n1bg = this.findAncestorBgAtLevel(act, 1);
+        const n2 = n1bg ? this.NIVEL2_MAP[n1bg] : null;
+        if (n2) this.rowStyleMap.set(act.projectActivityId, { bg: n2.bg, text: n2.text });
+      } else {
+        const n2bg = this.findAncestorBgAtLevel(act, 2);
+        const n3 = n2bg ? this.NIVEL3_MAP[n2bg] : null;
+        if (n3) this.rowStyleMap.set(act.projectActivityId, { bg: n3.bg, text: n3.text, border: n3.border });
       }
     }
   }
 
-  private findLevel1Color(act: ActividadDto): string | null {
+  private findAncestorBgAtLevel(act: ActividadDto, targetLevel: number): string | null {
     if (act.parentId === null) return null;
     const parent = this.actividades.find((a) => a.projectActivityId === act.parentId);
     if (!parent) return null;
-    if (parent.hierarchyLevel === 1) return this.colorMap.get(parent.projectActivityId) ?? null;
-    return this.findLevel1Color(parent);
-  }
-
-  /** Shades (claro/oscuro) del color base de nivel-1 de una actividad. */
-  private shadesOf(act: ActividadDto): { claro: string; oscuro: string } | null {
-    const base = this.colorMap.get(act.projectActivityId);
-    return base ? (this.SHADES[base] ?? null) : null;
+    if (parent.hierarchyLevel === targetLevel) {
+      return this.rowStyleMap.get(parent.projectActivityId)?.bg ?? null;
+    }
+    return this.findAncestorBgAtLevel(parent, targetLevel);
   }
 
   getRowStyle(act: ActividadDto): Record<string, string> {
-    if (act.hierarchyLevel === 0) {
-      return { 'background-color': this.NIVEL0_COLOR, color: '#ffffff' };
-    }
-    if (act.hierarchyLevel === 1) {
-      const color = this.colorMap.get(act.projectActivityId) ?? '#6b7280';
-      return { 'background-color': color, color: '#ffffff' };
-    }
-    const shades = this.shadesOf(act);
-    if (!shades) return {};
-    return { 'background-color': shades.claro, color: shades.oscuro };
+    const info = this.rowStyleMap.get(act.projectActivityId);
+    if (!info) return {};
+    const style: Record<string, string> = { 'background-color': info.bg, color: info.text };
+    if (info.border) style['--lvl-border'] = info.border;
+    return style;
+  }
+
+  isDarkBg(act: ActividadDto): boolean {
+    return this.rowStyleMap.get(act.projectActivityId)?.text === '#E0E1DD';
   }
 
   getBadgeStyle(act: ActividadDto): Record<string, string> {
-    if (act.hierarchyLevel <= 1) {
-      return { 'background-color': 'rgba(255, 255, 255, 0.2)', color: '#ffffff' };
+    if (this.isDarkBg(act)) {
+      const label = this.getEstado(act).label;
+      const map: Record<string, { bg: string; fg: string }> = {
+        CULMINADO:    { bg: 'rgba(74,222,128,0.22)',   fg: '#86efac' },
+        VENCIDO:      { bg: 'rgba(248,113,113,0.22)',  fg: '#fca5a5' },
+        'EN PROCESO': { bg: 'rgba(147,197,253,0.22)',  fg: '#93c5fd' },
+        PENDIENTE:    { bg: 'rgba(209,213,219,0.15)',  fg: '#e5e7eb' },
+      };
+      const s = map[label] ?? { bg: 'rgba(255,255,255,0.15)', fg: '#ffffff' };
+      return { 'background-color': s.bg, color: s.fg };
     }
-    const shades = this.shadesOf(act);
-    if (!shades) return {};
-    // colorClaro más oscuro = tinte del oscuro al 15% sobre la fila clara
-    return { 'background-color': shades.oscuro + '26', color: shades.oscuro };
+    return {};
+  }
+
+  getChevronStyle(act: ActividadDto): Record<string, string> {
+    const info = this.rowStyleMap.get(act.projectActivityId);
+    return info ? { color: info.text } : {};
+  }
+
+  getFechaRealStyle(act: ActividadDto): Record<string, string> {
+    if (!act.actualEndDate) {
+      // "—" en color secundario: usa la opacidad del CSS (0.75 en td-fecha) sin override
+      return {};
+    }
+    return {
+      color: this.isDarkBg(act) ? '#90CAF9' : '#1565C0',
+      fontWeight: '600',
+      opacity: '1', // anula el opacity: 0.75 que .td-fecha aplica sobre filas coloreadas
+    };
   }
 
   hasChildren(act: ActividadDto): boolean {
@@ -220,6 +278,210 @@ export class CronogramaActividades implements OnInit {
     }
   }
 
+  // ── Drag & Drop ────────────────────────────────────────────────────────────
+
+  /** true si `target` comparte el mismo parentId que la actividad en curso. */
+  private mismoParentId(target: ActividadDto): boolean {
+    if (!this.dragSrc) return false;
+    const pid = this.dragSrc.parentId;
+    return pid === null ? target.parentId === null : target.parentId === pid;
+  }
+
+  /** La línea indicadora solo aparece si el destino es un candidato válido. */
+  canDropOn(target: ActividadDto): boolean {
+    if (!this.dragSrc || this.dragSrc.projectActivityId === target.projectActivityId) return false;
+    if (!this.isVisible(target)) return false;
+    return this.mismoParentId(target);
+  }
+
+  onDragStart(act: ActividadDto, event: DragEvent): void {
+    this.dragSrc = act;
+    this.dragActId = act.projectActivityId;
+    event.dataTransfer!.effectAllowed = 'move';
+    event.dataTransfer!.setData('text/plain', String(act.projectActivityId));
+    const orderCell = event.currentTarget as HTMLElement;
+    const row = orderCell.closest('tr') as HTMLElement | null;
+    if (row && event.dataTransfer) {
+      const rect = row.getBoundingClientRect();
+      event.dataTransfer.setDragImage(row, event.clientX - rect.left, event.clientY - rect.top);
+    }
+  }
+
+  onDragOver(act: ActividadDto, event: DragEvent): void {
+    // Sin preventDefault → el navegador muestra cursor "prohibido" y no disparará drop
+    if (!this.canDropOn(act)) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    const row = event.currentTarget as HTMLElement;
+    const rect = row.getBoundingClientRect();
+    this.dropTargetId = act.projectActivityId;
+    this.dropAbove = event.clientY < rect.top + rect.height / 2;
+  }
+
+  onDragLeave(act: ActividadDto, event: DragEvent): void {
+    if (this.dropTargetId !== act.projectActivityId) return;
+    const related = event.relatedTarget as Node | null;
+    if (!(event.currentTarget as HTMLElement).contains(related)) {
+      this.dropTargetId = null;
+    }
+  }
+
+  onDragEnd(): void {
+    this.dragSrc = null;
+    this.dragActId = null;
+    this.dropTargetId = null;
+  }
+
+  /**
+   * Devuelve el subárbol de la actividad en srcIdx: ella misma + todos sus
+   * descendientes que aparecen contiguos inmediatamente después en el array
+   * (orden depth-first que retorna el backend).
+   */
+  private getSubtreeSlice(srcIdx: number): ActividadDto[] {
+    const slice = [this.actividades[srcIdx]];
+    const ids = new Set<number>([this.actividades[srcIdx].projectActivityId]);
+    for (let i = srcIdx + 1; i < this.actividades.length; i++) {
+      const a = this.actividades[i];
+      if (a.parentId !== null && ids.has(a.parentId)) {
+        slice.push(a);
+        ids.add(a.projectActivityId);
+      } else {
+        break;
+      }
+    }
+    return slice;
+  }
+
+  onDrop(act: ActividadDto, event: DragEvent): void {
+    event.preventDefault();
+
+    // Limpiar estado de drag de inmediato
+    const src = this.dragSrc;
+    this.dragSrc = null;
+    this.dragActId = null;
+    this.dropTargetId = null;
+
+    if (!src) return;
+
+    // ── Verificación final: mismo parentId ───────────────────────────────────
+    const srcPid = src.parentId;
+    const tgtPid = act.parentId;
+    const mismoParent = srcPid === null ? tgtPid === null : tgtPid === srcPid;
+    if (!mismoParent || src.projectActivityId === act.projectActivityId) return;
+
+    // ── Opción A: order global único ─────────────────────────────────────────
+    // 1. Obtener el subárbol de src (src + todos sus hijos recursivos)
+    const srcIdx = this.actividades.findIndex(
+      (a) => a.projectActivityId === src.projectActivityId,
+    );
+    if (srcIdx === -1) return;
+    const subtree = this.getSubtreeSlice(srcIdx);
+    const subtreeIds = new Set(subtree.map((a) => a.projectActivityId));
+
+    // 2. Lista plana sin el subárbol
+    const listaPlana = this.actividades.filter((a) => !subtreeIds.has(a.projectActivityId));
+
+    // 3. Posición del destino en la lista plana
+    const tgtIdx = listaPlana.findIndex((a) => a.projectActivityId === act.projectActivityId);
+    if (tgtIdx === -1) return;
+
+    // 4. Insertar el subárbol antes o después del destino
+    listaPlana.splice(this.dropAbove ? tgtIdx : tgtIdx + 1, 0, ...subtree);
+
+    // 5. Sin cambio real → no llamar al backend
+    const sinCambio = listaPlana.every(
+      (a, i) => a.projectActivityId === this.actividades[i].projectActivityId,
+    );
+    if (sinCambio) return;
+
+    // 6. Payload: TODAS las actividades con order global 1, 2, 3…
+    const items: ReordenarItem[] = listaPlana.map((a, i) => ({
+      projectActivityId: a.projectActivityId,
+      order: i + 1,
+    }));
+
+    this.guardandoOrden = true;
+    this.loaderService.show();
+    this.service.reordenarActividades(this.selectedProyectoId!, items).subscribe({
+      next: () => {
+        // Actualizar el array local directamente — no hay reload, no hay parpadeo ni reset de scroll
+        this.actividades = listaPlana;
+        this.buildParentIds();
+        this.buildColorMap();
+        this.buildAvanceMap();
+        this.guardandoOrden = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        // this.actividades nunca se modificó → ya tiene el orden original, sin necesidad de recargar
+        this.guardandoOrden = false;
+        this.loaderService.hide();
+        const msg = typeof err.error === 'string'
+          ? err.error
+          : (err.error?.message ?? err.error?.detail ?? err.message ?? 'Ocurrió un error.');
+        Swal.fire({ icon: 'error', title: 'Error al reordenar', text: msg, confirmButtonColor: '#2596be' });
+      },
+    });
+  }
+
+  // ── Cambio de jerarquía ────────────────────────────────────────────────────
+
+  canSubirNivel(act: ActividadDto): boolean {
+    return act.hierarchyLevel > 0;
+  }
+
+  canBajarNivel(act: ActividadDto): boolean {
+    return act.hierarchyLevel < 3;
+  }
+
+  subirNivelActividad(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.loaderService.show();
+    this.service.subirNivel(this.selectedProyectoId!, act.projectActivityId).subscribe({
+      next: () => { this.loaderService.hide(); this.recargar(); },
+      error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+    });
+  }
+
+  bajarNivelActividad(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    const actIdx = this.actividades.findIndex((a) => a.projectActivityId === act.projectActivityId);
+    let newParent: ActividadDto | null = null;
+    for (let i = actIdx - 1; i >= 0; i--) {
+      if (this.actividades[i].hierarchyLevel === act.hierarchyLevel) {
+        newParent = this.actividades[i];
+        break;
+      }
+    }
+    if (!newParent) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin padre disponible',
+        text: 'No hay un padre disponible para asignar esta actividad.',
+        confirmButtonColor: '#2596be',
+      });
+      return;
+    }
+    this.loaderService.show();
+    this.service.bajarNivel(this.selectedProyectoId!, act.projectActivityId, newParent.projectActivityId).subscribe({
+      next: () => { this.loaderService.hide(); this.recargar(); },
+      error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+    });
+  }
+
+  // ── Crear con nivel ────────────────────────────────────────────────────────
+
+  get padresDisponibles(): ActividadDto[] {
+    if (this.formNivel <= 1) return [];
+    return this.actividades.filter((a) => a.hierarchyLevel === this.formNivel - 1);
+  }
+
+  onFormNivelChange(nivel: number): void {
+    this.formNivel = nivel;
+    this.formPadreId = null;
+  }
+
   // ── Utilidades de formato ──────────────────────────────────────────────────
 
   formatDate(date: string | null | undefined): string {
@@ -236,8 +498,34 @@ export class CronogramaActividades implements OnInit {
     return { label: 'PENDIENTE', css: 'badge-gris' };
   }
 
+  private buildAvanceMap(): void {
+    this.avanceMap.clear();
+    for (const act of this.actividades) {
+      this.calcularAvance(act.projectActivityId);
+    }
+  }
+
+  private calcularAvance(actividadId: number): number {
+    if (this.avanceMap.has(actividadId)) return this.avanceMap.get(actividadId)!;
+    const hijos = this.actividades.filter((a) => a.parentId === actividadId);
+    let result: number;
+    if (hijos.length === 0) {
+      const act = this.actividades.find((a) => a.projectActivityId === actividadId);
+      result = act ? (act.actualEndDate ? 100 : (act.progressPercentage ?? 0)) : 0;
+    } else {
+      const suma = hijos.reduce((acc, h) => acc + this.calcularAvance(h.projectActivityId), 0);
+      result = Math.round(suma / hijos.length);
+    }
+    this.avanceMap.set(actividadId, result);
+    return result;
+  }
+
+  getDisplayIndex(act: ActividadDto): number {
+    return this.actividades.findIndex((a) => a.projectActivityId === act.projectActivityId) + 1;
+  }
+
   getAvance(act: ActividadDto): number {
-    return act.actualEndDate ? 100 : act.progressPercentage;
+    return this.avanceMap.get(act.projectActivityId) ?? (act.actualEndDate ? 100 : act.progressPercentage);
   }
 
   getAvanceColor(pct: number): string {
@@ -257,6 +545,8 @@ export class CronogramaActividades implements OnInit {
     this.formPlannedEnd = '';
     this.formActualEnd = '';
     this.formProgress = 0;
+    this.formNivel = 1;
+    this.formPadreId = null;
     this.guardando = false;
     this.modalOpen = true;
   }
@@ -269,7 +559,8 @@ export class CronogramaActividades implements OnInit {
     this.formPlannedStart = act.plannedStartDate?.slice(0, 10) ?? '';
     this.formPlannedEnd = act.plannedEndDate?.slice(0, 10) ?? '';
     this.formActualEnd = act.actualEndDate?.slice(0, 10) ?? '';
-    this.formProgress = act.progressPercentage ?? 0;
+    const raw = act.progressPercentage ?? 0;
+    this.formProgress = raw >= 75 ? 100 : raw >= 25 ? 50 : 0;
     this.guardando = false;
     this.modalOpen = true;
   }
@@ -278,6 +569,7 @@ export class CronogramaActividades implements OnInit {
     this.modalOpen = false;
     this.guardando = false;
     this.editandoAct = null;
+    this.errorFechaReal = false;
   }
 
   onOverlayClick(e: MouseEvent): void {
@@ -287,6 +579,11 @@ export class CronogramaActividades implements OnInit {
   }
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
+
+  onProgressChange(val: number): void {
+    this.formProgress = val;
+    if (val !== 100) this.errorFechaReal = false;
+  }
 
   guardar(): void {
     if (!this.selectedProyectoId) return;
@@ -299,6 +596,20 @@ export class CronogramaActividades implements OnInit {
       });
       return;
     }
+    if (this.modalMode === 'editar' && this.formProgress === 100 && !this.formActualEnd) {
+      this.errorFechaReal = true;
+      return;
+    }
+    if (this.modalMode === 'crear' && this.formNivel > 1 && !this.formPadreId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Padre requerido',
+        text: 'Debes seleccionar un padre para esta actividad.',
+        confirmButtonColor: '#2596be',
+      });
+      return;
+    }
+    this.errorFechaReal = false;
     this.guardando = true;
 
     if (this.modalMode === 'crear') {
@@ -307,6 +618,8 @@ export class CronogramaActividades implements OnInit {
         plannedStartDate: this.formPlannedStart || null,
         plannedEndDate: this.formPlannedEnd || null,
         progressPercentage: Number(this.formProgress) || 0,
+        hierarchyLevel: this.formNivel,
+        parentId: this.formNivel > 1 ? this.formPadreId : null,
       };
       this.service.crearActividad(this.selectedProyectoId, body).subscribe({
         next: () => { this.cerrarModal(); this.recargar(); },
@@ -334,6 +647,7 @@ export class CronogramaActividades implements OnInit {
       next: (res) => {
         const idx = this.actividades.findIndex((a) => a.projectActivityId === act.projectActivityId);
         if (idx !== -1) this.actividades[idx].actualEndDate = res.actualEndDate;
+        this.buildAvanceMap();
         this.cerrarModal();
         this.cdr.detectChanges();
       },
@@ -362,6 +676,7 @@ export class CronogramaActividades implements OnInit {
           );
           this.buildParentIds();
           this.buildColorMap();
+          this.buildAvanceMap();
           this.cerrarModal();
           this.cdr.detectChanges();
         },
@@ -372,6 +687,41 @@ export class CronogramaActividades implements OnInit {
 
   private recargar(): void {
     if (this.selectedProyectoId) this.loadActividades(this.selectedProyectoId);
+  }
+
+  /** Recarga desde BD preservando scroll (.page-content) y estado de colapso. */
+  private recargarConEstado(): void {
+    if (!this.selectedProyectoId) return;
+
+    const scrollEl = document.querySelector('.page-content') as HTMLElement | null;
+    const scrollTop = scrollEl?.scrollTop ?? 0;
+    const colapsados = new Set(this.collapsedIds);
+
+    this.loadingActividades = true;
+    this.loaderService.show();
+    this.service.getActividades(this.selectedProyectoId).subscribe({
+      next: (res) => {
+        this.actividades = res ?? [];
+        this.buildParentIds();
+        this.buildColorMap();
+        this.buildAvanceMap();
+
+        // Restaurar colapso antes del render: solo IDs que siguen existiendo
+        const existentes = new Set(this.actividades.map((a) => a.projectActivityId));
+        this.collapsedIds = new Set([...colapsados].filter((id) => existentes.has(id)));
+
+        this.loadingActividades = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+
+        // Restaurar scroll en el siguiente tick, cuando el DOM ya está actualizado
+        setTimeout(() => { if (scrollEl) scrollEl.scrollTop = scrollTop; }, 0);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingActividades = false;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── Modal Importar MPP ─────────────────────────────────────────────────────

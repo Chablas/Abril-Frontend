@@ -3,43 +3,22 @@
   <!-- ── Header ── -->
   <div class="header-card card">
     <div class="header-content">
-      <div class="header-info">
-        <span class="page-title">Cronograma de Actividades</span>
-        <span class="page-sub" *ngIf="proyecto?.responsableUdp">
-          Responsable UDP: {{ proyecto!.responsableUdp }}
-        </span>
-      </div>
-      <div class="header-select-wrapper">
-        <select
-          class="project-select"
-          [(ngModel)]="selectedProyectoId"
-          (ngModelChange)="onProyectoChange($event)"
-          [disabled]="loadingProyectos"
-        >
-          <option [ngValue]="null">— Seleccionar proyecto —</option>
-          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
-            {{ p.projectDescription }}
-          </option>
-        </select>
+      <div class="header-info-row">
+        <button class="btn-volver" (click)="volver()" title="Volver a proyectos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Volver
+        </button>
+        <div class="header-info">
+          <span class="page-title">{{ proyecto?.projectDescription || 'Cronograma de Actividades' }}</span>
+          <span class="page-sub" *ngIf="proyecto?.responsableUdp">
+            Responsable UDP: {{ proyecto!.responsableUdp }}
+          </span>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- ── Sin proyecto seleccionado ── -->
-  <div class="empty-state" *ngIf="!selectedProyectoId && !loadingProyectos">
-    <div class="empty-icon">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-        <line x1="8" y1="14" x2="8.01" y2="14"/>
-        <line x1="12" y1="14" x2="16" y2="14"/>
-        <line x1="8" y1="18" x2="8.01" y2="18"/>
-        <line x1="12" y1="18" x2="16" y2="18"/>
-      </svg>
-    </div>
-    <p class="empty-title">Selecciona un proyecto para ver su cronograma</p>
   </div>
 
   <!-- ── Cargando actividades ── -->
@@ -106,6 +85,7 @@
             <th class="col-fecha">Fin Real</th>
             <th class="col-avance">Avance</th>
             <th class="col-estado">Estado</th>
+            <th class="col-jerarquia"></th>
           </tr>
         </thead>
         <tbody>
@@ -113,17 +93,35 @@
           <tr
             *ngIf="isVisible(act)"
             class="row-clickable"
-            [class.row-colored]="act.hierarchyLevel <= 1"
-            [class.row-tinted]="act.hierarchyLevel >= 2"
+            [class.row-dark]="isDarkBg(act)"
+            [class.row-light]="!isDarkBg(act)"
+            [class.row-bordered]="act.hierarchyLevel >= 3"
+            [class.lvl-0]="act.hierarchyLevel === 0"
+            [class.lvl-1]="act.hierarchyLevel === 1"
+            [class.lvl-2]="act.hierarchyLevel === 2"
+            [class.lvl-deep]="act.hierarchyLevel >= 3"
+            [class.row-dragging]="dragActId === act.projectActivityId"
+            [class.drop-above]="dropTargetId === act.projectActivityId && dropAbove"
+            [class.drop-below]="dropTargetId === act.projectActivityId && !dropAbove"
             [ngStyle]="getRowStyle(act)"
             (click)="abrirModalEditar(act)"
+            (dragover)="onDragOver(act, $event)"
+            (dragleave)="onDragLeave(act, $event)"
+            (drop)="onDrop(act, $event)"
+            (dragend)="onDragEnd()"
           >
-            <td class="td-order">{{ act.order }}</td>
+            <td
+              class="td-order td-drag-handle"
+              [attr.draggable]="true"
+              (dragstart)="onDragStart(act, $event)"
+              (click)="$event.stopPropagation()"
+            >{{ getDisplayIndex(act) }}</td>
             <td class="td-actividad">
               <div class="actividad-cell" [style.padding-left.px]="act.hierarchyLevel * 20">
                 <button
                   *ngIf="hasChildren(act)"
                   class="btn-chevron"
+                  [ngStyle]="getChevronStyle(act)"
                   (click)="toggleCollapse(act, $event)"
                   [title]="collapsedIds.has(act.projectActivityId) ? 'Expandir' : 'Colapsar'"
                 >
@@ -142,7 +140,7 @@
             </td>
             <td class="td-fecha">{{ formatDate(act.plannedStartDate) }}</td>
             <td class="td-fecha">{{ formatDate(act.plannedEndDate) }}</td>
-            <td class="td-fecha" [class.td-fecha-real]="act.actualEndDate">
+            <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">
               {{ formatDate(act.actualEndDate) }}
             </td>
             <td class="td-avance">
@@ -150,7 +148,8 @@
                 <div class="avance-bar-bg">
                   <div
                     class="avance-bar-fill"
-                    [ngClass]="getAvanceColor(getAvance(act))"
+                    [ngClass]="isDarkBg(act) ? getAvanceColor(getAvance(act)) : ''"
+                    [style.background]="isDarkBg(act) ? null : '#2C3E56'"
                     [style.width.%]="getAvance(act)"
                   ></div>
                 </div>
@@ -158,9 +157,39 @@
               </div>
             </td>
             <td>
-              <span class="badge" [ngStyle]="getBadgeStyle(act)">
+              <span
+                class="badge"
+                [ngClass]="isDarkBg(act) ? '' : getEstado(act).css"
+                [ngStyle]="getBadgeStyle(act)"
+              >
                 {{ getEstado(act).label }}
               </span>
+            </td>
+            <td class="td-jerarquia" (click)="$event.stopPropagation()">
+              <div class="jerarquia-btns">
+                <button
+                  class="btn-jerarquia"
+                  [ngStyle]="getChevronStyle(act)"
+                  [disabled]="!canSubirNivel(act)"
+                  (click)="subirNivelActividad(act, $event)"
+                  title="Subir nivel"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <button
+                  class="btn-jerarquia"
+                  [ngStyle]="getChevronStyle(act)"
+                  [disabled]="!canBajarNivel(act)"
+                  (click)="bajarNivelActividad(act, $event)"
+                  title="Bajar nivel"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
             </td>
           </tr>
           </ng-container>
@@ -241,6 +270,27 @@
         />
       </div>
 
+      <!-- Nivel y Padre (solo en crear) -->
+      <div class="field-row" *ngIf="modalMode === 'crear'">
+        <div class="field">
+          <label class="field-label">Nivel</label>
+          <select class="field-input" [ngModel]="formNivel" (ngModelChange)="onFormNivelChange($event)">
+            <option [ngValue]="1">Nivel 1</option>
+            <option [ngValue]="2">Nivel 2</option>
+            <option [ngValue]="3">Nivel 3</option>
+          </select>
+        </div>
+        <div class="field" *ngIf="formNivel > 1">
+          <label class="field-label">Padre *</label>
+          <select class="field-input" [(ngModel)]="formPadreId">
+            <option [ngValue]="null">— Seleccionar padre —</option>
+            <option *ngFor="let p of padresDisponibles" [ngValue]="p.projectActivityId">
+              {{ p.order }}. {{ p.activityDescription }}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <!-- Fechas programadas -->
       <div class="field-row">
         <div class="field">
@@ -255,23 +305,26 @@
 
       <!-- Avance -->
       <div class="field">
-        <label class="field-label">Avance (%) — {{ formProgress }}%</label>
-        <div class="avance-field-wrap">
-          <input
-            type="range"
-            class="avance-slider"
-            [(ngModel)]="formProgress"
-            min="0"
-            max="100"
-            step="1"
-          />
-          <input
-            type="number"
-            class="field-input avance-number"
-            [(ngModel)]="formProgress"
-            min="0"
-            max="100"
-          />
+        <label class="field-label">Avance (%)</label>
+        <div class="avance-btn-group">
+          <button type="button"
+            class="avance-opt avance-opt-0"
+            [class.avance-opt-active]="formProgress === 0"
+            (click)="onProgressChange(0)">
+            0%
+          </button>
+          <button type="button"
+            class="avance-opt avance-opt-50"
+            [class.avance-opt-active]="formProgress === 50"
+            (click)="onProgressChange(50)">
+            50%
+          </button>
+          <button type="button"
+            class="avance-opt avance-opt-100"
+            [class.avance-opt-active]="formProgress === 100"
+            (click)="onProgressChange(100)">
+            100%
+          </button>
         </div>
         <div class="avance-preview-bar">
           <div
@@ -284,9 +337,21 @@
 
       <!-- Fin Real (solo en editar) -->
       <div class="field" *ngIf="modalMode === 'editar'">
-        <label class="field-label">Fecha Real de Fin</label>
-        <input type="date" class="field-input" [(ngModel)]="formActualEnd" />
-        <span class="field-hint">Dejar vacío si la actividad no ha culminado</span>
+        <label class="field-label">
+          Fecha Real de Fin
+          <span *ngIf="formProgress === 100" class="field-label-required">*</span>
+        </label>
+        <input
+          type="date"
+          class="field-input"
+          [class.field-input-error]="errorFechaReal"
+          [(ngModel)]="formActualEnd"
+          (ngModelChange)="errorFechaReal = false"
+        />
+        <span class="field-error" *ngIf="errorFechaReal">
+          La fecha real de fin es obligatoria cuando el avance es 100%
+        </span>
+        <span class="field-hint" *ngIf="!errorFechaReal">Dejar vacío si la actividad no ha culminado</span>
       </div>
 
     </div>
