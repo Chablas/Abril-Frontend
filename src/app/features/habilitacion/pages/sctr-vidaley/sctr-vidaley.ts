@@ -224,6 +224,13 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   // ── Tab Pólizas ──────────────────────────────────────────
 
+  private recalcularEstadoLocal(doc: SctrVidaLeyDto): void {
+    const tienePendientes = doc.workers?.some(
+      w => w.estado === 'En revision' || w.estado === 'Enviado'
+    ) ?? false;
+    doc.estado = tienePendientes ? 'Enviado' : 'Aprobado';
+  }
+
   loadDocumentos(page: number = this.currentPage): void {
     this.loading = true;
     this.loaderService.show();
@@ -803,7 +810,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
       next: () => {
         this.savingWorkerInline = false;
         Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1200, showConfirmButton: false });
-        this.loadDocumentos(this.currentPage);
+        const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
+        if (worker) worker.estado = 'Aprobado';
+        this.recalcularEstadoLocal(this.selectedDoc!);
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;
@@ -833,7 +843,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
         this.rechazandoWorkerId = null;
         this.rechazandoMotivoInline = '';
         Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1200, showConfirmButton: false });
-        this.loadDocumentos(this.currentPage);
+        const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
+        if (worker) worker.estado = 'Rechazado';
+        this.recalcularEstadoLocal(this.selectedDoc!);
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;
