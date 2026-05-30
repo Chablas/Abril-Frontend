@@ -22,7 +22,8 @@ export class Layout {
       this.router.url.includes('/clinica/dashboard') ||
       this.router.url.includes('/clinica/agenda') ||
       this.router.url.includes('/clinica/interconsultas') ||
-      this.router.url.includes('/clinica/programaciones')
+      this.router.url.includes('/clinica/programaciones') ||
+      this.router.url.includes('/habilitacion/dashboard-contratista')
     );
   }
 }
