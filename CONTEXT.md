@@ -2437,7 +2437,7 @@ Checkboxes y botones de aprobación masiva operan sobre este subset.
 - **`sctr-subir.html`**: campo Proyecto cambiado a **obligatorio** (`Proyecto *`, `placeholder="Selecciona un proyecto"`).
 - **`sctr-subir.ts` `submit()`**: guard antes del payload — si `!model.proyectoId` lanza Swal warning y hace `return`. El backend ya recibía `proyectoId` como opcional, pero ahora el frontend lo exige.
 - **`sctr-vidaley.ts` `filteredDocWorkers` / `filteredPolizaWorkers`**: excluyen workers con estado `'Rechazado'` además de `'Aprobado'`. Antes los Rechazados aparecían en el panel de aprobación masiva.
-- **`sctr-vidaley.ts` `loadDocumentos()`**: tras recibir `res.data`, mapea cada póliza recalculando `estado` client-side — `'Enviado'` si algún worker tiene `estadoSctr` o `estadoVidaLey` en `'En revision'`/`'Enviado'`; `'Aprobado'` en caso contrario. No se usa `doc.estado` del backend.
+- **`sctr-vidaley.ts` `recalcularEstadoLocal(doc)`** (método privado): actualiza `doc.estado` (`'Enviado'` si hay workers en `'En revision'`/`'Enviado'`, `'Aprobado'` si no), sincroniza `this.documentos[idx].estado` y llama `cdr.detectChanges()`. Usado por `aprobarWorkerIndividual` y `confirmarRechazarWorker` para reflejar cambios sin recargar del backend.
 
 ### Aprobación directa sin Swal confirm
 

@@ -229,6 +229,10 @@ export class SctrVidaley implements OnInit, OnDestroy {
       w => w.estado === 'En revision' || w.estado === 'Enviado'
     ) ?? false;
     doc.estado = tienePendientes ? 'Enviado' : 'Aprobado';
+
+    const idx = this.documentos.findIndex(d => d.id === doc.id);
+    if (idx !== -1) this.documentos[idx].estado = doc.estado;
+    this.cdr.detectChanges();
   }
 
   loadDocumentos(page: number = this.currentPage): void {
@@ -813,7 +817,6 @@ export class SctrVidaley implements OnInit, OnDestroy {
         const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
         if (worker) worker.estado = 'Aprobado';
         this.recalcularEstadoLocal(this.selectedDoc!);
-        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;
@@ -846,7 +849,6 @@ export class SctrVidaley implements OnInit, OnDestroy {
         const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
         if (worker) worker.estado = 'Rechazado';
         this.recalcularEstadoLocal(this.selectedDoc!);
-        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;
