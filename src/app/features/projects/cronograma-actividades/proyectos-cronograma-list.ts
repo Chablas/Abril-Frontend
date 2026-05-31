@@ -16,6 +16,17 @@ interface ProyectoRow extends ProyectoSimpleDto {
   avance: number;
 }
 
+const PROJECT_COLORS = [
+  '#3B82F6', // azul
+  '#14B8A6', // teal
+  '#F59E0B', // ámbar
+  '#A855F7', // púrpura
+  '#EF4444', // rojo
+  '#10B981', // esmeralda
+  '#F97316', // naranja
+  '#6366F1', // índigo
+];
+
 @Component({
   selector: 'app-proyectos-cronograma-list',
   standalone: true,
@@ -105,6 +116,18 @@ export class ProyectosCronogramaList implements OnInit {
 
     const suma = nivel0.reduce((s, n) => s + calc(n.projectActivityId), 0);
     return Math.round(suma / nivel0.length);
+  }
+
+  getProjectColor(index: number): string {
+    return PROJECT_COLORS[index % PROJECT_COLORS.length];
+  }
+
+  getProjectColorGlow(index: number): string {
+    const hex = PROJECT_COLORS[index % PROJECT_COLORS.length];
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.38)`;
   }
 
   pad(n: number): string {

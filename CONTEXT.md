@@ -3164,3 +3164,123 @@ PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/{id}/bajar-nivel  
 
 `ReordenarItem { projectActivityId, order }`. **Ojo**: subir/bajar-nivel llevan `{proyectoId}` en la ruta
 (se corrigió una versión previa sin él). `CrearActividadRequest` ahora incluye `hierarchyLevel` + `parentId`.
+
+---
+
+## Sesión 2026-05-31 — Cronograma de Actividades: rediseño tema claro + paleta demo
+
+### Tokens de diseño — `src/styles.css` + `@theme`
+
+Bloque `@theme` añadido en `src/styles.css` (inmediatamente después de `@import 'tailwindcss'`).
+Genera clases Tailwind `bg-abril-*`, `text-abril-*`, `border-abril-*`:
+
+| Token                   | Hex       | Uso                         |
+| ----------------------- | --------- | --------------------------- |
+| `--color-abril-ink`     | `#0D1B2A` | Nivel 0                     |
+| `--color-abril-prussian`| `#1B263B` | Nivel 1a                    |
+| `--color-abril-steel`   | `#415A77` | Nivel 1b                    |
+| `--color-abril-dusk`    | `#778DA9` | Nivel 1c                    |
+| `--color-abril-light`   | `#E0E1DD` | Nivel 1d / texto claro      |
+| `--color-abril-n2a..d`  | derivados | Nivel 2 (4 tonos)           |
+| `--color-abril-success` | `#86efac` | Badge culminado (dark ctx)  |
+| `--color-abril-danger`  | `#fca5a5` | Badge vencido (dark ctx)    |
+| `--color-abril-info`    | `#93c5fd` | Badge en proceso (dark ctx) |
+| `--color-abril-warning` | `#fde68a` | Badge pendiente (dark ctx)  |
+
+### Paleta Demo — `features/paleta-demo/`
+
+Nueva ruta pública **sin auth**: `app.routes.ts` → `{ path: 'paleta-demo', loadComponent: PaletaDemoComponent }`.
+Accesible en `http://localhost:4200/paleta-demo` sin login — sirve como referencia de design system.
+
+Página de 7 secciones (tema oscuro `#0D1B2A`, fuentes `Sora` + `DM Mono` via Google Fonts):
+1. Paleta base (5 swatches con token + hex + clase Tailwind)
+2. Derivados N2 + tokens semánticos
+3. Degradados (3 barras de gradiente)
+4. Badges en contexto oscuro y claro (side-by-side)
+5. Tabla de jerarquía con colores reales de los 4 niveles
+6. Showcase de botones (5 variantes × 2 fondos)
+7. Escala tipográfica (8 especímenes)
+
+Franja cromática en hero es interactiva: hover expande el segmento.
+
+### Vista 1 — `ProyectosCronogramaList` — rediseño tema claro
+
+**Tema**: fondo `#f0f4f8`, header oscuro `#0D1B2A` (se mantiene), cuerpo claro con tarjetas.
+
+**Paleta de colores por proyecto** (`PROJECT_COLORS[]`, 8 colores cíclicos):
+`#3B82F6, #14B8A6, #F59E0B, #A855F7, #EF4444, #10B981, #F97316, #6366F1`
+
+**Cambios en `.ts`:**
+- `getProjectColor(index)` — color cíclico del array
+- `getProjectColorGlow(index)` — rgba a 38% del mismo color para `box-shadow`
+
+**Cambios estructurales en `.html`:** `<table>` → lista de `div.project-card` con CSS Grid
+`52px 1fr 200px 220px`. El `<tr>` no soporta `border-radius`; las tarjetas sí.
+
+**Mecánica del borde lateral:**
+- `[style.--proj-color]="getProjectColor(i)"` en cada tarjeta
+- `::before` pseudo-element: `left:0; top:10px; bottom:10px; width:3px; border-radius:0 2px 2px 0`
+  → no afecta el grid layout, solo visual
+- Hover: `translateX(2px)` (sensación de anclaje al borde) + `brightness(1.035)`
+
+**Barra de avance:** fill usa `[style.background]="getProjectColor(i)"` + `box-shadow: var(--proj-glow)`
++ animación `scaleX(0→1)` al renderizarse.
+
+**Skeleton (modo claro):** shimmer `#b0c0d2 → #cdd9e6` sobre fondo `#e8edf3`.
+Responsive: la columna AVANCE desaparece en ≤768px, RESPONSABLE en ≤520px.
+
+### Vista 2 — `CronogramaActividades` — rediseño tema claro
+
+**Tema general:** fondo `#f0f4f8`, `table-card` blanco, `thead` `#e2e8f0`, separadores `#e9eef4`.
+
+**Nueva lógica de colores por jerarquía** — reemplaza la paleta BCS anterior:
+
+| Nivel | Fondo     | Texto     | Borde izquierdo                   |
+| ----- | --------- | --------- | --------------------------------- |
+| 0     | `#1B263B` | `#E0E1DD` | ninguno                           |
+| 1     | `#ffffff` | `#1B263B` | 3px `LEVEL1_COLORS[idx]` (sólido) |
+| 2     | `#f0f4f8` | `#2d3f52` | 3px `rgba(color, 0.45)`           |
+| 3+    | `#f8fafc` | `#4a6580` | 2px gris `#e9eef4` (CSS)          |
+
+`LEVEL1_COLORS` (8 colores, cíclico): mismo array que Vista 1.
+
+**Cambios en `rowStyleMap`:** tipo extendido con `color?: string` (el acento del nivel 1 que los hijos heredan).
+`buildColorMap()` reescrito; nuevos helpers: `findAncestorColorAtLevel()`, `hexToRgba()`, `getBarFillColor()`.
+
+**Separador de grupos:** `.lvl-1 td { border-top: 3px solid #f0f4f8; padding-top: 1rem }` — crea
+brecha visual entre grupos en tabla `border-collapse: collapse` sin cambiar el DOM.
+
+**Barra de avance:** fill = `getBarFillColor(act)` (color acento del mapa); nivel 0 (oscuro) mantiene
+clases semáforo `fill-verde/azul/amarillo/rojo`.
+
+**Fin Real:** `#1d4ed8` en fondos claros (era `#1565C0`).
+
+**Skeleton:** shimmer `#dde5ef → #eaeff6` sobre fondo blanco.
+
+**Drag & drop, collapse/expand, botones jerarquía: intactos.**
+
+### Estado/badges — nueva lógica 2026-05-31
+
+**Nueva firma:** `getEstado(act): 'CULMINADA' | 'VENCIDO' | 'EN PROGRESO'` (string literal, no objeto).
+
+**Lógica** (usa avance recursivo, no `progressPercentage` crudo):
+1. `getAvance(act) === 100` → `'CULMINADA'`
+2. `!act.plannedEndDate` → `'EN PROGRESO'`
+3. `new Date() > new Date(plannedEndDate)` (comparación por Date) → `'VENCIDO'`
+4. Default → `'EN PROGRESO'`
+
+**Helpers auxiliares:**
+- `getEstadoCss(act)` — devuelve clase CSS: `badge-verde` / `badge-rojo` / `badge-azul`
+- `getBadgeStyle(act)` — para filas oscuras (nivel 0): badges con color sólido opaco
+
+**Colores badge fila oscura (#1B263B):**
+- CULMINADA: `bg: #86efac, fg: #14532d`
+- VENCIDO: `bg: #fca5a5, fg: #7f1d1d`
+- EN PROGRESO: `bg: #93c5fd, fg: #1e3a5f`
+
+**Colores badge filas claras (CSS classes):**
+- `badge-verde`: `#dcfce7 / #166534`
+- `badge-rojo`: `#fee2e2 / #991b1b`
+- `badge-azul`: `#dbeafe / #1d4ed8`
+
+Template: `[ngClass]="isDarkBg(act) ? '' : getEstadoCss(act)"`, `{{ getEstado(act) }}`.

@@ -48,7 +48,7 @@ export class CronogramaActividades implements OnInit {
   // Jerarquía
   collapsedIds = new Set<number>();
   private parentIds = new Set<number>();
-  private rowStyleMap = new Map<number, { bg: string; text: string; border?: string }>();
+  private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
   private avanceMap = new Map<number, number>();
 
   // Drag & Drop
@@ -61,25 +61,11 @@ export class CronogramaActividades implements OnInit {
   // Crear: nivel y padre
   formNivel = 1;
   formPadreId: number | null = null;
-  private readonly NIVEL0 = { bg: '#0D1B2A', text: '#E0E1DD' } as const;
-  private readonly LEVEL1_ENTRIES: Array<{ base: string; text: string }> = [
-    { base: '#1B263B', text: '#E0E1DD' },
-    { base: '#415A77', text: '#E0E1DD' },
-    { base: '#778DA9', text: '#0D1B2A' },
-    { base: '#E0E1DD', text: '#0D1B2A' },
+  private readonly NIVEL0 = { bg: '#1B263B', text: '#E0E1DD' } as const;
+  private readonly LEVEL1_COLORS = [
+    '#3B82F6', '#14B8A6', '#F59E0B', '#A855F7',
+    '#EF4444', '#10B981', '#F97316', '#6366F1',
   ];
-  private readonly NIVEL2_MAP: Record<string, { bg: string; text: string }> = {
-    '#1B263B': { bg: '#2C3E56', text: '#E0E1DD' },
-    '#415A77': { bg: '#557090', text: '#E0E1DD' },
-    '#778DA9': { bg: '#8fa3b8', text: '#0D1B2A' },
-    '#E0E1DD': { bg: '#cacbc7', text: '#0D1B2A' },
-  };
-  private readonly NIVEL3_MAP: Record<string, { bg: string; text: string; border: string }> = {
-    '#2C3E56': { bg: '#dde3ec', text: '#1B263B', border: '#2C3E56' },
-    '#557090': { bg: '#e4eaf1', text: '#415A77', border: '#557090' },
-    '#8fa3b8': { bg: '#edf1f5', text: '#415A77', border: '#8fa3b8' },
-    '#cacbc7': { bg: '#f5f5f4', text: '#778DA9', border: '#cacbc7' },
-  };
 
   // Formulario del modal
   formActividad = '';
@@ -184,34 +170,53 @@ export class CronogramaActividades implements OnInit {
 
   private buildColorMap(): void {
     this.rowStyleMap.clear();
-    let paletteIdx = 0;
+    let level1Idx = 0;
     for (const act of this.actividades) {
       if (act.hierarchyLevel === 0) {
         this.rowStyleMap.set(act.projectActivityId, { ...this.NIVEL0 });
       } else if (act.hierarchyLevel === 1) {
-        const e = this.LEVEL1_ENTRIES[paletteIdx % this.LEVEL1_ENTRIES.length];
-        this.rowStyleMap.set(act.projectActivityId, { bg: e.base, text: e.text });
-        paletteIdx++;
+        const color = this.LEVEL1_COLORS[level1Idx % this.LEVEL1_COLORS.length];
+        this.rowStyleMap.set(act.projectActivityId, {
+          bg: '#ffffff',
+          text: '#1B263B',
+          border: color,
+          color,
+        });
+        level1Idx++;
       } else if (act.hierarchyLevel === 2) {
-        const n1bg = this.findAncestorBgAtLevel(act, 1);
-        const n2 = n1bg ? this.NIVEL2_MAP[n1bg] : null;
-        if (n2) this.rowStyleMap.set(act.projectActivityId, { bg: n2.bg, text: n2.text });
+        const parentColor = this.findAncestorColorAtLevel(act, 1);
+        this.rowStyleMap.set(act.projectActivityId, {
+          bg: '#f0f4f8',
+          text: '#2d3f52',
+          border: parentColor ? this.hexToRgba(parentColor, 0.45) : 'transparent',
+          color: parentColor ?? undefined,
+        });
       } else {
-        const n2bg = this.findAncestorBgAtLevel(act, 2);
-        const n3 = n2bg ? this.NIVEL3_MAP[n2bg] : null;
-        if (n3) this.rowStyleMap.set(act.projectActivityId, { bg: n3.bg, text: n3.text, border: n3.border });
+        const parentColor = this.findAncestorColorAtLevel(act, 1);
+        this.rowStyleMap.set(act.projectActivityId, {
+          bg: '#f8fafc',
+          text: '#4a6580',
+          color: parentColor ?? undefined,
+        });
       }
     }
   }
 
-  private findAncestorBgAtLevel(act: ActividadDto, targetLevel: number): string | null {
+  private findAncestorColorAtLevel(act: ActividadDto, targetLevel: number): string | null {
     if (act.parentId === null) return null;
     const parent = this.actividades.find((a) => a.projectActivityId === act.parentId);
     if (!parent) return null;
     if (parent.hierarchyLevel === targetLevel) {
-      return this.rowStyleMap.get(parent.projectActivityId)?.bg ?? null;
+      return this.rowStyleMap.get(parent.projectActivityId)?.color ?? null;
     }
-    return this.findAncestorBgAtLevel(parent, targetLevel);
+    return this.findAncestorColorAtLevel(parent, targetLevel);
+  }
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   getRowStyle(act: ActividadDto): Record<string, string> {
@@ -228,14 +233,13 @@ export class CronogramaActividades implements OnInit {
 
   getBadgeStyle(act: ActividadDto): Record<string, string> {
     if (this.isDarkBg(act)) {
-      const label = this.getEstado(act).label;
+      const estado = this.getEstado(act);
       const map: Record<string, { bg: string; fg: string }> = {
-        CULMINADO:    { bg: 'rgba(74,222,128,0.22)',   fg: '#86efac' },
-        VENCIDO:      { bg: 'rgba(248,113,113,0.22)',  fg: '#fca5a5' },
-        'EN PROCESO': { bg: 'rgba(147,197,253,0.22)',  fg: '#93c5fd' },
-        PENDIENTE:    { bg: 'rgba(209,213,219,0.15)',  fg: '#e5e7eb' },
+        CULMINADA:    { bg: '#86efac', fg: '#14532d' },
+        VENCIDO:      { bg: '#fca5a5', fg: '#7f1d1d' },
+        'EN PROGRESO':{ bg: '#93c5fd', fg: '#1e3a5f' },
       };
-      const s = map[label] ?? { bg: 'rgba(255,255,255,0.15)', fg: '#ffffff' };
+      const s = map[estado] ?? { bg: 'rgba(255,255,255,0.15)', fg: '#ffffff' };
       return { 'background-color': s.bg, color: s.fg };
     }
     return {};
@@ -252,7 +256,7 @@ export class CronogramaActividades implements OnInit {
       return {};
     }
     return {
-      color: this.isDarkBg(act) ? '#90CAF9' : '#1565C0',
+      color: this.isDarkBg(act) ? '#90CAF9' : '#1d4ed8',
       fontWeight: '600',
       opacity: '1', // anula el opacity: 0.75 que .td-fecha aplica sobre filas coloreadas
     };
@@ -490,12 +494,21 @@ export class CronogramaActividades implements OnInit {
     return `${p[2]}/${p[1]}/${p[0]}`;
   }
 
-  getEstado(act: ActividadDto): { label: string; css: string } {
-    if (act.actualEndDate) return { label: 'CULMINADO', css: 'badge-verde' };
-    const hoy = new Date().toISOString().slice(0, 10);
-    if (act.plannedEndDate && act.plannedEndDate < hoy) return { label: 'VENCIDO', css: 'badge-rojo' };
-    if (act.plannedStartDate && act.plannedStartDate <= hoy) return { label: 'EN PROCESO', css: 'badge-azul' };
-    return { label: 'PENDIENTE', css: 'badge-gris' };
+  getEstado(act: ActividadDto): 'CULMINADA' | 'VENCIDO' | 'EN PROGRESO' {
+    if (this.getAvance(act) === 100) return 'CULMINADA';
+    if (!act.plannedEndDate) return 'EN PROGRESO';
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fin = new Date(act.plannedEndDate);
+    fin.setHours(0, 0, 0, 0);
+    return hoy > fin ? 'VENCIDO' : 'EN PROGRESO';
+  }
+
+  getEstadoCss(act: ActividadDto): string {
+    const e = this.getEstado(act);
+    if (e === 'CULMINADA')  return 'badge-verde';
+    if (e === 'VENCIDO')    return 'badge-rojo';
+    return 'badge-azul'; // EN PROGRESO
   }
 
   private buildAvanceMap(): void {
@@ -526,6 +539,11 @@ export class CronogramaActividades implements OnInit {
 
   getAvance(act: ActividadDto): number {
     return this.avanceMap.get(act.projectActivityId) ?? (act.actualEndDate ? 100 : act.progressPercentage);
+  }
+
+  getBarFillColor(act: ActividadDto): string {
+    const info = this.rowStyleMap.get(act.projectActivityId);
+    return info?.color ?? '#415a77';
   }
 
   getAvanceColor(pct: number): string {
