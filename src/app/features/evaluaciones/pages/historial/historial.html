@@ -1,0 +1,56 @@
+<div class="hist-root">
+  <div class="topbar">
+    <div class="logo-mark">Ev</div>
+    <span class="logo-name">Evaluaciones · Historial</span>
+    <div class="logo-sep"></div>
+    <nav class="top-nav">
+      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
+      <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
+      <span class="nt active"><i class="ti ti-history"></i> Historial</span>
+      <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
+    </nav>
+  </div>
+
+  <div class="hist-body">
+    <div class="periodo-list">
+      <div class="pl-label">Períodos</div>
+      <div class="pl-item"
+        *ngFor="let p of periodos"
+        [class.active]="periodoSeleccionado?.id === p.id"
+        (click)="selectPeriodo(p)">
+        {{ p.nombreMes }} {{ p.anio }}
+        <span *ngIf="p.activo" class="pl-dot"></span>
+      </div>
+    </div>
+
+    <div class="eval-list">
+      <div class="eval-filters">
+        <select [(ngModel)]="filtroArea" class="filter-sel">
+          <option value="">Todas las áreas</option>
+          <option *ngFor="let a of areas" [value]="a">{{ a }}</option>
+        </select>
+        <input [(ngModel)]="filtroResidente" placeholder="Buscar residente..." class="filter-input" />
+      </div>
+      <div class="eval-table">
+        <div class="et-header">
+          <span>Residente</span>
+          <span>Evaluador</span>
+          <span>Área</span>
+          <span>Nota</span>
+          <span>Proyecto</span>
+          <span>Fecha</span>
+        </div>
+        <div class="et-row" *ngFor="let e of filtradas">
+          <span>{{ e.evaluadoNombre }}</span>
+          <span>{{ e.evaluadorNombre }}</span>
+          <span>{{ e.areaNombre }}</span>
+          <span [ngClass]="scoreClass(e.nota)">{{ e.nota ?? 'N/A' }}</span>
+          <span>{{ e.projectNombre ?? '—' }}</span>
+          <span>{{ e.createdAt | date:'dd/MM/yy' }}</span>
+        </div>
+        <div class="et-empty" *ngIf="!filtradas.length && !loading">Sin evaluaciones</div>
+        <div class="et-empty" *ngIf="loading">Cargando...</div>
+      </div>
+    </div>
+  </div>
+</div>
