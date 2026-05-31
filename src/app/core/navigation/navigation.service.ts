@@ -195,6 +195,18 @@ export class NavigationService {
       ],
     },
     {
+      key: 'evaluaciones',
+      label: 'Evaluaciones',
+      iconKey: 'star',
+      baseRoute: '/evaluaciones',
+      items: [
+        { label: 'Dashboard',          route: '/evaluaciones/dashboard',     featureKey: 'evaluaciones.dashboard' },
+        { label: 'Evaluar residente',  route: '/evaluaciones/evaluar',       featureKey: 'evaluaciones.evaluar' },
+        { label: 'Historial',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+        { label: 'Configuración',      route: '/evaluaciones/configuracion', featureKey: 'evaluaciones.configuracion' },
+      ],
+    },
+    {
       key: 'seguridad',
       label: 'Seguridad',
       iconKey: 'security',

@@ -93,6 +93,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/mejora-continua/mejora-continua.routes')
           .then(m => m.MEJORA_CONTINUA_ROUTES)
+      },
+
+      {
+        path: 'evaluaciones',
+        loadChildren: () =>
+          import('./features/evaluaciones/evaluaciones.routes')
+          .then(m => m.EVALUACIONES_ROUTES)
       }
     ]
   },

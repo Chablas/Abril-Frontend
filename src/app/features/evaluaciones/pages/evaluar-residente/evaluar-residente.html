@@ -1,0 +1,143 @@
+<div class="ev-root">
+  <div class="ev-topbar">
+    <div class="logo-area">
+      <div class="logo-mark">Ev</div>
+      <span class="logo-name">Evaluaciones</span>
+      <div class="logo-sep"></div>
+    </div>
+    <nav class="top-nav">
+      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
+      <span class="nt active"><i class="ti ti-pencil"></i> Evaluar</span>
+      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
+      <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
+    </nav>
+    <div class="topbar-right" *ngIf="periodo">
+      <div class="period-chip">
+        <div class="period-dot"></div>
+        <b>{{ periodo.nombreMes }} {{ periodo.anio }}</b>
+        <span style="color:#334155">· {{ periodo.diasRestantes }} días restantes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ev-body">
+    <!-- LEFT: Formulario -->
+    <div class="ev-form-col">
+      <div class="form-header">
+        <div class="fh-title">Nueva evaluación</div>
+        <div class="fh-period" *ngIf="periodo">{{ periodo.nombreMes }} {{ periodo.anio }}</div>
+      </div>
+
+      <!-- Residente -->
+      <div class="form-section">
+        <div class="fs-label">1. Residente a evaluar</div>
+        <div class="residente-search">
+          <i class="ti ti-search"></i>
+          <input type="text" placeholder="Buscar residente por nombre..." class="rs-input" readonly />
+        </div>
+        <div class="residente-selected" *ngIf="residenteSeleccionado">
+          <div class="rs-av">{{ iniciales(residenteSeleccionado.nombre) }}</div>
+          <div>
+            <div class="rs-name">{{ residenteSeleccionado.nombre }}</div>
+            <div class="rs-proj">{{ residenteSeleccionado.projectNombre ?? 'Sin proyecto' }}</div>
+          </div>
+          <button class="rs-clear" (click)="residenteSeleccionado = null">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Área -->
+      <div class="form-section" *ngIf="residenteSeleccionado">
+        <div class="fs-label">2. Área evaluadora</div>
+        <div class="area-chips">
+          <span class="area-chip"
+            *ngFor="let a of areas"
+            [class.active]="areaSeleccionada === a"
+            [class.done]="yaEvaluo(residenteSeleccionado.userId, a)"
+            (click)="!yaEvaluo(residenteSeleccionado.userId, a) && selectArea(a)">
+            <i class="ti ti-check" *ngIf="yaEvaluo(residenteSeleccionado.userId, a)"></i>
+            {{ a }}
+          </span>
+        </div>
+      </div>
+
+      <!-- No aplica -->
+      <div class="form-section" *ngIf="areaSeleccionada">
+        <label class="no-aplica-toggle">
+          <input type="checkbox" [(ngModel)]="noAplica" />
+          <span>No aplica este mes</span>
+        </label>
+        <textarea *ngIf="noAplica" [(ngModel)]="noAplicaMotivo"
+          class="motivo-input" placeholder="Motivo (obligatorio)..." rows="2">
+        </textarea>
+      </div>
+
+      <!-- Criterios -->
+      <div class="form-section" *ngIf="areaSeleccionada && !noAplica && detalles.length">
+        <div class="fs-label">3. Criterios de evaluación</div>
+        <div class="fs-sublabel">1-Deficiente · 2-Regular · 3-Satisfactorio · 4-Bueno · 5-Sobresaliente · N/A-No aplica</div>
+        <div class="criterios-list">
+          <div class="criterio-row" *ngFor="let d of detalles; let i = index">
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntajes">
+              <span class="puntaje-btn"
+                *ngFor="let p of puntajes"
+                [class.active]="d.puntaje === p"
+                (click)="setPuntaje(i, p)">{{ p }}</span>
+              <span class="puntaje-btn na-btn" [class.active]="d.esNa" (click)="setNa(i)">N/A</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comentario -->
+      <div class="form-section" *ngIf="areaSeleccionada && !noAplica">
+        <div class="fs-label">
+          4. Oportunidades de mejora y/o fortalezas
+          <span class="obligatorio">(obligatorio)</span>
+        </div>
+        <textarea [(ngModel)]="comentario" class="comentario-input"
+          placeholder="Escribe aquí..." rows="3">
+        </textarea>
+      </div>
+
+      <!-- Footer form -->
+      <div class="form-footer" *ngIf="areaSeleccionada">
+        <div class="nota-preview" *ngIf="!noAplica">
+          Nota calculada: <strong [ngClass]="scoreClass(notaCalculada)">{{ notaCalculada }}</strong> / 20
+        </div>
+        <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
+        <div class="success-msg" *ngIf="successMsg">{{ successMsg }}</div>
+        <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardando ? 'Guardando...' : 'Guardar nota' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Mis evaluaciones del mes -->
+    <div class="ev-history-col">
+      <div class="hist-header">
+        <div class="hist-title">Mis evaluaciones · {{ periodo?.nombreMes }}</div>
+        <span class="hist-count">{{ misEvaluaciones.length }}</span>
+      </div>
+      <div class="hist-list">
+        <div class="hist-item" *ngFor="let e of misEvaluaciones">
+          <div class="hi-header">
+            <div class="hi-evaluado">{{ e.evaluadoNombre.split(' ').slice(-2).join(' ') }}</div>
+            <span class="hi-nota" [ngClass]="scoreClass(e.nota)">{{ e.nota ?? 'N/A' }}</span>
+          </div>
+          <div class="hi-meta">{{ e.areaNombre }} · {{ e.projectNombre ?? 'Sin proyecto' }}</div>
+          <div class="hi-comment" *ngIf="e.comentario">
+            {{ e.comentario | slice:0:80 }}{{ (e.comentario?.length ?? 0) > 80 ? '...' : '' }}
+          </div>
+        </div>
+        <div class="hist-empty" *ngIf="!misEvaluaciones.length">
+          <i class="ti ti-clipboard-off" style="font-size:24px;color:#334155"></i>
+          <span>Sin evaluaciones este período</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
