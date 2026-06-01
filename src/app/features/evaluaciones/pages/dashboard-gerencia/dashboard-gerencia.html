@@ -59,7 +59,7 @@
               {{ iniciales(r.nombre) }}
             </div>
             <div class="rc-info">
-              <div class="rc-name">{{ r.nombre.split(' ').slice(-2).join(' ') }}</div>
+              <div class="rc-name">{{ r.nombre }}</div>
               <div class="rc-project">{{ r.projectNombre ?? 'Sin proyecto' }}</div>
             </div>
           </div>
@@ -147,7 +147,7 @@
           <div class="kc-num kc-green">{{ dashboard.residentes[0]?.promedioGeneral ?? '—' }}</div>
           <div class="kc-sub">
             <span class="kc-badge kb-p">
-              {{ dashboard.residentes[0]?.nombre?.split(' ')?.slice(-2)?.join(' ') ?? '—' }}
+              {{ dashboard.residentes[0]?.nombre ?? '—' }}
             </span>
           </div>
         </div>
@@ -189,7 +189,7 @@
           <div class="detalle-area" *ngIf="mostrarDetalleArea && residenteActivo">
             <div class="da-header">
               <span class="da-title">
-                Criterios · {{ areaSeleccionada }} · {{ residenteActivo.nombre.split(' ').slice(-2).join(' ') }}
+                Criterios · {{ areaSeleccionada }} · {{ residenteActivo.nombre }}
               </span>
               <span class="cp-action" (click)="mostrarDetalleArea = false">
                 <i class="ti ti-x"></i> Cerrar
