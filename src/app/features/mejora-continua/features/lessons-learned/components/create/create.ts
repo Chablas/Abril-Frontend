@@ -6,21 +6,18 @@ import { FileSelector, SelectedFile } from '../../../../../../shared/components/
 import { ImagePreview } from '../../../../../../shared/components/image-preview/image-preview';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LeccionesAprendidasService } from '../../services/lecciones-aprendidas.service';
-import { SubAreaService } from '../../../configuration/areas-subareas/services/subarea.service';
-import { SubAreaSimpleDTO } from '../../../configuration/areas-subareas/dtos/subAreaSimple.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LessonFiltersDTO } from '../../dtos/lessonFilters.model';
-import {
-  PhaseStageSubStageSubSpecialtyDTO,
-  StageFilterDTO,
-  SubStageFilterDTO,
-  SubSpecialtyFilterDTO,
-  LayerFilterDTO,
-  PartidaFilterDTO,
-} from '../../dtos/phaseStageSubStageSubSpecialty.model';
+import { ScopeItemDTO } from '../../dtos/scope-item.model';
+import { LessonAreaConfigItemDto } from '../../../configuration/lesson-areas/dtos/lesson-area.dto';
 import Swal from 'sweetalert2';
+
+interface LessonAreaOption {
+  lessonAreaId: number;
+  label: string;
+}
 
 @Component({
   selector: 'app-create-lesson',
@@ -33,28 +30,15 @@ export class CreateLesson implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  // Own form state (separate from list filters - fixes shared-state bug)
+  // Ubicación
   projectId: number = 0;
-  areaId: number = 0;
-  subAreaId: number | undefined = undefined;
-  subAreas: SubAreaSimpleDTO[] = [];
-  private allSubAreas: SubAreaSimpleDTO[] = [];
+  lessonAreaId: number = 0;
+  lessonAreaOptions: LessonAreaOption[] = [];
 
-  // Cascading selects
-  private psssData: PhaseStageSubStageSubSpecialtyDTO[] = [];
-  phases: PhaseStageSubStageSubSpecialtyDTO[] = [];
-  stages: StageFilterDTO[] = [];
-  layers: LayerFilterDTO[] = [];
-  subStages: SubStageFilterDTO[] = [];
-  subSpecialties: SubSpecialtyFilterDTO[] = [];
-  partidas: PartidaFilterDTO[] = [];
-
-  selectedPhaseId?: number;
-  selectedStageId?: number;
-  selectedLayerId?: number;
-  selectedSubStageId?: number;
-  selectedSubSpecialtyId?: number;
-  selectedPartidaId?: number;
+  // Árbol de scope genérico
+  // Cada índice representa un nivel: levels[0] = primer nivel, etc.
+  scopeLevels: ScopeItemDTO[][] = [];
+  selectedScopeItems: (ScopeItemDTO | undefined)[] = [];
 
   // Text fields
   problemDescription = '';
@@ -70,99 +54,90 @@ export class CreateLesson implements OnInit {
 
   constructor(
     private lessonService: LeccionesAprendidasService,
-    private subAreaService: SubAreaService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
-    this.loadAllSubAreas();
+    this.loadLessonAreas();
   }
 
-  private loadPSSSData(): void {
-    if (!this.areaId) return;
+  // ── Helpers de árbol ────────────────────────────────────────────────────────
+
+  getLevelLabel(levelIndex: number): string {
+    return this.scopeLevels[levelIndex]?.[0]?.catalogTypeName ?? `Nivel ${levelIndex + 1}`;
+  }
+
+  onScopeItemChange(levelIndex: number, selectedId: number | undefined): void {
+    const selected = selectedId
+      ? this.scopeLevels[levelIndex]?.find((i) => i.scopeItemId === selectedId)
+      : undefined;
+
+    this.selectedScopeItems[levelIndex] = selected;
+
+    // Limpiar niveles inferiores
+    this.scopeLevels = this.scopeLevels.slice(0, levelIndex + 1);
+    this.selectedScopeItems = this.selectedScopeItems.slice(0, levelIndex + 1);
+
+    // Agregar siguiente nivel si hay hijos
+    if (selected?.children?.length) {
+      this.scopeLevels.push(selected.children);
+      this.selectedScopeItems.push(undefined);
+    }
+  }
+
+  /** CatalogItemId del ítem más profundo seleccionado */
+  get deepestSelectedCatalogItemId(): number | undefined {
+    for (let i = this.selectedScopeItems.length - 1; i >= 0; i--) {
+      if (this.selectedScopeItems[i]) return this.selectedScopeItems[i]!.catalogItemId;
+    }
+    return undefined;
+  }
+
+  // ── Carga de datos ───────────────────────────────────────────────────────────
+
+  private loadLessonAreas(): void {
     this.loaderService.show();
-    this.lessonService.getFiltersCreate(this.areaId, this.subAreaId).subscribe({
-      next: (data) => {
-        this.psssData = data ?? [];
-        this.phases = this.psssData;
-        this.stages = [];
-        this.layers = [];
-        this.subStages = [];
-        this.subSpecialties = [];
-        this.partidas = [];
-        this.selectedPhaseId = undefined;
-        this.selectedStageId = undefined;
-        this.selectedLayerId = undefined;
-        this.selectedSubStageId = undefined;
-        this.selectedSubSpecialtyId = undefined;
-        this.selectedPartidaId = undefined;
+    this.lessonService.getLessonAreasWithScope().subscribe({
+      next: (data: LessonAreaConfigItemDto[]) => {
+        this.lessonAreaOptions = data
+          .filter((d) => d.lessonAreaId != null)
+          .map((d) => ({
+            lessonAreaId: d.lessonAreaId!,
+            label: d.path.map((s) => s.areaItemName).join(' > '),
+          }));
         this.loaderService.hide();
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 
-  private loadAllSubAreas(): void {
-    this.subAreaService.getAllSubAreaSimple().subscribe({
-      next: (data) => (this.allSubAreas = data),
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+  private loadScopeData(): void {
+    if (!this.lessonAreaId) return;
+    this.loaderService.show();
+    this.lessonService.getFiltersCreate(this.lessonAreaId).subscribe({
+      next: (tree) => {
+        this.scopeLevels = tree?.length ? [tree] : [];
+        this.selectedScopeItems = tree?.length ? [undefined] : [];
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 
-  onAreaChange(): void {
-    this.subAreaId = undefined;
-    this.subAreas = this.areaId
-      ? this.allSubAreas.filter(sa => sa.areaId === this.areaId)
-      : [];
-    this.loadPSSSData();
+  onLessonAreaChange(): void {
+    this.scopeLevels = [];
+    this.selectedScopeItems = [];
+    this.loadScopeData();
   }
 
-  onSubAreaChange(): void {
-    this.loadPSSSData();
-  }
-
-  onPhaseChange(): void {
-    const phase = this.psssData.find(p => p.phaseId === this.selectedPhaseId);
-    this.stages = phase?.stages ?? [];
-    this.layers = [];
-    this.subStages = [];
-    this.subSpecialties = [];
-    this.partidas = [];
-    this.selectedStageId = undefined;
-    this.selectedLayerId = undefined;
-    this.selectedSubStageId = undefined;
-    this.selectedSubSpecialtyId = undefined;
-    this.selectedPartidaId = undefined;
-  }
-
-  onStageChange(): void {
-    const stage = this.stages.find(s => s.stageId === this.selectedStageId);
-    this.layers = stage?.layers ?? [];
-    this.subStages = this.layers.length === 0 ? (stage?.subStages ?? []) : [];
-    this.partidas = (this.layers.length === 0 && this.subStages.length === 0) ? (stage?.partidas ?? []) : [];
-    this.subSpecialties = [];
-    this.selectedLayerId = undefined;
-    this.selectedSubStageId = undefined;
-    this.selectedSubSpecialtyId = undefined;
-    this.selectedPartidaId = undefined;
-  }
-
-  onLayerChange(): void {
-    const layer = this.layers.find(l => l.layerId === this.selectedLayerId);
-    this.subStages = layer?.subStages ?? [];
-    this.subSpecialties = [];
-    this.partidas = [];
-    this.selectedSubStageId = undefined;
-    this.selectedSubSpecialtyId = undefined;
-    this.selectedPartidaId = undefined;
-  }
-
-  onSubStageChange(): void {
-    const subStage = this.subStages.find(ss => ss.subStageId === this.selectedSubStageId);
-    this.subSpecialties = subStage?.subSpecialties ?? [];
-    this.selectedSubSpecialtyId = undefined;
-  }
+  // ── Imágenes ─────────────────────────────────────────────────────────────────
 
   onFileSelected(image: SelectedFile, type: 'opportunity' | 'improvement'): void {
     if (type === 'opportunity') {
@@ -184,10 +159,11 @@ export class CreateLesson implements OnInit {
     }
   }
 
+  // ── Submit ───────────────────────────────────────────────────────────────────
+
   submit(): void {
     if (!this.projectId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar proyecto' }); return; }
-    if (!this.areaId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar area' }); return; }
-    if (!this.selectedPhaseId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar fase' }); return; }
+    if (!this.lessonAreaId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar área' }); return; }
     if (!this.problemDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese una descripcion' }); return; }
     if (!this.reasonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese las causas' }); return; }
     if (!this.lessonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese la leccion aprendida' }); return; }
@@ -195,20 +171,17 @@ export class CreateLesson implements OnInit {
 
     const form = new FormData();
     form.append('ProjectId', String(this.projectId));
-    form.append('AreaId', String(this.areaId));
-    if (this.subAreaId) form.append('SubAreaId', String(this.subAreaId));
-    form.append('PhaseId', String(this.selectedPhaseId));
-    if (this.selectedStageId) form.append('StageId', String(this.selectedStageId));
-    if (this.selectedLayerId) form.append('LayerId', String(this.selectedLayerId));
-    if (this.selectedSubStageId) form.append('SubStageId', String(this.selectedSubStageId));
-    if (this.selectedSubSpecialtyId) form.append('SubSpecialtyId', String(this.selectedSubSpecialtyId));
-    if (this.selectedPartidaId) form.append('PartidaId', String(this.selectedPartidaId));
+    form.append('LessonAreaId', String(this.lessonAreaId));
+
+    const catalogItemId = this.deepestSelectedCatalogItemId;
+    if (catalogItemId) form.append('CatalogItemId', String(catalogItemId));
+
     form.append('ProblemDescription', this.problemDescription);
     form.append('ReasonDescription', this.reasonDescription);
     form.append('LessonDescription', this.lessonDescription);
     form.append('ImpactDescription', this.impactDescription);
-    this.opportunityFiles.forEach(f => form.append('OpportunityImages', f));
-    this.improvementFiles.forEach(f => form.append('ImprovementImages', f));
+    this.opportunityFiles.forEach((f) => form.append('OpportunityImages', f));
+    this.improvementFiles.forEach((f) => form.append('ImprovementImages', f));
 
     this.loaderService.show();
     this.lessonService.createLesson(form).subscribe({
@@ -218,7 +191,10 @@ export class CreateLesson implements OnInit {
         this.saved.emit();
         this.closeModal.emit();
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 }

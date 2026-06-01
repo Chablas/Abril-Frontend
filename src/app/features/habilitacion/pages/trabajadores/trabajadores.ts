@@ -40,11 +40,12 @@ import { HistorialEventos } from './components/historial-eventos/historial-event
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
 import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
+import { EmosProgramados } from './components/emos-programados/emos-programados';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit, ProgramacionCreate],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit, ProgramacionCreate, EmosProgramados],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -108,6 +109,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarProgramarInduccion = false;
   mostrarProgramarEmo = false;
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
+  mostrarEmosProgramados = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
@@ -938,5 +940,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   onProgramarEmoSaved(): void {
     this.mostrarProgramarEmo = false;
     this.workerParaProgramarEmo = null;
+  }
+
+  abrirEmosProgramados(): void {
+    this.mostrarEmosProgramados = true;
   }
 }

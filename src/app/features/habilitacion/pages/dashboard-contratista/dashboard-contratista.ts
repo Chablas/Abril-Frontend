@@ -1,20 +1,28 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ErrorService } from '../../../../core/services/error.service';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { EquipoHabService } from '../../services/equipo-hab.service';
-import { ProyectoDisponibleDto, EmpresaEntregableDto } from '../../dtos/empresa.model';
+import { EmpresaEntregableDto, EmpresaProyectoDto } from '../../dtos/empresa.model';
 import { ContratistaUsuarios } from './components/contratista-usuarios/contratista-usuarios';
 
 interface ProgresoProyecto {
   total: number;
   aprobadosEquiv: number;
   rechazados: number;
+  porcentaje: number;
+}
+
+interface VencerItem {
+  nombre: string;
+  documento: string;
+  proyecto: string;
+  dias: number;
+  tipo: 'trabajador' | 'empresa';
+  iniciales: string;
 }
 
 @Component({
@@ -28,32 +36,101 @@ export class DashboardContratista implements OnInit {
   empresaId: number | null = null;
   currentUserId: number | null = null;
   activeSection: 'resumen' | 'usuarios' = 'resumen';
+  proyectoTabSeleccionado = 0;
 
-  // Sec 1 — Proyectos
-  proyectos: ProyectoDisponibleDto[] = [];
+  // Proyectos
+  proyectos: EmpresaProyectoDto[] = [];
   loadingProyectos = true;
   progresoPorProyecto = new Map<number, ProgresoProyecto>();
 
-  // Sec 2 — Entregables empresa
-  proyectoSeleccionado: ProyectoDisponibleDto | null = null;
-  entregables: EmpresaEntregableDto[] = [];
+  // Entregables empresa
+  entregablesPorProyecto = new Map<number, EmpresaEntregableDto[]>();
   loadingEntregables = false;
 
-  // Sec 3 — Trabajadores
+  // Trabajadores
   totalTrabajadores = 0;
   trabHabilitados = 0;
   trabPendientes = 0;
   trabNoHabilitados = 0;
   loadingTrabajadores = true;
+  topNoHabilitados: { nombre: string; motivo: string }[] = [];
 
-  // Sec 4 — Equipos
+  // Equipos
   totalEquipos = 0;
-  equiposAutorizados = 0;
-  equiposNoAutorizados = 0;
   loadingEquipos = true;
 
-  get esContratista(): boolean {
-    return this.authService.isContratista();
+  // Próximos a vencer (datos mock hasta que haya endpoint)
+  proximosVencer: VencerItem[] = [];
+
+  get esContratista(): boolean { return this.authService.isContratista(); }
+  get empresaNombre(): string {
+    if (typeof localStorage === 'undefined') return '';
+    try { return JSON.parse(localStorage.getItem('user') ?? '{}').razonSocial ?? ''; } catch { return ''; }
+  }
+
+  get proyectoTabActual(): EmpresaProyectoDto | null {
+    return this.proyectos[this.proyectoTabSeleccionado] ?? null;
+  }
+
+  get entregablesTabActual(): EmpresaEntregableDto[] {
+    const p = this.proyectoTabActual;
+    if (!p) return [];
+    return this.entregablesPorProyecto.get(p.proyectoId) ?? [];
+  }
+
+  get entregablesAprobados(): number {
+    return this.entregablesTabActual.filter(e => e.estado === 'Aprobado').length;
+  }
+
+  get entregablesFalta(): number {
+    return this.entregablesTabActual.filter(e => e.estado === 'Falta' || e.estado === 'Rechazado').length;
+  }
+
+  get entregablesEnviados(): number {
+    return this.entregablesTabActual.filter(e => e.estado === 'Enviado').length;
+  }
+
+  get pctEntregables(): number {
+    const total = this.entregablesTabActual.length;
+    if (!total) return 0;
+    return Math.round((this.entregablesAprobados / total) * 100);
+  }
+
+  get totalEntregables(): number { return this.entregablesTabActual.length; }
+
+  get pctHabilitados(): number {
+    if (!this.totalTrabajadores) return 0;
+    return Math.round((this.trabHabilitados / this.totalTrabajadores) * 100);
+  }
+
+  get totalProyectosActivos(): number { return this.proyectos.length; }
+
+  get alertasCount(): number {
+    return this.trabNoHabilitados + this.proximosVencer.filter(v => v.dias <= 7).length;
+  }
+
+  get vencenEstaSemana(): number { return this.proximosVencer.filter(v => v.dias <= 7).length; }
+  get vencenEsteMes(): number { return this.proximosVencer.filter(v => v.dias > 7 && v.dias <= 30).length; }
+
+  get ringOffset(): number {
+    const circumference = 125.7;
+    return circumference - (this.pctEntregables / 100) * circumference;
+  }
+
+  get ringOffsetTasa(): number {
+    const circumference = 106.8;
+    return circumference - (this.pctHabilitados / 100) * circumference;
+  }
+
+  diasClass(dias: number): string {
+    if (dias <= 7) return 'dias-r';
+    if (dias <= 14) return 'dias-o';
+    return 'dias-y';
+  }
+
+  colorProyecto(idx: number): string {
+    const colors = ['#22c55e', '#f59e0b', '#3b82f6', '#a855f7', '#ef4444'];
+    return colors[idx % colors.length];
   }
 
   constructor(
@@ -61,7 +138,6 @@ export class DashboardContratista implements OnInit {
     private trabajadorService: TrabajadorHabService,
     private equipoService: EquipoHabService,
     private authService: AuthService,
-    private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private router: Router,
   ) {}
@@ -76,10 +152,7 @@ export class DashboardContratista implements OnInit {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        const sub =
-          decoded.sub ??
-          decoded.userId ??
-          decoded.nameid ??
+        const sub = decoded.sub ?? decoded.userId ?? decoded.nameid ??
           decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
         this.currentUserId = sub != null ? parseInt(String(sub), 10) : null;
       } catch { /* ignore */ }
@@ -88,148 +161,88 @@ export class DashboardContratista implements OnInit {
     this.loadProyectos();
     this.loadTrabajadores();
     this.loadEquipos();
+    this.buildProximosVencerMock();
   }
 
-  private loadProyectos(): void {
-    this.habEmpresaService.getProyectosDisponibles(this.empresaId!).subscribe({
-      next: (res) => {
-        this.proyectos = (res ?? []).filter((p) => p.estaActiva);
+  loadProyectos(): void {
+    this.loadingProyectos = true;
+    this.habEmpresaService.getProyectos(this.empresaId!).subscribe({
+      next: (ps) => {
+        this.proyectos = ps;
+        ps.forEach(p => this.loadEntregablesProyecto(p));
         this.loadingProyectos = false;
-        if (this.proyectos.length > 0) {
-          this.proyectoSeleccionado = this.proyectos[0];
-          this.loadEntregablesPanel(this.proyectoSeleccionado.id);
-          for (const p of this.proyectos) {
-            this.habEmpresaService.getEntregables(this.empresaId!, p.id).subscribe({
-              next: (items) => {
-                const list = items ?? [];
-                this.progresoPorProyecto.set(p.id, {
-                  total: list.length,
-                  aprobadosEquiv: list.filter(
-                    (e) =>
-                      e.estado === 'Aprobado' || e.estado === 'No Aplica' || e.estado === 'En Plazo',
-                  ).length,
-                  rechazados: list.filter((e) => e.estado === 'Rechazado').length,
-                });
-                this.cdr.detectChanges();
-              },
-              error: () => {},
-            });
-          }
-        }
         this.cdr.detectChanges();
       },
-      error: (err: HttpErrorResponse) => {
-        this.loadingProyectos = false;
-        this.errorService.handleError(err);
-      },
+      error: () => { this.loadingProyectos = false; },
     });
   }
 
-  seleccionarProyecto(p: ProyectoDisponibleDto): void {
-    if (this.proyectoSeleccionado?.id === p.id) return;
-    this.proyectoSeleccionado = p;
-    this.loadEntregablesPanel(p.id);
-  }
-
-  private loadEntregablesPanel(proyectoId: number): void {
-    this.loadingEntregables = true;
-    this.entregables = [];
-    this.habEmpresaService.getEntregables(this.empresaId!, proyectoId).subscribe({
-      next: (res) => {
-        this.entregables = res ?? [];
-        this.loadingEntregables = false;
+  loadEntregablesProyecto(p: EmpresaProyectoDto): void {
+    this.habEmpresaService.getEntregables(this.empresaId!, p.proyectoId).subscribe({
+      next: (ents) => {
+        this.entregablesPorProyecto.set(p.proyectoId, ents);
+        const total = ents.length;
+        const aprobados = ents.filter(e => e.estado === 'Aprobado').length;
+        const rechazados = ents.filter(e => e.estado === 'Rechazado').length;
+        this.progresoPorProyecto.set(p.proyectoId, {
+          total, aprobadosEquiv: aprobados, rechazados,
+          porcentaje: total ? Math.round((aprobados / total) * 100) : 0,
+        });
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.loadingEntregables = false;
-        this.cdr.detectChanges();
-      },
+      error: () => {},
     });
   }
 
-  private loadTrabajadores(): void {
-    this.trabajadorService
-      .getTrabajadores({ empresaId: this.empresaId, pageSize: 1000 })
-      .subscribe({
-        next: (res) => {
-          const list = res.data ?? [];
-          this.totalTrabajadores = res.totalRecords;
-          this.trabHabilitados = list.filter((w) => w.estadoHabilitacion === 'Habilitado').length;
-          this.trabNoHabilitados = list.filter(
-            (w) => w.estadoHabilitacion === 'No Autorizado',
-          ).length;
-          this.trabPendientes =
-            this.totalTrabajadores - this.trabHabilitados - this.trabNoHabilitados;
-          this.loadingTrabajadores = false;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.loadingTrabajadores = false;
-          this.cdr.detectChanges();
-        },
-      });
+  loadTrabajadores(): void {
+    this.loadingTrabajadores = true;
+    this.trabajadorService.getTrabajadores({ empresaId: this.empresaId!, page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        const workers = res.data ?? [];
+        this.totalTrabajadores = res.totalRecords ?? workers.length;
+        this.trabHabilitados = workers.filter(w => w.estadoHabilitacion === 'Habilitado').length;
+        this.trabNoHabilitados = workers.filter(w => w.estadoHabilitacion === 'No Autorizado').length;
+        this.trabPendientes = this.totalTrabajadores - this.trabHabilitados - this.trabNoHabilitados;
+        this.topNoHabilitados = workers
+          .filter(w => w.estadoHabilitacion === 'No Autorizado')
+          .slice(0, 5)
+          .map(w => ({ nombre: w.apellidoNombre ?? '—', motivo: 'No autorizado' }));
+        this.loadingTrabajadores = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingTrabajadores = false; },
+    });
   }
 
-  private loadEquipos(): void {
-    this.equipoService.getEquipos({ empresaId: this.empresaId, pageSize: 1000 }).subscribe({
+  loadEquipos(): void {
+    this.loadingEquipos = true;
+    this.equipoService.getEquipos({ empresaId: this.empresaId!, page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
-        const list = res.data ?? [];
-        this.totalEquipos = res.totalRecords;
-        this.equiposAutorizados = list.filter((e) => e.estadoHabilitacion === 'Habilitado').length;
-        this.equiposNoAutorizados = this.totalEquipos - this.equiposAutorizados;
+        this.totalEquipos = res.totalRecords ?? (res.data ?? []).length;
         this.loadingEquipos = false;
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.loadingEquipos = false;
-        this.cdr.detectChanges();
-      },
+      error: () => { this.loadingEquipos = false; },
     });
   }
 
-  // ── Sec 1 helpers ──────────────────────────────────────────
-  getBadge(proyectoId: number): string {
-    const p = this.progresoPorProyecto.get(proyectoId);
-    if (!p) return 'En Proceso';
-    if (p.rechazados > 0) return 'No Autorizado';
-    if (p.total > 0 && p.aprobadosEquiv === p.total) return 'Autorizado';
-    return 'En Proceso';
+  buildProximosVencerMock(): void {
+    // Placeholder hasta que haya endpoint de vencimientos
+    this.proximosVencer = [];
   }
 
-  getBadgeClass(proyectoId: number): string {
-    const b = this.getBadge(proyectoId);
-    if (b === 'Autorizado') return 'badge badge--green';
-    if (b === 'No Autorizado') return 'badge badge--red';
-    return 'badge badge--amber';
+  selectTab(idx: number): void {
+    this.proyectoTabSeleccionado = idx;
+    this.cdr.detectChanges();
   }
 
-  // ── Sec 2 helpers ──────────────────────────────────────────
-  get entAprobados(): number {
-    return this.entregables.filter((e) => e.estado === 'Aprobado').length;
-  }
-  get entEnviados(): number {
-    return this.entregables.filter((e) => e.estado === 'Enviado').length;
-  }
-  get entFalta(): number {
-    return this.entregables.filter((e) => e.estado === 'Falta').length;
-  }
-  get entRechazados(): number {
-    return this.entregables.filter((e) => e.estado === 'Rechazado').length;
-  }
-  get progresoEntregables(): number {
-    if (!this.entregables.length) return 0;
-    return Math.round((this.entAprobados / this.entregables.length) * 100);
+  navegarA(ruta: string): void { this.router.navigate([ruta]); }
+
+  iniciales(nombre: string): string {
+    return nombre.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
   }
 
-  // ── Sec 3 helpers ──────────────────────────────────────────
-  get progresoTrabajadores(): number {
-    if (!this.totalTrabajadores) return 0;
-    return Math.round((this.trabHabilitados / this.totalTrabajadores) * 100);
-  }
-
-  // ── Sec 4 helpers ──────────────────────────────────────────
-  get progresoEquipos(): number {
-    if (!this.totalEquipos) return 0;
-    return Math.round((this.equiposAutorizados / this.totalEquipos) * 100);
+  getWhatsappUrl(): string {
+    return 'https://chat.whatsapp.com/';
   }
 }

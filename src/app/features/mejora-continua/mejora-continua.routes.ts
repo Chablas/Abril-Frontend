@@ -13,18 +13,18 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
   {
     path: 'configuration/areas',
     loadComponent: () =>
-      import('./features/configuration/areas-subareas/components/areas')
-        .then((m) => m.Areas),
+      import('./features/configuration/lesson-areas/lesson-areas')
+        .then((m) => m.LessonAreas),
     canActivate: [roleGuard],
     data: { titulo: 'ÁREAS', featureKey: 'mejora-continua.config.areas' },
   },
   {
-    path: 'configuration/relations',
+    path: 'configuration/area-relations',
     loadComponent: () =>
-      import('./features/configuration/relations/relations')
-        .then((m) => m.Relations),
+      import('./features/configuration/areas-subareas/components/areas')
+        .then((m) => m.Areas),
     canActivate: [roleGuard],
-    data: { titulo: 'CONFIG. RELACIONES', featureKey: 'mejora-continua.config.relations' },
+    data: { titulo: 'RELACIONES POR ÁREA', featureKey: 'mejora-continua.config.area-relations' },
   },
   {
     path: 'configuration/templates',
@@ -33,5 +33,29 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
         .then((m) => m.Templates),
     canActivate: [roleGuard],
     data: { titulo: 'PLANTILLAS', featureKey: 'mejora-continua.config.templates' },
+  },
+  {
+    path: 'configuration/catalog-types',
+    loadComponent: () =>
+      import('./features/configuration/catalog-types/catalog-types')
+        .then((m) => m.CatalogTypes),
+    canActivate: [roleGuard],
+    data: { titulo: 'TIPOS DE CATÁLOGO', featureKey: 'mejora-continua.config.catalog-types' },
+  },
+  {
+    path: 'configuration/catalog-items',
+    loadComponent: () =>
+      import('./features/configuration/catalog-items/catalog-items')
+        .then((m) => m.CatalogItems),
+    canActivate: [roleGuard],
+    data: { titulo: 'ÍTEMS DE CATÁLOGO', featureKey: 'mejora-continua.config.catalog-items' },
+  },
+  {
+    path: 'configuration/reminders',
+    loadComponent: () =>
+      import('./features/configuration/lesson-reminders/components/lesson-reminders')
+        .then((m) => m.LessonReminders),
+    canActivate: [roleGuard],
+    data: { titulo: 'RECORDATORIOS DE LECCIONES', featureKey: 'mejora-continua.config.reminders' },
   },
 ];

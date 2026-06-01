@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
-import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders, buildParams } from './http-base';
+import { SALUD_OCUPACIONAL_BASE, SSOMA_BASE, buildAuthHeaders, buildParams } from './http-base';
 import {
   ProgramacionCreateDto,
   ProgramacionEstadoPatchDto,
@@ -10,6 +10,7 @@ import {
   ProgramacionQueryParams,
   ProgramacionUpdateDto,
 } from '../dtos/programacion.model';
+import { ProgramacionHabilitacionDto } from '../dtos/programacion-habilitacion.dto';
 
 @Injectable({ providedIn: 'root' })
 export class ProgramacionService {
@@ -60,5 +61,18 @@ export class ProgramacionService {
     return this.http.patch<ProgramacionListDto>(`${this.apiUrl}/${id}/clinica-accion`, body, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  getHabilitacion(f: { estado?: string; proyectoId?: number; fecha?: string; soloNoNotificados?: boolean } = {}): Observable<ProgramacionHabilitacionDto[]> {
+    const url = `${this.apiUrl}/habilitacion`;
+    console.log('[EmosProgramados] GET', url, f);
+    return this.http.get<ProgramacionHabilitacionDto[]>(url, {
+      params: buildParams(f as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  patchNotificado(id: number, notificado: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/notificado`, { notificado }, { headers: buildAuthHeaders() });
   }
 }

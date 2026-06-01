@@ -28,6 +28,9 @@
         </svg>
         Programar Inducción
       </button>
+      <button class="btn-ghost-sm btn-induccion" (click)="abrirEmosProgramados()">
+        EMOs Programados
+      </button>
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 5v14M5 12h14"/>
@@ -736,3 +739,8 @@
   (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
   (saved)="onProgramarEmoSaved()"
 ></app-programacion-create>
+<app-emos-programados
+  *ngIf="mostrarEmosProgramados"
+  [proyectos]="catalogoProyectos"
+  (closed)="mostrarEmosProgramados = false">
+</app-emos-programados>

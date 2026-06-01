@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ClinicaAccionDto, ProgramacionClinicaDto } from '../dtos/clinica.model';
 
@@ -37,7 +37,7 @@ export class ClinicaProgramacionService {
     return this.http.get<ProgramacionClinicaDto[]>(PROGRAMACIONES_BASE, {
       headers: buildClinicaHeaders(),
       params: httpParams,
-    });
+    }).pipe(tap(raw => console.log('[CPS] raw HTTP response item[0]:', raw[0])));
   }
 
   accionClinica(id: number, body: ClinicaAccionDto): Observable<unknown> {

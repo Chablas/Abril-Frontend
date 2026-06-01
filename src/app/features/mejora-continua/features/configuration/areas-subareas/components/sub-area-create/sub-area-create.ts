@@ -63,6 +63,30 @@ export class SubAreaCreate implements OnInit, OnChanges {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese una descripción' });
       return;
     }
+
+    this.subAreaService.checkAreaScope(this.createDto.areaId).subscribe({
+      next: ({ hasScope }) => {
+        if (hasScope) {
+          Swal.fire({
+            icon: 'warning',
+            title: '¿Desea continuar?',
+            text: 'Al agregar esta subárea se eliminarán las relaciones de scope configuradas para el área. Esta acción no se puede deshacer.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#64BC04',
+          }).then((result) => {
+            if (result.isConfirmed) this.doCreate();
+          });
+        } else {
+          this.doCreate();
+        }
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private doCreate(): void {
     this.loaderService.show();
     this.subAreaService.createSubArea(this.createDto).subscribe({
       next: (response: ApiMessageDTO) => {
@@ -73,7 +97,10 @@ export class SubAreaCreate implements OnInit, OnChanges {
         this.cdr.detectChanges();
         Swal.fire({ title: response.message ?? 'Subárea creada exitosamente', icon: 'success', draggable: true });
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 }

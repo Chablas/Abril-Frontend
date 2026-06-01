@@ -39,8 +39,11 @@ export class NavigationService {
           label: 'Configuración',
           items: [
             { label: 'Áreas', route: '/mejora-continua/configuration/areas', featureKey: 'mejora-continua.config.areas' },
-            { label: 'Relaciones', route: '/mejora-continua/configuration/relations', featureKey: 'mejora-continua.config.relations' },
+            { label: 'Relaciones por área', route: '/mejora-continua/configuration/area-relations', featureKey: 'mejora-continua.config.area-relations' },
             { label: 'Plantillas', route: '/mejora-continua/configuration/templates', featureKey: 'mejora-continua.config.templates' },
+            { label: 'Tipos de Catálogo', route: '/mejora-continua/configuration/catalog-types', featureKey: 'mejora-continua.config.catalog-types' },
+            { label: 'Ítems de Catálogo', route: '/mejora-continua/configuration/catalog-items', featureKey: 'mejora-continua.config.catalog-items' },
+            { label: 'Recordatorios Lecciones', route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' },
           ],
         },
       ],
@@ -69,7 +72,6 @@ export class NavigationService {
             { label: 'Niveles',            route: '/projects/configuration/layers',          featureKey: 'projects.config.layers' },
             { label: 'Subetapas',          route: '/projects/configuration/sub-stages',      featureKey: 'projects.config.sub-stages' },
             { label: 'Subespecialidades',  route: '/projects/configuration/sub-specialties', featureKey: 'projects.config.sub-specialties' },
-            { label: 'Recordatorios Lecciones', route: '/projects/configuration/reminders', featureKey: 'projects.config.reminders' },
             { label: 'Hitos',              route: '/projects/configuration/milestones',      featureKey: 'projects.config.milestones' },
           ],
         },
@@ -221,6 +223,7 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos',        route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
+        { label: 'Áreas',            route: '/configuracion/area',      featureKey: 'configuracion.area' },
         { label: 'Razones Sociales', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
         { label: 'Lista de Trabajadores', route: '/configuracion/workers', featureKey: 'configuracion.workers' },
       ],

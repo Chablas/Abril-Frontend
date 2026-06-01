@@ -152,6 +152,13 @@
             </div>
           </div>
 
+          <!-- empresa / proyecto -->
+          <div class="card-meta-row" *ngIf="item.empresa || item.proyecto">
+            <span class="card-meta-item" *ngIf="item.empresa">🏢 {{ item.empresa }}</span>
+            <span class="card-meta-sep" *ngIf="item.empresa && item.proyecto">·</span>
+            <span class="card-meta-item" *ngIf="item.proyecto">📁 {{ item.proyecto }}</span>
+          </div>
+
           <!-- ZONA 2: fechas -->
           <div class="card-dates">
             <span class="fecha-tag" [ngClass]="fechaClass(item.fechaProgramada)">
@@ -176,6 +183,8 @@
             <ng-container *ngIf="item.estado === 'Programado'">
               <button class="btn-act btn-accept" [disabled]="accionando === item.id"
                 (click)="abrirAceptar(item)">✓ Aceptar</button>
+              <button class="btn-act btn-reschedule" [disabled]="accionando === item.id"
+                (click)="abrirReprogramar(item)">📅 Reprogramar</button>
               <button class="btn-act btn-reject" [disabled]="accionando === item.id"
                 (click)="rechazar(item)">✕ Rechazar</button>
             </ng-container>
@@ -183,6 +192,8 @@
             <ng-container *ngIf="item.estado === 'Aceptado por Clínica'">
               <button class="btn-act btn-checkin" [disabled]="accionando === item.id"
                 (click)="checkIn(item)">⏱ Registrar ingreso</button>
+              <button class="btn-act btn-reschedule" [disabled]="accionando === item.id"
+                (click)="abrirReprogramar(item)">📅 Reprogramar</button>
               <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
                 (click)="rechazar(item)">✕</button>
             </ng-container>
@@ -195,6 +206,8 @@
                 (click)="abrirInterconsulta(item)">🔗 Interconsulta</button>
               <span class="chip-green"
                 *ngIf="item.interconsultaEstado === 'Completado'">✓ Interconsulta levantada</span>
+              <button class="btn-act btn-undo" [disabled]="accionando === item.id"
+                (click)="deshacerCheckin(item)">↩ Deshacer ingreso</button>
             </ng-container>
 
           </div>
@@ -355,6 +368,53 @@
     <button class="btn-confirmar" [disabled]="!modalAceptar.nuevaFecha" (click)="confirmarAceptar()">
       Confirmar
     </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     Modal — Reprogramar cita
+     ═══════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="modalReprogramar.open" (click)="cancelarReprogramar()"></div>
+<div class="dark-modal" *ngIf="modalReprogramar.open" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Reprogramar cita</div>
+      <h3 class="dm-title">{{ modalReprogramar.item?.workerNombre }}</h3>
+      <p class="dm-sub">{{ modalReprogramar.item?.workerDni }}
+        <span *ngIf="modalReprogramar.item?.tipoEmo"> · {{ modalReprogramar.item?.tipoEmo }}</span>
+      </p>
+    </div>
+    <button class="dm-close" (click)="cancelarReprogramar()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+      <div class="dm-field">
+        <label class="dm-label">FECHA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
+        <input type="date" class="dm-input"
+          [(ngModel)]="modalReprogramar.nuevaFecha"
+          (ngModelChange)="modalReprogramar.fechaError = ''" />
+        <p class="dm-error-inline" *ngIf="modalReprogramar.fechaError">
+          {{ modalReprogramar.fechaError }}
+        </p>
+      </div>
+      <div class="dm-field">
+        <label class="dm-label">HORA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
+        <input type="time" class="dm-input" placeholder="HH:MM"
+          [(ngModel)]="modalReprogramar.nuevaHora"
+          (ngModelChange)="modalReprogramar.horaError = ''" />
+        <p class="dm-error-inline" *ngIf="modalReprogramar.horaError">
+          {{ modalReprogramar.horaError }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarReprogramar()">Cancelar</button>
+    <button class="btn-confirmar" (click)="confirmarReprogramar()">Guardar</button>
   </div>
 
 </div>

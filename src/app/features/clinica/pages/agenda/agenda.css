@@ -372,6 +372,26 @@
   flex-wrap: wrap;
   margin-top: 8px;
 }
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.card-meta-item {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.card-meta-sep {
+  font-size: 0.7rem;
+  color: #cbd5e1;
+}
+
 .chip-group {
   display: flex;
   flex-direction: column;
@@ -486,7 +506,9 @@
   border-color: rgba(220,38,38,0.18);
   padding: 0.27rem 0.52rem;
 }
-.btn-complete  { background: rgba(234,88,12,0.08);   color: #c2410c; border-color: rgba(234,88,12,0.2); }
+.btn-complete    { background: rgba(234,88,12,0.08);   color: #c2410c; border-color: rgba(234,88,12,0.2); }
+.btn-reschedule  { background: rgba(14,165,233,0.08);  color: #0369a1; border-color: rgba(14,165,233,0.22); }
+.btn-undo        { background: rgba(100,116,139,0.07); color: #64748b; border-color: rgba(100,116,139,0.22); }
 .btn-interconsulta {
   background: transparent;
   color: #4f46e5;

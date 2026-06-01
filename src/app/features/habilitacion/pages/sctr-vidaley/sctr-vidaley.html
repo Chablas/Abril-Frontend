@@ -105,6 +105,7 @@
         <select class="field-input filter-sel" [(ngModel)]="wFiltroEstado" (change)="onWorkerFilter()">
           <option value="">Todos los estados</option>
           <option value="Enviado">Enviado</option>
+          <option value="En revision">En revisión</option>
           <option value="Aprobado">Aprobado</option>
           <option value="Rechazado">Rechazado</option>
           <option value="Falta">Falta</option>
@@ -378,7 +379,8 @@
                 'badge-aprobado': getPolizaWorkerEstado(pw) === 'Aprobado',
                 'badge-enviado': getPolizaWorkerEstado(pw) === 'Enviado',
                 'badge-rechazado': getPolizaWorkerEstado(pw) === 'Rechazado',
-                'badge-falta': !['Aprobado','Enviado','Rechazado'].includes(getPolizaWorkerEstado(pw))
+                'badge-revision': getPolizaWorkerEstado(pw) === 'En revision',
+                'badge-falta': !['Aprobado','Enviado','Rechazado','En revision'].includes(getPolizaWorkerEstado(pw))
               }">{{ getPolizaWorkerEstado(pw) }}</span>
               <div class="worker-inline-actions" (click)="$event.stopPropagation()">
                 <button type="button" class="btn-w-aprob" [disabled]="savingWorkerInline" title="Aprobar" (click)="aprobarPolizaWorkerIndividual(pw)">✓</button>

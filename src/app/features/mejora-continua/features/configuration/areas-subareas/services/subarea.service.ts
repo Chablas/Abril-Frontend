@@ -60,4 +60,11 @@ export class SubAreaService {
       headers: this.authHeaders(),
     });
   }
+
+  /** Verifica si el área tiene scope configurado a nivel de área (sin subárea). */
+  checkAreaScope(areaId: number): Observable<{ hasScope: boolean }> {
+    return this.http.get<{ hasScope: boolean }>(`${this.apiUrl}/check-scope/${areaId}`, {
+      headers: this.authHeaders(),
+    });
+  }
 }

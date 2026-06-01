@@ -21,6 +21,7 @@ export interface ProgramacionClinicaDto {
   categoria?: string | null;
   tipoTrabajador?: string | null;
   interconsultaEstado?: string;
+  proyecto?: string | null;
 }
 
 export interface ClinicaInterconsultaCreateDto {
