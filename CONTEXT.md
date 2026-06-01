@@ -4,6 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
+> **Última actualización**: 2026-05-31 — módulo `evaluaciones` creado completo (dashboard-gerencia con Chart.js/auto + AfterViewInit, evaluar-residente con área auto desde miSubarea, criterios 2-col grid, footer sticky, panel colapsable mis evaluaciones). Buscador residente con puedeVerTodos (modo A/B). Colores cíclicos en charts. `split/slice` eliminado de nombres en dashboard. `nombreCompleto` como campo canónico en evaluar-residente.
 
 ---
 
@@ -65,6 +66,7 @@ src/app/
     ├── configuracion/            # standalone routes (admin: empresas, proyectos, trabajadores)
     ├── contractors/              # standalone routes (pública + admin)
     ├── costs/                    # NgModule (adjudicaciones)
+    ├── evaluaciones/             # standalone routes (dashboard-gerencia, evaluar-residente, historial, configuracion-plantilla)
     ├── gestion-administrativa/   # standalone routes (solicitud-salidas, gestion-salidas, config)
     ├── habilitacion/             # standalone routes (trabajadores, empresa, equipos, bandeja…)
     ├── home/                     # Inicio
@@ -86,18 +88,27 @@ src/app/
             └── shared/           # utils del módulo (no UI compartida global)
 ```
 
-### Convención `configuracion/` (módulo nuevo, standalone routes)
+### Convención `configuracion/` (módulo NgModule con routes internas)
 
 ```
 features/configuracion/
-├── configuracion.routes.ts       # CONFIGURACION_ROUTES (export const)
-└── pages/
-    ├── companies/                # Razones Sociales (read-only)
-    ├── projects/                 # Proyectos + botón Emails SSOMA (PATCH)
-    └── workers/                  # Lista de Trabajadores (read-only, paged)
+├── configuracion-module.ts       # ConfiguracionModule (NgModule) con rutas internas
+├── pages/
+│   ├── companies/                # Razones Sociales (read-only)
+│   └── workers/                  # Lista de Trabajadores (read-only, paged)
+└── features/
+    ├── proyectos/components/     # Proyectos + botón Emails SSOMA (PATCH)
+    └── area/                     # Módulo Área (tipos, items, jerarquía)
+        ├── components/
+        │   ├── area.ts/html/css  # Shell con SectionTabs (tabs: Áreas / Jerarquía / Tipos)
+        │   ├── area-type/        # CRUD de tipos de área
+        │   ├── area-item/        # CRUD de ítems de área
+        │   └── area-scope/       # Árbol de jerarquía (area-scope-branch + area-scope-list)
+        ├── dtos/                 # areaType.model.ts, areaItem.model.ts, areaScope.model.ts
+        └── services/             # area-type.service.ts, area-item.service.ts, area-scope.service.ts
 ```
 
-Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoService.getEmosPorTrabajador`) y de core (`ProjectService.getProjectPaged`, `patchProjectEmails`). El modal `ProjectEmailsForm` se reutiliza por **import cross-feature** desde `features/projects/configuration/pages/proyectos/components/project-emails-form/`.
+Redirect interno: `''` → `'proyectos'`. Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoService.getEmosPorTrabajador`) y de core (`ProjectService.getProjectPaged`, `patchProjectEmails`). El modal `ProjectEmailsForm` se reutiliza por **import cross-feature** desde `features/projects/configuration/pages/proyectos/components/project-emails-form/`.
 
 ### Convención dentro de `features/<area>/`
 
@@ -130,6 +141,7 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
    /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
+   /evaluaciones                            → EVALUACIONES_ROUTES
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -146,10 +158,11 @@ Reutiliza servicios/DTOs de SSOMA (`CatalogosSaludService.getEmpresas`, `EmoServ
 ### Sub-rutas `/configuracion`
 
 ```
-/configuracion              → redirect 'companies'
-/configuracion/companies    → Companies (Razones Sociales)
-/configuracion/projects     → Projects (Proyectos + botón Emails SSOMA)
-/configuracion/workers      → Workers (Lista de Trabajadores)
+/configuracion              → redirect 'proyectos'
+/configuracion/proyectos    → Proyectos (Proyectos + botón Emails SSOMA, featureKey: configuracion.proyectos)
+/configuracion/area         → Area (Tipos/Ítems/Jerarquía — tabs con SectionTabs, featureKey: configuracion.area)
+/configuracion/companies    → Companies (Razones Sociales, featureKey: configuracion.companies)
+/configuracion/workers      → Workers (Lista de Trabajadores, featureKey: configuracion.workers)
 ```
 
 ### Guards
@@ -378,6 +391,7 @@ Importables como standalone desde cualquier feature.
 | `Paginator`                                                                  | `app-paginator`       | `shared/components/paginator/`                                                           | Inputs: `totalRecords`, `currentPage`, `totalPages`. Output: `pageChange`. Hasta 5 botones visibles.                                                                                                                                                                                                                                   |
 | `SearchSelect`                                                               | `app-search-select`   | `shared/components/search-select/`                                                       | Dropdown con búsqueda. Inputs: `options`, `valueField` (default `id`), `displayField` (default `name`), `value`, `placeholder`, `showLabel`, `label`, `allowClear` (default `true`). Output: `valueChange`. Botón X inline para limpiar valor cuando `allowClear = true`.                                                              |
 | `ViewToggle`                                                                 | `app-view-toggle`     | `shared/components/view-toggle/`                                                         | Toggle list/calendar/grid según `modes: ViewToggleMode[]`.                                                                                                                                                                                                                                                                             |
+| `SectionTabs`                                                                | `app-section-tabs`    | `shared/components/section-tabs/section-tabs.ts`                                         | Pestañas reutilizables estilo corporativo (borde inferior `#64BC04`). Inputs: `tabs: SectionTab[]`, `value: string\|null`. Output: `valueChange`. `SectionTab { id, label, badge?, disabled? }`. La pestaña activa eleva borde lateral+superior verde con `-mb-px`. Soporta two-way binding: `[(value)]="activeSection"`.                |
 | `Layout`                                                                     | —                     | `shared/components/layout/`                                                              | Shell autenticado. Renderiza Header + Sidebar + `<router-outlet>`.                                                                                                                                                                                                                                                                     |
 | `Header`, `Sidebar`, `SidebarMobile`, `NavIcon`                              | —                     | `shared/components/header,sidebar*,nav-icon/`                                            | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
 | `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios                | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes.                                                                                                                                                                                                                                                                                                           |
@@ -447,7 +461,7 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | PATCH                 | `/api/v1/project/{id}/emails`                         | `ProjectService.patchProjectEmails`           |
 | GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged`             |
 | —                     | `/api/v1/projectResident`                             | `ProjectResidentService`                      |
-| —                     | `/api/v1/userProject`                                 | `UserProjectService`                          |
+| ~~—~~                 | ~~`/api/v1/userProject`~~                             | ~~`UserProjectService`~~ (**eliminado** 2026-05-29) |
 
 ### Configuración (proyectos)
 
@@ -682,7 +696,7 @@ Solicitud de Salidas, Gestión de Salidas. Configuración: Motivos de Salida, Lu
 
 ### `features/mejora-continua/` — ✅ Implementado (detalle en §15)
 
-Lecciones Aprendidas. Configuración: Áreas/Subáreas (con PSSS scope), Relaciones, Plantillas. Todas las rutas usan solo `roleGuard` (el shell padre aplica `authGuard`).
+Lecciones Aprendidas. Configuración: Áreas (lesson-areas), Relaciones por Área (areas-subareas + PSSS scope), Plantillas, Tipos de Catálogo, Ítems de Catálogo, Recordatorios. **`Relations` eliminado** (2026-05-29). Todas las rutas usan solo `roleGuard` (el shell padre aplica `authGuard`).
 
 ### `features/habilitacion/` — ✅ Completo (detalle en §12)
 
@@ -746,9 +760,48 @@ Plataforma completa mobile-first.
 - **`ContratistaUsuarios` — CLINICA_CONTRACTOR_ID**: constante privada `CLINICA_CONTRACTOR_ID = 644`. `buildFormHtml()` acepta `isClinica?: boolean`. Cuando `isClinica = true`, el selector `swal-system-role` muestra solo `<option value="14">Clínica</option>` en vez de las opciones 11/49. `abrirModalInvitar()` activa `showTipoAcceso` para contractor 572 o 644 y pasa `isClinica` solo para 644.
 - **`AdminContratistaUsuarios`** (NUEVO) `pages/admin-contratista-usuarios/`: página admin standalone para gestionar usuarios de cualquier empresa contratista. Carga lista de empresas via `EmpresaContratistaService.getEmpresasLogin()` (`GET api/v1/habilitacion/auth/empresas`). Selector de empresa (`EmpresaSimpleDto { id, razonSocial, nombreComercial? }`). Al seleccionar, muestra `<app-contratista-usuarios [contractorId]="..." [currentUserId]="null" [forceAdminMode]="true">`. Ruta: `admin-usuarios-contratista`, solo `authGuard`, título `HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA`.
 
+### `features/evaluaciones/` — 🔵 En desarrollo (2026-05-31)
+
+Módulo de evaluación de residentes. `isFullPage()` en `layout.ts` cubre todas sus rutas.
+
+**Sub-rutas** (`evaluaciones.routes.ts`):
+```
+/evaluaciones              → redirect 'dashboard'
+/evaluaciones/dashboard    → DashboardGerencia  (featureKey: evaluaciones.dashboard)
+/evaluaciones/evaluar      → EvaluarResidente   (featureKey: evaluaciones.evaluar)
+/evaluaciones/historial    → Historial          (featureKey: evaluaciones.historial)
+/evaluaciones/configuracion → ConfiguracionPlantilla (featureKey: evaluaciones.configuracion)
+```
+
+**Base URL backend**: `${apiUrl}api/v1/evaluaciones/`
+
+| Servicio | Endpoints clave |
+|---|---|
+| `EvPeriodoService` | `GET /periodos/activo`, `GET /periodos`, `PUT /{id}/activar` |
+| `EvPlantillaService` | `GET /plantilla/areas`, `GET /plantilla/{area}`, `PUT /{id}` |
+| `EvEvaluacionService` | `POST /residentes`, `GET /residentes/mis-evaluaciones`, `GET /residentes/residentes-evaluables`, `GET /residentes/mi-subarea` |
+| `EvDashboardService` | `GET /dashboard/gerencia?periodoId=`, `GET /dashboard/tendencia` |
+
+**DTOs**: `ev-periodo.model.ts`, `ev-plantilla.model.ts`, `ev-evaluacion.model.ts`, `ev-dashboard.model.ts` (en `features/evaluaciones/dtos/`).
+
+**`EvaluarResidente` — convenciones críticas**:
+- Campo del JSON: `nombreCompleto` (no `nombre`). Interfaz local `ResidenteItem { userId, nombreCompleto, projectId, projectNombre, puedeVerTodos }`.
+- `puedeVerTodos = true` → Modo A: buscador dropdown con todos los residentes.
+- `puedeVerTodos = false` → Modo B: lista directa filtrable por proyecto.
+- Área se determina automáticamente desde `GET /residentes/mi-subarea` → `miSubarea`. Fallback: `'Todos'`. El usuario NO selecciona el área manualmente.
+- Layout: columna única, criterios 2-col CSS grid (`display:contents` en wrapper), footer sticky (1 fila), panel "Mis evaluaciones" colapsable al fondo (`misEvalColapsado = true` por defecto).
+
+**`DashboardGerencia` — convenciones críticas**:
+- Chart.js importado como módulo: `import Chart from 'chart.js/auto'` (no `window['Chart']`).
+- `implements OnInit, AfterViewInit`. `renderCharts()` llamado en `AfterViewInit` (si hay datos) y en `loadDashboard` subscribe (`setTimeout 100ms`).
+- Colores cíclicos: `private readonly COLORES` (7 pares bg/border), método `color(i)`.
+- `console.log('tendencia:', d.tendencia)` temporal para debug — quitar antes de producción.
+
+**Sidebar**: módulo `evaluaciones` en `navigation.service.ts` con `iconKey: 'star'`. Requiere agregar ese key en `nav-icon.html` si se quiere icono custom.
+
 ### Branches actuales
 
-- Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
+- Working: `master` y `feature/arquitectura-comercial` (ambas en sync — cherry-pick en cada commit).
 - Main para PRs: `master`.
 
 ---
@@ -1531,36 +1584,78 @@ Todas las rutas: `[authGuard, roleGuard]` + `featureKey`.
 
 `features/mejora-continua/` — standalone routes. Montado en `/mejora-continua`.
 
-### Sub-rutas
+### Sub-rutas (actualizadas 2026-05-29)
 
 ```
-/mejora-continua/lessons-learned               → LeccionesAprendidas  (featureKey: mejora-continua.lessons-learned)
-/mejora-continua/configuration/areas           → Areas                (featureKey: mejora-continua.config.areas)
-/mejora-continua/configuration/relations       → Relations            (featureKey: mejora-continua.config.relations)
-/mejora-continua/configuration/templates       → Templates            (featureKey: mejora-continua.config.templates)
+/mejora-continua/lessons-learned                  → LeccionesAprendidas  (featureKey: mejora-continua.lessons-learned)
+/mejora-continua/configuration/areas              → LessonAreas          (featureKey: mejora-continua.config.areas)
+/mejora-continua/configuration/area-relations     → Areas                (featureKey: mejora-continua.config.area-relations)
+/mejora-continua/configuration/templates          → Templates            (featureKey: mejora-continua.config.templates)
+/mejora-continua/configuration/catalog-types      → CatalogTypes         (featureKey: mejora-continua.config.catalog-types)
+/mejora-continua/configuration/catalog-items      → CatalogItems         (featureKey: mejora-continua.config.catalog-items)
+/mejora-continua/configuration/reminders          → LessonReminders      (featureKey: mejora-continua.config.reminders)
 ```
+
+> **Eliminado**: `/mejora-continua/configuration/relations` — la feature `relations/` fue borrada del proyecto (2026-05-29).
 
 ### Sub-features internas
 
 **`features/lessons-learned/`**
 
 - Subcomponentes: `card`, `create`, `detail`, `list`.
-- DTOs: `lessonFilters`, `lessonList`, `lessonPeriod`, `phaseStageSubStageSubSpecialty`.
+- DTOs: `lessonFilters`, `lessonList`, `lessonPeriod`, `phaseStageSubStageSubSpecialty`, `scope-item.model.ts` (nuevo 2026-05-29).
 - Servicio: `LeccionesAprendidasService`.
+
+**`features/configuration/lesson-areas/`** *(nuevo 2026-05-29)*
+
+- Lista simple de áreas para configurar en Lecciones Aprendidas (toggle activo/inactivo por área).
+- DTO: `LessonAreaConfigItemDto` (`lesson-area.dto.ts`).
+- Servicio: `LessonAreaService`.
 
 **`features/configuration/areas-subareas/`**
 
 - Layout dos paneles: `area-list` (izquierdo) + `sub-area-list` (derecho). Edición inline con modales `area-edit`/`sub-area-edit`.
-- Incluye `psss-scope-edit` — edita el alcance PSSS de cada subárea.
+- Incluye `psss-scope-edit` — edita el alcance PSSS de cada subárea (refactorizado 2026-05-29 con nuevos servicios de scope/catalog).
 - Servicios: `AreaService`, `SubareaService`, `PsssScopeService`.
+- Servicios nuevos (2026-05-29): `scope.service.ts`, `catalog.service.ts` en `features/configuration/scope/`.
 
-**`features/configuration/relations/`**
-
-- Tabla de relaciones con filtros. Servicio: `RelationsService`.
+**~~`features/configuration/relations/`~~** — **ELIMINADO** (2026-05-29). No usar ni referenciar.
 
 **`features/configuration/templates/`**
 
 - CRUD de plantillas PSSS. DTO: `psss-template.model.ts`. Servicio: `PsssTemplateService`.
+- `template-edit` refactorizado 2026-05-29 con nuevos campos de scope/catalog.
+
+**`features/configuration/catalog-types/`** *(nuevo 2026-05-29)*
+
+- CRUD de tipos de catálogo. Componente: `CatalogTypes`. Subcomponente: `catalog-type-form/`.
+- DTO: (`catalog-types.ts` interno). Servicio: propio dentro de la carpeta.
+
+**`features/configuration/catalog-items/`** *(nuevo 2026-05-29)*
+
+- CRUD de ítems de catálogo asociados a un tipo. Componente: `CatalogItems`. Subcomponente: `catalog-item-form/`.
+- Servicio: propio dentro de la carpeta.
+
+**`features/configuration/lesson-reminders/`** *(nuevo 2026-05-29)*
+
+- Recordatorios de lecciones aprendidas. Componente: `LessonReminders` con `SectionTabs` (tabs: **Usuarios** / **Staff de proyectos**).
+- Tab Usuarios: lista paginada de recordatorios (`LessonReminderDTO`). Subcomponente: `lesson-reminder-create/`.
+- Tab Staff: lista de staff por proyecto. Subcomponente: `project-staff-list/`.
+- DTOs: `lessonReminder.model.ts`, `lessonReminderCreate.model.ts`, `lessonReminderCreateData.model.ts`, `projectStaffReminder.model.ts`.
+- Servicio: `LessonReminderService`.
+
+### Sidebar (navigation.service.ts)
+
+Grupo "Configuración" en `mejora-continua`:
+
+```
+Áreas                  → /mejora-continua/configuration/areas          (lesson-areas)
+Relaciones por área    → /mejora-continua/configuration/area-relations  (areas-subareas)
+Plantillas             → /mejora-continua/configuration/templates
+Tipos de Catálogo      → /mejora-continua/configuration/catalog-types
+Ítems de Catálogo      → /mejora-continua/configuration/catalog-items
+Recordatorios Lecciones→ /mejora-continua/configuration/reminders
+```
 
 ### Guards
 
@@ -2377,6 +2472,13 @@ Checkboxes y botones de aprobación masiva operan sobre este subset.
 ### filtroEstado default 'Enviado'
 
 `filtroEstado = 'Enviado'` (antes `''`). La lista arranca filtrando pólizas en estado Enviado.
+
+### Fixes 2026-05-30
+
+- **`sctr-subir.html`**: campo Proyecto cambiado a **obligatorio** (`Proyecto *`, `placeholder="Selecciona un proyecto"`).
+- **`sctr-subir.ts` `submit()`**: guard antes del payload — si `!model.proyectoId` lanza Swal warning y hace `return`. El backend ya recibía `proyectoId` como opcional, pero ahora el frontend lo exige.
+- **`sctr-vidaley.ts` `filteredDocWorkers` / `filteredPolizaWorkers`**: excluyen workers con estado `'Rechazado'` además de `'Aprobado'`. Antes los Rechazados aparecían en el panel de aprobación masiva.
+- **`sctr-vidaley.ts` `recalcularEstadoLocal(doc)`** (método privado): actualiza `doc.estado` (`'Enviado'` si hay workers en `'En revision'`/`'Enviado'`, `'Aprobado'` si no), sincroniza `this.documentos[idx].estado` y llama `cdr.detectChanges()`. Usado por `aprobarWorkerIndividual` y `confirmarRechazarWorker` para reflejar cambios sin recargar del backend.
 
 ### Aprobación directa sin Swal confirm
 
