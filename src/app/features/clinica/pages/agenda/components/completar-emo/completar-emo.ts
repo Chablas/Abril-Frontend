@@ -26,10 +26,13 @@ export class CompletarEmo implements OnChanges {
   @Output() completado = new EventEmitter<void>();
 
   aptitud = '';
+  fechaEmo = '';
   notas = '';
   lecturaRealizada = false;
   fechaLectura = '';
   saving = false;
+
+  get hoy(): string { return new Date().toISOString().split('T')[0]; }
 
   archivoAptitud: File | null = null;
   archivoEmo: File | null = null;
@@ -49,7 +52,7 @@ export class CompletarEmo implements OnChanges {
   get requiereInterconsulta(): boolean { return this.aptitud === 'No Apto' || this.aptitud === 'Observado'; }
 
   get canSubmit(): boolean {
-    if (!this.aptitud || !this.programacion || this.saving) return false;
+    if (!this.aptitud || !this.fechaEmo || !this.programacion || this.saving) return false;
     if (this.requiereDocumentos && (!this.archivoAptitud || !this.archivoEmo)) return false;
     if (this.lecturaRealizada && (!this.fechaLectura || !this.archivoLectura)) return false;
     if (this.requiereRestriccion && this.restricciones.length === 0) return false;
@@ -71,6 +74,7 @@ export class CompletarEmo implements OnChanges {
 
   reset(): void {
     this.aptitud = '';
+    this.fechaEmo = '';
     this.notas = '';
     this.lecturaRealizada = false;
     this.fechaLectura = '';
@@ -93,6 +97,12 @@ export class CompletarEmo implements OnChanges {
   }
 
   quitarRestriccion(i: number): void { this.restricciones.splice(i, 1); }
+
+  onLecturaChange(): void {
+    if (this.lecturaRealizada && !this.fechaLectura) {
+      this.fechaLectura = new Date().toISOString().split('T')[0];
+    }
+  }
 
   onArchivoAptitud(event: Event): void {
     this.archivoAptitud = (event.target as HTMLInputElement).files?.[0] ?? null;
@@ -148,7 +158,7 @@ export class CompletarEmo implements OnChanges {
       workerId: this.programacion.workerId,
       tipoEmoId: this.programacion.tipoEmoId ?? 0,
       empresaOrigenId: this.programacion.empresaId ?? undefined,
-      fechaEmo: new Date().toISOString().split('T')[0],
+      fechaEmo: this.fechaEmo,
       aptitud: this.aptitud,
       requiereInterconsulta: this.requiereInterconsulta,
       notas: this.notas || undefined,
@@ -157,6 +167,8 @@ export class CompletarEmo implements OnChanges {
       restricciones: restriccionesPayload,
       interconsultaInline,
     };
+
+    console.log('[CompletarEmo] payload:', { ...emoDto, archivoLectura: this.archivoLectura?.name });
 
     this.emoSvc.createEmo(emoDto, this.archivoLectura).subscribe({
       next: (res) => {

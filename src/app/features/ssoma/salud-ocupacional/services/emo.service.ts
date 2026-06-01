@@ -66,7 +66,7 @@ export class EmoService {
     if (dto.fechaLectura)         fd.append('fechaLectura', dto.fechaLectura);
     if (dto.examenes?.length)     fd.append('examenes', JSON.stringify(dto.examenes));
     if (dto.restricciones?.length) fd.append('restricciones', JSON.stringify(dto.restricciones));
-    if (dto.interconsultaInline)  fd.append('interconsultaInline', JSON.stringify(dto.interconsultaInline));
+    if (dto.interconsultaInline)  fd.append('interconsultaInlineJson', JSON.stringify(dto.interconsultaInline));
     if (archivoLectura)           fd.append('archivoLectura', archivoLectura, archivoLectura.name);
 
     return this.http.post<{ id: number; message: string; interconsultaId?: number }>(

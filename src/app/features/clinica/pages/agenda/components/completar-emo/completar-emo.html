@@ -20,6 +20,11 @@
           </select>
         </div>
         <div class="field-group">
+          <label class="field-label">Fecha del EMO <span class="req">*</span></label>
+          <input type="date" class="field-input" [(ngModel)]="fechaEmo" [max]="hoy" />
+          <p class="field-error" *ngIf="!fechaEmo">La fecha del EMO es obligatoria</p>
+        </div>
+        <div class="field-group">
           <label class="field-label">Notas</label>
           <input type="text" class="field-input" [(ngModel)]="notas" placeholder="Observaciones opcionales..." />
         </div>
@@ -39,7 +44,7 @@
       <div class="emo-section-title">Lectura del EMO</div>
       <div class="emo-section-body">
         <label class="checkbox-row">
-          <input type="checkbox" [(ngModel)]="lecturaRealizada" />
+          <input type="checkbox" [(ngModel)]="lecturaRealizada" (change)="onLecturaChange()" />
           <span class="checkbox-label">Se realizó lectura del EMO</span>
         </label>
 
