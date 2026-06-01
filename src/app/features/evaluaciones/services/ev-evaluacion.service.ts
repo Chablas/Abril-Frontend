@@ -34,4 +34,12 @@ export class EvEvaluacionService {
   getDetalle(id: number): Observable<EvEvaluacionResponseDto> {
     return this.http.get<EvEvaluacionResponseDto>(`${this.base}/${id}`, { headers: this.headers() });
   }
+
+  getResidentesEvaluables(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/residentes-evaluables`, { headers: this.headers() });
+  }
+
+  getMiSubarea(): Observable<{ subarea: string }> {
+    return this.http.get<{ subarea: string }>(`${this.base}/mi-subarea`, { headers: this.headers() });
+  }
 }

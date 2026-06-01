@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import Chart from 'chart.js/auto';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { EvDashboardService } from '../../services/ev-dashboard.service';
@@ -14,7 +15,7 @@ import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
   styleUrl: './dashboard-gerencia.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardGerencia implements OnInit {
+export class DashboardGerencia implements OnInit, AfterViewInit {
   periodo: EvPeriodoDto | null = null;
   dashboard: EvDashboardGerenciaDto | null = null;
   loading = true;
@@ -25,11 +26,28 @@ export class DashboardGerencia implements OnInit {
   chartBarrasId = 'chart-barras-ev';
   chartTendenciaId = 'chart-tendencia-ev';
 
+  private readonly COLORES = [
+    { bg: '#DCFCE7', border: '#059669' },
+    { bg: '#DBEAFE', border: '#0284C7' },
+    { bg: '#EDE9FE', border: '#7C3AED' },
+    { bg: '#FEF3C7', border: '#D97706' },
+    { bg: '#FEE2E2', border: '#DC2626' },
+    { bg: '#E0F2FE', border: '#0369A1' },
+    { bg: '#FCE7F3', border: '#BE185D' },
+  ];
+  private color(i: number) { return this.COLORES[i % this.COLORES.length]; }
+
   constructor(
     private dashService: EvDashboardService,
     private periodoService: EvPeriodoService,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  ngAfterViewInit(): void {
+    if (this.dashboard) {
+      setTimeout(() => this.renderCharts(), 50);
+    }
+  }
 
   ngOnInit(): void {
     this.periodoService.getActivo().subscribe({
@@ -50,11 +68,9 @@ export class DashboardGerencia implements OnInit {
         this.dashboard = d;
         this.residenteActivo = d.residentes[0] ?? null;
         this.loading = false;
+        console.log('tendencia:', d.tendencia);
         this.cdr.markForCheck();
-        setTimeout(() => {
-          this.renderCharts();
-          this.cdr.markForCheck();
-        }, 150);
+        setTimeout(() => this.renderCharts(), 100);
       },
       error: () => {
         this.loading = false;
@@ -149,36 +165,35 @@ export class DashboardGerencia implements OnInit {
   }
 
   renderCharts(): void {
-    const Chart = (window as any)['Chart'];
-    if (!Chart || !this.dashboard) return;
-    this.renderBarras(Chart);
-    this.renderTendencia(Chart);
+    if (!this.dashboard) return;
+    this.renderBarras();
+    this.renderTendencia();
   }
 
-  private renderBarras(Chart: any): void {
-    const el = document.getElementById(this.chartBarrasId) as HTMLCanvasElement;
-    if (!el || !this.dashboard) return;
-    const existing = Chart.getChart(el);
+  private renderBarras(): void {
+    const canvasEl = document.getElementById(this.chartBarrasId) as HTMLCanvasElement;
+    if (!canvasEl || !this.dashboard) return;
+    const existing = Chart.getChart(canvasEl);
     if (existing) existing.destroy();
     const residentes = this.dashboard.residentes;
-    new Chart(el, {
+    new Chart(canvasEl, {
       type: 'bar',
       data: {
-        labels: residentes.map((r) => r.nombre.split(' ').slice(-2).join(' ')),
+        labels: residentes.map((r) => r.nombre),
         datasets: [
           {
             label: this.periodo?.nombreMes ?? 'Actual',
             data: residentes.map((r) => r.promedioGeneral ?? 0),
-            backgroundColor: ['#DCFCE7', '#DBEAFE', '#EDE9FE', '#FEF3C7', '#FEE2E2'],
-            borderColor: ['#059669', '#0284C7', '#7C3AED', '#D97706', '#DC2626'],
+            backgroundColor: residentes.map((_, i) => this.color(i).bg),
+            borderColor: residentes.map((_, i) => this.color(i).border),
             borderWidth: 1.5,
             borderRadius: 5,
           },
           {
             label: 'Mes anterior',
             data: residentes.map((r) => r.promedioMesAnterior ?? 0),
-            backgroundColor: ['#F0FDF4', '#F0F9FF', '#FAF5FF', '#FFFBEB', '#FEF2F2'],
-            borderColor: ['#86EFAC', '#7DD3FC', '#C4B5FD', '#FDE68A', '#FECACA'],
+            backgroundColor: residentes.map((_, i) => this.color(i).bg + '99'),
+            borderColor: residentes.map((_, i) => this.color(i).border + '66'),
             borderWidth: 1,
             borderRadius: 5,
           },
@@ -206,25 +221,24 @@ export class DashboardGerencia implements OnInit {
     });
   }
 
-  private renderTendencia(Chart: any): void {
-    const el = document.getElementById(this.chartTendenciaId) as HTMLCanvasElement;
-    if (!el || !this.dashboard) return;
-    const existing = Chart.getChart(el);
+  private renderTendencia(): void {
+    const canvasEl = document.getElementById(this.chartTendenciaId) as HTMLCanvasElement;
+    if (!canvasEl || !this.dashboard) return;
+    const existing = Chart.getChart(canvasEl);
     if (existing) existing.destroy();
     const tendencia = this.dashboard.tendencia;
     const meses = [...new Set(tendencia.map((t) => t.nombreMes))];
     const userIds = [...new Set(tendencia.map((t) => t.userId))];
-    const colores = ['#059669', '#0284C7', '#D97706', '#DC2626', '#7C3AED'];
     const datasets = userIds.map((uid, idx) => {
       const r = this.dashboard!.residentes.find((r) => r.userId === uid);
-      const nombre = r ? r.nombre.split(' ').slice(-2).join(' ') : `User ${uid}`;
+      const nombre = r?.nombre ?? `User ${uid}`;
       return {
         label: nombre,
         data: meses.map(
           (m) => tendencia.find((t) => t.userId === uid && t.nombreMes === m)?.promedio ?? null,
         ),
-        borderColor: colores[idx % colores.length],
-        backgroundColor: colores[idx % colores.length] + '11',
+        borderColor: this.color(idx).border,
+        backgroundColor: this.color(idx).bg + '33',
         borderWidth: 1.5,
         pointRadius: 2,
         tension: 0.4,
@@ -232,7 +246,7 @@ export class DashboardGerencia implements OnInit {
         spanGaps: true,
       };
     });
-    new Chart(el, {
+    new Chart(canvasEl, {
       type: 'line',
       data: { labels: meses, datasets },
       options: {
