@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-05-30 — nuevas features mejora-continua, configuracion/area, SectionTabs. Fix sctr-subir: proyecto obligatorio. Fix sctr-vidaley: ocultar Rechazados, recalcularEstadoLocal(). auth.service: getContratistaScope/ProyectoIds + persistContratistaToken guarda scope/proyectos. ContratistaTokenDto +scope/proyectoIds. login contratista navega a /habilitacion. contratista-usuarios: rolOpts GESTOR solo para CASEVIP/CLINICA. dashboard-contratista: banner WhatsApp al pie.
+> **Última actualización**: 2026-05-31 — módulo `evaluaciones` creado completo (dashboard-gerencia con Chart.js/auto + AfterViewInit, evaluar-residente con área auto desde miSubarea, criterios 2-col grid, footer sticky, panel colapsable mis evaluaciones). Buscador residente con puedeVerTodos (modo A/B). Colores cíclicos en charts. `split/slice` eliminado de nombres en dashboard. `nombreCompleto` como campo canónico en evaluar-residente.
 
 ---
 
@@ -66,6 +66,7 @@ src/app/
     ├── configuracion/            # standalone routes (admin: empresas, proyectos, trabajadores)
     ├── contractors/              # standalone routes (pública + admin)
     ├── costs/                    # NgModule (adjudicaciones)
+    ├── evaluaciones/             # standalone routes (dashboard-gerencia, evaluar-residente, historial, configuracion-plantilla)
     ├── gestion-administrativa/   # standalone routes (solicitud-salidas, gestion-salidas, config)
     ├── habilitacion/             # standalone routes (trabajadores, empresa, equipos, bandeja…)
     ├── home/                     # Inicio
@@ -140,6 +141,7 @@ Redirect interno: `''` → `'proyectos'`. Reutiliza servicios/DTOs de SSOMA (`Ca
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
    /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
+   /evaluaciones                            → EVALUACIONES_ROUTES
    /gestion-administrativa                  → GESTION_ADMINISTRATIVA_ROUTES
    /mejora-continua                         → MEJORA_CONTINUA_ROUTES
 /contractors                                → CONTRACTORS_ROUTES (público — registro contratistas)
@@ -758,9 +760,48 @@ Plataforma completa mobile-first.
 - **`ContratistaUsuarios` — CLINICA_CONTRACTOR_ID**: constante privada `CLINICA_CONTRACTOR_ID = 644`. `buildFormHtml()` acepta `isClinica?: boolean`. Cuando `isClinica = true`, el selector `swal-system-role` muestra solo `<option value="14">Clínica</option>` en vez de las opciones 11/49. `abrirModalInvitar()` activa `showTipoAcceso` para contractor 572 o 644 y pasa `isClinica` solo para 644.
 - **`AdminContratistaUsuarios`** (NUEVO) `pages/admin-contratista-usuarios/`: página admin standalone para gestionar usuarios de cualquier empresa contratista. Carga lista de empresas via `EmpresaContratistaService.getEmpresasLogin()` (`GET api/v1/habilitacion/auth/empresas`). Selector de empresa (`EmpresaSimpleDto { id, razonSocial, nombreComercial? }`). Al seleccionar, muestra `<app-contratista-usuarios [contractorId]="..." [currentUserId]="null" [forceAdminMode]="true">`. Ruta: `admin-usuarios-contratista`, solo `authGuard`, título `HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA`.
 
+### `features/evaluaciones/` — 🔵 En desarrollo (2026-05-31)
+
+Módulo de evaluación de residentes. `isFullPage()` en `layout.ts` cubre todas sus rutas.
+
+**Sub-rutas** (`evaluaciones.routes.ts`):
+```
+/evaluaciones              → redirect 'dashboard'
+/evaluaciones/dashboard    → DashboardGerencia  (featureKey: evaluaciones.dashboard)
+/evaluaciones/evaluar      → EvaluarResidente   (featureKey: evaluaciones.evaluar)
+/evaluaciones/historial    → Historial          (featureKey: evaluaciones.historial)
+/evaluaciones/configuracion → ConfiguracionPlantilla (featureKey: evaluaciones.configuracion)
+```
+
+**Base URL backend**: `${apiUrl}api/v1/evaluaciones/`
+
+| Servicio | Endpoints clave |
+|---|---|
+| `EvPeriodoService` | `GET /periodos/activo`, `GET /periodos`, `PUT /{id}/activar` |
+| `EvPlantillaService` | `GET /plantilla/areas`, `GET /plantilla/{area}`, `PUT /{id}` |
+| `EvEvaluacionService` | `POST /residentes`, `GET /residentes/mis-evaluaciones`, `GET /residentes/residentes-evaluables`, `GET /residentes/mi-subarea` |
+| `EvDashboardService` | `GET /dashboard/gerencia?periodoId=`, `GET /dashboard/tendencia` |
+
+**DTOs**: `ev-periodo.model.ts`, `ev-plantilla.model.ts`, `ev-evaluacion.model.ts`, `ev-dashboard.model.ts` (en `features/evaluaciones/dtos/`).
+
+**`EvaluarResidente` — convenciones críticas**:
+- Campo del JSON: `nombreCompleto` (no `nombre`). Interfaz local `ResidenteItem { userId, nombreCompleto, projectId, projectNombre, puedeVerTodos }`.
+- `puedeVerTodos = true` → Modo A: buscador dropdown con todos los residentes.
+- `puedeVerTodos = false` → Modo B: lista directa filtrable por proyecto.
+- Área se determina automáticamente desde `GET /residentes/mi-subarea` → `miSubarea`. Fallback: `'Todos'`. El usuario NO selecciona el área manualmente.
+- Layout: columna única, criterios 2-col CSS grid (`display:contents` en wrapper), footer sticky (1 fila), panel "Mis evaluaciones" colapsable al fondo (`misEvalColapsado = true` por defecto).
+
+**`DashboardGerencia` — convenciones críticas**:
+- Chart.js importado como módulo: `import Chart from 'chart.js/auto'` (no `window['Chart']`).
+- `implements OnInit, AfterViewInit`. `renderCharts()` llamado en `AfterViewInit` (si hay datos) y en `loadDashboard` subscribe (`setTimeout 100ms`).
+- Colores cíclicos: `private readonly COLORES` (7 pares bg/border), método `color(i)`.
+- `console.log('tendencia:', d.tendencia)` temporal para debug — quitar antes de producción.
+
+**Sidebar**: módulo `evaluaciones` en `navigation.service.ts` con `iconKey: 'star'`. Requiere agregar ese key en `nav-icon.html` si se quiere icono custom.
+
 ### Branches actuales
 
-- Working: `master` (feature/arquitectura-comercial mergeada a master el 2026-05-26).
+- Working: `master` y `feature/arquitectura-comercial` (ambas en sync — cherry-pick en cada commit).
 - Main para PRs: `master`.
 
 ---
