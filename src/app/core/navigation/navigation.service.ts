@@ -33,6 +33,7 @@ export class NavigationService {
       baseRoute: '/mejora-continua',
       items: [
         { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned', featureKey: 'mejora-continua.lessons-learned' },
+        { label: 'Dashboard Lecciones',  route: '/mejora-continua/dashboard',        featureKey: 'mejora-continua.dashboard' },
       ],
       groups: [
         {
@@ -56,7 +57,7 @@ export class NavigationService {
       items: [
         { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
         { label: 'Cronograma de Actividades',     route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
-        { label: 'Dashboard Lecciones',           route: '/projects/dashboard',                    featureKey: 'projects.dashboard' },
+        // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
         { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
         { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
         { label: 'Control de cuaderno de obra',   route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
