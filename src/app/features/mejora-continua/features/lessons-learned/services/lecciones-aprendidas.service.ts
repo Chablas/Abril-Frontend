@@ -3,9 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { LessonListPagedDTO, LessonsPagedWithFiltersDTO } from '../dtos/lessonList.model';
+import { LessonDetailDTO } from '../dtos/lessonDetail.model';
 import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
 import { ScopeItemDTO } from '../dtos/scope-item.model';
 import { LessonAreaConfigItemDto } from '../../configuration/lesson-areas/dtos/lesson-area.dto';
+import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 
 @Injectable({
   providedIn: 'root',
@@ -69,6 +71,38 @@ export class LeccionesAprendidasService {
   createLesson(form: FormData): Observable<unknown> {
     return this.http.post(this.apiUrl, form, {
       headers: this.authHeaders(),
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Métodos migrados desde core/services/lesson.service.ts. Cubren los
+  // endpoints específicos de la página /mejora-continua/lessons-learned
+  // (lectura, borrado y exportación a Excel de una lección).
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getById(id: number | null): Observable<LessonDetailDTO> {
+    return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  deleteLesson(lessonId: number | undefined): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${lessonId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getExcel(filters: any): Observable<Blob> {
+    let params = new HttpParams();
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== null && filters[key] !== '' && filters[key] !== undefined) {
+        params = params.set(key, filters[key]);
+      }
+    });
+    return this.http.get(`${this.apiUrl}/export-excel`, {
+      params,
+      headers: this.authHeaders(),
+      responseType: 'blob',
     });
   }
 }

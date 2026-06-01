@@ -2,10 +2,10 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
-import { LessonService } from '../../../../../../core/services/lesson.service';
+import { LeccionesAprendidasService } from '../../services/lecciones-aprendidas.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { LessonDetailDTO, LessonImageDTO } from '../../../../../../core/dtos/lesson/lessonDetail.model';
+import { LessonDetailDTO, LessonImageDTO } from '../../dtos/lessonDetail.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../../../environments/environment';
@@ -31,7 +31,7 @@ export class DetailLesson implements OnInit {
   apiUrl = environment.apiUrl;
 
   constructor(
-    private lessonService: LessonService,
+    private lessonService: LeccionesAprendidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}

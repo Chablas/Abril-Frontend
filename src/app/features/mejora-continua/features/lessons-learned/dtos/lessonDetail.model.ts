@@ -1,4 +1,4 @@
-export interface LessonListDTO {
+export interface LessonDetailDTO {
   lessonId: number;
   lessonCode?: string;
   period: string;
@@ -11,10 +11,12 @@ export interface LessonListDTO {
   projectDescription?: string;
 
   areaId: number;
-  /** Path completo (incluye Gerencia). Para la vista de detalle. */
+  /** Path completo (incluye Gerencia). Mostrado en el modal de detalle. */
   areaDescription: string;
-  /** Path "corto" para tabla/tarjetas: sin Gerencia, en MAYÚSCULAS. */
+  /** Path "corto" sin Gerencia, en MAYÚSCULAS. Espejo del campo de la lista. */
   areaListDescription?: string;
+  subAreaId?: number;
+  subAreaDescription?: string;
 
   phaseStageSubStageSubSpecialtyId?: number;
   phaseId?: number;
@@ -32,7 +34,7 @@ export interface LessonListDTO {
 
   stateId: number;
   stateDescription: string;
-  images: LessonImage[];
+  images?: LessonImageDTO[];
 
   createdDateTime: string;
   createdUserId: number;
@@ -42,20 +44,7 @@ export interface LessonListDTO {
   active: boolean;
 }
 
-export interface LessonListPagedDTO {
-  page: number;
-  pageSize: number;
-  totalRecords: number;
-  totalPages: number;
-  data: LessonListDTO[];
-}
-
-export interface LessonsPagedWithFiltersDTO {
-  paged: LessonListPagedDTO;
-  filters: import('./lessonFilters.model').LessonFiltersDTO;
-}
-
-interface LessonImage {
+export interface LessonImageDTO {
   lessonImageId: number;
   imageUrl: string;
   lessonId: number;

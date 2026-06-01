@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LessonService } from '../../../../../core/services/lesson.service';
 import { LeccionesAprendidasService } from '../services/lecciones-aprendidas.service';
 import { LessonListDTO } from '../dtos/lessonList.model';
 import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
@@ -86,7 +85,6 @@ export class LeccionesAprendidas implements OnInit {
   selectedLessonTab: 'general' | 'images' = 'general';
 
   constructor(
-    private lessonService: LessonService,
     private leccionesAprendidasService: LeccionesAprendidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -166,7 +164,7 @@ export class LeccionesAprendidas implements OnInit {
 
   downloadExcel(): void {
     this.loaderService.show();
-    this.lessonService.getExcel(this.filtersTable).subscribe({
+    this.leccionesAprendidasService.getExcel(this.filtersTable).subscribe({
       next: (blob: Blob) => {
         const file = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = window.URL.createObjectURL(file);

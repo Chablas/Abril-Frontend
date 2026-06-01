@@ -94,6 +94,28 @@ export class CreateLesson implements OnInit {
     return undefined;
   }
 
+  /**
+   * Valida que la sección CLASIFICACION está completa:
+   *   • Existe al menos un nivel.
+   *   • Todos los niveles desplegados tienen valor seleccionado.
+   *   • El ítem más profundo seleccionado es una HOJA (no tiene hijos).
+   * Esto garantiza que se eligió una "relación válida" del árbol de scope —
+   * sin esto, el catalog_item enviado podría apuntar a un nodo intermedio
+   * que no representa una clasificación completa.
+   */
+  isClassificationComplete(): boolean {
+    if (this.scopeLevels.length === 0) return false;
+    if (this.selectedScopeItems.length !== this.scopeLevels.length) return false;
+    for (const sel of this.selectedScopeItems) {
+      if (!sel) return false;
+    }
+    const deepest = this.selectedScopeItems[this.selectedScopeItems.length - 1];
+    if (!deepest) return false;
+    // Si el nodo elegido todavía tiene hijos, el usuario no terminó de profundizar.
+    if (deepest.children && deepest.children.length > 0) return false;
+    return true;
+  }
+
   // ── Carga de datos ───────────────────────────────────────────────────────────
 
   private loadLessonAreas(): void {
@@ -164,6 +186,14 @@ export class CreateLesson implements OnInit {
   submit(): void {
     if (!this.projectId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar proyecto' }); return; }
     if (!this.lessonAreaId) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccionar área' }); return; }
+    if (!this.isClassificationComplete()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Clasificación incompleta',
+        text: 'Debes seleccionar una opción en cada desplegable de la sección Clasificación hasta llegar al último nivel disponible.',
+      });
+      return;
+    }
     if (!this.problemDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese una descripcion' }); return; }
     if (!this.reasonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese las causas' }); return; }
     if (!this.lessonDescription) { Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingrese la leccion aprendida' }); return; }
