@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-05-31 — módulo `evaluaciones` creado completo (dashboard-gerencia con Chart.js/auto + AfterViewInit, evaluar-residente con área auto desde miSubarea, criterios 2-col grid, footer sticky, panel colapsable mis evaluaciones). Buscador residente con puedeVerTodos (modo A/B). Colores cíclicos en charts. `split/slice` eliminado de nombres en dashboard. `nombreCompleto` como campo canónico en evaluar-residente.
+> **Última actualización**: 2026-05-31 (v2) — dashboard-gerencia: `renderBarras` con colores fijos `#1E3A5F`/`#CBD5E1` + plugin `separators` inline con líneas punteadas entre grupos. `renderTendencia`: ordenado por clave `YYYY-MM`, filtro fechas futuras (`<= hoy`), highlight de línea por `residenteActivoTendencia` (click en canvas toggle, `Number()` coercion). Vistas `mensual`/`tendencia` separadas con `*ngIf` + `setVista(detectChanges)`. Heatmap usa `residenteActivo.promediosPorArea`. `criterios-grid` muestra header evaluador + comentario por evaluación. Panel 4 filtrado por `residenteActivo.userId`. `anchor:'top'→'end'` fix en datalabels.
 
 ---
 
@@ -793,9 +793,15 @@ Módulo de evaluación de residentes. `isFullPage()` en `layout.ts` cubre todas 
 
 **`DashboardGerencia` — convenciones críticas**:
 - Chart.js importado como módulo: `import Chart from 'chart.js/auto'` (no `window['Chart']`).
-- `implements OnInit, AfterViewInit`. `renderCharts()` llamado en `AfterViewInit` (si hay datos) y en `loadDashboard` subscribe (`setTimeout 100ms`).
+- `implements OnInit, AfterViewInit`. `renderCharts()` llamado en `AfterViewInit` y en `loadDashboard` (`setTimeout 100ms`). `setVista()` usa `detectChanges()` síncrono antes del timeout para garantizar canvas en DOM.
 - Colores cíclicos: `private readonly COLORES` (7 pares bg/border), método `color(i)`.
-- `console.log('tendencia:', d.tendencia)` temporal para debug — quitar antes de producción.
+- Dos vistas: `vistaActiva = 'mensual' | 'tendencia'`. `charts-area` y `tendencia-area` con `*ngIf`. `renderCharts()` solo renderiza el gráfico de la vista activa.
+- `residenteActivoTendencia: number | null` — controla qué línea se resalta en tendencia. Se setea al hacer click en canvas (`onTendenciaClick`) o al cambiar residente estando en vista tendencia. Al cargar se resetea a `null`. Comparación con `Number()` coercion para evitar type mismatch.
+- `renderBarras`: colores fijos `#1E3A5F` (actual) / `#CBD5E1` (anterior). Plugin inline `separators` dibuja líneas punteadas entre grupos. Datalabels sobre barras. Eje Y min 10, max 20.
+- `renderTendencia`: ordena meses por clave `YYYY-MM`. Filtra `tendencia` por `<= hoy`. Eje X callback muestra año solo en enero. Click en canvas resalta la línea del dataset clickeado.
+- Heatmap Panel 2: usa `residenteActivo?.promediosPorArea ?? dashboard.promediosPorArea`. Tabs por área en detalle. `criterios-grid` muestra `crit-evaluador-header` + criterios + `crit-comentario`.
+- Panel comentarios (tendencia-area): filtrado por `residenteActivo.userId`.
+- `console.log` de debug en `renderTendencia` y `loadDashboard` — quitar antes de producción.
 
 **Sidebar**: módulo `evaluaciones` en `navigation.service.ts` con `iconKey: 'star'`. Requiere agregar ese key en `nav-icon.html` si se quiere icono custom.
 
