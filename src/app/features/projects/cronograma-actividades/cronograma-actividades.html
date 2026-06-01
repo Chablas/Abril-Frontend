@@ -514,18 +514,18 @@
             <tr *ngFor="let c of cascadaPreview?.cambios">
               <td class="cascada-td-act">{{ c.activityDescription }}</td>
               <td class="cascada-td-fecha">
-                <span class="cascada-fecha-ant">{{ formatDate(c.inicioAnterior) }}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"
-                  style="flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/></svg>
-                <span class="cascada-fecha-nueva">{{ formatDate(c.inicioNuevo) }}</span>
+                <div class="cascada-fecha-inner">
+                  <span class="cascada-fecha-ant">{{ formatDate(c.inicioAnterior) }}</span>
+                  <span class="cascada-arrow">↓</span>
+                  <span class="cascada-fecha-nueva">{{ formatDate(c.inicioNuevo) }}</span>
+                </div>
               </td>
               <td class="cascada-td-fecha">
-                <span class="cascada-fecha-ant">{{ formatDate(c.finAnterior) }}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"
-                  style="flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/></svg>
-                <span class="cascada-fecha-nueva">{{ formatDate(c.finNuevo) }}</span>
+                <div class="cascada-fecha-inner">
+                  <span class="cascada-fecha-ant">{{ formatDate(c.finAnterior) }}</span>
+                  <span class="cascada-arrow">↓</span>
+                  <span class="cascada-fecha-nueva">{{ formatDate(c.finNuevo) }}</span>
+                </div>
               </td>
             </tr>
           </tbody>

@@ -4,8 +4,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { CronogramaActividadesService } from './services/cronograma-actividades.service';
 import {
-  CronogramaActividadesService,
   ProyectoSimpleDto,
   ActividadDto,
   CrearActividadRequest,
@@ -13,7 +13,7 @@ import {
   ReordenarItem,
   CascadaResultDto,
   CascadaCambioDto,
-} from '../../../core/services/cronograma-actividades.service';
+} from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';

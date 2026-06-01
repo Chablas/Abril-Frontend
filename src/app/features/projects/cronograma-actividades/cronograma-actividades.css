@@ -1192,10 +1192,23 @@
 }
 
 .cascada-td-fecha {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+  display: table-cell;
+  vertical-align: middle;
   white-space: nowrap;
+  min-width: 120px;
+}
+
+.cascada-fecha-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.cascada-arrow {
+  color: #9ca3af;
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 .cascada-fecha-ant {

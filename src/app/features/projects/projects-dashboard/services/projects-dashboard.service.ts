@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../../environments/environment';
 import {
   ProjectsDashboardDTO,
   ProjectsDashboardFiltersDTO,
   ProyectoDetalleDTO,
-} from '../dtos/projects-dashboard/projectsDashboard.model';
+} from '../dtos/projectsDashboard.model';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;

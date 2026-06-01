@@ -4,11 +4,11 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { CronogramaActividadesService } from './services/cronograma-actividades.service';
 import {
-  CronogramaActividadesService,
   ProyectoSimpleDto,
   ActividadDto,
-} from '../../../core/services/cronograma-actividades.service';
+} from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 

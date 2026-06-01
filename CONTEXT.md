@@ -2703,8 +2703,8 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 
 ### Archivos nuevos creados
 
-- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
-- `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
+- `features/projects/projects-dashboard/dtos/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
+- `features/projects/projects-dashboard/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
 - `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
 
 ### Registro en routing y navegación
@@ -2722,7 +2722,8 @@ Módulo completo para gestionar actividades de la tabla `project_activity`.
 
 **Archivos:**
 
-- `core/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts`
 - `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
 
 **Endpoints:**
@@ -3067,7 +3068,8 @@ paleta Material previa (ver §Sesión 2026-05-26) y agrega navegación maestro-d
 reordenamiento, cambio de jerarquía y cálculo recursivo de avance.
 
 **Archivos:**
-- `core/services/cronograma-actividades.service.ts` (nuevos endpoints + DTO ampliado)
+- `features/projects/cronograma-actividades/services/cronograma-actividades.service.ts` (nuevos endpoints + DTO ampliado)
+- `features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts` (interfaces separadas del service)
 - `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css` (Vista 2 — detalle)
 - `features/projects/cronograma-actividades/proyectos-cronograma-list.ts/html/css` (Vista 1 — lista, **nuevo**)
 - `features/projects/proyectos-routing-module.ts` (ruta con `:proyectoId`)
@@ -3289,7 +3291,7 @@ Template: `[ngClass]="isDarkBg(act) ? '' : getEstadoCss(act)"`, `{{ getEstado(ac
 
 ## Sesión 2026-06-01 — Cronograma de Actividades: predecesoras + cascada
 
-### DTOs nuevos (`core/services/cronograma-actividades.service.ts`)
+### DTOs nuevos (`features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts`)
 
 `ActividadDto` ampliado con dos campos:
 - `predecesoras: number[]` — IDs de actividades predecesoras
@@ -3339,7 +3341,7 @@ Estado: `cascadaModalOpen = false`, `cascadaPreview: CascadaResultDto | null`, `
 - `aplicarCascada()` — POST `/aplicar`; por cada `CascadaCambioDto` en `result.cambios`, patch quirúrgico `plannedStartDate`/`plannedEndDate` en `this.actividades` por `projectActivityId` → `buildAvanceMap()` + `buildColorMap()` → `cdr.detectChanges()` → cierra modal.
 - `cancelarCascada()` — cierra el modal sin tocar datos.
 
-HTML: overlay `*ngIf="cascadaModalOpen"` (no cierra al click en backdrop — requiere decisión explícita), box `.cascada-modal-box` 700px, header `#1B263B`, tabla scrolleable (`max-height: 320px`) con columnas **Actividad / Inicio ant→nuevo / Fin ant→nuevo** (fecha anterior tachada en gris, fecha nueva en azul bold, flecha SVG entre ellas). Footer `[Cancelar] [Aplicar cambios]`, ambos `disabled` mientras `aplicandoCascada`.
+HTML: overlay `*ngIf="cascadaModalOpen"` (no cierra al click en backdrop — requiere decisión explícita), box `.cascada-modal-box` 700px, header `#1B263B`, tabla scrolleable (`max-height: 320px`) con columnas **Actividad / Inicio ant→nuevo / Fin ant→nuevo**. Cada celda de fecha contiene `<div class="cascada-fecha-inner">` (`flex-direction: column`): fecha anterior tachada en gris → `↓` → fecha nueva en azul bold. **CSS clave**: `.cascada-td-fecha { display: table-cell; min-width: 120px }` — el `display: table-cell` es explícito para evitar que un reset o herencia flex anule el comportamiento de celda. Footer `[Cancelar] [Aplicar cambios]`, ambos `disabled` mientras `aplicandoCascada`.
 
 ### Badge de predecesoras en tabla
 
@@ -3363,3 +3365,43 @@ const actividadId  = this.editandoId!;
 const predSnapshot = [...this.formPredecesoras];
 ```
 Todas las llamadas async posteriores usan `actividadId` y `predSnapshot` en vez de `this.editandoId` / `this.formPredecesoras`.
+
+---
+
+## Sesión 2026-06-01 (cont.) — Reorganización feature-local + fix modal cascada
+
+### Reorganización a arquitectura por feature
+
+`cronograma-actividades` y `projects-dashboard` migrados de arquitectura por capas a arquitectura por feature. Archivos eliminados de `core/`; movidos a subcarpetas locales `dtos/` y `services/` dentro de cada feature.
+
+**Cronograma de Actividades — estructura final:**
+```
+features/projects/cronograma-actividades/
+  ├── dtos/cronograma-actividades.dtos.ts     ← interfaces extraídas del service original
+  ├── services/cronograma-actividades.service.ts
+  ├── cronograma-actividades.ts / .html / .css
+  └── proyectos-cronograma-list.ts / .html / .css
+```
+Eliminado: `core/services/cronograma-actividades.service.ts`.
+
+**Projects Dashboard — estructura final:**
+```
+features/projects/projects-dashboard/
+  ├── dtos/projectsDashboard.model.ts
+  ├── services/projects-dashboard.service.ts
+  └── projects-dashboard.ts / .html / .css
+```
+Eliminados: `core/services/projects-dashboard.service.ts`, `core/dtos/projects-dashboard/projectsDashboard.model.ts` (+ carpeta vacía).
+
+Imports actualizados en `cronograma-actividades.ts`, `proyectos-cronograma-list.ts`, `projects-dashboard.ts`. El `projects-dashboard.service.ts` también actualizó su import interno al modelo (de `../dtos/...` relativo a `core/` → `../dtos/projectsDashboard.model` relativo a `services/`).
+
+### Fix modal cascada — columna Fin aparecía vacía
+
+**Causa raíz**: `.cascada-td-fecha { display: flex }` aplicado directamente al `<td>` anulaba `display: table-cell`, colapsando ambas celdas de fecha en la misma columna visual.
+
+**Fix**:
+- Eliminado `display: flex` del `<td>`. Agregado `display: table-cell` explícito + `min-width: 120px`.
+- Contenido interno envuelto en `<div class="cascada-fecha-inner">` (`display: flex; flex-direction: column`).
+- Flecha `→` (SVG horizontal) cambiada a `↓` (`<span class="cascada-arrow">`).
+
+**Regla general**: nunca poner `display: flex` directamente en `<td>` — usa un `<div>` wrapper interno.

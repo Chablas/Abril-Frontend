@@ -1,70 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-
-export interface ProyectoSimpleDto {
-  projectId: number;
-  projectDescription: string;
-  responsableUdp: string | null;
-}
-
-export interface ActividadDto {
-  projectActivityId: number;
-  projectId: number;
-  activityDescription: string;
-  plannedStartDate: string | null;
-  plannedEndDate: string | null;
-  actualEndDate: string | null;
-  progressPercentage: number;
-  order: number;
-  hierarchyLevel: number;
-  parentId: number | null;
-  predecesoras: number[];
-  esPadre: boolean;
-}
-
-export interface CascadaCambioDto {
-  projectActivityId: number;
-  activityDescription: string;
-  inicioAnterior: string;
-  inicioNuevo: string;
-  finAnterior: string;
-  finNuevo: string;
-}
-
-export interface CascadaResultDto {
-  hayCambios: boolean;
-  cambios: CascadaCambioDto[];
-}
-
-export interface ActualizarPredecesorasResultDto {
-  projectActivityId: number;
-  predecesoras: number[];
-  previewCascada: CascadaResultDto;
-}
-
-export interface CrearActividadRequest {
-  activityDescription: string;
-  plannedStartDate: string | null;
-  plannedEndDate: string | null;
-  progressPercentage: number;
-  hierarchyLevel: number;
-  parentId: number | null;
-}
-
-export interface ReordenarItem {
-  projectActivityId: number;
-  order: number;
-}
-
-export interface EditarActividadRequest {
-  activityDescription: string;
-  plannedStartDate: string | null;
-  plannedEndDate: string | null;
-  actualEndDate: string | null;
-  progressPercentage: number;
-}
+import { environment } from '../../../../../environments/environment';
+import {
+  ProyectoSimpleDto,
+  ActividadDto,
+  CascadaResultDto,
+  ActualizarPredecesorasResultDto,
+  CrearActividadRequest,
+  ReordenarItem,
+  EditarActividadRequest,
+} from '../dtos/cronograma-actividades.dtos';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
