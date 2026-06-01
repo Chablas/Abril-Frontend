@@ -45,7 +45,6 @@
               <th class="col-fecha">Fin Real</th>
               <th class="col-avance">Avance</th>
               <th class="col-estado">Estado</th>
-              <th class="col-jerarquia"></th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +61,6 @@
                 </div>
               </td>
               <td><div class="skel skel-badge-pill"></div></td>
-              <td></td>
             </tr>
           </tbody>
         </table>
@@ -128,7 +126,6 @@
               <th class="col-fecha">Fin Real</th>
               <th class="col-avance">Avance</th>
               <th class="col-estado">Estado</th>
-              <th class="col-jerarquia"></th>
             </tr>
           </thead>
           <tbody>
@@ -147,7 +144,7 @@
               [class.drop-above]="dropTargetId === act.projectActivityId && dropAbove"
               [class.drop-below]="dropTargetId === act.projectActivityId && !dropAbove"
               [ngStyle]="getRowStyle(act)"
-              (click)="abrirModalEditar(act)"
+              (click)="act.hierarchyLevel === 1 ? abrirGanttModal(act) : abrirModalEditar(act)"
               (dragover)="onDragOver(act, $event)"
               (dragleave)="onDragLeave(act, $event)"
               (drop)="onDrop(act, $event)"
@@ -158,7 +155,33 @@
                 [attr.draggable]="true"
                 (dragstart)="onDragStart(act, $event)"
                 (click)="$event.stopPropagation()"
-              >{{ getDisplayIndex(act) }}</td>
+              >
+                <div class="order-cell">
+                  <button
+                    class="btn-nivel"
+                    [disabled]="!canSubirNivel(act)"
+                    (click)="subirNivelActividad(act, $event)"
+                    title="Subir nivel"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                  <span class="order-num">{{ getDisplayIndex(act) }}</span>
+                  <button
+                    class="btn-nivel"
+                    [disabled]="!canBajarNivel(act)"
+                    (click)="bajarNivelActividad(act, $event)"
+                    title="Bajar nivel"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
               <td class="td-actividad">
                 <div class="actividad-cell" [style.padding-left.px]="act.hierarchyLevel * 20">
                   <button
@@ -169,7 +192,7 @@
                     [title]="collapsedIds.has(act.projectActivityId) ? 'Expandir' : 'Colapsar'"
                   >
                     <svg
-                      width="12" height="12" viewBox="0 0 24 24"
+                      width="16" height="16" viewBox="0 0 24 24"
                       fill="none" stroke="currentColor" stroke-width="2.5"
                       class="chevron-icon"
                       [class.chevron-collapsed]="collapsedIds.has(act.projectActivityId)"
@@ -179,6 +202,11 @@
                   </button>
                   <span *ngIf="!hasChildren(act)" class="chevron-spacer"></span>
                   <span>{{ act.activityDescription }}</span>
+                  <span
+                    *ngIf="act.predecesoras?.length"
+                    class="pred-badge"
+                    [title]="getPredTooltip(act)"
+                  >← {{ act.predecesoras.length }}</span>
                 </div>
               </td>
               <td class="td-fecha">{{ formatDate(act.plannedStartDate) }}</td>
@@ -208,35 +236,8 @@
                   {{ getEstado(act) }}
                 </span>
               </td>
-              <td class="td-jerarquia" (click)="$event.stopPropagation()">
-                <div class="jerarquia-btns">
-                  <button
-                    class="btn-jerarquia"
-                    [ngStyle]="getChevronStyle(act)"
-                    [disabled]="!canSubirNivel(act)"
-                    (click)="subirNivelActividad(act, $event)"
-                    title="Subir nivel"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="15 18 9 12 15 6"/>
-                    </svg>
-                  </button>
-                  <button
-                    class="btn-jerarquia"
-                    [ngStyle]="getChevronStyle(act)"
-                    [disabled]="!canBajarNivel(act)"
-                    (click)="bajarNivelActividad(act, $event)"
-                    title="Bajar nivel"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
             </tr>
+
             </ng-container>
           </tbody>
         </table>
@@ -342,13 +343,28 @@
       <div class="field-row">
         <div class="field">
           <label class="field-label">Inicio Programado</label>
-          <input type="date" class="field-input" [(ngModel)]="formPlannedStart" />
+          <input
+            type="date"
+            class="field-input"
+            [class.field-input-readonly]="editandoAct?.esPadre"
+            [(ngModel)]="formPlannedStart"
+            [disabled]="!!editandoAct?.esPadre"
+          />
         </div>
         <div class="field">
           <label class="field-label">Fin Programado</label>
-          <input type="date" class="field-input" [(ngModel)]="formPlannedEnd" />
+          <input
+            type="date"
+            class="field-input"
+            [class.field-input-readonly]="editandoAct?.esPadre"
+            [(ngModel)]="formPlannedEnd"
+            [disabled]="!!editandoAct?.esPadre"
+          />
         </div>
       </div>
+      <p class="field-hint field-hint-readonly" *ngIf="editandoAct?.esPadre">
+        Calculado automáticamente desde las actividades hijas
+      </p>
 
       <!-- Avance -->
       <div class="field">
@@ -380,6 +396,44 @@
             [style.width.%]="formProgress"
           ></div>
         </div>
+      </div>
+
+      <!-- Predecesoras (solo editar hojas) -->
+      <div class="field pred-field" *ngIf="modalMode === 'editar' && !editandoAct?.esPadre">
+        <label class="field-label">Predecesoras</label>
+
+        <!-- Chips de predecesoras seleccionadas -->
+        <div class="pred-chips" *ngIf="formPredecesoras.length">
+          <span class="pred-chip" *ngFor="let pid of formPredecesoras">
+            {{ getPredChipLabel(pid) }}
+            <button class="pred-chip-remove" type="button" (click)="quitarPredecesora(pid)" title="Quitar">×</button>
+          </span>
+        </div>
+
+        <!-- Input de búsqueda -->
+        <input
+          type="text"
+          class="field-input"
+          placeholder="Buscar por # o nombre..."
+          [(ngModel)]="predSearch"
+          autocomplete="off"
+        />
+
+        <!-- Resultados de búsqueda -->
+        <div class="pred-results" *ngIf="predSearch.trim() && filtrarPredecesoras().length">
+          <button
+            class="pred-result-item"
+            type="button"
+            *ngFor="let act of filtrarPredecesoras()"
+            (click)="agregarPredecesora(act)"
+          >
+            <span class="pred-result-idx">{{ getDisplayIndex(act) }}</span>
+            <span class="pred-result-name">{{ act.activityDescription }}</span>
+          </button>
+        </div>
+        <p class="pred-empty" *ngIf="predSearch.trim() && !filtrarPredecesoras().length">
+          Sin resultados
+        </p>
       </div>
 
       <!-- Fin Real (solo en editar) -->
@@ -424,6 +478,165 @@
       <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
         {{ guardando ? 'Guardando...' : 'Guardar' }}
       </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal cascada ── -->
+<div class="modal-overlay" *ngIf="cascadaModalOpen">
+  <div class="modal-box cascada-modal-box">
+
+    <div class="modal-header cascada-modal-header">
+      <h3 class="modal-title cascada-modal-title">Cambios de cascada</h3>
+      <button class="btn-modal-close cascada-close-btn" (click)="cancelarCascada()"
+              [disabled]="aplicandoCascada" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="cascada-desc">
+        Las siguientes actividades serán reprogramadas en cascada a partir de las predecesoras modificadas:
+      </p>
+      <div class="cascada-table-wrap">
+        <table class="cascada-table">
+          <thead>
+            <tr>
+              <th>Actividad</th>
+              <th>Inicio ant → nuevo</th>
+              <th>Fin ant → nuevo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of cascadaPreview?.cambios">
+              <td class="cascada-td-act">{{ c.activityDescription }}</td>
+              <td class="cascada-td-fecha">
+                <span class="cascada-fecha-ant">{{ formatDate(c.inicioAnterior) }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"
+                  style="flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/></svg>
+                <span class="cascada-fecha-nueva">{{ formatDate(c.inicioNuevo) }}</span>
+              </td>
+              <td class="cascada-td-fecha">
+                <span class="cascada-fecha-ant">{{ formatDate(c.finAnterior) }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"
+                  style="flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/></svg>
+                <span class="cascada-fecha-nueva">{{ formatDate(c.finNuevo) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cancelarCascada()" [disabled]="aplicandoCascada">Cancelar</button>
+      <button class="btn-primary" (click)="aplicarCascada()" [disabled]="aplicandoCascada">
+        {{ aplicandoCascada ? 'Aplicando...' : 'Aplicar cambios' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal Gantt (nivel 1) ── -->
+<div class="modal-overlay" *ngIf="ganttModalAct" (click)="onGanttOverlayClick($event)">
+  <div class="gantt-modal-box"
+       [style.--g-accent]="getGanttAccentColor(ganttModalAct!)">
+
+    <div class="gantt-modal-header">
+      <div class="gantt-modal-title-wrap">
+        <h3 class="gantt-modal-title">{{ ganttModalAct!.activityDescription }}</h3>
+        <ng-container *ngIf="getGanttRange(getGanttChildren(ganttModalAct!)) as r">
+          <span class="gantt-range-label gantt-range-label-header">
+            {{ formatDate(r.min.toISOString()) }} → {{ formatDate(r.max.toISOString()) }}
+          </span>
+        </ng-container>
+      </div>
+      <button class="btn-modal-close gantt-modal-close-btn" (click)="cerrarGanttModal()" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="gantt-modal-body">
+      <ng-container *ngIf="getGanttChildren(ganttModalAct!) as kids">
+        <ng-container *ngIf="getGanttRange(kids) as range; else ganttModalSinFechas">
+          <ng-container *ngIf="getGanttWeeks(range) as weeks">
+
+            <div class="gantt-layout">
+
+              <!-- ── Columna de nombres (fija) ── -->
+              <div class="gantt-names-col">
+                <div class="gantt-names-spacer"></div>
+                <div
+                  class="gantt-name-row"
+                  *ngFor="let kid of kids"
+                  [title]="kid.activityDescription"
+                >{{ kid.activityDescription }}</div>
+              </div>
+
+              <!-- ── Columna de barras (scrollable) ── -->
+              <div class="gantt-chart-col">
+                <div class="gantt-chart-inner" [style.width.px]="getGanttChartWidth(weeks)">
+
+                  <!-- Fila 1: Meses -->
+                  <div class="gantt-scale-months">
+                    <div
+                      class="gantt-month-cell"
+                      *ngFor="let month of getGanttMonths(weeks)"
+                      [style.width.px]="month.spanWeeks * 50"
+                    >{{ month.label }}</div>
+                  </div>
+
+                  <!-- Fila 2: Semanas -->
+                  <div class="gantt-scale-weeks">
+                    <div
+                      class="gantt-week-cell"
+                      *ngFor="let week of weeks"
+                      [class.gantt-week-today]="week.isCurrentWeek"
+                    >{{ week.label }}</div>
+                  </div>
+
+                  <!-- Área de barras -->
+                  <div class="gantt-bars-area">
+                    <!-- Línea HOY -->
+                    <div
+                      class="gantt-today-line"
+                      *ngIf="getTodayPosition(range, weeks) as todayLeft"
+                      [style.left]="todayLeft"
+                    ></div>
+                    <!-- Una fila por actividad hijo -->
+                    <div class="gantt-bar-row" *ngFor="let kid of kids">
+                      <div
+                        class="gantt-bar-container"
+                        [ngStyle]="getBarLayerStyle(kid, weeks)"
+                      >
+                        <div class="gantt-bar-bg"
+                             [style.background]="getGanttBarColorAlpha(ganttModalAct!)"></div>
+                        <div class="gantt-bar-fill"
+                             [style.width.%]="getAvance(kid)"
+                             [style.background]="getGanttAccentColor(ganttModalAct!)"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+          </ng-container>
+        </ng-container>
+        <ng-template #ganttModalSinFechas>
+          <p class="gantt-no-data">Sin fechas programadas en este grupo</p>
+        </ng-template>
+      </ng-container>
     </div>
 
   </div>

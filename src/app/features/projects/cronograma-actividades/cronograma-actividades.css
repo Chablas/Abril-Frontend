@@ -229,13 +229,12 @@
 }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
-.col-order     { width: 48px; }
+.col-order     { width: 76px; }
 .col-actividad { min-width: 200px; }
 .col-fecha     { width: 110px; }
 .col-avance    { width: 150px; }
 .col-estado    { width: 125px; }
 .col-acciones  { width: 110px; }
-.col-jerarquia { width: 62px; }
 
 /* ── Drag handle ──────────────────────────────────────────────────────────── */
 .td-drag-handle { cursor: grab; user-select: none; }
@@ -289,44 +288,49 @@
 .data-table tbody tr.lvl-2 .td-actividad    { font-weight: 500; }
 .data-table tbody tr.lvl-deep .td-actividad { font-weight: 400; }
 
-/* ── Botones de jerarquía ─────────────────────────────────────────────────── */
-.td-jerarquia { padding: 0.35rem 0.5rem; vertical-align: middle; }
-
-.jerarquia-btns {
+/* ── Columna # con botones de nivel ──────────────────────────────────────── */
+.order-cell {
   display: flex;
   align-items: center;
-  gap: 0.2rem;
+  justify-content: center;
+  gap: 2px;
 }
 
-.btn-jerarquia {
+.order-num {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 18px;
+  text-align: center;
+}
+
+.btn-nivel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border: none;
-  border-radius: 50%;
+  border-radius: 3px;
   background: transparent;
-  color: inherit;
-  opacity: 0.55;
+  color: #778da9;
+  opacity: 0;
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
-  transition: opacity 0.12s, background 0.12s, transform 0.1s;
+  transition: opacity 0.15s ease, color 0.12s ease, background 0.12s ease;
 }
 
-.btn-jerarquia:hover:not(:disabled) {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.1);
-  transform: scale(1.15);
+.row-clickable:hover .btn-nivel:not(:disabled) { opacity: 1; }
+.row-clickable:hover .btn-nivel:disabled       { opacity: 0.2; cursor: not-allowed; }
+
+.btn-nivel:hover:not(:disabled) {
+  color: inherit;
+  background: rgba(0, 0, 0, 0.06);
 }
 
-.row-dark .btn-jerarquia:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.15);
+.row-dark .btn-nivel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
 }
-
-.btn-jerarquia:disabled { opacity: 0.18; cursor: not-allowed; }
 
 /* ── Celdas de tabla ──────────────────────────────────────────────────────── */
 .td-order { color: #9ca3af; font-size: 0.82rem; }
@@ -355,15 +359,15 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 32px;
   border: none;
   background: transparent;
   color: inherit;
   opacity: 0.75;
   cursor: pointer;
-  padding: 0;
-  border-radius: 3px;
+  padding: 8px;
+  border-radius: 5px;
   transition: opacity 0.12s, background 0.12s;
 }
 
@@ -381,7 +385,7 @@
 .chevron-spacer {
   display: inline-block;
   flex-shrink: 0;
-  width: 18px;
+  width: 32px;
 }
 
 .td-fecha { font-size: 0.83rem; color: #6b7280; white-space: nowrap; }
@@ -651,6 +655,20 @@
 
 .field-hint { font-size: 0.75rem; color: #9ca3af; }
 
+.field-input-readonly,
+.field-input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+.field-hint-readonly {
+  color: #778da9;
+  font-style: italic;
+  margin-top: -0.5rem;
+}
+
 .field-label-required { color: var(--rojo); margin-left: 0.15rem; }
 
 .field-input-error {
@@ -787,3 +805,428 @@
 }
 
 .loading-text { font-size: 0.87rem; color: #9ca3af; margin: 0; }
+
+/* ── Modal Gantt (nivel 1) ────────────────────────────────────────────────── */
+.gantt-modal-box {
+  width: 80vw;
+  max-width: 1100px;
+  max-height: 85vh;
+  background: #f0f4f8;
+  border-radius: 14px;
+  border-top: 3px solid var(--g-accent, #415a77);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gantt-modal-header {
+  background: #1b263b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.4rem;
+  flex-shrink: 0;
+}
+
+.gantt-modal-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.gantt-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e0e1dd;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-range-label {
+  font-size: 0.73rem;
+  color: #778da9;
+  white-space: nowrap;
+}
+
+.gantt-range-label-header { color: #778da9; }
+
+.gantt-modal-close-btn { color: #778da9; }
+.gantt-modal-close-btn:hover { background: rgba(255,255,255,0.12); color: #e0e1dd; }
+
+.gantt-modal-body {
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Layout dos columnas ──────────────────────────────────────────────────── */
+.gantt-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Columna nombres (fija) */
+.gantt-names-col {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.gantt-names-spacer {
+  height: 54px; /* meses 26px + semanas 28px */
+  flex-shrink: 0;
+  background: #1b263b;
+  border-bottom: 1px solid #415a77;
+}
+
+.gantt-name-row {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-size: 0.73rem;
+  color: #4a6580;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid #e9eef4;
+  flex-shrink: 0;
+}
+
+/* Columna chart (scrollable horizontal) */
+.gantt-chart-col {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+.gantt-chart-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Escala — fila 1: Meses ───────────────────────────────────────────────── */
+.gantt-scale-months {
+  display: flex;
+  height: 26px;
+  flex-shrink: 0;
+  background: #1b263b;
+}
+
+.gantt-month-cell {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #778da9;
+  border-right: 1px solid #415a77;
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ── Escala — fila 2: Semanas ─────────────────────────────────────────────── */
+.gantt-scale-weeks {
+  display: flex;
+  height: 28px;
+  flex-shrink: 0;
+  background: #263c54;
+  border-bottom: 1px solid #334d6e;
+}
+
+.gantt-week-cell {
+  width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #8fa3b8;
+  border-right: 1px solid #334d6e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gantt-week-today {
+  background: #415a77;
+  color: #e0e1dd;
+  font-weight: 600;
+}
+
+/* ── Área de barras ───────────────────────────────────────────────────────── */
+.gantt-bars-area {
+  position: relative;
+  flex: 1;
+}
+
+.gantt-bar-row {
+  position: relative;
+  height: 34px;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.gantt-bar-container {
+  position: absolute;
+  top: 6px;
+  height: 22px;
+  border-radius: 4px;
+  min-width: 4px;
+  overflow: hidden;
+}
+
+.gantt-bar-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+}
+
+.gantt-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* ── Línea HOY ────────────────────────────────────────────────────────────── */
+.gantt-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ef4444;
+  z-index: 10;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* ── Sin datos ────────────────────────────────────────────────────────────── */
+.gantt-no-data {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+}
+
+/* ── Selector de predecesoras ─────────────────────────────────────────────── */
+.pred-field { position: relative; }
+
+.pred-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.pred-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pred-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: background 0.1s;
+}
+.pred-chip-remove:hover { background: rgba(29, 78, 216, 0.18); }
+
+.pred-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.pred-result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.pred-result-item:hover { background: #f0f4ff; }
+
+.pred-result-idx {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #778da9;
+  min-width: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pred-result-name {
+  font-size: 0.82rem;
+  color: #1b263b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pred-empty {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0.3rem 0 0;
+  padding: 0;
+}
+
+/* ── Modal cascada ────────────────────────────────────────────────────────── */
+.cascada-modal-box { max-width: 700px; }
+
+.cascada-modal-header {
+  background: #1b263b;
+  border-bottom: 1px solid #415a77;
+}
+
+.cascada-modal-title { color: #e0e1dd; }
+
+.cascada-close-btn { color: #778da9; }
+.cascada-close-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e0e1dd;
+}
+.cascada-close-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.cascada-desc {
+  font-size: 0.83rem;
+  color: #4a6580;
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.cascada-table-wrap {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.cascada-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cascada-table thead tr { background: #f0f4f8; position: sticky; top: 0; z-index: 1; }
+
+.cascada-table th {
+  padding: 0.55rem 0.9rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4a6580;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.cascada-table td {
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid #f0f4f8;
+  vertical-align: middle;
+  color: #374151;
+}
+
+.cascada-table tbody tr:last-child td { border-bottom: none; }
+.cascada-table tbody tr:hover td { background: #f8fafc; }
+
+.cascada-td-act {
+  max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.cascada-td-fecha {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.cascada-fecha-ant {
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-size: 0.78rem;
+}
+
+.cascada-fecha-nueva {
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* ── Badge de predecesoras en tabla ──────────────────────────────────────── */
+.pred-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: default;
+  letter-spacing: 0.01em;
+}
+
+.row-dark .pred-badge {
+  background: rgba(219, 234, 254, 0.18);
+  color: #93c5fd;
+}

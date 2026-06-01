@@ -11,6 +11,8 @@ import {
   CrearActividadRequest,
   EditarActividadRequest,
   ReordenarItem,
+  CascadaResultDto,
+  CascadaCambioDto,
 } from '../../../core/services/cronograma-actividades.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -46,7 +48,8 @@ export class CronogramaActividades implements OnInit {
   importando = false;
 
   // Jerarquía
-  collapsedIds = new Set<number>();
+  collapsedIds  = new Set<number>();
+  ganttModalAct: ActividadDto | null = null;
   private parentIds = new Set<number>();
   private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
   private avanceMap = new Map<number, number>();
@@ -62,6 +65,8 @@ export class CronogramaActividades implements OnInit {
   formNivel = 1;
   formPadreId: number | null = null;
   private readonly NIVEL0 = { bg: '#1B263B', text: '#E0E1DD' } as const;
+  private readonly GANTT_WEEK_PX = 50;
+  private readonly GANTT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   private readonly LEVEL1_COLORS = [
     '#3B82F6', '#14B8A6', '#F59E0B', '#A855F7',
     '#EF4444', '#10B981', '#F97316', '#6366F1',
@@ -74,6 +79,15 @@ export class CronogramaActividades implements OnInit {
   formActualEnd = '';
   formProgress = 0;
   errorFechaReal = false;
+
+  // Predecesoras
+  formPredecesoras: number[] = [];
+  predSearch = '';
+
+  // Modal de cascada
+  cascadaModalOpen = false;
+  cascadaPreview: CascadaResultDto | null = null;
+  aplicandoCascada = false;
 
   constructor(
     private service: CronogramaActividadesService,
@@ -133,6 +147,7 @@ export class CronogramaActividades implements OnInit {
   onProyectoChange(id: number | null): void {
     this.actividades = [];
     this.collapsedIds.clear();
+    this.ganttModalAct = null;
     this.parentIds.clear();
     this.rowStyleMap.clear();
     this.avanceMap.clear();
@@ -280,6 +295,124 @@ export class CronogramaActividades implements OnInit {
     } else {
       this.collapsedIds.add(act.projectActivityId);
     }
+  }
+
+  // ── Modal Gantt (nivel 1) ──────────────────────────────────────────────────
+
+  abrirGanttModal(act: ActividadDto): void {
+    this.ganttModalAct = act;
+    setTimeout(() => {
+      const col = document.querySelector('.gantt-chart-col') as HTMLElement | null;
+      if (!col) return;
+      const kids  = this.getGanttChildren(act);
+      const range = this.getGanttRange(kids);
+      if (!range) return;
+      const weeks  = this.getGanttWeeks(range);
+      const todayPx = this.getScrollToToday(range, weeks);
+      col.scrollLeft = Math.max(0, todayPx - col.clientWidth / 2);
+    }, 0);
+  }
+  cerrarGanttModal(): void                   { this.ganttModalAct = null; }
+
+  onGanttOverlayClick(e: MouseEvent): void {
+    if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.cerrarGanttModal();
+    }
+  }
+
+  getGanttAccentColor(act: ActividadDto): string {
+    return this.rowStyleMap.get(act.projectActivityId)?.color ?? '#415a77';
+  }
+
+  getGanttChildren(act: ActividadDto): ActividadDto[] {
+    return this.actividades.filter((a) => a.parentId === act.projectActivityId);
+  }
+
+  getGanttRange(kids: ActividadDto[]): { min: Date; max: Date } | null {
+    const ts: number[] = [];
+    for (const k of kids) {
+      if (k.plannedStartDate) ts.push(new Date(k.plannedStartDate).getTime());
+      if (k.plannedEndDate)   ts.push(new Date(k.plannedEndDate).getTime());
+    }
+    if (!ts.length) return null;
+    return { min: new Date(Math.min(...ts)), max: new Date(Math.max(...ts)) };
+  }
+
+  // ── Gantt: cálculos de semanas/meses/barras ────────────────────────────────
+
+  getGanttWeeks(range: { min: Date; max: Date }): { startDate: Date; label: string; isCurrentWeek: boolean }[] {
+    const firstMonday = new Date(range.min);
+    const dow = firstMonday.getDay();
+    firstMonday.setDate(firstMonday.getDate() - (dow === 0 ? 6 : dow - 1));
+    firstMonday.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const weeks: { startDate: Date; label: string; isCurrentWeek: boolean }[] = [];
+    let cur = new Date(firstMonday);
+    const limit = new Date(range.max.getTime() + this.GANTT_WEEK_MS);
+
+    while (cur <= limit) {
+      const weekEnd = new Date(cur.getTime() + this.GANTT_WEEK_MS - 1);
+      const dd = String(cur.getDate()).padStart(2, '0');
+      const mm = String(cur.getMonth() + 1).padStart(2, '0');
+      weeks.push({
+        startDate: new Date(cur),
+        label: `${dd}/${mm}`,
+        isCurrentWeek: today >= cur && today <= weekEnd,
+      });
+      cur = new Date(cur.getTime() + this.GANTT_WEEK_MS);
+    }
+    return weeks;
+  }
+
+  getGanttMonths(weeks: { startDate: Date }[]): { label: string; spanWeeks: number }[] {
+    const NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const months: { label: string; spanWeeks: number }[] = [];
+    for (const w of weeks) {
+      const lbl = `${NAMES[w.startDate.getMonth()]} ${w.startDate.getFullYear()}`;
+      const last = months[months.length - 1];
+      if (last && last.label === lbl) { last.spanWeeks++; }
+      else { months.push({ label: lbl, spanWeeks: 1 }); }
+    }
+    return months;
+  }
+
+  getBarLayerStyle(kid: ActividadDto, weeks: { startDate: Date }[]): Record<string, string> {
+    if (!kid.plannedStartDate || !kid.plannedEndDate || !weeks.length) return { display: 'none' };
+    const origin = weeks[0].startDate.getTime();
+    const start  = new Date(kid.plannedStartDate).getTime();
+    const end    = new Date(kid.plannedEndDate).getTime();
+    const leftPx  = Math.max(0, (start - origin) / this.GANTT_WEEK_MS * this.GANTT_WEEK_PX);
+    const widthPx = Math.max(4, (end - start) / this.GANTT_WEEK_MS * this.GANTT_WEEK_PX);
+    return { left: `${leftPx}px`, width: `${widthPx}px` };
+  }
+
+  getTodayPosition(range: { min: Date; max: Date }, weeks: { startDate: Date }[]): string | null {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (hoy < range.min || hoy > range.max || !weeks.length) return null;
+    const origin = weeks[0].startDate.getTime();
+    const px = (hoy.getTime() - origin) / this.GANTT_WEEK_MS * this.GANTT_WEEK_PX;
+    return `${px}px`;
+  }
+
+  getScrollToToday(range: { min: Date; max: Date }, weeks: { startDate: Date }[]): number {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (!weeks.length) return 0;
+    const origin = weeks[0].startDate.getTime();
+    return Math.max(0, (hoy.getTime() - origin) / this.GANTT_WEEK_MS * this.GANTT_WEEK_PX);
+  }
+
+  getGanttBarColorAlpha(act: ActividadDto): string {
+    const color = this.rowStyleMap.get(act.projectActivityId)?.color;
+    return color ? this.hexToRgba(color, 0.22) : 'rgba(65, 90, 119, 0.22)';
+  }
+
+  getGanttChartWidth(weeks: unknown[]): number {
+    return weeks.length * this.GANTT_WEEK_PX;
   }
 
   // ── Drag & Drop ────────────────────────────────────────────────────────────
@@ -579,6 +712,8 @@ export class CronogramaActividades implements OnInit {
     this.formActualEnd = act.actualEndDate?.slice(0, 10) ?? '';
     const raw = act.progressPercentage ?? 0;
     this.formProgress = raw >= 75 ? 100 : raw >= 25 ? 50 : 0;
+    this.formPredecesoras = [...(act.predecesoras ?? [])];
+    this.predSearch = '';
     this.guardando = false;
     this.modalOpen = true;
   }
@@ -588,12 +723,125 @@ export class CronogramaActividades implements OnInit {
     this.guardando = false;
     this.editandoAct = null;
     this.errorFechaReal = false;
+    this.formPredecesoras = [];
+    this.predSearch = '';
   }
 
   onOverlayClick(e: MouseEvent): void {
     if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
       this.cerrarModal();
     }
+  }
+
+  // ── Cascada ────────────────────────────────────────────────────────────────
+
+  private patchActividadLocal(res: ActividadDto): void {
+    const idx = this.actividades.findIndex((a) => a.projectActivityId === res.projectActivityId);
+    if (idx === -1) return;
+    this.actividades[idx].activityDescription = res.activityDescription;
+    this.actividades[idx].plannedStartDate    = res.plannedStartDate;
+    this.actividades[idx].plannedEndDate      = res.plannedEndDate;
+    this.actividades[idx].actualEndDate       = res.actualEndDate;
+    this.actividades[idx].progressPercentage  = res.progressPercentage;
+  }
+
+  private mostrarCascadaSiHayCambios(preview: CascadaResultDto): void {
+    if (preview.hayCambios) {
+      this.cascadaPreview = preview;
+      this.cascadaModalOpen = true;
+    }
+  }
+
+  aplicarCascada(): void {
+    this.aplicandoCascada = true;
+    this.loaderService.show();
+    this.service.aplicarCascada(this.selectedProyectoId!).subscribe({
+      next: (result) => {
+        for (const c of result.cambios) {
+          const idx = this.actividades.findIndex((a) => a.projectActivityId === c.projectActivityId);
+          if (idx !== -1) {
+            this.actividades[idx].plannedStartDate = c.inicioNuevo;
+            this.actividades[idx].plannedEndDate   = c.finNuevo;
+          }
+        }
+        this.buildAvanceMap();
+        this.buildColorMap();
+        this.aplicandoCascada = false;
+        this.cascadaModalOpen = false;
+        this.cascadaPreview = null;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.aplicandoCascada = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  cancelarCascada(): void {
+    this.cascadaModalOpen = false;
+    this.cascadaPreview = null;
+  }
+
+  // ── Predecesoras ───────────────────────────────────────────────────────────
+
+  private getDescendantIds(actId: number): Set<number> {
+    const result = new Set<number>();
+    const queue = [actId];
+    while (queue.length) {
+      const id = queue.shift()!;
+      for (const a of this.actividades) {
+        if (a.parentId === id) {
+          result.add(a.projectActivityId);
+          queue.push(a.projectActivityId);
+        }
+      }
+    }
+    return result;
+  }
+
+  filtrarPredecesoras(): ActividadDto[] {
+    if (!this.editandoAct || !this.predSearch.trim()) return [];
+    const term = this.predSearch.toLowerCase().trim();
+    const excludeIds = new Set<number>([
+      this.editandoAct.projectActivityId,
+      ...this.getDescendantIds(this.editandoAct.projectActivityId),
+      ...this.formPredecesoras,
+    ]);
+    return this.actividades
+      .filter((a) => !a.esPadre && !excludeIds.has(a.projectActivityId))
+      .filter((a) => {
+        const idx = String(this.getDisplayIndex(a));
+        return idx.includes(term) || a.activityDescription.toLowerCase().includes(term);
+      })
+      .slice(0, 8);
+  }
+
+  getPredChipLabel(pid: number): string {
+    const act = this.actividades.find((a) => a.projectActivityId === pid);
+    return act ? `${this.getDisplayIndex(act)} — ${act.activityDescription}` : `#${pid}`;
+  }
+
+  agregarPredecesora(act: ActividadDto): void {
+    if (!this.formPredecesoras.includes(act.projectActivityId)) {
+      this.formPredecesoras = [...this.formPredecesoras, act.projectActivityId];
+    }
+    this.predSearch = '';
+  }
+
+  quitarPredecesora(id: number): void {
+    this.formPredecesoras = this.formPredecesoras.filter((p) => p !== id);
+  }
+
+  getPredTooltip(act: ActividadDto): string {
+    if (!act.predecesoras?.length) return '';
+    const nombres = act.predecesoras.map((pid) => {
+      const pred = this.actividades.find((a) => a.projectActivityId === pid);
+      return pred ? `${this.getDisplayIndex(pred)}. ${pred.activityDescription}` : `#${pid}`;
+    });
+    return `Predecesoras: ${nombres.join(', ')}`;
   }
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
@@ -644,6 +892,21 @@ export class CronogramaActividades implements OnInit {
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
       });
     } else {
+      const esPadre = this.editandoAct?.esPadre ?? false;
+
+      // Capturar antes de cerrarModal() para que el reset no los pise
+      const actividadId    = this.editandoId!;
+      const predSnapshot   = [...this.formPredecesoras];
+
+      // Detectar qué cambió para saber si hay que verificar cascada
+      const predCambiaron =
+        JSON.stringify([...predSnapshot].sort()) !==
+        JSON.stringify([...(this.editandoAct?.predecesoras ?? [])].sort());
+
+      const fechasCambiaron =
+        (this.formPlannedStart || null) !== (this.editandoAct?.plannedStartDate?.slice(0, 10) ?? null) ||
+        (this.formPlannedEnd   || null) !== (this.editandoAct?.plannedEndDate?.slice(0, 10)   ?? null);
+
       const body: EditarActividadRequest = {
         activityDescription: this.formActividad.trim(),
         plannedStartDate: this.formPlannedStart || null,
@@ -651,8 +914,50 @@ export class CronogramaActividades implements OnInit {
         actualEndDate: this.formActualEnd || null,
         progressPercentage: Number(this.formProgress) || 0,
       };
-      this.service.editarActividad(this.editandoId!, body).subscribe({
-        next: () => { this.cerrarModal(); this.recargar(); },
+
+      this.service.editarActividad(actividadId, body).subscribe({
+        next: (res) => {
+          this.patchActividadLocal(res);
+          this.buildAvanceMap();
+          this.guardando = false;
+          this.cerrarModal();
+          this.cdr.detectChanges();
+
+          // ── Verificar cascada ──────────────────────────────────────────────
+          if (!esPadre && predCambiaron) {
+            // Guardar predecesoras → respuesta incluye preview de cascada
+            this.service.actualizarPredecesoras(actividadId, {
+              predecessorIds: predSnapshot,
+            }).subscribe({
+              next: (predRes) => {
+                const idx = this.actividades.findIndex(
+                  (a) => a.projectActivityId === actividadId,
+                );
+                if (idx !== -1) {
+                  this.actividades[idx].predecesoras = predRes.predecesoras;
+                }
+                this.mostrarCascadaSiHayCambios(predRes.previewCascada);
+                this.cdr.detectChanges();
+              },
+              error: (err: HttpErrorResponse) => {
+                const msg =
+                  typeof err.error === 'string'
+                    ? err.error
+                    : (err.error?.message ?? err.error?.detail ?? 'Error al guardar predecesoras.');
+                Swal.fire({ icon: 'error', title: 'Predecesoras', text: msg, confirmButtonColor: '#2596be' });
+              },
+            });
+          } else if (!esPadre && fechasCambiaron) {
+            // Llamar al preview de cascada
+            this.service.previewCascada(this.selectedProyectoId!).subscribe({
+              next: (preview) => {
+                this.mostrarCascadaSiHayCambios(preview);
+                this.cdr.detectChanges();
+              },
+              error: () => { /* si falla el preview, no bloqueamos al usuario */ },
+            });
+          }
+        },
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
       });
     }

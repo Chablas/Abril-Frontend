@@ -3284,3 +3284,82 @@ clases semáforo `fill-verde/azul/amarillo/rojo`.
 - `badge-azul`: `#dbeafe / #1d4ed8`
 
 Template: `[ngClass]="isDarkBg(act) ? '' : getEstadoCss(act)"`, `{{ getEstado(act) }}`.
+
+---
+
+## Sesión 2026-06-01 — Cronograma de Actividades: predecesoras + cascada
+
+### DTOs nuevos (`core/services/cronograma-actividades.service.ts`)
+
+`ActividadDto` ampliado con dos campos:
+- `predecesoras: number[]` — IDs de actividades predecesoras
+- `esPadre: boolean` — true si la actividad tiene hijos (calculado por el backend)
+
+Nuevos interfaces:
+```ts
+CascadaCambioDto { projectActivityId, activityDescription,
+                   inicioAnterior, inicioNuevo, finAnterior, finNuevo }
+CascadaResultDto { hayCambios: boolean, cambios: CascadaCambioDto[] }
+ActualizarPredecesorasResultDto { projectActivityId, predecesoras, previewCascada: CascadaResultDto }
+```
+
+### Endpoints nuevos
+
+```
+PUT  /api/v1/cronograma-actividades/actividades/{id}/predecesoras
+     body: { predecessorIds: number[] }
+     response: ActualizarPredecesorasResultDto
+
+POST /api/v1/cronograma-actividades/{proyectoId}/recalcular-cascada/preview
+     response: CascadaResultDto
+
+POST /api/v1/cronograma-actividades/{proyectoId}/recalcular-cascada/aplicar
+     response: CascadaResultDto
+```
+
+### Selector de predecesoras (modal editar — solo hojas)
+
+Visible cuando `modalMode === 'editar' && !editandoAct?.esPadre`.
+
+- `formPredecesoras: number[]` — IDs seleccionados; se inicializa con `act.predecesoras ?? []` al abrir.
+- `predSearch: string` — campo de búsqueda con autocomplete.
+- `filtrarPredecesoras()` — filtra actividades hoja, excluye la actividad en edición, sus descendientes y las ya seleccionadas. Retorna hasta 8 resultados que coincidan por número de orden o descripción.
+- `getPredChipLabel(pid)` — `"N — descripción"` usando `getDisplayIndex`.
+- `agregarPredecesora(act)` — push a `formPredecesoras`, limpia `predSearch`.
+- `quitarPredecesora(id)` — filter de `formPredecesoras`.
+- `getDescendantIds(actId)` — BFS de descendientes (para excluirlos del selector).
+
+Fechas programadas deshabilitadas (`[disabled]="!!editandoAct?.esPadre"`) y con clase `field-input-readonly` cuando `esPadre`. Hint "Calculado automáticamente desde las actividades hijas" visible en ese caso.
+
+### Modal de cascada
+
+Estado: `cascadaModalOpen = false`, `cascadaPreview: CascadaResultDto | null`, `aplicandoCascada = false`.
+
+- `mostrarCascadaSiHayCambios(preview)` — si `preview.hayCambios` abre el modal.
+- `aplicarCascada()` — POST `/aplicar`; por cada `CascadaCambioDto` en `result.cambios`, patch quirúrgico `plannedStartDate`/`plannedEndDate` en `this.actividades` por `projectActivityId` → `buildAvanceMap()` + `buildColorMap()` → `cdr.detectChanges()` → cierra modal.
+- `cancelarCascada()` — cierra el modal sin tocar datos.
+
+HTML: overlay `*ngIf="cascadaModalOpen"` (no cierra al click en backdrop — requiere decisión explícita), box `.cascada-modal-box` 700px, header `#1B263B`, tabla scrolleable (`max-height: 320px`) con columnas **Actividad / Inicio ant→nuevo / Fin ant→nuevo** (fecha anterior tachada en gris, fecha nueva en azul bold, flecha SVG entre ellas). Footer `[Cancelar] [Aplicar cambios]`, ambos `disabled` mientras `aplicandoCascada`.
+
+### Badge de predecesoras en tabla
+
+`getPredTooltip(act)` — retorna `"Predecesoras: N. nombre, ..."` para el tooltip nativo.
+
+Badge `← N` (donde N = cantidad) dentro de `.actividad-cell`, tras el texto de la actividad:
+```html
+<span *ngIf="act.predecesoras?.length" class="pred-badge" [title]="getPredTooltip(act)">
+  ← {{ act.predecesoras.length }}
+</span>
+```
+CSS `.pred-badge`: píldora `#dbeafe / #1d4ed8`, `0.65rem`, `font-weight: 700`. Variante `.row-dark .pred-badge`: `rgba(219,234,254,0.18) / #93c5fd`.
+
+### Bug fix — predecesoras silenciosamente borradas al guardar
+
+`cerrarModal()` resetea `this.formPredecesoras = []`. El flujo en `guardar()` llamaba `cerrarModal()` **antes** de llamar a `actualizarPredecesoras()`, por lo que el PUT llegaba con `predecessorIds: []` siempre.
+
+**Fix**: capturar en variables locales inmutables antes del `cerrarModal()`:
+```ts
+const actividadId  = this.editandoId!;
+const predSnapshot = [...this.formPredecesoras];
+```
+Todas las llamadas async posteriores usan `actividadId` y `predSnapshot` en vez de `this.editandoId` / `this.formPredecesoras`.

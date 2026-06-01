@@ -20,6 +20,28 @@ export interface ActividadDto {
   order: number;
   hierarchyLevel: number;
   parentId: number | null;
+  predecesoras: number[];
+  esPadre: boolean;
+}
+
+export interface CascadaCambioDto {
+  projectActivityId: number;
+  activityDescription: string;
+  inicioAnterior: string;
+  inicioNuevo: string;
+  finAnterior: string;
+  finNuevo: string;
+}
+
+export interface CascadaResultDto {
+  hayCambios: boolean;
+  cambios: CascadaCambioDto[];
+}
+
+export interface ActualizarPredecesorasResultDto {
+  projectActivityId: number;
+  predecesoras: number[];
+  previewCascada: CascadaResultDto;
 }
 
 export interface CrearActividadRequest {
@@ -113,6 +135,30 @@ export class CronogramaActividadesService {
     return this.http.patch<void>(
       `${this.base}/${proyectoId}/actividades/${id}/bajar-nivel`,
       { parentId },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  actualizarPredecesoras(id: number, body: { predecessorIds: number[] }): Observable<ActualizarPredecesorasResultDto> {
+    return this.http.put<ActualizarPredecesorasResultDto>(
+      `${this.base}/actividades/${id}/predecesoras`,
+      body,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  previewCascada(proyectoId: number): Observable<CascadaResultDto> {
+    return this.http.post<CascadaResultDto>(
+      `${this.base}/${proyectoId}/recalcular-cascada/preview`,
+      {},
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  aplicarCascada(proyectoId: number): Observable<CascadaResultDto> {
+    return this.http.post<CascadaResultDto>(
+      `${this.base}/${proyectoId}/recalcular-cascada/aplicar`,
+      {},
       { headers: buildAuthHeaders() },
     );
   }
