@@ -18,8 +18,8 @@
         <b>{{ periodo.nombreMes }} {{ periodo.anio }}</b> · Activo
       </div>
       <div class="view-toggle">
-        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="vistaActiva='mensual'">Mensual</span>
-        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="vistaActiva='tendencia'">Tendencia</span>
+        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="setVista('mensual')">Mensual</span>
+        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="setVista('tendencia')">Tendencia</span>
       </div>
     </div>
   </div>
@@ -32,8 +32,8 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <div class="view-toggle">
-        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="vistaActiva='mensual'">Mensual</span>
-        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="vistaActiva='tendencia'">Tendencia</span>
+        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="setVista('mensual')">Mensual</span>
+        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="setVista('tendencia')">Tendencia</span>
       </div>
     </div>
   </div>
@@ -153,8 +153,8 @@
         </div>
       </div>
 
-      <!-- CHARTS AREA -->
-      <div class="charts-area">
+      <!-- CHARTS AREA — vista mensual -->
+      <div class="charts-area" *ngIf="vistaActiva === 'mensual'">
         <!-- Panel 1: Barras mensuales -->
         <div class="chart-panel">
           <div class="cp-header">
@@ -176,69 +176,90 @@
           </div>
           <div class="area-heatmap" *ngIf="!mostrarDetalleArea">
             <div class="ah-cell"
-              *ngFor="let a of dashboard.promediosPorArea"
-              [style.background]="areaColor(a.promedio)"
-              [style.borderColor]="areaBorderColor(a.promedio)"
-              style="border:0.5px solid"
+              *ngFor="let a of (residenteActivo?.promediosPorArea ?? dashboard.promediosPorArea)"
               (click)="areaSeleccionada = a.areaNombre; mostrarDetalleArea = true">
-              <div class="ah-area" [style.color]="areaTextColor(a.promedio)">{{ a.areaNombre }}</div>
-              <div class="ah-score" [style.color]="scoreColor(a.promedio)">{{ a.promedio ?? '—' }}</div>
-              <div class="ah-count" [style.color]="areaTextColor(a.promedio)">{{ a.totalEvaluaciones }} eval.</div>
+              <div class="ah-area">{{ a.areaNombre }}</div>
+              <div class="ah-score" [ngClass]="scoreClass(a.promedio)">{{ a.promedio ?? '—' }}</div>
+              <div class="ah-evals">{{ a.totalEvaluaciones }} eval.</div>
             </div>
           </div>
           <div class="detalle-area" *ngIf="mostrarDetalleArea && residenteActivo">
             <div class="da-header">
-              <span class="da-title">
-                Criterios · {{ areaSeleccionada }} · {{ residenteActivo.nombre }}
-              </span>
-              <span class="cp-action" (click)="mostrarDetalleArea = false">
-                <i class="ti ti-x"></i> Cerrar
-              </span>
+              <div class="da-tabs">
+                <span class="da-tab"
+                  *ngFor="let a of residenteActivo.promediosPorArea"
+                  [class.da-tab-active]="areaSeleccionada === a.areaNombre"
+                  (click)="areaSeleccionada = a.areaNombre">
+                  {{ a.areaNombre.split(' ')[0] }}
+                  <b [ngClass]="scoreClass(a.promedio)">{{ a.promedio }}</b>
+                </span>
+              </div>
+              <span class="cp-action" (click)="mostrarDetalleArea = false"><i class="ti ti-x"></i></span>
             </div>
             <div class="criterios-grid">
-              <ng-container *ngFor="let d of getDetallesPorArea(residenteActivo.evaluaciones, areaSeleccionada ?? '')">
-                <div class="crit-item" *ngFor="let det of d.detalles">
-                  <span class="crit-score" [ngClass]="scoreClass(det.puntaje ? det.puntaje * 4 : null)">
-                    {{ det.esNa ? 'N/A' : det.puntaje }}
-                  </span>
-                  <div class="crit-text">{{ det.criterio }}</div>
-                </div>
+              <ng-container *ngFor="let ev of residenteActivo.evaluaciones">
+                <ng-container *ngIf="ev.areaNombre === areaSeleccionada">
+                  <!-- Header del evaluador -->
+                  <div class="crit-evaluador-header">
+                    <i class="ti ti-user"></i> {{ ev.evaluadorNombre || 'Evaluador' }}
+                    <span class="crit-eval-nota" [ngClass]="scoreClass(ev.nota)">{{ ev.nota ?? '—' }}</span>
+                  </div>
+                  <!-- Criterios -->
+                  <div class="crit-item" *ngFor="let det of ev.detalles">
+                    <span class="crit-score" [ngClass]="scoreClass(det.puntaje !== null ? det.puntaje * 4 : null)">
+                      {{ det.esNa ? 'N/A' : det.puntaje }}
+                    </span>
+                    <div class="crit-text">{{ det.criterio }}</div>
+                  </div>
+                  <!-- Comentario -->
+                  <div class="crit-comentario" *ngIf="ev.comentario">
+                    <i class="ti ti-quote"></i> {{ ev.comentario }}
+                  </div>
+                </ng-container>
               </ng-container>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Panel 3: Tendencia histórica -->
-        <div class="chart-panel">
+      <!-- TENDENCIA AREA — vista tendencia -->
+      <div class="tendencia-area" *ngIf="vistaActiva === 'tendencia'">
+        <!-- Panel tendencia full -->
+        <div class="chart-panel tend-main">
           <div class="cp-header">
             <div class="cp-title"><i class="ti ti-chart-line"></i> Tendencia histórica</div>
             <span class="cp-badge">{{ periodo?.anio }}</span>
           </div>
           <div class="chart-container">
-            <canvas [id]="chartTendenciaId"></canvas>
+            <canvas [id]="chartTendenciaId" (click)="onTendenciaClick($event)"></canvas>
           </div>
         </div>
 
-        <!-- Panel 4: Últimos comentarios -->
-        <div class="chart-panel">
+        <!-- Panel comentarios full -->
+        <div class="chart-panel tend-comments">
           <div class="cp-header">
-            <div class="cp-title"><i class="ti ti-message-circle"></i> Últimos comentarios</div>
-            <span class="cp-badge kb-y">{{ periodo?.nombreMes }}</span>
+            <div class="cp-title"><i class="ti ti-message-circle"></i> Comentarios</div>
+            <span class="cp-badge" style="background:#EEF2FF;color:#4338CA">
+              {{ (residenteActivo?.nombre ?? '').split(' ').slice(0,2).join(' ') }}
+            </span>
           </div>
-          <div class="comment-list">
-            <div class="comment-item"
-              *ngFor="let c of dashboard.ultimosComentarios"
-              [style.borderLeftColor]="scoreColor(c.nota)">
-              <div class="ci-header">
-                <span class="ci-evaluator">{{ c.evaluadorNombre }} · {{ c.areaNombre }}</span>
-                <span class="ci-score" [ngClass]="scoreClass(c.nota)">{{ c.nota ?? '—' }}</span>
+          <div class="comment-list" *ngIf="residenteActivo">
+            <ng-container *ngFor="let c of dashboard.ultimosComentarios">
+              <div class="comment-item"
+                *ngIf="c.evaluadoUserId === residenteActivo.userId && c.comentario"
+                [style.borderLeftColor]="scoreColor(c.nota)">
+                <div class="ci-header">
+                  <span class="ci-area">{{ c.areaNombre }}</span>
+                  <span class="ci-score" [ngClass]="scoreClass(c.nota)">{{ c.nota ?? '—' }}</span>
+                </div>
+                <div class="ci-text">{{ c.comentario }}</div>
+                <div class="ci-evaluator">{{ c.evaluadorNombre }}</div>
               </div>
-              <div class="ci-text">{{ c.comentario }}</div>
-              <div class="ci-evaluado">{{ c.evaluadoNombre }}</div>
-            </div>
-            <div class="empty-comments" *ngIf="!dashboard.ultimosComentarios.length">
-              <i class="ti ti-message-off" style="font-size:24px;color:#334155"></i>
-              <span>Sin comentarios este período</span>
+            </ng-container>
+            <div class="empty-comments"
+              *ngIf="!dashboard.ultimosComentarios.some(c => c.evaluadoUserId === residenteActivo!.userId && c.comentario)">
+              <i class="ti ti-message-off" style="font-size:24px"></i>
+              <span>Sin comentarios para {{ residenteActivo.nombre.split(' ')[0] }}</span>
             </div>
           </div>
         </div>
