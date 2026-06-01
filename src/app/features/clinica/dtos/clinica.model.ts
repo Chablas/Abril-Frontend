@@ -41,7 +41,7 @@ export interface ClinicaAccionDto {
   motivoRechazo?: string;
   checkInHora?: string;
   emoResultadoId?: number;
-  fechaNueva?: string;
+  nuevaFecha?: string;
   horaNueva?: string;
 }
 

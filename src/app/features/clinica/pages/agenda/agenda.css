@@ -661,6 +661,94 @@
 .btn-confirmar:hover { background: #16a34a; }
 .btn-confirmar:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ── Modal confirmar reprogramación (cr-*) ─────────── */
+.cr-modal { min-width: 340px; max-width: 420px; }
+
+.cr-header { gap: 0; }
+.cr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cr-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+.cr-eyebrow {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 2px;
+}
+
+.cr-body { gap: 1rem; }
+
+.cr-datetime-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+}
+.cr-date-big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #14532d;
+  letter-spacing: 0.02em;
+}
+.cr-time-big {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #14532d;
+}
+
+.cr-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cr-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.cr-row:last-child { border-bottom: none; }
+.cr-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.cr-val {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-align: right;
+}
+.cr-val--accent {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
 /* ── Modal interconsulta ──────────────────────────── */
 .ic-modal { max-width: 480px; }
 .dm-textarea {

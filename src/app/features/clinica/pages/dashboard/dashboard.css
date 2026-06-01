@@ -492,6 +492,50 @@
   .mini-stats { flex: 1 1 200px; }
   .nav-cards  { flex: 1 1 200px; }
 }
+
+/* ── Móvil: liberar overflow para scroll completo ── */
+@media (max-width: 768px) {
+  :host {
+    overflow: auto;
+  }
+  .dash-root {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .dash-body {
+    flex: none;
+    height: auto;
+    overflow: visible;
+  }
+  .bottom-section {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+  .proximos-card {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .nav-section {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .nav-cards {
+    flex: none;
+    height: auto;
+    overflow: visible;
+  }
+  .nav-card {
+    flex: none;
+    min-height: 52px;
+  }
+}
+
 @media (max-width: 640px) {
   .dash-header { padding: 10px 14px; }
   .dash-body   { padding: 8px 12px; gap: 8px; }
