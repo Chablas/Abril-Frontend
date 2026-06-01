@@ -29,8 +29,29 @@
         <span>Cargando documento…</span>
       </div>
 
+      <div *ngIf="!loading && tipo === 'pdf'" class="dv-pdf-wrapper">
+        <div class="dv-search-bar">
+          <input
+            #searchInput
+            type="text"
+            class="dv-search-input"
+            placeholder="Buscar texto…"
+            [value]="searchQuery"
+            (input)="searchQuery = searchInput.value; buscarTexto()"
+            (keydown.enter)="navegarBusqueda(1)"
+          />
+          <span class="dv-search-count" *ngIf="searchQuery">
+            {{ searchMatches.length ? searchIdx + 1 : 0 }} / {{ searchMatches.length }}
+          </span>
+          <button type="button" class="dv-btn dv-btn-sm" (click)="navegarBusqueda(-1)" [disabled]="!searchMatches.length">‹</button>
+          <button type="button" class="dv-btn dv-btn-sm" (click)="navegarBusqueda(1)"  [disabled]="!searchMatches.length">›</button>
+          <span class="dv-page-info" *ngIf="pdfPageCount">{{ pdfPageCount }} pág.</span>
+        </div>
+        <div class="dv-pdf-pages" #pdfContainer></div>
+      </div>
+
       <iframe
-        *ngIf="!loading && (tipo === 'pdf' || tipo === 'office')"
+        *ngIf="!loading && tipo === 'office'"
         class="dv-iframe"
         [src]="safeUrl"
         frameborder="0"

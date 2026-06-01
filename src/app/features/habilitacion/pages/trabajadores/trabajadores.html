@@ -238,7 +238,7 @@
               (valueChange)="filtroProyectoId = $event; onFilterChange()"
             />
           </div>
-          <div class="fb-ss-wrap" *ngIf="filtroContratistaCasa !== 'Contratista'">
+          <div class="fb-ss-wrap" *ngIf="!isContratista()">
             <app-search-select
               [options]="catalogoEmpresas"
               valueField="id"

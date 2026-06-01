@@ -1,4 +1,3 @@
-/* ── Host ─────────────────────────────────────────── */
 :host {
   display: flex;
   flex-direction: column;
@@ -7,7 +6,6 @@
   overflow: hidden;
 }
 
-/* ── Root ─────────────────────────────────────────── */
 .agenda-root {
   display: flex;
   flex-direction: column;
@@ -17,7 +15,6 @@
   color: #1e293b;
 }
 
-/* ── Header ───────────────────────────────────────── */
 .agenda-header {
   flex-shrink: 0;
   display: flex;
@@ -50,7 +47,6 @@
   gap: 0.5rem;
 }
 
-/* ── Tabs ─────────────────────────────────────────── */
 .agenda-tabs {
   display: flex;
   gap: 4px;
@@ -75,15 +71,23 @@
   border-color: rgba(255, 255, 255, 0.3) !important;
   font-weight: 600;
 }
-.date-picker-wrap {
+
+.date-picker-wrap, .search-wrap {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 0.32rem 0.7rem;
 }
+.date-picker-wrap { padding: 0.32rem 0.7rem; }
+.search-wrap {
+  padding: 0.3rem 0.7rem;
+  min-width: 180px;
+  transition: border-color 0.15s;
+}
+.search-wrap:focus-within { border-color: #94a3b8; }
+
 .date-icon { font-size: 0.85rem; }
 .date-input {
   background: transparent;
@@ -109,7 +113,6 @@
 .btn-refresh:hover { border-color: #cbd5e1; color: #64748b; }
 .btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Stats bar ────────────────────────────────────── */
 .stats-bar {
   flex-shrink: 0;
   display: flex;
@@ -160,7 +163,6 @@
 .stat-green  { color: #16a34a; }
 .stat-slate  { color: #64748b; }
 
-/* ── Controls row ─────────────────────────────────── */
 .controls-row {
   flex-shrink: 0;
   display: flex;
@@ -210,18 +212,6 @@
 }
 .pill-active .pill-count { background: rgba(0, 0, 0, 0.12); }
 
-.search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.3rem 0.7rem;
-  min-width: 180px;
-  transition: border-color 0.15s;
-}
-.search-wrap:focus-within { border-color: #94a3b8; }
 .search-icon { font-size: 0.82rem; }
 .search-input {
   background: transparent;
@@ -234,7 +224,6 @@
 }
 .search-input::placeholder { color: #cbd5e1; }
 
-/* ── Cards zone (scroll container) ───────────────── */
 .cards-zone {
   flex: 1;
   overflow-y: auto;
@@ -243,7 +232,6 @@
   background: #f0f4f8;
 }
 
-/* ── Loading ──────────────────────────────────────── */
 .loading-row {
   display: flex;
   align-items: center;
@@ -263,7 +251,6 @@
   flex-shrink: 0;
 }
 
-/* ── Empty ────────────────────────────────────────── */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -276,7 +263,6 @@
 .empty-icon { font-size: 2.2rem; }
 .empty-text { font-size: 0.84rem; }
 
-/* ── Cards grid ───────────────────────────────────── */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -284,7 +270,6 @@
   align-content: start;
 }
 
-/* ── Card base ────────────────────────────────────── */
 .agenda-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -304,26 +289,20 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
-
-/* Terminales: atenuadas */
 .card-muted { opacity: 0.6; background: #f8fafc; }
 .card-muted .worker-name { color: #94a3b8; }
-
-/* Border-left por estado */
 .card-bl-blue   { border-left-color: #3b82f6; }
 .card-bl-violet { border-left-color: #8b5cf6; }
 .card-bl-orange { border-left-color: #f97316; }
 .card-bl-green  { border-left-color: #22c55e; }
 .card-bl-slate  { border-left-color: #94a3b8; }
 
-/* ── ZONA 1: card-top ─────────────────────────────── */
 .card-top {
   padding: 14px 16px 10px;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
-
 .card-top-row1 {
   display: flex;
   align-items: flex-start;
@@ -346,8 +325,6 @@
   overflow: visible;
 }
 .worker-dni { font-size: 12px; color: #94a3b8; white-space: nowrap; }
-
-/* Estado chip */
 .estado-chip {
   font-size: 0.64rem;
   font-weight: 700;
@@ -362,8 +339,6 @@
 .chip-orange { background: rgba(249,115,22,0.10);  color: #c2410c; border-color: rgba(249,115,22,0.25); }
 .chip-green  { background: rgba(34,197,94,0.10);   color: #15803d; border-color: rgba(34,197,94,0.25); }
 .chip-slate  { background: rgba(100,116,139,0.10); color: #475569; border-color: rgba(100,116,139,0.2); }
-
-/* Chips fila 2 */
 .card-chips {
   display: flex;
   flex-direction: row;
@@ -387,11 +362,7 @@
   text-overflow: ellipsis;
   max-width: 220px;
 }
-.card-meta-sep {
-  font-size: 0.7rem;
-  color: #cbd5e1;
-}
-
+.card-meta-sep { font-size: 0.7rem; color: #cbd5e1; }
 .chip-group {
   display: flex;
   flex-direction: column;
@@ -412,8 +383,6 @@
   align-self: stretch;
   margin: 0 4px;
 }
-
-/* TipoTrabajador badge */
 .tipo-trab-badge {
   font-size: 11px;
   font-weight: 600;
@@ -426,8 +395,6 @@
 .trab-oficina { background: #e8edf5; color: #2d4a7a; }
 .trab-staff   { background: #e8f2ec; color: #2d6a45; }
 .trab-obrero  { background: #f0f0f0; color: #4a4a4a; }
-
-/* Categoria badge */
 .cat-badge {
   font-size: 11px;
   font-weight: 600;
@@ -437,7 +404,6 @@
   color: #4a5568;
   white-space: nowrap;
 }
-
 .ocup-badge {
   background: #faf5e8;
   color: #7a5c1e;
@@ -447,7 +413,7 @@
   padding: 2px 8px;
   white-space: nowrap;
 }
-.meta-txt     { font-size: 12px; color: #64748b; }
+.meta-txt { font-size: 12px; color: #64748b; }
 .meta-empresa {
   font-size: 12px;
   color: #64748b;
@@ -456,8 +422,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* ── ZONA 2: card-dates ───────────────────────────── */
 .card-dates {
   display: flex;
   align-items: center;
@@ -477,7 +441,6 @@
 .checkin-tag  { font-size: 12px; color: #16a34a; font-weight: 600; }
 .motivo-tag   { font-size: 12px; color: #94a3b8; font-style: italic; }
 
-/* ── ZONA 3: card-actions ─────────────────────────── */
 .card-actions {
   display: flex;
   gap: 8px;
@@ -506,9 +469,9 @@
   border-color: rgba(220,38,38,0.18);
   padding: 0.27rem 0.52rem;
 }
-.btn-complete    { background: rgba(234,88,12,0.08);   color: #c2410c; border-color: rgba(234,88,12,0.2); }
-.btn-reschedule  { background: rgba(14,165,233,0.08);  color: #0369a1; border-color: rgba(14,165,233,0.22); }
-.btn-undo        { background: rgba(100,116,139,0.07); color: #64748b; border-color: rgba(100,116,139,0.22); }
+.btn-complete   { background: rgba(234,88,12,0.08);   color: #c2410c; border-color: rgba(234,88,12,0.2); }
+.btn-reschedule { background: rgba(14,165,233,0.08);  color: #0369a1; border-color: rgba(14,165,233,0.22); }
+.btn-undo       { background: rgba(100,116,139,0.07); color: #64748b; border-color: rgba(100,116,139,0.22); }
 .btn-interconsulta {
   background: transparent;
   color: #4f46e5;
@@ -524,15 +487,12 @@
 .btn-interconsulta:hover { background: #eef2ff; border-color: #a5b4fc; }
 .btn-interconsulta:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Modal backdrop ───────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 100;
 }
-
-/* ── Modal confirmar aceptación ───────────────────── */
 .dark-modal {
   position: fixed;
   top: 50%;
@@ -647,8 +607,8 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-ghost-dark:hover { border-color: #cbd5e1; color: #475569; }
-.btn-confirmar {
-  background: #22c55e;
+
+.btn-confirmar, .btn-confirmar-ic {
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -658,10 +618,92 @@
   cursor: pointer;
   transition: background 0.15s;
 }
-.btn-confirmar:hover { background: #16a34a; }
-.btn-confirmar:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-confirmar     { background: #22c55e; }
+.btn-confirmar-ic  { background: #4f46e5; }
+.btn-confirmar:hover    { background: #16a34a; }
+.btn-confirmar-ic:hover:not(:disabled) { background: #4338ca; }
+.btn-confirmar:disabled, .btn-confirmar-ic:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── Modal interconsulta ──────────────────────────── */
+.cr-modal { min-width: 340px; max-width: 420px; }
+.cr-header { gap: 0; }
+.cr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cr-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+.cr-eyebrow {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin: 0 0 2px;
+}
+.cr-body { gap: 1rem; }
+.cr-datetime-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+}
+.cr-date-big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #14532d;
+  letter-spacing: 0.02em;
+}
+.cr-time-big {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #14532d;
+}
+.cr-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cr-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.cr-row:last-child { border-bottom: none; }
+.cr-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.cr-val {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-align: right;
+}
+.cr-val--accent { color: #f1f5f9; font-weight: 600; }
+
 .ic-modal { max-width: 480px; }
 .dm-textarea {
   resize: vertical;
@@ -694,21 +736,7 @@
   text-overflow: ellipsis;
   max-width: 320px;
 }
-.btn-confirmar-ic {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.4rem 1.1rem;
-  font-size: 0.81rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-confirmar-ic:hover:not(:disabled) { background: #4338ca; }
-.btn-confirmar-ic:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── Interconsultas tab — controls ───────────────── */
 .ic-ctrl-field {
   display: flex;
   flex-direction: column;
@@ -736,7 +764,6 @@
 .ic-ctrl-input:focus { border-color: #64bc04; box-shadow: 0 0 0 3px rgba(100,188,4,0.12); }
 .ic-ctrl-input::placeholder { color: #94a3b8; }
 .ic-ctrl-select { min-width: 160px; cursor: pointer; }
-
 .btn-buscar-ic {
   background: #0f172a;
   color: #ffffff;
@@ -753,7 +780,6 @@
 .btn-buscar-ic:hover:not(:disabled) { background: #1e293b; }
 .btn-buscar-ic:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Interconsultas tab — table ───────────────────── */
 .ic-table-zone {
   flex: 1;
   overflow-y: auto;
@@ -825,32 +851,20 @@
 .td-muted { color: #94a3b8; }
 .td-action { text-align: right; overflow: visible; }
 
-/* Días badge */
-.ic-dias-badge {
+.ic-dias-badge, .ic-estado-badge {
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 10px;
   border-radius: 20px;
   white-space: nowrap;
 }
+.ic-dias-badge   { padding: 3px 10px; }
+.ic-estado-badge { padding: 4px 10px; }
 .ic-chip-red    { background: #fef2f2; color: #dc2626; }
 .ic-chip-orange { background: #fff7ed; color: #ea580c; }
 .ic-chip-green  { background: #f0fdf4; color: #16a34a; }
 .ic-chip-muted  { color: #cbd5e1; font-size: 12px; padding: 0; background: none; }
-
-/* Estado badge */
-.ic-estado-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-.ic-chip-gray { background: #f8fafc; color: #64748b; }
-
-/* Acciones */
+.ic-chip-gray   { background: #f8fafc; color: #64748b; }
 .btn-ver-ic {
   background: #f8fafc;
   color: #64748b;
@@ -865,10 +879,8 @@
 }
 .btn-ver-ic:hover { background: #f1f5f9; color: #475569; }
 
-/* ── Animations ───────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Modal interconsulta (levantamiento) ──────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -897,13 +909,12 @@
 }
 .ic-modal-nombre { font-size: 18px; font-weight: 700; color: #0f172a; }
 .ic-modal-sub    { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-.ic-modal-close  {
+.ic-modal-close {
   background: none; border: none; font-size: 18px;
   color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;
   transition: color 0.15s; flex-shrink: 0;
 }
 .ic-modal-close:hover { color: #475569; }
-
 .ic-modal-body {
   padding: 20px 24px;
   display: flex;
@@ -926,7 +937,6 @@
   flex-shrink: 0;
 }
 .ic-step-done { background: #16a34a; }
-
 .ic-modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -939,8 +949,6 @@
   padding-top: 8px;
   border-top: 1px solid #f1f5f9;
 }
-
-/* ── Campos del modal ─────────────────────────────── */
 .ic-field { display: flex; flex-direction: column; gap: 4px; }
 .ic-label {
   font-size: 10px; font-weight: 700;
@@ -965,23 +973,25 @@
 .ic-error { color: #dc2626; font-size: 11px; margin: 0; }
 .ic-paso-desc { font-size: 13px; color: #64748b; margin: 0; }
 
-/* ── Botones modal ────────────────────────────────── */
+.ic-btn-cancel, .ic-btn-confirmar {
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
 .ic-btn-cancel {
   background: transparent; color: #64748b;
-  border: 1.5px solid #e2e8f0; border-radius: 8px;
-  padding: 9px 20px; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: background 0.15s;
+  border: 1.5px solid #e2e8f0;
 }
 .ic-btn-cancel:hover { background: #f8fafc; }
 .ic-btn-confirmar {
   background: #0f172a; color: #ffffff; border: none;
-  border-radius: 8px; padding: 9px 20px; font-size: 13px;
-  font-weight: 600; cursor: pointer; transition: background 0.15s;
 }
 .ic-btn-confirmar:hover:not(:disabled) { background: #1e293b; }
 .ic-btn-confirmar:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Tabla interconsultas ─────────────────────────── */
 .ic-btn-accion {
   background: transparent;
   color: #0f172a;
@@ -996,7 +1006,6 @@
 }
 .ic-btn-accion:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-/* ── Responsive ───────────────────────────────────── */
 @media (max-width: 1100px) {
   .cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
