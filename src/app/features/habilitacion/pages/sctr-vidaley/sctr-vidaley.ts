@@ -224,6 +224,17 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   // ── Tab Pólizas ──────────────────────────────────────────
 
+  private recalcularEstadoLocal(doc: SctrVidaLeyDto): void {
+    const tienePendientes = doc.workers?.some(
+      w => w.estado === 'En revision' || w.estado === 'Enviado'
+    ) ?? false;
+    doc.estado = tienePendientes ? 'Enviado' : 'Aprobado';
+
+    const idx = this.documentos.findIndex(d => d.id === doc.id);
+    if (idx !== -1) this.documentos[idx].estado = doc.estado;
+    this.cdr.detectChanges();
+  }
+
   loadDocumentos(page: number = this.currentPage): void {
     this.loading = true;
     this.loaderService.show();
@@ -547,12 +558,14 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   get filteredDocWorkers(): SctrWorkerDto[] {
     if (!this.selectedDoc) return [];
-    return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado');
+    return this.selectedDoc.workers.filter((w) => w.estado !== 'Aprobado' && w.estado !== 'Rechazado');
   }
 
   get filteredPolizaWorkers(): SctrWorkerDto[] {
     if (!this.selectedPoliza) return [];
-    return this.selectedPoliza.workers.filter((w) => this.getPolizaWorkerEstado(w) !== 'Aprobado');
+    return this.selectedPoliza.workers.filter(
+      (w) => this.getPolizaWorkerEstado(w) !== 'Aprobado' && this.getPolizaWorkerEstado(w) !== 'Rechazado',
+    );
   }
 
   get docAllChecked(): boolean {
@@ -801,7 +814,9 @@ export class SctrVidaley implements OnInit, OnDestroy {
       next: () => {
         this.savingWorkerInline = false;
         Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1200, showConfirmButton: false });
-        this.loadDocumentos(this.currentPage);
+        const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
+        if (worker) worker.estado = 'Aprobado';
+        this.recalcularEstadoLocal(this.selectedDoc!);
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;
@@ -831,7 +846,9 @@ export class SctrVidaley implements OnInit, OnDestroy {
         this.rechazandoWorkerId = null;
         this.rechazandoMotivoInline = '';
         Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1200, showConfirmButton: false });
-        this.loadDocumentos(this.currentPage);
+        const worker = this.selectedDoc!.workers?.find(x => x.workerId === w.workerId);
+        if (worker) worker.estado = 'Rechazado';
+        this.recalcularEstadoLocal(this.selectedDoc!);
       },
       error: (err: HttpErrorResponse) => {
         this.savingWorkerInline = false;

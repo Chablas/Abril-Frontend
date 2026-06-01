@@ -210,7 +210,10 @@ export class ContratistaUsuarios implements OnInit {
         </div>`
       : '';
 
-    const rolOpts = ['ADMIN', 'GESTOR']
+    const roles = (this.contractorId === this.CASEVIP_ID || this.contractorId === this.CLINICA_CONTRACTOR_ID)
+      ? ['ADMIN', 'GESTOR']
+      : ['ADMIN'];
+    const rolOpts = roles
       .map((r) => `<option value="${r}" ${opts.rolNombre === r ? 'selected' : ''}>${r}</option>`)
       .join('');
 

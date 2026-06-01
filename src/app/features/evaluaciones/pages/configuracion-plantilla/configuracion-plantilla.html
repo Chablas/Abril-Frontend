@@ -1,0 +1,58 @@
+<div class="conf-root">
+  <div class="topbar">
+    <div class="logo-mark">Ev</div>
+    <span class="logo-name">Evaluaciones · Configuración</span>
+    <div class="logo-sep"></div>
+    <nav class="top-nav">
+      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
+      <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
+      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
+      <span class="nt active"><i class="ti ti-settings"></i> Configuración</span>
+    </nav>
+  </div>
+
+  <div class="conf-body">
+    <div class="area-sidebar">
+      <div class="as-label">Áreas evaluadoras</div>
+      <div class="as-item"
+        *ngFor="let a of areas"
+        [class.active]="areaActiva === a"
+        (click)="selectArea(a)">
+        {{ a }}
+      </div>
+    </div>
+
+    <div class="criterios-panel">
+      <div class="cp-header-bar">
+        <div class="cp-title">{{ areaActiva }} · {{ criterios.length }} criterios</div>
+      </div>
+      <div class="criterio-list">
+        <div class="criterio-item"
+          *ngFor="let c of criterios; let i = index"
+          [class.inactivo]="!c.activo">
+          <span class="ci-num">{{ i + 1 }}</span>
+          <div class="ci-body">
+            <div *ngIf="editandoId !== c.id" class="ci-text">{{ c.criterio }}</div>
+            <textarea *ngIf="editandoId === c.id" [(ngModel)]="editTexto"
+              class="ci-edit" rows="2">
+            </textarea>
+          </div>
+          <div class="ci-actions">
+            <button *ngIf="editandoId !== c.id" class="ci-btn" (click)="iniciarEdicion(c)">
+              <i class="ti ti-edit"></i>
+            </button>
+            <button *ngIf="editandoId === c.id" class="ci-btn ci-btn-save" (click)="guardarEdicion(c)">
+              <i class="ti ti-check"></i>
+            </button>
+            <button *ngIf="editandoId === c.id" class="ci-btn" (click)="editandoId = null">
+              <i class="ti ti-x"></i>
+            </button>
+            <button class="ci-btn" [title]="c.activo ? 'Desactivar' : 'Activar'" (click)="toggleActivo(c)">
+              <i class="ti" [ngClass]="c.activo ? 'ti-eye' : 'ti-eye-off'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

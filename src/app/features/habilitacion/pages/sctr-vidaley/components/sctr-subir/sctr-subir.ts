@@ -367,6 +367,11 @@ export class SctrSubir implements OnChanges, OnDestroy {
   submit(): void {
     if (!this.canSubmit) return;
 
+    if (!this.model.proyectoId) {
+      Swal.fire({ icon: 'warning', title: 'Proyecto requerido', text: 'Debes seleccionar un proyecto antes de continuar.', confirmButtonColor: '#64bc04' });
+      return;
+    }
+
     const [anio, mes] = this.model.fechaInicio.split('-').map(Number);
 
     const payload: SctrVidaLeyCreateDto = {

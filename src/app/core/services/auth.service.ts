@@ -65,6 +65,18 @@ export class AuthService {
       }),
     );
     localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures ?? []));
+    localStorage.setItem('contratista_scope', res.scope ?? 'TODOS');
+    localStorage.setItem('contratista_proyectos', JSON.stringify(res.proyectoIds ?? []));
+  }
+
+  getContratistaScope(): string {
+    return localStorage.getItem('contratista_scope') ?? 'TODOS';
+  }
+
+  getContratistaProyectoIds(): number[] {
+    try {
+      return JSON.parse(localStorage.getItem('contratista_proyectos') ?? '[]');
+    } catch { return []; }
   }
 
   setPassword(data: { token: string; password: string | null | undefined }) {
