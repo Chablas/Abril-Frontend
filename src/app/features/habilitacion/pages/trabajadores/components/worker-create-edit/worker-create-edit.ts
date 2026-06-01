@@ -495,6 +495,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
               debeBloquear = true;
               puedeIrABuscar = true;
               mensajeHtml = `<b>${worker.apellidoNombre}</b> ya estuvo registrado en tu empresa.<br><br>Búscalo en la lista para reingresarlo.`;
+            } else {
+              // RETIRADO + otra empresa: solo bloquear si es admin (worker Casa)
+              if (!this.esContratista) {
+                debeBloquear = true;
+                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya existe como trabajador retirado.<br><br>Usa la opción Reingreso para reactivarlo.`;
+              }
+              // Contratista: no bloquear, puede registrarlo libremente en su empresa
             }
           } else {
             debeBloquear = true;

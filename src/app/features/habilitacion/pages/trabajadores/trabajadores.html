@@ -95,6 +95,23 @@
             <div class="wc-foot-left">
               <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
               <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
+              <span
+                *ngIf="w.estadoProgramacionEmo"
+                class="emo-prog-label"
+                [ngClass]="{
+                  'label-programado':    w.estadoProgramacionEmo === 'Programado',
+                  'label-aceptado':      w.estadoProgramacionEmo === 'Aceptado',
+                  'label-atencion':      w.estadoProgramacionEmo === 'En Atención',
+                  'label-interconsulta': w.estadoProgramacionEmo === 'Interconsulta'
+                }"
+              >
+                <ng-container [ngSwitch]="w.estadoProgramacionEmo">
+                  <ng-container *ngSwitchCase="'Programado'">📅 EMO Programado</ng-container>
+                  <ng-container *ngSwitchCase="'Aceptado'">✅ Aceptado por Clínica</ng-container>
+                  <ng-container *ngSwitchCase="'En Atención'">🏥 En Atención</ng-container>
+                  <ng-container *ngSwitchCase="'Interconsulta'">🔄 Interconsulta Pendiente</ng-container>
+                </ng-container>
+              </span>
             </div>
             <div class="wc-actions">
               <button
