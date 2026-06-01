@@ -3405,3 +3405,75 @@ Imports actualizados en `cronograma-actividades.ts`, `proyectos-cronograma-list.
 - Flecha `→` (SVG horizontal) cambiada a `↓` (`<span class="cascada-arrow">`).
 
 **Regla general**: nunca poner `display: flex` directamente en `<td>` — usa un `<div>` wrapper interno.
+
+---
+
+## Sesión 2026-06-01 (cont.) — Cronograma: edición inline, línea base, semáforo, predecesoras, comportamiento de filas
+
+### Feature 1 — Edición inline de fechas (popover flotante)
+
+Doble click en celdas **Inicio Prog.**, **Fin Prog.**, **LB Inicio**, **LB Fin** abre un popover flotante (no expande la celda):
+
+- `startInlineEdit(act, field, event)`: captura `getBoundingClientRect()` de la celda, calcula posición con flip inteligente (si cerca del borde derecho → abre a la izquierda; cerca del fondo → abre hacia arriba). Guarda `inlinePopoverPos: { top, left }`.
+- Popover: `position: fixed; z-index: 901`, `width: 240px`, border-top `--azul`, sombra `abril-prussian`. Contiene: label del campo, `<input type="date">`, botones "✓ Confirmar" y "✗ Cancelar".
+- Backdrop: `position: fixed; inset: 0; z-index: 900` — click fuera cierra sin guardar.
+- Enter / click ✓ → `commitInlineEdit()` → `editarActividad` (fechas programadas) o `actualizarLineaBase` (LB). Para LB: si ya tenía fecha, Swal de advertencia antes de guardar.
+- Escape / click ✗ / click fuera → `cancelInlineEdit()`.
+- Modo lectura: icono lápiz 11px aparece con `opacity: 0 → 0.75` al hover (`.fecha-edit-icon`). Celda en edición: fecha aparece en gris (`.td-fecha-editing .fecha-text { color: #9ca3af }`).
+- `@ViewChild('popoverDateInput')` para autofocus al abrir.
+
+**DTOs**: `ActividadDto` ampliado con `baselineStartDate?: string | null` y `baselineEndDate?: string | null`.
+
+**Service**: `actualizarLineaBase(id, body: { baselineStartDate, baselineEndDate }): Observable<void>` → `PATCH /actividades/{id}/linea-base`.
+
+### Feature 2 — Toggle Línea Base
+
+Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). Cuando ON, aparecen 5 columnas extra en la tabla después de "Fin Prog.":
+
+| Columna | Descripción |
+|---|---|
+| LB Inicio | `baselineStartDate` — editable inline (hojas) |
+| LB Fin | `baselineEndDate` — editable inline (hojas) |
+| Desfase Ini. | `prog - lb` días; promedio en padres |
+| Desfase Fin | `prog - lb` días; promedio en padres |
+| Semáforo | verde ≤0d, amarillo 1–7d, rojo >7d |
+
+- `getDesfaseDias(act, 'start'|'end')`: hojas → diferencia directa; padres → promedio hijos.
+- `formatDesfase(dias)`: `+5d` / `-3d` / `0d` / `—`.
+- `getDesfaseClass(dias)`: `desfase-ok` / `desfase-warn` / `desfase-late`.
+- `getSemaforoClass(act)`: hojas → por desfase fin; padres → peor semáforo de hijos (recursivo). Dot 11px con box-shadow de color.
+
+### Feature 3 — Predecesoras mejoradas
+
+**Bug chips sin botón ×**: `.pred-chip { overflow: hidden }` clipeaba el botón. Fix: texto envuelto en `.pred-chip-label` con `overflow: hidden; text-overflow: ellipsis; min-width: 0`. El botón vive fuera del span recortado → siempre visible.
+
+**Navegación por teclado en dropdown**: `predDropdownIdx = -1` + `@ViewChild('predInput')`. Handler `onPredKeydown(event)`:
+- `↓` / `↑`: mueven el highlight saltando items deshabilitados; `scrollIntoView({ block: 'nearest' })`.
+- `Enter`: selecciona el item activo si no está deshabilitado.
+- `Escape`: limpia `predSearch` y cierra el dropdown.
+- Tras `agregarPredecesora`: resetea índice + refocus al input para agregar siguiente.
+
+**Búsqueda exacta por número**: si el input es solo dígitos (`/^\d+$/.test(term)`), hace match exacto de `String(getDisplayIndex(a)) === term`. Si no hay coincidencia exacta, fallback a búsqueda parcial por nombre.
+
+**Items deshabilitados con hint**: `filtrarPredecesoras()` retorna `PredResultItem[] { act, disabled, hint }`. Muestra toda actividad que hace match:
+- Es descendiente del nodo editado → `disabled: true, hint: 'Es descendiente'`
+- `wouldCreateCycle()` (BFS por grafo de predecesoras) → `disabled: true, hint: 'Crearía un ciclo'`
+- `[disabled]="item.disabled"` en el `<button>` + `.pred-result-disabled` con cursor not-allowed + `.pred-result-hint` en itálica gris.
+
+**Nodos padre con predecesoras** (cambio de restricción):
+- Sección predecesoras del modal ahora visible para TODOS los nodos (`*ngIf="modalMode === 'editar'"` sin `&& !editandoAct?.esPadre`).
+- `filtrarPredecesoras`: eliminada la línea que deshabilitaba items con `esPadre=true`.
+- `guardar()`: `if (predCambiaron)` sin guarda `!esPadre` — padres guardan sus predecesoras igual que las hojas.
+- Badge `← N` ya sin restricción de `esPadre` (siempre fue `*ngIf="act.predecesoras?.length"`).
+
+### Feature 4 — Click simple / doble click en filas
+
+- **Click simple** → `abrirModalEditar(act)` (todos los nodos, incluido nivel 1).
+- **Doble click** → `abrirGanttModal(act)`.
+- **Mecanismo**: `rowClickTimer` de 250ms. `onRowClick` programa el modal con delay cancelable. `onRowDblClick` cancela el timer y abre el Gantt directamente.
+- `(dblclick)="onRowDblClick(act)"` añadido al `<tr>`.
+- Elementos con `stopPropagation` propio (chevron, botones de nivel, drag handle, celdas fecha-editable de hojas) no se ven afectados.
+
+### CSS — budget Angular
+
+`anyComponentStyle` subido de `20kB → 28kB` en `angular.json` para acomodar el crecimiento del CSS del cronograma (actualmente ~21kB tras agregar estilos de popover, línea base, semáforo y predecesoras).

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,6 +17,12 @@ import {
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
+
+interface PredResultItem {
+  act: ActividadDto;
+  disabled: boolean;
+  hint: string;
+}
 
 @Component({
   selector: 'app-cronograma-actividades',
@@ -54,6 +60,9 @@ export class CronogramaActividades implements OnInit {
   private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
   private avanceMap = new Map<number, number>();
 
+  // Timer para distinguir click simple de doble click en filas
+  private rowClickTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Drag & Drop
   dragSrc: ActividadDto | null = null;   // actividad siendo arrastrada
   dragActId: number | null = null;       // id para clase CSS row-dragging
@@ -83,11 +92,24 @@ export class CronogramaActividades implements OnInit {
   // Predecesoras
   formPredecesoras: number[] = [];
   predSearch = '';
+  predDropdownIdx = -1;
+
+  @ViewChild('predInput') predInputRef?: ElementRef<HTMLInputElement>;
 
   // Modal de cascada
   cascadaModalOpen = false;
   cascadaPreview: CascadaResultDto | null = null;
   aplicandoCascada = false;
+
+  // Línea base
+  lineaBaseVisible = false;
+
+  // Edición inline — popover flotante
+  inlineEditCell: { id: number; field: 'start' | 'end' | 'lbStart' | 'lbEnd' } | null = null;
+  inlineEditValue = '';
+  inlinePopoverPos = { top: 0, left: 0 };
+
+  @ViewChild('popoverDateInput') popoverDateInputRef?: ElementRef<HTMLInputElement>;
 
   constructor(
     private service: CronogramaActividadesService,
@@ -295,6 +317,27 @@ export class CronogramaActividades implements OnInit {
     } else {
       this.collapsedIds.add(act.projectActivityId);
     }
+  }
+
+  // ── Click simple / doble click en fila ────────────────────────────────────
+
+  onRowClick(act: ActividadDto): void {
+    if (this.rowClickTimer !== null) {
+      clearTimeout(this.rowClickTimer);
+      this.rowClickTimer = null;
+    }
+    this.rowClickTimer = setTimeout(() => {
+      this.rowClickTimer = null;
+      this.abrirModalEditar(act);
+    }, 250);
+  }
+
+  onRowDblClick(act: ActividadDto): void {
+    if (this.rowClickTimer !== null) {
+      clearTimeout(this.rowClickTimer);
+      this.rowClickTimer = null;
+    }
+    this.abrirGanttModal(act);
   }
 
   // ── Modal Gantt (nivel 1) ──────────────────────────────────────────────────
@@ -714,6 +757,7 @@ export class CronogramaActividades implements OnInit {
     this.formProgress = raw >= 75 ? 100 : raw >= 25 ? 50 : 0;
     this.formPredecesoras = [...(act.predecesoras ?? [])];
     this.predSearch = '';
+    this.predDropdownIdx = -1;
     this.guardando = false;
     this.modalOpen = true;
   }
@@ -725,6 +769,7 @@ export class CronogramaActividades implements OnInit {
     this.errorFechaReal = false;
     this.formPredecesoras = [];
     this.predSearch = '';
+    this.predDropdownIdx = -1;
   }
 
   onOverlayClick(e: MouseEvent): void {
@@ -802,21 +847,64 @@ export class CronogramaActividades implements OnInit {
     return result;
   }
 
-  filtrarPredecesoras(): ActividadDto[] {
+  filtrarPredecesoras(): PredResultItem[] {
     if (!this.editandoAct || !this.predSearch.trim()) return [];
-    const term = this.predSearch.toLowerCase().trim();
-    const excludeIds = new Set<number>([
-      this.editandoAct.projectActivityId,
-      ...this.getDescendantIds(this.editandoAct.projectActivityId),
-      ...this.formPredecesoras,
-    ]);
-    return this.actividades
-      .filter((a) => !a.esPadre && !excludeIds.has(a.projectActivityId))
-      .filter((a) => {
-        const idx = String(this.getDisplayIndex(a));
-        return idx.includes(term) || a.activityDescription.toLowerCase().includes(term);
-      })
-      .slice(0, 8);
+
+    const term     = this.predSearch.trim();
+    const isNum    = /^\d+$/.test(term);
+    const termLow  = term.toLowerCase();
+    const editId   = this.editandoAct.projectActivityId;
+    const descIds  = this.getDescendantIds(editId);
+    const selected = new Set(this.formPredecesoras);
+
+    // Pool: excluir la actividad en edición y las ya agregadas como chips
+    const pool = this.actividades.filter(
+      (a) => a.projectActivityId !== editId && !selected.has(a.projectActivityId),
+    );
+
+    let matched: ActividadDto[];
+    if (isNum) {
+      // Coincidencia EXACTA por número de fila
+      matched = pool.filter((a) => String(this.getDisplayIndex(a)) === term);
+      // Fallback a búsqueda por nombre si no hay coincidencia exacta
+      if (matched.length === 0) {
+        matched = pool.filter((a) => a.activityDescription.toLowerCase().includes(termLow));
+      }
+    } else {
+      matched = pool.filter(
+        (a) =>
+          String(this.getDisplayIndex(a)).includes(termLow) ||
+          a.activityDescription.toLowerCase().includes(termLow),
+      );
+    }
+
+    // Anotar con disabled/hint según el motivo de exclusión
+    const result: PredResultItem[] = matched.map((a) => {
+      if (descIds.has(a.projectActivityId))            return { act: a, disabled: true, hint: 'Es descendiente' };
+      if (this.wouldCreateCycle(a.projectActivityId))  return { act: a, disabled: true, hint: 'Crearía un ciclo' };
+      return { act: a, disabled: false, hint: '' };
+    });
+
+    // Habilitados primero; máximo 8 items
+    result.sort((x, y) => Number(x.disabled) - Number(y.disabled));
+    return result.slice(0, 8);
+  }
+
+  private wouldCreateCycle(candidateId: number): boolean {
+    const editId  = this.editandoAct!.projectActivityId;
+    const visited = new Set<number>();
+    const queue   = [candidateId];
+    while (queue.length) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const act = this.actividades.find((a) => a.projectActivityId === id);
+      for (const predId of act?.predecesoras ?? []) {
+        if (predId === editId) return true;
+        if (!visited.has(predId)) queue.push(predId);
+      }
+    }
+    return false;
   }
 
   getPredChipLabel(pid: number): string {
@@ -829,6 +917,51 @@ export class CronogramaActividades implements OnInit {
       this.formPredecesoras = [...this.formPredecesoras, act.projectActivityId];
     }
     this.predSearch = '';
+    this.predDropdownIdx = -1;
+    setTimeout(() => this.predInputRef?.nativeElement.focus(), 0);
+  }
+
+  onPredKeydown(event: KeyboardEvent): void {
+    const results = this.filtrarPredecesoras();
+
+    switch (event.key) {
+      case 'ArrowDown': {
+        if (!results.length) return;
+        event.preventDefault();
+        let next = this.predDropdownIdx + 1;
+        while (next < results.length && results[next].disabled) next++;
+        if (next < results.length) {
+          this.predDropdownIdx = next;
+          this.cdr.detectChanges();
+          document.querySelector('.pred-result-active')?.scrollIntoView({ block: 'nearest' });
+        }
+        break;
+      }
+      case 'ArrowUp': {
+        if (!results.length) return;
+        event.preventDefault();
+        let prev = this.predDropdownIdx - 1;
+        while (prev >= 0 && results[prev].disabled) prev--;
+        if (prev >= 0) {
+          this.predDropdownIdx = prev;
+          this.cdr.detectChanges();
+          document.querySelector('.pred-result-active')?.scrollIntoView({ block: 'nearest' });
+        }
+        break;
+      }
+      case 'Enter': {
+        if (this.predDropdownIdx >= 0 && this.predDropdownIdx < results.length) {
+          const item = results[this.predDropdownIdx];
+          if (!item.disabled) { event.preventDefault(); this.agregarPredecesora(item.act); }
+        }
+        break;
+      }
+      case 'Escape':
+        event.preventDefault();
+        this.predSearch = '';
+        this.predDropdownIdx = -1;
+        break;
+    }
   }
 
   quitarPredecesora(id: number): void {
@@ -924,7 +1057,7 @@ export class CronogramaActividades implements OnInit {
           this.cdr.detectChanges();
 
           // ── Verificar cascada ──────────────────────────────────────────────
-          if (!esPadre && predCambiaron) {
+          if (predCambiaron) {
             // Guardar predecesoras → respuesta incluye preview de cascada
             this.service.actualizarPredecesoras(actividadId, {
               predecessorIds: predSnapshot,
@@ -1045,6 +1178,177 @@ export class CronogramaActividades implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  // ── Línea base toggle ─────────────────────────────────────────────────────
+
+  toggleLineaBase(): void {
+    this.lineaBaseVisible = !this.lineaBaseVisible;
+  }
+
+  // ── Edición inline de fechas ───────────────────────────────────────────────
+
+  get inlinePopoverStyle(): Record<string, string> {
+    return { top: `${this.inlinePopoverPos.top}px`, left: `${this.inlinePopoverPos.left}px` };
+  }
+
+  getInlineFieldLabel(): string {
+    switch (this.inlineEditCell?.field) {
+      case 'start':   return 'Inicio Programado';
+      case 'end':     return 'Fin Programado';
+      case 'lbStart': return 'LB Inicio';
+      case 'lbEnd':   return 'LB Fin';
+      default:        return '';
+    }
+  }
+
+  startInlineEdit(
+    act: ActividadDto,
+    field: 'start' | 'end' | 'lbStart' | 'lbEnd',
+    event: MouseEvent,
+  ): void {
+    if (act.esPadre) return;
+    event.stopPropagation();
+
+    // Calcular posición del popover desde la celda clicada
+    const cell = (event.target as HTMLElement).closest('td') as HTMLElement;
+    const rect  = cell?.getBoundingClientRect() ?? { top: 0, bottom: 0, left: 0, right: 0 };
+    const vpW   = window.innerWidth;
+    const vpH   = window.innerHeight;
+    const popW  = 240;
+    const popH  = 130;
+    const left  = rect.right + popW > vpW - 8  ? rect.right - popW : rect.left;
+    const top   = rect.bottom + popH > vpH - 8 ? rect.top - popH - 4 : rect.bottom + 4;
+    this.inlinePopoverPos = { top, left };
+
+    const val =
+      field === 'start'   ? act.plannedStartDate :
+      field === 'end'     ? act.plannedEndDate :
+      field === 'lbStart' ? act.baselineStartDate :
+                            act.baselineEndDate;
+    this.inlineEditValue = val?.slice(0, 10) ?? '';
+    this.inlineEditCell  = { id: act.projectActivityId, field };
+    this.cdr.detectChanges();
+    setTimeout(() => this.popoverDateInputRef?.nativeElement.focus(), 0);
+  }
+
+  cancelInlineEdit(): void {
+    this.inlineEditCell = null;
+    this.cdr.detectChanges();
+  }
+
+  commitInlineEdit(): void {
+    if (!this.inlineEditCell) return;
+
+    const value = this.inlineEditValue;
+    const cell  = this.inlineEditCell;
+    this.inlineEditCell = null;
+    this.cdr.detectChanges();
+
+    const act = this.actividades.find((a) => a.projectActivityId === cell.id);
+    if (!act) return;
+
+    if (cell.field === 'start' || cell.field === 'end') {
+      const cur = (cell.field === 'start'
+        ? act.plannedStartDate : act.plannedEndDate)?.slice(0, 10) ?? '';
+      if ((value || '') === cur) return;
+
+      const body: EditarActividadRequest = {
+        activityDescription: act.activityDescription,
+        plannedStartDate:    cell.field === 'start' ? (value || null) : act.plannedStartDate,
+        plannedEndDate:      cell.field === 'end'   ? (value || null) : act.plannedEndDate,
+        actualEndDate:       act.actualEndDate,
+        progressPercentage:  act.progressPercentage,
+      };
+
+      this.service.editarActividad(act.projectActivityId, body).subscribe({
+        next: (res) => { this.patchActividadLocal(res); this.buildAvanceMap(); this.cdr.detectChanges(); },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    } else {
+      // Edición de línea base
+      const hasLb = !!(act.baselineStartDate || act.baselineEndDate);
+      const actId = act.projectActivityId;
+      const lbBody = {
+        baselineStartDate: cell.field === 'lbStart' ? (value || null) : (act.baselineStartDate ?? null),
+        baselineEndDate:   cell.field === 'lbEnd'   ? (value || null) : (act.baselineEndDate   ?? null),
+      };
+
+      const doSave = () => {
+        this.service.actualizarLineaBase(actId, lbBody).subscribe({
+          next: () => {
+            const idx = this.actividades.findIndex((a) => a.projectActivityId === actId);
+            if (idx !== -1) {
+              if (cell.field === 'lbStart') this.actividades[idx].baselineStartDate = value || null;
+              else                          this.actividades[idx].baselineEndDate   = value || null;
+            }
+            this.cdr.detectChanges();
+          },
+          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        });
+      };
+
+      if (hasLb) {
+        Swal.fire({
+          icon: 'warning',
+          title: '¿Cambiar línea base?',
+          text: '¿Seguro que quieres cambiar la línea base? Esta acción modifica tu referencia de comparación.',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, cambiar',
+          cancelButtonText:  'Cancelar',
+          confirmButtonColor: '#2596be',
+          cancelButtonColor:  '#9ca3af',
+        }).then((result) => { if (result.isConfirmed) doSave(); });
+      } else {
+        doSave();
+      }
+    }
+  }
+
+  // ── Desfase y semáforo ─────────────────────────────────────────────────────
+
+  getDesfaseDias(act: ActividadDto, field: 'start' | 'end'): number | null {
+    if (act.esPadre) {
+      const hijos = this.actividades.filter((a) => a.parentId === act.projectActivityId);
+      const vals  = hijos
+        .map((h) => this.getDesfaseDias(h, field))
+        .filter((d): d is number => d !== null);
+      return vals.length ? Math.round(vals.reduce((s, d) => s + d, 0) / vals.length) : null;
+    }
+    const lb   = (field === 'start' ? act.baselineStartDate : act.baselineEndDate)?.slice(0, 10);
+    const prog = (field === 'start' ? act.plannedStartDate  : act.plannedEndDate)?.slice(0, 10);
+    if (!lb || !prog) return null;
+    return Math.round((new Date(prog).getTime() - new Date(lb).getTime()) / 86400000);
+  }
+
+  formatDesfase(dias: number | null): string {
+    if (dias === null) return '—';
+    if (dias > 0) return `+${dias}d`;
+    if (dias < 0) return `${dias}d`;
+    return '0d';
+  }
+
+  getDesfaseClass(dias: number | null): string {
+    if (dias === null) return '';
+    if (dias <= 0) return 'desfase-ok';
+    if (dias <= 7) return 'desfase-warn';
+    return 'desfase-late';
+  }
+
+  getSemaforoClass(act: ActividadDto): string {
+    if (act.esPadre) {
+      const hijos  = this.actividades.filter((a) => a.parentId === act.projectActivityId);
+      const clases = hijos.map((h) => this.getSemaforoClass(h)).filter((s) => s !== '');
+      if (clases.includes('semaforo-rojo'))     return 'semaforo-rojo';
+      if (clases.includes('semaforo-amarillo')) return 'semaforo-amarillo';
+      if (clases.length && clases.every((s) => s === 'semaforo-verde')) return 'semaforo-verde';
+      return '';
+    }
+    const d = this.getDesfaseDias(act, 'end');
+    if (d === null) return '';
+    if (d <= 0)  return 'semaforo-verde';
+    if (d <= 7)  return 'semaforo-amarillo';
+    return 'semaforo-rojo';
   }
 
   // ── Modal Importar MPP ─────────────────────────────────────────────────────

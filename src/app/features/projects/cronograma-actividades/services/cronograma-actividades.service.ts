@@ -109,6 +109,15 @@ export class CronogramaActividadesService {
     );
   }
 
+  actualizarLineaBase(
+    id: number,
+    body: { baselineStartDate: string | null; baselineEndDate: string | null },
+  ): Observable<void> {
+    return this.http.patch<void>(`${this.base}/actividades/${id}/linea-base`, body, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
   importarMpp(proyectoId: number, file: File): Observable<any> {
     const formData = new FormData();
     formData.append('archivo', file);

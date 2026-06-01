@@ -75,6 +75,13 @@
           {{ actividades.length }} actividad{{ actividades.length !== 1 ? 'es' : '' }}
         </span>
         <div class="toolbar-actions">
+          <button class="btn-secondary" [class.btn-lb-on]="lineaBaseVisible" (click)="toggleLineaBase()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              style="margin-right:0.35rem;flex-shrink:0">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Línea Base
+          </button>
           <button *ngIf="esAdmin" class="btn-secondary" (click)="abrirModalMpp()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               style="margin-right:0.35rem;flex-shrink:0">
@@ -123,6 +130,13 @@
               <th class="col-actividad">Actividad</th>
               <th class="col-fecha">Inicio Prog.</th>
               <th class="col-fecha">Fin Prog.</th>
+              <ng-container *ngIf="lineaBaseVisible">
+                <th class="col-fecha">LB Inicio</th>
+                <th class="col-fecha">LB Fin</th>
+                <th class="col-desfase">Desfase Ini.</th>
+                <th class="col-desfase">Desfase Fin</th>
+                <th class="col-sema">Semáforo</th>
+              </ng-container>
               <th class="col-fecha">Fin Real</th>
               <th class="col-avance">Avance</th>
               <th class="col-estado">Estado</th>
@@ -144,7 +158,8 @@
               [class.drop-above]="dropTargetId === act.projectActivityId && dropAbove"
               [class.drop-below]="dropTargetId === act.projectActivityId && !dropAbove"
               [ngStyle]="getRowStyle(act)"
-              (click)="act.hierarchyLevel === 1 ? abrirGanttModal(act) : abrirModalEditar(act)"
+              (click)="onRowClick(act)"
+              (dblclick)="onRowDblClick(act)"
               (dragover)="onDragOver(act, $event)"
               (dragleave)="onDragLeave(act, $event)"
               (drop)="onDrop(act, $event)"
@@ -209,8 +224,82 @@
                   >← {{ act.predecesoras.length }}</span>
                 </div>
               </td>
-              <td class="td-fecha">{{ formatDate(act.plannedStartDate) }}</td>
-              <td class="td-fecha">{{ formatDate(act.plannedEndDate) }}</td>
+              <!-- Inicio Prog — doble click abre popover flotante (solo hojas) -->
+              <td class="td-fecha"
+                  [class.td-fecha-editable]="!act.esPadre"
+                  [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'start'"
+                  (click)="!act.esPadre && $event.stopPropagation()"
+                  (dblclick)="startInlineEdit(act, 'start', $event)">
+                <span class="fecha-cell-inner">
+                  <span class="fecha-text">{{ formatDate(act.plannedStartDate) }}</span>
+                  <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                  </svg>
+                </span>
+              </td>
+              <!-- Fin Prog -->
+              <td class="td-fecha"
+                  [class.td-fecha-editable]="!act.esPadre"
+                  [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'end'"
+                  (click)="!act.esPadre && $event.stopPropagation()"
+                  (dblclick)="startInlineEdit(act, 'end', $event)">
+                <span class="fecha-cell-inner">
+                  <span class="fecha-text">{{ formatDate(act.plannedEndDate) }}</span>
+                  <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                  </svg>
+                </span>
+              </td>
+              <!-- Columnas de Línea Base + Desfase + Semáforo -->
+              <ng-container *ngIf="lineaBaseVisible">
+                <td class="td-fecha td-lb"
+                    [class.td-fecha-editable]="!act.esPadre"
+                    [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'lbStart'"
+                    (click)="!act.esPadre && $event.stopPropagation()"
+                    (dblclick)="startInlineEdit(act, 'lbStart', $event)">
+                  <span class="fecha-cell-inner">
+                    <span class="fecha-text">{{ formatDate(act.baselineStartDate) }}</span>
+                    <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                  </span>
+                </td>
+                <td class="td-fecha td-lb"
+                    [class.td-fecha-editable]="!act.esPadre"
+                    [class.td-fecha-editing]="inlineEditCell?.id === act.projectActivityId && inlineEditCell?.field === 'lbEnd'"
+                    (click)="!act.esPadre && $event.stopPropagation()"
+                    (dblclick)="startInlineEdit(act, 'lbEnd', $event)">
+                  <span class="fecha-cell-inner">
+                    <span class="fecha-text">{{ formatDate(act.baselineEndDate) }}</span>
+                    <svg *ngIf="!act.esPadre" class="fecha-edit-icon" width="11" height="11"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                    </svg>
+                  </span>
+                </td>
+                <td class="td-desfase">
+                  <span [ngClass]="getDesfaseClass(getDesfaseDias(act, 'start'))">
+                    {{ formatDesfase(getDesfaseDias(act, 'start')) }}
+                  </span>
+                </td>
+                <td class="td-desfase">
+                  <span [ngClass]="getDesfaseClass(getDesfaseDias(act, 'end'))">
+                    {{ formatDesfase(getDesfaseDias(act, 'end')) }}
+                  </span>
+                </td>
+                <td class="td-sema">
+                  <span *ngIf="getSemaforoClass(act)"
+                        class="semaforo-dot"
+                        [ngClass]="getSemaforoClass(act)"></span>
+                </td>
+              </ng-container>
               <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">
                 {{ formatDate(act.actualEndDate) }}
               </td>
@@ -247,6 +336,24 @@
 
   </div>
 
+</div>
+
+<!-- ── Popover edición inline de fechas ── -->
+<div class="inline-date-backdrop" *ngIf="inlineEditCell" (click)="cancelInlineEdit()"></div>
+<div class="inline-date-popover" *ngIf="inlineEditCell"
+     [ngStyle]="inlinePopoverStyle"
+     (click)="$event.stopPropagation()">
+  <span class="inline-popover-label">{{ getInlineFieldLabel() }}</span>
+  <input #popoverDateInput
+         type="date"
+         class="inline-date-picker"
+         [(ngModel)]="inlineEditValue"
+         (keydown.enter)="commitInlineEdit()"
+         (keydown.escape)="cancelInlineEdit()" />
+  <div class="inline-popover-footer">
+    <button class="inline-btn-cancel" type="button" (click)="cancelInlineEdit()">✗ Cancelar</button>
+    <button class="inline-btn-confirm" type="button" (click)="commitInlineEdit()">✓ Confirmar</button>
+  </div>
 </div>
 
 <!-- ── Modal importar MPP ── -->
@@ -362,9 +469,6 @@
           />
         </div>
       </div>
-      <p class="field-hint field-hint-readonly" *ngIf="editandoAct?.esPadre">
-        Calculado automáticamente desde las actividades hijas
-      </p>
 
       <!-- Avance -->
       <div class="field">
@@ -398,24 +502,27 @@
         </div>
       </div>
 
-      <!-- Predecesoras (solo editar hojas) -->
-      <div class="field pred-field" *ngIf="modalMode === 'editar' && !editandoAct?.esPadre">
+      <!-- Predecesoras -->
+      <div class="field pred-field" *ngIf="modalMode === 'editar'">
         <label class="field-label">Predecesoras</label>
 
         <!-- Chips de predecesoras seleccionadas -->
         <div class="pred-chips" *ngIf="formPredecesoras.length">
           <span class="pred-chip" *ngFor="let pid of formPredecesoras">
-            {{ getPredChipLabel(pid) }}
+            <span class="pred-chip-label">{{ getPredChipLabel(pid) }}</span>
             <button class="pred-chip-remove" type="button" (click)="quitarPredecesora(pid)" title="Quitar">×</button>
           </span>
         </div>
 
         <!-- Input de búsqueda -->
         <input
+          #predInput
           type="text"
           class="field-input"
           placeholder="Buscar por # o nombre..."
           [(ngModel)]="predSearch"
+          (ngModelChange)="predDropdownIdx = -1"
+          (keydown)="onPredKeydown($event)"
           autocomplete="off"
         />
 
@@ -423,12 +530,16 @@
         <div class="pred-results" *ngIf="predSearch.trim() && filtrarPredecesoras().length">
           <button
             class="pred-result-item"
+            [class.pred-result-active]="predDropdownIdx === i && !item.disabled"
+            [class.pred-result-disabled]="item.disabled"
+            [disabled]="item.disabled"
             type="button"
-            *ngFor="let act of filtrarPredecesoras()"
-            (click)="agregarPredecesora(act)"
+            *ngFor="let item of filtrarPredecesoras(); let i = index"
+            (click)="agregarPredecesora(item.act)"
           >
-            <span class="pred-result-idx">{{ getDisplayIndex(act) }}</span>
-            <span class="pred-result-name">{{ act.activityDescription }}</span>
+            <span class="pred-result-idx">{{ getDisplayIndex(item.act) }}</span>
+            <span class="pred-result-name">{{ item.act.activityDescription }}</span>
+            <span *ngIf="item.disabled" class="pred-result-hint">{{ item.hint }}</span>
           </button>
         </div>
         <p class="pred-empty" *ngIf="predSearch.trim() && !filtrarPredecesoras().length">

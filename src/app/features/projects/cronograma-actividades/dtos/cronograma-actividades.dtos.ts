@@ -17,6 +17,8 @@ export interface ActividadDto {
   parentId: number | null;
   predecesoras: number[];
   esPadre: boolean;
+  baselineStartDate?: string | null;
+  baselineEndDate?: string | null;
 }
 
 export interface CascadaCambioDto {
