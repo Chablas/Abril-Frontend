@@ -11,6 +11,14 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
     data: { titulo: 'LECCIONES APRENDIDAS', featureKey: 'mejora-continua.lessons-learned' },
   },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./features/lessons-dashboard/components/lessons-dashboard')
+        .then((m) => m.LessonsDashboard),
+    canActivate: [roleGuard],
+    data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS', featureKey: 'mejora-continua.dashboard' },
+  },
+  {
     path: 'configuration/areas',
     loadComponent: () =>
       import('./features/configuration/lesson-areas/lesson-areas')

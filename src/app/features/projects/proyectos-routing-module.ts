@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LessonsDashboard } from './lessons-dashboard/components/lessons-dashboard';
 import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
 import { IvtControl } from '../projects/ivt-control/ivt-control';
 import { ConstructionLogbookControl } from '../projects/construction-logbook-control/construction-logbook-control';
@@ -14,7 +13,7 @@ const routes: Routes = [
   {
     path: '',
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
       {
         path: 'projects-dashboard',
         children: [
@@ -42,17 +41,6 @@ const routes: Routes = [
               roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
               featureKey: 'projects.cronograma-actividades',
             },
-          },
-        ],
-      },
-      {
-        path: 'dashboard',
-        children: [
-          {
-            path: '',
-            component: LessonsDashboard,
-            canActivate: [roleGuard],
-            data: { titulo: 'DASHBOARD DE LECCIONES APRENDIDAS', featureKey: 'projects.dashboard' },
           },
         ],
       },
