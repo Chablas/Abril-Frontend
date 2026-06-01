@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
-import { LessonReminderPagedDTO } from '../dtos/lessonReminder.model';
+import { LessonReminderPagedDTO, ToggleLessonReminderResultDTO } from '../dtos/lessonReminder.model';
 import { LessonReminderCreateDTO } from '../dtos/lessonReminderCreate.model';
 import { LessonReminderCreateDataDTO } from '../dtos/lessonReminderCreateData.model';
 import {
@@ -46,6 +46,14 @@ export class LessonReminderService {
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${userProjectId}`, {
       headers: this.authHeaders(),
     });
+  }
+
+  toggleActive(userProjectId: number): Observable<ToggleLessonReminderResultDTO> {
+    return this.http.put<ToggleLessonReminderResultDTO>(
+      `${this.apiUrl}/${userProjectId}/toggle`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   // Filtro de project_staff_reminder (toggle por proyecto con staff_email)

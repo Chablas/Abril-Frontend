@@ -18,3 +18,8 @@ export interface LessonReminderPagedDTO {
   totalPages: number;
   data: LessonReminderDTO[];
 }
+
+export interface ToggleLessonReminderResultDTO {
+  userProjectId: number;
+  active: boolean;
+}

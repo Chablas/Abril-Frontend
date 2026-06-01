@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { SectionTabs, SectionTab } from '../../../../../../shared/components/section-tabs/section-tabs';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
@@ -23,6 +24,7 @@ type ReminderSection = 'users' | 'staff';
     FormsModule,
     Paginator,
     SectionTabs,
+    StatusBadge,
     LessonReminderCreate,
     ProjectStaffList,
   ],
@@ -87,6 +89,21 @@ export class LessonReminders implements OnInit {
   onCreated(): void {
     this.showCreateModal = false;
     this.load(this.currentPage || 1);
+  }
+
+  toggle(item: LessonReminderDTO, event: MouseEvent): void {
+    event.stopPropagation();
+    this.loaderService.show();
+    this.service.toggleActive(item.userProjectId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        item.active = res.active;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   delete(item: LessonReminderDTO, event: MouseEvent): void {
