@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-05-31 (v2) — dashboard-gerencia: `renderBarras` con colores fijos `#1E3A5F`/`#CBD5E1` + plugin `separators` inline con líneas punteadas entre grupos. `renderTendencia`: ordenado por clave `YYYY-MM`, filtro fechas futuras (`<= hoy`), highlight de línea por `residenteActivoTendencia` (click en canvas toggle, `Number()` coercion). Vistas `mensual`/`tendencia` separadas con `*ngIf` + `setVista(detectChanges)`. Heatmap usa `residenteActivo.promediosPorArea`. `criterios-grid` muestra header evaluador + comentario por evaluación. Panel 4 filtrado por `residenteActivo.userId`. `anchor:'top'→'end'` fix en datalabels.
+> **Última actualización**: 2026-06-02 — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
 
 ---
 
