@@ -73,6 +73,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   soloRetirados = false;
   soloSinEmo = false;
   soloEmoVencido = false;
+  soloSinVidaLey = false;
 
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
@@ -208,6 +209,7 @@ export class Trabajadores implements OnInit, OnDestroy {
       soloRetirados: this.soloRetirados || undefined,
       soloSinEmo: this.soloSinEmo || undefined,
       soloEmoVencido: this.soloEmoVencido || undefined,
+      soloSinVidaLey: this.soloSinVidaLey || undefined,
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {

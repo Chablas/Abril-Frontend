@@ -235,6 +235,10 @@
             <input type="checkbox" [(ngModel)]="soloEmoVencido" (change)="loadWorkers(1)" />
             <span>EMO Vencido</span>
           </label>
+          <label class="fb-toggle">
+            <input type="checkbox" [(ngModel)]="soloSinVidaLey" (change)="loadWorkers(1)" />
+            <span>Sin Vida Ley</span>
+          </label>
           <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
             <option value="">Todos los estados</option>
             <option value="Habilitado">Habilitado</option>
