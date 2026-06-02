@@ -194,6 +194,8 @@
                 (click)="checkIn(item)">⏱ Registrar ingreso</button>
               <button class="btn-act btn-reschedule" [disabled]="accionando === item.id"
                 (click)="abrirReprogramar(item)">📅 Reprogramar</button>
+              <button class="btn-act btn-noasistio" [disabled]="accionando === item.id"
+                (click)="noAsistio(item)">🚫 No asistió</button>
               <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
                 (click)="rechazar(item)">✕</button>
             </ng-container>
@@ -343,9 +345,14 @@
     <div class="dm-field-grid">
       <div class="dm-field">
         <label class="dm-label">Fecha de atención</label>
-        <input type="date" class="dm-input" [(ngModel)]="modalAceptar.nuevaFecha" />
+        <input type="date" class="dm-input"
+          [(ngModel)]="modalAceptar.nuevaFecha"
+          (ngModelChange)="modalAceptar.fechaError = ''" />
+        <p class="dm-error-inline" *ngIf="modalAceptar.fechaError">
+          {{ modalAceptar.fechaError }}
+        </p>
         <p class="dm-warn"
-          *ngIf="modalAceptar.item && modalAceptar.nuevaFecha !== (modalAceptar.item.fechaProgramada ?? '')">
+          *ngIf="!modalAceptar.fechaError && modalAceptar.item && modalAceptar.nuevaFecha !== (modalAceptar.item.fechaProgramada ?? '').substring(0, 10)">
           Fecha original: {{ modalAceptar.item?.fechaProgramada | date: 'dd MMM yyyy' }}
         </p>
       </div>
@@ -474,6 +481,75 @@
 
 </div>
 
+<!-- ═══════════════════════════════════════════════════
+     Modal — Confirmar reprogramación
+     ═══════════════════════════════════════════════════ -->
+<div class="modal-backdrop" *ngIf="modalConfirmarReprogramar.open" (click)="cancelarConfirmarReprogramar()"></div>
+<div class="dark-modal cr-modal" *ngIf="modalConfirmarReprogramar.open" (click)="$event.stopPropagation()">
+
+  <div class="dm-header cr-header">
+    <div class="cr-header-left">
+      <div class="cr-icon-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div>
+        <p class="cr-eyebrow">Reprogramación de cita</p>
+        <h3 class="dm-title" style="margin:0">Confirmar cambio</h3>
+      </div>
+    </div>
+    <button class="dm-close" (click)="cancelarConfirmarReprogramar()">✕</button>
+  </div>
+
+  <div class="dm-body cr-body">
+
+    <!-- Fecha y hora destacadas -->
+    <div class="cr-datetime-block">
+      <div class="cr-date-big">
+        {{ modalConfirmarReprogramar.fechaNueva | date: 'dd/MM/yyyy' }}
+      </div>
+      <div class="cr-time-big">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        {{ modalConfirmarReprogramar.horaNueva }}
+      </div>
+    </div>
+
+    <!-- Tabla de datos -->
+    <div class="cr-table">
+      <div class="cr-row">
+        <span class="cr-lbl">Trabajador</span>
+        <span class="cr-val">{{ modalConfirmarReprogramar.workerNombre }}</span>
+      </div>
+      <div class="cr-row">
+        <span class="cr-lbl">Nueva fecha</span>
+        <span class="cr-val cr-val--accent">{{ modalConfirmarReprogramar.fechaNueva | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="cr-row">
+        <span class="cr-lbl">Nueva hora</span>
+        <span class="cr-val cr-val--accent">{{ modalConfirmarReprogramar.horaNueva }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cancelarConfirmarReprogramar()">Cancelar</button>
+    <button class="btn-confirmar" (click)="ejecutarReprogramar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Confirmar
+    </button>
+  </div>
+
+</div>
+
 <!-- CompletarEmo overlay -->
 <app-completar-emo
   [open]="!!completandoItem"
@@ -553,7 +629,7 @@
         <button class="ic-btn-cancel" (click)="icDetalle = null">Cancelar</button>
         <button class="ic-btn-confirmar"
           (click)="confirmarLevantamiento()"
-          [disabled]="icLevantamiento.cargando">
+          [disabled]="levantarDeshabilitado || icLevantamiento.cargando">
           {{ icLevantamiento.cargando ? 'Guardando...' : 'Levantar interconsulta' }}
         </button>
       </div>

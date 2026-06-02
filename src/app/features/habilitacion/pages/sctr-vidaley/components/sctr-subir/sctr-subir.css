@@ -380,3 +380,57 @@
   font-weight: 600;
   padding: 0.2rem 0.6rem;
 }
+
+.tipo-badge-vidaley {
+  display: flex;
+  align-items: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ostaff-toggle-wrap {
+  margin-top: 8px;
+}
+
+.ostaff-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.ostaff-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #64bc04;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ostaff-toggle:hover {
+  border-color: #64bc04;
+  background: #f0fdf4;
+  color: #374151;
+}
+
+.ostaff-toggle--on {
+  background: #f0fdf4;
+  border-color: #64bc04;
+  color: #15803d;
+}

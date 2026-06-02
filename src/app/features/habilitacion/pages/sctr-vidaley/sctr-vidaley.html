@@ -78,6 +78,10 @@
     </div>
     <div class="sctr-top-filters" *ngIf="activeTab === 'trabajadores'">
       <div class="filters-row">
+        <label class="oficina-staff-check">
+          <input type="checkbox" [(ngModel)]="modoOficinaStaff" (change)="onModoOficinaStaffChange()" />
+          <span>Oficina Central / Staff</span>
+        </label>
         <div class="filter-ss-wrap" *ngIf="isAdmin()">
           <app-search-select
             [options]="empresas"
@@ -88,20 +92,24 @@
             placeholder="Todas las empresas"
           />
         </div>
-        <div class="filter-ss-wrap">
-          <app-search-select
-            [options]="proyectos"
-            valueField="projectId"
-            displayField="projectDescription"
-            [value]="wFiltroProyectoId"
-            (valueChange)="wFiltroProyectoId = $event; onWorkerFilter()"
-            placeholder="Todos los proyectos"
-          />
-        </div>
-        <select class="field-input filter-sel" [(ngModel)]="wFiltroTipo" (change)="onTipoChange()">
-          <option value="SCTR">SCTR</option>
-          <option value="VIDA_LEY">Vida Ley</option>
-        </select>
+        @if (!modoOficinaStaff) {
+          <div class="filter-ss-wrap">
+            <app-search-select
+              [options]="proyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="wFiltroProyectoId"
+              (valueChange)="wFiltroProyectoId = $event; onWorkerFilter()"
+              placeholder="Todos los proyectos"
+            />
+          </div>
+          <select class="field-input filter-sel" [(ngModel)]="wFiltroTipo" (change)="onTipoChange()">
+            <option value="SCTR">SCTR</option>
+            <option value="VIDA_LEY">Vida Ley</option>
+          </select>
+        } @else {
+          <span class="tipo-fijo-label">Vida Ley</span>
+        }
         <select class="field-input filter-sel" [(ngModel)]="wFiltroEstado" (change)="onWorkerFilter()">
           <option value="">Todos los estados</option>
           <option value="Enviado">Enviado</option>

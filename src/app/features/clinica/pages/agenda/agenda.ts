@@ -35,12 +35,14 @@ export class Agenda implements OnInit {
     item: ProgramacionClinicaDto | null;
     nuevaFecha: string;
     horaAceptar: string;
+    fechaError: string;
     horaError: string;
   } = {
     open: false,
     item: null,
     nuevaFecha: '',
     horaAceptar: '',
+    fechaError: '',
     horaError: '',
   };
 
@@ -61,6 +63,15 @@ export class Agenda implements OnInit {
   };
 
   completandoItem: ProgramacionClinicaDto | null = null;
+
+  modalConfirmarReprogramar: {
+    open: boolean;
+    workerNombre: string;
+    fechaNueva: string;
+    horaNueva: string;
+    body: ClinicaAccionDto | null;
+    itemId: number | null;
+  } = { open: false, workerNombre: '', fechaNueva: '', horaNueva: '', body: null, itemId: null };
 
   activeTab: 'agenda' | 'interconsultas' = 'agenda';
   interconsultas: any[] = [];
@@ -186,28 +197,34 @@ export class Agenda implements OnInit {
     this.modalAceptar = {
       open: true,
       item,
-      nuevaFecha: item.fechaProgramada ?? '',
+      nuevaFecha: item.fechaProgramada ? item.fechaProgramada.substring(0, 10) : '',
       horaAceptar: item.horaProgramada ?? '',
+      fechaError: '',
       horaError: '',
     };
   }
 
   cancelarAceptar(): void {
-    this.modalAceptar = { open: false, item: null, nuevaFecha: '', horaAceptar: '', horaError: '' };
+    this.modalAceptar = { open: false, item: null, nuevaFecha: '', horaAceptar: '', fechaError: '', horaError: '' };
   }
 
   confirmarAceptar(): void {
     const item = this.modalAceptar.item;
     if (!item) return;
+    this.modalAceptar.fechaError = '';
+    this.modalAceptar.horaError = '';
+    if (!this.modalAceptar.nuevaFecha) {
+      this.modalAceptar.fechaError = 'La fecha es obligatoria';
+      return;
+    }
     if (!this.modalAceptar.horaAceptar || this.modalAceptar.horaAceptar.trim() === '' || this.modalAceptar.horaAceptar === '--:--') {
       this.modalAceptar.horaError = 'La hora es obligatoria';
       return;
     }
-    this.modalAceptar.horaError = '';
     const body: ClinicaAccionDto = {
       id: item.id,
       accion: 'Aceptar',
-      fechaNueva: this.modalAceptar.nuevaFecha,
+      nuevaFecha: this.modalAceptar.nuevaFecha,
       horaNueva: this.modalAceptar.horaAceptar,
     };
     this.cancelarAceptar();
@@ -216,14 +233,16 @@ export class Agenda implements OnInit {
 
   // ── Modal Reprogramar ────────────────────────────────────
   abrirReprogramar(item: ProgramacionClinicaDto): void {
+    console.log('[abrirReprogramar] fechaProgramada raw:', item.fechaProgramada, 'resultado substring:', item.fechaProgramada?.substring(0, 10));
     this.modalReprogramar = {
       open: true,
       item,
-      nuevaFecha: item.fechaProgramada ?? '',
+      nuevaFecha: item.fechaProgramada ? item.fechaProgramada.substring(0, 10) : '',
       nuevaHora: item.horaProgramada ?? '',
       horaError: '',
       fechaError: '',
     };
+    setTimeout(() => { this.cdr.detectChanges(); }, 0);
   }
 
   cancelarReprogramar(): void {
@@ -239,6 +258,12 @@ export class Agenda implements OnInit {
     if (!this.modalReprogramar.nuevaFecha) {
       this.modalReprogramar.fechaError = 'La fecha es obligatoria';
       valid = false;
+    } else if (
+      this.modalReprogramar.nuevaFecha === (item.fechaProgramada ?? '').substring(0, 10) &&
+      this.modalReprogramar.nuevaHora === (item.horaProgramada ?? '')
+    ) {
+      this.modalReprogramar.fechaError = 'Debes cambiar la fecha o la hora';
+      valid = false;
     }
     if (!this.modalReprogramar.nuevaHora || this.modalReprogramar.nuevaHora === '--:--') {
       this.modalReprogramar.horaError = 'La hora es obligatoria';
@@ -248,12 +273,31 @@ export class Agenda implements OnInit {
     const body: ClinicaAccionDto = {
       id: item.id,
       accion: 'Aceptar',
-      fechaNueva: this.modalReprogramar.nuevaFecha,
+      nuevaFecha: this.modalReprogramar.nuevaFecha,
       horaNueva: this.modalReprogramar.nuevaHora,
     };
+    console.log('[Reprogramar] payload:', body);
+    this.modalConfirmarReprogramar = {
+      open: true,
+      workerNombre: item.workerNombre,
+      fechaNueva: this.modalReprogramar.nuevaFecha,
+      horaNueva: this.modalReprogramar.nuevaHora,
+      body,
+      itemId: item.id,
+    };
+  }
+
+  cancelarConfirmarReprogramar(): void {
+    this.modalConfirmarReprogramar = { open: false, workerNombre: '', fechaNueva: '', horaNueva: '', body: null, itemId: null };
+  }
+
+  ejecutarReprogramar(): void {
+    const { body, itemId } = this.modalConfirmarReprogramar;
+    if (!body || !itemId) return;
+    this.cancelarConfirmarReprogramar();
     this.cancelarReprogramar();
-    this.accionando = item.id;
-    this.svc.accionClinica(item.id, body).subscribe({
+    this.accionando = itemId;
+    this.svc.accionClinica(itemId, body).subscribe({
       next: () => {
         this.accionando = null;
         this.loadAgenda(this.selectedDate);
@@ -296,6 +340,25 @@ export class Agenda implements OnInit {
           motivoRechazo: result.value,
         });
       }
+    });
+  }
+
+  // ── No asistió ───────────────────────────────────────────
+  noAsistio(item: ProgramacionClinicaDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Marcar como No asistió?',
+      html: `<span style="font-size:0.87rem;color:#94a3b8">${item.workerNombre}</span>`,
+      background: '#1e293b',
+      color: '#f1f5f9',
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#334155',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, no asistió',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.ejecutarAccion(item.id, { id: item.id, accion: 'No Asistió' });
     });
   }
 
@@ -467,6 +530,11 @@ export class Agenda implements OnInit {
     } finally {
       lev.cargando = false;
     }
+  }
+
+  get levantarDeshabilitado(): boolean {
+    const lev = this.icLevantamiento;
+    return !lev.fechaAtencion || !lev.resultado?.trim() || !lev.diagnostico?.trim() || !lev.archivoFile;
   }
 
   icEstadoClass(estado: string): string {

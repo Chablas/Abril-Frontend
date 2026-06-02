@@ -37,11 +37,11 @@ export interface ClinicaInterconsultaCreateDto {
 
 export interface ClinicaAccionDto {
   id: number;
-  accion: 'Aceptar' | 'Rechazar' | 'CheckIn' | 'Completar';
+  accion: 'Aceptar' | 'Rechazar' | 'CheckIn' | 'Completar' | 'No Asistió';
   motivoRechazo?: string;
   checkInHora?: string;
   emoResultadoId?: number;
-  fechaNueva?: string;
+  nuevaFecha?: string;
   horaNueva?: string;
 }
 
