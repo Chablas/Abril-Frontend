@@ -70,13 +70,17 @@ export class ContractorManagementEdit implements OnInit {
   // ── Correos ────────────────────────────────────────────────────────────────
 
   addEmail(): void {
-    const email = this.newEmail.trim().toLowerCase();
+    // Se conserva tal cual se escribe (solo trim): los correos son sensibles a mayúsculas,
+    // por lo que 'Correo@x.pe' y 'correo@x.pe' se consideran distintos.
+    // El input tiene autocapitalize/autocorrect desactivados para que el navegador no
+    // altere lo tecleado.
+    const email = this.newEmail.trim();
     if (!email) return;
-    if (this.emails.map(e => e.toLowerCase()).includes(email)) {
+    if (this.emails.includes(email)) {   // duplicado exacto (case-sensitive)
       this.newEmail = '';
       return;
     }
-    this.emails.push(this.newEmail.trim());
+    this.emails.push(email);
     this.newEmail = '';
   }
 
