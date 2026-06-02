@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -16,6 +17,7 @@ import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { LessonsDashboardService } from '../services/lessons-dashboard.service';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { MultiSearchSelect } from '../../../../../shared/components/multi-search-select/multi-search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import {
@@ -30,13 +32,14 @@ Chart.register(...registerables, ChartDataLabels);
 @Component({
   selector: 'app-lessons-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, MultiSearchSelect],
   templateUrl: './lessons-dashboard.html',
   styleUrl: './lessons-dashboard.css',
 })
 export class LessonsDashboard implements AfterViewInit {
   trendChart?: Chart;
   barChart?: Chart;
+  userChart?: Chart;
   pieChart?: Chart;
   lineChart?: Chart;
   phaseStageCharts: PhaseStageChartDTO[] = [];
@@ -49,14 +52,48 @@ export class LessonsDashboard implements AfterViewInit {
   readonly doughnutColors = ['#D4F0C2', '#BEE7E8', '#C7CEEA', '#F9D8A6', '#FFF1A8', '#F6C1CC'];
 
   data?: LessonsDashboardDataDTO;
-  filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [] };
-  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaId: 0 };
+  filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [], projects: [] };
+  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaId: 0, projectIds: [] };
 
   // Opciones de período preformateadas para el search-select (value = 'yyyy-MM-dd', label = 'MM-yyyy').
   periodOptions: { value: string; label: string }[] = [];
 
+  /** Penúltimo mes con datos (último mes cerrado, ya que el mes en curso suele estar incompleto). */
+  get penultMonth() {
+    const m = this.data?.lessonsByMonth ?? [];
+    return m.length >= 2 ? m[m.length - 2] : undefined;
+  }
+
+  /** Antepenúltimo mes con datos (base de comparación del penúltimo). */
+  get antepenultMonth() {
+    const m = this.data?.lessonsByMonth ?? [];
+    return m.length >= 3 ? m[m.length - 3] : undefined;
+  }
+
+  /** Variación % del penúltimo mes vs. el antepenúltimo. null si no hay base de comparación. */
+  get monthVariationPct(): number | null {
+    const base = this.antepenultMonth?.value ?? 0;
+    if (!this.antepenultMonth || base === 0) return null;
+    const cur = this.penultMonth?.value ?? 0;
+    return Math.round(((cur - base) / base) * 100);
+  }
+
+  /** Proyecto con más lecciones (lessonsByProject ya viene ordenado desc por el backend). */
+  get leaderProject() {
+    return this.data?.lessonsByProject?.[0];
+  }
+
+  /** Promedio de lecciones por proyecto (con al menos una lección). */
+  get avgPerProject(): number {
+    const projects = this.data?.lessonsByProject ?? [];
+    if (!projects.length) return 0;
+    const total = projects.reduce((sum, p) => sum + p.value, 0);
+    return Math.round((total / projects.length) * 10) / 10;
+  }
+
   @ViewChild('lessonsTrendChart') lessonsTrendChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsChart') lessonsChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lessonsUserChart') lessonsUserChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsPieChart') lessonsPieChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lessonsLineChart') lessonsLineChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -114,6 +151,7 @@ export class LessonsDashboard implements AfterViewInit {
     this.phaseStageCharts = data.lessonsByPhaseAndStage ?? [];
     this.createTrendChart(data);
     this.createBarChart(data);
+    this.createUserChart(data);
     this.createPieChart(data);
     this.createLineChart(data);
     setTimeout(() => this.createPhaseStageCharts(this.phaseStageCharts));
@@ -188,6 +226,44 @@ export class LessonsDashboard implements AfterViewInit {
         plugins: {
           datalabels: {
             color: '#828282',
+            formatter: (v) => v,
+            font: { weight: 'bold', size: 12 },
+            anchor: 'end',
+            align: 'right',
+            offset: 4,
+          },
+          legend: { position: 'bottom' },
+        },
+        scales: { x: { ticks: { precision: 0 }, beginAtZero: true } },
+      },
+    });
+  }
+
+  private createUserChart(data: LessonsDashboardDataDTO) {
+    this.userChart?.destroy();
+    // Top 10 usuarios por aportes (ranking de engagement).
+    const sorted = [...(data.lessonsByUser ?? [])].sort((a, b) => b.value - a.value).slice(0, 10);
+    this.userChart = new Chart(this.lessonsUserChartRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels: sorted.map((x) => x.label),
+        datasets: [
+          {
+            label: 'Lecciones registradas',
+            data: sorted.map((x) => x.value),
+            backgroundColor: '#CFEAF1',
+            borderColor: '#0086A5',
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            color: '#0086A5',
             formatter: (v) => v,
             font: { weight: 'bold', size: 12 },
             anchor: 'end',
@@ -301,6 +377,99 @@ export class LessonsDashboard implements AfterViewInit {
 
   // ── PDF ──────────────────────────────────────────────────────────────────
 
+  /** Dibuja la cuadrícula de tarjetas resumen (4×2) en el PDF y devuelve la Y siguiente. */
+  private drawSummaryCards(pdf: jsPDF, startY: number, marginX: number, usableWidth: number): number {
+    const s = this.data?.summary;
+
+    // Variación del penúltimo mes vs. antepenúltimo (sin flechas: no están en WinAnsi).
+    const v = this.monthVariationPct;
+    let variationText = 'sin comparación';
+    let variationRgb: [number, number, number] = [156, 163, 175];
+    if (v !== null) {
+      const sign = v > 0 ? '+' : '';
+      variationText = `${sign}${v}% vs. ${this.antepenultMonth?.label ?? ''}`;
+      variationRgb = v > 0 ? [0, 156, 135] : v < 0 ? [211, 0, 0] : [156, 163, 175];
+    }
+
+    const cards: {
+      label: string;
+      value: string;
+      rgb: [number, number, number];
+      sub?: string;
+      subRgb?: [number, number, number];
+      small?: boolean;
+    }[] = [
+      { label: 'Total lecciones', value: String(s?.totalLessons ?? 0), rgb: [100, 188, 4] },
+      {
+        label: `Lecciones ${this.penultMonth?.label || 'mes'}`,
+        value: String(this.penultMonth?.value ?? 0),
+        rgb: [116, 195, 29],
+        sub: variationText,
+        subRgb: variationRgb,
+      },
+      { label: 'Proyectos', value: String(s?.totalProjects ?? 0), rgb: [0, 134, 165] },
+      { label: 'Áreas', value: String(s?.totalAreas ?? 0), rgb: [80, 150, 3] },
+      { label: 'Fases', value: String(s?.totalPhases ?? 0), rgb: [162, 215, 104] },
+      { label: 'Usuarios', value: String(s?.totalUsers ?? 0), rgb: [60, 113, 2] },
+      {
+        label: 'Proyecto líder',
+        value: this.leaderProject?.label || '—',
+        rgb: [31, 41, 55],
+        sub: this.leaderProject ? `${this.leaderProject.value} lecciones` : '',
+        subRgb: [100, 188, 4],
+        small: true,
+      },
+      { label: 'Prom. por proyecto', value: String(this.avgPerProject), rgb: [131, 201, 54] },
+    ];
+
+    const cols = 4;
+    const gap = 4;
+    const cardW = (usableWidth - gap * (cols - 1)) / cols;
+    const cardH = 17;
+    const rowGap = 4;
+
+    cards.forEach((c, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = marginX + col * (cardW + gap);
+      const y = startY + row * (cardH + rowGap);
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(226, 232, 240);
+      pdf.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
+
+      // Etiqueta
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(pdf.splitTextToSize(c.label, cardW - 6)[0], x + 3, y + 5);
+
+      // Valor
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(c.rgb[0], c.rgb[1], c.rgb[2]);
+      if (c.small) {
+        pdf.setFontSize(8.5);
+        pdf.text(pdf.splitTextToSize(c.value, cardW - 6).slice(0, 2), x + 3, y + 9);
+      } else {
+        pdf.setFontSize(16);
+        pdf.text(c.value, x + 3, y + 12);
+      }
+
+      // Subtexto (variación / líder)
+      if (c.sub) {
+        const srgb = c.subRgb ?? [156, 163, 175];
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(srgb[0], srgb[1], srgb[2]);
+        pdf.text(pdf.splitTextToSize(c.sub, cardW - 6)[0], x + 3, y + cardH - 2.5);
+      }
+    });
+
+    pdf.setTextColor(0, 0, 0);
+    const rows = Math.ceil(cards.length / cols);
+    return startY + rows * cardH + (rows - 1) * rowGap + 8;
+  }
+
   private generatePDF(): jsPDF {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const marginX = 10;
@@ -323,6 +492,9 @@ export class LessonsDashboard implements AfterViewInit {
     });
     currentY = (pdf as any).lastAutoTable.finalY + 8;
 
+    // Tarjetas resumen (4×2), replican las del dashboard
+    currentY = this.drawSummaryCards(pdf, currentY, marginX, usableWidth);
+
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
 
@@ -342,9 +514,11 @@ export class LessonsDashboard implements AfterViewInit {
       pdf.addImage(this.pieChart.toBase64Image(), 'PNG', marginX + halfWidth, currentY, halfWidth, chartHeight);
       currentY += 70;
     }
-    pdf.text('LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD', 105, currentY, { align: 'center' });
+    pdf.text('TOP USUARIOS (RANKING DE APORTES)', marginX + halfWidth / 2, currentY, { align: 'center' });
+    pdf.text('LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD', marginX + halfWidth + halfWidth / 2, currentY, { align: 'center' });
     currentY += 2;
-    if (this.lineChart) pdf.addImage(this.lineChart.toBase64Image(), 'PNG', 10, currentY, 210 - 20, 60);
+    if (this.userChart) pdf.addImage(this.userChart.toBase64Image(), 'PNG', marginX, currentY, halfWidth, chartHeight);
+    if (this.lineChart) pdf.addImage(this.lineChart.toBase64Image(), 'PNG', marginX + halfWidth, currentY, halfWidth, chartHeight);
 
     return pdf;
   }
