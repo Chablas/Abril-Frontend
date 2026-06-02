@@ -66,6 +66,13 @@
         <span class="stat-num stat-green">{{ countCompletados }}</span>
         <span class="stat-lbl">Completados</span>
       </div>
+      <div class="stat-item stat-clickeable" *ngIf="countNoPresento > 0"
+           [class.stat-active]="filtroEstado === 'No se presentó'"
+           (click)="filtroEstado = 'No se presentó'">
+        <span class="stat-sep"></span>
+        <span class="stat-num stat-amber">{{ countNoPresento }}</span>
+        <span class="stat-lbl">No se presentó</span>
+      </div>
       <div class="stat-item stat-clickeable" *ngIf="countRechazados > 0"
            [class.stat-active]="filtroEstado === 'Rechazado'"
            (click)="filtroEstado = 'Rechazado'">
@@ -198,6 +205,11 @@
                 (click)="noAsistio(item)">🚫 No asistió</button>
               <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
                 (click)="rechazar(item)">✕</button>
+            </ng-container>
+
+            <ng-container *ngIf="item.estado === 'No se presentó'">
+              <button class="btn-act btn-reschedule" [disabled]="accionando === item.id"
+                (click)="abrirReprogramar(item)">📅 Reprogramar</button>
             </ng-container>
 
             <ng-container *ngIf="item.estado === 'En Atención'">
