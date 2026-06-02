@@ -88,7 +88,7 @@
           <!-- Fila 2: DNI · empresa -->
           <div class="wc-meta">
             <span class="wc-dni">{{ w.dni }}</span>
-            <span class="wc-empresa" *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
+            <span *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
           </div>
           <!-- Fila 3 (opcional): categoría · ocupación -->
           <div class="wc-puesto" *ngIf="w.categoria || w.ocupacion">
