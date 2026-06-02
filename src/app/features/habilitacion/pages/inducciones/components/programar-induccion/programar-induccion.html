@@ -17,7 +17,7 @@
           <strong>{{ selectedWorker.apellidoNombre }}</strong>
           <span class="muted-line">DNI {{ selectedWorker.dni }} · {{ selectedWorker.empresaNombre ?? '—' }}</span>
         </div>
-        <button type="button" class="btn-ghost btn-x" (click)="clearWorker()">Cambiar</button>
+        <button *ngIf="!workerPreseleccionado" type="button" class="btn-ghost btn-x" (click)="clearWorker()">Cambiar</button>
       </div>
       <div *ngIf="!selectedWorker">
         <input

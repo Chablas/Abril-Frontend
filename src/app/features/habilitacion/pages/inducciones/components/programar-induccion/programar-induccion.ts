@@ -8,6 +8,18 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
+
+export interface WorkerPreseleccionado {
+  workerId: number;
+  apellidoNombre: string;
+  dni: string;
+  empresaId: number;
+  empresaNombre?: string;
+  induccionId?: number;
+  proyectoId?: number;
+  trabajoAltura?: boolean;
+  equipoElectrico?: boolean;
+}
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -22,7 +34,7 @@ import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model
 import { InduccionService } from '../../../../services/induccion.service';
 import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
-import { InduccionCreateDto } from '../../../../dtos/induccion.model';
+import { InduccionBatchCreateDto, InduccionReprogramarDto } from '../../../../dtos/induccion.model';
 
 @Component({
   selector: 'app-programar-induccion',
@@ -33,6 +45,7 @@ import { InduccionCreateDto } from '../../../../dtos/induccion.model';
 })
 export class ProgramarInduccion implements OnChanges, OnDestroy {
   @Input() open = false;
+  @Input() workerPreseleccionado: WorkerPreseleccionado | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
@@ -46,6 +59,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   proyectoId: number | null = null;
   fechaProgramada = '';
   trabajoAltura = false;
+  equipoElectrico = false;
 
   saving = false;
   hoy = new Date().toISOString().substring(0, 10);
@@ -82,10 +96,13 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   private reset(): void {
     this.workersSearch = '';
     this.workersResultados = [];
-    this.selectedWorker = null;
-    this.proyectoId = null;
+    this.selectedWorker = this.workerPreseleccionado
+      ? (this.workerPreseleccionado as unknown as WorkerHabilitacionListDto)
+      : null;
+    this.proyectoId = this.workerPreseleccionado?.proyectoId ?? null;
     this.fechaProgramada = this.hoy;
-    this.trabajoAltura = false;
+    this.trabajoAltura = this.workerPreseleccionado?.trabajoAltura ?? false;
+    this.equipoElectrico = this.workerPreseleccionado?.equipoElectrico ?? false;
   }
 
   private loadProyectos(): void {
@@ -158,7 +175,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   }
 
   get title(): string {
-    return 'Programar inducción';
+    return this.workerPreseleccionado ? 'Reprogramar inducción' : 'Programar inducción';
   }
 
   get canSubmit(): boolean {
@@ -181,36 +198,71 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
       return;
     }
 
-    const payload: InduccionCreateDto = {
-      workerId: this.selectedWorker.workerId,
-      proyectoId: this.proyectoId,
-      empresaId: this.selectedWorker.empresaId,
-      fechaProgramada: this.fechaProgramada,
-      trabajoAltura: this.trabajoAltura,
-    };
-
     this.saving = true;
     this.loaderService.show();
 
-    this.induccionService.create(payload).subscribe({
-      next: () => {
-        this.saving = false;
-        this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'Inducción programada',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        this.saved.emit();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving = false;
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
+    if (this.workerPreseleccionado?.induccionId) {
+      const dto: InduccionReprogramarDto = {
+        fechaProgramada: this.fechaProgramada,
+        proyectoId: this.proyectoId,
+        trabajoAltura: this.trabajoAltura,
+      };
+      console.log('RAMA REPROGRAMAR - induccionId:', this.workerPreseleccionado?.induccionId, 'proyectoId:', this.proyectoId, 'fecha:', this.fechaProgramada);
+      console.log('Enviando PATCH reprogramar', this.workerPreseleccionado.induccionId, dto);
+      this.induccionService.reprogramar(this.workerPreseleccionado.induccionId, dto).subscribe({
+        next: () => {
+          console.log('PATCH reprogramar exitoso, emitiendo saved');
+          this.saving = false;
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Inducción reprogramada',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.saved.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log('PATCH reprogramar error', err);
+          console.error('REPROGRAMAR ERROR:', err);
+          this.saving = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
+    } else {
+      const payload: InduccionBatchCreateDto = {
+        proyectoId: this.proyectoId,
+        empresaId: this.selectedWorker.empresaId,
+        fechaProgramada: this.fechaProgramada,
+        trabajoAltura: this.trabajoAltura,
+        equipoElectrico: this.equipoElectrico,
+        workerIds: [this.selectedWorker.workerId],
+      };
+      console.log('Enviando POST induccion', payload);
+      this.induccionService.crearBatch(payload).subscribe({
+        next: () => {
+          console.log('POST exitoso, emitiendo saved');
+          this.saving = false;
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Inducción programada',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          this.saved.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log('POST error', err);
+          this.saving = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
+    }
   }
 
   close(): void {
