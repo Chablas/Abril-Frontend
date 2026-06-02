@@ -185,3 +185,17 @@ app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
 }
 .gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2563eb !important; }
 .gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #16a34a !important; }
+.emo-prog-label {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+.label-programado    { background: #eff6ff !important; color: #3b82f6 !important; }
+.label-aceptado      { background: #f0fdf4 !important; color: #16a34a !important; }
+.label-atencion      { background: #fefce8 !important; color: #ca8a04 !important; }
+.label-interconsulta { background: #fdf4ff !important; color: #9333ea !important; }

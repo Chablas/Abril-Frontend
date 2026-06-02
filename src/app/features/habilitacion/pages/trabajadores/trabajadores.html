@@ -90,7 +90,21 @@
             <span class="wc-dni">{{ w.dni }}</span>
             <span class="wc-empresa" *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
           </div>
-          <!-- Fila 3: proyecto · badge estado + acciones -->
+          <!-- Fila 3 (opcional): badge EMO programación -->
+          @if (w.estadoProgramacionEmo) {
+            <div class="wc-emo-row">
+              <span
+                class="emo-prog-label"
+                [ngClass]="{
+                  'label-programado':    w.estadoProgramacionEmo === 'Programado',
+                  'label-aceptado':      w.estadoProgramacionEmo === 'Aceptado por Clínica',
+                  'label-atencion':      w.estadoProgramacionEmo === 'En Atención',
+                  'label-interconsulta': w.estadoProgramacionEmo === 'Interconsulta'
+                }"
+              >{{ emoProgLabel(w.estadoProgramacionEmo) }}</span>
+            </div>
+          }
+          <!-- Fila 4: proyecto · badge estado + acciones -->
           <div class="wc-foot">
             <div class="wc-foot-left">
               <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
@@ -220,6 +234,10 @@
           <label class="fb-toggle">
             <input type="checkbox" [(ngModel)]="soloEmoVencido" (change)="loadWorkers(1)" />
             <span>EMO Vencido</span>
+          </label>
+          <label class="fb-toggle">
+            <input type="checkbox" [(ngModel)]="soloSinVidaLey" (change)="loadWorkers(1)" />
+            <span>Sin Vida Ley</span>
           </label>
           <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
             <option value="">Todos los estados</option>

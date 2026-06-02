@@ -19,10 +19,20 @@
       <div class="grid-2">
         <div>
           <label class="field-label">Tipo *</label>
-          <select class="field-input" [(ngModel)]="model.tipo">
-            <option value="SCTR">SCTR</option>
-            <option value="VIDA_LEY">Vida Ley</option>
-          </select>
+          @if (!esOficinaStaff) {
+            <select class="field-input" [(ngModel)]="model.tipo">
+              <option value="SCTR">SCTR</option>
+              <option value="VIDA_LEY">Vida Ley</option>
+            </select>
+          } @else {
+            <div class="tipo-badge-vidaley">Vida Ley</div>
+          }
+          <div class="ostaff-toggle-wrap">
+            <label class="ostaff-toggle" [class.ostaff-toggle--on]="esOficinaStaff">
+              <input type="checkbox" [(ngModel)]="esOficinaStaff" (change)="onEsOficinaStaffChange()" />
+              Oficina Central / Staff
+            </label>
+          </div>
         </div>
         <div>
           <label class="field-label">Tipo de póliza *</label>
@@ -41,7 +51,7 @@
         <div class="col-span-2" *ngIf="isAdmin()">
           <label class="field-label">Empresa *</label>
           <app-search-select
-            [options]="empresas"
+            [options]="empresasFiltradas"
             valueField="id"
             displayField="nombre"
             [value]="model.empresaId"
@@ -50,31 +60,38 @@
           />
         </div>
 
-        <div class="col-span-2">
-          <label class="field-label">Proyecto *</label>
-          <app-search-select
-            [options]="proyectos"
-            valueField="projectId"
-            displayField="projectDescription"
-            [value]="model.proyectoId"
-            (valueChange)="model.proyectoId = $event"
-            placeholder="Selecciona un proyecto"
-          />
-        </div>
+        @if (!esOficinaStaff) {
+          <div class="col-span-2">
+            <label class="field-label">Proyecto *</label>
+            <app-search-select
+              [options]="proyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="model.proyectoId"
+              (valueChange)="model.proyectoId = $event"
+              placeholder="Selecciona un proyecto"
+            />
+          </div>
+        }
 
-        <div>
-          <label class="field-label">Fecha inicio *</label>
-          <input type="date" class="field-input" [(ngModel)]="model.fechaInicio" />
-        </div>
-        <div>
-          <label class="field-label">Fecha vencimiento *</label>
-          <input type="date" class="field-input" [(ngModel)]="model.vigencia" />
-        </div>
       </div>
     </ng-container>
 
     <!-- PASO 2: Trabajadores + visor -->
     <ng-container *ngIf="paso === 2">
+
+      <!-- Fechas en paso 2 -->
+      <div class="paso2-fechas-row">
+        <div>
+          <label class="field-label">Fecha inicio *</label>
+          <input #inputFechaInicio type="text" class="field-input" placeholder="dd/mm/aaaa" readonly />
+        </div>
+        <div>
+          <label class="field-label">Fecha vencimiento *</label>
+          <input #inputFechaVencimiento type="text" class="field-input" placeholder="dd/mm/aaaa" readonly />
+        </div>
+      </div>
+
       <div class="wizard-paso2">
 
         <!-- Panel izquierdo: workers -->
@@ -133,8 +150,8 @@
               />
               <div class="worker-info">
                 <strong>{{ w.apellidoNombre }}</strong>
-                <span class="muted-line">DNI {{ w.dni }}</span>
               </div>
+              <span class="worker-dni">{{ w.dni }}</span>
               <span class="btn-chip worker-estado-chip" [class]="getEstadoClass(model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr)">
                 {{ model.tipo === 'VIDA_LEY' ? w.estadoVidaLey : w.estadoSctr }}
               </span>
@@ -143,8 +160,17 @@
         </div>
 
         <!-- Panel derecho: visor PDF -->
-        <div class="panel-visor">
-          <div class="visor-upload-bar">
+        <div class="panel-visor"
+             (dragenter)="isDragging = true; $event.preventDefault()"
+             (dragleave)="isDragging = false"
+             (dragover)="$event.preventDefault()"
+             (drop)="isDragging = false; onDrop($event)">
+          <div *ngIf="isDragging" class="drag-overlay">
+            <span>📄 Suelta el archivo aquí</span>
+          </div>
+          <div class="visor-upload-bar"
+               (dragover)="$event.preventDefault()"
+               (drop)="onDrop($event)">
             <span class="visor-upload-filename">
               <ng-container *ngIf="uploadingFile">
                 <span class="upload-spinner"></span> Subiendo…

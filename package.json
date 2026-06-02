@@ -7,7 +7,9 @@
     "build": "ng build && node scripts/generate-version.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:Abril": "node dist/Abril/server/server.mjs"
+    "serve:ssr:Abril": "node dist/Abril/server/server.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "prettier": {
     "printWidth": 100,
@@ -34,10 +36,12 @@
     "@angular/ssr": "^21.0.5",
     "@azure/msal-angular": "^5.1.4",
     "@azure/msal-browser": "^5.6.3",
+    "@types/flatpickr": "^3.1.4",
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
     "dhtmlx-gantt": "^9.1.1",
     "express": "^5.1.0",
+    "flatpickr": "^4.6.13",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
@@ -59,6 +63,7 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wrangler": "^4.96.0"
   }
 }

@@ -73,6 +73,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   soloRetirados = false;
   soloSinEmo = false;
   soloEmoVencido = false;
+  soloSinVidaLey = false;
 
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
@@ -208,9 +209,11 @@ export class Trabajadores implements OnInit, OnDestroy {
       soloRetirados: this.soloRetirados || undefined,
       soloSinEmo: this.soloSinEmo || undefined,
       soloEmoVencido: this.soloEmoVencido || undefined,
+      soloSinVidaLey: this.soloSinVidaLey || undefined,
     };
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
+        console.log('worker[0]:', res.data?.[0]);
         this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
@@ -944,5 +947,15 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   abrirEmosProgramados(): void {
     this.mostrarEmosProgramados = true;
+  }
+
+  emoProgLabel(estado: string): string {
+    const map: Record<string, string> = {
+      'Programado':           '📅 EMO Programado',
+      'Aceptado por Clínica': '✅ Aceptado por Clínica',
+      'En Atención':          '🏥 En Atención',
+      'Interconsulta':        '🔄 Interconsulta Pendiente',
+    };
+    return map[estado] ?? estado;
   }
 }

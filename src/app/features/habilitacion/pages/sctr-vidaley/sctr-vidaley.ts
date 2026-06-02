@@ -102,6 +102,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
   wFiltroTipo: 'SCTR' | 'VIDA_LEY' = 'SCTR';
   wFiltroNombre = '';
   wFiltroEmpresaTexto = '';
+  modoOficinaStaff = false;
 
   // ── Tab Trabajadores — panel derecho ──────────────────────
   selectedPoliza: SctrVidaLeyDto | null = null;
@@ -391,6 +392,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
         proyectoId: this.wFiltroProyectoId ?? undefined,
         tipo: this.wFiltroTipo,
         ...estadoParam,
+        ...(this.modoOficinaStaff ? { obraOficina: 'OficinaStaff' } : {}),
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -413,6 +415,14 @@ export class SctrVidaley implements OnInit, OnDestroy {
   onTipoChange(): void {
     this.wFiltroEstado = 'Enviado';
     this.workerFilterChange$.next();
+  }
+
+  onModoOficinaStaffChange(): void {
+    if (this.modoOficinaStaff) {
+      this.wFiltroTipo = 'VIDA_LEY';
+      this.wFiltroProyectoId = null;
+    }
+    this.loadTrabajadores();
   }
 
   selectWorker(w: SctrTrabajadorEstadoDto): void {

@@ -194,6 +194,8 @@
                 (click)="checkIn(item)">⏱ Registrar ingreso</button>
               <button class="btn-act btn-reschedule" [disabled]="accionando === item.id"
                 (click)="abrirReprogramar(item)">📅 Reprogramar</button>
+              <button class="btn-act btn-noasistio" [disabled]="accionando === item.id"
+                (click)="noAsistio(item)">🚫 No asistió</button>
               <button class="btn-act btn-reject-sm" [disabled]="accionando === item.id"
                 (click)="rechazar(item)">✕</button>
             </ng-container>

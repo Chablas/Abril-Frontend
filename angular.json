@@ -27,7 +27,8 @@
             ],
             "styles": [
               "src/styles.css",
-              "node_modules/dhtmlx-gantt/codebase/dhtmlxgantt.css"
+              "node_modules/dhtmlx-gantt/codebase/dhtmlxgantt.css",
+              "node_modules/flatpickr/dist/themes/material_green.css"
             ]
           },
           "configurations": {
@@ -40,8 +41,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "16kB",
-                  "maximumError": "28kB"
+                  "maximumWarning": "30kB",
+                  "maximumError": "40kB"
                 }
               ],
               "fileReplacements": [
