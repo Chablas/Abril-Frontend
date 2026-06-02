@@ -343,6 +343,25 @@ export class Agenda implements OnInit {
     });
   }
 
+  // ── No asistió ───────────────────────────────────────────
+  noAsistio(item: ProgramacionClinicaDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Marcar como No asistió?',
+      html: `<span style="font-size:0.87rem;color:#94a3b8">${item.workerNombre}</span>`,
+      background: '#1e293b',
+      color: '#f1f5f9',
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#334155',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, no asistió',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.ejecutarAccion(item.id, { id: item.id, accion: 'No Asistió' });
+    });
+  }
+
   // ── CheckIn ──────────────────────────────────────────────
   checkIn(item: ProgramacionClinicaDto): void {
     const hora = new Date().toTimeString().slice(0, 5);

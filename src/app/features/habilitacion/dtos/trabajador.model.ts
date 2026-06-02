@@ -14,7 +14,7 @@ export interface WorkerHabilitacionListDto {
   obraOficina?: string;
   tieneEmo?: boolean;
   diasRestantesEmo?: number | null;
-  estadoProgramacionEmo?: 'Programado' | 'Aceptado' | 'En Atención' | 'Interconsulta' | null;
+  estadoProgramacionEmo?: string | null;
 }
 
 export interface WorkerEntregableDto {
