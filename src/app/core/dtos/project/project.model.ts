@@ -23,4 +23,5 @@ export interface ProjectGetDTO {
     updatedDateTime?: string;
     updatedUserId?: number;
     active: boolean;
+    fotoUrl?: string;
 }

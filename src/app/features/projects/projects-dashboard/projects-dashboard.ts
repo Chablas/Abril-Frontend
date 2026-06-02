@@ -8,7 +8,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   ProjectsDashboardService,
   ProjectsDashboardParams,
-} from '../../../core/services/projects-dashboard.service';
+} from './services/projects-dashboard.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import {
@@ -17,7 +17,7 @@ import {
   ProjectsDashboardItemDTO,
   ProyectoDetalleDTO,
   ResponsableSimpleDTO,
-} from '../../../core/dtos/projects-dashboard/projectsDashboard.model';
+} from './dtos/projectsDashboard.model';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 
 Chart.register(...registerables, ChartDataLabels);
