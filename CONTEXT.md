@@ -462,6 +462,20 @@ Todos los servicios apuntan a `${environment.apiUrl}api/v1/<resource>`.
 | GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged`             |
 | —                     | `/api/v1/projectResident`                             | `ProjectResidentService`                      |
 | ~~—~~                 | ~~`/api/v1/userProject`~~                             | ~~`UserProjectService`~~ (**eliminado** 2026-05-29) |
+| Método                | Endpoint                                              | Servicio                                                                        |
+| --------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| GET                   | `/api/v1/project/paged?page=N`                        | `ProjectService.getProjectPaged`                                                |
+| GET                   | `/api/v1/project/paged-with-residents?page=N`         | `ProjectService.getProjectPagedWithResidents`                                   |
+| GET                   | `/api/v1/project/with-resident-by-userId`             | `ProjectService.getWithResidentByUserId`                                        |
+| POST                  | `/api/v1/project`                                     | `ProjectService.createProject`                                                  |
+| PUT                   | `/api/v1/project`                                     | `ProjectService.editProject`                                                    |
+| DELETE                | `/api/v1/project/{id}`                                | `ProjectService.deleteProject`                                                  |
+| GET                   | `/api/v1/project/{id}/emails`                         | `ProjectService.getProjectEmails`                                               |
+| PATCH                 | `/api/v1/project/{id}/emails`                         | `ProjectService.patchProjectEmails`                                             |
+| PATCH (multipart)     | `/api/v1/project/{id}/foto`                           | `ProjectService.uploadProjectFoto` (FormData `foto`; responde `{ message, fotoUrl }`) |
+| GET (paged + filtros) | `/api/v1/project/paged?search=…&estado=…&companyId=…` | `ProjectService.getProjectsPaged`                                               |
+| —                     | `/api/v1/projectResident`                             | `ProjectResidentService`                                                        |
+| —                     | `/api/v1/userProject`                                 | `UserProjectService`                                                            |
 
 ### Configuración (proyectos)
 
@@ -599,6 +613,20 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
 
 Sub-features: lecciones, dashboard, milestone-schedule (gantt), IVT control, cuaderno obra, informes, seguimiento residentes, configuración (áreas/fases/etapas/etc.). Todos completados. Proyectos incluye botón **"Emails SSOMA"** → modal `ProjectEmailsForm` (PATCH `/api/v1/project/{id}/emails`).
+
+#### `milestone-schedule/` — Cronograma de Hitos (gantt) — 🔵 rediseño 2026-05-27
+Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt v9 free**. Vista de lista de proyectos → historial de cronogramas → gantt de hitos.
+
+- **Lista de proyectos = grid de cards** (no tabla). `schedules: ProjectGetDTO[]` (array plano — NO `PagedResponseDTO`; se asigna con `this.schedules = response.data ?? []`). Input de búsqueda con **debounce 400 ms** (`onSearchChange()` → `clearTimeout` + `setTimeout` → `loadSchedules(1, searchQuery || undefined)`): búsqueda **server-side**, no client-side; `projectsFiltered` getter simplemente devuelve `this.schedules`. `loadSchedules(page, search?)` llama `ProjectService.getProjectPagedWithResidents(page, search, 12)` (pageSize=12 fijo). Grid responsive 1/2/3/4 cols. Cada card: bloque 120px con **foto del proyecto** (`projectImages[projectId]`) o **placeholder iniciales** sobre color determinístico (`getProjectColor` hash → 8 colores, `getInitials` = 2 primeras palabras). Subida foto vía ícono cámara (hover) → `onProjectImageChange()` → `ProjectService.uploadProjectFoto()`. Ícono ojo → `openMilestoneScheduleHistory(item.projectId, item.projectDescription)` (abre historial de versiones, **no** edición).
+- **KPI cards (3)**: Total / Culminados / En proceso. Getter `kpis` sobre `ganttTasks` (`gantt.getTaskByTime()`).
+- **Estados — solo 2**: `getEstado(task)` = `task['fechaRealFin'] != null ? 'CULMINADO' : 'EN_PROCESO'`. Colores gantt vía `getGanttClass` → clases `ms-culminado` (#16a34a) / `ms-en-proceso` (#2563eb). Columna "Estado" con badges (`.estado-*`). **Reglas gantt son globales en `styles.css`** (`.gantt_task_line.ms-*`, `.gantt_task_content` overlay) — dhtmlx inyecta fuera del scope del componente.
+- **Acciones (editar / eliminar / culminar)** viven en el **modal "VER HITO"**, no en columnas del grid. `toggleCulminar()` alterna `fechaRealFin` (hoy ↔ null), sincroniza `selectedTask` y el DTO. Métodos `editTask/deleteTask/toggleCulminar` son `public` (los llama el template).
+- **Milestones (sin fecha fin)**: se construyen con `{ type:'milestone', duration:0, end_date: start_date }` (NUNCA `null`/`undefined` — dhtmlx revienta con `calculateEndDate`). `gantt.templates.task_end_date` guarda contra fechas no-Date. Render como **círculo** (no rombo): `task_class` añade `gantt_milestone`; CSS global `.gantt_task_line.gantt_milestone .gantt_task_content` = 14px redondo centrado con `translate(-50%,-50%)`.
+- **`undatedTasks: any[]`** — lista paralela para hitos sin fecha (plantilla fake-data de proyecto nuevo sin cronograma). dhtmlx-gantt ignora silenciosamente tareas con `start_date: null`; éstas se gestionan **fuera del Gantt** en `undatedTasks`. Template muestra dos estados vacíos: `*ngIf="noMilestones && undatedTasks.length > 0"` → tabla de hitos pendientes con botón "Agregar fecha" → `editUndatedTask(task)`; `*ngIf="noMilestones && undatedTasks.length === 0"` → pantalla vacía SVG. `editUndatedTask(task)` lee del array (no de `gantt.getTask()`). `saveEditTask()` detecta si el ítem está en `undatedTasks` (`findIndex` por `milestoneId`) y lo **promueve al Gantt**: `undatedTasks.splice(idx,1)` → si es el primero: `this.noMilestones=false`, `initGantt(false)`, `gantt.parse({data:[taskData],...})`; si ya hay otros en gantt: `gantt.addTask(taskData)`. `backToList()` limpia `undatedTasks = []`.
+- **`gantt.showDate(new Date())`** se llama después de **cada** `gantt.parse(...)` para posicionar el scroll en la fecha actual.
+- **Línea "Hoy"**: dhtmlx free **no tiene `addMarker`** → se dibuja `div#today-line-custom` manual en `drawTodayLine()` (posición por `gantt.getState().min/max_date`). Como vive dentro del stacking context del gantt, **no se puede poner detrás de modales solo con z-index**: las 5 flags de modal son **getter/setter** que llaman `updateTodayLineVisibility()` (oculta la línea si hay cualquier modal abierto). `BaseModal` overlay subido a `z-[1000]`/contenido `z-[1001]` (bajo SweetAlert ~1060 y loader 9998).
+- **Densidad compacta** (~zoom 80%): `row_height:28`, `bar_height:16`, `gantt.config['milestone_height']=16` (bracket notation — `milestone_height` es index-signature en dhtmlx types, dot-notation causa TS4111), `scale_height:44`; escala día con `format:'%d'` (solo número, sin nombre de mes); `min_column_width:16`; KPIs y botones con padding reducido; reglas `app-milestone-schedule .gantt_*` en `styles.css`.
+- **`gantt.config.csp = false`** al inicio de `initGantt()` — necesario para que dhtmlx no sanitice el SVG/HTML de los templates de columnas.
 
 ### `features/costs/` — ⚠️ Solo Adjudicaciones
 
@@ -2796,8 +2824,8 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 
 ### Archivos nuevos creados
 
-- `core/dtos/projects-dashboard/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
-- `core/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
+- `features/projects/projects-dashboard/dtos/projectsDashboard.model.ts` — DTOs completos: `ProjectsDashboardFilterItemDTO`, `ResponsableSimpleDTO`, `ProjectsDashboardFiltersDTO`, `ProjectsDashboardItemDTO`, `ProjectsDashboardDTO`, `DistribucionEstadoDTO`, `RankingResponsableDTO`, `HeatmapSemanaDTO`, `HeatmapResponsableDTO`, `ActividadCriticaDTO`, `GanttTareaDTO`, `ProyectoDetalleDTO`.
+- `features/projects/projects-dashboard/services/projects-dashboard.service.ts` — `getFilters()`, `getDashboard(params)`, `getProjectDetail(id)`.
 - `features/projects/projects-dashboard/projects-dashboard.ts/html/css` — 8 secciones: 4 KPI cards, filtros, donut Chart.js, barras horizontales Chart.js, heatmap HTML, ranking de responsables, tabla de proyectos, panel lateral deslizable con Gantt + actividades críticas.
 
 ### Registro en routing y navegación
@@ -2809,13 +2837,14 @@ GET  /api/v1/projects-dashboard/{proyectoId}
 
 ## Sesión 2026-05-26 — Cronograma de Actividades + Ajustes Dashboard
 
-### 1. Nueva feature: Cronograma de Actividades
+### 1. Cronograma de Actividades
 
 Módulo completo para gestionar actividades de la tabla `project_activity`.
 
-**Archivos creados:**
+**Archivos:**
 
-- `core/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/services/cronograma-actividades.service.ts`
+- `features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts`
 - `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css`
 
 **Endpoints:**
@@ -2827,13 +2856,37 @@ POST   /api/v1/cronograma-actividades/{proyectoId}/actividades
 PUT    /api/v1/cronograma-actividades/actividades/{id}
 PATCH  /api/v1/cronograma-actividades/actividades/{id}/culminar
 DELETE /api/v1/cronograma-actividades/actividades/{id}
+POST   /api/v1/cronograma-actividades/{proyectoId}/importar-mpp   (FormData: archivo)
 ```
 
-**DTOs:** `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`, `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order }`.
+**DTOs:**
+- `ProyectoSimpleDto { projectId, projectDescription, responsableUdp }`
+- `ActividadDto { projectActivityId, projectId, activityDescription, plannedStartDate, plannedEndDate, actualEndDate, progressPercentage, order, hierarchyLevel, parentId }`
 
-**Funcionalidad:** dropdown de proyectos, tabla con barra de avance coloreada (verde/azul/amarillo/rojo por umbral), badges de estado (CULMINADO/VENCIDO/EN PROCESO/PENDIENTE), modal crear/editar con slider, botón culminar/desculminar, eliminar con Swal.
+**Funcionalidad:**
+- Dropdown de proyectos → carga actividades en tabla.
+- **Avance**: `getAvance(act)` devuelve `100` si `actualEndDate != null`, o `progressPercentage` si no. Barra coloreada verde/azul/amarillo/rojo por umbral.
+- **Estado**: badges CULMINADO / VENCIDO / EN PROCESO / PENDIENTE.
+- **Clic en fila** → abre modal "Editar Actividad". No hay columna de botones de acción.
+- **Modal Editar**: footer `[Eliminar] [Culminar/Desculminar] [Cancelar] [Guardar]`. Eliminar alineado a la izquierda (btn-danger, margin-right:auto). Culminar/Desculminar con btn-ghost-verde.
+- **Modal Crear**: footer solo `[Cancelar] [Guardar]`.
+- **Importar desde MS Project**: botón visible para roles `ADMINISTRADOR DE UDP` o `ADMINISTRADOR DE RESIDENTES` (`esAdmin` getter con `authService.hasRole`). Modal con `<input type="file" accept=".mpp">`. Si el proyecto ya tiene actividades, Swal de confirmación antes de llamar al backend. Spinner mientras procesa. Al completar: cerrar modal, recargar tabla, Swal éxito.
 
-**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
+**Jerarquía visual:**
+- `ActividadDto` trae `hierarchyLevel` y `parentId` del backend (en orden correcto: padres antes que hijos).
+- `buildParentIds()` → `Set<number>` de IDs que son padres (para `hasChildren()` en O(1)).
+- `buildColorMap()` → `Map<id, colorBase>` construido al cargar: recorre en orden; nivel-1 toma el siguiente color de `LEVEL1_PALETTE`; nivel-2+ hereda el color del ancestro nivel-1 (`findLevel1Color()` recursivo por `parentId`). Guarda solo el **color base** de nivel-1; las variantes claro/oscuro se resuelven vía `SHADES`.
+  - `NIVEL0_COLOR = '#3F51B5'`.
+  - `LEVEL1_PALETTE` (8): `['#2196F3','#009688','#FF9800','#E91E63','#9C27B0','#00BCD4','#F44336','#673AB7']`.
+  - `SHADES: Record<base, {claro, oscuro}>` — par claro/oscuro Material por cada color de la paleta (ej. `#2196F3 → {claro:'#E3F2FD', oscuro:'#1565C0'}`). `shadesOf(act)` busca por el base de la actividad.
+- `getRowStyle(act)` (`[ngStyle]` en `<tr>`): nivel 0 → `#3F51B5`/blanco; nivel 1 → colorBase/blanco; nivel 2+ → `claro`/`oscuro`.
+- `getBadgeStyle(act)` (`[ngStyle]` en el badge de estado, reemplaza al `[ngClass]` anterior): nivel 0/1 → `rgba(255,255,255,0.2)`/blanco; nivel 2+ → `oscuro+'26'` (tinte 15%)/`oscuro`. La etiqueta sigue de `getEstado(act).label`.
+- Filas con `[class.row-colored]` (niveles 0–1) y `[class.row-tinted]` (nivel 2+). CSS `.row-colored td`/`.row-tinted td { color: inherit }` hace que `#`, fechas y avance hereden el color de texto del nivel. `.btn-chevron { color: inherit }` → chevron blanco en 0/1, `oscuro` en 2+.
+- **Collapse/expand**: chevron ∨ (expandido) / > (colapsado, rotación CSS -90°). `collapsedIds: Set<number>`. `isVisible(act)` recursivo: sube por `parentId` hasta que ningún ancestro esté en `collapsedIds`. `toggleCollapse(act, event)` con `stopPropagation()`.
+- Estado de jerarquía (`collapsedIds`, `parentIds`, `colorMap`) se limpia al cambiar de proyecto.
+- `getEstado(act).css` (clases `badge-verde/rojo/...`) queda sin uso en el template tras pasar el badge a `[ngStyle]`; CSS scoped inofensivo.
+
+**Routing:** `proyectos-routing-module.ts` ruta `cronograma-actividades`, `canActivate: [roleGuard]`, `featureKey: 'projects.cronograma-actividades'`. Roles permitidos en ruta: `USUARIO DE UDP`, `ADMINISTRADOR DE UDP`. Ítem en `navigation.service.ts` segundo del módulo proyectos.
 
 ### 2. SearchSelect — ajuste de texto
 
@@ -3126,3 +3179,422 @@ Opción A — EmoRepository.Create retorna el interconsultaId en la respuesta de
 Opción B — Frontend llama GET /interconsultas?workerId=X&estado=Pendiente para obtener el id
 
 Recomendación: Opción A — modificar EmoCreateResponseDto para incluir interconsultaId?: int
+
+---
+
+## Sesión 2026-05-30 — Cronograma de Actividades: rediseño visual + jerarquía editable + master-detail
+
+Reescritura grande del módulo `features/projects/cronograma-actividades/`. Reemplaza la
+paleta Material previa (ver §Sesión 2026-05-26) y agrega navegación maestro-detalle,
+reordenamiento, cambio de jerarquía y cálculo recursivo de avance.
+
+**Archivos:**
+- `features/projects/cronograma-actividades/services/cronograma-actividades.service.ts` (nuevos endpoints + DTO ampliado)
+- `features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts` (interfaces separadas del service)
+- `features/projects/cronograma-actividades/cronograma-actividades.ts/html/css` (Vista 2 — detalle)
+- `features/projects/cronograma-actividades/proyectos-cronograma-list.ts/html/css` (Vista 1 — lista, **nuevo**)
+- `features/projects/proyectos-routing-module.ts` (ruta con `:proyectoId`)
+
+### Navegación maestro-detalle (router)
+
+```
+/projects/cronograma-actividades              → ProyectosCronogramaList (Vista 1)
+/projects/cronograma-actividades/:proyectoId  → CronogramaActividades  (Vista 2)
+```
+
+- **Vista 1** (`ProyectosCronogramaList`): tabla dashboard **oscura** (paleta BCS abajo). Columnas
+  NO / PROYECTO / RESPONSABLE / AVANCE. Carga proyectos con `getProyectos()` y vía `forkJoin`
+  las actividades de cada uno para calcular el avance del nodo de nivel 0 (recursivo). Proyecto
+  sin actividades o con error → 0%. Clic en fila → `router.navigate([..., projectId])`.
+- **Vista 2** (`CronogramaActividades`): lee `proyectoId` de `ActivatedRoute.snapshot`; sin id → `volver()`.
+  Header con botón **← Volver** (`volver()` → navega a la lista) + nombre del proyecto; **sin dropdown**.
+  `onProyectoChange()` quedó inerte (ya no hay selector). Resto de la lógica intacta.
+
+### Paleta BCS de jerarquía (4 niveles) — reemplaza Material
+
+`rowStyleMap: Map<id, {bg, text, border?}>` construido en `buildColorMap()`. Helpers:
+`isDarkBg(act)` (true si `text === '#E0E1DD'`), `getRowStyle`, `getChevronStyle`.
+
+- **Nivel 0**: bg `#0D1B2A`, text `#E0E1DD`.
+- **Nivel 1** (`LEVEL1_ENTRIES`, por orden de aparición): `#1B263B`, `#415A77`, `#778DA9`, `#E0E1DD`
+  (los dos primeros con texto `#E0E1DD`, los dos últimos con texto `#0D1B2A`).
+- **Nivel 2** (`NIVEL2_MAP`, derivado del ancestro nivel-1): `#2C3E56` / `#557090` / `#8fa3b8` / `#cacbc7`.
+- **Nivel 3+** (`NIVEL3_MAP`): fondo muy claro + `border-left: 3px` del color nivel-2 (vía `--lvl-border`).
+- `findAncestorBgAtLevel(act, nivel)` sube por `parentId` hasta el ancestro del nivel pedido.
+- Clases de fila: `row-dark`/`row-light` + `lvl-0..lvl-deep` (peso de fuente decreciente) + `row-bordered` (nivel 3+).
+
+### Badges adaptativos al fondo
+
+`getBadgeStyle(act)`: en filas **oscuras** devuelve colores claros semitransparentes (CULMINADO
+`#86efac`, VENCIDO `#fca5a5`, EN PROCESO `#93c5fd`, PENDIENTE `#e5e7eb`); en filas **claras**
+devuelve `{}` y el template aplica `[ngClass]="getEstado(act).css"` (clases `badge-*` estándar).
+Template: `[ngClass]="isDarkBg(act) ? '' : getEstado(act).css"`.
+
+### Columna Fin Real
+
+`getFechaRealStyle(act)`: con fecha → `#90CAF9` (fondos oscuros) / `#1565C0` (fondos claros), `opacity:1`;
+sin fecha → `{}` (hereda el color secundario de la fila con `opacity:0.75`). Reemplaza la clase `td-fecha-real`.
+La celda de actividad usa `white-space: normal; word-break: break-word` (no trunca con ellipsis).
+
+### Avance recursivo (solo visual, no se persiste)
+
+`avanceMap: Map<id, number>` reconstruido en `buildAvanceMap()` (tras cargar, culminar, eliminar).
+`calcularAvance(id)` memoizado: hoja → `progressPercentage` (o 100 si `actualEndDate`); padre →
+`Math.round(promedio simple de hijos directos)`. `getAvance(act)` lee del mapa. En fondos claros la
+barra se fuerza a `#2C3E56` (`[style.background]`); en oscuros usa las clases semáforo `fill-*`.
+
+### Drag & Drop — Order global único (Opción A)
+
+Handle en el `<td>` de orden (`td-drag-handle`, `[attr.draggable]="true"`, `(dragstart)`). Estado:
+`dragSrc`, `dragActId`, `dropTargetId`, `dropAbove`. **Regla única**: solo se reordena entre actividades
+con el **mismo `parentId`** (`mismoParentId()` / `canDropOn()` con comparación explícita de `null`).
+`onDragOver` solo hace `preventDefault()` si el destino es válido (cursor prohibido si no).
+
+`onDrop`: toma el **subárbol** de `src` (`getSubtreeSlice` — src + descendientes contiguos en el array
+depth-first), lo extrae de la lista plana, lo reinserta antes/después del destino, y recalcula `order = i+1`
+para **todas** las actividades. Envía la lista completa a `reordenarActividades`. **Éxito → actualiza el
+array local directamente** (`this.actividades = listaPlana` + rebuild de mapas, sin GET) para evitar
+parpadeo y reset de scroll; **error → solo Swal** (el array nunca se mutó, conserva el orden original).
+El mensaje de error del backend se extrae con fallback `err.error (string) ?? .message ?? .detail`.
+`recargarConEstado()` (preserva scroll de `.page-content` + `collapsedIds`) existe para recargas que sí
+hacen GET. **Nota**: el contenedor scrollable real es `.page-content` del layout, no `window`.
+
+### Botones de jerarquía (subir/bajar nivel)
+
+Columna `col-jerarquia` con dos botones `btn-jerarquia` (← / →). `canSubirNivel` (`level>0`),
+`canBajarNivel` (`level<3`). Bajar: busca hacia atrás el nodo anterior del **mismo nivel** como nuevo
+padre; si no hay → Swal "No hay un padre disponible…". Llaman `subirNivel`/`bajarNivel` con loading + recarga.
+
+### Crear actividad con nivel + padre
+
+Modal crear: selector **Nivel** (1/2/3) + selector **Padre** (visible si nivel>1, lista actividades del
+nivel inmediatamente superior vía getter `padresDisponibles`). `onFormNivelChange()` resetea el padre.
+Validación: nivel>1 sin padre → Swal. `CrearActividadRequest` ampliado con `hierarchyLevel` + `parentId`.
+
+### Selector de avance 0/50/100 + validación
+
+Modal: slider reemplazado por 3 botones (`avance-opt-0/50/100`; activo: gris/azul/verde). `onProgressChange(v)`.
+Al editar, el valor de BD se "snapea" al más cercano (`raw>=75→100`, `>=25→50`, resto `0`). **Validación**:
+en editar, avance 100% exige Fecha Real de Fin → `errorFechaReal` muestra mensaje bajo el campo y bloquea Guardar.
+
+### Endpoints nuevos (servicio)
+
+```
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/reordenar            (body: ReordenarItem[])
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/{id}/subir-nivel
+PATCH /api/v1/cronograma-actividades/{proyectoId}/actividades/{id}/bajar-nivel     (body: { parentId })
+```
+
+`ReordenarItem { projectActivityId, order }`. **Ojo**: subir/bajar-nivel llevan `{proyectoId}` en la ruta
+(se corrigió una versión previa sin él). `CrearActividadRequest` ahora incluye `hierarchyLevel` + `parentId`.
+
+---
+
+## Sesión 2026-05-31 — Cronograma de Actividades: rediseño tema claro + paleta demo
+
+### Tokens de diseño — `src/styles.css` + `@theme`
+
+Bloque `@theme` añadido en `src/styles.css` (inmediatamente después de `@import 'tailwindcss'`).
+Genera clases Tailwind `bg-abril-*`, `text-abril-*`, `border-abril-*`:
+
+| Token                   | Hex       | Uso                         |
+| ----------------------- | --------- | --------------------------- |
+| `--color-abril-ink`     | `#0D1B2A` | Nivel 0                     |
+| `--color-abril-prussian`| `#1B263B` | Nivel 1a                    |
+| `--color-abril-steel`   | `#415A77` | Nivel 1b                    |
+| `--color-abril-dusk`    | `#778DA9` | Nivel 1c                    |
+| `--color-abril-light`   | `#E0E1DD` | Nivel 1d / texto claro      |
+| `--color-abril-n2a..d`  | derivados | Nivel 2 (4 tonos)           |
+| `--color-abril-success` | `#86efac` | Badge culminado (dark ctx)  |
+| `--color-abril-danger`  | `#fca5a5` | Badge vencido (dark ctx)    |
+| `--color-abril-info`    | `#93c5fd` | Badge en proceso (dark ctx) |
+| `--color-abril-warning` | `#fde68a` | Badge pendiente (dark ctx)  |
+
+### Paleta Demo — `features/paleta-demo/`
+
+Nueva ruta pública **sin auth**: `app.routes.ts` → `{ path: 'paleta-demo', loadComponent: PaletaDemoComponent }`.
+Accesible en `http://localhost:4200/paleta-demo` sin login — sirve como referencia de design system.
+
+Página de 7 secciones (tema oscuro `#0D1B2A`, fuentes `Sora` + `DM Mono` via Google Fonts):
+1. Paleta base (5 swatches con token + hex + clase Tailwind)
+2. Derivados N2 + tokens semánticos
+3. Degradados (3 barras de gradiente)
+4. Badges en contexto oscuro y claro (side-by-side)
+5. Tabla de jerarquía con colores reales de los 4 niveles
+6. Showcase de botones (5 variantes × 2 fondos)
+7. Escala tipográfica (8 especímenes)
+
+Franja cromática en hero es interactiva: hover expande el segmento.
+
+### Vista 1 — `ProyectosCronogramaList` — rediseño tema claro
+
+**Tema**: fondo `#f0f4f8`, header oscuro `#0D1B2A` (se mantiene), cuerpo claro con tarjetas.
+
+**Paleta de colores por proyecto** (`PROJECT_COLORS[]`, 8 colores cíclicos):
+`#3B82F6, #14B8A6, #F59E0B, #A855F7, #EF4444, #10B981, #F97316, #6366F1`
+
+**Cambios en `.ts`:**
+- `getProjectColor(index)` — color cíclico del array
+- `getProjectColorGlow(index)` — rgba a 38% del mismo color para `box-shadow`
+
+**Cambios estructurales en `.html`:** `<table>` → lista de `div.project-card` con CSS Grid
+`52px 1fr 200px 220px`. El `<tr>` no soporta `border-radius`; las tarjetas sí.
+
+**Mecánica del borde lateral:**
+- `[style.--proj-color]="getProjectColor(i)"` en cada tarjeta
+- `::before` pseudo-element: `left:0; top:10px; bottom:10px; width:3px; border-radius:0 2px 2px 0`
+  → no afecta el grid layout, solo visual
+- Hover: `translateX(2px)` (sensación de anclaje al borde) + `brightness(1.035)`
+
+**Barra de avance:** fill usa `[style.background]="getProjectColor(i)"` + `box-shadow: var(--proj-glow)`
++ animación `scaleX(0→1)` al renderizarse.
+
+**Skeleton (modo claro):** shimmer `#b0c0d2 → #cdd9e6` sobre fondo `#e8edf3`.
+Responsive: la columna AVANCE desaparece en ≤768px, RESPONSABLE en ≤520px.
+
+### Vista 2 — `CronogramaActividades` — rediseño tema claro
+
+**Tema general:** fondo `#f0f4f8`, `table-card` blanco, `thead` `#e2e8f0`, separadores `#e9eef4`.
+
+**Nueva lógica de colores por jerarquía** — reemplaza la paleta BCS anterior:
+
+| Nivel | Fondo     | Texto     | Borde izquierdo                   |
+| ----- | --------- | --------- | --------------------------------- |
+| 0     | `#1B263B` | `#E0E1DD` | ninguno                           |
+| 1     | `#ffffff` | `#1B263B` | 3px `LEVEL1_COLORS[idx]` (sólido) |
+| 2     | `#f0f4f8` | `#2d3f52` | 3px `rgba(color, 0.45)`           |
+| 3+    | `#f8fafc` | `#4a6580` | 2px gris `#e9eef4` (CSS)          |
+
+`LEVEL1_COLORS` (8 colores, cíclico): mismo array que Vista 1.
+
+**Cambios en `rowStyleMap`:** tipo extendido con `color?: string` (el acento del nivel 1 que los hijos heredan).
+`buildColorMap()` reescrito; nuevos helpers: `findAncestorColorAtLevel()`, `hexToRgba()`, `getBarFillColor()`.
+
+**Separador de grupos:** `.lvl-1 td { border-top: 3px solid #f0f4f8; padding-top: 1rem }` — crea
+brecha visual entre grupos en tabla `border-collapse: collapse` sin cambiar el DOM.
+
+**Barra de avance:** fill = `getBarFillColor(act)` (color acento del mapa); nivel 0 (oscuro) mantiene
+clases semáforo `fill-verde/azul/amarillo/rojo`.
+
+**Fin Real:** `#1d4ed8` en fondos claros (era `#1565C0`).
+
+**Skeleton:** shimmer `#dde5ef → #eaeff6` sobre fondo blanco.
+
+**Drag & drop, collapse/expand, botones jerarquía: intactos.**
+
+### Estado/badges — nueva lógica 2026-05-31
+
+**Nueva firma:** `getEstado(act): 'CULMINADA' | 'VENCIDO' | 'EN PROGRESO'` (string literal, no objeto).
+
+**Lógica** (usa avance recursivo, no `progressPercentage` crudo):
+1. `getAvance(act) === 100` → `'CULMINADA'`
+2. `!act.plannedEndDate` → `'EN PROGRESO'`
+3. `new Date() > new Date(plannedEndDate)` (comparación por Date) → `'VENCIDO'`
+4. Default → `'EN PROGRESO'`
+
+**Helpers auxiliares:**
+- `getEstadoCss(act)` — devuelve clase CSS: `badge-verde` / `badge-rojo` / `badge-azul`
+- `getBadgeStyle(act)` — para filas oscuras (nivel 0): badges con color sólido opaco
+
+**Colores badge fila oscura (#1B263B):**
+- CULMINADA: `bg: #86efac, fg: #14532d`
+- VENCIDO: `bg: #fca5a5, fg: #7f1d1d`
+- EN PROGRESO: `bg: #93c5fd, fg: #1e3a5f`
+
+**Colores badge filas claras (CSS classes):**
+- `badge-verde`: `#dcfce7 / #166534`
+- `badge-rojo`: `#fee2e2 / #991b1b`
+- `badge-azul`: `#dbeafe / #1d4ed8`
+
+Template: `[ngClass]="isDarkBg(act) ? '' : getEstadoCss(act)"`, `{{ getEstado(act) }}`.
+
+---
+
+## Sesión 2026-06-01 — Cronograma de Actividades: predecesoras + cascada
+
+### DTOs nuevos (`features/projects/cronograma-actividades/dtos/cronograma-actividades.dtos.ts`)
+
+`ActividadDto` ampliado con dos campos:
+- `predecesoras: number[]` — IDs de actividades predecesoras
+- `esPadre: boolean` — true si la actividad tiene hijos (calculado por el backend)
+
+Nuevos interfaces:
+```ts
+CascadaCambioDto { projectActivityId, activityDescription,
+                   inicioAnterior, inicioNuevo, finAnterior, finNuevo }
+CascadaResultDto { hayCambios: boolean, cambios: CascadaCambioDto[] }
+ActualizarPredecesorasResultDto { projectActivityId, predecesoras, previewCascada: CascadaResultDto }
+```
+
+### Endpoints nuevos
+
+```
+PUT  /api/v1/cronograma-actividades/actividades/{id}/predecesoras
+     body: { predecessorIds: number[] }
+     response: ActualizarPredecesorasResultDto
+
+POST /api/v1/cronograma-actividades/{proyectoId}/recalcular-cascada/preview
+     response: CascadaResultDto
+
+POST /api/v1/cronograma-actividades/{proyectoId}/recalcular-cascada/aplicar
+     response: CascadaResultDto
+```
+
+### Selector de predecesoras (modal editar — solo hojas)
+
+Visible cuando `modalMode === 'editar' && !editandoAct?.esPadre`.
+
+- `formPredecesoras: number[]` — IDs seleccionados; se inicializa con `act.predecesoras ?? []` al abrir.
+- `predSearch: string` — campo de búsqueda con autocomplete.
+- `filtrarPredecesoras()` — filtra actividades hoja, excluye la actividad en edición, sus descendientes y las ya seleccionadas. Retorna hasta 8 resultados que coincidan por número de orden o descripción.
+- `getPredChipLabel(pid)` — `"N — descripción"` usando `getDisplayIndex`.
+- `agregarPredecesora(act)` — push a `formPredecesoras`, limpia `predSearch`.
+- `quitarPredecesora(id)` — filter de `formPredecesoras`.
+- `getDescendantIds(actId)` — BFS de descendientes (para excluirlos del selector).
+
+Fechas programadas deshabilitadas (`[disabled]="!!editandoAct?.esPadre"`) y con clase `field-input-readonly` cuando `esPadre`. Hint "Calculado automáticamente desde las actividades hijas" visible en ese caso.
+
+### Modal de cascada
+
+Estado: `cascadaModalOpen = false`, `cascadaPreview: CascadaResultDto | null`, `aplicandoCascada = false`.
+
+- `mostrarCascadaSiHayCambios(preview)` — si `preview.hayCambios` abre el modal.
+- `aplicarCascada()` — POST `/aplicar`; por cada `CascadaCambioDto` en `result.cambios`, patch quirúrgico `plannedStartDate`/`plannedEndDate` en `this.actividades` por `projectActivityId` → `buildAvanceMap()` + `buildColorMap()` → `cdr.detectChanges()` → cierra modal.
+- `cancelarCascada()` — cierra el modal sin tocar datos.
+
+HTML: overlay `*ngIf="cascadaModalOpen"` (no cierra al click en backdrop — requiere decisión explícita), box `.cascada-modal-box` 700px, header `#1B263B`, tabla scrolleable (`max-height: 320px`) con columnas **Actividad / Inicio ant→nuevo / Fin ant→nuevo**. Cada celda de fecha contiene `<div class="cascada-fecha-inner">` (`flex-direction: column`): fecha anterior tachada en gris → `↓` → fecha nueva en azul bold. **CSS clave**: `.cascada-td-fecha { display: table-cell; min-width: 120px }` — el `display: table-cell` es explícito para evitar que un reset o herencia flex anule el comportamiento de celda. Footer `[Cancelar] [Aplicar cambios]`, ambos `disabled` mientras `aplicandoCascada`.
+
+### Badge de predecesoras en tabla
+
+`getPredTooltip(act)` — retorna `"Predecesoras: N. nombre, ..."` para el tooltip nativo.
+
+Badge `← N` (donde N = cantidad) dentro de `.actividad-cell`, tras el texto de la actividad:
+```html
+<span *ngIf="act.predecesoras?.length" class="pred-badge" [title]="getPredTooltip(act)">
+  ← {{ act.predecesoras.length }}
+</span>
+```
+CSS `.pred-badge`: píldora `#dbeafe / #1d4ed8`, `0.65rem`, `font-weight: 700`. Variante `.row-dark .pred-badge`: `rgba(219,234,254,0.18) / #93c5fd`.
+
+### Bug fix — predecesoras silenciosamente borradas al guardar
+
+`cerrarModal()` resetea `this.formPredecesoras = []`. El flujo en `guardar()` llamaba `cerrarModal()` **antes** de llamar a `actualizarPredecesoras()`, por lo que el PUT llegaba con `predecessorIds: []` siempre.
+
+**Fix**: capturar en variables locales inmutables antes del `cerrarModal()`:
+```ts
+const actividadId  = this.editandoId!;
+const predSnapshot = [...this.formPredecesoras];
+```
+Todas las llamadas async posteriores usan `actividadId` y `predSnapshot` en vez de `this.editandoId` / `this.formPredecesoras`.
+
+---
+
+## Sesión 2026-06-01 (cont.) — Reorganización feature-local + fix modal cascada
+
+### Reorganización a arquitectura por feature
+
+`cronograma-actividades` y `projects-dashboard` migrados de arquitectura por capas a arquitectura por feature. Archivos eliminados de `core/`; movidos a subcarpetas locales `dtos/` y `services/` dentro de cada feature.
+
+**Cronograma de Actividades — estructura final:**
+```
+features/projects/cronograma-actividades/
+  ├── dtos/cronograma-actividades.dtos.ts     ← interfaces extraídas del service original
+  ├── services/cronograma-actividades.service.ts
+  ├── cronograma-actividades.ts / .html / .css
+  └── proyectos-cronograma-list.ts / .html / .css
+```
+Eliminado: `core/services/cronograma-actividades.service.ts`.
+
+**Projects Dashboard — estructura final:**
+```
+features/projects/projects-dashboard/
+  ├── dtos/projectsDashboard.model.ts
+  ├── services/projects-dashboard.service.ts
+  └── projects-dashboard.ts / .html / .css
+```
+Eliminados: `core/services/projects-dashboard.service.ts`, `core/dtos/projects-dashboard/projectsDashboard.model.ts` (+ carpeta vacía).
+
+Imports actualizados en `cronograma-actividades.ts`, `proyectos-cronograma-list.ts`, `projects-dashboard.ts`. El `projects-dashboard.service.ts` también actualizó su import interno al modelo (de `../dtos/...` relativo a `core/` → `../dtos/projectsDashboard.model` relativo a `services/`).
+
+### Fix modal cascada — columna Fin aparecía vacía
+
+**Causa raíz**: `.cascada-td-fecha { display: flex }` aplicado directamente al `<td>` anulaba `display: table-cell`, colapsando ambas celdas de fecha en la misma columna visual.
+
+**Fix**:
+- Eliminado `display: flex` del `<td>`. Agregado `display: table-cell` explícito + `min-width: 120px`.
+- Contenido interno envuelto en `<div class="cascada-fecha-inner">` (`display: flex; flex-direction: column`).
+- Flecha `→` (SVG horizontal) cambiada a `↓` (`<span class="cascada-arrow">`).
+
+**Regla general**: nunca poner `display: flex` directamente en `<td>` — usa un `<div>` wrapper interno.
+
+---
+
+## Sesión 2026-06-01 (cont.) — Cronograma: edición inline, línea base, semáforo, predecesoras, comportamiento de filas
+
+### Feature 1 — Edición inline de fechas (popover flotante)
+
+Doble click en celdas **Inicio Prog.**, **Fin Prog.**, **LB Inicio**, **LB Fin** abre un popover flotante (no expande la celda):
+
+- `startInlineEdit(act, field, event)`: captura `getBoundingClientRect()` de la celda, calcula posición con flip inteligente (si cerca del borde derecho → abre a la izquierda; cerca del fondo → abre hacia arriba). Guarda `inlinePopoverPos: { top, left }`.
+- Popover: `position: fixed; z-index: 901`, `width: 240px`, border-top `--azul`, sombra `abril-prussian`. Contiene: label del campo, `<input type="date">`, botones "✓ Confirmar" y "✗ Cancelar".
+- Backdrop: `position: fixed; inset: 0; z-index: 900` — click fuera cierra sin guardar.
+- Enter / click ✓ → `commitInlineEdit()` → `editarActividad` (fechas programadas) o `actualizarLineaBase` (LB). Para LB: si ya tenía fecha, Swal de advertencia antes de guardar.
+- Escape / click ✗ / click fuera → `cancelInlineEdit()`.
+- Modo lectura: icono lápiz 11px aparece con `opacity: 0 → 0.75` al hover (`.fecha-edit-icon`). Celda en edición: fecha aparece en gris (`.td-fecha-editing .fecha-text { color: #9ca3af }`).
+- `@ViewChild('popoverDateInput')` para autofocus al abrir.
+
+**DTOs**: `ActividadDto` ampliado con `baselineStartDate?: string | null` y `baselineEndDate?: string | null`.
+
+**Service**: `actualizarLineaBase(id, body: { baselineStartDate, baselineEndDate }): Observable<void>` → `PATCH /actividades/{id}/linea-base`.
+
+### Feature 2 — Toggle Línea Base
+
+Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). Cuando ON, aparecen 5 columnas extra en la tabla después de "Fin Prog.":
+
+| Columna | Descripción |
+|---|---|
+| LB Inicio | `baselineStartDate` — editable inline (hojas) |
+| LB Fin | `baselineEndDate` — editable inline (hojas) |
+| Desfase Ini. | `prog - lb` días; promedio en padres |
+| Desfase Fin | `prog - lb` días; promedio en padres |
+| Semáforo | verde ≤0d, amarillo 1–7d, rojo >7d |
+
+- `getDesfaseDias(act, 'start'|'end')`: hojas → diferencia directa; padres → promedio hijos.
+- `formatDesfase(dias)`: `+5d` / `-3d` / `0d` / `—`.
+- `getDesfaseClass(dias)`: `desfase-ok` / `desfase-warn` / `desfase-late`.
+- `getSemaforoClass(act)`: hojas → por desfase fin; padres → peor semáforo de hijos (recursivo). Dot 11px con box-shadow de color.
+
+### Feature 3 — Predecesoras mejoradas
+
+**Bug chips sin botón ×**: `.pred-chip { overflow: hidden }` clipeaba el botón. Fix: texto envuelto en `.pred-chip-label` con `overflow: hidden; text-overflow: ellipsis; min-width: 0`. El botón vive fuera del span recortado → siempre visible.
+
+**Navegación por teclado en dropdown**: `predDropdownIdx = -1` + `@ViewChild('predInput')`. Handler `onPredKeydown(event)`:
+- `↓` / `↑`: mueven el highlight saltando items deshabilitados; `scrollIntoView({ block: 'nearest' })`.
+- `Enter`: selecciona el item activo si no está deshabilitado.
+- `Escape`: limpia `predSearch` y cierra el dropdown.
+- Tras `agregarPredecesora`: resetea índice + refocus al input para agregar siguiente.
+
+**Búsqueda exacta por número**: si el input es solo dígitos (`/^\d+$/.test(term)`), hace match exacto de `String(getDisplayIndex(a)) === term`. Si no hay coincidencia exacta, fallback a búsqueda parcial por nombre.
+
+**Items deshabilitados con hint**: `filtrarPredecesoras()` retorna `PredResultItem[] { act, disabled, hint }`. Muestra toda actividad que hace match:
+- Es descendiente del nodo editado → `disabled: true, hint: 'Es descendiente'`
+- `wouldCreateCycle()` (BFS por grafo de predecesoras) → `disabled: true, hint: 'Crearía un ciclo'`
+- `[disabled]="item.disabled"` en el `<button>` + `.pred-result-disabled` con cursor not-allowed + `.pred-result-hint` en itálica gris.
+
+**Nodos padre con predecesoras** (cambio de restricción):
+- Sección predecesoras del modal ahora visible para TODOS los nodos (`*ngIf="modalMode === 'editar'"` sin `&& !editandoAct?.esPadre`).
+- `filtrarPredecesoras`: eliminada la línea que deshabilitaba items con `esPadre=true`.
+- `guardar()`: `if (predCambiaron)` sin guarda `!esPadre` — padres guardan sus predecesoras igual que las hojas.
+- Badge `← N` ya sin restricción de `esPadre` (siempre fue `*ngIf="act.predecesoras?.length"`).
+
+### Feature 4 — Click simple / doble click en filas
+
+- **Click simple** → `abrirModalEditar(act)` (todos los nodos, incluido nivel 1).
+- **Doble click** → `abrirGanttModal(act)`.
+- **Mecanismo**: `rowClickTimer` de 250ms. `onRowClick` programa el modal con delay cancelable. `onRowDblClick` cancela el timer y abre el Gantt directamente.
+- `(dblclick)="onRowDblClick(act)"` añadido al `<tr>`.
+- Elementos con `stopPropagation` propio (chevron, botones de nivel, drag handle, celdas fecha-editable de hojas) no se ven afectados.
+
+### CSS — budget Angular
+
+`anyComponentStyle` subido de `20kB → 28kB` en `angular.json` para acomodar el crecimiento del CSS del cronograma (actualmente ~21kB tras agregar estilos de popover, línea base, semáforo y predecesoras).

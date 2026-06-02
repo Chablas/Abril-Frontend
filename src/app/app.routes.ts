@@ -169,6 +169,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'paleta-demo',
+    loadComponent: () =>
+      import('./features/paleta-demo/paleta-demo')
+      .then(m => m.PaletaDemoComponent)
+  },
+
+  {
     path: '**',
     redirectTo: 'auth/login'
   }

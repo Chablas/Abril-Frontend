@@ -2,6 +2,27 @@
 
 @import 'tailwindcss';
 
+@theme {
+  /* ── Paleta BCS — jerarquía oscura ──────────────────────────────────────── */
+  --color-abril-ink:       #0D1B2A;   /* nivel 0 */
+  --color-abril-prussian:  #1B263B;   /* nivel 1a */
+  --color-abril-steel:     #415A77;   /* nivel 1b */
+  --color-abril-dusk:      #778DA9;   /* nivel 1c */
+  --color-abril-light:     #E0E1DD;   /* nivel 1d / texto claro */
+
+  /* Derivados nivel 2 */
+  --color-abril-n2a:       #2C3E56;
+  --color-abril-n2b:       #557090;
+  --color-abril-n2c:       #8fa3b8;
+  --color-abril-n2d:       #cacbc7;
+
+  /* Semánticos */
+  --color-abril-success:   #86efac;   /* verde claro — badge culminado */
+  --color-abril-danger:    #fca5a5;   /* rojo claro  — badge vencido  */
+  --color-abril-info:      #93c5fd;   /* azul claro  — badge en proceso */
+  --color-abril-warning:   #fde68a;   /* amarillo    — badge pendiente */
+}
+
 /* HTML: <div class="loader"></div> */
 .loader-overlay {
   position: fixed;
@@ -81,14 +102,6 @@
   border-radius: 10px;
 }
 
-/* rombo milestone */
-.custom-milestone .gantt_task_content {
-  background-color: rgb(0, 134, 165);
-  border-color: rgb(0, 134, 165);
-  border-radius: 50px;
-  height: 25px;
-  width: 25px;
-}
 
 .gantt_task_line {
   background: white !important;
@@ -110,3 +123,65 @@
 .gantt_task_line.gantt-pendiente .gantt_task_progress { background-color: #6b7280 !important; }
 
 .gantt_task_content { color: #fff !important; font-size: 11px !important; }
+
+/* Milestone-schedule — colores por estado (ms-*) */
+.gantt_task_line.ms-culminado { background-color: #16a34a !important; border-color: #15803d !important; }
+.gantt_task_line.ms-culminado .gantt_task_progress { background-color: #15803d !important; }
+
+.gantt_task_line.ms-en-proceso { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
+.gantt_task_line.ms-en-proceso .gantt_task_progress { background-color: #1d4ed8 !important; }
+
+/* Task bar content (gantt_task_content sits on top of gantt_task_line and needs its own override) */
+.custom-task.ms-culminado .gantt_task_content  { background-color: #16a34a !important; border-color: #15803d !important; }
+.custom-task.ms-en-proceso .gantt_task_content { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
+
+
+/* Today marker */
+.gantt_marker.today-line { background-color: #f59e0b; width: 2px; }
+.gantt_marker.today-line .gantt_marker_content {
+  background: #f59e0b;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Estado badge — global porque dhtmlx inyecta fuera del scope del componente */
+.estado-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.estado-culminado  { background: #dcfce7; color: #16a34a; }
+.estado-en-proceso { background: #dbeafe; color: #2563eb; }
+
+/* Ensure dhtmlx shows its native horizontal scrollbar */
+.gantt_layout_root { overflow-x: auto !important; }
+
+/* milestone-schedule — compact density */
+app-milestone-schedule .gantt_grid_scale .gantt_grid_head_cell,
+app-milestone-schedule .gantt_grid_data .gantt_cell { font-size: 11px; padding: 0 4px; }
+app-milestone-schedule .gantt_scale_cell,
+app-milestone-schedule .gantt_scale_line { font-size: 11px; }
+app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
+
+/* Milestone circles — global (dhtmlx renders outside Angular component scope) */
+.gantt_task_line.gantt_milestone {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+}
+.gantt_task_line.gantt_milestone .gantt_task_content {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+.gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2563eb !important; }
+.gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #16a34a !important; }

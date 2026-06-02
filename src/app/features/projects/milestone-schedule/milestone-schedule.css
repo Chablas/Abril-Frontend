@@ -1,0 +1,74 @@
+:host {
+  display: block;
+  overflow-x: hidden;
+}
+
+.kpi-cards {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpi-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #D6DEE5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-sub {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+/* Barras normales */
+.gantt_task_line.gantt-task-future {
+  background-color: #64bc04;
+  border-color: #4fa003;
+}
+
+.gantt_task_line.gantt-task-inprogress {
+  background-color: #0086a5;
+  border-color: #006880;
+}
+
+.gantt_task_line.gantt-task-overdue {
+  background-color: #d30000;
+  border-color: #a80000;
+}
+
+/* Hitos (diamante) */
+.gantt_task_line.gantt_milestone.gantt-task-future,
+.gantt_task_line.gantt_milestone.gantt-task-future::before {
+  background-color: #64bc04;
+  border-color: #4fa003;
+}
+
+.gantt_task_line.gantt_milestone.gantt-task-inprogress,
+.gantt_task_line.gantt_milestone.gantt-task-inprogress::before {
+  background-color: #0086a5;
+  border-color: #006880;
+}
+
+.gantt_task_line.gantt_milestone.gantt-task-overdue,
+.gantt_task_line.gantt_milestone.gantt-task-overdue::before {
+  background-color: #d30000;
+  border-color: #a80000;
+}
