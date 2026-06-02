@@ -24,6 +24,9 @@ export class LessonsDashboardService {
     if (filters.periodDate) params = params.set('periodDate', filters.periodDate);
     if (filters.userId) params = params.set('userId', String(filters.userId));
     if (filters.lessonAreaId) params = params.set('lessonAreaId', String(filters.lessonAreaId));
+    (filters.projectIds ?? []).forEach((id) => {
+      params = params.append('projectIds', String(id));
+    });
 
     return this.http.get<LessonsDashboardDataDTO>(`${this.apiUrl}/data`, {
       params,
