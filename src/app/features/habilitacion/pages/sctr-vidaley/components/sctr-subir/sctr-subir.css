@@ -1,8 +1,8 @@
 .form-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding-top: 0.25rem;
+  gap: 0.2rem;
+  padding-top: 0.2rem;
   flex: 1;
   min-height: 0;
 }
@@ -55,9 +55,9 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding-bottom: 4px;
+  padding: 0.2rem 0;
   border-bottom: 1px solid #f3f4f6;
-  margin-bottom: 2px;
+  margin-bottom: 0.2rem;
   flex-shrink: 0;
 }
 
@@ -117,8 +117,8 @@
 /* Paso 2: two-panel layout */
 .wizard-paso2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 0.6fr 1fr;
+  gap: 0.6rem;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -127,9 +127,10 @@
 .panel-workers {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   overflow: hidden;
   height: 100%;
+  padding: 0.4rem;
 }
 
 .panel-visor {
@@ -138,6 +139,23 @@
   gap: 0.5rem;
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+.drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(34, 197, 94, 0.1);
+  border: 2px dashed #16a34a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #16a34a;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .advertencia {
@@ -206,14 +224,18 @@
   border-radius: 0 0 10px 10px;
   overflow-y: auto;
   background: #ffffff;
+  padding: 0;
 }
 
 .worker-row {
-  display: flex;
-  gap: 0.65rem;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 2fr) minmax(0, 0.9fr) 4rem;
+  gap: 0.4rem;
   align-items: center;
-  padding: 0.55rem 0.75rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.72rem;
   border-bottom: 1px solid #f3f4f6;
+  overflow: hidden;
   cursor: pointer;
 }
 
@@ -226,18 +248,32 @@
 }
 
 .worker-info {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.85rem;
   color: #111827;
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
+}
+
+.worker-info strong {
+  font-size: 0.58rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+}
+
+.worker-dni {
+  font-size: 0.72rem;
+  color: #6b7280;
+  align-self: center;
+  padding: 0;
 }
 
 .worker-estado-chip {
   flex-shrink: 0;
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.3rem;
+  min-width: 0;
 }
 
 .muted-line {
@@ -433,4 +469,28 @@
   background: #f0fdf4;
   border-color: #64bc04;
   color: #15803d;
+}
+
+/* Paso 2: inputs de fecha */
+.paso2-fechas-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0;
+  margin-bottom: 0.2rem;
+}
+
+.paso2-fechas-row > div {
+  flex: 1;
+}
+
+.paso2-fechas-row input[type=date] {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  height: auto;
+}
+
+.paso2-fechas-row .field-label {
+  font-size: 0.68rem;
+  margin-bottom: 0.1rem;
 }

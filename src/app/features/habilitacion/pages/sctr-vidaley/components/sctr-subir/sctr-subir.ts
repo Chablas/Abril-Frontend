@@ -15,6 +15,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, takeUntil } from 'rxjs';
+import * as flatpickr from 'flatpickr';
+import { Spanish } from 'flatpickr/dist/l10n/es';
 import Swal from 'sweetalert2';
 import { jwtDecode } from 'jwt-decode';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
@@ -51,6 +53,11 @@ interface SctrSubirForm {
 })
 export class SctrSubir implements OnChanges, OnDestroy {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('inputFechaInicio') inputFechaInicio!: ElementRef;
+  @ViewChild('inputFechaVencimiento') inputFechaVencimiento!: ElementRef;
+
+  private fpInicio: any;
+  private fpVencimiento: any;
 
   @Input() open = false;
   @Output() closed = new EventEmitter<void>();
@@ -65,6 +72,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
   loadingWorkers = false;
   workersSeleccionados = new Set<number>();
   filtroObra: 'obra' | 'staff' | '' = '';
+  isDragging = false;
 
   esOficinaStaff = false;
   archivoObjectUrl = '';
@@ -100,6 +108,8 @@ export class SctrSubir implements OnChanges, OnDestroy {
     this.destroy$.complete();
     this.uploadCancel$.complete();
     this.revokeObjectUrl();
+    this.fpInicio?.destroy();
+    this.fpVencimiento?.destroy();
   }
 
   isAdmin(): boolean {
@@ -216,7 +226,6 @@ export class SctrSubir implements OnChanges, OnDestroy {
   get canPaso1(): boolean {
     if (!this.model.tipo || !this.model.tipoPoliza) return false;
     if (!this.model.empresaId) return false;
-    if (!this.model.fechaInicio || !this.model.vigencia) return false;
     return true;
   }
 
@@ -224,6 +233,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
     if (this.saving || this.uploadingFile) return false;
     if (!this.model.archivoUrl) return false;
     if (this.workersSeleccionados.size === 0) return false;
+    if (!this.model.fechaInicio || !this.model.vigencia) return false;
     return true;
   }
 
@@ -250,16 +260,77 @@ export class SctrSubir implements OnChanges, OnDestroy {
     return this.trabajadoresFiltrados.some((w) => this.workersSeleccionados.has(w.workerId));
   }
 
+  private _safeArchivoUrl: SafeResourceUrl | null = null;
+
   get safeArchivoUrl(): SafeResourceUrl | null {
-    return this.archivoObjectUrl
-      ? this.sanitizer.bypassSecurityTrustResourceUrl(this.archivoObjectUrl)
-      : null;
+    return this._safeArchivoUrl;
   }
 
   avanzar(): void {
     if (!this.canPaso1) return;
     this.paso = 2;
     this.loadWorkers();
+    this.cdr.detectChanges();
+    setTimeout(() => this.initFlatpickr(), 0);
+  }
+
+  private initFlatpickr(): void {
+    const fp: any = (flatpickr as any).default ?? flatpickr;
+
+    console.log('[flatpickr] initFlatpickr called, fp callable:', typeof fp);
+    console.log('[flatpickr] inputFechaInicio nativeElement:', this.inputFechaInicio?.nativeElement);
+    console.log('[flatpickr] inputFechaVencimiento nativeElement:', this.inputFechaVencimiento?.nativeElement);
+
+    this.fpInicio?.destroy();
+    this.fpVencimiento?.destroy();
+
+    if (this.inputFechaInicio?.nativeElement) {
+      this.fpInicio = fp(this.inputFechaInicio.nativeElement, {
+        locale: Spanish,
+        dateFormat: 'd/m/Y',
+        allowInput: true,
+        appendTo: document.body,
+        onChange: (dates: Date[]) => { this.model.fechaInicio = dates[0] ? this.formatDate(dates[0]) : ''; },
+        onOpen: (_d: any, _s: any, instance: any) => {
+          const handler = (e: MouseEvent) => {
+            if (!instance.calendarContainer.contains(e.target as Node)) {
+              instance.close();
+              document.removeEventListener('mousedown', handler, true);
+            }
+          };
+          setTimeout(() => document.addEventListener('mousedown', handler, true), 50);
+        },
+      });
+      console.log('[flatpickr] fpInicio initialized:', this.fpInicio);
+    } else {
+      console.warn('[flatpickr] inputFechaInicio nativeElement NO disponible');
+    }
+
+    if (this.inputFechaVencimiento?.nativeElement) {
+      this.fpVencimiento = fp(this.inputFechaVencimiento.nativeElement, {
+        locale: Spanish,
+        dateFormat: 'd/m/Y',
+        allowInput: true,
+        appendTo: document.body,
+        onChange: (dates: Date[]) => { this.model.vigencia = dates[0] ? this.formatDate(dates[0]) : ''; },
+        onOpen: (_d: any, _s: any, instance: any) => {
+          const handler = (e: MouseEvent) => {
+            if (!instance.calendarContainer.contains(e.target as Node)) {
+              instance.close();
+              document.removeEventListener('mousedown', handler, true);
+            }
+          };
+          setTimeout(() => document.addEventListener('mousedown', handler, true), 50);
+        },
+      });
+      console.log('[flatpickr] fpVencimiento initialized:', this.fpVencimiento);
+    } else {
+      console.warn('[flatpickr] inputFechaVencimiento nativeElement NO disponible');
+    }
+  }
+
+  private formatDate(d: Date): string {
+    return d.toISOString().split('T')[0];
   }
 
   volver(): void {
@@ -332,12 +403,23 @@ export class SctrSubir implements OnChanges, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
     if (!file) return;
+    input.value = '';
+    this.procesarArchivo(file);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.procesarArchivo(file);
+  }
+
+  private procesarArchivo(file: File): void {
     this.uploadCancel$.next();
     this.revokeObjectUrl();
     this.archivoObjectUrl = URL.createObjectURL(file);
+    this._safeArchivoUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.archivoObjectUrl);
     this.model.archivoNombre = file.name;
     this.model.archivoUrl = '';
-    input.value = '';
     this.uploadFile(file);
     this.cdr.detectChanges();
   }
@@ -368,6 +450,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
     if (this.archivoObjectUrl) {
       URL.revokeObjectURL(this.archivoObjectUrl);
       this.archivoObjectUrl = '';
+      this._safeArchivoUrl = null;
     }
   }
 
@@ -413,7 +496,9 @@ export class SctrSubir implements OnChanges, OnDestroy {
         this.saving = false;
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Documento creado', timer: 1500, showConfirmButton: false });
-        this.saved.emit();
+        this.model.fechaInicio = '';
+        this.model.vigencia = '';
+        this.loadWorkers();
       },
       error: (err: HttpErrorResponse) => {
         this.saving = false;
