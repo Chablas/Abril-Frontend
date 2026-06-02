@@ -19,10 +19,20 @@
       <div class="grid-2">
         <div>
           <label class="field-label">Tipo *</label>
-          <select class="field-input" [(ngModel)]="model.tipo">
-            <option value="SCTR">SCTR</option>
-            <option value="VIDA_LEY">Vida Ley</option>
-          </select>
+          @if (!esOficinaStaff) {
+            <select class="field-input" [(ngModel)]="model.tipo">
+              <option value="SCTR">SCTR</option>
+              <option value="VIDA_LEY">Vida Ley</option>
+            </select>
+          } @else {
+            <div class="tipo-badge-vidaley">Vida Ley</div>
+          }
+          <div class="ostaff-toggle-wrap">
+            <label class="ostaff-toggle" [class.ostaff-toggle--on]="esOficinaStaff">
+              <input type="checkbox" [(ngModel)]="esOficinaStaff" (change)="onEsOficinaStaffChange()" />
+              Oficina Central / Staff
+            </label>
+          </div>
         </div>
         <div>
           <label class="field-label">Tipo de póliza *</label>
@@ -41,7 +51,7 @@
         <div class="col-span-2" *ngIf="isAdmin()">
           <label class="field-label">Empresa *</label>
           <app-search-select
-            [options]="empresas"
+            [options]="empresasFiltradas"
             valueField="id"
             displayField="nombre"
             [value]="model.empresaId"
@@ -50,17 +60,19 @@
           />
         </div>
 
-        <div class="col-span-2">
-          <label class="field-label">Proyecto *</label>
-          <app-search-select
-            [options]="proyectos"
-            valueField="projectId"
-            displayField="projectDescription"
-            [value]="model.proyectoId"
-            (valueChange)="model.proyectoId = $event"
-            placeholder="Selecciona un proyecto"
-          />
-        </div>
+        @if (!esOficinaStaff) {
+          <div class="col-span-2">
+            <label class="field-label">Proyecto *</label>
+            <app-search-select
+              [options]="proyectos"
+              valueField="projectId"
+              displayField="projectDescription"
+              [value]="model.proyectoId"
+              (valueChange)="model.proyectoId = $event"
+              placeholder="Selecciona un proyecto"
+            />
+          </div>
+        }
 
         <div>
           <label class="field-label">Fecha inicio *</label>

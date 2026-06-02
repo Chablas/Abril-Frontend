@@ -66,6 +66,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
   workersSeleccionados = new Set<number>();
   filtroObra: 'obra' | 'staff' | '' = '';
 
+  esOficinaStaff = false;
   archivoObjectUrl = '';
   model: SctrSubirForm = this.empty();
   saving = false;
@@ -130,10 +131,24 @@ export class SctrSubir implements OnChanges, OnDestroy {
     this.uploadCancel$.next();
     this.uploadingFile = false;
     this.paso = 1;
+    this.esOficinaStaff = false;
     this.model = this.empty();
     this.trabajadores = [];
     this.workersSeleccionados = new Set();
     this.revokeObjectUrl();
+  }
+
+  get empresasFiltradas(): EmpresaSimpleDto[] {
+    if (!this.esOficinaStaff) return this.empresas;
+    return this.empresas.filter(e => e.esAbril);
+  }
+
+  onEsOficinaStaffChange(): void {
+    if (this.esOficinaStaff) {
+      this.model.tipo = 'VIDA_LEY';
+      this.model.proyectoId = null;
+    }
+    this.model.empresaId = null;
   }
 
   private loadInitial(): void {
@@ -264,6 +279,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
       proyectoId: this.model.proyectoId ?? undefined,
       tipo: this.model.tipo,
       tipoPoliza: this.model.tipoPoliza,
+      ...(this.esOficinaStaff ? { obraOficina: 'OficinaStaff' } : {}),
     };
 
     const estadoFiltro = this.model.tipoPoliza === 'Renovacion'
@@ -367,7 +383,7 @@ export class SctrSubir implements OnChanges, OnDestroy {
   submit(): void {
     if (!this.canSubmit) return;
 
-    if (!this.model.proyectoId) {
+    if (!this.esOficinaStaff && !this.model.proyectoId) {
       Swal.fire({ icon: 'warning', title: 'Proyecto requerido', text: 'Debes seleccionar un proyecto antes de continuar.', confirmButtonColor: '#64bc04' });
       return;
     }
