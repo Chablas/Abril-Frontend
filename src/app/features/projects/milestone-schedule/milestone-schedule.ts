@@ -138,6 +138,46 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return { total, culminados, enProceso };
   }
 
+  // ── Plantilla de hitos (noMilestones view) ────────────────────────────────
+  busqueda = '';
+  filtroActivo: 'todos' | 'sin-fecha' | 'con-fecha' = 'todos';
+
+  tieneFecha(hito: any): boolean {
+    return !!(hito.startDate || hito.endDate);
+  }
+
+  get hitosFiltrados(): any[] {
+    let result = this.undatedTasks;
+    if (this.busqueda.trim()) {
+      const q = this.busqueda.toLowerCase();
+      result = result.filter((t: any) => t.text.toLowerCase().includes(q));
+    }
+    if (this.filtroActivo === 'con-fecha') result = result.filter((t: any) =>  this.tieneFecha(t));
+    if (this.filtroActivo === 'sin-fecha') result = result.filter((t: any) => !this.tieneFecha(t));
+    return result;
+  }
+
+  get statConFecha(): number { return this.undatedTasks.filter((t: any) => this.tieneFecha(t)).length; }
+  get statSinFecha(): number { return this.undatedTasks.length - this.statConFecha; }
+  get pctConFecha(): number {
+    return this.undatedTasks.length ? Math.round(this.statConFecha / this.undatedTasks.length * 100) : 0;
+  }
+
+  onFechaChange(hito: any): void {
+    const startClean = hito.startDate?.substring(0, 10) || null;
+    const endClean   = hito.endDate?.substring(0, 10)   || null;
+    hito.startDate  = startClean ?? '';
+    hito.endDate    = endClean   ?? '';
+    hito.start_date = startClean ? this.parseStringToDate(startClean) : null;
+    hito.end_date   = endClean   ? this.parseStringToDate(endClean)   : null;
+    const idx = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules
+      .findIndex((s: any) => s.milestoneId === hito.milestoneId);
+    if (idx !== -1) {
+      this.milestoneScheduleHistoryCreateDTO.milestoneSchedules[idx].plannedStartDate = startClean ?? '';
+      this.milestoneScheduleHistoryCreateDTO.milestoneSchedules[idx].plannedEndDate   = endClean;
+    }
+  }
+
   getEstado(task: any): string {
     return task['fechaRealFin'] != null ? 'CULMINADO' : 'EN_PROCESO';
   }
@@ -422,6 +462,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               end_date: null as Date | null,
               type: 'milestone',
               duration: 0,
+              startDate: '' as string,
+              endDate: '' as string,
             })),
           ),
         )
@@ -461,8 +503,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       id: task.milestoneId,
       milestoneId: task.milestoneId,
       text: task.text,
-      plannedStartDate: task.plannedStart ?? '',
-      plannedEndDate: task.plannedEnd ?? null,
+      plannedStartDate: task.startDate ?? '',
+      plannedEndDate: task.endDate ?? null,
     };
     this.showEditModal = true;
   }
@@ -971,9 +1013,9 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       // Solo almacena las fechas en undatedTasks — la promoción al Gantt ocurre al presionar "Guardar"
       const task = this.undatedTasks[undatedIdx];
       task.start_date = startDate;
-      task.end_date = endDate;
-      task.plannedStart = startClean;
-      task.plannedEnd = endClean;
+      task.end_date   = endDate;
+      task.startDate  = startClean ?? '';
+      task.endDate    = endClean   ?? '';
     } else {
       // Actualizar tarea existente en el Gantt
       const task = gantt.getTask(item.id);

@@ -5,6 +5,19 @@ export interface ProyectoSimpleDto {
   avance: number;
 }
 
+// FIX-A: header del proyecto incluido en la respuesta de actividades
+export interface ProyectoCronogramaHeaderDto {
+  projectId: number;
+  projectDescription: string;
+  responsableUdp: string | null;
+  fechaInicio: string | null;
+}
+
+export interface ActividadesProyectoResponseDto {
+  proyecto: ProyectoCronogramaHeaderDto;
+  actividades: ActividadDto[];
+}
+
 export interface ActividadDto {
   projectActivityId: number;
   projectId: number;
@@ -62,4 +75,11 @@ export interface EditarActividadRequest {
   plannedEndDate: string | null;
   actualEndDate: string | null;
   progressPercentage: number;
+  // FIX-B: null = no tocar predecesoras, [] = eliminar todas
+  predecessorIds?: number[] | null;
+}
+
+export interface EditarActividadResultDto {
+  actividad: ActividadDto;
+  cascada: CascadaResultDto | null;
 }

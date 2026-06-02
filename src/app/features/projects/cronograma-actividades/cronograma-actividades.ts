@@ -6,13 +6,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { CronogramaActividadesService } from './services/cronograma-actividades.service';
 import {
-  ProyectoSimpleDto,
   ActividadDto,
+  ActividadesProyectoResponseDto,
+  ProyectoCronogramaHeaderDto,
   CrearActividadRequest,
   EditarActividadRequest,
+  EditarActividadResultDto,
   ReordenarItem,
   CascadaResultDto,
-  CascadaCambioDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -33,12 +34,11 @@ interface PredResultItem {
 })
 export class CronogramaActividades implements OnInit {
   // Datos
-  proyectos: ProyectoSimpleDto[] = [];
+  proyectoHeader: ProyectoCronogramaHeaderDto | null = null;
   actividades: ActividadDto[] = [];
   selectedProyectoId: number | null = null;
 
   // Cargas
-  loadingProyectos = false;
   loadingActividades = false;
   guardando = false;
 
@@ -135,7 +135,6 @@ export class CronogramaActividades implements OnInit {
       return;
     }
     this.selectedProyectoId = id;
-    this.loadProyectos();      // para mostrar nombre + responsable del proyecto
     this.loadActividades(id);
   }
 
@@ -143,46 +142,15 @@ export class CronogramaActividades implements OnInit {
     this.router.navigate(['/projects/cronograma-actividades']);
   }
 
-  get proyecto(): ProyectoSimpleDto | undefined {
-    return this.proyectos.find((p) => p.projectId === this.selectedProyectoId);
-  }
-
   // ── Carga de datos ─────────────────────────────────────────────────────────
-
-  private loadProyectos(): void {
-    this.loadingProyectos = true;
-    this.loaderService.show();
-    this.service.getProyectos().subscribe({
-      next: (res) => {
-        this.proyectos = res;
-        this.loadingProyectos = false;
-        this.loaderService.hide();
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loadingProyectos = false;
-        this.errorService.handleError(err);
-      },
-    });
-  }
-
-  onProyectoChange(id: number | null): void {
-    this.actividades = [];
-    this.collapsedIds.clear();
-    this.ganttModalAct = null;
-    this.parentIds.clear();
-    this.rowStyleMap.clear();
-    this.avanceMap.clear();
-    if (!id) return;
-    this.loadActividades(id);
-  }
 
   private loadActividades(proyectoId: number): void {
     this.loadingActividades = true;
     this.loaderService.show();
     this.service.getActividades(proyectoId).subscribe({
-      next: (res) => {
-        this.actividades = res ?? [];
+      next: (res: ActividadesProyectoResponseDto) => {
+        this.proyectoHeader = res.proyecto;
+        this.actividades    = res.actividades ?? [];
         this.buildParentIds();
         this.buildColorMap();
         this.buildAvanceMap();
@@ -788,6 +756,7 @@ export class CronogramaActividades implements OnInit {
     this.actividades[idx].plannedEndDate      = res.plannedEndDate;
     this.actividades[idx].actualEndDate       = res.actualEndDate;
     this.actividades[idx].progressPercentage  = res.progressPercentage;
+    this.actividades[idx].predecesoras        = res.predecesoras;
   }
 
   private mostrarCascadaSiHayCambios(preview: CascadaResultDto): void {
@@ -977,6 +946,17 @@ export class CronogramaActividades implements OnInit {
     return `Predecesoras: ${nombres.join(', ')}`;
   }
 
+  getPredecessorasLabel(act: ActividadDto): string {
+    if (!act.predecesoras?.length) return '';
+    const MAX = 2;
+    const nums = act.predecesoras.map((p) => {
+      const found = this.actividades.find((a) => a.projectActivityId === p);
+      return found ? this.getDisplayIndex(found) : '?';
+    });
+    if (nums.length <= MAX) return '← ' + nums.join(', ');
+    return '← ' + nums.slice(0, MAX).join(', ') + ' +' + (nums.length - MAX);
+  }
+
   // ── CRUD ───────────────────────────────────────────────────────────────────
 
   onProgressChange(val: number): void {
@@ -1025,70 +1005,33 @@ export class CronogramaActividades implements OnInit {
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
       });
     } else {
-      const esPadre = this.editandoAct?.esPadre ?? false;
+      const actividadId  = this.editandoId!;
+      const predSnapshot = [...this.formPredecesoras];
 
-      // Capturar antes de cerrarModal() para que el reset no los pise
-      const actividadId    = this.editandoId!;
-      const predSnapshot   = [...this.formPredecesoras];
-
-      // Detectar qué cambió para saber si hay que verificar cascada
       const predCambiaron =
         JSON.stringify([...predSnapshot].sort()) !==
         JSON.stringify([...(this.editandoAct?.predecesoras ?? [])].sort());
 
-      const fechasCambiaron =
-        (this.formPlannedStart || null) !== (this.editandoAct?.plannedStartDate?.slice(0, 10) ?? null) ||
-        (this.formPlannedEnd   || null) !== (this.editandoAct?.plannedEndDate?.slice(0, 10)   ?? null);
-
       const body: EditarActividadRequest = {
         activityDescription: this.formActividad.trim(),
-        plannedStartDate: this.formPlannedStart || null,
-        plannedEndDate: this.formPlannedEnd || null,
-        actualEndDate: this.formActualEnd || null,
-        progressPercentage: Number(this.formProgress) || 0,
+        plannedStartDate:    this.formPlannedStart || null,
+        plannedEndDate:      this.formPlannedEnd   || null,
+        actualEndDate:       this.formActualEnd    || null,
+        progressPercentage:  Number(this.formProgress) || 0,
+        predecessorIds:      predCambiaron ? predSnapshot : null,
       };
 
       this.service.editarActividad(actividadId, body).subscribe({
-        next: (res) => {
-          this.patchActividadLocal(res);
+        next: (res: EditarActividadResultDto) => {
+          this.patchActividadLocal(res.actividad);
           this.buildAvanceMap();
           this.guardando = false;
           this.cerrarModal();
           this.cdr.detectChanges();
 
-          // ── Verificar cascada ──────────────────────────────────────────────
-          if (predCambiaron) {
-            // Guardar predecesoras → respuesta incluye preview de cascada
-            this.service.actualizarPredecesoras(actividadId, {
-              predecessorIds: predSnapshot,
-            }).subscribe({
-              next: (predRes) => {
-                const idx = this.actividades.findIndex(
-                  (a) => a.projectActivityId === actividadId,
-                );
-                if (idx !== -1) {
-                  this.actividades[idx].predecesoras = predRes.predecesoras;
-                }
-                this.mostrarCascadaSiHayCambios(predRes.previewCascada);
-                this.cdr.detectChanges();
-              },
-              error: (err: HttpErrorResponse) => {
-                const msg =
-                  typeof err.error === 'string'
-                    ? err.error
-                    : (err.error?.message ?? err.error?.detail ?? 'Error al guardar predecesoras.');
-                Swal.fire({ icon: 'error', title: 'Predecesoras', text: msg, confirmButtonColor: '#2596be' });
-              },
-            });
-          } else if (!esPadre && fechasCambiaron) {
-            // Llamar al preview de cascada
-            this.service.previewCascada(this.selectedProyectoId!).subscribe({
-              next: (preview) => {
-                this.mostrarCascadaSiHayCambios(preview);
-                this.cdr.detectChanges();
-              },
-              error: () => { /* si falla el preview, no bloqueamos al usuario */ },
-            });
+          if (res.cascada) {
+            this.mostrarCascadaSiHayCambios(res.cascada);
+            this.cdr.detectChanges();
           }
         },
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
@@ -1156,8 +1099,9 @@ export class CronogramaActividades implements OnInit {
     this.loadingActividades = true;
     this.loaderService.show();
     this.service.getActividades(this.selectedProyectoId).subscribe({
-      next: (res) => {
-        this.actividades = res ?? [];
+      next: (res: ActividadesProyectoResponseDto) => {
+        this.proyectoHeader = res.proyecto;
+        this.actividades    = res.actividades ?? [];
         this.buildParentIds();
         this.buildColorMap();
         this.buildAvanceMap();
@@ -1262,7 +1206,7 @@ export class CronogramaActividades implements OnInit {
       };
 
       this.service.editarActividad(act.projectActivityId, body).subscribe({
-        next: (res) => { this.patchActividadLocal(res); this.buildAvanceMap(); this.cdr.detectChanges(); },
+        next: (res: EditarActividadResultDto) => { this.patchActividadLocal(res.actividad); this.buildAvanceMap(); this.cdr.detectChanges(); },
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
     } else {

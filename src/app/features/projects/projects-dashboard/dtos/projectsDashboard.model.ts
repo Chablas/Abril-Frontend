@@ -67,6 +67,11 @@ export interface ProjectsDashboardDTO {
   heatmapCarga: HeatmapResponsableDTO[];
 }
 
+// FIX-C: respuesta del endpoint unificado GET /projects-dashboard (filters + data en un solo request)
+export interface ProjectsDashboardResponseDto extends ProjectsDashboardDTO {
+  filtros: ProjectsDashboardFiltersDTO;
+}
+
 // ── Detalle de proyecto (panel lateral) ─────────────────────────────────────
 
 export interface ActividadCriticaDTO {

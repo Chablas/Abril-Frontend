@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-02 — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
+> **Última actualización**: 2026-06-02 — Regla R1 1-HTTP-1-acción aplicada a CronogramaActividades y ProjectsDashboard. Nuevos DTOs (ActividadesProyectoResponseDto, EditarActividadResultDto, ProjectsDashboardResponseDto). Badge predecesoras muestra orden con getDisplayIndex. Rediseño plantilla hitos (milestone-schedule): tabla compacta con chip PLANTILLA, subheader stats, filtros Todos/Sin fecha/Con fecha.
 
 ---
 
@@ -43,6 +43,44 @@ npm run serve:ssr:Abril   # corre dist/Abril/server/server.mjs
 Producción: `environment.prod.ts` (sustituido por `angular.json` fileReplacements).
 
 > **Nota**: `apiUrl` termina en `/`. Las rutas se concatenan como `${environment.apiUrl}api/v1/...` (sin `/` inicial).
+
+---
+
+## REGLAS DE CODIFICACIÓN (obligatorias en todo código nuevo)
+
+### R1 — 1 acción de usuario = 1 llamada HTTP
+Cada acción (ngOnInit de una página, click en detalle, cambio de filtro, cambio de página)
+debe hacer **una sola llamada HTTP**. Nunca dos llamadas en paralelo ni secuenciales
+para construir la misma vista.
+
+```typescript
+// PROHIBIDO en ngOnInit
+this.service.getDatos(page).subscribe(...);
+this.service.getFiltros().subscribe(...);  // segunda llamada prohibida
+
+// CORRECTO — el backend devuelve todo junto
+this.service.getDatosConFiltros(page).subscribe(res => {
+  this.datos = res.data;
+  this.filtros = res.filtros;
+});
+```
+
+### R2 — Sin llamadas anidadas
+Prohibido hacer una llamada HTTP y dentro del subscribe hacer otra.
+
+```typescript
+// PROHIBIDO
+this.service.getProyecto(id).subscribe(proyecto => {
+  this.service.getActividades(proyecto.id).subscribe(...); // llamada anidada prohibida
+});
+
+// CORRECTO — el endpoint GET /proyecto/{id} ya trae las actividades incluidas
+this.service.getProyectoConActividades(id).subscribe(...);
+```
+
+### R3 — Estructura por features
+DTOs y services van en `features/<nombre-feature>/dtos/` y `features/<nombre-feature>/services/`.
+No agregar nada nuevo en `core/dtos/` ni `core/services/`.
 
 ---
 
@@ -3598,3 +3636,50 @@ Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). 
 ### CSS — budget Angular
 
 `anyComponentStyle` subido de `20kB → 28kB` en `angular.json` para acomodar el crecimiento del CSS del cronograma (actualmente ~21kB tras agregar estilos de popover, línea base, semáforo y predecesoras).
+
+---
+
+## Sesión 2026-06-02 — Arquitectura, contratos API y rediseños UI
+
+### Reglas de codificación establecidas (ver sección §REGLAS al inicio)
+- R1: 1 acción de usuario = 1 llamada HTTP
+- R2: Sin llamadas anidadas en subscribe
+- R3: Estructura por features — DTOs y services en features/<nombre>/
+
+### Fixes de llamadas múltiples
+- CronogramaActividades ngOnInit: 2 llamadas → 1
+  (getActividades ahora devuelve `{ proyecto, actividades }` — loadProyectos() eliminado)
+- CronogramaActividades guardar() editar: 2 llamadas → 1
+  (predecessorIds van en el body del PUT, cascada viene en el response)
+- ProjectsDashboard ngOnInit: forkJoin eliminado → 1 llamada
+  (getDashboard() devuelve filtros incluidos en el response)
+
+### Nuevos DTOs agregados (cronograma-actividades.dtos.ts)
+- `ProyectoCronogramaHeaderDto` `{ projectId, projectDescription, responsableUdp, fechaInicio }`
+- `ActividadesProyectoResponseDto` `{ proyecto, actividades }`
+- `EditarActividadRequest` — extendido con `predecessorIds?: number[] | null`
+- `EditarActividadResultDto` `{ actividad, cascada: CascadaResultDto | null }`
+
+### Nuevos DTOs agregados (projectsDashboard.model.ts)
+- `ProjectsDashboardResponseDto` — extiende `ProjectsDashboardDTO` con campo `filtros: ProjectsDashboardFiltersDTO`
+
+### Badge predecesoras
+- Antes: mostraba conteo `← 1`
+- Ahora: muestra número de orden `← 45` o `← 45, 76` o `← 45, 76 +1`
+- `getPredecessorasLabel(act)` en `cronograma-actividades.ts` — usa `getDisplayIndex` (posición 1-based en array, igual que el tooltip)
+
+### Rediseño plantilla de hitos (milestone-schedule)
+- Quitado botón "Nuevo hito" en vista plantilla (`*ngIf="!noMilestones"`)
+- Chip `PLANTILLA` junto al nombre del proyecto (solo visible cuando `noMilestones && undatedTasks.length > 0`)
+- Subheader stats: `X hitos · X con fecha · X sin fecha · [barra 3px] X%`
+- Layout compacto tipo tabla: `# | Hito | Inicio | Fin | Estado`
+- Fechas como puntos de referencia (sin semáforo vencido/programado)
+- Badge binario: `Con fecha` / `Sin fecha`
+- Filtros: Todos / Sin fecha / Con fecha
+- Búsqueda client-side por nombre del hito
+- Propiedades de tarea renombradas: `plannedStart/plannedEnd` → `startDate/endDate`
+- Métodos: `tieneFecha()`, `hitosFiltrados`, `statConFecha`, `statSinFecha`, `pctConFecha`, `onFechaChange()`
+
+### Reestructura carpetas (confirmado en esta sesión)
+- `cronograma-actividades/dtos/` y `cronograma-actividades/services/` separados de `core/`
+- `projects-dashboard/dtos/` y `projects-dashboard/services/` separados de `core/`

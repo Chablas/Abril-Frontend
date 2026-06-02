@@ -13,9 +13,9 @@
           Volver
         </button>
         <div class="header-info">
-          <span class="page-title">{{ proyecto?.projectDescription || 'Cronograma de Actividades' }}</span>
-          <span class="page-sub" *ngIf="proyecto?.responsableUdp">
-            Responsable UDP: {{ proyecto!.responsableUdp }}
+          <span class="page-title">{{ proyectoHeader?.projectDescription || 'Cronograma de Actividades' }}</span>
+          <span class="page-sub" *ngIf="proyectoHeader?.responsableUdp">
+            Responsable UDP: {{ proyectoHeader!.responsableUdp }}
           </span>
         </div>
       </div>
@@ -221,7 +221,7 @@
                     *ngIf="act.predecesoras?.length"
                     class="pred-badge"
                     [title]="getPredTooltip(act)"
-                  >← {{ act.predecesoras.length }}</span>
+                  >{{ getPredecessorasLabel(act) }}</span>
                 </div>
               </td>
               <!-- Inicio Prog — doble click abre popover flotante (solo hojas) -->
