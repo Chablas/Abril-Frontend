@@ -99,10 +99,10 @@ export class ControlAccesoService {
     );
   }
 
-  getNoAutorizados(proyectoId: number): Observable<NoAutorizadoDto[]> {
+  getNoAutorizados(proyectoId: number, estadoHabilitacion?: string): Observable<NoAutorizadoDto[]> {
     return this.http.get<NoAutorizadoDto[]>(`${this.base}/no-autorizados`, {
       headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId }),
+      params: buildHabParams({ proyectoId, estadoHabilitacion }),
     });
   }
 

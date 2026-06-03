@@ -12,7 +12,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
 import { environment } from '../../../../../environments/environment';
 
-type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado';
+type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado' | 'No se presentó';
 
 @Component({
   selector: 'app-clinica-agenda',
@@ -112,6 +112,7 @@ export class Agenda implements OnInit {
     { key: 'En Atención', label: 'En Atención' },
     { key: 'Completado', label: 'Completado' },
     { key: 'Rechazado', label: 'Rechazado' },
+    { key: 'No se presentó', label: 'No se presentó' },
   ];
 
   constructor(
@@ -158,9 +159,10 @@ export class Agenda implements OnInit {
   get countCompletados(): number { return this.items.filter(i => i.estado === 'Completado').length; }
   get countRechazados(): number {
     return this.items.filter(i =>
-      ['Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(i.estado),
+      ['Rechazado por Clínica', 'Cancelado'].includes(i.estado),
     ).length;
   }
+  get countNoPresento(): number { return this.items.filter(i => i.estado === 'No se presentó').length; }
 
   countForFiltro(key: FiltroEstado): number {
     switch (key) {
@@ -170,6 +172,7 @@ export class Agenda implements OnInit {
       case 'En Atención': return this.countEnAtencion;
       case 'Completado': return this.countCompletados;
       case 'Rechazado': return this.countRechazados;
+      case 'No se presentó': return this.countNoPresento;
     }
   }
 
@@ -178,7 +181,7 @@ export class Agenda implements OnInit {
     let base = this.items;
     if (this.filtroEstado === 'Rechazado') {
       base = base.filter(i =>
-        ['Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(i.estado),
+        ['Rechazado por Clínica', 'Cancelado'].includes(i.estado),
       );
     } else if (this.filtroEstado) {
       base = base.filter(i => i.estado === this.filtroEstado);
@@ -639,12 +642,13 @@ export class Agenda implements OnInit {
       'En Atención': 'pill-orange',
       'Completado': 'pill-green',
       'Rechazado': 'pill-slate',
+      'No se presentó': 'pill-amber',
     };
     return map[key] ?? '';
   }
 
   esTerminal(estado: string): boolean {
-    return ['Completado', 'Rechazado por Clínica', 'Cancelado', 'No se presentó'].includes(estado);
+    return ['Completado', 'Rechazado por Clínica', 'Cancelado'].includes(estado);
   }
 
   fechaClass(fecha: string): string {

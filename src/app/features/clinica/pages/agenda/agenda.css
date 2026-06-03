@@ -162,6 +162,7 @@
 .stat-orange { color: #ea580c; }
 .stat-green  { color: #16a34a; }
 .stat-slate  { color: #64748b; }
+.stat-amber  { color: #d97706; }
 
 .controls-row {
   flex-shrink: 0;
@@ -201,6 +202,7 @@
 .pill-active.pill-orange { background: rgba(234,88,12,0.08);   border-color: rgba(234,88,12,0.35);  color: #c2410c; }
 .pill-active.pill-green  { background: rgba(22,163,74,0.08);   border-color: rgba(22,163,74,0.3);   color: #15803d; }
 .pill-active.pill-slate  { background: rgba(100,116,139,0.08); border-color: rgba(100,116,139,0.3); color: #475569; }
+.pill-active.pill-amber  { background: rgba(217,119,6,0.08);   border-color: rgba(217,119,6,0.35);  color: #b45309; }
 .pill-count {
   background: rgba(0, 0, 0, 0.07);
   border-radius: 999px;

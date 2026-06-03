@@ -18,14 +18,24 @@ export interface DashboardSummaryDTO {
   totalUsers: number;
 }
 
+export interface PendingUserDTO {
+  userId: number;
+  fullName?: string;
+  email?: string;
+  projects: string[];
+}
+
 export interface LessonsDashboardDataDTO {
   summary: DashboardSummaryDTO;
   lessonsByMonth: ChartItemDTO[];
   lessonsByProject: ChartItemDTO[];
   lessonsByArea: ChartItemDTO[];
+  lessonsByUser: ChartItemDTO[];
   lessonsByPhase: ChartItemDTO[];
   lessonsByPhaseAndStage: PhaseStageChartDTO[];
   lessonsBySubStage: ChartItemDTO[];
+  pendingPeriodLabel: string;
+  pendingUsers: PendingUserDTO[];
 }
 
 export interface DashboardPeriodDTO {
@@ -42,14 +52,21 @@ export interface DashboardAreaDTO {
   areaDescription: string;
 }
 
+export interface DashboardProjectDTO {
+  projectId: number;
+  projectDescription: string;
+}
+
 export interface LessonsDashboardFiltersDTO {
   periods: DashboardPeriodDTO[];
   users: DashboardUserDTO[];
   areas: DashboardAreaDTO[];
+  projects: DashboardProjectDTO[];
 }
 
 export interface SelectedDashboardFilters {
   periodDate: string | null;
   userId: number;
   lessonAreaId: number;
+  projectIds: number[];
 }

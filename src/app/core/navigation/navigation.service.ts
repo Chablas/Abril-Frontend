@@ -205,6 +205,7 @@ export class NavigationService {
         { label: 'Evaluar residente',  route: '/evaluaciones/evaluar',       featureKey: 'evaluaciones.evaluar' },
         { label: 'Historial',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
         { label: 'Configuración',      route: '/evaluaciones/configuracion', featureKey: 'evaluaciones.configuracion' },
+        { label: 'Asignaciones',       route: '/evaluaciones/asignaciones',  featureKey: 'evaluaciones.asignaciones' },
       ],
     },
     {

@@ -88,9 +88,14 @@
           <!-- Fila 2: DNI · empresa -->
           <div class="wc-meta">
             <span class="wc-dni">{{ w.dni }}</span>
-            <span class="wc-empresa" *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
+            <span *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
           </div>
-          <!-- Fila 3 (opcional): badge EMO programación -->
+          <!-- Fila 3 (opcional): categoría · ocupación -->
+          <div class="wc-puesto" *ngIf="w.categoria || w.ocupacion">
+            <span class="wc-tag" *ngIf="w.categoria">{{ w.categoria }}</span>
+            <span class="wc-tag" *ngIf="w.ocupacion">{{ w.ocupacion }}</span>
+          </div>
+          <!-- Fila 4 (opcional): badge EMO programación -->
           @if (w.estadoProgramacionEmo) {
             <div class="wc-emo-row">
               <span

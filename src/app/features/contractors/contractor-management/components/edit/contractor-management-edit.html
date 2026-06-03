@@ -104,6 +104,7 @@
       <div class="flex gap-2">
         <input type="email" [(ngModel)]="newEmail" (keydown.enter)="addEmail()"
           placeholder="nuevo@correo.com"
+          autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
           class="flex-1 border border-[#D6DEE5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
         <button type="button" (click)="addEmail()"
           class="px-4 py-2.5 bg-[#64BC04] text-white text-sm font-medium rounded-xl hover:bg-[#57a803] transition-colors cursor-pointer shrink-0">

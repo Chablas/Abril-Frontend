@@ -49,6 +49,12 @@ export interface InduccionListDto {
   fechaIngreso?: string;
 }
 
+export interface InduccionReprogramarDto {
+  fechaProgramada: string;
+  proyectoId: number;
+  trabajoAltura: boolean;
+}
+
 export interface InduccionBatchCreateDto {
   proyectoId: number;
   empresaId?: number;

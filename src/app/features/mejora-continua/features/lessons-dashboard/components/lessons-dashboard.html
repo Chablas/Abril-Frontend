@@ -41,6 +41,19 @@
       </app-search-select>
     </div>
 
+    <!-- Proyectos (selección múltiple) -->
+    <div class="w-[240px]">
+      <app-multi-search-select
+        label="Proyectos"
+        [options]="filters.projects"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="selected.projectIds"
+        (valueChange)="selected.projectIds = $event"
+        placeholder="Todos los proyectos">
+      </app-multi-search-select>
+    </div>
+
     <button type="button" (click)="loadDashboard()"
       class="h-[38px] px-5 bg-[#64BC04] rounded-[10px] cursor-pointer flex items-center gap-2">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -62,10 +75,26 @@
   </div>
 
   <!-- Tarjetas resumen -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-[15px]">
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8 gap-[15px]">
     <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Total lecciones</span>
       <span class="text-3xl font-bold text-[#64BC04]">{{ data?.summary?.totalLessons ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+      <span class="text-xs text-gray-500">Lecciones {{ penultMonth?.label || 'mes' }}</span>
+      <span class="text-3xl font-bold text-[#74c31d]">{{ penultMonth?.value ?? 0 }}</span>
+      <span class="text-xs font-semibold flex items-center gap-1"
+        [ngClass]="{
+          'text-[#009C87]': monthVariationPct !== null && monthVariationPct > 0,
+          'text-[#D30000]': monthVariationPct !== null && monthVariationPct < 0,
+          'text-gray-400': monthVariationPct === null || monthVariationPct === 0
+        }">
+        <ng-container *ngIf="monthVariationPct !== null; else noBase">
+          {{ monthVariationPct > 0 ? '▲' : (monthVariationPct < 0 ? '▼' : '=') }}
+          {{ monthVariationPct > 0 ? '+' : '' }}{{ monthVariationPct }}% vs. {{ antepenultMonth?.label }}
+        </ng-container>
+        <ng-template #noBase>sin comparación</ng-template>
+      </span>
     </div>
     <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Proyectos</span>
@@ -82,6 +111,19 @@
     <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Usuarios</span>
       <span class="text-3xl font-bold text-[#3c7102]">{{ data?.summary?.totalUsers ?? 0 }}</span>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+      <span class="text-xs text-gray-500">Proyecto líder</span>
+      <span class="text-base font-bold text-gray-800 line-clamp-2 leading-tight" [title]="leaderProject?.label || ''">
+        {{ leaderProject?.label || '—' }}
+      </span>
+      <span *ngIf="leaderProject" class="text-xs text-[#64BC04] font-semibold">
+        {{ leaderProject?.value }} lecciones
+      </span>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+      <span class="text-xs text-gray-500">Prom. por proyecto</span>
+      <span class="text-3xl font-bold text-[#83c936]">{{ avgPerProject }}</span>
     </div>
   </div>
 
@@ -149,12 +191,65 @@
     </ng-template>
   </div>
 
-  <!-- Subetapa / especialidad -->
-  <div class="w-full lg:w-1/2 rounded-2xl border border-gray-200 bg-white p-5">
-    <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD</h3>
-    <div class="relative h-[300px] sm:h-[400px]">
-      <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
+  <!-- Fila: Top usuarios + Subetapa/especialidad -->
+  <div class="flex flex-col lg:flex-row gap-[20px]">
+    <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
+      <h3 class="font-semibold text-gray-800 mb-2">TOP USUARIOS (RANKING DE APORTES)</h3>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsUserChart class="absolute inset-0 w-full"></canvas>
+      </div>
     </div>
+
+    <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
+      <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD</h3>
+      <div class="relative h-[300px] sm:h-[400px]">
+        <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usuarios pendientes del mes (accionable) -->
+  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        <h3 class="font-semibold text-gray-800">USUARIOS PENDIENTES</h3>
+        <span class="text-xs bg-[#FAD5D4] text-[#D30000] rounded-full px-2 py-0.5 font-semibold">
+          {{ data?.pendingUsers?.length ?? 0 }}
+        </span>
+        <span class="text-xs text-gray-400">Período {{ data?.pendingPeriodLabel }}</span>
+      </div>
+      <a routerLink="/mejora-continua/configuration/reminders"
+        class="text-sm text-[#0086A5] hover:underline flex items-center gap-1">
+        Gestionar recordatorios
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </a>
+    </div>
+
+    <div *ngIf="data?.pendingUsers?.length; else allDone"
+      class="max-h-[280px] overflow-y-auto divide-y divide-gray-100">
+      <div *ngFor="let u of data?.pendingUsers" class="py-2.5 flex flex-col sm:flex-row sm:items-center gap-2">
+        <div class="sm:w-[280px] flex flex-col">
+          <span class="text-sm font-medium text-gray-800">{{ u.fullName }}</span>
+          <a *ngIf="u.email" [href]="'mailto:' + u.email" class="text-xs text-[#0086A5] hover:underline">
+            {{ u.email }}
+          </a>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <span *ngFor="let p of u.projects"
+            class="text-xs bg-gray-100 text-gray-600 border border-gray-200 rounded px-2 py-0.5">
+            {{ p }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #allDone>
+      <div class="py-6 text-center text-sm text-[#009C87]">
+        🎉 ¡Todos al día! No hay usuarios pendientes en el período {{ data?.pendingPeriodLabel }}.
+      </div>
+    </ng-template>
   </div>
 
 </div>
