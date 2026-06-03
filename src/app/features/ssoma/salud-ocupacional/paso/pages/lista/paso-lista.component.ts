@@ -70,7 +70,7 @@ export class PasoListaComponent implements OnInit {
   }
 
   verDetalle(id: number): void {
-    this.router.navigate(['/ssoma/salud-ocupacional/paso', id]);
+    this.router.navigate(['/ssoma/gestion/paso', id]);
   }
 
   aprobar(item: PasoDto): void {
@@ -118,7 +118,7 @@ export class PasoListaComponent implements OnInit {
         this.saving = false;
         this.crearOpen = false;
         Swal.fire('Creado', '', 'success');
-        this.router.navigate(['/ssoma/salud-ocupacional/paso', paso.id]);
+        this.router.navigate(['/ssoma/gestion/paso', paso.id]);
       },
       error: (err: HttpErrorResponse) => {
         this.saving = false;
