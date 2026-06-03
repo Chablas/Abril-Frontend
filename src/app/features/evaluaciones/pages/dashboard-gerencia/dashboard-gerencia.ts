@@ -410,4 +410,10 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
     const userIds = [...new Set(tendencia.map((t) => t.userId))];
     this.selectResidenteTendencia(userIds[dsIdx]);
   }
+
+  get hasAsignaciones(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const raw = localStorage.getItem('allowed_features');
+    return raw ? (JSON.parse(raw) as string[]).includes('evaluaciones.asignaciones') : false;
+  }
 }

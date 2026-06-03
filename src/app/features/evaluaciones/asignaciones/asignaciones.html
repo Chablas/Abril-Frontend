@@ -1,0 +1,87 @@
+<div class="asig-root">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo-mark">Ev</div>
+    <span class="logo-name">Evaluaciones · Asignaciones</span>
+    <div class="logo-sep"></div>
+    <nav class="top-nav">
+      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
+      <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
+      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
+      <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
+      <span class="nt active"><i class="ti ti-user-check"></i> Asignaciones</span>
+    </nav>
+  </div>
+
+  <!-- BODY -->
+  <div class="asig-body">
+    <div class="asig-loading" *ngIf="loading">
+      <i class="ti ti-loader-2 spin"></i>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <ng-container *ngFor="let subarea of subareas">
+        <div class="section-header">
+          <span class="section-title">{{ subarea }}</span>
+          <span class="section-count">{{ supervisoresBySubarea(subarea).length }} supervisores</span>
+        </div>
+        <div class="sup-list">
+          <div class="sup-card" *ngFor="let s of supervisoresBySubarea(subarea)">
+            <div class="sup-info">
+              <div class="sup-avatar">{{ initials(s.nombreCompleto) }}</div>
+              <div class="sup-meta">
+                <div class="sup-nombre">{{ s.nombreCompleto }}</div>
+                <div class="sup-cargo">{{ s.cargo }}</div>
+              </div>
+            </div>
+            <div class="sup-proyectos">
+              <ng-container *ngIf="s.proyectos.length > 0; else sinProyectos">
+                <span class="chip" *ngFor="let p of s.proyectos">{{ p.projectDescription }}</span>
+              </ng-container>
+              <ng-template #sinProyectos>
+                <span class="badge-sin">Sin proyectos</span>
+              </ng-template>
+            </div>
+            <button class="btn-editar" (click)="abrirModal(s)">
+              <i class="ti ti-edit"></i> Editar
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" *ngIf="modalAbierto" (click)="cerrarModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Asignar Proyectos</div>
+          <div class="modal-sub" *ngIf="supervisorEditando">{{ supervisorEditando.nombreCompleto }}</div>
+        </div>
+        <button class="modal-close" (click)="cerrarModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div
+          class="proyecto-check"
+          *ngFor="let p of proyectos"
+          (click)="toggleProyecto(p.projectId)">
+          <div class="check-box" [class.checked]="seleccionados.has(p.projectId)">
+            <i class="ti ti-check" *ngIf="seleccionados.has(p.projectId)"></i>
+          </div>
+          <span class="check-label">{{ p.projectDescription }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="modal-count">
+          {{ seleccionados.size }} proyecto{{ seleccionados.size !== 1 ? 's' : '' }} seleccionado{{ seleccionados.size !== 1 ? 's' : '' }}
+        </span>
+        <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-save" (click)="guardar()" [disabled]="guardando">
+          <i class="ti" [ngClass]="guardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+          {{ guardando ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

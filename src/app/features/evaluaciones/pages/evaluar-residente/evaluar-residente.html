@@ -1,5 +1,5 @@
 <div class="ev-root">
-  <!-- TOPBAR -->
+  <!-- ══ TOPBAR ══════════════════════════════════════════════════════ -->
   <div class="ev-topbar">
     <div class="logo-area">
       <div class="logo-mark">Ev</div>
@@ -11,6 +11,7 @@
       <span class="nt active"><i class="ti ti-pencil"></i> Evaluar</span>
       <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
       <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
+      <span class="nt" *ngIf="hasAsignaciones" routerLink="/evaluaciones/asignaciones"><i class="ti ti-user-check"></i> Asignaciones</span>
     </nav>
     <div class="topbar-right" *ngIf="periodo">
       <div class="period-chip">
@@ -23,132 +24,174 @@
 
   <div class="ev-body">
 
-    <!-- ── RESIDENTE ───────────────────────────── -->
-    <div class="res-block">
+    <!-- ══ VISTA LISTA: sin residente seleccionado ══════════════════ -->
+    <ng-container *ngIf="!residenteSeleccionado">
 
-      <!-- MODO A: buscador + dropdown -->
-      <ng-container *ngIf="!residenteSeleccionado && modoVerTodos">
-        <div style="position:relative">
-          <div class="residente-search">
-            <i class="ti ti-search"></i>
-            <input
-              type="text"
-              placeholder="Buscar residente por nombre..."
-              class="rs-input"
-              [(ngModel)]="busqueda"
-              autocomplete="off"
-              (focus)="dropdownAbierto = true"
-              (blur)="cerrarDropdown()" />
-          </div>
-          <div class="rs-dropdown" *ngIf="dropdownAbierto && residentesFiltrados.length > 0">
-            <div class="rs-option"
-              *ngFor="let r of residentesFiltrados"
-              (click)="seleccionarResidente(r)">
-              <div class="rs-opt-av">{{ iniciales(r.nombreCompleto) }}</div>
-              <div>
-                <div class="rs-opt-name">{{ r.nombreCompleto }}</div>
-                <div class="rs-opt-proj">{{ r.projectNombre ?? 'Sin proyecto' }}</div>
-              </div>
-            </div>
-          </div>
+      <!-- Header con período y contador -->
+      <div class="list-header">
+        <div class="lh-left">
+          <span class="lh-title">Selecciona un residente</span>
+          <span class="lh-period" *ngIf="periodo">
+            <span class="period-dot-sm"></span>
+            {{ periodo.nombreMes }} {{ periodo.anio }}
+            <span class="lh-dias">· {{ periodo.diasRestantes }} días restantes</span>
+          </span>
         </div>
-      </ng-container>
+        <div class="lh-counter">
+          <span class="counter-num">{{ evalCount }}</span>
+          <span class="counter-den">/ {{ residentes.length }}</span>
+          <span class="counter-label">evaluados</span>
+        </div>
+      </div>
 
-      <!-- MODO B: lista directa + filtro proyecto -->
-      <ng-container *ngIf="!residenteSeleccionado && !modoVerTodos">
-        <div class="proyecto-bar">
-          <span class="proy-nombre"><i class="ti ti-building"></i> {{ proyectoActivoNombre }}</span>
-          <button class="btn-cambiar-proy" (click)="mostrarSelectProyecto = !mostrarSelectProyecto">
+      <!-- Buscador (modoVerTodos) -->
+      <div class="search-wrap" *ngIf="modoVerTodos">
+        <div class="search-bar">
+          <i class="ti ti-search search-icon"></i>
+          <input class="search-input" type="text" placeholder="Buscar residente por nombre..."
+            [(ngModel)]="busqueda" autocomplete="off" />
+          <button class="search-clear" *ngIf="busqueda" (click)="busqueda = ''">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtro proyecto (!modoVerTodos) -->
+      <div class="proj-filter-wrap" *ngIf="!modoVerTodos">
+        <div class="proj-filter-bar">
+          <i class="ti ti-building proj-icon"></i>
+          <span class="proj-filter-name">{{ proyectoActivoNombre }}</span>
+          <button class="btn-switch-proj" (click)="mostrarSelectProyecto = !mostrarSelectProyecto">
             <i class="ti ti-transfer"></i> Cambiar
           </button>
         </div>
-        <div class="select-proyecto-wrap" *ngIf="mostrarSelectProyecto">
-          <select class="select-proyecto" [(ngModel)]="proyectoFiltroId" (ngModelChange)="mostrarSelectProyecto = false">
-            <option [ngValue]="null">Todos los proyectos</option>
-            <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
-          </select>
-        </div>
-        <div class="residentes-lista">
-          <div class="res-item" *ngFor="let r of residentesFiltrados" (click)="seleccionarResidente(r)">
-            <div class="res-av">{{ iniciales(r.nombreCompleto) }}</div>
-            <div class="res-info">
-              <div class="res-name">{{ r.nombreCompleto }}</div>
-              <div class="res-proj">{{ r.projectNombre ?? 'Sin proyecto' }}</div>
+        <select class="proj-select" *ngIf="mostrarSelectProyecto"
+          [(ngModel)]="proyectoFiltroId" (ngModelChange)="mostrarSelectProyecto = false">
+          <option [ngValue]="null">Todos los proyectos</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <!-- Grid de cards -->
+      <div class="cards-scroll">
+        <div class="cards-grid">
+          <div class="res-card"
+            *ngFor="let r of residentesFiltrados"
+            [class.res-card-done]="yaEvaluoResidente(r.userId)"
+            (click)="seleccionarResidente(r)">
+            <div class="card-accent" [style.background]="projColor(r.projectId).accent"></div>
+            <div class="card-avatar"
+              [style.background]="projColor(r.projectId).bg"
+              [style.color]="projColor(r.projectId).text">
+              {{ iniciales(r.nombreCompleto) }}
             </div>
-            <i class="ti ti-chevron-right" style="color:#94a3b8;font-size:10px;margin-left:auto"></i>
+            <div class="card-body">
+              <div class="card-name">{{ r.nombreCompleto }}</div>
+              <span class="card-proj-chip"
+                [style.background]="projColor(r.projectId).bg"
+                [style.color]="projColor(r.projectId).text"
+                [style.borderColor]="projColor(r.projectId).border">
+                <i class="ti ti-building" style="font-size:8px"></i>
+                {{ r.projectNombre ?? 'Sin proyecto' }}
+              </span>
+            </div>
+            <div class="card-check" *ngIf="yaEvaluoResidente(r.userId)">
+              <i class="ti ti-circle-check-filled"></i>
+              <span>Evaluado</span>
+            </div>
           </div>
-          <div class="res-empty" *ngIf="!residentesFiltrados.length">Sin residentes</div>
-        </div>
-      </ng-container>
 
-      <!-- SELECCIONADO — una línea compacta -->
-      <div class="residente-selected" *ngIf="residenteSeleccionado">
-        <div class="rs-av">{{ iniciales(residenteSeleccionado.nombreCompleto) }}</div>
-        <div class="rs-info">
-          <span class="rs-name">{{ residenteSeleccionado.nombreCompleto }}</span>
-          <span class="rs-sep">·</span>
-          <span class="rs-proj">{{ residenteSeleccionado.projectNombre ?? 'Sin proyecto' }}</span>
-          <span *ngIf="areaSeleccionada" class="rs-area-chip">· {{ areaSeleccionada }}</span>
-        </div>
-        <button class="btn-cambiar-res" (click)="cambiarResidente()">
-          <i class="ti ti-pencil"></i> Cambiar
-        </button>
-      </div>
-    </div>
-
-    <!-- ── NO APLICA ──────────────────────────── -->
-    <div class="noaplica-block" *ngIf="residenteSeleccionado">
-      <label class="no-aplica-toggle">
-        <input type="checkbox" [(ngModel)]="noAplica" />
-        <span>No aplica este mes</span>
-      </label>
-      <textarea *ngIf="noAplica" [(ngModel)]="noAplicaMotivo"
-        class="motivo-input" placeholder="Motivo obligatorio..." rows="2">
-      </textarea>
-    </div>
-
-    <!-- ── CRITERIOS 2 COLUMNAS (scrollable, flex:1) ── -->
-    <div class="criterios-scroll" *ngIf="residenteSeleccionado && !noAplica">
-      <div class="cs-sublabel">
-        1 Deficiente · 2 Regular · 3 Satisfactorio · 4 Bueno · 5 Sobresaliente · N/A
-      </div>
-      <div class="criterios-grid">
-        <div class="criterio-row" *ngFor="let d of detalles; let i = index">
-          <div class="cr-text">{{ d.criterio }}</div>
-          <div class="cr-puntajes">
-            <span class="puntaje-btn"
-              *ngFor="let p of puntajes"
-              [class.active]="d.puntaje === p"
-              (click)="setPuntaje(i, p)">{{ p }}</span>
-            <span class="puntaje-btn na-btn" [class.active]="d.esNa" (click)="setNa(i)">N/A</span>
+          <div class="cards-empty" *ngIf="!residentesFiltrados.length && !loading">
+            <i class="ti ti-users-group"></i>
+            <span>Sin residentes que mostrar</span>
+          </div>
+          <div class="cards-empty" *ngIf="loading">
+            <i class="ti ti-loader-2 spin"></i>
+            <span>Cargando...</span>
           </div>
         </div>
       </div>
-      <div class="criterios-empty" *ngIf="!detalles.length">
-        <i class="ti ti-loader" style="font-size:14px;color:#cbd5e1"></i>
-        <span>Cargando criterios...</span>
-      </div>
-    </div>
 
-    <!-- ── FOOTER STICKY ─────────────────────── -->
-    <div class="form-sticky-footer" *ngIf="residenteSeleccionado">
-      <div class="sf-row">
-        <textarea [(ngModel)]="comentario" class="comentario-input" rows="1"
-          placeholder="Oportunidades de mejora y/o fortalezas (obligatorio)...">
+    </ng-container>
+
+    <!-- ══ VISTA FORM: con residente seleccionado ════════════════════ -->
+    <ng-container *ngIf="residenteSeleccionado">
+
+      <!-- Residente seleccionado — barra compacta -->
+      <div class="res-block">
+        <div class="residente-selected">
+          <div class="rs-av"
+            [style.background]="projColor(residenteSeleccionado.projectId).bg"
+            [style.color]="projColor(residenteSeleccionado.projectId).text">
+            {{ iniciales(residenteSeleccionado.nombreCompleto) }}
+          </div>
+          <div class="rs-info">
+            <span class="rs-name">{{ residenteSeleccionado.nombreCompleto }}</span>
+            <span class="rs-sep">·</span>
+            <span class="rs-proj">{{ residenteSeleccionado.projectNombre ?? 'Sin proyecto' }}</span>
+            <span *ngIf="areaSeleccionada" class="rs-area-chip">· {{ areaSeleccionada }}</span>
+          </div>
+          <button class="btn-cambiar-res" (click)="cambiarResidente()">
+            <i class="ti ti-arrow-left"></i> Volver
+          </button>
+        </div>
+      </div>
+
+      <!-- No aplica -->
+      <div class="noaplica-block">
+        <label class="no-aplica-toggle">
+          <input type="checkbox" [(ngModel)]="noAplica" />
+          <span>No aplica este mes</span>
+        </label>
+        <textarea *ngIf="noAplica" [(ngModel)]="noAplicaMotivo"
+          class="motivo-input" placeholder="Motivo obligatorio..." rows="2">
         </textarea>
-        <span class="nota-preview" *ngIf="!noAplica">
-          <strong [ngClass]="scoreClass(notaCalculada)">{{ notaCalculada }}</strong>/20
-        </span>
-        <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
-          <i class="ti ti-device-floppy"></i>
-          {{ guardando ? 'Guardando...' : 'Guardar' }}
-        </button>
       </div>
-      <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
-      <div class="success-msg" *ngIf="successMsg">{{ successMsg }}</div>
-    </div>
 
-    <!-- ── MIS EVALUACIONES (colapsable) ─────── -->
+      <!-- Criterios 2 columnas -->
+      <div class="criterios-scroll" *ngIf="!noAplica">
+        <div class="cs-sublabel">
+          1 Deficiente · 2 Regular · 3 Satisfactorio · 4 Bueno · 5 Sobresaliente · N/A
+        </div>
+        <div class="criterios-grid">
+          <div class="criterio-row" *ngFor="let d of detalles; let i = index">
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntajes">
+              <span class="puntaje-btn"
+                *ngFor="let p of puntajes"
+                [class.active]="d.puntaje === p"
+                (click)="setPuntaje(i, p)">{{ p }}</span>
+              <span class="puntaje-btn na-btn" [class.active]="d.esNa" (click)="setNa(i)">N/A</span>
+            </div>
+          </div>
+        </div>
+        <div class="criterios-empty" *ngIf="!detalles.length">
+          <i class="ti ti-loader" style="font-size:14px;color:#cbd5e1"></i>
+          <span>Cargando criterios...</span>
+        </div>
+      </div>
+
+      <!-- Footer sticky -->
+      <div class="form-sticky-footer">
+        <div class="sf-row">
+          <textarea [(ngModel)]="comentario" class="comentario-input" rows="1"
+            placeholder="Oportunidades de mejora y/o fortalezas (obligatorio)...">
+          </textarea>
+          <span class="nota-preview" *ngIf="!noAplica">
+            <strong [ngClass]="scoreClass(notaCalculada)">{{ notaCalculada }}</strong>/20
+          </span>
+          <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+            <i class="ti ti-device-floppy"></i>
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+        <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
+        <div class="success-msg" *ngIf="successMsg">{{ successMsg }}</div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ MIS EVALUACIONES (siempre al fondo, colapsable) ══════════ -->
     <div class="mis-eval-panel">
       <div class="mep-header" (click)="misEvalColapsado = !misEvalColapsado">
         <i class="ti ti-history" style="font-size:12px;color:#6366f1"></i>

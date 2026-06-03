@@ -285,6 +285,30 @@ export class EvaluarResidente implements OnInit {
     );
   }
 
+  private readonly PROJ_PALETTE = [
+    { bg: '#eef2ff', text: '#4338ca', border: '#c7d2fe', accent: '#6366f1' },
+    { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0', accent: '#22c55e' },
+    { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', accent: '#f97316' },
+    { bg: '#fdf4ff', text: '#7e22ce', border: '#e9d5ff', accent: '#a855f7' },
+    { bg: '#f0f9ff', text: '#0369a1', border: '#bae6fd', accent: '#0ea5e9' },
+    { bg: '#fff1f2', text: '#9f1239', border: '#fecdd3', accent: '#f43f5e' },
+    { bg: '#fefce8', text: '#854d0e', border: '#fef08a', accent: '#ca8a04' },
+    { bg: '#f0fdfa', text: '#134e4a', border: '#99f6e4', accent: '#14b8a6' },
+  ];
+
+  projColor(projectId: number | null): { bg: string; text: string; border: string; accent: string } {
+    const idx = projectId === null ? 0 : Math.abs(projectId) % this.PROJ_PALETTE.length;
+    return this.PROJ_PALETTE[idx];
+  }
+
+  yaEvaluoResidente(userId: number): boolean {
+    return this.misEvaluaciones.some((e) => e.evaluadoUserId === userId);
+  }
+
+  get evalCount(): number {
+    return this.residentes.filter((r) => this.yaEvaluoResidente(r.userId)).length;
+  }
+
   scoreClass(nota: number | null): string {
     if (nota === null) return 'score-eq';
     if (nota >= 16) return 'score-hi';
@@ -299,5 +323,11 @@ export class EvaluarResidente implements OnInit {
       .map((p) => p[0])
       .join('')
       .toUpperCase();
+  }
+
+  get hasAsignaciones(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const raw = localStorage.getItem('allowed_features');
+    return raw ? (JSON.parse(raw) as string[]).includes('evaluaciones.asignaciones') : false;
   }
 }
