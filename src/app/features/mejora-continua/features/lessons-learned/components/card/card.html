@@ -17,31 +17,12 @@
       <span class="text-[11px] text-gray-500">{{ item.period?.toUpperCase() }}</span>
     </div>
 
-    <!-- Fase / Etapa / Nivel / Subetapa / Subespecialidad (solo los que existan) -->
-    <div class="flex flex-wrap gap-1 mt-0.5">
-      <span *ngIf="item.phaseDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.phaseDescription }}
-      </span>
-      <span *ngIf="item.stageDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.stageDescription }}
-      </span>
-      <span *ngIf="item.layerDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.layerDescription }}
-      </span>
-      <span *ngIf="item.subStageDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.subStageDescription }}
-      </span>
-      <span *ngIf="item.subSpecialtyDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.subSpecialtyDescription }}
-      </span>
-      <span *ngIf="item.partidaDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.partidaDescription }}
+    <!-- Clasificación: un pill por cada segmento (Fase / Etapa / Nivel / …). -->
+    <div *ngIf="item.classificationSegments?.length" class="flex flex-wrap gap-1 mt-0.5">
+      <span *ngFor="let seg of item.classificationSegments"
+        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full"
+        [title]="seg.catalogTypeName + ': ' + seg.catalogItemDescription">
+        {{ seg.catalogItemDescription }}
       </span>
     </div>
 

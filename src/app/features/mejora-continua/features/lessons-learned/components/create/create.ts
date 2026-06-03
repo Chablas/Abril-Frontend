@@ -14,9 +14,17 @@ import { ScopeItemDTO } from '../../dtos/scope-item.model';
 import { LessonAreaConfigItemDto } from '../../../configuration/lesson-areas/dtos/lesson-area.dto';
 import Swal from 'sweetalert2';
 
-interface LessonAreaOption {
-  lessonAreaId: number;
-  label: string;
+/**
+ * Nodo del árbol de áreas para el selector en cascada.
+ * Se reconstruye en el front a partir de los `path` de cada rama (hoja) devuelta
+ * por el backend. Solo las hojas llevan `lessonAreaId`.
+ */
+interface AreaTreeNode {
+  id: number; // id sintético estable para el search-select
+  name: string;
+  typeName: string;
+  lessonAreaId?: number;
+  children: AreaTreeNode[];
 }
 
 @Component({
@@ -33,7 +41,12 @@ export class CreateLesson implements OnInit {
   // Ubicación
   projectId: number = 0;
   lessonAreaId: number = 0;
-  lessonAreaOptions: LessonAreaOption[] = [];
+
+  // Selector de área en cascada (un desplegable por nivel del árbol).
+  // areaLevels[i] = opciones del nivel i; selectedAreaNodes[i] = nodo elegido en ese nivel.
+  areaLevels: AreaTreeNode[][] = [];
+  selectedAreaNodes: (AreaTreeNode | undefined)[] = [];
+  private areaNodeSeq = 0;
 
   // Árbol de scope genérico
   // Cada índice representa un nivel: levels[0] = primer nivel, etc.
@@ -122,12 +135,9 @@ export class CreateLesson implements OnInit {
     this.loaderService.show();
     this.lessonService.getLessonAreasWithScope().subscribe({
       next: (data: LessonAreaConfigItemDto[]) => {
-        this.lessonAreaOptions = data
-          .filter((d) => d.lessonAreaId != null)
-          .map((d) => ({
-            lessonAreaId: d.lessonAreaId!,
-            label: d.path.map((s) => s.areaItemName).join(' > '),
-          }));
+        const roots = this.buildAreaTree(data.filter((d) => d.lessonAreaId != null));
+        this.areaLevels = roots.length ? [roots] : [];
+        this.selectedAreaNodes = roots.length ? [undefined] : [];
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -135,6 +145,87 @@ export class CreateLesson implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /**
+   * Reconstruye el árbol de áreas a partir de los `path` de cada rama (hoja).
+   * Omite los nodos raíz cuyo tipo es 'Área de Gerencia' (el "nodo padre de todos"),
+   * de modo que el primer nivel arranque en el 'Área Estándar'. Si el primer nodo
+   * ya es 'Área Estándar', no se omite nada.
+   */
+  private buildAreaTree(items: LessonAreaConfigItemDto[]): AreaTreeNode[] {
+    this.areaNodeSeq = 0;
+    const roots: AreaTreeNode[] = [];
+
+    for (const item of items) {
+      // Quitar los segmentos raíz de tipo 'Área de Gerencia'.
+      let start = 0;
+      while (start < item.path.length && (item.path[start].areaTypeName ?? '').trim() === 'Área de Gerencia') {
+        start++;
+      }
+      const trimmed = item.path.slice(start);
+      if (trimmed.length === 0) continue;
+
+      let level = roots;
+      let node: AreaTreeNode | undefined;
+      for (const seg of trimmed) {
+        node = level.find((n) => n.name === seg.areaItemName && n.typeName === seg.areaTypeName);
+        if (!node) {
+          node = { id: ++this.areaNodeSeq, name: seg.areaItemName, typeName: seg.areaTypeName, children: [] };
+          level.push(node);
+        }
+        level = node.children;
+      }
+      // El último segmento es la hoja: lleva el lessonAreaId.
+      if (node) node.lessonAreaId = item.lessonAreaId!;
+    }
+
+    return roots;
+  }
+
+  /** Etiqueta de cada desplegable de área: el tipo de área de ese nivel. */
+  getAreaLevelLabel(levelIndex: number): string {
+    return this.areaLevels[levelIndex]?.[0]?.typeName ?? 'Área';
+  }
+
+  onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
+    const selected = selectedId
+      ? this.areaLevels[levelIndex]?.find((n) => n.id === selectedId)
+      : undefined;
+
+    this.selectedAreaNodes[levelIndex] = selected;
+
+    // Limpiar niveles inferiores
+    this.areaLevels = this.areaLevels.slice(0, levelIndex + 1);
+    this.selectedAreaNodes = this.selectedAreaNodes.slice(0, levelIndex + 1);
+
+    // Si el nodo elegido tiene hijos, mostrar el siguiente desplegable
+    if (selected?.children?.length) {
+      this.areaLevels.push(selected.children);
+      this.selectedAreaNodes.push(undefined);
+    }
+
+    this.syncLessonAreaFromCascade();
+  }
+
+  /**
+   * Calcula el lessonAreaId según el cascade: solo es válido cuando el nodo más
+   * profundo seleccionado es una HOJA (sin hijos, con lessonAreaId). Mientras se
+   * navega por nodos intermedios, lessonAreaId queda en 0 y se limpia la clasificación.
+   */
+  private syncLessonAreaFromCascade(): void {
+    const deepest = this.selectedAreaNodes.length
+      ? this.selectedAreaNodes[this.selectedAreaNodes.length - 1]
+      : undefined;
+    const newId =
+      deepest && !deepest.children.length && deepest.lessonAreaId ? deepest.lessonAreaId : 0;
+
+    if (newId === this.lessonAreaId) return;
+
+    this.lessonAreaId = newId;
+    this.scopeLevels = [];
+    this.selectedScopeItems = [];
+    if (newId) this.loadScopeData();
   }
 
   private loadScopeData(): void {
@@ -151,12 +242,6 @@ export class CreateLesson implements OnInit {
         this.errorService.handleError(err);
       },
     });
-  }
-
-  onLessonAreaChange(): void {
-    this.scopeLevels = [];
-    this.selectedScopeItems = [];
-    this.loadScopeData();
   }
 
   // ── Imágenes ─────────────────────────────────────────────────────────────────

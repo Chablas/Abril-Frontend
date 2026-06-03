@@ -22,26 +22,23 @@
     <!-- Tab: Datos generales -->
     <div [hidden]="activeTab !== 'general'" class="flex flex-col gap-5">
 
-      <!-- Metadata -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 bg-[#E5F7D1] rounded-xl p-5">
-        <!-- Columna izquierda -->
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period }}</span></p>
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Fase: </span> <span class="text-gray-800">{{ lesson.phaseDescription }}</span></p>
-
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
-        <p *ngIf="lesson.stageDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Etapa: </span> <span class="text-gray-800">{{ lesson.stageDescription }}</span></p>
-
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
-        <p *ngIf="lesson.partidaDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Partida: </span> <span class="text-gray-800">{{ lesson.partidaDescription }}</span></p>
-
-        <p *ngIf="lesson.subAreaDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Subárea: </span> <span class="text-gray-800">{{ lesson.subAreaDescription }}</span></p>
-        <p *ngIf="lesson.layerDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Nivel: </span> <span class="text-gray-800">{{ lesson.layerDescription }}</span></p>
-
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>
-        <p *ngIf="lesson.subStageDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Subetapa: </span> <span class="text-gray-800">{{ lesson.subStageDescription }}</span></p>
-
-        <p class="text-sm"><span class="text-[#64BC04] font-medium">Creado por: </span> <span class="text-gray-800">{{ lesson.createdUserFullName }}</span></p>
-        <p *ngIf="lesson.subSpecialtyDescription" class="text-sm"><span class="text-[#64BC04] font-medium">Subespecialidad: </span> <span class="text-gray-800">{{ lesson.subSpecialtyDescription }}</span></p>
+      <!-- Metadata: 2 columnas explícitas. Datos básicos a la izquierda, segmentos
+           de clasificación SIEMPRE en la 2da columna (independientemente de cuántos
+           datos básicos haya en la izquierda). -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 bg-[#E5F7D1] rounded-xl p-5">
+        <div class="flex flex-col gap-2">
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period }}</span></p>
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Creado por: </span> <span class="text-gray-800">{{ lesson.createdUserFullName }}</span></p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <p *ngFor="let seg of lesson.classificationSegments" class="text-sm">
+            <span class="text-[#64BC04] font-medium">{{ seg.catalogTypeName }}: </span>
+            <span class="text-gray-800">{{ seg.catalogItemDescription }}</span>
+          </p>
+        </div>
       </div>
 
       <!-- Campos de texto (solo lectura) -->
