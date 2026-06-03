@@ -22,10 +22,15 @@ export class LessonReminderService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getPaged(page: number, pageSize: number = 10): Observable<LessonReminderPagedDTO> {
-    const params = new HttpParams()
+  getPaged(
+    page: number,
+    pageSize: number = 10,
+    subarea?: string | null,
+  ): Observable<LessonReminderPagedDTO> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
+    if (subarea) params = params.set('subarea', subarea);
     return this.http.get<LessonReminderPagedDTO>(`${this.apiUrl}/paged`, {
       params,
       headers: this.authHeaders(),

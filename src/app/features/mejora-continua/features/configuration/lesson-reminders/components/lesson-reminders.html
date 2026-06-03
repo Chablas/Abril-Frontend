@@ -7,7 +7,19 @@
 
   <!-- SECCIÓN: Usuarios (CRUD user_project) -->
   <div *ngIf="activeSection === 'users'" class="flex flex-col gap-3">
-    <div class="flex w-full justify-end">
+    <div class="flex w-full items-end justify-between gap-3 flex-wrap">
+      <div class="w-[260px]">
+        <app-search-select
+          label="Área"
+          [options]="subareaOptions"
+          valueField="value"
+          displayField="label"
+          [value]="selectedSubarea"
+          (valueChange)="onSubareaChange($event)"
+          placeholder="Todas las áreas"
+        ></app-search-select>
+      </div>
+
       <button
         (click)="openCreateModal($event)"
         class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer"

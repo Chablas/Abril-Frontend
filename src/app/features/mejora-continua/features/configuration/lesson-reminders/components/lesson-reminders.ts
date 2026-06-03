@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { SectionTabs, SectionTab } from '../../../../../../shared/components/section-tabs/section-tabs';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
@@ -25,6 +26,7 @@ type ReminderSection = 'users' | 'staff';
     Paginator,
     SectionTabs,
     StatusBadge,
+    SearchSelect,
     LessonReminderCreate,
     ProjectStaffList,
   ],
@@ -36,6 +38,37 @@ export class LessonReminders implements OnInit {
     { id: 'users', label: 'Usuarios' },
     { id: 'staff', label: 'Staff de proyectos' },
   ];
+
+  // Subáreas (hardcodeadas) para el filtro de la lista de usuarios.
+  // Provienen de los valores distintos de workers.subarea.
+  readonly subareaOptions: { value: string; label: string }[] = [
+    'Administración',
+    'Administración Obra',
+    'Almacenero',
+    'Arquitectura',
+    'Arquitectura Comercial',
+    'Calidad',
+    'Contabilidad',
+    'Costos y Presupuestos',
+    'Finanzas',
+    'Gestión del Talento Humano',
+    'Ingeniería BIM',
+    'Legal',
+    'Logística',
+    'Marketing',
+    'Planeamiento BIM',
+    'Post Venta',
+    'Producción',
+    'Proyectos',
+    'Residencia',
+    'SSOMA',
+    'Tecnología de la Información',
+    'Trámites Documentarios',
+    'Unidad de Proyectos',
+    'Ventas',
+  ].map((s) => ({ value: s, label: s }));
+
+  selectedSubarea: string | null = null;
 
   paged: LessonReminderPagedDTO = {
     page: 0,
@@ -64,7 +97,7 @@ export class LessonReminders implements OnInit {
 
   load(page: number = 1): void {
     this.loaderService.show();
-    this.service.getPaged(page).subscribe({
+    this.service.getPaged(page, 10, this.selectedSubarea).subscribe({
       next: (res) => {
         this.paged = res;
         this.currentPage = res.page;
@@ -79,6 +112,11 @@ export class LessonReminders implements OnInit {
 
   changePage(page: number): void {
     this.load(page);
+  }
+
+  onSubareaChange(value: string | null): void {
+    this.selectedSubarea = value;
+    this.load(1);
   }
 
   openCreateModal(event: MouseEvent): void {
