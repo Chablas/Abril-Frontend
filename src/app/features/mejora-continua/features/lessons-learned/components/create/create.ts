@@ -183,11 +183,6 @@ export class CreateLesson implements OnInit {
     return roots;
   }
 
-  /** Etiqueta de cada desplegable de área: el tipo de área de ese nivel. */
-  getAreaLevelLabel(levelIndex: number): string {
-    return this.areaLevels[levelIndex]?.[0]?.typeName ?? 'Área';
-  }
-
   onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
     const selected = selectedId
       ? this.areaLevels[levelIndex]?.find((n) => n.id === selectedId)
