@@ -8,6 +8,7 @@
       <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
       <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
       <span class="nt active"><i class="ti ti-settings"></i> Configuración</span>
+      <span class="nt" *ngIf="hasAsignaciones" routerLink="/evaluaciones/asignaciones"><i class="ti ti-user-check"></i> Asignaciones</span>
     </nav>
   </div>
 

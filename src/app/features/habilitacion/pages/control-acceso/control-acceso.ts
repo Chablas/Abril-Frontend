@@ -57,6 +57,7 @@ export class ControlAcceso implements OnInit {
   noAutorizados: NoAutorizadoDto[] = [];
   loadingNoAutorizados = false;
   filtroEmpresaNA = '';
+  filtroEstadoNA: 'no-autorizados' | 'autorizados' | 'todos' = 'no-autorizados';
 
   get empresasNA(): string[] {
     return [...new Set(this.noAutorizados.map(w => w.empresaNombre).filter(Boolean))].sort() as string[];
@@ -92,6 +93,7 @@ export class ControlAcceso implements OnInit {
     this.searchQuery = '';
     this.noAutorizados = [];
     this.filtroEmpresaNA = '';
+    this.filtroEstadoNA = 'no-autorizados';
     if (this.activeTab !== 'consulta' && this.activeTab !== 'tareo') {
       this.loadTab(this.activeTab);
     }
@@ -209,10 +211,26 @@ export class ControlAcceso implements OnInit {
 
   // ── No autorizados ────────────────────────────────────────────────────────
 
+  get noAutorizadosTitulo(): string {
+    if (this.filtroEstadoNA === 'autorizados') return 'Autorizados';
+    if (this.filtroEstadoNA === 'todos') return 'Todos';
+    return 'No autorizados';
+  }
+
+  onFiltroEstadoNAChange(value: 'no-autorizados' | 'autorizados' | 'todos'): void {
+    this.filtroEstadoNA = value;
+    this.filtroEmpresaNA = '';
+    this.loadNoAutorizados();
+  }
+
   loadNoAutorizados(): void {
     if (!this.selectedProyectoId) return;
     this.loadingNoAutorizados = true;
-    this.controlAccesoService.getNoAutorizados(this.selectedProyectoId).subscribe({
+    const estadoParam =
+      this.filtroEstadoNA === 'no-autorizados' ? 'No Autorizado' :
+      this.filtroEstadoNA === 'autorizados'    ? 'Habilitado'    :
+      undefined;
+    this.controlAccesoService.getNoAutorizados(this.selectedProyectoId, estadoParam).subscribe({
       next: res => {
         this.noAutorizados = res;
         this.loadingNoAutorizados = false;

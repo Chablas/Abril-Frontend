@@ -138,6 +138,15 @@ export class NavigationService {
       ],
     },
     {
+      key: 'gestion-ssoma',
+      label: 'Gestión SSOMA',
+      iconKey: 'gestion-ssoma',
+      baseRoute: '/ssoma/gestion',
+      items: [
+        { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
+      ],
+    },
+    {
       key: 'habilitacion',
       label: 'Gestión de Ingresos',
       iconKey: 'habilitacion',
@@ -200,6 +209,7 @@ export class NavigationService {
         { label: 'Evaluar residente',  route: '/evaluaciones/evaluar',       featureKey: 'evaluaciones.evaluar' },
         { label: 'Historial',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
         { label: 'Configuración',      route: '/evaluaciones/configuracion', featureKey: 'evaluaciones.configuracion' },
+        { label: 'Asignaciones',       route: '/evaluaciones/asignaciones',  featureKey: 'evaluaciones.asignaciones' },
       ],
     },
     {

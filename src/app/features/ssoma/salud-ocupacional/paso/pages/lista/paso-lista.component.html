@@ -1,0 +1,182 @@
+<div>
+  <!-- ── Hero ─────────────────────────────────────────────────── -->
+  <div class="lista-hero">
+    <div>
+      <h1 class="lista-hero__title">Programas PASO</h1>
+      <p class="lista-hero__sub">Gestión de programas anuales de seguridad y salud</p>
+    </div>
+    <div class="lista-hero__right">
+      <span *ngIf="!loading" class="badge-count">{{ items.length }} resultado{{ items.length !== 1 ? 's' : '' }}</span>
+      <button type="button" class="btn-new" (click)="crearOpen = true">
+        <i class="ti ti-plus"></i> Nueva plantilla corporativa
+      </button>
+    </div>
+  </div>
+
+  <div class="lista-body">
+
+    <!-- ── Filtros ──────────────────────────────────────────────── -->
+    <div class="filters-card">
+      <div>
+        <div class="filter-label">Año</div>
+        <select class="filter-select" [(ngModel)]="filtros.anio" (ngModelChange)="load()">
+          <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="filter-label">Estado</div>
+        <select class="filter-select" [(ngModel)]="filtros.estado" (ngModelChange)="load()">
+          <option value="">Todos los estados</option>
+          <option value="Borrador">Borrador</option>
+          <option value="Aprobado">Aprobado</option>
+          <option value="Activo">Activo</option>
+          <option value="Cerrado">Cerrado</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="filter-label">Tipo</div>
+        <div class="filter-toggle">
+          <button type="button" [class.active]="filtros.esPlantilla === ''" (click)="filtros.esPlantilla=''; load()">Todos</button>
+          <button type="button" [class.active]="filtros.esPlantilla === 'true'" (click)="filtros.esPlantilla='true'; load()">Plantillas</button>
+          <button type="button" [class.active]="filtros.esPlantilla === 'false'" (click)="filtros.esPlantilla='false'; load()">Instancias</button>
+        </div>
+      </div>
+
+      <button *ngIf="filtros.estado || filtros.esPlantilla" type="button" class="filter-clear" (click)="filtros.estado=''; filtros.esPlantilla=''; load()">
+        <i class="ti ti-x"></i> Limpiar filtros
+      </button>
+    </div>
+
+    <!-- ── Tabla ────────────────────────────────────────────────── -->
+    <div class="table-card">
+
+      <!-- Skeleton loading -->
+      <ng-container *ngIf="loading">
+        <table class="paso-table">
+          <thead>
+            <tr>
+              <th>Nombre</th><th>Año</th><th>Proyecto</th><th class="text-center">Tipo</th><th class="text-center">Estado</th><th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let _ of [1,2,3,4,5]">
+              <td><span class="skeleton" style="height:13px;width:70%;display:block;"></span></td>
+              <td><span class="skeleton" style="height:13px;width:40px;display:block;"></span></td>
+              <td><span class="skeleton" style="height:13px;width:55%;display:block;"></span></td>
+              <td class="text-center"><span class="skeleton" style="height:20px;width:60px;display:inline-block;border-radius:999px;"></span></td>
+              <td class="text-center"><span class="skeleton" style="height:20px;width:60px;display:inline-block;border-radius:999px;"></span></td>
+              <td class="text-right"><span class="skeleton" style="height:28px;width:80px;display:inline-block;border-radius:8px;"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+
+      <!-- Empty state -->
+      <div *ngIf="!loading && !items.length" class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="8" y="12" width="48" height="40" rx="4" stroke="#d1d5db" stroke-width="2"/>
+          <path d="M8 22h48" stroke="#d1d5db" stroke-width="2"/>
+          <rect x="16" y="30" width="12" height="3" rx="1.5" fill="#d1d5db"/>
+          <rect x="16" y="37" width="20" height="3" rx="1.5" fill="#d1d5db"/>
+        </svg>
+        <p>Sin programas para los filtros seleccionados</p>
+      </div>
+
+      <!-- Tabla de datos -->
+      <table *ngIf="!loading && items.length" class="paso-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Año</th>
+            <th>Proyecto</th>
+            <th class="text-center">Tipo</th>
+            <th class="text-center">Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td><span class="cell-name" [title]="item.nombre">{{ item.nombre }}</span></td>
+            <td style="color:#6b7280;font-weight:600">{{ item.anio }}</td>
+            <td style="color:#6b7280">{{ item.proyectoNombre ?? '—' }}</td>
+            <td class="text-center">
+              <span class="badge-tipo" [ngClass]="item.esPlantilla ? 'badge-tipo--plantilla' : 'badge-tipo--instancia'">
+                <i class="ti" [ngClass]="item.esPlantilla ? 'ti-template' : 'ti-copy'"></i>
+                {{ item.esPlantilla ? 'Plantilla' : 'Instancia' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span class="badge-estado" [ngClass]="'badge-estado--' + item.estado.toLowerCase()">
+                {{ item.estado }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="row-actions">
+                <button type="button" class="row-btn row-btn--ver" (click)="verDetalle(item.id)" title="Ver detalle">
+                  <i class="ti ti-eye"></i>
+                </button>
+                <button *ngIf="item.estado === 'Borrador'" type="button" class="row-btn row-btn--aprobar" (click)="aprobar(item)" title="Aprobar programa">
+                  <i class="ti ti-check"></i>
+                </button>
+                <button *ngIf="item.esPlantilla && item.estado === 'Aprobado'" type="button" class="row-btn row-btn--instanciar" (click)="abrirInstanciar(item)" title="Instanciar">
+                  <i class="ti ti-copy"></i>
+                </button>
+                <div class="export-wrap">
+                  <button type="button" class="row-btn row-btn--export" title="Exportar"
+                    (click)="exportDropdownId = exportDropdownId === item.id ? null : item.id">
+                    <i class="ti ti-download"></i>
+                  </button>
+                  <div *ngIf="exportDropdownId === item.id" class="export-menu">
+                    <div class="export-item" (click)="exportar(item.id, 'excel')">
+                      <i class="ti ti-file-spreadsheet" style="color:#16a34a"></i> Excel
+                    </div>
+                    <div class="export-item" (click)="exportar(item.id, 'pdf')">
+                      <i class="ti ti-file-type-pdf" style="color:#dc2626"></i> PDF
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Crear ─────────────────────────────────────────────── -->
+<div *ngIf="crearOpen" class="modal-overlay" (click)="crearOpen=false">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <h3 class="modal-title">Nuevo Programa PASO</h3>
+    <div class="field">
+      <label>Nombre <span style="color:#ef4444">*</span></label>
+      <input type="text" placeholder="Ej. PASO Corporativo {{ anios[1] }}" [(ngModel)]="crearForm.nombre" />
+    </div>
+    <div class="field">
+      <label>Año</label>
+      <input type="number" [(ngModel)]="crearForm.anio" />
+    </div>
+    <label class="field-check">
+      <input type="checkbox" [(ngModel)]="crearForm.esPlantilla" />
+      Es plantilla corporativa
+    </label>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="crearOpen=false">Cancelar</button>
+      <button type="button" class="btn-save" [disabled]="saving || !crearForm.nombre.trim()" (click)="crear()">
+        <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+        {{ saving ? 'Creando...' : 'Crear programa' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Instanciar ─────────────────────────────────────────── -->
+<app-instanciar-modal
+  *ngIf="instanciarOpen && instanciarPasoId"
+  [pasoPlantillaId]="instanciarPasoId"
+  [plantillaNombre]="instanciarNombre"
+  (closed)="instanciarOpen=false"
+  (instanciaCreada)="onInstanciaCreada()">
+</app-instanciar-modal>

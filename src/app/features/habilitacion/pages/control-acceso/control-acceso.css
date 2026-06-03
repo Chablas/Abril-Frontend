@@ -383,6 +383,35 @@
   color: #dc2626;
 }
 
+.ca-noauth-count--green { color: #16a34a; }
+.ca-noauth-count--gray  { color: #6b7280; }
+
+.ca-estado-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.ca-estado-pill {
+  padding: 0.28rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.ca-estado-pill:hover { background: #f1f5f9; }
+
+.ca-estado-pill--on {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
 .ca-noauth-filter {
   margin: 0.75rem 0 0.5rem;
 }
@@ -439,6 +468,11 @@
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.ca-noauth-badge--green {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 /* ── Estados vacíos / error ──────────────────────────────────────── */

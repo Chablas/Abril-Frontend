@@ -198,8 +198,19 @@
     <ng-container *ngIf="selectedProyectoId && activeTab === 'no-autorizados'">
 
       <div class="section-bar ca-section-hdr">
-        <span class="section-title">No autorizados</span>
-        <span class="ca-noauth-count">{{ noAutorizados.length }}</span>
+        <span class="section-title">{{ noAutorizadosTitulo }}</span>
+        <span class="ca-noauth-count" [class.ca-noauth-count--green]="filtroEstadoNA === 'autorizados'" [class.ca-noauth-count--gray]="filtroEstadoNA === 'todos'">
+          {{ noAutorizadosFiltrados.length }}
+        </span>
+      </div>
+
+      <!-- Filtro estado -->
+      <div class="ca-noauth-filter">
+        <div class="ca-estado-pills">
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'no-autorizados'" (click)="onFiltroEstadoNAChange('no-autorizados')">No autorizados</button>
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'autorizados'"    (click)="onFiltroEstadoNAChange('autorizados')">Autorizados</button>
+          <button class="ca-estado-pill" [class.ca-estado-pill--on]="filtroEstadoNA === 'todos'"          (click)="onFiltroEstadoNAChange('todos')">Todos</button>
+        </div>
       </div>
 
       <!-- Filtro por empresa -->
@@ -223,7 +234,9 @@
               {{ w.empresaNombre }}<ng-container *ngIf="w.dni"> · DNI {{ w.dni }}</ng-container>
             </div>
           </div>
-          <span class="ca-noauth-badge">No autorizado</span>
+          <span class="ca-noauth-badge" [class.ca-noauth-badge--green]="w.estadoHabilitacion === 'Habilitado'">
+            {{ w.estadoHabilitacion }}
+          </span>
         </div>
       </div>
 

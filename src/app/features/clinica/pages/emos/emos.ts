@@ -15,6 +15,7 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { aptitudBadgeClass, APTITUD_CHART_ORDER } from '../../../ssoma/salud-ocupacional/shared/aptitud.utils';
 import { diasVencerBadgeClass, diasVencerStyle } from '../../../ssoma/salud-ocupacional/shared/dias-vencer.utils';
 import { EmoDetail } from '../../../ssoma/salud-ocupacional/emos/components/emo-detail/emo-detail';
+import { ProgramarEmoDialogComponent } from './programar-emo-dialog/programar-emo-dialog';
 
 interface FilterOption {
   id: string;
@@ -24,7 +25,7 @@ interface FilterOption {
 @Component({
   selector: 'app-clinica-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail, ProgramarEmoDialogComponent],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })
@@ -62,6 +63,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   loading = false;
 
   selectedEmoId: number | null = null;
+  selectedWorkerForProgramar: EmoPorTrabajadorDto | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -168,6 +170,16 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   verHistorial(item: EmoPorTrabajadorDto, event: MouseEvent): void {
     event.stopPropagation();
     this.router.navigate(['/ssoma/salud-ocupacional/emos', item.workerId, 'historial']);
+  }
+
+  abrirProgramarEmo(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedWorkerForProgramar = item;
+  }
+
+  onProgramarEmoCerrado(reload: boolean): void {
+    this.selectedWorkerForProgramar = null;
+    if (reload) this.load(this.currentPage);
   }
 
   aptitudClass(aptitud?: string): string {
