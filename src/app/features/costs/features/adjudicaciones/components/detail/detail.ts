@@ -119,6 +119,16 @@ export class Detail implements OnInit {
   /** Tipos de documento que ya tienen generación implementada en el backend. */
   private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'PromissoryNote', 'Instructivo']);
 
+  /**
+   * Documentos que NO se suben ni generan: usan un PDF de plantilla fijo del servidor.
+   * Solo se controla su estado con dos opciones: Aprobado (4) / No aplica (1).
+   */
+  private readonly templateDocs = new Set(['NonConformingOutput', 'ToleranceChart']);
+
+  isTemplateDoc(key: string): boolean {
+    return this.templateDocs.has(key);
+  }
+
   constructor(
     private adjudicacionesService: AdjudicacionesService,
     private loaderService: LoaderService,
@@ -218,7 +228,11 @@ export class Detail implements OnInit {
   get allDocsApproved(): boolean {
     return this.documents.every(doc => {
       const statusId = this.docForms[doc.key]?.statusId;
-      const hasFile  = !!this.getDocFile(doc.key);
+      // Documentos de plantilla: Aprobado no requiere archivo subido (usan PDF estándar).
+      if (this.isTemplateDoc(doc.key)) {
+        return statusId === 1 || statusId === 4;
+      }
+      const hasFile = !!this.getDocFile(doc.key);
       return statusId === 1 || (statusId === 4 && hasFile);
     });
   }
@@ -455,14 +469,30 @@ export class Detail implements OnInit {
   }
 
   onStatusChange(docKey: string): void {
+    // Los documentos de plantilla (Causales / Cuadro) no tienen archivo: el estado ES el dato,
+    // por lo que SIEMPRE se persiste (el backend hace upsert del registro de estado).
+    if (this.isTemplateDoc(docKey)) {
+      this.saveDocStatus(docKey);
+      return;
+    }
     // Si no hay archivo subido no existe ningún registro en BD que actualizar;
     // el estado queda guardado solo localmente para el propósito de desbloquear el avance.
     if (!this.getDocFile(docKey)) return;
     this.saveDocStatus(docKey);
   }
 
-  /** Opciones de estado para un documento. Para OF Técnica devuelve las opciones restringidas. */
-  getStatusOptionsForDoc(_docKey: string): { id: number; label: string }[] {
+  /**
+   * Opciones de estado para un documento.
+   * - Documentos de plantilla (Causales / Cuadro): solo Aprobado y No aplica.
+   * - Para OF Técnica devuelve las opciones restringidas.
+   */
+  getStatusOptionsForDoc(docKey: string): { id: number; label: string }[] {
+    if (this.isTemplateDoc(docKey)) {
+      return [
+        { id: 4, label: 'Aprobado' },
+        { id: 1, label: 'No aplica' },
+      ];
+    }
     return this.fileStatuses;
   }
 
@@ -493,6 +523,11 @@ export class Detail implements OnInit {
         if (file) {
           file.statusId    = form.statusId;
           file.observation = form.observation || null;
+        } else if (this.isTemplateDoc(docKey)) {
+          // Documentos de plantilla: no hay archivo; reflejar el estado en el item local.
+          const stub = { fileUrl: '', statusId: form.statusId, observation: form.observation || null };
+          if (docKey === 'NonConformingOutput') this.item.nonConformingOutput = stub;
+          else if (docKey === 'ToleranceChart') this.item.toleranceChart = stub;
         }
       },
       error: (err) => {
