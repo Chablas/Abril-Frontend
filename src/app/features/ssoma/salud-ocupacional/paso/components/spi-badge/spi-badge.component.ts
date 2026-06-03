@@ -11,9 +11,13 @@ import { CommonModule } from '@angular/common';
 export class SpiBadgeComponent {
   @Input() spi: number | null | undefined = null;
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  /** Si se provee, spi=0 con planificadas=0 se trata como "Sin datos" en lugar de "Crítico" */
+  @Input() planificadas: number | null | undefined;
 
   get nivel(): 'success' | 'warning' | 'danger' | 'none' {
     if (this.spi == null) return 'none';
+    // spi=0 sin actividades planificadas → no hay datos reales, no mostrar "Crítico"
+    if (this.spi === 0 && this.planificadas != null && this.planificadas === 0) return 'none';
     if (this.spi >= 0.95) return 'success';
     if (this.spi >= 0.80) return 'warning';
     return 'danger';
@@ -47,6 +51,7 @@ export class SpiBadgeComponent {
   }
 
   get formatted(): string {
+    if (this.nivel === 'none') return '—';
     return this.spi != null ? this.spi.toFixed(2) : '—';
   }
 }

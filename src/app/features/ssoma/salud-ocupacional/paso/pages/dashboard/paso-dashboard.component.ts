@@ -8,6 +8,21 @@ import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.componen
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
+const DEFAULT_DASHBOARD: PasoDashboardDto = {
+  proyectos: [],
+  consolidado: {
+    planificadasHoy: 0,
+    ejecutadasHoy: 0,
+    spi: 0,
+    spiColor: 'success',
+    avancePorcentaje: 0,
+    totalAnio: 0,
+    ejecutadasTotal: 0,
+    vencidas: 0,
+  },
+  alertas: [],
+};
+
 @Component({
   selector: 'app-paso-dashboard',
   standalone: true,
@@ -16,12 +31,13 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   styleUrl: './paso-dashboard.component.css',
 })
 export class PasoDashboardComponent implements OnInit, OnDestroy {
-  data: PasoDashboardDto | null = null;
+  // Inicializado con defaults para que nunca sea null
+  data: PasoDashboardDto = { ...DEFAULT_DASHBOARD };
   loading = false;
 
   // Count-up display values
-  dispSpi    = 0;
-  dispAvance = 0;
+  dispSpi      = 0;
+  dispAvance   = 0;
   dispVencidas = 0;
   dispProximas = 0;
 
@@ -45,7 +61,14 @@ export class PasoDashboardComponent implements OnInit, OnDestroy {
     this.loaderService.show();
     this.pasoService.getDashboard().subscribe({
       next: (res) => {
-        this.data = res;
+        // Mantiene los defaults y sobreescribe con datos reales,
+        // garantizando que los arrays nunca sean undefined
+        this.data = {
+          ...DEFAULT_DASHBOARD,
+          ...res,
+          proyectos: res?.proyectos ?? [],
+          alertas:   res?.alertas   ?? [],
+        };
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -60,10 +83,9 @@ export class PasoDashboardComponent implements OnInit, OnDestroy {
   }
 
   private runCountUp(): void {
-    if (!this.data) return;
-    this.animate('dispSpi',      0, Math.round((this.data.consolidado.spi ?? 0) * 100), 900);
-    this.animate('dispAvance',   0, Math.round(this.data.consolidado.avancePorcentaje ?? 0), 700);
-    this.animate('dispVencidas', 0, this.data.consolidado.vencidas ?? 0, 600);
+    this.animate('dispSpi',      0, Math.round((this.data?.consolidado?.spi ?? 0) * 100), 900);
+    this.animate('dispAvance',   0, Math.round(this.data?.consolidado?.avancePorcentaje ?? 0), 700);
+    this.animate('dispVencidas', 0, this.data?.consolidado?.vencidas ?? 0, 600);
     this.animate('dispProximas', 0, this.alertasProximas, 600);
   }
 
@@ -82,25 +104,19 @@ export class PasoDashboardComponent implements OnInit, OnDestroy {
   }
 
   get alertasVencidas(): number {
-    return this.data?.alertas.filter(a => a.tipo === 'Vencida').length ?? 0;
+    return this.data?.alertas?.filter(a => a.tipo === 'Vencida').length ?? 0;
   }
 
   get alertasProximas(): number {
-    return this.data?.alertas.filter(a => a.tipo === 'ProximaVencer').length ?? 0;
+    return this.data?.alertas?.filter(a => a.tipo === 'ProximaVencer').length ?? 0;
   }
 
   get alertasRecientes() {
-    return this.data?.alertas.slice(0, 5) ?? [];
+    return this.data?.alertas?.slice(0, 5) ?? [];
   }
 
   get programasActivos(): number {
-    return this.data?.proyectos.length ?? 0;
-  }
-
-  spiColor(spi: number): string {
-    if (spi >= 0.95) return '#198754';
-    if (spi >= 0.80) return '#ffc107';
-    return '#dc3545';
+    return this.data?.proyectos?.length ?? 0;
   }
 
   estadoLabel(spi: number): string {
