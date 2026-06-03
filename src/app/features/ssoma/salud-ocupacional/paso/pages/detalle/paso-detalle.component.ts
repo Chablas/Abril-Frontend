@@ -155,7 +155,7 @@ export class PasoDetalleComponent implements OnInit {
     return m[e] ?? 'bg-gray-100 text-gray-500';
   }
 
-  volver(): void { this.router.navigate(['/ssoma/salud-ocupacional/paso/lista']); }
+  volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
 
   tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
   tabColors: Record<TabAmbito, string> = { Seguridad: 'blue', Salud: 'green', Ambiente: 'teal', Gantt: 'gray' };

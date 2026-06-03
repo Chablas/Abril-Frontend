@@ -9,7 +9,7 @@ export const SSOMA_ROUTES: Routes = [
       ),
   },
   {
-    path: 'salud-ocupacional/paso',
+    path: 'gestion/paso',
     loadChildren: () =>
       import('./salud-ocupacional/paso/paso.routes').then((m) => m.PASO_ROUTES),
   },

@@ -138,9 +138,17 @@ export class NavigationService {
             { label: 'Convalidaciones', route: '/ssoma/salud-ocupacional/convalidaciones', featureKey: 'ssoma.salud-ocupacional.convalidaciones' },
             { label: 'Catálogos',       route: '/ssoma/salud-ocupacional/catalogos',      featureKey: 'ssoma.salud-ocupacional.catalogos' },
             { label: 'Reportes',        route: '/ssoma/salud-ocupacional/reportes',       featureKey: 'ssoma.salud-ocupacional.reportes' },
-            { label: 'Prog. Anual SSOMA', route: '/ssoma/salud-ocupacional/paso/dashboard', featureKey: 'ssoma.paso.dashboard' },
           ],
         },
+      ],
+    },
+    {
+      key: 'gestion-ssoma',
+      label: 'Gestión SSOMA',
+      iconKey: 'gestion-ssoma',
+      baseRoute: '/ssoma/gestion',
+      items: [
+        { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
       ],
     },
     {

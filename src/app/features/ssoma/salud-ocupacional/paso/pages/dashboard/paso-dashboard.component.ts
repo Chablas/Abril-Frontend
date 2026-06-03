@@ -73,10 +73,10 @@ export class PasoDashboardComponent implements OnInit {
   }
 
   irALista(): void {
-    this.router.navigate(['/ssoma/salud-ocupacional/paso/lista']);
+    this.router.navigate(['/ssoma/gestion/paso/lista']);
   }
 
   irAAlertas(): void {
-    this.router.navigate(['/ssoma/salud-ocupacional/paso/alertas']);
+    this.router.navigate(['/ssoma/gestion/paso/alertas']);
   }
 }

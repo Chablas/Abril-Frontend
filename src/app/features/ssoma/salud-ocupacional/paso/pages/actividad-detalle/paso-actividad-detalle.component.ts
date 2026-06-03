@@ -86,6 +86,6 @@ export class PasoActividadDetalleComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/ssoma/salud-ocupacional/paso', this.actividad?.pasoId ?? '']);
+    this.router.navigate(['/ssoma/gestion/paso', this.actividad?.pasoId ?? '']);
   }
 }
