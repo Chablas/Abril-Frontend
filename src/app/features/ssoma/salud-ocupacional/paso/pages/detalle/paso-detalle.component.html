@@ -1,0 +1,156 @@
+<section class="p-6 space-y-4" *ngIf="!loading; else loadingTpl">
+  <ng-container *ngIf="paso">
+
+    <!-- Header -->
+    <header class="flex items-start justify-between flex-wrap gap-3">
+      <div>
+        <button type="button" (click)="volver()" class="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-1">
+          <i class="ti ti-arrow-left"></i> Volver a lista
+        </button>
+        <h2 class="text-xl font-semibold text-gray-800">{{ paso.nombre }}</h2>
+        <div class="flex items-center gap-3 mt-1 flex-wrap">
+          <span class="text-sm text-gray-500">{{ paso.anio }}</span>
+          <span *ngIf="paso.proyectoNombre" class="text-sm text-gray-500">· {{ paso.proyectoNombre }}</span>
+          <span class="badge text-xs" [ngClass]="estadoBadge(paso.estado)">{{ paso.estado }}</span>
+          <span *ngIf="paso.esPlantilla" class="badge text-xs bg-indigo-100 text-indigo-700">Plantilla</span>
+          <app-spi-badge *ngIf="spi" [spi]="spi.spi"></app-spi-badge>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button *ngIf="paso.estado==='Borrador'" type="button" (click)="aprobar()"
+          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700">
+          <i class="ti ti-check"></i> Aprobar
+        </button>
+        <button *ngIf="paso.esPlantilla && paso.estado==='Aprobado'" type="button" (click)="instanciarOpen=true"
+          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+          <i class="ti ti-copy"></i> Instanciar
+        </button>
+        <div class="relative group">
+          <button type="button"
+            class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+            <i class="ti ti-download"></i> Exportar
+          </button>
+          <div class="absolute right-0 top-8 bg-white border border-gray-100 rounded-lg shadow-lg z-10 min-w-32 py-1 hidden group-hover:block">
+            <button type="button" (click)="exportar('excel')"
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+              <i class="ti ti-file-spreadsheet text-green-600"></i> Excel
+            </button>
+            <button type="button" (click)="exportar('pdf')"
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+              <i class="ti ti-file-type-pdf text-red-600"></i> PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-100">
+      <nav class="flex gap-6">
+        <button *ngFor="let t of tabs" type="button"
+          class="pb-3 text-sm transition-colors" [ngClass]="tabClass(t)" (click)="setTab(t)">
+          <i class="ti mr-1"
+            [class.ti-shield]="t==='Seguridad'" [class.ti-heart-pulse]="t==='Salud'"
+            [class.ti-leaf]="t==='Ambiente'" [class.ti-chart-gantt]="t==='Gantt'"></i>
+          {{ t === 'Salud' ? 'Salud Ocupacional' : t }}
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab content -->
+    <ng-container *ngIf="tabActiva !== 'Gantt'">
+      <div class="flex justify-end mb-2">
+        <button type="button" (click)="abrirAgregar()"
+          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-blue-600 hover:bg-blue-50">
+          <i class="ti ti-plus"></i> Agregar actividad
+        </button>
+      </div>
+      <app-actividad-tree
+        [actividades]="actividadesTab"
+        [pasoId]="paso.id"
+        (actividadEliminada)="onEliminada($event)">
+      </app-actividad-tree>
+    </ng-container>
+
+    <app-paso-gantt *ngIf="tabActiva==='Gantt'" [pasoId]="paso.id"></app-paso-gantt>
+
+  </ng-container>
+</section>
+
+<ng-template #loadingTpl>
+  <div class="flex items-center justify-center py-20 text-gray-400">
+    <i class="ti ti-loader-2 animate-spin text-3xl mr-3"></i> Cargando...
+  </div>
+</ng-template>
+
+<!-- Offcanvas agregar actividad -->
+<div *ngIf="agregarOpen" class="fixed inset-0 z-50 flex">
+  <div class="flex-1 bg-black/30" (click)="agregarOpen=false"></div>
+  <div class="bg-white w-full max-w-md h-full overflow-y-auto shadow-xl p-6 space-y-4">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-semibold text-gray-800">Agregar Actividad</h3>
+      <button type="button" (click)="agregarOpen=false" class="text-gray-400 hover:text-gray-600"><i class="ti ti-x text-xl"></i></button>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Categoría <span class="text-red-500">*</span></label>
+      <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+        [(ngModel)]="agregarForm.categoriaId">
+        <option [ngValue]="undefined">— Selecciona —</option>
+        <option *ngFor="let c of categoriasFiltradas" [ngValue]="c.id">{{ c.nombre }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre <span class="text-red-500">*</span></label>
+      <input type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+        [(ngModel)]="agregarForm.nombre" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Descripción</label>
+      <textarea rows="2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-400"
+        [(ngModel)]="agregarForm.descripcion"></textarea>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Frecuencia</label>
+      <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+        [(ngModel)]="agregarForm.frecuencia">
+        <option value="Mensual">Mensual</option>
+        <option value="Bimestral">Bimestral</option>
+        <option value="Trimestral">Trimestral</option>
+        <option value="Semestral">Semestral</option>
+        <option value="Anual">Anual</option>
+        <option value="Unica">Única</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Mes inicio</label>
+        <input type="number" min="1" max="12" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+          [(ngModel)]="agregarForm.mesInicio" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Mes fin</label>
+        <input type="number" min="1" max="12" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+          [(ngModel)]="agregarForm.mesFin" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad planificada</label>
+      <input type="number" min="1" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+        [(ngModel)]="agregarForm.cantidadPlanificada" />
+    </div>
+    <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+      <button type="button" (click)="agregarOpen=false" class="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancelar</button>
+      <button type="button" [disabled]="saving" (click)="guardarActividad()"
+        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+        <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+        {{ saving ? 'Guardando...' : 'Agregar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Instanciar modal -->
+<app-instanciar-modal *ngIf="instanciarOpen && paso"
+  [pasoPlantillaId]="paso.id" [plantillaNombre]="paso.nombre"
+  (closed)="instanciarOpen=false" (instanciaCreada)="onInstanciaCreada()">
+</app-instanciar-modal>

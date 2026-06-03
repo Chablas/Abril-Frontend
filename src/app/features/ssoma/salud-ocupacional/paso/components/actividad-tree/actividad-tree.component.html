@@ -1,0 +1,75 @@
+<div class="space-y-6">
+  <div *ngFor="let grupo of groups" class="space-y-2">
+    <!-- Cabecera de categoría -->
+    <div class="flex items-center gap-2 px-1">
+      <i class="ti ti-tag text-gray-400"></i>
+      <span class="text-sm font-semibold text-gray-700">{{ grupo.nombre }}</span>
+      <span class="text-xs text-gray-400">({{ grupo.actividades.length }})</span>
+    </div>
+
+    <!-- Cards de actividades -->
+    <div class="space-y-2">
+      <div *ngFor="let a of grupo.actividades"
+        class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+
+          <!-- Info principal -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="font-semibold text-gray-800 text-sm">{{ a.nombre }}</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [ngClass]="frecuenciaBadge(a.frecuencia)">
+                {{ a.frecuencia }}
+              </span>
+            </div>
+            <div *ngIf="a.descripcion" class="text-xs text-gray-500 mb-2">{{ a.descripcion }}</div>
+            <div *ngIf="a.responsableNombre" class="flex items-center gap-1 text-xs text-gray-500">
+              <i class="ti ti-user"></i> {{ a.responsableNombre }}
+            </div>
+          </div>
+
+          <!-- SPI y progreso -->
+          <div class="flex flex-col items-end gap-2 flex-shrink-0">
+            <app-spi-badge [spi]="spiActividad(a)"></app-spi-badge>
+            <div class="text-xs text-gray-500">{{ ejecutadas(a) }} / {{ a.cantidadPlanificada }} ejecuciones</div>
+            <div class="w-32 bg-gray-100 rounded-full h-1.5">
+              <div class="h-1.5 rounded-full bg-blue-500 transition-all" [style.width.%]="progreso(a)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+          <a class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+            [routerLink]="['/ssoma/salud-ocupacional/paso/actividad', a.id]">
+            <i class="ti ti-eye"></i> Ver detalle
+          </a>
+          <button type="button" (click)="abrirEjecucion(a)"
+            class="text-xs text-green-600 hover:text-green-800 flex items-center gap-1">
+            <i class="ti ti-plus"></i> Registrar ejecución
+          </button>
+          <button type="button" (click)="onEditar(a)"
+            class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 ml-auto">
+            <i class="ti ti-edit"></i> Editar
+          </button>
+          <button type="button" (click)="onEliminar(a)"
+            class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="groups.length === 0" class="text-center py-10 text-gray-400">
+    <i class="ti ti-clipboard-list text-3xl mb-2 block"></i>
+    <p class="text-sm">No hay actividades en este ámbito</p>
+  </div>
+</div>
+
+<!-- Modal de ejecución -->
+<app-ejecucion-modal
+  *ngIf="actividadEjecutando"
+  [actividad]="actividadEjecutando"
+  (closed)="actividadEjecutando = null"
+  (ejecucionCreada)="onEjecucionCreada($event)">
+</app-ejecucion-modal>
