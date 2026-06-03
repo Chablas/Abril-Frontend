@@ -19,6 +19,7 @@ import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto } from '../../dt
   standalone: true,
   imports: [CommonModule, FormsModule, BaseModal],
   templateUrl: './ejecucion-modal.component.html',
+  styleUrl: './ejecucion-modal.component.css',
 })
 export class EjecucionModalComponent implements OnInit {
   @Input() actividad!: PasoActividadDto;

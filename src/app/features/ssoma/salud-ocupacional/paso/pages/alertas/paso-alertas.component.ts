@@ -13,6 +13,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   standalone: true,
   imports: [CommonModule, EjecucionModalComponent],
   templateUrl: './paso-alertas.component.html',
+  styleUrl: './paso-alertas.component.css',
 })
 export class PasoAlertasComponent implements OnInit {
   alertas: PasoAlertaDto[] = [];

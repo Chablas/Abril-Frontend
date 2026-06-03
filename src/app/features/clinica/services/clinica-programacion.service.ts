@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ClinicaAccionDto, ProgramacionClinicaDto } from '../dtos/clinica.model';
+import { ClinicaAccionDto, CreateProgramacionDto, ProgramacionClinicaDto } from '../dtos/clinica.model';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -38,6 +38,12 @@ export class ClinicaProgramacionService {
       headers: buildClinicaHeaders(),
       params: httpParams,
     }).pipe(tap(raw => console.log('[CPS] raw HTTP response item[0]:', raw[0])));
+  }
+
+  programarEmo(dto: CreateProgramacionDto): Observable<ProgramacionClinicaDto> {
+    return this.http.post<ProgramacionClinicaDto>(PROGRAMACIONES_BASE, dto, {
+      headers: buildClinicaHeaders(),
+    });
   }
 
   accionClinica(id: number, body: ClinicaAccionDto): Observable<unknown> {

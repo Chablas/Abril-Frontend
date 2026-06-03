@@ -15,6 +15,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   standalone: true,
   imports: [CommonModule, FormsModule, InstanciarModalComponent],
   templateUrl: './paso-lista.component.html',
+  styleUrl: './paso-lista.component.css',
 })
 export class PasoListaComponent implements OnInit {
   items: PasoDto[] = [];

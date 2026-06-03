@@ -6,9 +6,11 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './spi-badge.component.html',
+  styleUrl: './spi-badge.component.css',
 })
 export class SpiBadgeComponent {
   @Input() spi: number | null | undefined = null;
+  @Input() size: 'sm' | 'md' | 'lg' = 'md';
 
   get nivel(): 'success' | 'warning' | 'danger' | 'none' {
     if (this.spi == null) return 'none';

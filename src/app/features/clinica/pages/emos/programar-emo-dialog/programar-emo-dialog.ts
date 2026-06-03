@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { EmoService } from '../../../../ssoma/salud-ocupacional/services/emo.service';
+import { ClinicaProgramacionService } from '../../../services/clinica-programacion.service';
 import { CatalogosSaludService } from '../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmoPorTrabajadorDto } from '../../../../ssoma/salud-ocupacional/dtos/emo.model';
 import {
@@ -30,7 +30,7 @@ export class ProgramarEmoDialogComponent implements OnInit {
   medicos: MedicoSimpleDto[] = [];
 
   form = {
-    fechaEmo: '',
+    fechaProgramada: '',
     tipoEmoId: 0,
     clinicaId: 0,
     medicoId: 0,
@@ -40,7 +40,7 @@ export class ProgramarEmoDialogComponent implements OnInit {
   submitting = false;
 
   constructor(
-    private emoService: EmoService,
+    private programacionService: ClinicaProgramacionService,
     private catalogos: CatalogosSaludService,
     private errorService: ErrorService,
   ) {}
@@ -56,25 +56,24 @@ export class ProgramarEmoDialogComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
-    return !!(this.form.fechaEmo && this.form.tipoEmoId && this.form.clinicaId);
+    return !!(this.form.fechaProgramada && this.form.tipoEmoId && this.form.clinicaId);
   }
 
   submit(): void {
     if (!this.canSubmit || this.submitting) return;
 
     this.submitting = true;
-    this.emoService
-      .createEmo({
+    this.programacionService
+      .programarEmo({
         workerId: this.worker.workerId,
         tipoEmoId: this.form.tipoEmoId,
-        fechaEmo: this.form.fechaEmo,
-        clinicaId: this.form.clinicaId || undefined,
-        medicoId: this.form.medicoId || undefined,
-        notas: this.form.notas || undefined,
-        aptitud: 'Pendiente',
-        requiereInterconsulta: false,
-        examenes: [],
-        restricciones: [],
+        empresaId: null,
+        fechaProgramada: this.form.fechaProgramada,
+        horaProgramada: null,
+        clinicaId: this.form.clinicaId || null,
+        medicoId: this.form.medicoId || null,
+        notas: this.form.notas || null,
+        origen: 'Registro directo',
       })
       .subscribe({
         next: () => {

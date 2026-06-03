@@ -19,6 +19,7 @@ interface CategoriaGroup {
   standalone: true,
   imports: [CommonModule, RouterModule, SpiBadgeComponent, EjecucionModalComponent],
   templateUrl: './actividad-tree.component.html',
+  styleUrl: './actividad-tree.component.css',
 })
 export class ActividadTreeComponent {
   @Input() set actividades(list: PasoActividadDto[]) {
@@ -28,13 +29,17 @@ export class ActividadTreeComponent {
   get actividades(): PasoActividadDto[] { return this._actividades; }
 
   @Input() pasoId!: number;
+  @Input() ambito: 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt' = 'Seguridad';
   @Output() actividadEditarClick = new EventEmitter<PasoActividadDto>();
   @Output() actividadEliminada = new EventEmitter<number>();
   @Output() ejecucionRegistrada = new EventEmitter<PasoEjecucionDto>();
 
   private _actividades: PasoActividadDto[] = [];
   groups: CategoriaGroup[] = [];
+  collapsedGroups = new Set<number>();
   actividadEjecutando: PasoActividadDto | null = null;
+
+  readonly mesActual = new Date().getMonth() + 1;
 
   constructor(
     private actividadService: PasoActividadService,
@@ -52,6 +57,16 @@ export class ActividadTreeComponent {
     this.groups = Array.from(map.values());
   }
 
+  toggleGroup(id: number): void {
+    if (this.collapsedGroups.has(id)) {
+      this.collapsedGroups.delete(id);
+    } else {
+      this.collapsedGroups.add(id);
+    }
+  }
+
+  isCollapsed(id: number): boolean { return this.collapsedGroups.has(id); }
+
   ejecutadas(a: PasoActividadDto): number {
     return (a.ejecuciones ?? []).filter(e => e.estado === 'Ejecutado').length;
   }
@@ -67,21 +82,43 @@ export class ActividadTreeComponent {
     return Math.min(1, this.ejecutadas(a) / total);
   }
 
-  frecuenciaBadge(f: string): string {
-    const map: Record<string, string> = {
-      Mensual: 'bg-blue-100 text-blue-700',
-      Bimestral: 'bg-cyan-100 text-cyan-700',
-      Trimestral: 'bg-teal-100 text-teal-700',
-      Semestral: 'bg-indigo-100 text-indigo-700',
-      Anual: 'bg-purple-100 text-purple-700',
-      Unica: 'bg-gray-100 text-gray-600',
-    };
-    return map[f] ?? 'bg-gray-100 text-gray-600';
+  ejecucionMesActual(a: PasoActividadDto): { estado: string; label: string } {
+    const ejeMes = (a.ejecuciones ?? []).filter(e => {
+      const d = new Date(e.fechaProgramada);
+      return d.getMonth() + 1 === this.mesActual;
+    });
+    if (!ejeMes.length) return { estado: 'sin', label: 'Sin ejecución este mes' };
+    const ej = ejeMes[ejeMes.length - 1];
+    switch (ej.estado) {
+      case 'Ejecutado':  return { estado: 'ejecutado',  label: 'Ejecutada este mes' };
+      case 'Vencido':    return { estado: 'vencido',    label: 'Vencida este mes' };
+      case 'Programado': return { estado: 'programado', label: 'Programada este mes' };
+      default:           return { estado: 'sin',        label: 'Sin ejecución' };
+    }
   }
 
-  abrirEjecucion(a: PasoActividadDto): void {
-    this.actividadEjecutando = a;
+  frecuenciaClass(f: string): string {
+    const m: Record<string, string> = {
+      Mensual: 'freq-badge--mensual',
+      Bimestral: 'freq-badge--bimestral',
+      Trimestral: 'freq-badge--trimestral',
+      Semestral: 'freq-badge--semestral',
+      Anual: 'freq-badge--anual',
+      Unica: 'freq-badge--unica',
+    };
+    return m[f] ?? 'freq-badge--unica';
   }
+
+  ambitoClass(): string {
+    const m: Record<string, string> = { Seguridad: 'seg', Salud: 'sal', Ambiente: 'amb' };
+    return m[this.ambito] ?? 'default';
+  }
+
+  avatarInitials(nombre: string): string {
+    return nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
 
   onEjecucionCreada(e: PasoEjecucionDto): void {
     this.actividadEjecutando = null;
@@ -89,9 +126,7 @@ export class ActividadTreeComponent {
     this.cdr.detectChanges();
   }
 
-  onEditar(a: PasoActividadDto): void {
-    this.actividadEditarClick.emit(a);
-  }
+  onEditar(a: PasoActividadDto): void { this.actividadEditarClick.emit(a); }
 
   onEliminar(a: PasoActividadDto): void {
     Swal.fire({
@@ -104,10 +139,7 @@ export class ActividadTreeComponent {
     }).then(r => {
       if (!r.isConfirmed) return;
       this.actividadService.delete(a.id).subscribe({
-        next: () => {
-          this.actividadEliminada.emit(a.id);
-          this.cdr.detectChanges();
-        },
+        next: () => { this.actividadEliminada.emit(a.id); this.cdr.detectChanges(); },
         error: () => Swal.fire('Error', 'No se pudo eliminar la actividad', 'error'),
       });
     });

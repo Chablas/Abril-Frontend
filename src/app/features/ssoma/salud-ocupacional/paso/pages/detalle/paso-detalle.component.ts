@@ -21,6 +21,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent],
   templateUrl: './paso-detalle.component.html',
+  styleUrl: './paso-detalle.component.css',
 })
 export class PasoDetalleComponent implements OnInit {
   paso: PasoDto | null = null;
@@ -29,13 +30,14 @@ export class PasoDetalleComponent implements OnInit {
   loading = false;
   tabActiva: TabAmbito = 'Seguridad';
 
-  // Agregar actividad offcanvas
   agregarOpen = false;
   agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
 
-  // Instanciar
   instanciarOpen = false;
+  exportOpen = false;
+
+  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
 
   constructor(
     private route: ActivatedRoute,
@@ -91,7 +93,14 @@ export class PasoDetalleComponent implements OnInit {
     return this.categorias.filter(c => c.ambito === this.tabActiva);
   }
 
-  setTab(tab: TabAmbito): void { this.tabActiva = tab; }
+  countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
+    return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
+  }
+
+  setTab(tab: TabAmbito): void {
+    this.tabActiva = tab;
+    this.exportOpen = false;
+  }
 
   aprobar(): void {
     if (!this.paso) return;
@@ -131,12 +140,11 @@ export class PasoDetalleComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onInstanciaCreada(): void {
-    this.instanciarOpen = false;
-  }
+  onInstanciaCreada(): void { this.instanciarOpen = false; }
 
   exportar(format: 'excel' | 'pdf'): void {
     if (!this.paso) return;
+    this.exportOpen = false;
     this.pasoService.exportReporte(this.paso.id, format).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -151,18 +159,28 @@ export class PasoDetalleComponent implements OnInit {
   }
 
   estadoBadge(e: string): string {
-    const m: Record<string, string> = { Borrador: 'bg-gray-100 text-gray-600', Aprobado: 'bg-blue-100 text-blue-700', Activo: 'bg-green-100 text-green-700', Cerrado: 'bg-gray-200 text-gray-800' };
+    const m: Record<string, string> = {
+      Borrador: 'bg-gray-100 text-gray-600',
+      Aprobado: 'bg-blue-100 text-blue-700',
+      Activo: 'bg-green-100 text-green-700',
+      Cerrado: 'bg-gray-200 text-gray-800',
+    };
     return m[e] ?? 'bg-gray-100 text-gray-500';
   }
 
-  volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
-
-  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
-  tabColors: Record<TabAmbito, string> = { Seguridad: 'blue', Salud: 'green', Ambiente: 'teal', Gantt: 'gray' };
-
-  tabClass(t: TabAmbito): string {
-    return this.tabActiva === t
-      ? 'border-b-2 border-blue-600 text-blue-700 font-semibold'
-      : 'text-gray-500 hover:text-gray-700';
+  tabColor(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb', Gantt: 'tab--gantt' };
+    return m[t];
   }
+
+  tabIcon(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf', Gantt: 'ti-chart-gantt' };
+    return m[t];
+  }
+
+  tabLabel(t: TabAmbito): string {
+    return t === 'Salud' ? 'Salud Ocupacional' : t;
+  }
+
+  volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
 }

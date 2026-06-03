@@ -1,3 +1,15 @@
+export interface CreateProgramacionDto {
+  workerId: number;
+  tipoEmoId: number;
+  empresaId: number | null;
+  fechaProgramada: string;
+  horaProgramada: string | null;
+  clinicaId: number | null;
+  medicoId: number | null;
+  notas: string | null;
+  origen: string;
+}
+
 export interface ProgramacionClinicaDto {
   id: number;
   workerId: number;

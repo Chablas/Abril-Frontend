@@ -1,118 +1,145 @@
-<section class="p-6 space-y-4" *ngIf="!loading; else loadingTpl">
-  <ng-container *ngIf="paso">
+<div *ngIf="loading" class="loading-center">
+  <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+  <span>Cargando programa…</span>
+</div>
 
-    <!-- Header -->
-    <header class="flex items-start justify-between flex-wrap gap-3">
-      <div>
-        <button type="button" (click)="volver()" class="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-1">
-          <i class="ti ti-arrow-left"></i> Volver a lista
-        </button>
-        <h2 class="text-xl font-semibold text-gray-800">{{ paso.nombre }}</h2>
-        <div class="flex items-center gap-3 mt-1 flex-wrap">
-          <span class="text-sm text-gray-500">{{ paso.anio }}</span>
-          <span *ngIf="paso.proyectoNombre" class="text-sm text-gray-500">· {{ paso.proyectoNombre }}</span>
-          <span class="badge text-xs" [ngClass]="estadoBadge(paso.estado)">{{ paso.estado }}</span>
-          <span *ngIf="paso.esPlantilla" class="badge text-xs bg-indigo-100 text-indigo-700">Plantilla</span>
-          <app-spi-badge *ngIf="spi" [spi]="spi.spi"></app-spi-badge>
+<ng-container *ngIf="!loading && paso">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <div class="detalle-header">
+    <div class="breadcrumb">
+      <a (click)="volver()"><i class="ti ti-home"></i></a>
+      <i class="ti ti-chevron-right"></i>
+      <a (click)="volver()">Programas PASO</a>
+      <i class="ti ti-chevron-right"></i>
+      <span style="opacity:1;font-weight:600">{{ paso.nombre }}</span>
+    </div>
+
+    <div class="header-main">
+      <div class="header-left">
+        <h1 class="header-title">{{ paso.nombre }}</h1>
+        <div class="header-meta">
+          <span><i class="ti ti-calendar"></i> {{ paso.anio }}</span>
+          <span *ngIf="paso.proyectoNombre"><i class="ti ti-building"></i> {{ paso.proyectoNombre }}</span>
+          <span class="hdr-badge">{{ paso.estado }}</span>
+          <span *ngIf="paso.esPlantilla" class="hdr-badge"><i class="ti ti-template"></i> Plantilla</span>
         </div>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
-        <button *ngIf="paso.estado==='Borrador'" type="button" (click)="aprobar()"
-          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700">
+      <div class="header-actions">
+        <button *ngIf="paso.estado === 'Borrador'" type="button" class="hdr-btn hdr-btn--green" (click)="aprobar()">
           <i class="ti ti-check"></i> Aprobar
         </button>
-        <button *ngIf="paso.esPlantilla && paso.estado==='Aprobado'" type="button" (click)="instanciarOpen=true"
-          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+        <button *ngIf="paso.esPlantilla && paso.estado === 'Aprobado'" type="button" class="hdr-btn hdr-btn--purple" (click)="instanciarOpen=true">
           <i class="ti ti-copy"></i> Instanciar
         </button>
-        <div class="relative group">
-          <button type="button"
-            class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-            <i class="ti ti-download"></i> Exportar
+        <div class="export-wrap">
+          <button type="button" class="hdr-btn hdr-btn--outline" (click)="exportOpen=!exportOpen">
+            <i class="ti ti-download"></i> Exportar <i class="ti ti-chevron-down" style="font-size:.75rem;opacity:.7"></i>
           </button>
-          <div class="absolute right-0 top-8 bg-white border border-gray-100 rounded-lg shadow-lg z-10 min-w-32 py-1 hidden group-hover:block">
-            <button type="button" (click)="exportar('excel')"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-              <i class="ti ti-file-spreadsheet text-green-600"></i> Excel
-            </button>
-            <button type="button" (click)="exportar('pdf')"
-              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-              <i class="ti ti-file-type-pdf text-red-600"></i> PDF
-            </button>
+          <div *ngIf="exportOpen" class="export-menu">
+            <div class="export-item" (click)="exportar('excel')">
+              <i class="ti ti-file-spreadsheet" style="color:#16a34a"></i> Excel
+            </div>
+            <div class="export-item" (click)="exportar('pdf')">
+              <i class="ti ti-file-type-pdf" style="color:#dc2626"></i> PDF
+            </div>
           </div>
         </div>
       </div>
-    </header>
-
-    <!-- Tabs -->
-    <div class="border-b border-gray-100">
-      <nav class="flex gap-6">
-        <button *ngFor="let t of tabs" type="button"
-          class="pb-3 text-sm transition-colors" [ngClass]="tabClass(t)" (click)="setTab(t)">
-          <i class="ti mr-1"
-            [class.ti-shield]="t==='Seguridad'" [class.ti-heart-pulse]="t==='Salud'"
-            [class.ti-leaf]="t==='Ambiente'" [class.ti-chart-gantt]="t==='Gantt'"></i>
-          {{ t === 'Salud' ? 'Salud Ocupacional' : t }}
-        </button>
-      </nav>
     </div>
+  </div>
 
-    <!-- Tab content -->
+  <!-- ── KPI Strip ──────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">SPI</span>
+      <div class="kpi-strip__value">
+        <app-spi-badge *ngIf="spi; else dashSpi" [spi]="spi.spi" size="md"></app-spi-badge>
+        <ng-template #dashSpi><span style="color:#9ca3af;font-size:.9rem">—</span></ng-template>
+      </div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Avance %</span>
+      <div class="kpi-strip__value" style="color:#2563eb">{{ spi ? (spi.avancePorcentaje | number:'1.0-1') + '%' : '—' }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Total actividades</span>
+      <div class="kpi-strip__value">{{ paso.actividades?.length ?? 0 }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Ejecutadas</span>
+      <div class="kpi-strip__value" style="color:#16a34a">{{ spi?.ejecutadasTotal ?? 0 }}</div>
+    </div>
+    <div class="kpi-strip__item">
+      <span class="kpi-strip__label">Vencidas</span>
+      <div class="kpi-strip__value" [style.color]="(spi?.vencidas ?? 0) > 0 ? '#dc2626' : '#16a34a'">
+        {{ spi?.vencidas ?? 0 }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ───────────────────────────────────────────────────── -->
+  <nav class="paso-tabs">
+    <button *ngFor="let t of tabs" type="button"
+      class="paso-tab"
+      [ngClass]="[tabColor(t), tabActiva === t ? 'active' : '']"
+      (click)="setTab(t)">
+      <i class="ti" [ngClass]="tabIcon(t)"></i>
+      {{ tabLabel(t) }}
+      <span *ngIf="t !== 'Gantt'" class="tab-count">{{ countTab(t) }}</span>
+    </button>
+  </nav>
+
+  <!-- ── Tab content ────────────────────────────────────────────── -->
+  <div class="tab-body">
     <ng-container *ngIf="tabActiva !== 'Gantt'">
-      <div class="flex justify-end mb-2">
-        <button type="button" (click)="abrirAgregar()"
-          class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-blue-600 hover:bg-blue-50">
+      <div class="tab-toolbar">
+        <button type="button" class="btn-add" (click)="abrirAgregar()">
           <i class="ti ti-plus"></i> Agregar actividad
         </button>
       </div>
       <app-actividad-tree
         [actividades]="actividadesTab"
         [pasoId]="paso.id"
+        [ambito]="tabActiva"
         (actividadEliminada)="onEliminada($event)">
       </app-actividad-tree>
     </ng-container>
-
-    <app-paso-gantt *ngIf="tabActiva==='Gantt'" [pasoId]="paso.id"></app-paso-gantt>
-
-  </ng-container>
-</section>
-
-<ng-template #loadingTpl>
-  <div class="flex items-center justify-center py-20 text-gray-400">
-    <i class="ti ti-loader-2 animate-spin text-3xl mr-3"></i> Cargando...
+    <app-paso-gantt *ngIf="tabActiva === 'Gantt'" [pasoId]="paso.id"></app-paso-gantt>
   </div>
-</ng-template>
 
-<!-- Offcanvas agregar actividad -->
-<div *ngIf="agregarOpen" class="fixed inset-0 z-50 flex">
-  <div class="flex-1 bg-black/30" (click)="agregarOpen=false"></div>
-  <div class="bg-white w-full max-w-md h-full overflow-y-auto shadow-xl p-6 space-y-4">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="text-lg font-semibold text-gray-800">Agregar Actividad</h3>
-      <button type="button" (click)="agregarOpen=false" class="text-gray-400 hover:text-gray-600"><i class="ti ti-x text-xl"></i></button>
+</ng-container>
+
+<!-- ── Offcanvas agregar actividad ─────────────────────────────── -->
+<div *ngIf="agregarOpen" class="offcanvas-overlay">
+  <div class="offcanvas-backdrop" (click)="agregarOpen=false"></div>
+  <div class="offcanvas-panel">
+    <div class="offcanvas-header">
+      <h3 class="offcanvas-title">Agregar Actividad</h3>
+      <button type="button" class="offcanvas-close" (click)="agregarOpen=false"><i class="ti ti-x"></i></button>
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Categoría <span class="text-red-500">*</span></label>
-      <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-        [(ngModel)]="agregarForm.categoriaId">
+
+    <div class="oc-field">
+      <label class="oc-label">Categoría <span style="color:#ef4444">*</span></label>
+      <select class="oc-select" [(ngModel)]="agregarForm.categoriaId">
         <option [ngValue]="undefined">— Selecciona —</option>
         <option *ngFor="let c of categoriasFiltradas" [ngValue]="c.id">{{ c.nombre }}</option>
       </select>
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre <span class="text-red-500">*</span></label>
-      <input type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-        [(ngModel)]="agregarForm.nombre" />
+
+    <div class="oc-field">
+      <label class="oc-label">Nombre <span style="color:#ef4444">*</span></label>
+      <input type="text" class="oc-input" [(ngModel)]="agregarForm.nombre" />
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Descripción</label>
-      <textarea rows="2" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-400"
-        [(ngModel)]="agregarForm.descripcion"></textarea>
+
+    <div class="oc-field">
+      <label class="oc-label">Descripción</label>
+      <textarea rows="2" class="oc-textarea" [(ngModel)]="agregarForm.descripcion"></textarea>
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Frecuencia</label>
-      <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-        [(ngModel)]="agregarForm.frecuencia">
+
+    <div class="oc-field">
+      <label class="oc-label">Frecuencia</label>
+      <select class="oc-select" [(ngModel)]="agregarForm.frecuencia">
         <option value="Mensual">Mensual</option>
         <option value="Bimestral">Bimestral</option>
         <option value="Trimestral">Trimestral</option>
@@ -121,27 +148,26 @@
         <option value="Unica">Única</option>
       </select>
     </div>
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Mes inicio</label>
-        <input type="number" min="1" max="12" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-          [(ngModel)]="agregarForm.mesInicio" />
+
+    <div class="oc-grid2">
+      <div class="oc-field">
+        <label class="oc-label">Mes inicio</label>
+        <input type="number" min="1" max="12" class="oc-input" [(ngModel)]="agregarForm.mesInicio" />
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Mes fin</label>
-        <input type="number" min="1" max="12" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-          [(ngModel)]="agregarForm.mesFin" />
+      <div class="oc-field">
+        <label class="oc-label">Mes fin</label>
+        <input type="number" min="1" max="12" class="oc-input" [(ngModel)]="agregarForm.mesFin" />
       </div>
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad planificada</label>
-      <input type="number" min="1" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-        [(ngModel)]="agregarForm.cantidadPlanificada" />
+
+    <div class="oc-field">
+      <label class="oc-label">Cantidad planificada</label>
+      <input type="number" min="1" class="oc-input" [(ngModel)]="agregarForm.cantidadPlanificada" />
     </div>
-    <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
-      <button type="button" (click)="agregarOpen=false" class="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancelar</button>
-      <button type="button" [disabled]="saving" (click)="guardarActividad()"
-        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+
+    <div class="oc-footer">
+      <button type="button" class="oc-btn-cancel" (click)="agregarOpen=false">Cancelar</button>
+      <button type="button" class="oc-btn-save" [disabled]="saving" (click)="guardarActividad()">
         <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
         {{ saving ? 'Guardando...' : 'Agregar' }}
       </button>
@@ -149,7 +175,7 @@
   </div>
 </div>
 
-<!-- Instanciar modal -->
+<!-- ── Instanciar modal ────────────────────────────────────────── -->
 <app-instanciar-modal *ngIf="instanciarOpen && paso"
   [pasoPlantillaId]="paso.id" [plantillaNombre]="paso.nombre"
   (closed)="instanciarOpen=false" (instanciaCreada)="onInstanciaCreada()">

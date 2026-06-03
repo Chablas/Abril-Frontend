@@ -1,72 +1,77 @@
-<div class="space-y-6">
-  <div *ngFor="let grupo of groups" class="space-y-2">
-    <!-- Cabecera de categoría -->
-    <div class="flex items-center gap-2 px-1">
-      <i class="ti ti-tag text-gray-400"></i>
-      <span class="text-sm font-semibold text-gray-700">{{ grupo.nombre }}</span>
-      <span class="text-xs text-gray-400">({{ grupo.actividades.length }})</span>
+<div class="tree-wrap">
+
+  <div *ngFor="let grupo of groups">
+
+    <!-- Cabecera colapsable de categoría -->
+    <div class="cat-header" (click)="toggleGroup(grupo.id)">
+      <div class="cat-icon" [ngClass]="'cat-icon--' + ambitoClass()">
+        <i class="ti ti-tag"></i>
+      </div>
+      <span class="cat-name">{{ grupo.nombre }}</span>
+      <span class="cat-count">{{ grupo.actividades.length }}</span>
+      <i class="ti ti-chevron-right cat-chevron" [class.open]="!isCollapsed(grupo.id)"></i>
     </div>
 
-    <!-- Cards de actividades -->
-    <div class="space-y-2">
+    <!-- Lista de actividades -->
+    <div *ngIf="!isCollapsed(grupo.id)" class="activities">
       <div *ngFor="let a of grupo.actividades"
-        class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-        <div class="flex flex-wrap items-start justify-between gap-3">
+        class="act-card"
+        [ngClass]="'act-card--' + ambitoClass()">
 
-          <!-- Info principal -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap mb-1">
-              <span class="font-semibold text-gray-800 text-sm">{{ a.nombre }}</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [ngClass]="frecuenciaBadge(a.frecuencia)">
-                {{ a.frecuencia }}
-              </span>
+        <div class="act-top">
+          <!-- Izquierda: info -->
+          <div class="act-info">
+            <div class="act-name-row">
+              <span class="act-name">{{ a.nombre }}</span>
+              <span class="freq-badge" [ngClass]="frecuenciaClass(a.frecuencia)">{{ a.frecuencia }}</span>
             </div>
-            <div *ngIf="a.descripcion" class="text-xs text-gray-500 mb-2">{{ a.descripcion }}</div>
-            <div *ngIf="a.responsableNombre" class="flex items-center gap-1 text-xs text-gray-500">
-              <i class="ti ti-user"></i> {{ a.responsableNombre }}
+            <div *ngIf="a.responsableNombre" class="act-responsable">
+              <span class="avatar-chip">{{ avatarInitials(a.responsableNombre) }}</span>
+              {{ a.responsableNombre }}
             </div>
           </div>
 
-          <!-- SPI y progreso -->
-          <div class="flex flex-col items-end gap-2 flex-shrink-0">
-            <app-spi-badge [spi]="spiActividad(a)"></app-spi-badge>
-            <div class="text-xs text-gray-500">{{ ejecutadas(a) }} / {{ a.cantidadPlanificada }} ejecuciones</div>
-            <div class="w-32 bg-gray-100 rounded-full h-1.5">
-              <div class="h-1.5 rounded-full bg-blue-500 transition-all" [style.width.%]="progreso(a)"></div>
+          <!-- Derecha: progreso + SPI + mes actual -->
+          <div class="act-right">
+            <app-spi-badge [spi]="spiActividad(a)" size="sm"></app-spi-badge>
+            <div class="act-progress-text">{{ ejecutadas(a) }}/{{ a.cantidadPlanificada }} ejecuciones</div>
+            <div class="progress-bar">
+              <div class="progress-bar__fill" [ngClass]="'progress-bar__fill--' + ambitoClass()" [style.width.%]="progreso(a)"></div>
             </div>
+            <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(a).estado">
+              <i class="ti ti-calendar-event" style="font-size:.65rem"></i>
+              {{ ejecucionMesActual(a).label }}
+            </span>
           </div>
         </div>
 
-        <!-- Acciones -->
-        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
-          <a class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
-            [routerLink]="['/ssoma/gestion/paso/actividad', a.id]">
+        <!-- Botones de acción -->
+        <div class="act-actions">
+          <button type="button" class="act-btn act-btn--registrar" (click)="abrirEjecucion(a)">
+            <i class="ti ti-plus"></i> Registrar
+          </button>
+          <a class="act-btn act-btn--ver" [routerLink]="['/ssoma/gestion/paso/actividad', a.id]">
             <i class="ti ti-eye"></i> Ver detalle
           </a>
-          <button type="button" (click)="abrirEjecucion(a)"
-            class="text-xs text-green-600 hover:text-green-800 flex items-center gap-1">
-            <i class="ti ti-plus"></i> Registrar ejecución
+          <button type="button" class="act-btn act-btn--icon-only" (click)="onEditar(a)" title="Editar">
+            <i class="ti ti-edit"></i>
           </button>
-          <button type="button" (click)="onEditar(a)"
-            class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 ml-auto">
-            <i class="ti ti-edit"></i> Editar
-          </button>
-          <button type="button" (click)="onEliminar(a)"
-            class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">
+          <button type="button" class="act-btn act-btn--icon-only act-btn--danger" (click)="onEliminar(a)" title="Eliminar">
             <i class="ti ti-trash"></i>
           </button>
         </div>
+
       </div>
     </div>
   </div>
 
-  <div *ngIf="groups.length === 0" class="text-center py-10 text-gray-400">
-    <i class="ti ti-clipboard-list text-3xl mb-2 block"></i>
-    <p class="text-sm">No hay actividades en este ámbito</p>
+  <div *ngIf="groups.length === 0" class="tree-empty">
+    <i class="ti ti-clipboard-list"></i>
+    <p>No hay actividades en este ámbito</p>
   </div>
+
 </div>
 
-<!-- Modal de ejecución -->
 <app-ejecucion-modal
   *ngIf="actividadEjecutando"
   [actividad]="actividadEjecutando"

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -13,10 +13,20 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   standalone: true,
   imports: [CommonModule, SpiBadgeComponent],
   templateUrl: './paso-dashboard.component.html',
+  styleUrl: './paso-dashboard.component.css',
 })
-export class PasoDashboardComponent implements OnInit {
+export class PasoDashboardComponent implements OnInit, OnDestroy {
   data: PasoDashboardDto | null = null;
   loading = false;
+
+  // Count-up display values
+  dispSpi    = 0;
+  dispAvance = 0;
+  dispVencidas = 0;
+  dispProximas = 0;
+
+  private timers: ReturnType<typeof setInterval>[] = [];
+  readonly anioActual = new Date().getFullYear();
 
   constructor(
     private pasoService: PasoService,
@@ -26,9 +36,9 @@ export class PasoDashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  ngOnInit(): void {
-    this.load();
-  }
+  ngOnInit(): void { this.load(); }
+
+  ngOnDestroy(): void { this.timers.forEach(t => clearInterval(t)); }
 
   load(): void {
     this.loading = true;
@@ -39,6 +49,7 @@ export class PasoDashboardComponent implements OnInit {
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
+        this.runCountUp();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
@@ -46,6 +57,28 @@ export class PasoDashboardComponent implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  private runCountUp(): void {
+    if (!this.data) return;
+    this.animate('dispSpi',      0, Math.round((this.data.consolidado.spi ?? 0) * 100), 900);
+    this.animate('dispAvance',   0, Math.round(this.data.consolidado.avancePorcentaje ?? 0), 700);
+    this.animate('dispVencidas', 0, this.data.consolidado.vencidas ?? 0, 600);
+    this.animate('dispProximas', 0, this.alertasProximas, 600);
+  }
+
+  private animate(prop: 'dispSpi' | 'dispAvance' | 'dispVencidas' | 'dispProximas', from: number, to: number, ms: number): void {
+    if (to === 0) { this[prop] = 0; return; }
+    const steps = Math.max(1, Math.round(ms / 16));
+    let step = 0;
+    const inc = (to - from) / steps;
+    const t = setInterval(() => {
+      step++;
+      this[prop] = step < steps ? Math.round(from + inc * step) : to;
+      this.cdr.detectChanges();
+      if (step >= steps) clearInterval(t);
+    }, 16);
+    this.timers.push(t);
   }
 
   get alertasVencidas(): number {
@@ -60,10 +93,14 @@ export class PasoDashboardComponent implements OnInit {
     return this.data?.alertas.slice(0, 5) ?? [];
   }
 
-  estadoBadge(spi: number): string {
-    if (spi >= 0.95) return 'bg-green-100 text-green-700';
-    if (spi >= 0.80) return 'bg-yellow-100 text-yellow-700';
-    return 'bg-red-100 text-red-700';
+  get programasActivos(): number {
+    return this.data?.proyectos.length ?? 0;
+  }
+
+  spiColor(spi: number): string {
+    if (spi >= 0.95) return '#198754';
+    if (spi >= 0.80) return '#ffc107';
+    return '#dc3545';
   }
 
   estadoLabel(spi: number): string {
@@ -72,11 +109,12 @@ export class PasoDashboardComponent implements OnInit {
     return 'Crítico';
   }
 
-  irALista(): void {
-    this.router.navigate(['/ssoma/gestion/paso/lista']);
+  estadoBadgeClass(spi: number): string {
+    if (spi >= 0.95) return 'badge-estado--green';
+    if (spi >= 0.80) return 'badge-estado--yellow';
+    return 'badge-estado--red';
   }
 
-  irAAlertas(): void {
-    this.router.navigate(['/ssoma/gestion/paso/alertas']);
-  }
+  irALista(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
+  irAAlertas(): void { this.router.navigate(['/ssoma/gestion/paso/alertas']); }
 }
