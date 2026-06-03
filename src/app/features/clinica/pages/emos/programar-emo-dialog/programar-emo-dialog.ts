@@ -67,7 +67,7 @@ export class ProgramarEmoDialogComponent implements OnInit {
       .programarEmo({
         workerId: this.worker.workerId,
         tipoEmoId: this.form.tipoEmoId,
-        empresaId: null,
+        empresaId: this.worker.empresaId ?? null,
         fechaProgramada: this.form.fechaProgramada,
         horaProgramada: null,
         clinicaId: this.form.clinicaId || null,
