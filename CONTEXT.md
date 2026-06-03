@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-02 — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
+> **Última actualización**: 2026-06-03 — Módulo PASO (Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente) creado completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores (GET/PUT `/api/v1/evaluaciones/asignaciones-supervisor`), rediseño completo de `/evaluaciones/evaluar` (grid 2-col de cards con color por proyecto, SPI badge, contador evaluados). Ver historial más antiguo abajo.
+>
+> **2026-06-02** — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
 
 ---
 
@@ -85,7 +87,13 @@ src/app/
             ├── catalogos/
             ├── services/         # http-base.ts + un servicio por recurso
             ├── dtos/
-            └── shared/           # utils del módulo (no UI compartida global)
+            ├── shared/           # utils del módulo (no UI compartida global)
+            └── paso/             # Módulo PASO — lazy desde ssoma.routes.ts → /ssoma/salud-ocupacional/paso
+                ├── paso.routes.ts
+                ├── dtos/paso.dtos.ts
+                ├── services/     # paso.service.ts | paso-actividad.service.ts | paso-ejecucion.service.ts
+                ├── components/   # spi-badge | ejecucion-modal | instanciar-modal | actividad-tree | paso-gantt
+                └── pages/        # dashboard | lista | detalle | actividad-detalle | alertas
 ```
 
 ### Convención `configuracion/` (módulo NgModule con routes internas)
@@ -138,6 +146,8 @@ Redirect interno: `''` → `'proyectos'`. Reutiliza servicios/DTOs de SSOMA (`Ca
    /contractors                             → CONTRACTORS_ADMIN_ROUTES
    /arquitectura-comercial                  → ArquitecturaComercialModule
    /ssoma                                   → SSOMA_ROUTES
+     /ssoma/salud-ocupacional               → SALUD_OCUPACIONAL_ROUTES
+     /ssoma/salud-ocupacional/paso          → PASO_ROUTES (lazy, featureKey: ssoma.paso.*)
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
    /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
@@ -538,6 +548,43 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
 > **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns.
 
+### SSOMA — PASO (Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente)
+
+Base: `${apiUrl}api/v1/ssoma-paso` — controller unificado. Actividades y ejecuciones como sub-rutas.
+
+| Método | Endpoint | Servicio |
+| ------ | -------- | -------- |
+| GET    | `/api/v1/ssoma-paso?anio=&proyectoId=&estado=&esPlantilla=` | `PasoService.getAll` |
+| GET    | `/api/v1/ssoma-paso/{id}` | `PasoService.getById` |
+| POST   | `/api/v1/ssoma-paso` | `PasoService.create` |
+| PUT    | `/api/v1/ssoma-paso/{id}` | `PasoService.update` |
+| PATCH  | `/api/v1/ssoma-paso/{id}/aprobar` | `PasoService.aprobar` |
+| POST   | `/api/v1/ssoma-paso/{id}/instanciar` | `PasoService.instanciar` |
+| GET    | `/api/v1/ssoma-paso/{id}/gantt` | `PasoService.getGantt` |
+| GET    | `/api/v1/ssoma-paso/{id}/spi` | `PasoService.getSpi` |
+| GET    | `/api/v1/ssoma-paso/{id}/reporte?format=excel\|pdf` | `PasoService.exportReporte` (Blob) |
+| GET    | `/api/v1/ssoma-paso/dashboard` | `PasoService.getDashboard` |
+| GET    | `/api/v1/ssoma-paso/alertas` | `PasoService.getAlertas` |
+| GET    | `/api/v1/ssoma-paso/categorias` | `PasoService.getCategorias` |
+| GET    | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.getById` |
+| POST   | `/api/v1/ssoma-paso/actividad` | `PasoActividadService.create` |
+| PUT    | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.update` |
+| DELETE | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.delete` |
+| POST   | `/api/v1/ssoma-paso/ejecucion` | `PasoEjecucionService.create` |
+| PATCH  | `/api/v1/ssoma-paso/ejecucion/{id}/evidencia` | `PasoEjecucionService.subirEvidencia` (multipart, campo `file`) |
+
+**DTOs clave** (`paso/dtos/paso.dtos.ts`): `PasoDto`, `PasoActividadDto`, `PasoEjecucionDto`, `PasoSpiDto`, `PasoDashboardDto`, `PasoAlertaDto`, `PasoGanttDto`, `PasoCategoriaDto`. Colores por ámbito: Seguridad→azul, Salud→verde, Ambiente→teal. SPI: ≥0.95=verde, 0.80-0.94=amarillo, <0.80=rojo.
+
+### Evaluaciones — Asignaciones de Supervisores
+
+| Método | Endpoint | Servicio |
+| ------ | -------- | -------- |
+| GET    | `/api/v1/evaluaciones/asignaciones-supervisor` | `EvAsignacionesService.getSupervisores` |
+| GET    | `/api/v1/evaluaciones/asignaciones-supervisor/proyectos` | `EvAsignacionesService.getProyectos` |
+| PUT    | `/api/v1/evaluaciones/asignaciones-supervisor/{supervisorWorkerId}` | `EvAsignacionesService.updateAsignaciones` (body: `{ projectIds: number[] }`) |
+
+**DTOs**: `SupervisorAsignacionDto { workerId, nombreCompleto, cargo, subarea, proyectos: ProyectoAsignadoDto[] }`, `ProyectoAsignadoDto { projectId, projectDescription }`. Filtra subareas `Unidad de Proyectos` y `Planeamiento BIM`.
+
 ### Arquitectura Comercial
 
 Base: `${apiUrl}api/v1/arquitectura-comercial`
@@ -658,6 +705,40 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **Eliminar**: botón basura en cada fila → Swal → DELETE → `loadActividades()`.
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
+
+### `features/ssoma/salud-ocupacional/paso/` — ✅ Módulo PASO (2026-06-03)
+
+Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente. Lazy bajo `/ssoma/salud-ocupacional/paso/`.
+
+**Rutas**:
+```
+/paso/dashboard        → PasoDashboardComponent   (featureKey: ssoma.paso.dashboard)
+/paso/lista            → PasoListaComponent        (featureKey: ssoma.paso.lista)
+/paso/alertas          → PasoAlertasComponent      (featureKey: ssoma.paso.alertas)
+/paso/actividad/:id    → PasoActividadDetalleComponent
+/paso/:id              → PasoDetalleComponent
+```
+
+**Componentes reutilizables**:
+- `SpiBadgeComponent` — pill con semáforo: ≥0.95 verde / 0.80-0.94 amarillo / <0.80 rojo.
+- `EjecucionModalComponent` — BaseModal. Registra ejecución + drag & drop evidencia (POST create → PATCH evidencia).
+- `InstanciarModalComponent` — BaseModal wizard 2 pasos: proyecto+año → confirmar. Usa `ProjectService.getWithResidentByUserId()`.
+- `ActividadTreeComponent` — agrupa `PasoActividadDto[]` por `categoriaId`, muestra progreso bar + SPI por actividad.
+- `PasoGanttComponent` — wrapper dhtmlx-gantt v9 (`import 'dhtmlx-gantt'; declare const gantt: any`). Read-only, escala mensual. Destruye gantt en `ngOnDestroy`.
+
+**Sidebar**: entrada "Prog. Anual SSOMA" en grupo "Salud Ocupacional" de `navigation.service.ts` (featureKey `ssoma.paso.dashboard`).
+
+### `features/evaluaciones/asignaciones/` — ✅ Asignaciones de Supervisores (2026-06-03)
+
+Pantalla para la jefa de UDP para asignar proyectos a supervisores de subareas "Unidad de Proyectos" y "Planeamiento BIM".
+
+- Ruta: `/evaluaciones/asignaciones` (featureKey: `evaluaciones.asignaciones`)
+- Modal de edición con checkboxes. DTOs: `SupervisorAsignacionDto.nombreCompleto`, `ProyectoAsignadoDto.projectId/projectDescription`.
+- Nav item condicional (`*ngIf="hasAsignaciones"`) añadido al topbar de las 4 páginas existentes de evaluaciones.
+
+### `features/evaluaciones/pages/evaluar-residente/` — 🔄 Rediseño (2026-06-03)
+
+Grid 2 columnas de cards (1 col mobile ≤640px). Paleta de 8 colores por `projectId % 8`. Buscador con focus ring. Contador "X/Y evaluados". Badge "✓ Evaluado" con opacidad 60% en cards ya evaluadas. Lógica de evaluación sin cambios.
 
 ### `features/clinica/` — ✅ Módulo Clínica (nuevo en 2026-05-26)
 

@@ -8,5 +8,10 @@ export const SSOMA_ROUTES: Routes = [
         (m) => m.SALUD_OCUPACIONAL_ROUTES,
       ),
   },
+  {
+    path: 'salud-ocupacional/paso',
+    loadChildren: () =>
+      import('./salud-ocupacional/paso/paso.routes').then((m) => m.PASO_ROUTES),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

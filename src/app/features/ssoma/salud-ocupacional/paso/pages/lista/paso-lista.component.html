@@ -1,0 +1,160 @@
+<section class="p-6 space-y-4">
+  <header class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800">Programas PASO</h2>
+      <p class="text-sm text-gray-500">Gestión de programas anuales de seguridad y salud</p>
+    </div>
+    <button type="button" (click)="crearOpen = true"
+      class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+      <i class="ti ti-plus"></i> Nueva plantilla corporativa
+    </button>
+  </header>
+
+  <!-- Filtros -->
+  <div class="flex flex-wrap gap-3 bg-white border border-gray-100 rounded-xl p-3">
+    <select class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+      [(ngModel)]="filtros.anio" (ngModelChange)="load()">
+      <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+    </select>
+    <select class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+      [(ngModel)]="filtros.estado" (ngModelChange)="load()">
+      <option value="">Todos los estados</option>
+      <option value="Borrador">Borrador</option>
+      <option value="Aprobado">Aprobado</option>
+      <option value="Activo">Activo</option>
+      <option value="Cerrado">Cerrado</option>
+    </select>
+    <div class="flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden text-sm">
+      <button type="button" (click)="filtros.esPlantilla=''; load()"
+        class="px-3 py-1.5 transition-colors"
+        [class.bg-blue-600]="filtros.esPlantilla===''" [class.text-white]="filtros.esPlantilla===''"
+        [class.text-gray-600]="filtros.esPlantilla!==''">Todos</button>
+      <button type="button" (click)="filtros.esPlantilla='true'; load()"
+        class="px-3 py-1.5 transition-colors"
+        [class.bg-blue-600]="filtros.esPlantilla==='true'" [class.text-white]="filtros.esPlantilla==='true'"
+        [class.text-gray-600]="filtros.esPlantilla!=='true'">Plantillas</button>
+      <button type="button" (click)="filtros.esPlantilla='false'; load()"
+        class="px-3 py-1.5 transition-colors"
+        [class.bg-blue-600]="filtros.esPlantilla==='false'" [class.text-white]="filtros.esPlantilla==='false'"
+        [class.text-gray-600]="filtros.esPlantilla!=='false'">Instancias</button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
+            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Año</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Proyecto</th>
+            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
+            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+            <th class="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="loading">
+            <td colspan="6" class="py-10 text-center text-gray-400">
+              <i class="ti ti-loader-2 animate-spin text-xl mr-2"></i>Cargando...
+            </td>
+          </tr>
+          <tr *ngFor="let item of items" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <td class="py-3 px-4 font-medium text-gray-800">{{ item.nombre }}</td>
+            <td class="py-3 px-4 text-center text-gray-600">{{ item.anio }}</td>
+            <td class="py-3 px-4 text-gray-600">{{ item.proyectoNombre ?? '—' }}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="badge" [class.bg-indigo-100]="item.esPlantilla" [class.text-indigo-700]="item.esPlantilla"
+                [class.bg-teal-100]="!item.esPlantilla" [class.text-teal-700]="!item.esPlantilla">
+                {{ item.esPlantilla ? 'Plantilla' : 'Instancia' }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="badge" [ngClass]="estadoBadge(item.estado)">{{ item.estado }}</span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button type="button" (click)="verDetalle(item.id)" title="Ver detalle"
+                  class="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-blue-50 transition-colors">
+                  <i class="ti ti-eye"></i>
+                </button>
+                <button *ngIf="item.estado === 'Borrador'" type="button" (click)="aprobar(item)" title="Aprobar"
+                  class="text-gray-400 hover:text-green-600 p-1 rounded hover:bg-green-50 transition-colors">
+                  <i class="ti ti-check"></i>
+                </button>
+                <button *ngIf="item.esPlantilla && item.estado === 'Aprobado'" type="button" (click)="abrirInstanciar(item)" title="Instanciar"
+                  class="text-gray-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50 transition-colors">
+                  <i class="ti ti-copy"></i>
+                </button>
+                <!-- Export dropdown -->
+                <div class="relative">
+                  <button type="button" (click)="exportDropdownId = exportDropdownId === item.id ? null : item.id"
+                    class="text-gray-400 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors">
+                    <i class="ti ti-download"></i>
+                  </button>
+                  <div *ngIf="exportDropdownId === item.id"
+                    class="absolute right-0 top-7 bg-white border border-gray-100 rounded-lg shadow-lg z-10 min-w-32 py-1">
+                    <button type="button" (click)="exportar(item.id, 'excel')"
+                      class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <i class="ti ti-file-spreadsheet text-green-600"></i> Excel
+                    </button>
+                    <button type="button" (click)="exportar(item.id, 'pdf')"
+                      class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <i class="ti ti-file-type-pdf text-red-600"></i> PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && !items.length">
+            <td colspan="6" class="empty">Sin programas para los filtros seleccionados</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Modal crear -->
+<ng-container *ngIf="crearOpen">
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" (click)="crearOpen=false">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 m-4" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Nuevo Programa PASO</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre <span class="text-red-500">*</span></label>
+          <input type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+            placeholder="Ej. PASO Corporativo 2026" [(ngModel)]="crearForm.nombre" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Año</label>
+          <input type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+            [(ngModel)]="crearForm.anio" />
+        </div>
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="crearForm.esPlantilla" />
+          Es plantilla corporativa
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button type="button" (click)="crearOpen=false" class="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Cancelar</button>
+        <button type="button" [disabled]="saving || !crearForm.nombre.trim()" (click)="crear()"
+          class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+          <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+          {{ saving ? 'Creando...' : 'Crear' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<!-- Modal instanciar -->
+<app-instanciar-modal
+  *ngIf="instanciarOpen && instanciarPasoId"
+  [pasoPlantillaId]="instanciarPasoId"
+  [plantillaNombre]="instanciarNombre"
+  (closed)="instanciarOpen=false"
+  (instanciaCreada)="onInstanciaCreada()">
+</app-instanciar-modal>
