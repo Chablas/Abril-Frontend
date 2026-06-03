@@ -199,3 +199,40 @@ app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
 .label-aceptado      { background: #f0fdf4 !important; color: #16a34a !important; }
 .label-atencion      { background: #fefce8 !important; color: #ca8a04 !important; }
 .label-interconsulta { background: #fdf4ff !important; color: #9333ea !important; }
+
+/* ── PASO dashboard — avatar fixed en full-page ───────────────── */
+app-layout .full-page-wrapper app-header {
+  position: fixed !important;
+  top: 12px !important;
+  right: 8px !important;
+  z-index: 999 !important;
+}
+
+app-layout .full-page-wrapper app-header > div {
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+app-layout .full-page-wrapper app-header .shrink-0.relative {
+  width: 40px !important;
+  height: 40px !important;
+  overflow: visible !important;
+}
+
+app-layout .full-page-wrapper app-header .shrink-0.relative img {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255,255,255,.4) !important;
+}
+
+app-layout .full-page-wrapper app-header [class*="flex-8"],
+app-layout .full-page-wrapper app-header a[routerlink],
+app-layout .full-page-wrapper app-header img[alt="Logo"],
+app-layout .full-page-wrapper app-header .sm\:hidden {
+  display: none !important;
+}
