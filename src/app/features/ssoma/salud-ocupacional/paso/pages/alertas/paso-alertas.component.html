@@ -49,11 +49,11 @@
       <div *ngIf="activas.length" class="alert-cards">
         <div *ngFor="let a of activas"
           class="alert-card"
-          [ngClass]="a.tipo === 'Vencida' ? 'alert-card--red' : 'alert-card--yellow'">
+          [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card--red' : 'alert-card--yellow'">
 
           <div class="alert-card__icon"
-            [ngClass]="a.tipo === 'Vencida' ? 'alert-card__icon--red' : 'alert-card__icon--yellow'">
-            <i class="ti" [ngClass]="a.tipo === 'Vencida' ? 'ti-alert-triangle' : 'ti-clock'"></i>
+            [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card__icon--red' : 'alert-card__icon--yellow'">
+            <i class="ti" [ngClass]="a.tipoAlerta === 'Vencido' ? 'ti-alert-triangle' : 'ti-clock'"></i>
           </div>
 
           <div class="alert-card__body">
@@ -65,11 +65,11 @@
           </div>
 
           <div class="alert-card__right">
-            <span class="days-badge" [ngClass]="a.tipo === 'Vencida' ? 'days-badge--red' : 'days-badge--yellow'">
-              <ng-container *ngIf="a.tipo === 'Vencida'">
-                <i class="ti ti-clock-x"></i> {{ a.diasVencido }}d vencida
+            <span class="days-badge" [ngClass]="a.tipoAlerta === 'Vencido' ? 'days-badge--red' : 'days-badge--yellow'">
+              <ng-container *ngIf="a.tipoAlerta === 'Vencido'">
+                <i class="ti ti-clock-x"></i> Vencida
               </ng-container>
-              <ng-container *ngIf="a.tipo === 'ProximaVencer'">
+              <ng-container *ngIf="a.tipoAlerta === 'ProximaAVencer'">
                 <i class="ti ti-clock-hour-4"></i> Vence pronto
               </ng-container>
             </span>

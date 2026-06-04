@@ -54,13 +54,13 @@
     <div class="kpi-strip__item">
       <span class="kpi-strip__label">SPI</span>
       <div class="kpi-strip__value">
-        <app-spi-badge *ngIf="spi; else dashSpi" [spi]="spi.spi" size="md"></app-spi-badge>
+        <app-spi-badge *ngIf="spi; else dashSpi" [spi]="spi.spiGeneral" size="md"></app-spi-badge>
         <ng-template #dashSpi><span style="color:#9ca3af;font-size:.9rem">—</span></ng-template>
       </div>
     </div>
     <div class="kpi-strip__item">
       <span class="kpi-strip__label">Avance %</span>
-      <div class="kpi-strip__value" style="color:#2563eb">{{ spi ? (spi.avancePorcentaje | number:'1.0-1') + '%' : '—' }}</div>
+      <div class="kpi-strip__value" style="color:#2563eb">{{ spi ? (spi.porcentajeAvance | number:'1.0-1') + '%' : '—' }}</div>
     </div>
     <div class="kpi-strip__item">
       <span class="kpi-strip__label">Total actividades</span>
@@ -68,12 +68,12 @@
     </div>
     <div class="kpi-strip__item">
       <span class="kpi-strip__label">Ejecutadas</span>
-      <div class="kpi-strip__value" style="color:#16a34a">{{ spi?.ejecutadasTotal ?? 0 }}</div>
+      <div class="kpi-strip__value" style="color:#16a34a">{{ spi?.totalEjecutadas ?? 0 }}</div>
     </div>
     <div class="kpi-strip__item">
       <span class="kpi-strip__label">Vencidas</span>
-      <div class="kpi-strip__value" [style.color]="(spi?.vencidas ?? 0) > 0 ? '#dc2626' : '#16a34a'">
-        {{ spi?.vencidas ?? 0 }}
+      <div class="kpi-strip__value" [style.color]="(spi?.totalVencidas ?? 0) > 0 ? '#dc2626' : '#16a34a'">
+        {{ spi?.totalVencidas ?? 0 }}
       </div>
     </div>
   </div>

@@ -49,6 +49,7 @@
   height: 100%;
   overflow: hidden;
   background: #eef0f6;
+  min-height: 0;
 }
 
 /* ── HERO ─────────────────────────────────────────────────────── */
@@ -62,7 +63,6 @@
   background: #080f27 !important;
   border-bottom: 1px solid rgba(255,255,255,.06);
   position: relative;
-  overflow: hidden;
   box-shadow: none;
 }
 .paso-hero::before {
@@ -124,8 +124,8 @@
 }
 .hero-pill i { font-size: 12px; }
 .hero-pill--warn { color: #f59e0b !important; background: rgba(245,158,11,.14) !important; border-color: rgba(245,158,11,.22); }
-.paso-hero__right { display: flex; align-items: center; gap: 8px; z-index: 1; flex-shrink: 0; }
-.hero-avatar-gap { width: 56px; flex-shrink: 0; }
+.paso-hero__right { margin-left: auto; display: flex; align-items: center; gap: 8px; z-index: 1; flex-shrink: 0; padding-right: 60px; }
+.hero-avatar-gap { display: none; }
 .hero-btn {
   display: inline-flex;
   align-items: center;
@@ -198,6 +198,13 @@
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 12px !important;
+}
+.kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 .kpi-card {
   background: #ffffff !important;
@@ -514,9 +521,15 @@
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .bottom-grid { grid-template-columns: 1fr !important; }
+  .paso-hero__center { display: none; }
+}
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .ambito-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 760px) {
   .ambito-grid { grid-template-columns: 1fr !important; }
   .dashboard-content { padding: 12px 14px !important; }
-  .paso-hero__center { display: none; }
+  .paso-hero__title { font-size: 12px !important; }
+  .paso-hero__sub { display: none; }
 }

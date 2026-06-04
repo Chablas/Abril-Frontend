@@ -4,71 +4,81 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { buildAuthHeaders, buildParams } from '../../services/http-base';
 import {
-  PasoDto,
+  PasoDetalleDto,
+  PasoListItemDto,
+  PagedResultDto,
   PasoSpiDto,
   PasoDashboardDto,
   PasoAlertaDto,
-  PasoGanttDto,
+  GanttItemDto,
   PasoCategoriaDto,
   CreatePasoDto,
   InstanciarPasoDto,
 } from '../dtos/paso.dtos';
 
-const PASO_BASE = `${environment.apiUrl}api/v1/ssoma-paso`;
+const BASE = `${environment.apiUrl}api/v1/ssoma-paso`;
 
 @Injectable({ providedIn: 'root' })
 export class PasoService {
   constructor(private http: HttpClient) {}
 
-  getAll(params: { proyectoId?: number; anio?: number; estado?: string; esPlantilla?: boolean } = {}): Observable<PasoDto[]> {
-    return this.http.get<PasoDto[]>(PASO_BASE, {
+  getAll(params: {
+    proyectoId?: number;
+    anio?: number;
+    estado?: string;
+    esPlantilla?: boolean;
+    page?: number;
+    pageSize?: number;
+  } = {}): Observable<PagedResultDto<PasoListItemDto>> {
+    return this.http.get<PagedResultDto<PasoListItemDto>>(BASE, {
       params: buildParams(params as Record<string, unknown>),
       headers: buildAuthHeaders(),
     });
   }
 
-  getById(id: number): Observable<PasoDto> {
-    return this.http.get<PasoDto>(`${PASO_BASE}/${id}`, { headers: buildAuthHeaders() });
+  getById(id: number): Observable<PasoDetalleDto> {
+    return this.http.get<PasoDetalleDto>(`${BASE}/${id}`, { headers: buildAuthHeaders() });
   }
 
-  create(dto: CreatePasoDto): Observable<PasoDto> {
-    return this.http.post<PasoDto>(PASO_BASE, dto, { headers: buildAuthHeaders() });
+  create(dto: CreatePasoDto): Observable<PasoListItemDto> {
+    return this.http.post<PasoListItemDto>(BASE, dto, { headers: buildAuthHeaders() });
   }
 
-  update(id: number, dto: Partial<CreatePasoDto>): Observable<PasoDto> {
-    return this.http.put<PasoDto>(`${PASO_BASE}/${id}`, dto, { headers: buildAuthHeaders() });
+  update(id: number, dto: Partial<CreatePasoDto>): Observable<PasoListItemDto> {
+    return this.http.put<PasoListItemDto>(`${BASE}/${id}`, dto, { headers: buildAuthHeaders() });
   }
 
-  aprobar(id: number): Observable<PasoDto> {
-    return this.http.patch<PasoDto>(`${PASO_BASE}/${id}/aprobar`, {}, { headers: buildAuthHeaders() });
+  aprobar(id: number): Observable<PasoListItemDto> {
+    return this.http.patch<PasoListItemDto>(`${BASE}/${id}/aprobar`, {}, { headers: buildAuthHeaders() });
   }
 
-  instanciar(id: number, dto: InstanciarPasoDto): Observable<PasoDto> {
-    return this.http.post<PasoDto>(`${PASO_BASE}/${id}/instanciar`, dto, { headers: buildAuthHeaders() });
+  instanciar(id: number, dto: InstanciarPasoDto): Observable<PasoListItemDto> {
+    return this.http.post<PasoListItemDto>(`${BASE}/${id}/instanciar`, dto, { headers: buildAuthHeaders() });
   }
 
-  getGantt(id: number): Observable<PasoGanttDto> {
-    return this.http.get<PasoGanttDto>(`${PASO_BASE}/${id}/gantt`, { headers: buildAuthHeaders() });
+  getGantt(id: number): Observable<GanttItemDto[]> {
+    return this.http.get<GanttItemDto[]>(`${BASE}/${id}/gantt`, { headers: buildAuthHeaders() });
   }
 
   getSpi(id: number): Observable<PasoSpiDto> {
-    return this.http.get<PasoSpiDto>(`${PASO_BASE}/${id}/spi`, { headers: buildAuthHeaders() });
+    return this.http.get<PasoSpiDto>(`${BASE}/${id}/spi`, { headers: buildAuthHeaders() });
   }
 
-  getDashboard(): Observable<PasoDashboardDto> {
-    return this.http.get<PasoDashboardDto>(`${PASO_BASE}/dashboard`, { headers: buildAuthHeaders() });
+  getDashboard(anio?: number): Observable<PasoDashboardDto> {
+    const params = anio ? buildParams({ anio } as Record<string, unknown>) : undefined;
+    return this.http.get<PasoDashboardDto>(`${BASE}/dashboard`, { params, headers: buildAuthHeaders() });
   }
 
   getAlertas(): Observable<PasoAlertaDto[]> {
-    return this.http.get<PasoAlertaDto[]>(`${PASO_BASE}/alertas`, { headers: buildAuthHeaders() });
+    return this.http.get<PasoAlertaDto[]>(`${BASE}/alertas`, { headers: buildAuthHeaders() });
   }
 
   getCategorias(): Observable<PasoCategoriaDto[]> {
-    return this.http.get<PasoCategoriaDto[]>(`${PASO_BASE}/categorias`, { headers: buildAuthHeaders() });
+    return this.http.get<PasoCategoriaDto[]>(`${BASE}/categorias`, { headers: buildAuthHeaders() });
   }
 
   exportReporte(id: number, format: 'excel' | 'pdf'): Observable<Blob> {
-    return this.http.get(`${PASO_BASE}/${id}/reporte`, {
+    return this.http.get(`${BASE}/${id}/reporte`, {
       params: buildParams({ format } as Record<string, unknown>),
       headers: buildAuthHeaders(),
       responseType: 'blob',

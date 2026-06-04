@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { PasoService } from '../../services/paso.service';
-import { PasoDto, CreatePasoDto } from '../../dtos/paso.dtos';
+import { PasoListItemDto, CreatePasoDto } from '../../dtos/paso.dtos';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -18,23 +18,24 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   styleUrl: './paso-lista.component.css',
 })
 export class PasoListaComponent implements OnInit {
-  items: PasoDto[] = [];
+  items: PasoListItemDto[] = [];
   loading = false;
+  total = 0;
+  totalPages = 1;
+  page = 1;
+  readonly pageSize = 20;
 
   filtros = { anio: new Date().getFullYear(), proyectoId: '', estado: '', esPlantilla: '' };
   anios = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i);
 
-  // Crear modal
   crearOpen = false;
-  crearForm: CreatePasoDto = { nombre: '', anio: new Date().getFullYear(), esPlantilla: false };
+  crearForm: CreatePasoDto = { nombre: '', anio: new Date().getFullYear(), mesInicio: 1, esPlantilla: false };
   saving = false;
 
-  // Instanciar modal
   instanciarOpen = false;
   instanciarPasoId: number | null = null;
   instanciarNombre = '';
 
-  // Export dropdown
   exportDropdownId: number | null = null;
 
   constructor(
@@ -52,12 +53,14 @@ export class PasoListaComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.loaderService.show();
-    const params: any = { anio: this.filtros.anio };
-    if (this.filtros.estado) params.estado = this.filtros.estado;
-    if (this.filtros.esPlantilla !== '') params.esPlantilla = this.filtros.esPlantilla === 'true';
+    const params: Record<string, unknown> = { anio: this.filtros.anio, page: this.page, pageSize: this.pageSize };
+    if (this.filtros.estado) params['estado'] = this.filtros.estado;
+    if (this.filtros.esPlantilla !== '') params['esPlantilla'] = this.filtros.esPlantilla === 'true';
     this.pasoService.getAll(params).subscribe({
       next: (res) => {
-        this.items = res;
+        this.items = res.items;
+        this.total = res.total;
+        this.totalPages = res.totalPages ?? Math.ceil(res.total / this.pageSize);
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -70,22 +73,35 @@ export class PasoListaComponent implements OnInit {
     });
   }
 
+  prevPage(): void {
+    if (this.page > 1) { this.page--; this.load(); }
+  }
+
+  nextPage(): void {
+    if (this.page < this.totalPages) { this.page++; this.load(); }
+  }
+
   verDetalle(id: number): void {
     this.router.navigate(['/ssoma/gestion/paso', id]);
   }
 
-  aprobar(item: PasoDto): void {
-    Swal.fire({ icon: 'question', title: '¿Aprobar programa?', text: item.nombre, showCancelButton: true, confirmButtonText: 'Aprobar' })
-      .then(r => {
-        if (!r.isConfirmed) return;
-        this.pasoService.aprobar(item.id).subscribe({
-          next: () => { Swal.fire('Aprobado', '', 'success'); this.load(); },
-          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-        });
+  aprobar(item: PasoListItemDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar programa?',
+      text: item.nombre,
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      this.pasoService.aprobar(item.id).subscribe({
+        next: () => { Swal.fire('Aprobado', '', 'success'); this.load(); },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
+    });
   }
 
-  abrirInstanciar(item: PasoDto): void {
+  abrirInstanciar(item: PasoListItemDto): void {
     this.instanciarPasoId = item.id;
     this.instanciarNombre = item.nombre;
     this.instanciarOpen = true;
@@ -132,8 +148,8 @@ export class PasoListaComponent implements OnInit {
     const map: Record<string, string> = {
       Borrador: 'bg-gray-100 text-gray-600',
       Aprobado: 'bg-blue-100 text-blue-700',
-      Activo: 'bg-green-100 text-green-700',
-      Cerrado: 'bg-gray-200 text-gray-800',
+      Activo:   'bg-green-100 text-green-700',
+      Cerrado:  'bg-gray-200 text-gray-800',
     };
     return map[estado] ?? 'bg-gray-100 text-gray-500';
   }

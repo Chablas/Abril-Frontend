@@ -54,11 +54,11 @@ export class PasoAlertasComponent implements OnInit {
   }
 
   get vencidas(): PasoAlertaDto[] {
-    return this.alertas.filter(a => a.tipo === 'Vencida');
+    return this.alertas.filter(a => a.tipoAlerta === 'Vencido');
   }
 
   get proximas(): PasoAlertaDto[] {
-    return this.alertas.filter(a => a.tipo === 'ProximaVencer');
+    return this.alertas.filter(a => a.tipoAlerta === 'ProximaAVencer');
   }
 
   get activas(): PasoAlertaDto[] {

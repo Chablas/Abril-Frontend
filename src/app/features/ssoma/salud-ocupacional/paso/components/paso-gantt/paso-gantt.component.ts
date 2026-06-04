@@ -76,7 +76,7 @@ export class PasoGanttComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loading = false;
         if (this.initialized && typeof gantt !== 'undefined') {
           gantt.clearAll();
-          gantt.parse({ data: data.tasks, links: [] });
+          gantt.parse({ data: data as any, links: [] });
         }
         this.cdr.detectChanges();
       },

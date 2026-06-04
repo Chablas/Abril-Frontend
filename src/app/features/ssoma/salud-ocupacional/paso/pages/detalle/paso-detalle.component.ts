@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
-import { PasoDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
+import { PasoDetalleDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
@@ -24,7 +24,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
   styleUrl: './paso-detalle.component.css',
 })
 export class PasoDetalleComponent implements OnInit {
-  paso: PasoDto | null = null;
+  paso: PasoDetalleDto | null = null;
   spi: PasoSpiDto | null = null;
   categorias: PasoCategoriaDto[] = [];
   loading = false;
@@ -107,7 +107,11 @@ export class PasoDetalleComponent implements OnInit {
     Swal.fire({ icon: 'question', title: '¿Aprobar programa?', showCancelButton: true, confirmButtonText: 'Aprobar' }).then(r => {
       if (!r.isConfirmed) return;
       this.pasoService.aprobar(this.paso!.id).subscribe({
-        next: (p) => { this.paso = p; Swal.fire('Aprobado', '', 'success'); this.cdr.detectChanges(); },
+        next: (p) => {
+          if (this.paso) this.paso = { ...this.paso, estado: p.estado, aprobadoPorNombre: p.aprobadoPorNombre, aprobadoEn: p.aprobadoEn };
+          Swal.fire('Aprobado', '', 'success');
+          this.cdr.detectChanges();
+        },
         error: (err) => this.errorService.handleError(err),
       });
     });
