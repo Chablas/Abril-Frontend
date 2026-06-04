@@ -8,13 +8,14 @@ import { PasoService } from '../../services/paso.service';
 import { PasoListItemDto, CreatePasoDto } from '../../dtos/paso.dtos';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
+import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
 @Component({
   selector: 'app-paso-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, InstanciarModalComponent, PasoNavComponent],
+  imports: [CommonModule, FormsModule, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })

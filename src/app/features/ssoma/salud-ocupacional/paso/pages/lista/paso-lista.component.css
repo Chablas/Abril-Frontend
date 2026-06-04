@@ -1,49 +1,19 @@
-/* ── Hero ─────────────────────────────────────────────────────── */
-.lista-hero {
-  background: linear-gradient(135deg, #1B263B 0%, #415A77 100%);
-  padding: 1.4rem 1.75rem;
+
+:host {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  color: #fff;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #f4f6f9 !important;
 }
 
-.lista-hero__title { font-size: 1.35rem; font-weight: 800; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
-.lista-hero__sub   { font-size: 0.82rem; opacity: 0.72; margin: 0; }
-
-.lista-hero__right {
+.lista-root {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f4f6f9;
 }
-
-.badge-count {
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  padding: 0.2rem 0.65rem;
-  color: #fff;
-}
-
-.btn-new {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: #fff;
-  color: #1B263B;
-  border-radius: 8px;
-  padding: 0.5rem 1.1rem;
-  border: none;
-  transition: all 0.15s;
-  cursor: pointer;
-}
-.btn-new:hover { background: #f0f4ff; }
 
 /* ── Page body ────────────────────────────────────────────────── */
 .lista-body {

@@ -1,18 +1,12 @@
 <div>
   <!-- ── Hero ─────────────────────────────────────────────────── -->
-  <div class="alertas-hero">
-    <div class="alertas-hero__left">
-      <h1 class="alertas-hero__title">
-        <i class="ti ti-alert-triangle"></i>
-        Alertas PASO
-        <span *ngIf="alertas.length" class="badge-total">{{ alertas.length }}</span>
-      </h1>
-      <p class="alertas-hero__sub">Actividades vencidas y próximas a vencer</p>
-    </div>
-    <button type="button" class="hero-refresh" (click)="load()">
-      <i class="ti ti-refresh"></i> Actualizar
-    </button>
-  </div>
+  <app-ssoma-page-header
+    badge="SSOMA · PASO"
+    titulo="Alertas PASO"
+    subtitulo="Actividades vencidas y próximas a vencer"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-ssoma-page-header>
   <app-paso-nav></app-paso-nav>
 
   <div class="alertas-body">

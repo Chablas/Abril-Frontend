@@ -1,35 +1,16 @@
-<!-- ═══════════════════  HERO BAR  ═══════════════════ -->
-<div class="paso-hero">
-  <div class="paso-hero__left">
-    <span class="paso-hero__badge">SSOMA · {{ anioActual }}</span>
-    <div class="hero-vline"></div>
-    <div class="paso-hero__title-wrap">
-      <h1 class="paso-hero__title">Programa Anual SSOMA</h1>
-      <p class="paso-hero__sub">Seguridad · Salud Ocupacional · Medio Ambiente</p>
-    </div>
-  </div>
-
-  <div class="paso-hero__center">
-    <span class="hero-pill">
-      <i class="ti ti-layout-grid" aria-hidden="true"></i>
-      {{ data?.programasActivos ?? 0 }} activos
-    </span>
-    <span class="hero-pill" [class.hero-pill--warn]="alertas.length > 0">
-      <i class="ti ti-alert-triangle" aria-hidden="true"></i>
-      {{ alertas.length }} alertas
-    </span>
-  </div>
-
-  <div class="paso-hero__right">
-    <button type="button" class="hero-btn hero-btn--ghost" (click)="load()">
-      <i class="ti ti-refresh" aria-hidden="true"></i> Actualizar
-    </button>
-    <button type="button" class="hero-btn hero-btn--primary" (click)="irALista()">
-      <i class="ti ti-plus" aria-hidden="true"></i> Nuevo programa
-    </button>
-    <div class="hero-avatar-placeholder"></div>
-  </div>
-</div>
+<app-ssoma-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Programa Anual SSOMA"
+  subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+  [pills]="[
+    { icono: 'ti-layout-grid', texto: (data?.programasActivos ?? 0) + ' activos' },
+    { icono: 'ti-alert-triangle', texto: alertas.length + ' alertas', warn: alertas.length > 0 }
+  ]"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  [botonPrimario]="{ label: 'Nuevo programa', icono: 'ti-plus' }"
+  (secondaryClick)="load()"
+  (primaryClick)="irALista()">
+</app-ssoma-page-header>
 
 <app-paso-nav></app-paso-nav>
 

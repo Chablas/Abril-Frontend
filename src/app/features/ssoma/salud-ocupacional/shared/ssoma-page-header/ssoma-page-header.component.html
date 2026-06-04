@@ -1,0 +1,37 @@
+<div class="ssoma-hero">
+  <div class="ssoma-hero__left">
+    <span class="ssoma-hero__badge">{{ badge }}</span>
+    <div class="ssoma-hero__vline"></div>
+    <div class="ssoma-hero__title-wrap">
+      <h1 class="ssoma-hero__title">{{ titulo }}</h1>
+      <p class="ssoma-hero__sub" *ngIf="subtitulo">{{ subtitulo }}</p>
+    </div>
+  </div>
+
+  <div class="ssoma-hero__center" *ngIf="pills.length">
+    <span *ngFor="let p of pills"
+          class="ssoma-hero__pill"
+          [class.ssoma-hero__pill--warn]="p.warn">
+      <i class="ti {{ p.icono }}" aria-hidden="true"></i>
+      {{ p.texto }}
+    </span>
+  </div>
+
+  <div class="ssoma-hero__right">
+    <button *ngIf="botonSecundario"
+            type="button"
+            class="ssoma-hero__btn ssoma-hero__btn--ghost"
+            (click)="secondaryClick.emit()">
+      <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
+      {{ botonSecundario.label }}
+    </button>
+    <button *ngIf="botonPrimario"
+            type="button"
+            class="ssoma-hero__btn ssoma-hero__btn--primary"
+            (click)="primaryClick.emit()">
+      <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
+      {{ botonPrimario.label }}
+    </button>
+    <div class="ssoma-hero__avatar-gap"></div>
+  </div>
+</div>

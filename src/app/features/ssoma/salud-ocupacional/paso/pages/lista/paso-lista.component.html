@@ -1,17 +1,12 @@
 <div>
   <!-- ── Hero ─────────────────────────────────────────────────── -->
-  <div class="lista-hero">
-    <div>
-      <h1 class="lista-hero__title">Programas PASO</h1>
-      <p class="lista-hero__sub">Gestión de programas anuales de seguridad y salud</p>
-    </div>
-    <div class="lista-hero__right">
-      <span *ngIf="!loading" class="badge-count">{{ total }} resultado{{ total !== 1 ? 's' : '' }}</span>
-      <button type="button" class="btn-new" (click)="crearOpen = true">
-        <i class="ti ti-plus"></i> Nueva plantilla corporativa
-      </button>
-    </div>
-  </div>
+  <app-ssoma-page-header
+    badge="SSOMA · PASO"
+    titulo="Programas PASO"
+    subtitulo="Gestión de programas anuales de seguridad y salud"
+    [botonPrimario]="{ label: 'Nueva plantilla', icono: 'ti-plus' }"
+    (primaryClick)="crearOpen = true">
+  </app-ssoma-page-header>
   <app-paso-nav></app-paso-nav>
 
   <div class="lista-body">
