@@ -1,158 +1,185 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { forkJoin } from 'rxjs';
 import { PasoService } from '../../services/paso.service';
-import { PasoListItemDto, CreatePasoDto } from '../../dtos/paso.dtos';
+import { PasoActividadService } from '../../services/paso-actividad.service';
+import { PasoListItemDto, PasoDetalleDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
+import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
+import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
+import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
 import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
+type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
+
 @Component({
   selector: 'app-paso-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
+            PasoGanttComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })
 export class PasoListaComponent implements OnInit {
-  items: PasoListItemDto[] = [];
+  programas: PasoListItemDto[] = [];
+  selectedPasoId: number | null = null;
+
+  paso: PasoDetalleDto | null = null;
+  spi: PasoSpiDto | null = null;
+  categorias: PasoCategoriaDto[] = [];
+
   loading = false;
-  total = 0;
-  totalPages = 1;
-  page = 1;
-  readonly pageSize = 20;
+  loadingDetalle = false;
+  tabActiva: TabAmbito = 'Seguridad';
+  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
 
-  filtros = { anio: new Date().getFullYear(), proyectoId: '', estado: '', esPlantilla: '' };
-  anios = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i);
-
-  crearOpen = false;
-  crearForm: CreatePasoDto = { nombre: '', anio: new Date().getFullYear(), mesInicio: 1, esPlantilla: false };
+  agregarOpen = false;
+  agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
-
   instanciarOpen = false;
-  instanciarPasoId: number | null = null;
-  instanciarNombre = '';
+  exportOpen = false;
 
-  exportDropdownId: number | null = null;
+  readonly anioActual = new Date().getFullYear();
 
   constructor(
     private pasoService: PasoService,
+    private actividadService: PasoActividadService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.load();
+    forkJoin({
+      programas: this.pasoService.getAll({ esPlantilla: false, anio: this.anioActual, pageSize: 50 }),
+      categorias: this.pasoService.getCategorias(),
+    }).subscribe({
+      next: ({ programas, categorias }) => {
+        this.programas = programas.items;
+        this.categorias = categorias;
+        if (this.programas.length > 0) {
+          this.selectedPasoId = this.programas[0].id;
+          this.loadDetalle(this.programas[0].id);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => this.errorService.handleError(err),
+    });
   }
 
-  load(): void {
-    this.loading = true;
+  onProyectoChange(): void {
+    if (this.selectedPasoId) this.loadDetalle(this.selectedPasoId);
+  }
+
+  private loadDetalle(id: number): void {
+    this.loadingDetalle = true;
     this.loaderService.show();
-    const params: Record<string, unknown> = { anio: this.filtros.anio, page: this.page, pageSize: this.pageSize };
-    if (this.filtros.estado) params['estado'] = this.filtros.estado;
-    if (this.filtros.esPlantilla !== '') params['esPlantilla'] = this.filtros.esPlantilla === 'true';
-    this.pasoService.getAll(params).subscribe({
-      next: (res) => {
-        this.items = res.items;
-        this.total = res.total;
-        this.totalPages = res.totalPages ?? Math.ceil(res.total / this.pageSize);
-        this.loading = false;
+    forkJoin({
+      paso: this.pasoService.getById(id),
+      spi: this.pasoService.getSpi(id),
+    }).subscribe({
+      next: ({ paso, spi }) => {
+        this.paso = paso;
+        this.spi = spi;
+        this.loadingDetalle = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loading = false;
+        this.loadingDetalle = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
       },
     });
   }
 
-  prevPage(): void {
-    if (this.page > 1) { this.page--; this.load(); }
+  get actividadesTab() {
+    if (!this.paso?.actividades) return [];
+    return this.paso.actividades.filter(a => a.categoriaAmbito === this.tabActiva && a.activo);
   }
 
-  nextPage(): void {
-    if (this.page < this.totalPages) { this.page++; this.load(); }
+  get categoriasFiltradas() {
+    return this.categorias.filter(c => c.ambito === (this.tabActiva as 'Seguridad' | 'Salud' | 'Ambiente'));
   }
 
-  verDetalle(id: number): void {
-    this.router.navigate(['/ssoma/gestion/paso', id]);
+  countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
+    return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
   }
 
-  aprobar(item: PasoListItemDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar programa?',
-      text: item.nombre,
-      showCancelButton: true,
-      confirmButtonText: 'Aprobar',
-    }).then(r => {
+  setTab(tab: TabAmbito): void { this.tabActiva = tab; this.exportOpen = false; }
+
+  aprobar(): void {
+    if (!this.paso) return;
+    Swal.fire({ icon: 'question', title: '¿Aprobar programa?', showCancelButton: true, confirmButtonText: 'Aprobar' }).then(r => {
       if (!r.isConfirmed) return;
-      this.pasoService.aprobar(item.id).subscribe({
-        next: () => { Swal.fire('Aprobado', '', 'success'); this.load(); },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      this.pasoService.aprobar(this.paso!.id).subscribe({
+        next: (p) => {
+          if (this.paso) this.paso = { ...this.paso, estado: p.estado, aprobadoPorNombre: p.aprobadoPorNombre, aprobadoEn: p.aprobadoEn };
+          Swal.fire('Aprobado', '', 'success');
+          this.cdr.detectChanges();
+        },
+        error: (err) => this.errorService.handleError(err),
       });
     });
   }
 
-  abrirInstanciar(item: PasoListItemDto): void {
-    this.instanciarPasoId = item.id;
-    this.instanciarNombre = item.nombre;
-    this.instanciarOpen = true;
+  abrirAgregar(): void {
+    this.agregarForm = { pasoId: this.paso?.id, mesInicio: 1, mesFin: 12, cantidadPlanificada: 1 };
+    this.agregarOpen = true;
   }
 
-  onInstanciaCreada(): void {
-    this.instanciarOpen = false;
-    this.load();
+  guardarActividad(): void {
+    if (!this.agregarForm.nombre?.trim() || !this.agregarForm.categoriaId) return;
+    this.saving = true;
+    this.actividadService.create(this.agregarForm as CreateActividadDto).subscribe({
+      next: (a) => {
+        this.saving = false;
+        this.agregarOpen = false;
+        if (this.paso) this.paso.actividades = [...(this.paso.actividades ?? []), a];
+        this.cdr.detectChanges();
+      },
+      error: (err) => { this.saving = false; this.errorService.handleError(err); },
+    });
   }
 
-  exportar(id: number, format: 'excel' | 'pdf'): void {
-    this.exportDropdownId = null;
-    this.pasoService.exportReporte(id, format).subscribe({
+  onEliminada(id: number): void {
+    if (this.paso) this.paso.actividades = this.paso.actividades?.filter(a => a.id !== id);
+    this.cdr.detectChanges();
+  }
+
+  onInstanciaCreada(): void { this.instanciarOpen = false; this.ngOnInit(); }
+
+  exportar(format: 'excel' | 'pdf'): void {
+    if (!this.paso) return;
+    this.exportOpen = false;
+    this.pasoService.exportReporte(this.paso.id, format).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `PASO-${id}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+        a.download = `PASO-${this.paso!.id}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
         a.click();
         URL.revokeObjectURL(url);
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err) => this.errorService.handleError(err),
     });
   }
 
-  crear(): void {
-    if (!this.crearForm.nombre.trim()) return;
-    this.saving = true;
-    this.pasoService.create(this.crearForm).subscribe({
-      next: (paso) => {
-        this.saving = false;
-        this.crearOpen = false;
-        Swal.fire('Creado', '', 'success');
-        this.router.navigate(['/ssoma/gestion/paso', paso.id]);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving = false;
-        this.errorService.handleError(err);
-      },
-    });
+  tabColor(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb', Gantt: 'tab--gantt' };
+    return m[t];
   }
 
-  estadoBadge(estado: string): string {
-    const map: Record<string, string> = {
-      Borrador: 'bg-gray-100 text-gray-600',
-      Aprobado: 'bg-blue-100 text-blue-700',
-      Activo:   'bg-green-100 text-green-700',
-      Cerrado:  'bg-gray-200 text-gray-800',
-    };
-    return map[estado] ?? 'bg-gray-100 text-gray-500';
+  tabIcon(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf', Gantt: 'ti-chart-gantt' };
+    return m[t];
   }
+
+  tabLabel(t: TabAmbito): string { return t === 'Salud' ? 'Salud Ocupacional' : t; }
 }
