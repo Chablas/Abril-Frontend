@@ -145,7 +145,7 @@
         </div>
 
         <div class="flex flex-col gap-[4px]">
-          <app-search-select label="Forma de pago" [options]="createFormData.paymentForms" valueField="paymentFormId"
+          <app-search-select label="Forma de valorización" [options]="createFormData.paymentForms" valueField="paymentFormId"
             displayField="paymentFormDescription" [(value)]="createDto.paymentFormId" />
           <p *ngIf="submitted && !createDto.paymentFormId" class="text-xs text-red-500">Campo requerido</p>
         </div>

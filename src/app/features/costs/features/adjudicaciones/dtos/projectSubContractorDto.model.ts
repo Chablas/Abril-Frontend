@@ -63,6 +63,7 @@ export interface ProjectSubContractorDTO {
   // Salidas no conforme y cuadro de tolerancias (paso 3 — solo subida)
   nonConformingOutput?: ProjectSubContractorFileDTO;
   toleranceChart?: ProjectSubContractorFileDTO;
+  finishProtection?: ProjectSubContractorFileDTO;
   // Ficha técnica y anexos (paso 3 — solo subida)
   fichaTecnica?: ProjectSubContractorFileDTO;
   anexo?: ProjectSubContractorFileDTO;

@@ -70,6 +70,7 @@ export class Detail implements OnInit {
       { key: 'Instructivo',          label: 'Instructivo' },
       { key: 'NonConformingOutput',  label: 'Causales de No Conformidad' },
       { key: 'ToleranceChart',       label: 'Cuadro de Tolerancias' },
+      { key: 'FinishProtection',     label: 'Protección de Acabados' },
       { key: 'FichaTecnica',         label: 'Ficha Técnica' },
       { key: 'Anexo',                label: 'Anexos' },
     ];
@@ -123,7 +124,7 @@ export class Detail implements OnInit {
    * Documentos que NO se suben ni generan: usan un PDF de plantilla fijo del servidor.
    * Solo se controla su estado con dos opciones: Aprobado (4) / No aplica (1).
    */
-  private readonly templateDocs = new Set(['NonConformingOutput', 'ToleranceChart']);
+  private readonly templateDocs = new Set(['NonConformingOutput', 'ToleranceChart', 'FinishProtection']);
 
   isTemplateDoc(key: string): boolean {
     return this.templateDocs.has(key);
@@ -335,6 +336,7 @@ export class Detail implements OnInit {
       case 'Instructivo':          return this.item.instructivo          ?? undefined;
       case 'NonConformingOutput':  return this.item.nonConformingOutput  ?? undefined;
       case 'ToleranceChart':       return this.item.toleranceChart       ?? undefined;
+      case 'FinishProtection':     return this.item.finishProtection     ?? undefined;
       case 'FichaTecnica':         return this.item.fichaTecnica         ?? undefined;
       case 'Anexo':                return this.item.anexo                ?? undefined;
       case 'ScannedDoc1':          return this.item.scannedDoc1          ?? undefined;
@@ -489,7 +491,7 @@ export class Detail implements OnInit {
   getStatusOptionsForDoc(docKey: string): { id: number; label: string }[] {
     if (this.isTemplateDoc(docKey)) {
       return [
-        { id: 4, label: 'Aprobado' },
+        { id: 4, label: 'Si aplica' },
         { id: 1, label: 'No aplica' },
       ];
     }
@@ -528,6 +530,7 @@ export class Detail implements OnInit {
           const stub = { fileUrl: '', statusId: form.statusId, observation: form.observation || null };
           if (docKey === 'NonConformingOutput') this.item.nonConformingOutput = stub;
           else if (docKey === 'ToleranceChart') this.item.toleranceChart = stub;
+          else if (docKey === 'FinishProtection') this.item.finishProtection = stub;
         }
       },
       error: (err) => {
