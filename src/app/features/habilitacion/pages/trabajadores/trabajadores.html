@@ -506,7 +506,7 @@
           La inducción se gestiona desde el módulo de Inducciones.
         </div>
 
-        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12">
+        <div class="field-grp" *ngIf="selectedEntregable.itemId !== 12 && (workerEsCasa() || (selectedEntregable.itemId !== 11 && selectedEntregable.itemId !== 13))">
           <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
           <div class="upload-zone upload-zone--disabled"
             *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">

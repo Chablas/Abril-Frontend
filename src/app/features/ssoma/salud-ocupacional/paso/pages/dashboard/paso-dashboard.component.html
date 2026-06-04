@@ -1,127 +1,381 @@
-<section class="p-6 space-y-6">
-  <header class="flex items-center justify-between flex-wrap gap-3">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">PASO — Dashboard</h2>
-      <p class="text-sm text-gray-500">Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente</p>
-    </div>
-    <div class="flex gap-2">
-      <button type="button" (click)="load()"
-        class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700">
-        <i class="ti ti-refresh"></i> Actualizar
-      </button>
-      <button type="button" (click)="irALista()"
-        class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-        <i class="ti ti-plus"></i> Nuevo programa
-      </button>
-    </div>
-  </header>
+<div class="paso-root">
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="flex items-center justify-center py-16 text-gray-400">
-    <i class="ti ti-loader-2 animate-spin text-3xl mr-3"></i>
-    <span>Cargando dashboard...</span>
+<!-- ═══════════════════  HERO BAR  ═══════════════════ -->
+<div class="paso-hero">
+  <div class="paso-hero__left">
+    <span class="paso-hero__badge">SSOMA · {{ anioActual }}</span>
+    <div class="hero-vline"></div>
+    <div class="paso-hero__title-wrap">
+      <h1 class="paso-hero__title">Programa Anual SSOMA</h1>
+      <p class="paso-hero__sub">Seguridad · Salud Ocupacional · Medio Ambiente</p>
+    </div>
   </div>
+
+  <div class="paso-hero__center">
+    <span class="hero-pill">
+      <i class="ti ti-layout-grid" aria-hidden="true"></i>
+      {{ programasActivos }} activos
+    </span>
+    <span class="hero-pill" [class.hero-pill--warn]="(data?.alertas?.length ?? 0) > 0">
+      <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+      {{ data?.alertas?.length ?? 0 }} alertas
+    </span>
+  </div>
+
+  <div class="paso-hero__right">
+    <button type="button" class="hero-btn hero-btn--ghost" (click)="load()">
+      <i class="ti ti-refresh" aria-hidden="true"></i> Actualizar
+    </button>
+    <button type="button" class="hero-btn hero-btn--primary" (click)="irALista()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Nuevo programa
+    </button>
+  </div>
+  <div class="hero-avatar-gap"></div>
+</div>
+
+<!-- ═══════════════════  CONTENT  ═══════════════════ -->
+<div class="dashboard-content">
+
+  <!-- SKELETON -->
+  <ng-container *ngIf="loading">
+    <div class="kpi-grid">
+      <div *ngFor="let _ of [1,2,3,4]" class="kpi-card skeleton-card">
+        <div class="skeleton" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div class="skeleton" style="height:9px;width:50%;margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:28px;width:40%;margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:8px;width:65%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ambito-grid">
+      <div *ngFor="let _ of [1,2,3]" class="ambito-card skeleton-card">
+        <div class="skeleton" style="height:11px;width:40%;margin-bottom:14px;"></div>
+        <div class="skeleton" style="height:32px;width:30%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="height:6px;width:100%;margin-bottom:10px;"></div>
+        <div class="skeleton" style="height:9px;width:55%;"></div>
+      </div>
+    </div>
+  </ng-container>
 
   <ng-container *ngIf="!loading && data">
 
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <article class="kpi-card">
+    <!-- ══ FILA 1: KPIs ══ -->
+    <div class="kpi-grid fade-in">
+
+      <!-- SPI Consolidado -->
+      <article class="kpi-card kpi-card--purple">
+        <div class="kpi-icon" style="background:#f3f0ff;color:#7c3aed">
+          <i class="ti ti-chart-line" aria-hidden="true"></i>
+        </div>
         <div class="kpi-label">SPI Consolidado</div>
-        <div class="mt-1">
-          <app-spi-badge [spi]="data.consolidado.spi"></app-spi-badge>
+        <div class="kpi-value">{{ (dispSpi / 100) | number:'1.2-2' }}</div>
+        <app-spi-badge
+          [spi]="data.consolidado.spi"
+          [planificadas]="data.consolidado.planificadasHoy"
+          size="sm">
+        </app-spi-badge>
+      </article>
+
+      <!-- Avance Global -->
+      <article class="kpi-card kpi-card--blue">
+        <div class="kpi-icon" style="background:#eff6ff;color:#1d4ed8">
+          <i class="ti ti-progress" aria-hidden="true"></i>
         </div>
-        <div class="kpi-sub mt-1">{{ data.consolidado.planificadasHoy }} planif. hoy</div>
-      </article>
-
-      <article class="kpi-card">
-        <div class="kpi-label">% Avance Global</div>
-        <div class="kpi-value text-blue-700">{{ data.consolidado.avancePorcentaje | number:'1.0-1' }}%</div>
-        <div class="kpi-sub">{{ data.consolidado.ejecutadasTotal }} / {{ data.consolidado.totalAnio }} actividades</div>
-      </article>
-
-      <article class="kpi-card" [class.kpi-alert]="data.consolidado.vencidas > 0">
-        <div class="kpi-label">Actividades Vencidas</div>
-        <div class="kpi-value" [class.text-red-700]="data.consolidado.vencidas > 0">
-          {{ data.consolidado.vencidas }}
+        <div class="kpi-label">Avance Global</div>
+        <div class="kpi-value">{{ dispAvance }}<span class="kpi-unit">%</span></div>
+        <div class="kpi-sub">{{ data.consolidado.ejecutadasTotal }}/{{ data.consolidado.totalAnio }} actividades</div>
+        <div class="kpi-bar">
+          <div class="kpi-bar__fill kpi-bar__fill--blue" [style.width.%]="data.consolidado.avancePorcentaje"></div>
         </div>
-        <div class="kpi-sub">Requieren acción inmediata</div>
       </article>
 
-      <article class="kpi-card" [class.kpi-alert]="alertasProximas > 0">
+      <!-- Vencidas -->
+      <article class="kpi-card"
+        [class.kpi-card--red]="data.consolidado.vencidas > 0"
+        [class.kpi-card--green]="data.consolidado.vencidas === 0">
+        <div class="kpi-icon" style="background:#fef2f2;color:#b91c1c">
+          <i class="ti" aria-hidden="true"
+            [class.ti-clock-x]="data.consolidado.vencidas > 0"
+            [class.ti-circle-check]="data.consolidado.vencidas === 0"></i>
+        </div>
+        <div class="kpi-label">Vencidas</div>
+        <div class="kpi-value"
+          [class.kpi-value--red]="data.consolidado.vencidas > 0"
+          [class.kpi-value--green]="data.consolidado.vencidas === 0">
+          {{ dispVencidas }}
+        </div>
+        <div class="kpi-sub">
+          {{ data.consolidado.vencidas > 0 ? 'Requieren acción inmediata' : 'Sin vencimientos' }}
+        </div>
+      </article>
+
+      <!-- Próximas a Vencer -->
+      <article class="kpi-card"
+        [class.kpi-card--amber]="alertasProximas > 0"
+        [class.kpi-card--green]="alertasProximas === 0">
+        <div class="kpi-icon" style="background:#fffbeb;color:#b45309">
+          <i class="ti ti-clock-hour-4" aria-hidden="true"></i>
+        </div>
         <div class="kpi-label">Próximas a Vencer</div>
-        <div class="kpi-value" [class.text-yellow-700]="alertasProximas > 0">{{ alertasProximas }}</div>
+        <div class="kpi-value"
+          [class.kpi-value--amber]="alertasProximas > 0"
+          [class.kpi-value--green]="alertasProximas === 0">
+          {{ dispProximas }}
+        </div>
         <div class="kpi-sub">Próximos 7 días</div>
       </article>
-    </div>
 
-    <!-- Tabla proyectos -->
-    <div class="card p-4">
-      <h3 class="section-title">SPI por Proyecto</h3>
-      <div class="table-wrapper">
-        <table class="w-full text-sm">
+    </div><!-- /kpi-grid -->
+
+    <!-- ══ FILA 2: Ámbitos horizontales ══ -->
+    <div class="ambito-grid fade-in" style="animation-delay:.08s">
+
+      <!-- Seguridad -->
+      <div class="ambito-card ambito-card--seg" (click)="irALista()">
+        <div class="ambito-header">
+          <div class="ambito-icon" style="background:#eff6ff;color:#1d4ed8">
+            <i class="ti ti-shield-check" aria-hidden="true"></i>
+          </div>
+          <div class="ambito-meta">
+            <span class="ambito-name">Seguridad</span>
+            <app-spi-badge [spi]="null" size="sm"></app-spi-badge>
+          </div>
+          <i class="ti ti-arrow-right ambito-arrow" aria-hidden="true"></i>
+        </div>
+        <div class="ambito-stats">
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">—</span>
+            <span class="ambito-stat__lbl">actividades</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">0%</span>
+            <span class="ambito-stat__lbl">avance</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val ambito-stat__val--ok">0</span>
+            <span class="ambito-stat__lbl">vencidas</span>
+          </div>
+        </div>
+        <div class="ambito-progress">
+          <div class="ambito-progress__fill ambito-progress__fill--seg" style="width:0%"></div>
+        </div>
+        <div class="ambito-footer">
+          <span class="ambito-chip ambito-chip--ok">
+            <i class="ti ti-circle-check" aria-hidden="true"></i> Al día
+          </span>
+          <span class="ambito-link">Ver detalle</span>
+        </div>
+      </div>
+
+      <!-- Salud Ocupacional -->
+      <div class="ambito-card ambito-card--sal" (click)="irALista()">
+        <div class="ambito-header">
+          <div class="ambito-icon" style="background:#ecfdf5;color:#0a7c52">
+            <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
+          </div>
+          <div class="ambito-meta">
+            <span class="ambito-name">Salud Ocupacional</span>
+            <app-spi-badge [spi]="null" size="sm"></app-spi-badge>
+          </div>
+          <i class="ti ti-arrow-right ambito-arrow" aria-hidden="true"></i>
+        </div>
+        <div class="ambito-stats">
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">—</span>
+            <span class="ambito-stat__lbl">actividades</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">0%</span>
+            <span class="ambito-stat__lbl">avance</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val ambito-stat__val--ok">0</span>
+            <span class="ambito-stat__lbl">vencidas</span>
+          </div>
+        </div>
+        <div class="ambito-progress">
+          <div class="ambito-progress__fill ambito-progress__fill--sal" style="width:0%"></div>
+        </div>
+        <div class="ambito-footer">
+          <span class="ambito-chip ambito-chip--ok">
+            <i class="ti ti-circle-check" aria-hidden="true"></i> Al día
+          </span>
+          <span class="ambito-link">Ver detalle</span>
+        </div>
+      </div>
+
+      <!-- Medio Ambiente -->
+      <div class="ambito-card ambito-card--amb" (click)="irALista()">
+        <div class="ambito-header">
+          <div class="ambito-icon" style="background:#e0f7f4;color:#0a8c80">
+            <i class="ti ti-leaf" aria-hidden="true"></i>
+          </div>
+          <div class="ambito-meta">
+            <span class="ambito-name">Medio Ambiente</span>
+            <app-spi-badge [spi]="null" size="sm"></app-spi-badge>
+          </div>
+          <i class="ti ti-arrow-right ambito-arrow" aria-hidden="true"></i>
+        </div>
+        <div class="ambito-stats">
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">—</span>
+            <span class="ambito-stat__lbl">actividades</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val">0%</span>
+            <span class="ambito-stat__lbl">avance</span>
+          </div>
+          <div class="ambito-stat-divider"></div>
+          <div class="ambito-stat">
+            <span class="ambito-stat__val ambito-stat__val--ok">0</span>
+            <span class="ambito-stat__lbl">vencidas</span>
+          </div>
+        </div>
+        <div class="ambito-progress">
+          <div class="ambito-progress__fill ambito-progress__fill--amb" style="width:0%"></div>
+        </div>
+        <div class="ambito-footer">
+          <span class="ambito-chip ambito-chip--ok">
+            <i class="ti ti-circle-check" aria-hidden="true"></i> Al día
+          </span>
+          <span class="ambito-link">Ver detalle</span>
+        </div>
+      </div>
+
+    </div><!-- /ambito-grid -->
+
+    <!-- ══ FILA 3: Proyectos + Alertas ══ -->
+    <div class="bottom-grid fade-in" style="animation-delay:.16s">
+
+      <!-- SPI por Proyecto -->
+      <div class="panel-card">
+        <div class="panel-card__header">
+          <span class="panel-title">
+            <i class="ti ti-building-skyscraper" aria-hidden="true"></i>
+            SPI por Proyecto
+          </span>
+          <button type="button" class="link-btn" (click)="irALista()">
+            Ver todos <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div *ngIf="!data.proyectos.length" class="empty-state">
+          <div class="empty-state__icon">
+            <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+          </div>
+          <p class="empty-state__title">Sin programas activos</p>
+          <p class="empty-state__sub">Crea el primer programa PASO para comenzar el seguimiento</p>
+          <button type="button" class="empty-state__btn" (click)="irALista()">
+            <i class="ti ti-plus" aria-hidden="true"></i> Nuevo programa
+          </button>
+        </div>
+
+        <table *ngIf="data.proyectos.length" class="paso-table">
           <thead>
-            <tr class="border-b border-gray-100">
-              <th class="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Proyecto</th>
-              <th class="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">SPI</th>
-              <th class="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Avance %</th>
-              <th class="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Vencidas</th>
-              <th class="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+            <tr>
+              <th>Proyecto</th>
+              <th class="col-center">SPI</th>
+              <th class="col-center">Avance</th>
+              <th class="col-center">Vencidas</th>
+              <th class="col-center">Estado</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of data.proyectos" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-              <td class="py-2.5 px-3 font-medium text-gray-800">{{ p.proyectoNombre }}</td>
-              <td class="py-2.5 px-3 text-center"><app-spi-badge [spi]="p.spi.spi"></app-spi-badge></td>
-              <td class="py-2.5 px-3 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <div class="w-20 bg-gray-100 rounded-full h-1.5">
-                    <div class="h-1.5 rounded-full bg-blue-500" [style.width.%]="p.spi.avancePorcentaje"></div>
+            <tr *ngFor="let p of data.proyectos">
+              <td class="cell-project">
+                <span class="project-dot"></span>
+                {{ p.proyectoNombre }}
+              </td>
+              <td class="col-center">
+                <app-spi-badge [spi]="p.spi.spi" [planificadas]="p.spi.planificadasHoy" size="sm"></app-spi-badge>
+              </td>
+              <td class="col-center">
+                <div class="table-progress">
+                  <div class="table-progress__bar">
+                    <div class="table-progress__fill" [style.width.%]="p.spi.avancePorcentaje ?? 0"></div>
                   </div>
-                  <span class="text-xs text-gray-600">{{ p.spi.avancePorcentaje | number:'1.0-1' }}%</span>
+                  <span class="table-progress__pct">{{ (p.spi.avancePorcentaje ?? 0) | number:'1.0-0' }}%</span>
                 </div>
               </td>
-              <td class="py-2.5 px-3 text-center">
-                <span class="badge" [class.bg-red-100]="p.spi.vencidas>0" [class.text-red-700]="p.spi.vencidas>0"
-                  [class.bg-gray-100]="p.spi.vencidas===0" [class.text-gray-500]="p.spi.vencidas===0">
+              <td class="col-center">
+                <span class="badge-num"
+                  [class.badge-num--red]="p.spi.vencidas > 0"
+                  [class.badge-num--green]="p.spi.vencidas === 0">
                   {{ p.spi.vencidas }}
                 </span>
               </td>
-              <td class="py-2.5 px-3 text-center">
-                <span class="badge" [ngClass]="estadoBadge(p.spi.spi)">{{ estadoLabel(p.spi.spi) }}</span>
+              <td class="col-center">
+                <span class="estado-chip"
+                  [class.estado-chip--green]="p.spi.spi >= 0.95"
+                  [class.estado-chip--amber]="p.spi.spi >= 0.80 && p.spi.spi < 0.95"
+                  [class.estado-chip--red]="p.spi.spi < 0.80 && p.spi.planificadasHoy > 0"
+                  [class.estado-chip--gray]="p.spi.planificadasHoy === 0">
+                  {{ p.spi.planificadasHoy === 0 ? 'Sin inicio' : estadoLabel(p.spi.spi) }}
+                </span>
               </td>
-            </tr>
-            <tr *ngIf="!data.proyectos.length">
-              <td colspan="5" class="empty">Sin datos de proyectos</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- Alertas recientes -->
-    <div class="card p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="section-title mb-0">Alertas Recientes</h3>
-        <button type="button" (click)="irAAlertas()"
-          class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
-          Ver todas <i class="ti ti-arrow-right"></i>
-        </button>
+      <!-- Alertas -->
+      <div class="panel-card panel-card--alerts">
+        <div class="panel-card__header">
+          <span class="panel-title">
+            <i class="ti ti-bell" aria-hidden="true"></i>
+            Alertas
+            <span *ngIf="data.alertas.length" class="panel-badge">{{ data.alertas.length }}</span>
+          </span>
+          <button type="button" class="link-btn" (click)="irAAlertas()">
+            Ver todas <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div *ngIf="!alertasRecientes.length" class="empty-state">
+          <div class="empty-state__icon empty-state__icon--green">
+            <i class="ti ti-mood-happy" aria-hidden="true"></i>
+          </div>
+          <p class="empty-state__title">Todo en orden</p>
+          <p class="empty-state__sub">No hay actividades vencidas ni próximas a vencer</p>
+        </div>
+
+        <div *ngIf="alertasRecientes.length" class="alerts-list">
+          <div *ngFor="let a of data.alertas.slice(0,5)" class="alert-row">
+            <div class="alert-dot"
+              [class.alert-dot--red]="a.tipo === 'Vencida'"
+              [class.alert-dot--amber]="a.tipo !== 'Vencida'">
+            </div>
+            <div class="alert-body">
+              <div class="alert-nombre">{{ a.actividadNombre }}</div>
+              <div class="alert-meta">
+                <i class="ti ti-building" style="font-size:10px" aria-hidden="true"></i>
+                {{ a.proyectoNombre }}
+              </div>
+            </div>
+            <div class="alert-right">
+              <span class="alert-chip"
+                [class.alert-chip--red]="a.tipo === 'Vencida'"
+                [class.alert-chip--amber]="a.tipo !== 'Vencida'">
+                {{ a.tipo === 'Vencida' ? (a.diasVencido + 'd') : 'Pronto' }}
+              </span>
+              <span class="alert-tipo">{{ a.tipo === 'Vencida' ? 'Vencida' : 'Por vencer' }}</span>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div class="flex flex-wrap gap-2">
-        <span *ngFor="let a of alertasRecientes"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer"
-          [class.bg-red-100]="a.tipo==='Vencida'" [class.text-red-700]="a.tipo==='Vencida'"
-          [class.bg-yellow-100]="a.tipo==='ProximaVencer'" [class.text-yellow-700]="a.tipo==='ProximaVencer'"
-          (click)="irAAlertas()">
-          <i class="ti" [class.ti-alert-circle]="a.tipo==='Vencida'" [class.ti-clock]="a.tipo==='ProximaVencer'"></i>
-          {{ a.actividadNombre }}
-          <span class="opacity-70">· {{ a.proyectoNombre }}</span>
-          <span *ngIf="a.tipo==='Vencida'" class="font-bold">{{ a.diasVencido }}d vencida</span>
-        </span>
-        <div *ngIf="!data.alertas.length" class="text-sm text-gray-400 py-2">Sin alertas activas</div>
-      </div>
-    </div>
+
+    </div><!-- /bottom-grid -->
 
   </ng-container>
-</section>
+
+</div><!-- /dashboard-content -->
+
+</div><!-- /paso-root -->
+<!-- v2 -->
