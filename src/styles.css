@@ -230,6 +230,43 @@ app-layout .full-page-wrapper app-header .shrink-0.relative img {
   border: 2px solid rgba(255,255,255,.4) !important;
 }
 
+/* ── PASO nav global ──────────────────────────────────────────── */
+app-paso-nav {
+  display: block;
+  flex-shrink: 0;
+}
+app-paso-nav .paso-nav {
+  display: flex !important;
+  gap: 0 !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+app-paso-nav .paso-nav__tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0.65rem 1.1rem !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #9ca3af !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  border-radius: 0 !important;
+  margin-bottom: -1px !important;
+}
+app-paso-nav .paso-nav__tab:hover { color: #374151 !important; }
+app-paso-nav .paso-nav__tab.paso-nav__tab--active {
+  color: #111827 !important;
+  font-weight: 700 !important;
+  background: #ffffff !important;
+  border-bottom: 3px solid #16a34a !important;
+  box-shadow: none !important;
+}
+
 app-layout .full-page-wrapper app-header [class*="flex-8"],
 app-layout .full-page-wrapper app-header a[routerlink],
 app-layout .full-page-wrapper app-header img[alt="Logo"],

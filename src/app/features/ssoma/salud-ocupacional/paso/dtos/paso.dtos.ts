@@ -9,6 +9,9 @@ export interface PasoDashboardDto {
   totalVencidas: number;
   totalProximasVencer: number;
   porProyecto: PasoPorProyectoDto[];
+  seguridad?: SpiPorAmbitoDto;
+  salud?: SpiPorAmbitoDto;
+  ambiente?: SpiPorAmbitoDto;
 }
 
 export interface PasoPorProyectoDto {

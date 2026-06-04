@@ -31,6 +31,8 @@
   </div>
 </div>
 
+<app-paso-nav></app-paso-nav>
+
 <!-- ═══════════════════  CONTENT  ═══════════════════ -->
 <div class="dashboard-content">
 
@@ -153,6 +155,65 @@
       </article>
 
     </div><!-- /kpi-grid -->
+
+    <!-- ── SPI POR ÁMBITO ── -->
+    <div class="ambito-grid fade-in" *ngIf="data.seguridad || data.salud || data.ambiente">
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.seguridad?.color === 'verde'"
+        [class.ambito-card--amber]="data.seguridad?.color === 'amarillo'"
+        [class.ambito-card--red]="data.seguridad?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#eff6ff;color:#1d4ed8">
+          <i class="ti ti-shield-check" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Seguridad</div>
+          <div class="ambito-spi">{{ data.seguridad?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.seguridad?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.seguridad?.ejecutadas ?? 0 }}/{{ data.seguridad?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.seguridad?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.seguridad?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.salud?.color === 'verde'"
+        [class.ambito-card--amber]="data.salud?.color === 'amarillo'"
+        [class.ambito-card--red]="data.salud?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#ecfdf5;color:#0a7c52">
+          <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Salud Ocupacional</div>
+          <div class="ambito-spi">{{ data.salud?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.salud?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.salud?.ejecutadas ?? 0 }}/{{ data.salud?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.salud?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.salud?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+      <div class="ambito-card"
+        [class.ambito-card--green]="data.ambiente?.color === 'verde'"
+        [class.ambito-card--amber]="data.ambiente?.color === 'amarillo'"
+        [class.ambito-card--red]="data.ambiente?.color === 'rojo'">
+        <div class="ambito-icon" style="background:#e0f7f4;color:#0a8c80">
+          <i class="ti ti-leaf" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="ambito-label">Medio Ambiente</div>
+          <div class="ambito-spi">{{ data.ambiente?.spi | number:'1.2-2' }}</div>
+          <app-spi-badge [spi]="data.ambiente?.spi ?? 0" size="sm"></app-spi-badge>
+        </div>
+        <div class="ambito-stats">
+          <span>{{ data.ambiente?.ejecutadas ?? 0 }}/{{ data.ambiente?.planificadas ?? 0 }}</span>
+          <span *ngIf="(data.ambiente?.vencidas ?? 0) > 0" class="ambito-vencidas">{{ data.ambiente?.vencidas }} venc.</span>
+        </div>
+      </div>
+
+    </div><!-- /ambito-grid -->
 
     <!-- ── FILA 2: Proyectos + Alertas ── -->
     <div class="bottom-grid fade-in">
