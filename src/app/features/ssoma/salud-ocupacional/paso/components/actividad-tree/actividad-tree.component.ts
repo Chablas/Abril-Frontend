@@ -28,6 +28,12 @@ export class ActividadTreeComponent {
   }
   get actividades(): PasoActividadDto[] { return this._actividades; }
 
+  @Input() set filtroEstado(val: string) {
+    this._filtroEstado = val;
+    this.buildGroups();
+  }
+  get filtroEstado(): string { return this._filtroEstado; }
+
   @Input() pasoId!: number;
   @Input() ambito: 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt' = 'Seguridad';
   @Output() actividadEditarClick = new EventEmitter<PasoActividadDto>();
@@ -35,6 +41,7 @@ export class ActividadTreeComponent {
   @Output() ejecucionRegistrada = new EventEmitter<PasoEjecucionDto>();
 
   private _actividades: PasoActividadDto[] = [];
+  private _filtroEstado = '';
   groups: CategoriaGroup[] = [];
   collapsedGroups = new Set<number>();
   actividadEjecutando: PasoActividadDto | null = null;
@@ -47,8 +54,16 @@ export class ActividadTreeComponent {
   ) {}
 
   private buildGroups(): void {
+    const filtered = this._actividades.filter(a => {
+      if (!this._filtroEstado) return true;
+      const mes = this.ejecucionMesActual(a);
+      if (this._filtroEstado === 'pendiente') return mes.estado === 'sin' || mes.estado === 'programado';
+      if (this._filtroEstado === 'ejecutado') return mes.estado === 'ejecutado';
+      if (this._filtroEstado === 'vencido')   return mes.estado === 'vencido';
+      return true;
+    });
     const map = new Map<number, CategoriaGroup>();
-    for (const a of this._actividades) {
+    for (const a of filtered) {
       if (!map.has(a.categoriaId)) {
         map.set(a.categoriaId, { id: a.categoriaId, nombre: a.categoriaNombre, icono: 'ti-tag', actividades: [] });
       }
@@ -58,11 +73,8 @@ export class ActividadTreeComponent {
   }
 
   toggleGroup(id: number): void {
-    if (this.collapsedGroups.has(id)) {
-      this.collapsedGroups.delete(id);
-    } else {
-      this.collapsedGroups.add(id);
-    }
+    if (this.collapsedGroups.has(id)) this.collapsedGroups.delete(id);
+    else this.collapsedGroups.add(id);
   }
 
   isCollapsed(id: number): boolean { return this.collapsedGroups.has(id); }
@@ -71,15 +83,18 @@ export class ActividadTreeComponent {
     return (a.ejecuciones ?? []).filter(e => e.estado === 'Ejecutado').length;
   }
 
-  progreso(a: PasoActividadDto): number {
-    if (!a.cantidadPlanificada) return 0;
-    return Math.min(100, Math.round((this.ejecutadas(a) / a.cantidadPlanificada) * 100));
-  }
-
   spiActividad(a: PasoActividadDto): number | null {
     const total = a.cantidadPlanificada;
     if (!total) return null;
     return Math.min(1, this.ejecutadas(a) / total);
+  }
+
+  spiBarColor(a: PasoActividadDto): string {
+    const spi = this.spiActividad(a);
+    if (spi === null) return 'sin';
+    if (spi >= 0.9) return 'verde';
+    if (spi >= 0.7) return 'amarillo';
+    return 'rojo';
   }
 
   ejecucionMesActual(a: PasoActividadDto): { estado: string; label: string } {
@@ -87,24 +102,21 @@ export class ActividadTreeComponent {
       const d = new Date(e.fechaProgramada);
       return d.getMonth() + 1 === this.mesActual;
     });
-    if (!ejeMes.length) return { estado: 'sin', label: 'Sin ejecución este mes' };
+    if (!ejeMes.length) return { estado: 'sin', label: 'Sin ejecución' };
     const ej = ejeMes[ejeMes.length - 1];
     switch (ej.estado) {
-      case 'Ejecutado':  return { estado: 'ejecutado',  label: 'Ejecutada este mes' };
-      case 'Vencido':    return { estado: 'vencido',    label: 'Vencida este mes' };
-      case 'Programado': return { estado: 'programado', label: 'Programada este mes' };
+      case 'Ejecutado':  return { estado: 'ejecutado',  label: 'Ejecutada' };
+      case 'Vencido':    return { estado: 'vencido',    label: 'Vencida' };
+      case 'Programado': return { estado: 'programado', label: 'Programada' };
       default:           return { estado: 'sin',        label: 'Sin ejecución' };
     }
   }
 
   frecuenciaClass(f: string): string {
     const m: Record<string, string> = {
-      Mensual: 'freq-badge--mensual',
-      Bimestral: 'freq-badge--bimestral',
-      Trimestral: 'freq-badge--trimestral',
-      Semestral: 'freq-badge--semestral',
-      Anual: 'freq-badge--anual',
-      Unica: 'freq-badge--unica',
+      Mensual: 'freq-badge--mensual', Bimestral: 'freq-badge--bimestral',
+      Trimestral: 'freq-badge--trimestral', Semestral: 'freq-badge--semestral',
+      Anual: 'freq-badge--anual', Unica: 'freq-badge--unica',
     };
     return m[f] ?? 'freq-badge--unica';
   }
@@ -112,10 +124,6 @@ export class ActividadTreeComponent {
   ambitoClass(): string {
     const m: Record<string, string> = { Seguridad: 'seg', Salud: 'sal', Ambiente: 'amb' };
     return m[this.ambito] ?? 'default';
-  }
-
-  avatarInitials(nombre: string): string {
-    return nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   }
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }

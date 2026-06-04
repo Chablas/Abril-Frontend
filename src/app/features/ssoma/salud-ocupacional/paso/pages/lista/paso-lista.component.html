@@ -76,18 +76,27 @@
       </button>
     </nav>
 
+    <!-- Toolbar entre tabs y contenido -->
+    <div class="actividades-toolbar" *ngIf="tabActiva !== 'Gantt'">
+      <div class="filtro-pills">
+        <button [class.active]="filtroEstado===''" (click)="filtroEstado=''" type="button">Todas</button>
+        <button [class.active]="filtroEstado==='pendiente'" (click)="filtroEstado='pendiente'" type="button">Pendientes</button>
+        <button [class.active]="filtroEstado==='ejecutado'" (click)="filtroEstado='ejecutado'" type="button">Completadas</button>
+        <button [class.active]="filtroEstado==='vencido'" (click)="filtroEstado='vencido'" type="button">Vencidas</button>
+      </div>
+      <button type="button" class="btn-add" (click)="abrirAgregar()">
+        <i class="ti ti-plus"></i> Agregar actividad
+      </button>
+    </div>
+
     <!-- Contenido del tab -->
     <div class="tab-body">
       <ng-container *ngIf="tabActiva !== 'Gantt'">
-        <div class="tab-toolbar">
-          <button type="button" class="btn-add" (click)="abrirAgregar()">
-            <i class="ti ti-plus"></i> Agregar actividad
-          </button>
-        </div>
         <app-actividad-tree
           [actividades]="actividadesTab"
           [pasoId]="paso.id"
           [ambito]="tabActiva"
+          [filtroEstado]="filtroEstado"
           (actividadEliminada)="onEliminada($event)">
         </app-actividad-tree>
       </ng-container>

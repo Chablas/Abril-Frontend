@@ -2,61 +2,51 @@
 
   <div *ngFor="let grupo of groups">
 
-    <!-- Cabecera colapsable de categoría -->
+    <!-- Fila cabecera de categoría -->
     <div class="cat-header" (click)="toggleGroup(grupo.id)">
-      <div class="cat-icon" [ngClass]="'cat-icon--' + ambitoClass()">
-        <i class="ti ti-tag"></i>
-      </div>
+      <i class="ti ti-chevron-right cat-chevron" [class.open]="!isCollapsed(grupo.id)"></i>
       <span class="cat-name">{{ grupo.nombre }}</span>
       <span class="cat-count">{{ grupo.actividades.length }}</span>
-      <i class="ti ti-chevron-right cat-chevron" [class.open]="!isCollapsed(grupo.id)"></i>
     </div>
 
-    <!-- Lista de actividades -->
-    <div *ngIf="!isCollapsed(grupo.id)" class="activities">
-      <div *ngFor="let a of grupo.actividades"
-        class="act-card"
-        [ngClass]="'act-card--' + ambitoClass()">
+    <!-- Filas de actividades -->
+    <div *ngIf="!isCollapsed(grupo.id)">
+      <div *ngFor="let a of grupo.actividades" class="actividad-row">
 
-        <div class="act-top">
-          <!-- Izquierda: info -->
-          <div class="act-info">
-            <div class="act-name-row">
-              <span class="act-name">{{ a.nombre }}</span>
-              <span class="freq-badge" [ngClass]="frecuenciaClass(a.frecuencia)">{{ a.frecuencia }}</span>
-            </div>
-            <div *ngIf="a.responsableNombre" class="act-responsable">
-              <span class="avatar-chip">{{ avatarInitials(a.responsableNombre) }}</span>
-              {{ a.responsableNombre }}
-            </div>
-          </div>
+        <!-- Col 1: barra de color SPI -->
+        <div class="act-color-bar" [ngClass]="'act-color-bar--' + spiBarColor(a)"></div>
 
-          <!-- Derecha: progreso + SPI + mes actual -->
-          <div class="act-right">
-            <app-spi-badge [spi]="spiActividad(a)" size="sm"></app-spi-badge>
-            <div class="act-progress-text">{{ ejecutadas(a) }}/{{ a.cantidadPlanificada }} ejecuciones</div>
-            <div class="progress-bar">
-              <div class="progress-bar__fill" [ngClass]="'progress-bar__fill--' + ambitoClass()" [style.width.%]="progreso(a)"></div>
-            </div>
-            <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(a).estado">
-              <i class="ti ti-calendar-event" style="font-size:.65rem"></i>
-              {{ ejecucionMesActual(a).label }}
-            </span>
-          </div>
+        <!-- Col 2: nombre -->
+        <div class="act-name-cell">
+          <span class="act-name" [title]="a.nombre">{{ a.nombre }}</span>
         </div>
 
-        <!-- Botones de acción -->
-        <div class="act-actions">
-          <button type="button" class="act-btn act-btn--registrar" (click)="abrirEjecucion(a)">
+        <!-- Col 3: frecuencia -->
+        <span class="freq-badge" [ngClass]="frecuenciaClass(a.frecuencia)">{{ a.frecuencia }}</span>
+
+        <!-- Col 4: meses -->
+        <span class="act-meses">M{{ a.mesInicio }}–M{{ a.mesFin }}</span>
+
+        <!-- Col 5: ejecuciones -->
+        <span class="act-ejec">{{ ejecutadas(a) }}/{{ a.cantidadPlanificada }}</span>
+
+        <!-- Col 6: SPI badge -->
+        <app-spi-badge [spi]="spiActividad(a)" size="sm"></app-spi-badge>
+
+        <!-- Col 7: estado mes actual -->
+        <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(a).estado">
+          {{ ejecucionMesActual(a).label }}
+        </span>
+
+        <!-- Col 8: acciones -->
+        <div class="act-row-actions">
+          <button type="button" class="row-btn row-btn--reg" (click)="abrirEjecucion(a)" title="Registrar ejecución">
             <i class="ti ti-plus"></i> Registrar
           </button>
-          <a class="act-btn act-btn--ver" [routerLink]="['/ssoma/gestion/paso/actividad', a.id]">
-            <i class="ti ti-eye"></i> Ver detalle
+          <a class="row-btn row-btn--ver" [routerLink]="['/ssoma/gestion/paso/actividad', a.id]" title="Ver detalle">
+            <i class="ti ti-eye"></i>
           </a>
-          <button type="button" class="act-btn act-btn--icon-only" (click)="onEditar(a)" title="Editar">
-            <i class="ti ti-edit"></i>
-          </button>
-          <button type="button" class="act-btn act-btn--icon-only act-btn--danger" (click)="onEliminar(a)" title="Eliminar">
+          <button type="button" class="row-btn row-btn--del" (click)="onEliminar(a)" title="Eliminar">
             <i class="ti ti-trash"></i>
           </button>
         </div>
@@ -67,7 +57,7 @@
 
   <div *ngIf="groups.length === 0" class="tree-empty">
     <i class="ti ti-clipboard-list"></i>
-    <p>No hay actividades en este ámbito</p>
+    <p>No hay actividades{{ filtroEstado ? ' con este filtro' : ' en este ámbito' }}</p>
   </div>
 
 </div>

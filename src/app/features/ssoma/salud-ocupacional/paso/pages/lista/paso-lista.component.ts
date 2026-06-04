@@ -39,6 +39,7 @@ export class PasoListaComponent implements OnInit {
   tabActiva: TabAmbito = 'Seguridad';
   tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
 
+  filtroEstado = '';
   agregarOpen = false;
   agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
@@ -74,6 +75,7 @@ export class PasoListaComponent implements OnInit {
   }
 
   onProyectoChange(): void {
+    this.filtroEstado = '';
     if (this.selectedPasoId) this.loadDetalle(this.selectedPasoId);
   }
 
@@ -112,7 +114,7 @@ export class PasoListaComponent implements OnInit {
     return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
   }
 
-  setTab(tab: TabAmbito): void { this.tabActiva = tab; this.exportOpen = false; }
+  setTab(tab: TabAmbito): void { this.tabActiva = tab; this.exportOpen = false; this.filtroEstado = ''; }
 
   aprobar(): void {
     if (!this.paso) return;
