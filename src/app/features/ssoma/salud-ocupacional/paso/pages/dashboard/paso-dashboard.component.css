@@ -109,7 +109,7 @@
   letter-spacing: -.01em;
 }
 .paso-hero__sub { font-size: 11px; color: rgba(255,255,255,.38) !important; margin: 0; }
-.paso-hero__center { display: flex; gap: 7px; z-index: 1; }
+.paso-hero__center { display: flex; gap: 7px; z-index: 1; flex: 1; justify-content: center; }
 .hero-pill {
   display: inline-flex;
   align-items: center;
@@ -124,7 +124,7 @@
 }
 .hero-pill i { font-size: 12px; }
 .hero-pill--warn { color: #f59e0b !important; background: rgba(245,158,11,.14) !important; border-color: rgba(245,158,11,.22); }
-.paso-hero__right { margin-left: auto; display: flex; align-items: center; gap: 8px; z-index: 1; flex-shrink: 0; padding-right: 60px; }
+.paso-hero__right { display: flex; align-items: center; gap: 8px; z-index: 1; flex-shrink: 0; padding-right: 60px; }
 .hero-avatar-gap { display: none; }
 .hero-btn {
   display: inline-flex;
