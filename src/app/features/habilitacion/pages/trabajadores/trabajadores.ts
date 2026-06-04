@@ -390,7 +390,10 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   esSctrVidaley(e: WorkerEntregableDto | null): boolean {
-    return !!e?.esSctrVidaley;
+    if (!e) return false;
+    // Items 11 (SCTR trabajador) y 13 (Vida Ley trabajador) se gestionan directamente aquí
+    if (e.itemId === 11 || e.itemId === 13) return false;
+    return !!e.esSctrVidaley;
   }
 
   esEmo(e: WorkerEntregableDto): boolean {
