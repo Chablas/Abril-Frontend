@@ -77,8 +77,8 @@
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Eficiencia</span>
-      <span class="kpi-value" style="color:#1E3A5F">{{ kpis.eficienciaMedia }}%</span>
-      <span class="kpi-sub">Media SPI</span>
+      <span class="kpi-value" [style.color]="getSpiKpiColor(kpis.eficienciaMedia)">{{ kpis.eficienciaMedia | number:'1.2-2' }}</span>
+      <span class="kpi-sub">SPI Promedio</span>
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Progreso</span>

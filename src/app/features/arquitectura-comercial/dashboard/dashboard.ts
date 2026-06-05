@@ -463,6 +463,13 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     return `Semana ${w} · ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
   }
 
+  getSpiKpiColor(spi: number): string {
+    if (spi > 1.05) return '#2E6DB4';  // Adelantado
+    if (spi >= 0.95) return '#1B6B3A'; // En tiempo
+    if (spi >= 0.80) return '#D97706'; // Leve retraso
+    return '#C0392B';                   // Crítico
+  }
+
   getSpiColor(spi: number | null | undefined): string {
     if (!spi) return '#9CA3AF';
     if (spi >= 0.95) return '#1B6B3A';
