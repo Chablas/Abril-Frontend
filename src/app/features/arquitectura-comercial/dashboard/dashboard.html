@@ -77,8 +77,8 @@
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Eficiencia</span>
-      <span class="kpi-value" style="color:#1E3A5F">{{ kpis.eficienciaMedia }}%</span>
-      <span class="kpi-sub">Media SPI</span>
+      <span class="kpi-value" [style.color]="getSpiKpiColor(kpis.eficienciaMedia)">{{ kpis.eficienciaMedia | number:'1.2-2' }}</span>
+      <span class="kpi-sub">SPI Promedio</span>
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Progreso</span>
@@ -150,45 +150,154 @@
   <!-- ══ MAIN GRID 3 COLS ══ -->
   <div class="main-grid">
 
-    <!-- ── COL IZQUIERDA: Ranking ── -->
+    <!-- ── COL IZQUIERDA: Ranking REDISEÑADO ── -->
     <div class="dash-card rank-card">
-      <div class="card-header">
-        <span class="card-title">RANKING EFICIENCIA</span>
-        <span class="prom-tag">Prom: {{ promedioEficiencia }}%</span>
+
+      <!-- Header con gradiente y promedio -->
+      <div class="rank-header">
+        <div class="rank-header-left">
+          <div class="rank-title-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                    fill="#F59E0B" stroke="#F59E0B" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span class="rank-title-text">RANKING EFICIENCIA</span>
+          </div>
+          <p class="rank-subtitle">Actividades completadas / asignadas</p>
+        </div>
+        <div class="rank-prom-bubble">
+          <span class="rank-prom-label">PROMEDIO</span>
+          <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
+        </div>
       </div>
+
+      <!-- Leyenda explicativa -->
+      <div class="rank-legend">
+        <div class="rank-legend-item">
+          <span class="rank-legend-bar rank-legend-real"></span>
+          <span class="rank-legend-txt">Avance real</span>
+        </div>
+        <div class="rank-legend-item">
+          <span class="rank-legend-bar rank-legend-proyectada"></span>
+          <span class="rank-legend-txt">Proyección +12%</span>
+        </div>
+        <div class="rank-legend-sep"></div>
+        <div class="rank-legend-item">
+          <span class="rank-legend-dot" style="background:#1B6B3A"></span>
+          <span class="rank-legend-txt">≥80% óptimo</span>
+        </div>
+        <div class="rank-legend-item">
+          <span class="rank-legend-dot" style="background:#2E6DB4"></span>
+          <span class="rank-legend-txt">60–79% normal</span>
+        </div>
+        <div class="rank-legend-item">
+          <span class="rank-legend-dot" style="background:#C0392B"></span>
+          <span class="rank-legend-txt">&lt;60% crítico</span>
+        </div>
+      </div>
+
+      <!-- Lista ranking -->
       <div class="rank-list">
-        <div *ngFor="let sup of supervisores; let i = index" class="rank-item">
-          <div class="rank-pos">{{ i + 1 }}</div>
-          <div class="rank-left">
-            <div class="sup-avatar"
-                 [style.background]="getAvatarBg(sup.progreso)"
-                 [style.color]="getAvatarColor(sup.progreso)">
-              {{ getInitials(sup.nombre) }}
-            </div>
-            <div class="rank-info">
+        <div *ngFor="let sup of supervisores; let i = index"
+             class="rank-item"
+             [class.rank-item-top]="i === 0">
+
+          <!-- Posición con medalla para top 3 -->
+          <div class="rank-medal" [ngSwitch]="i">
+            <svg *ngSwitchCase="0" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#F59E0B" opacity="0.15"/>
+              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#F59E0B">1</text>
+            </svg>
+            <svg *ngSwitchCase="1" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#9CA3AF" opacity="0.2"/>
+              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#6B7280">2</text>
+            </svg>
+            <svg *ngSwitchCase="2" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#D97706" opacity="0.15"/>
+              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#D97706">3</text>
+            </svg>
+            <span *ngSwitchDefault class="rank-pos-num">{{ i + 1 }}</span>
+          </div>
+
+          <!-- Avatar -->
+          <div class="sup-avatar"
+               [style.background]="getAvatarBg(sup.progreso)"
+               [style.color]="getAvatarColor(sup.progreso)">
+            {{ getInitials(sup.nombre) }}
+          </div>
+
+          <!-- Info central -->
+          <div class="rank-info">
+            <div class="rank-nombre-row">
               <span class="rank-nombre">{{ sup.nombre }}</span>
-              <span class="rank-avance">{{ sup.completadas }}/{{ sup.total }} · {{ sup.progreso }}%</span>
+              <span class="rank-badge"
+                    [style.background]="getComentarioBg(sup)"
+                    [style.color]="getComentarioColor(sup)">
+                {{ getComentario(sup) }}
+              </span>
+            </div>
+
+            <!-- Contador completadas/total con tooltip -->
+            <div class="rank-stats-row">
+              <span class="rank-completadas"
+                    title="Actividades con fecha efectiva de cierre registrada">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="margin-right:2px">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {{ sup.completadas }} completadas
+              </span>
+              <span class="rank-divider">·</span>
+              <span class="rank-total"
+                    title="Total de actividades asignadas a este supervisor">
+                {{ sup.total }} asignadas
+              </span>
+              <span class="rank-divider">·</span>
+              <span class="rank-pct" [style.color]="getAvatarColor(sup.progreso)">
+                <b>{{ sup.progreso }}%</b>
+              </span>
+            </div>
+
+            <!-- Barra doble con etiquetas -->
+            <div class="dual-bar-wrap">
               <div class="dual-bar-track">
                 <div class="bar-proyectada" [style.width.%]="getProyectada(sup.progreso)"></div>
-                <div class="bar-real" [style.width.%]="sup.progreso" [style.background]="getAvatarColor(sup.progreso)"></div>
+                <div class="bar-real"
+                     [style.width.%]="sup.progreso"
+                     [style.background]="getAvatarColor(sup.progreso)"></div>
               </div>
+              <span class="bar-pct-label" [style.color]="getAvatarColor(sup.progreso)">
+                {{ sup.progreso }}%
+              </span>
             </div>
           </div>
-          <span class="rank-badge"
-                [style.background]="getComentarioBg(sup)"
-                [style.color]="getComentarioColor(sup)">
-            {{ getComentario(sup) }}
-          </span>
+
         </div>
-        <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
+        <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos de supervisores</p>
       </div>
+
+      <!-- Footer equilibrio -->
       <div class="rank-footer">
-        <span class="equilibrio-tag"
-              [class.eq-verde]="equipoEquilibrado"
-              [class.eq-rojo]="!equipoEquilibrado">
-          {{ equipoEquilibrado ? '● Equilibrado' : '⚠ Desbalance' }} · Prom: {{ promedioEficiencia }}%
-        </span>
+        <div class="equilibrio-tag"
+             [class.eq-verde]="equipoEquilibrado"
+             [class.eq-rojo]="!equipoEquilibrado">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+            <circle *ngIf="equipoEquilibrado" cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+            <path *ngIf="equipoEquilibrado" d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path *ngIf="!equipoEquilibrado" d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle *ngIf="!equipoEquilibrado" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          {{ equipoEquilibrado ? 'Equipo equilibrado' : 'Desbalance detectado' }}
+        </div>
+        <div class="rank-footer-meta">
+          <span title="Diferencia entre el mejor y peor supervisor">
+            Varianza: {{ supervisores.length >= 2
+              ? (supervisores[0].progreso - supervisores[supervisores.length-1].progreso)
+              : 0 }}pp
+          </span>
+          <span>· Prom: <b>{{ promedioEficiencia }}%</b></span>
+        </div>
       </div>
+
     </div>
 
     <!-- ── COL CENTRO: 4 gráficas ── -->
