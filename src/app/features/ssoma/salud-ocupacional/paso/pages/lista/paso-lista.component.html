@@ -71,6 +71,16 @@
     </div>
   </div>
 
+  <!-- Toggle de vista -->
+  <div class="vista-toggle">
+    <button [class.active]="vistaActual==='mensual'" (click)="cambiarVista('mensual')" type="button">
+      <i class="ti ti-calendar-month"></i> Mensual
+    </button>
+    <button [class.active]="vistaActual==='anual'" (click)="cambiarVista('anual')" type="button">
+      <i class="ti ti-calendar-stats"></i> Anual
+    </button>
+  </div>
+
   <!-- Loading -->
   <div *ngIf="loadingDetalle" class="loading-center">
     <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
@@ -78,44 +88,162 @@
   </div>
 
   <ng-container *ngIf="!loadingDetalle && paso">
-    <!-- Tabs de ámbito -->
-    <nav class="paso-tabs">
-      <button *ngFor="let t of tabs" type="button"
-        class="paso-tab"
-        [ngClass]="[tabColor(t), tabActiva === t ? 'active' : '']"
-        (click)="setTab(t)">
-        <i class="ti" [ngClass]="tabIcon(t)"></i>
-        {{ tabLabel(t) }}
-        <span *ngIf="t !== 'Gantt'" class="tab-count">{{ countTab($any(t)) }}</span>
-      </button>
-    </nav>
 
-    <!-- Toolbar entre tabs y contenido -->
-    <div class="actividades-toolbar" *ngIf="tabActiva !== 'Gantt'">
-      <div class="filtro-pills">
-        <button [class.active]="filtroEstado===''" (click)="filtroEstado=''" type="button">Todas</button>
-        <button [class.active]="filtroEstado==='pendiente'" (click)="filtroEstado='pendiente'" type="button">Pendientes</button>
-        <button [class.active]="filtroEstado==='ejecutado'" (click)="filtroEstado='ejecutado'" type="button">Completadas</button>
-        <button [class.active]="filtroEstado==='vencido'" (click)="filtroEstado='vencido'" type="button">Vencidas</button>
+    <!-- ══ VISTA MENSUAL ══ -->
+    <ng-container *ngIf="vistaActual==='mensual'">
+
+      <div class="mes-header">
+        <button (click)="cambiarMes(-1)" type="button">‹</button>
+        <span class="mes-titulo">{{ meses[mesSeleccionado-1] }} {{ anioSeleccionado }}</span>
+        <button (click)="cambiarMes(1)" type="button">›</button>
       </div>
-      <button type="button" class="btn-add" (click)="abrirAgregar()">
-        <i class="ti ti-plus"></i> Agregar actividad
-      </button>
-    </div>
 
-    <!-- Contenido del tab -->
-    <div class="tab-body">
-      <ng-container *ngIf="tabActiva !== 'Gantt'">
-        <app-actividad-tree
-          [actividades]="actividadesTab"
-          [pasoId]="paso.id"
-          [ambito]="tabActiva"
-          [filtroEstado]="filtroEstado"
-          (actividadEliminada)="onEliminada($event)">
-        </app-actividad-tree>
-      </ng-container>
-      <app-paso-gantt *ngIf="tabActiva === 'Gantt'" [pasoId]="paso.id"></app-paso-gantt>
-    </div>
+      <div *ngIf="loadingMes" class="loading-center">
+        <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+        <span>Cargando mes…</span>
+      </div>
+
+      <!-- KPIs del mes -->
+      <div class="mes-kpis" *ngIf="resumenMes && !loadingMes">
+        <div class="mes-kpi">
+          <span class="mes-kpi__label">Programadas</span>
+          <span class="mes-kpi__value">{{ resumenMes.totalProgramadas }}</span>
+        </div>
+        <div class="mes-kpi mes-kpi--green">
+          <span class="mes-kpi__label">✅ Completadas</span>
+          <span class="mes-kpi__value">{{ resumenMes.completadas }}</span>
+        </div>
+        <div class="mes-kpi mes-kpi--amber">
+          <span class="mes-kpi__label">⏳ Pendientes</span>
+          <span class="mes-kpi__value">{{ resumenMes.pendientes }}</span>
+        </div>
+        <div class="mes-kpi mes-kpi--red">
+          <span class="mes-kpi__label">❌ Vencidas</span>
+          <span class="mes-kpi__value">{{ resumenMes.vencidas }}</span>
+        </div>
+        <div class="mes-progreso">
+          <div class="mes-progreso__bar">
+            <div class="mes-progreso__fill" [style.width.%]="resumenMes.porcentajeAvance"></div>
+          </div>
+          <span>{{ resumenMes.porcentajeAvance | number:'1.0-0' }}%</span>
+        </div>
+      </div>
+
+      <!-- KPIs por ámbito del mes -->
+      <div class="mes-ambitos" *ngIf="resumenMes && !loadingMes">
+        <div class="mes-ambito">
+          <i class="ti ti-shield-check" style="color:#1d4ed8"></i>
+          <span>Seguridad</span>
+          <span class="mes-ambito__ratio">{{ resumenMes.seguridad.completadas }}/{{ resumenMes.seguridad.programadas }}</span>
+          <div class="mes-ambito__bar">
+            <div [style.width.%]="resumenMes.seguridad.programadas > 0 ? (resumenMes.seguridad.completadas / resumenMes.seguridad.programadas * 100) : 0"></div>
+          </div>
+        </div>
+        <div class="mes-ambito">
+          <i class="ti ti-heart-rate-monitor" style="color:#0a7c52"></i>
+          <span>Salud Ocup.</span>
+          <span class="mes-ambito__ratio">{{ resumenMes.salud.completadas }}/{{ resumenMes.salud.programadas }}</span>
+          <div class="mes-ambito__bar">
+            <div [style.width.%]="resumenMes.salud.programadas > 0 ? (resumenMes.salud.completadas / resumenMes.salud.programadas * 100) : 0"></div>
+          </div>
+        </div>
+        <div class="mes-ambito">
+          <i class="ti ti-leaf" style="color:#0a8c80"></i>
+          <span>Ambiente</span>
+          <span class="mes-ambito__ratio">{{ resumenMes.ambiente.completadas }}/{{ resumenMes.ambiente.programadas }}</span>
+          <div class="mes-ambito__bar">
+            <div [style.width.%]="resumenMes.ambiente.programadas > 0 ? (resumenMes.ambiente.completadas / resumenMes.ambiente.programadas * 100) : 0"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de actividades del mes -->
+      <div class="mes-actividades" *ngIf="resumenMes && !loadingMes">
+        <div *ngFor="let a of resumenMes.actividades" class="mes-act-row"
+          [class.mes-act--ejecutado]="a.estado === 'Ejecutado'"
+          [class.mes-act--vencido]="a.estado === 'Vencido'"
+          [class.mes-act--programado]="a.estado === 'Programado'"
+          [class.mes-act--sin]="a.estado === 'SinProgramar'">
+          <div class="mes-act__estado-dot"></div>
+          <div class="mes-act__nombre">{{ a.nombre }}</div>
+          <div class="mes-act__categoria">{{ a.categoriaNombre }}</div>
+          <div class="mes-act__ambito-badge">{{ a.categoriaAmbito }}</div>
+          <div class="mes-act__fecha">
+            {{ a.fechaEjecutada ? (a.fechaEjecutada | date:'dd/MM') : (a.fechaProgramada | date:'dd/MM') }}
+          </div>
+          <div class="mes-act__evidencia">
+            <span *ngIf="a.evidenciaNombre" class="evidencia-chip">
+              <i class="ti ti-paperclip"></i> {{ a.evidenciaNombre }}
+            </span>
+          </div>
+          <div class="mes-act__actions">
+            <button type="button" class="row-btn row-btn--reg" title="Registrar ejecución"
+              (click)="registrarDesdeResumen(a)">
+              <i class="ti ti-plus"></i> Registrar
+            </button>
+            <button *ngIf="a.estado === 'Programado' || a.estado === 'SinProgramar'"
+              type="button" class="row-btn row-btn--amber" title="Reprogramar"
+              (click)="abrirReprogramarDesdeResumen(a)">
+              <i class="ti ti-calendar-event"></i> Reprogramar
+            </button>
+            <button type="button" class="row-btn row-btn--ver" title="Ver historial"
+              (click)="verDetalleActividad(a.actividadId)">
+              <i class="ti ti-eye"></i>
+            </button>
+            <button type="button" class="row-btn row-btn--del" title="Eliminar"
+              (click)="eliminarDesdeResumen(a.actividadId)">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ══ VISTA ANUAL ══ -->
+    <ng-container *ngIf="vistaActual==='anual'">
+
+      <!-- Tabs de ámbito -->
+      <nav class="paso-tabs">
+        <button *ngFor="let t of tabs" type="button"
+          class="paso-tab"
+          [ngClass]="[tabColor(t), tabActiva === t ? 'active' : '']"
+          (click)="setTab(t)">
+          <i class="ti" [ngClass]="tabIcon(t)"></i>
+          {{ tabLabel(t) }}
+          <span *ngIf="t !== 'Gantt'" class="tab-count">{{ countTab($any(t)) }}</span>
+        </button>
+      </nav>
+
+      <!-- Toolbar entre tabs y contenido -->
+      <div class="actividades-toolbar" *ngIf="tabActiva !== 'Gantt'">
+        <div class="filtro-pills">
+          <button [class.active]="filtroEstado===''" (click)="filtroEstado=''" type="button">Todas</button>
+          <button [class.active]="filtroEstado==='pendiente'" (click)="filtroEstado='pendiente'" type="button">Pendientes</button>
+          <button [class.active]="filtroEstado==='ejecutado'" (click)="filtroEstado='ejecutado'" type="button">Completadas</button>
+          <button [class.active]="filtroEstado==='vencido'" (click)="filtroEstado='vencido'" type="button">Vencidas</button>
+        </div>
+        <button type="button" class="btn-add" (click)="abrirAgregar()">
+          <i class="ti ti-plus"></i> Agregar actividad
+        </button>
+      </div>
+
+      <!-- Contenido del tab -->
+      <div class="tab-body">
+        <ng-container *ngIf="tabActiva !== 'Gantt'">
+          <app-actividad-tree
+            [actividades]="actividadesTab"
+            [pasoId]="paso.id"
+            [ambito]="tabActiva"
+            [filtroEstado]="filtroEstado"
+            (actividadEliminada)="onEliminada($event)">
+          </app-actividad-tree>
+        </ng-container>
+        <app-paso-gantt *ngIf="tabActiva === 'Gantt'" [pasoId]="paso.id"></app-paso-gantt>
+      </div>
+
+    </ng-container>
+
   </ng-container>
 </div>
 
@@ -177,3 +305,177 @@
   [pasoPlantillaId]="paso.id" [plantillaNombre]="paso.nombre"
   (closed)="instanciarOpen=false" (instanciaCreada)="onInstanciaCreada()">
 </app-instanciar-modal>
+
+<app-ejecucion-modal
+  *ngIf="actividadEjecutando"
+  [actividad]="actividadEjecutando"
+  (closed)="actividadEjecutando = null"
+  (ejecucionCreada)="onEjecucionCreada($event)">
+</app-ejecucion-modal>
+
+<!-- Modal reprogramar actividad -->
+<div *ngIf="reprogramarMesOpen && actividadAReprogramar" class="eliminar-overlay">
+  <div class="eliminar-modal">
+    <div class="eliminar-header">
+      <i class="ti ti-calendar-event" style="color:#d97706;font-size:1.2rem"></i>
+      <h3 class="eliminar-titulo">Reprogramar actividad</h3>
+    </div>
+    <p class="eliminar-nombre">{{ actividadAReprogramar.nombre }}</p>
+    <div class="eliminar-field">
+      <label class="eliminar-label">Nueva fecha *</label>
+      <input type="date" class="eliminar-textarea" style="min-height:unset;padding:0.55rem 0.75rem"
+        [(ngModel)]="nuevaFechaReprogramacion" />
+    </div>
+    <div class="eliminar-field">
+      <label class="eliminar-label">Motivo *</label>
+      <textarea class="eliminar-textarea" [(ngModel)]="motivoReprogramacion"
+        placeholder="Describe el motivo..." rows="3"></textarea>
+      <span *ngIf="motivoReprogramacion.length > 0 && motivoReprogramacion.length < 10" class="eliminar-hint">
+        Mínimo 10 caracteres ({{ motivoReprogramacion.length }}/10)
+      </span>
+    </div>
+    <div class="eliminar-footer">
+      <button type="button" class="eliminar-btn-cancel"
+        (click)="reprogramarMesOpen = false; motivoReprogramacion = ''; nuevaFechaReprogramacion = ''">
+        Cancelar
+      </button>
+      <button type="button" class="reprogramar-btn-confirm"
+        [disabled]="!nuevaFechaReprogramacion || motivoReprogramacion.trim().length < 10"
+        (click)="confirmarReprogramarDesdeResumen()">
+        <i class="ti ti-calendar-event"></i> Reprogramar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal eliminar actividad -->
+<div *ngIf="eliminarOpen && eliminarActividad" class="eliminar-overlay">
+  <div class="eliminar-modal">
+    <div class="eliminar-header">
+      <i class="ti ti-trash" style="color:#dc2626;font-size:1.2rem"></i>
+      <h3 class="eliminar-titulo">Eliminar actividad</h3>
+    </div>
+    <p class="eliminar-desc">Esta acción no se puede deshacer. La actividad quedará registrada en el historial.</p>
+    <p class="eliminar-nombre">{{ eliminarActividad.nombre }}</p>
+    <div class="eliminar-field">
+      <label class="eliminar-label">Motivo de eliminación *</label>
+      <textarea class="eliminar-textarea" [(ngModel)]="motivoEliminacion"
+        placeholder="Describe el motivo..." rows="3"></textarea>
+      <span *ngIf="motivoEliminacion.length > 0 && motivoEliminacion.length < 10" class="eliminar-hint">
+        Mínimo 10 caracteres ({{ motivoEliminacion.length }}/10)
+      </span>
+    </div>
+    <div class="eliminar-footer">
+      <button type="button" class="eliminar-btn-cancel"
+        (click)="eliminarOpen = false; motivoEliminacion = ''">
+        Cancelar
+      </button>
+      <button type="button" class="eliminar-btn-confirm"
+        [disabled]="motivoEliminacion.trim().length < 10"
+        (click)="confirmarEliminar()">
+        <i class="ti ti-trash"></i> Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Offcanvas historial de ejecuciones -->
+<div *ngIf="actividadDetalle" class="det-overlay">
+  <div class="det-backdrop" (click)="actividadDetalle = null"></div>
+  <div class="det-panel">
+
+    <div class="det-header">
+      <div class="det-header-info">
+        <h3 class="det-title">{{ actividadDetalle.nombre }}</h3>
+        <div class="det-badges">
+          <span class="freq-badge" [ngClass]="frecuenciaClass(actividadDetalle.frecuencia)">{{ actividadDetalle.frecuencia }}</span>
+          <span class="det-meta-item"><i class="ti ti-calendar-event"></i> M{{ actividadDetalle.mesInicio }}–M{{ actividadDetalle.mesFin }}</span>
+          <span class="det-meta-item"><i class="ti ti-check"></i> {{ ejecutadas(actividadDetalle) }}/{{ actividadDetalle.cantidadPlanificada }}</span>
+        </div>
+      </div>
+      <button type="button" class="det-close" (click)="actividadDetalle = null"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="det-kpis">
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">SPI</span>
+        <app-spi-badge [spi]="spiActividad(actividadDetalle)" size="sm"></app-spi-badge>
+      </div>
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">Este mes</span>
+        <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(actividadDetalle).estado">
+          {{ ejecucionMesActual(actividadDetalle).label }}
+        </span>
+      </div>
+    </div>
+
+    <div class="det-tabs">
+      <button type="button" class="det-tab" [class.active]="detallePestana==='ejecuciones'"
+        (click)="detallePestana='ejecuciones'">
+        <i class="ti ti-list"></i> Ejecuciones
+      </button>
+      <button type="button" class="det-tab" [class.active]="detallePestana==='historial'"
+        (click)="detallePestana='historial'">
+        <i class="ti ti-history"></i> Historial de cambios
+      </button>
+    </div>
+
+    <div class="det-body">
+
+      <!-- Pestaña ejecuciones -->
+      <ng-container *ngIf="detallePestana==='ejecuciones'">
+        <p class="det-section-title">Historial de ejecuciones</p>
+        <div *ngIf="!actividadDetalle.ejecuciones?.length" class="det-empty">
+          <i class="ti ti-calendar-off" style="font-size:1.75rem;opacity:0.25"></i>
+          <p>Sin ejecuciones registradas</p>
+        </div>
+        <div *ngFor="let e of actividadDetalle.ejecuciones" class="ejec-row">
+          <div class="ejec-dot" [ngClass]="'ejec-dot--' + e.estado.toLowerCase()"></div>
+          <div class="ejec-info">
+            <div class="ejec-top">
+              <span class="ejec-fecha">{{ e.fechaProgramada | date:'dd MMM yyyy' }}</span>
+              <span class="ejec-badge" [ngClass]="'ejec-badge--' + e.estado.toLowerCase()">{{ e.estado }}</span>
+              <span *ngIf="e.fechaEjecutada" class="ejec-ejecutada">
+                ✓ {{ e.fechaEjecutada | date:'dd MMM' }}
+              </span>
+            </div>
+            <p *ngIf="e.observaciones" class="ejec-obs">{{ e.observaciones }}</p>
+            <p *ngIf="e.participantesCount" class="ejec-obs">{{ e.participantesCount }} participantes</p>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Pestaña historial de cambios -->
+      <ng-container *ngIf="detallePestana==='historial'">
+        <p class="det-section-title">Historial de cambios</p>
+        <div *ngIf="loadingAuditoria" class="det-empty">
+          <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem;opacity:0.4"></i>
+          <p>Cargando...</p>
+        </div>
+        <div *ngIf="!loadingAuditoria && !auditoria.length" class="det-empty">
+          <i class="ti ti-history" style="font-size:1.75rem;opacity:0.25"></i>
+          <p>Sin cambios registrados</p>
+        </div>
+        <div *ngFor="let c of auditoria" class="audit-row">
+          <div class="audit-icon" [style.color]="auditColor(c.tipo)">
+            <i class="ti" [ngClass]="auditIcono(c.tipo)"></i>
+          </div>
+          <div class="audit-info">
+            <p class="audit-desc">{{ c.descripcion }}</p>
+            <p *ngIf="c.motivo" class="audit-motivo">{{ c.motivo }}</p>
+            <span class="audit-fecha">{{ c.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+    </div>
+
+    <div class="det-footer">
+      <button type="button" class="det-btn-cancel" (click)="actividadDetalle = null">Cerrar</button>
+      <button type="button" class="det-btn-save" (click)="abrirEjecucion(actividadDetalle); actividadDetalle = null">
+        <i class="ti ti-plus"></i> Registrar ejecución
+      </button>
+    </div>
+
+  </div>
+</div>

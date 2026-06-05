@@ -1,10 +1,13 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { SpiBadgeComponent } from '../spi-badge/spi-badge.component';
 import { EjecucionModalComponent } from '../ejecucion-modal/ejecucion-modal.component';
 import { PasoActividadService } from '../../services/paso-actividad.service';
-import { PasoActividadDto, PasoEjecucionDto } from '../../dtos/paso.dtos';
+import { PasoService } from '../../services/paso.service';
+import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
+import { PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto } from '../../dtos/paso.dtos';
 
 interface CategoriaGroup {
   id: number;
@@ -16,7 +19,7 @@ interface CategoriaGroup {
 @Component({
   selector: 'app-actividad-tree',
   standalone: true,
-  imports: [CommonModule, SpiBadgeComponent, EjecucionModalComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, EjecucionModalComponent],
   templateUrl: './actividad-tree.component.html',
   styleUrl: './actividad-tree.component.css',
 })
@@ -45,11 +48,23 @@ export class ActividadTreeComponent {
   collapsedGroups = new Set<number>();
   actividadEjecutando: PasoActividadDto | null = null;
   actividadDetalle: PasoActividadDto | null = null;
+  detallePestana: 'ejecuciones' | 'historial' = 'ejecuciones';
+  auditoria: PasoAuditoriaDto[] = [];
+  loadingAuditoria = false;
+  eliminarOpen = false;
+  eliminarActividad: PasoActividadDto | null = null;
+  motivoEliminacion = '';
+  reprogramarOpen = false;
+  ejecucionAReprogramar: PasoEjecucionDto | null = null;
+  nuevaFechaReprogramacion = '';
+  motivoReprogramacion = '';
 
   readonly mesActual = new Date().getMonth() + 1;
 
   constructor(
     private actividadService: PasoActividadService,
+    private pasoService: PasoService,
+    private ejecucionService: PasoEjecucionService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -127,7 +142,31 @@ export class ActividadTreeComponent {
   }
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
-  abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
+
+  abrirDetalle(a: PasoActividadDto): void {
+    this.actividadDetalle = a;
+    this.detallePestana = 'ejecuciones';
+    this.auditoria = [];
+    this.loadingAuditoria = true;
+    this.pasoService.getAuditoria(a.id).subscribe({
+      next: (data) => { this.auditoria = data; this.loadingAuditoria = false; this.cdr.detectChanges(); },
+      error: () => { this.loadingAuditoria = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  auditIcono(tipo: string): string {
+    const t = tipo.toLowerCase();
+    if (t.includes('elimin')) return 'ti-trash';
+    if (t.includes('reprog')) return 'ti-calendar-event';
+    return 'ti-pencil';
+  }
+
+  auditColor(tipo: string): string {
+    const t = tipo.toLowerCase();
+    if (t.includes('elimin')) return '#dc2626';
+    if (t.includes('reprog')) return '#d97706';
+    return '#2563eb';
+  }
 
   onEjecucionCreada(e: PasoEjecucionDto): void {
     this.actividadEjecutando = null;
@@ -137,20 +176,56 @@ export class ActividadTreeComponent {
 
   onEditar(a: PasoActividadDto): void { this.actividadEditarClick.emit(a); }
 
-  onEliminar(a: PasoActividadDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: '¿Eliminar actividad?',
-      text: a.nombre,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      confirmButtonColor: '#ef4444',
-    }).then(r => {
-      if (!r.isConfirmed) return;
-      this.actividadService.delete(a.id).subscribe({
-        next: () => { this.actividadEliminada.emit(a.id); this.cdr.detectChanges(); },
-        error: () => Swal.fire('Error', 'No se pudo eliminar la actividad', 'error'),
-      });
+  abrirEliminar(a: PasoActividadDto): void {
+    this.eliminarActividad = a;
+    this.motivoEliminacion = '';
+    this.eliminarOpen = true;
+  }
+
+  abrirReprogramar(e: PasoEjecucionDto): void {
+    this.ejecucionAReprogramar = e;
+    this.nuevaFechaReprogramacion = '';
+    this.motivoReprogramacion = '';
+    this.reprogramarOpen = true;
+  }
+
+  confirmarReprogramar(): void {
+    if (!this.ejecucionAReprogramar || !this.nuevaFechaReprogramacion || this.motivoReprogramacion.trim().length < 10) return;
+    this.ejecucionService.reprogramar(this.ejecucionAReprogramar.id, {
+      nuevaFecha: this.nuevaFechaReprogramacion,
+      motivo: this.motivoReprogramacion.trim(),
+    }).subscribe({
+      next: (updated) => {
+        if (this.actividadDetalle) {
+          const idx = this.actividadDetalle.ejecuciones.findIndex(e => e.id === updated.id);
+          if (idx >= 0) this.actividadDetalle.ejecuciones[idx] = updated;
+          this.pasoService.getAuditoria(this.actividadDetalle.id).subscribe({
+            next: (data) => { this.auditoria = data; this.cdr.detectChanges(); },
+            error: () => {},
+          });
+        }
+        this.ejecucionRegistrada.emit(updated);
+        this.reprogramarOpen = false;
+        this.ejecucionAReprogramar = null;
+        this.nuevaFechaReprogramacion = '';
+        this.motivoReprogramacion = '';
+        this.cdr.detectChanges();
+      },
+      error: () => Swal.fire('Error', 'No se pudo reprogramar la ejecución', 'error'),
+    });
+  }
+
+  confirmarEliminar(): void {
+    if (!this.eliminarActividad || this.motivoEliminacion.trim().length < 10) return;
+    this.actividadService.delete(this.eliminarActividad.id, this.motivoEliminacion.trim()).subscribe({
+      next: () => {
+        this.actividadEliminada.emit(this.eliminarActividad!.id);
+        this.eliminarOpen = false;
+        this.eliminarActividad = null;
+        this.motivoEliminacion = '';
+        this.cdr.detectChanges();
+      },
+      error: () => Swal.fire('Error', 'No se pudo eliminar la actividad', 'error'),
     });
   }
 }
