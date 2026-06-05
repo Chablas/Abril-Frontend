@@ -43,9 +43,9 @@
           <button type="button" class="row-btn row-btn--reg" (click)="abrirEjecucion(a)" title="Registrar ejecución">
             <i class="ti ti-plus"></i> Registrar
           </button>
-          <a class="row-btn row-btn--ver" [routerLink]="['/ssoma/gestion/paso/actividad', a.id]" title="Ver detalle">
+          <button type="button" class="row-btn row-btn--ver" (click)="abrirDetalle(a)" title="Ver historial">
             <i class="ti ti-eye"></i>
-          </a>
+          </button>
           <button type="button" class="row-btn row-btn--del" (click)="onEliminar(a)" title="Eliminar">
             <i class="ti ti-trash"></i>
           </button>
@@ -68,3 +68,67 @@
   (closed)="actividadEjecutando = null"
   (ejecucionCreada)="onEjecucionCreada($event)">
 </app-ejecucion-modal>
+
+<!-- Offcanvas historial de ejecuciones -->
+<div *ngIf="actividadDetalle" class="det-overlay">
+  <div class="det-backdrop" (click)="actividadDetalle = null"></div>
+  <div class="det-panel">
+
+    <div class="det-header">
+      <div class="det-header-info">
+        <h3 class="det-title">{{ actividadDetalle.nombre }}</h3>
+        <div class="det-badges">
+          <span class="freq-badge" [ngClass]="frecuenciaClass(actividadDetalle.frecuencia)">{{ actividadDetalle.frecuencia }}</span>
+          <span class="det-meta-item"><i class="ti ti-calendar-event"></i> M{{ actividadDetalle.mesInicio }}–M{{ actividadDetalle.mesFin }}</span>
+          <span class="det-meta-item"><i class="ti ti-check"></i> {{ ejecutadas(actividadDetalle) }}/{{ actividadDetalle.cantidadPlanificada }}</span>
+        </div>
+      </div>
+      <button type="button" class="det-close" (click)="actividadDetalle = null"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="det-kpis">
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">SPI</span>
+        <app-spi-badge [spi]="spiActividad(actividadDetalle)" size="sm"></app-spi-badge>
+      </div>
+      <div class="det-kpi-item">
+        <span class="det-kpi-label">Este mes</span>
+        <span class="mes-actual" [ngClass]="'mes-actual--' + ejecucionMesActual(actividadDetalle).estado">
+          {{ ejecucionMesActual(actividadDetalle).label }}
+        </span>
+      </div>
+    </div>
+
+    <div class="det-body">
+      <p class="det-section-title">Historial de ejecuciones</p>
+
+      <div *ngIf="!actividadDetalle.ejecuciones?.length" class="det-empty">
+        <i class="ti ti-calendar-off" style="font-size:1.75rem;opacity:0.25"></i>
+        <p>Sin ejecuciones registradas</p>
+      </div>
+
+      <div *ngFor="let e of actividadDetalle.ejecuciones" class="ejec-row">
+        <div class="ejec-dot" [ngClass]="'ejec-dot--' + e.estado.toLowerCase()"></div>
+        <div class="ejec-info">
+          <div class="ejec-top">
+            <span class="ejec-fecha">{{ e.fechaProgramada | date:'dd MMM yyyy' }}</span>
+            <span class="ejec-badge" [ngClass]="'ejec-badge--' + e.estado.toLowerCase()">{{ e.estado }}</span>
+            <span *ngIf="e.fechaEjecutada" class="ejec-ejecutada">
+              ✓ {{ e.fechaEjecutada | date:'dd MMM' }}
+            </span>
+          </div>
+          <p *ngIf="e.observaciones" class="ejec-obs">{{ e.observaciones }}</p>
+          <p *ngIf="e.participantesCount" class="ejec-obs">{{ e.participantesCount }} participantes</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="det-footer">
+      <button type="button" class="det-btn-cancel" (click)="actividadDetalle = null">Cerrar</button>
+      <button type="button" class="det-btn-save" (click)="abrirEjecucion(actividadDetalle); actividadDetalle = null">
+        <i class="ti ti-plus"></i> Registrar ejecución
+      </button>
+    </div>
+
+  </div>
+</div>

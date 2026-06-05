@@ -1,6 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
 import { SpiBadgeComponent } from '../spi-badge/spi-badge.component';
 import { EjecucionModalComponent } from '../ejecucion-modal/ejecucion-modal.component';
@@ -17,7 +16,7 @@ interface CategoriaGroup {
 @Component({
   selector: 'app-actividad-tree',
   standalone: true,
-  imports: [CommonModule, RouterModule, SpiBadgeComponent, EjecucionModalComponent],
+  imports: [CommonModule, SpiBadgeComponent, EjecucionModalComponent],
   templateUrl: './actividad-tree.component.html',
   styleUrl: './actividad-tree.component.css',
 })
@@ -45,6 +44,7 @@ export class ActividadTreeComponent {
   groups: CategoriaGroup[] = [];
   collapsedGroups = new Set<number>();
   actividadEjecutando: PasoActividadDto | null = null;
+  actividadDetalle: PasoActividadDto | null = null;
 
   readonly mesActual = new Date().getMonth() + 1;
 
@@ -127,6 +127,7 @@ export class ActividadTreeComponent {
   }
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
+  abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
 
   onEjecucionCreada(e: PasoEjecucionDto): void {
     this.actividadEjecutando = null;

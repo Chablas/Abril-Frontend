@@ -10,15 +10,28 @@
 
   <!-- Selector de proyecto + KPIs -->
   <div class="proyecto-bar">
+
+    <!-- Selector Apple-style -->
     <div class="proyecto-selector">
-      <label class="selector-label">PROYECTO</label>
-      <select class="selector-select" [(ngModel)]="selectedPasoId" (ngModelChange)="onProyectoChange()">
-        <option *ngFor="let p of programas" [ngValue]="p.id">
-          {{ p.proyectoNombre ?? p.nombre }} · {{ p.anio }}
-        </option>
-      </select>
+      <span class="selector-label">PROYECTO</span>
+      <div class="selector-row">
+        <div class="selector-wrap">
+          <select class="selector-select" [(ngModel)]="selectedPasoId" (ngModelChange)="onProyectoChange()">
+            <option *ngFor="let p of programas" [ngValue]="p.id">
+              {{ p.proyectoNombre ?? p.nombre }} · {{ p.anio }}
+            </option>
+          </select>
+          <i class="ti ti-chevron-down selector-chev"></i>
+        </div>
+        <span *ngIf="paso" class="estado-pill" [ngClass]="'estado-pill--' + paso.estado.toLowerCase()">
+          {{ paso.estado }}
+        </span>
+      </div>
     </div>
 
+    <div class="bar-sep"></div>
+
+    <!-- KPI mini-cards -->
     <div class="kpi-strip" *ngIf="spi && !loadingDetalle">
       <div class="kpi-strip__item">
         <span class="kpi-strip__label">SPI</span>
@@ -40,6 +53,7 @@
       </div>
     </div>
 
+    <!-- Acciones -->
     <div class="proyecto-actions" *ngIf="paso">
       <button *ngIf="paso.estado === 'Borrador'" type="button" class="hdr-btn hdr-btn--green" (click)="aprobar()">
         <i class="ti ti-check"></i> Aprobar

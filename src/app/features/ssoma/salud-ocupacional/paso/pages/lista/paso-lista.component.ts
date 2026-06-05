@@ -101,9 +101,13 @@ export class PasoListaComponent implements OnInit {
     });
   }
 
+  private normAmbito(raw: string): string {
+    return raw === 'Salud Ocupacional' ? 'Salud' : raw;
+  }
+
   get actividadesTab() {
     if (!this.paso?.actividades) return [];
-    return this.paso.actividades.filter(a => a.categoriaAmbito === this.tabActiva && a.activo);
+    return this.paso.actividades.filter(a => this.normAmbito(a.categoriaAmbito) === this.tabActiva && a.activo);
   }
 
   get categoriasFiltradas() {
@@ -111,7 +115,8 @@ export class PasoListaComponent implements OnInit {
   }
 
   countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
-    return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
+    console.log('ambitos:', [...new Set(this.paso?.actividades?.map(a => a.categoriaAmbito))]);
+    return this.paso?.actividades?.filter(a => this.normAmbito(a.categoriaAmbito) === tab && a.activo).length ?? 0;
   }
 
   setTab(tab: TabAmbito): void { this.tabActiva = tab; this.exportOpen = false; this.filtroEstado = ''; }
