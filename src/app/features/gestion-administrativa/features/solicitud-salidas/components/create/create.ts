@@ -43,6 +43,13 @@ export class SolicitudSalidaCreate implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
+  /**
+   * Máximo de caracteres del motivo personalizado. El motivo se imprime en la
+   * columna MOTIVO del PDF (≈200pt a 8.5pt), donde ~90 caracteres llenan 2 líneas.
+   * Mantener alineado con el recorte a 2 líneas del PDF (TablaMaxLineas).
+   */
+  readonly MOTIVO_LIBRE_MAX = 90;
+
   formData: SolicitudSalidaFormDataDto = {
     motivos: [],
     lugares: [],

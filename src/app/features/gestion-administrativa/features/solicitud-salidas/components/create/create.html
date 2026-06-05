@@ -71,7 +71,9 @@
         <ng-container *ngIf="t.motivoLibreOn">
           <label class="text-sm text-[#64BC04] font-medium">Motivo</label>
           <input type="text" [(ngModel)]="t.motivoLibre" placeholder="Ingresa el motivo"
+            [maxlength]="MOTIVO_LIBRE_MAX"
             class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+          <span class="text-[11px] text-gray-400 self-end">{{ t.motivoLibre?.length || 0 }}/{{ MOTIVO_LIBRE_MAX }}</span>
         </ng-container>
         <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
           <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" class="accent-[#64BC04]" />
