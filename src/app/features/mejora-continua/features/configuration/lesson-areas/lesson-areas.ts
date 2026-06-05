@@ -57,6 +57,36 @@ export class LessonAreas implements OnInit {
     });
   }
 
+  toggleIncludeInForm(item: LessonAreaConfigItemDto): void {
+    if (!item.active || !item.hasScope) return;
+    this.loaderService.show();
+    this.service.setIncludeInForm(item.areaScopeId, !item.includeInForm).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        item.includeInForm = res.value;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  toggleIncludeDescendants(item: LessonAreaConfigItemDto): void {
+    if (!item.active || !item.hasChildren) return;
+    this.loaderService.show();
+    this.service.setIncludeDescendants(item.areaScopeId, !item.includeDescendants).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        item.includeDescendants = res.value;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   get filteredRows(): LessonAreaConfigItemDto[] {
     const term = this.searchText.trim().toLowerCase();
     if (!term) return this.rows;

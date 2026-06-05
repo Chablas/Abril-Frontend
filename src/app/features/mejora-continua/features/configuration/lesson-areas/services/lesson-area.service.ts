@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
-import { LessonAreaConfigItemDto, ToggleLessonAreaResultDto } from '../dtos/lesson-area.dto';
+import {
+  LessonAreaConfigItemDto,
+  ToggleLessonAreaResultDto,
+  SetLessonAreaFlagResultDto,
+} from '../dtos/lesson-area.dto';
 
 @Injectable({ providedIn: 'root' })
 export class LessonAreaService {
@@ -22,6 +26,22 @@ export class LessonAreaService {
   toggle(areaScopeId: number): Observable<ToggleLessonAreaResultDto> {
     return this.http.put<ToggleLessonAreaResultDto>(
       `${this.apiUrl}/toggle/${areaScopeId}`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  setIncludeInForm(areaScopeId: number, value: boolean): Observable<SetLessonAreaFlagResultDto> {
+    return this.http.put<SetLessonAreaFlagResultDto>(
+      `${this.apiUrl}/include-in-form/${areaScopeId}?value=${value}`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  setIncludeDescendants(areaScopeId: number, value: boolean): Observable<SetLessonAreaFlagResultDto> {
+    return this.http.put<SetLessonAreaFlagResultDto>(
+      `${this.apiUrl}/include-descendants/${areaScopeId}?value=${value}`,
       {},
       { headers: this.authHeaders() },
     );
