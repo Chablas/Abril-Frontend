@@ -16,6 +16,8 @@ export interface LessonDetailDTO {
   /** Path "corto" sin Gerencia, en MAYÚSCULAS. Espejo del campo de la lista. */
   areaListDescription?: string;
 
+  /** Rama seleccionada de lesson_area (modelo nuevo). Necesario para editar. */
+  lessonAreaId?: number;
   /** ID del nodo hoja en el árbol de scope (catalog_item). */
   catalogItemId?: number;
   /** Segmentos de clasificación caminando scope_item (raíz → hoja). */
@@ -23,6 +25,14 @@ export interface LessonDetailDTO {
 
   stateId: number;
   stateDescription: string;
+
+  /** PENDIENTE | APROBADA | RECHAZADA */
+  approvalStatus: string;
+  rejectionComment?: string;
+  reviewedByFullName?: string;
+  /** True si el usuario actual es el jefe del autor y la lección está PENDIENTE. */
+  canReview: boolean;
+
   images?: LessonImageDTO[];
 
   createdDateTime: string;

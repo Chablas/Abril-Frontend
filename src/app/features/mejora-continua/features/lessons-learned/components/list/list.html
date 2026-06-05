@@ -17,6 +17,14 @@
         <!-- Datos generales -->
         <td class="px-2 py-2 bg-[#f2f5f2] cursor-pointer w-[280px]" (click)="openDetail(item.lessonId, $event, 'general')">
 
+          <!-- Estado de aprobación -->
+          <span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1"
+            [ngClass]="{
+              'bg-amber-100 text-amber-700': item.approvalStatus === 'PENDIENTE',
+              'bg-green-100 text-green-700': item.approvalStatus === 'APROBADA',
+              'bg-red-100 text-red-700': item.approvalStatus === 'RECHAZADA'
+            }">{{ item.approvalStatus }}</span>
+
           <!-- Proyecto -->
           <div class="flex items-center gap-2" title="Proyecto">
             <svg class="min-w-5 min-h-5 w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">

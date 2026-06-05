@@ -47,6 +47,17 @@
         </app-search-select>
       </div>
 
+      <div class="w-[200px]">
+        <app-search-select
+          label="Estado"
+          [options]="approvalStatusOptions"
+          valueField="value"
+          displayField="label"
+          [value]="filtersTable.approvalStatus"
+          (valueChange)="filtersTable.approvalStatus = $event">
+        </app-search-select>
+      </div>
+
       <!-- Advanced filters -->
       <ng-container *ngIf="showFilters">
 
@@ -85,6 +96,14 @@
         </div>
 
       </ng-container>
+
+      <button type="button" (click)="toggleMyPendingReview()"
+        class="h-[38px] px-4 rounded-xl text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        [ngClass]="filtersTable.onlyMyPendingReview
+          ? 'bg-[#64BC04] text-white border-[#64BC04]'
+          : 'bg-white text-[#64BC04] border-[#64BC04] hover:bg-[#E5F7D1]'">
+        Pendientes de mi revisión
+      </button>
 
       <button type="button" (click)="showFilters = !showFilters"
         class="h-[38px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
@@ -154,5 +173,15 @@
   [currentUserId]="currentUserId"
   [defaultTab]="selectedLessonTab"
   (closeModal)="selectedLessonId = null"
-  (deleted)="loadLessons(currentPage)">
+  (deleted)="loadLessons(currentPage)"
+  (edit)="onEditLesson($event)"
+  (reviewed)="onReviewed()">
 </app-detail-lesson>
+
+<app-edit-lesson
+  *ngIf="editLessonId"
+  [lessonId]="editLessonId"
+  [filtersData]="filtersData"
+  (closeModal)="editLessonId = null"
+  (saved)="onEditSaved()">
+</app-edit-lesson>

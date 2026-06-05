@@ -23,6 +23,8 @@ export interface LessonListDTO {
 
   stateId: number;
   stateDescription: string;
+  /** PENDIENTE | APROBADA | RECHAZADA */
+  approvalStatus: string;
   images: LessonImage[];
 
   createdDateTime: string;

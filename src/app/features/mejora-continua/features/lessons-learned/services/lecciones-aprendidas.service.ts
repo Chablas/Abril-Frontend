@@ -74,6 +74,24 @@ export class LeccionesAprendidasService {
     });
   }
 
+  updateLesson(id: number, form: FormData): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${id}`, form, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  approveLesson(id: number): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${id}/approve`, {}, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  rejectLesson(id: number, comment: string | null): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${id}/reject`, { comment }, {
+      headers: this.authHeaders(),
+    });
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Métodos migrados desde core/services/lesson.service.ts. Cubren los
   // endpoints específicos de la página /mejora-continua/lessons-learned

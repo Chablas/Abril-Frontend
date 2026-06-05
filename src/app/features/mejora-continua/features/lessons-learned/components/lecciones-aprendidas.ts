@@ -10,6 +10,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { CreateLesson } from './create/create';
 import { DetailLesson } from './detail/detail';
+import { EditLesson } from './edit/edit';
 import { LessonList } from './list/list';
 import { LessonCard } from './card/card';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -21,7 +22,7 @@ import { jwtDecode } from 'jwt-decode';
 @Component({
   selector: 'app-lecciones-aprendidas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
+  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson, EditLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
   templateUrl: './lecciones-aprendidas.html',
 })
 export class LeccionesAprendidas implements OnInit {
@@ -57,9 +58,21 @@ export class LeccionesAprendidas implements OnInit {
     userId: null as number | null,
     /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
     catalogSelections: {} as Record<number, number | null>,
+    /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. */
+    approvalStatus: null as string | null,
+    /** Solo lecciones pendientes de mi revisión (subordinados). */
+    onlyMyPendingReview: false,
     page: 1 as number | null,
   };
   showFilters = false;
+
+  // Opciones del filtro de estado de aprobación.
+  approvalStatusOptions = [
+    { value: null, label: 'Todos los estados' },
+    { value: 'PENDIENTE', label: 'Pendiente' },
+    { value: 'APROBADA', label: 'Aprobada' },
+    { value: 'RECHAZADA', label: 'Rechazada' },
+  ];
 
   // View mode
   viewMode = 'table';
@@ -80,6 +93,7 @@ export class LeccionesAprendidas implements OnInit {
   showCreateModal = false;
   selectedLessonId: number | null = null;
   selectedLessonTab: 'general' | 'images' = 'general';
+  editLessonId: number | null = null;
 
   constructor(
     private leccionesAprendidasService: LeccionesAprendidasService,
@@ -160,8 +174,16 @@ export class LeccionesAprendidas implements OnInit {
       periodDate: this.filtersTable.periodDate,
       userId: this.filtersTable.userId,
       catalogItemIds: selected.length > 0 ? selected.join(',') : null,
+      approvalStatus: this.filtersTable.approvalStatus,
+      onlyMyPendingReview: this.filtersTable.onlyMyPendingReview ? true : null,
       page: this.filtersTable.page,
     };
+  }
+
+  /** Atajo: alterna "pendientes de mi revisión" y recarga. */
+  toggleMyPendingReview(): void {
+    this.filtersTable.onlyMyPendingReview = !this.filtersTable.onlyMyPendingReview;
+    this.loadLessons(1);
   }
 
   private formatPeriodValue(date: Date): string {
@@ -223,5 +245,21 @@ export class LeccionesAprendidas implements OnInit {
   onCardClick(lessonId: number): void {
     this.selectedLessonId = lessonId;
     this.selectedLessonTab = 'general';
+  }
+
+  /** Desde el detalle: abrir el modal de edición (solo el autor). */
+  onEditLesson(lessonId: number): void {
+    this.selectedLessonId = null;
+    this.editLessonId = lessonId;
+  }
+
+  onEditSaved(): void {
+    this.editLessonId = null;
+    this.loadLessons(this.currentPage || 1);
+  }
+
+  /** Tras aprobar/rechazar en el detalle, recargar la lista. */
+  onReviewed(): void {
+    this.loadLessons(this.currentPage || 1);
   }
 }

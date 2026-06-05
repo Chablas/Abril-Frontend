@@ -126,6 +126,8 @@
   *ngIf="showEditModal"
   [dto]="editDto"
   [existingClauses]="editingClauses"
+  [existingAnexo3Clauses]="editingAnexo3Clauses"
+  [existingAnexo4Clauses]="editingAnexo4Clauses"
   (closeModal)="showEditModal = false"
   (saved)="load(1)">
 </app-work-item-category-edit>
