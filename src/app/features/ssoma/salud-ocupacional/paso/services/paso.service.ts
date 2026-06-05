@@ -14,6 +14,8 @@ import {
   PasoCategoriaDto,
   CreatePasoDto,
   InstanciarPasoDto,
+  PasoResumenMesDto,
+  PasoAuditoriaDto,
 } from '../dtos/paso.dtos';
 
 const BASE = `${environment.apiUrl}api/v1/ssoma-paso`;
@@ -75,6 +77,19 @@ export class PasoService {
 
   getCategorias(): Observable<PasoCategoriaDto[]> {
     return this.http.get<PasoCategoriaDto[]>(`${BASE}/categorias`, { headers: buildAuthHeaders() });
+  }
+
+  getAuditoria(actividadId: number): Observable<PasoAuditoriaDto[]> {
+    return this.http.get<PasoAuditoriaDto[]>(`${BASE}/actividad/${actividadId}/auditoria`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getResumenMes(id: number, anio: number, mes: number): Observable<PasoResumenMesDto> {
+    return this.http.get<PasoResumenMesDto>(`${BASE}/${id}/resumen-mes`, {
+      params: buildParams({ anio, mes } as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+    });
   }
 
   exportReporte(id: number, format: 'excel' | 'pdf'): Observable<Blob> {

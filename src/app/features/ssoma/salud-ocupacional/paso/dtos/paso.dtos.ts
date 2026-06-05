@@ -9,6 +9,9 @@ export interface PasoDashboardDto {
   totalVencidas: number;
   totalProximasVencer: number;
   porProyecto: PasoPorProyectoDto[];
+  seguridad?: SpiPorAmbitoDto;
+  salud?: SpiPorAmbitoDto;
+  ambiente?: SpiPorAmbitoDto;
 }
 
 export interface PasoPorProyectoDto {
@@ -210,8 +213,56 @@ export interface CreateActividadDto {
 export interface CreateEjecucionDto {
   actividadId: number;
   fechaProgramada?: string;
-  fechaEjecutada: string;
+  fechaEjecutada?: string;
   fechaVerificacion?: string;
   observaciones?: string;
   participantesCount?: number;
+}
+
+export interface PasoResumenMesDto {
+  anio: number;
+  mes: number;
+  nombreMes: string;
+  totalProgramadas: number;
+  completadas: number;
+  pendientes: number;
+  vencidas: number;
+  porcentajeAvance: number;
+  seguridad: PasoResumenMesAmbitoDto;
+  salud: PasoResumenMesAmbitoDto;
+  ambiente: PasoResumenMesAmbitoDto;
+  actividades: PasoResumenMesActividadDto[];
+}
+
+export interface PasoAuditoriaDto {
+  id: number;
+  tipo: string;
+  descripcion: string;
+  motivo: string;
+  valorAnterior: any;
+  valorNuevo: any;
+  usuarioId: number | null;
+  createdAt: string;
+}
+
+export interface PasoResumenMesAmbitoDto {
+  programadas: number;
+  completadas: number;
+  pendientes: number;
+  vencidas: number;
+}
+
+export interface PasoResumenMesActividadDto {
+  actividadId: number;
+  nombre: string;
+  categoriaNombre: string;
+  categoriaAmbito: string;
+  frecuencia: string;
+  ejecucionId: number | null;
+  fechaProgramada: string | null;
+  estado: 'Ejecutado' | 'Programado' | 'Vencido' | 'SinProgramar';
+  fechaEjecutada: string | null;
+  observaciones: string | null;
+  evidenciaNombre: string | null;
+  evidenciaUrl: string | null;
 }

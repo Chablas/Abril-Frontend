@@ -23,7 +23,10 @@ export class PasoActividadService {
     return this.http.put<PasoActividadDto>(`${ACTIVIDAD_BASE}/${id}`, dto, { headers: buildAuthHeaders() });
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${ACTIVIDAD_BASE}/${id}`, { headers: buildAuthHeaders() });
+  delete(id: number, motivo: string): Observable<void> {
+    return this.http.request<void>('DELETE', `${ACTIVIDAD_BASE}/${id}`, {
+      body: { motivo },
+      headers: buildAuthHeaders(),
+    });
   }
 }

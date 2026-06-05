@@ -11,6 +11,8 @@ import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.componen
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
+import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
+import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
@@ -19,7 +21,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
 @Component({
   selector: 'app-paso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
   templateUrl: './paso-detalle.component.html',
   styleUrl: './paso-detalle.component.css',
 })
@@ -94,6 +96,8 @@ export class PasoDetalleComponent implements OnInit {
   }
 
   countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
+    const valores = [...new Set(this.paso?.actividades?.map(a => a.categoriaAmbito) ?? [])];
+    console.log('[PASO] categoriaAmbito valores únicos:', valores);
     return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
   }
 

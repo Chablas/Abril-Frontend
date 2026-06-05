@@ -1,5 +1,9 @@
 /* updated */
 
+.layout-content {
+  border-left: 1px solid #e5e7eb;
+}
+
 .full-page-wrapper,
 .full-page-wrapper > div {
   background: transparent !important;
