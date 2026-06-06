@@ -150,73 +150,37 @@
   <!-- ══ MAIN GRID 3 COLS ══ -->
   <div class="main-grid">
 
-    <!-- ── COL IZQUIERDA: Ranking REDISEÑADO ── -->
+    <!-- ── COL IZQUIERDA: Ranking Eficiencia ── -->
     <div class="dash-card rank-card">
 
-      <!-- Header con gradiente y promedio -->
+      <!-- Header -->
       <div class="rank-header">
         <div class="rank-header-left">
-          <div class="rank-title-wrap">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                    fill="#F59E0B" stroke="#F59E0B" stroke-width="1.5" stroke-linejoin="round"/>
-            </svg>
-            <span class="rank-title-text">RANKING EFICIENCIA</span>
-          </div>
-          <p class="rank-subtitle">Actividades completadas / asignadas</p>
+          <span class="rank-title-text">RANKING EFICIENCIA</span>
+          <span class="rank-subtitle">Índice IES · eficiencia del supervisor</span>
         </div>
-        <div class="rank-prom-bubble">
-          <span class="rank-prom-label">PROMEDIO</span>
+        <div class="rank-prom-pill">
           <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
+          <span class="rank-prom-label">PROM.</span>
         </div>
       </div>
 
-      <!-- Leyenda explicativa -->
-      <div class="rank-legend">
-        <div class="rank-legend-item">
-          <span class="rank-legend-bar rank-legend-real"></span>
-          <span class="rank-legend-txt">Avance real</span>
-        </div>
-        <div class="rank-legend-item">
-          <span class="rank-legend-bar rank-legend-proyectada"></span>
-          <span class="rank-legend-txt">Proyección +12%</span>
-        </div>
-        <div class="rank-legend-sep"></div>
-        <div class="rank-legend-item">
-          <span class="rank-legend-dot" style="background:#1B6B3A"></span>
-          <span class="rank-legend-txt">≥80% óptimo</span>
-        </div>
-        <div class="rank-legend-item">
-          <span class="rank-legend-dot" style="background:#2E6DB4"></span>
-          <span class="rank-legend-txt">60–79% normal</span>
-        </div>
-        <div class="rank-legend-item">
-          <span class="rank-legend-dot" style="background:#C0392B"></span>
-          <span class="rank-legend-txt">&lt;60% crítico</span>
-        </div>
-      </div>
-
-      <!-- Lista ranking -->
+      <!-- Lista -->
       <div class="rank-list">
         <div *ngFor="let sup of supervisores; let i = index"
              class="rank-item"
-             [class.rank-item-top]="i === 0">
+             [class.rank-item-crit]="sup.progreso < 50"
+             [style.borderColor]="getAvatarColor(sup.progreso) + '55'">
 
-          <!-- Posición con medalla para top 3 -->
-          <div class="rank-medal" [ngSwitch]="i">
-            <svg *ngSwitchCase="0" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#F59E0B" opacity="0.15"/>
-              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#F59E0B">1</text>
-            </svg>
-            <svg *ngSwitchCase="1" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#9CA3AF" opacity="0.2"/>
-              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#6B7280">2</text>
-            </svg>
-            <svg *ngSwitchCase="2" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" fill="#D97706" opacity="0.15"/>
-              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#D97706">3</text>
-            </svg>
-            <span *ngSwitchDefault class="rank-pos-num">{{ i + 1 }}</span>
+          <!-- Acento izquierdo por color -->
+          <div class="rank-accent"
+               [style.background]="sup.progreso >= 75
+                 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
+                 : sup.progreso >= 60
+                 ? 'linear-gradient(180deg,#60A5FA,#2563EB)'
+                 : sup.progreso >= 45
+                 ? 'linear-gradient(180deg,#FCD34D,#B45309)'
+                 : 'linear-gradient(180deg,#F87171,#DC2626)'">
           </div>
 
           <!-- Avatar -->
@@ -226,7 +190,7 @@
             {{ getInitials(sup.nombre) }}
           </div>
 
-          <!-- Info central -->
+          <!-- Info -->
           <div class="rank-info">
             <div class="rank-nombre-row">
               <span class="rank-nombre">{{ sup.nombre }}</span>
@@ -237,37 +201,33 @@
               </span>
             </div>
 
-            <!-- Contador completadas/total con tooltip -->
             <div class="rank-stats-row">
-              <span class="rank-completadas"
-                    title="Actividades con fecha efectiva de cierre registrada">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="margin-right:2px">
-                  <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                {{ sup.completadas }} completadas
+              <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'"
+                    [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
+                {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
               </span>
-              <span class="rank-divider">·</span>
-              <span class="rank-total"
-                    title="Total de actividades asignadas a este supervisor">
-                {{ sup.total }} asignadas
-              </span>
-              <span class="rank-divider">·</span>
-              <span class="rank-pct" [style.color]="getAvatarColor(sup.progreso)">
-                <b>{{ sup.progreso }}%</b>
+              <span class="rank-stat-sep">/</span>
+              <span class="rank-stat-tot">{{ sup.total }}</span>
+              <span class="rank-stat-sep">·</span>
+              <span class="rank-stat-ies-lbl">IES</span>
+              <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">
+                {{ sup.progreso | number:'1.0-0' }}
               </span>
             </div>
 
-            <!-- Barra doble con etiquetas -->
-            <div class="dual-bar-wrap">
-              <div class="dual-bar-track">
-                <div class="bar-proyectada" [style.width.%]="getProyectada(sup.progreso)"></div>
-                <div class="bar-real"
+            <div class="rank-bar-row">
+              <div class="rank-bar-track">
+                <div class="rank-bar-fill"
                      [style.width.%]="sup.progreso"
-                     [style.background]="getAvatarColor(sup.progreso)"></div>
+                     [style.background]="sup.progreso >= 75
+                       ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
+                       : sup.progreso >= 60
+                       ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
+                       : sup.progreso >= 45
+                       ? 'linear-gradient(90deg,#FCD34D,#B45309)'
+                       : 'linear-gradient(90deg,#F87171,#DC2626)'">
+                </div>
               </div>
-              <span class="bar-pct-label" [style.color]="getAvatarColor(sup.progreso)">
-                {{ sup.progreso }}%
-              </span>
             </div>
           </div>
 
@@ -275,68 +235,177 @@
         <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos de supervisores</p>
       </div>
 
-      <!-- Footer equilibrio -->
+      <!-- Leyenda IES -->
+      <div class="rank-legend">
+        <div class="rank-legend-header">
+          <span class="rank-legend-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Cómo se calcula el IES
+          </span>
+        </div>
+        <div class="rank-legend-formula">
+          <div class="rank-legend-cell">
+            <div class="rank-legend-pill">35%</div>
+            <div><div class="rank-legend-cell-name">SPI</div><div class="rank-legend-cell-desc">Cumple plazos · spi ÷ 1.5</div></div>
+          </div>
+          <div class="rank-legend-cell">
+            <div class="rank-legend-pill">35%</div>
+            <div><div class="rank-legend-cell-name">Cierre</div><div class="rank-legend-cell-desc">Actividades con fin real</div></div>
+          </div>
+          <div class="rank-legend-cell">
+            <div class="rank-legend-pill">20%</div>
+            <div><div class="rank-legend-cell-name">Inicio puntual</div><div class="rank-legend-cell-desc">Comenzó a tiempo</div></div>
+          </div>
+          <div class="rank-legend-cell">
+            <div class="rank-legend-pill">10%</div>
+            <div><div class="rank-legend-cell-name">Sin mora</div><div class="rank-legend-cell-desc">Penaliza vencidas abiertas</div></div>
+          </div>
+        </div>
+        <div class="rank-legend-thresholds">
+          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#22A85A"></span>≥75 óptimo</span>
+          <span class="rank-threshold-sep">·</span>
+          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#6095E8"></span>50–74 normal</span>
+          <span class="rank-threshold-sep">·</span>
+          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#E05252"></span>&lt;50 crítico</span>
+          <span class="rank-threshold-sep">|</span>
+          <span class="rank-threshold-note">pp = pts. porcentuales</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
       <div class="rank-footer">
-        <div class="equilibrio-tag"
-             [class.eq-verde]="equipoEquilibrado"
-             [class.eq-rojo]="!equipoEquilibrado">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-            <circle *ngIf="equipoEquilibrado" cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
-            <path *ngIf="equipoEquilibrado" d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path *ngIf="!equipoEquilibrado" d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <circle *ngIf="!equipoEquilibrado" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+        <div class="rank-eq-tag"
+             [class.rank-eq-verde]="equipoEquilibrado"
+             [class.rank-eq-rojo]="!equipoEquilibrado">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path *ngIf="equipoEquilibrado" d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <ng-container *ngIf="!equipoEquilibrado">
+              <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            </ng-container>
           </svg>
           {{ equipoEquilibrado ? 'Equipo equilibrado' : 'Desbalance detectado' }}
         </div>
-        <div class="rank-footer-meta">
-          <span title="Diferencia entre el mejor y peor supervisor">
-            Varianza: {{ supervisores.length >= 2
-              ? (supervisores[0].progreso - supervisores[supervisores.length-1].progreso)
-              : 0 }}pp
+        <div class="rank-footer-right">
+          <svg width="48" height="24" viewBox="0 0 48 24" aria-hidden="true">
+            <polyline points="2,20 10,14 18,17 28,7 36,10 46,4"
+                      fill="none" stroke="#B0BAD0" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="46" cy="4" r="2.5" fill="#6095E8"/>
+          </svg>
+          <span class="rank-footer-meta"
+                title="pp = puntos porcentuales: diferencia entre el IES del mejor y peor supervisor">
+            Brecha:
+            <b>{{ supervisores.length >= 2
+              ? ((supervisores[0].progreso - supervisores[supervisores.length-1].progreso) | number:'1.1-1')
+              : 0 }}pp</b>
+            · Prom: <b>{{ promedioEficiencia }}%</b>
           </span>
-          <span>· Prom: <b>{{ promedioEficiencia }}%</b></span>
         </div>
       </div>
 
     </div>
 
-    <!-- ── COL CENTRO: 4 gráficas ── -->
+    <!-- ── COL CENTRO: Charts ── -->
     <div class="center-col">
 
       <!-- Distribución por Estado -->
       <div class="dash-card chart-card-sm">
         <div class="card-header">
           <span class="card-title">DISTRIBUCIÓN POR ESTADO</span>
+          <span class="dist-total-badge">{{ kpis.totalActividades }} actividades</span>
         </div>
         <div class="donut-wrapper">
           <div class="donut-canvas-wrap">
             <canvas #distribucionCanvas></canvas>
+            <div class="donut-center-overlay">
+              <span class="donut-center-num">{{ kpis.progresoGlobal }}%</span>
+              <span class="donut-center-lbl">avance</span>
+            </div>
           </div>
           <div class="donut-legend-v">
-            <span class="leg-item"><span class="leg-dot" style="background:#1B6B3A"></span>Culminadas <b>{{ kpis.culminadas }}</b></span>
-            <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>En Proceso <b>{{ kpis.enProceso }}</b></span>
-            <span class="leg-item"><span class="leg-dot" style="background:#C0392B"></span>Vencidas <b>{{ kpis.vencidas }}</b></span>
-            <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>Pendientes <b>{{ kpis.pendientes }}</b></span>
+            <div class="dist-leg-row">
+              <div class="dist-leg-left">
+                <span class="leg-dot" style="background:#2D9E5F"></span>
+                <span class="dist-leg-label">Culminadas</span>
+                <span class="dist-leg-num">{{ kpis.culminadas }}</span>
+              </div>
+              <div class="dist-leg-bar-wrap">
+                <div class="dist-leg-bar" style="background:#2D9E5F"
+                     [style.width.%]="kpis.totalActividades ? (kpis.culminadas / kpis.totalActividades * 100) : 0"></div>
+              </div>
+              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.culminadas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
+            </div>
+            <div class="dist-leg-row">
+              <div class="dist-leg-left">
+                <span class="leg-dot" style="background:#4A7FD4"></span>
+                <span class="dist-leg-label">En proceso</span>
+                <span class="dist-leg-num">{{ kpis.enProceso }}</span>
+              </div>
+              <div class="dist-leg-bar-wrap">
+                <div class="dist-leg-bar" style="background:#4A7FD4"
+                     [style.width.%]="kpis.totalActividades ? (kpis.enProceso / kpis.totalActividades * 100) : 0"></div>
+              </div>
+              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.enProceso / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
+            </div>
+            <div class="dist-leg-row">
+              <div class="dist-leg-left">
+                <span class="leg-dot" style="background:#C94040"></span>
+                <span class="dist-leg-label">Vencidas</span>
+                <span class="dist-leg-num">{{ kpis.vencidas }}</span>
+              </div>
+              <div class="dist-leg-bar-wrap">
+                <div class="dist-leg-bar" style="background:#C94040"
+                     [style.width.%]="kpis.totalActividades ? (kpis.vencidas / kpis.totalActividades * 100) : 0"></div>
+              </div>
+              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.vencidas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
+            </div>
+            <div class="dist-leg-row">
+              <div class="dist-leg-left">
+                <span class="leg-dot" style="background:#C4860A"></span>
+                <span class="dist-leg-label">Pendientes</span>
+                <span class="dist-leg-num">{{ kpis.pendientes }}</span>
+              </div>
+              <div class="dist-leg-bar-wrap">
+                <div class="dist-leg-bar" style="background:#C4860A"
+                     [style.width.%]="kpis.totalActividades ? (kpis.pendientes / kpis.totalActividades * 100) : 0"></div>
+              </div>
+              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.pendientes / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Proyección Avance Semanal -->
+      <!-- Curva S — Avance Programado vs Real -->
       <div class="dash-card chart-card-md">
         <div class="card-header">
-          <span class="card-title">AVANCE SEMANAL %</span>
-          <span class="card-sub">Últimas 8 semanas</span>
+          <span class="card-title">CURVA DE AVANCE</span>
+          <div class="chart-legend-inline">
+            <span class="cli-item">
+              <span class="cli-line cli-line-dash"></span>Programado
+            </span>
+            <span class="cli-item">
+              <span class="cli-line cli-line-solid"></span>Real
+            </span>
+          </div>
         </div>
         <div class="chart-wrap-md">
           <canvas #avanceCanvas></canvas>
         </div>
       </div>
 
-      <!-- Eficiencia SPI -->
+      <!-- Tendencia SPI -->
       <div class="dash-card chart-card-md">
         <div class="card-header">
-          <span class="card-title">EFICIENCIA SPI</span>
-          <span class="card-sub">Últimas 3 semanas</span>
+          <span class="card-title">TENDENCIA SPI</span>
+          <div class="spi-ref-badges">
+            <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F">≥0.95 OK</span>
+            <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A">≥0.80</span>
+            <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040">&lt;0.80</span>
+          </div>
         </div>
         <div class="chart-wrap-md">
           <canvas #eficienciaCanvas></canvas>
@@ -345,7 +414,7 @@
 
     </div>
 
-    <!-- ── COL DERECHA: Hitos + Tareas por arquitecto ── -->
+    <!-- ── COL DERECHA: Hitos + Tareas ── -->
     <div class="right-col">
 
       <!-- Hitos Críticos -->
@@ -359,7 +428,6 @@
             </svg>
           </button>
         </div>
-        <!-- Vista rápida top 6 -->
         <div class="hitos-preview">
           <div *ngFor="let h of hitosCriticos.slice(0,6)"
                class="hito-item"
@@ -369,7 +437,9 @@
               <span class="hito-meta">{{ h.proyecto }}</span>
             </div>
             <div class="hito-right">
-              <span class="hito-dias" [style.color]="getHitoColor(h.diasRestantes)">
+              <span class="hito-dias-badge"
+                    [style.background]="getHitoColor(h.diasRestantes) + '18'"
+                    [style.color]="getHitoColor(h.diasRestantes)">
                 {{ diasLabel(h.diasRestantes) }}
               </span>
             </div>
@@ -378,28 +448,28 @@
         </div>
         <div class="hitos-footer">
           <div class="mini-counter">
-            <span class="mini-num" style="color:#C0392B">{{ hitosUrgentesCnt }}</span>
+            <span class="mini-num" style="color:#C94040">{{ hitosUrgentesCnt }}</span>
             <span class="mini-label">Urgente</span>
           </div>
           <div class="mini-counter">
-            <span class="mini-num" style="color:#D97706">{{ hitosEstaSemanaCnt }}</span>
+            <span class="mini-num" style="color:#C4860A">{{ hitosEstaSemanaCnt }}</span>
             <span class="mini-label">Esta sem.</span>
           </div>
           <div class="mini-counter">
-            <span class="mini-num" style="color:#2E6DB4">{{ hitosProximosCnt }}</span>
+            <span class="mini-num" style="color:#4A7FD4">{{ hitosProximosCnt }}</span>
             <span class="mini-label">Próximos</span>
           </div>
         </div>
       </div>
 
-      <!-- Tareas por Arquitecto (stacked) -->
+      <!-- Tareas por Arquitecto -->
       <div class="dash-card chart-card-lg">
         <div class="card-header">
-          <span class="card-title">TAREAS POR ARQUITECTO</span>
-          <div class="chart-legend-row">
-            <span class="leg-item"><span class="leg-dot" style="background:#2E6DB4"></span>Hitos</span>
-            <span class="leg-item"><span class="leg-dot" style="background:#1B6B3A"></span>Entregables</span>
-            <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>Consultas</span>
+          <span class="card-title">CARGA POR SUPERVISOR</span>
+          <div class="chart-legend-inline">
+            <span class="cli-item"><span class="cli-dot" style="background:#4A7FD4"></span>Hitos</span>
+            <span class="cli-item"><span class="cli-dot" style="background:#2D9E5F"></span>Entregables</span>
+            <span class="cli-item"><span class="cli-dot" style="background:#C4860A"></span>Consultas</span>
           </div>
         </div>
         <div class="chart-wrap-lg">
