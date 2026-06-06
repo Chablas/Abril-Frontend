@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-03 — Módulo PASO (Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente) creado completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores (GET/PUT `/api/v1/evaluaciones/asignaciones-supervisor`), rediseño completo de `/evaluaciones/evaluar` (grid 2-col de cards con color por proyecto, SPI badge, contador evaluados). Ver historial más antiguo abajo.
+> **Última actualización**: 2026-06-06 — Habilitación: upload multi-archivo (staging), vigencia contratista, entregables mensuales con tabla de meses. Ver §12 y sesión 2026-06-06 abajo.
+>
+> **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
 >
 > **2026-06-02** — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
 
@@ -1398,15 +1400,27 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 
 1. `selectEquipo(eq)` → llama `loadEntregablesEquipo(eq.id)`.
 2. `selectEntregable(e)` → puebla `panelVigencia`, `panelArchivoUrl`, `panelArchivoNombre`, `panelObsAbril`, `panelEstado`; abre drawer.
-3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
+3. Upload → staging local: `archivosPendientes: ArchivoStagingDto[]`. Botón **ENVIAR** llama `enviarDocumento()` → sube archivos secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar todos. **Ya NO existe `autoMarcarEnviado()`.**
 4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
 5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
-6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin. Sin botón "ENVIAR DOCUMENTO" (eliminado); flujo es auto-save en upload.
+6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin.
 7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
 
-**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
+**Staging multi-archivo** (los 3 componentes):
+- `panelArchivoUrl` y `panelArchivoNombre` eliminados como propiedades → reemplazados por `archivosPendientes: ArchivoStagingDto[]`.
+- Getters: `get uploadingFile()` = `archivosPendientes.some(a => a.subiendo)`, `get panelArchivoUrl()` = primer archivo con path.
+- `onFileSelected()`: acepta múltiples archivos, los agrega al staging sin subir inmediatamente.
+- `quitarArchivo(idx)`: elimina un archivo del staging.
+- `enviarDocumento()`: sube secuencialmente + llama `/archivos/enviar` al final.
 
-**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
+**Vigencia contratista** (los 3 componentes):
+- `requiereVigencia=true` → input date editable.
+- `requiereVigencia=false` → span readonly con fecha formateada.
+- Items permanentes en empresa (itemId 12/13): muestra texto "Permanente", no input.
+
+**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`.
+
+**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false` (en `guardarEntregable` admin).
 
 ### Página Control de Acceso — mobile-first operaciones en obra
 
@@ -3679,3 +3693,82 @@ Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). 
 ### CSS — budget Angular
 
 `anyComponentStyle` subido de `20kB → 28kB` en `angular.json` para acomodar el crecimiento del CSS del cronograma (actualmente ~21kB tras agregar estilos de popover, línea base, semáforo y predecesoras).
+
+---
+
+## Sesión 2026-06-06 — Habilitación: multi-archivo staging + vigencia contratista + entregables mensuales
+
+### Upload multi-archivo (empresa, trabajadores, equipos)
+
+**Patrón anterior eliminado**: `panelArchivoUrl: string`, `panelArchivoNombre: string`, `uploadingFile: boolean`, `autoMarcarEnviado()`, `subirArchivo()` en upload zone.
+
+**Nuevo patrón** (`ArchivoStagingDto` en `trabajador.model.ts`):
+```ts
+interface ArchivoStagingDto { file: File; nombre: string; path?: string; esZip: boolean; zipContenido?: string; subiendo: boolean; error: boolean; }
+```
+- Los 3 componentes tienen `archivosPendientes: ArchivoStagingDto[]`.
+- `onFileSelected()` acepta múltiples archivos (input con `multiple`) y los agrega al array local.
+- Botón ENVIAR llama `enviarDocumento()` → sube secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar.
+- `quitarArchivo(idx)` elimina del array.
+- **Nuevos endpoints** en `sharepoint-upload.service.ts`: `POST /archivos/subir-multiple`, `POST /archivos/enviar`.
+
+### Vigencia contratista
+
+Los 3 componentes muestran siempre el campo vigencia en la sección contratista:
+- `requiereVigencia = true` → `<input type="date">` editable.
+- `requiereVigencia = false` → `<span>` con fecha formateada o "—".
+- `esPermanente` (empresa itemId 12/13) → texto "Permanente", input deshabilitado.
+
+Lógica en `enviarDocumento()`:
+- Contratista + requiereVigencia → envía `panelVigencia`.
+- Admin → envía `panelVigencia`.
+- Contratista + !requiereVigencia → `undefined` (backend calcula).
+
+### Entregables mensuales (empresa.ts / empresa.html)
+
+**Nuevos DTOs** en `empresa.model.ts`:
+- `EntregableMesDto { id, mes, anio, estado, vigencia?, archivoUrl?, obsAbril?, obsContratista?, motivoRechazo? }`.
+- `EmpresaEntregableDto` extendido: `esMensual: boolean`, `motivoRechazo?`, `meses: EntregableMesDto[]`.
+- `EmpresaEntregableUpdateDto` extendido: `motivoRechazo?`, `mes?`, `anio?`.
+
+**Nuevas propiedades en empresa.ts**:
+- `mesSeleccionado: EntregableMesDto | null` — mes activo en el selector.
+- `mesPanelMes: number` (0-indexed), `mesPanelAnio: number` — mes/año del selector.
+- `mesesNombres[]`, getters `mesesDisponibles` (últimos 12 meses), `mesActualLabel`.
+
+**Drawer empresa — bloques mensuales**:
+- **Contratista + esMensual**: selector de mes (`onMesChange(mes, anio)`), info de estado del mes seleccionado (si ya aprobado/rechazado → bloque bloqueado), zona de upload, textarea obs. Botón ENVIAR = "ENVIAR {mesActualLabel}"; disabled si mes ya aprobado/rechazado.
+- **Admin + esMensual**: tabla de meses con columnas Mes/Estado/Acciones. Por cada mes en estado `Enviado`: botones ✓ (`aprobarMesEspecifico`) y ✕ (`rechazarMesEspecifico`). Motivo de rechazo en tooltip.
+- Bloques no-mensuales: condición añadida `&& !selectedEntregable.esMensual`.
+
+**Nuevos métodos en empresa.ts**:
+- `onMesChange(mes, anio)`: actualiza selector + busca `mesSeleccionado` en `e.meses`.
+- `aprobarMesEspecifico(mes: EntregableMesDto)`: Swal confirm → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Aprobado', vigencia? })`.
+- `rechazarMesEspecifico(mes: EntregableMesDto)`: Swal textarea → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Rechazado', motivoRechazo })`.
+- `eliminarArchivoVersion(archivoId)`: Swal confirm → `habEmpresaService.eliminarArchivo(archivoId)`.
+
+**Nuevos métodos en `hab-empresa.service.ts`**:
+- `getMesesEntregable(empresaId, itemId, proyectoId)` → `GET /empresas/{id}/entregables/{itemId}/meses`.
+- `aprobarMes(empresaId, entregableId, dto)` → `PATCH /empresas/{id}/entregables/{entregableId}/mes`.
+- `eliminarArchivo(archivoId)` → `DELETE /archivos/{archivoId}`.
+
+### Bandeja — badge meses pendientes
+
+`BandejaItemDto` extendido con `itemId?`, `esMensual?`, `mes?`, `anio?`, `mesesPendientes?`.
+
+En `bandeja.html`, debajo del nombre del entregable:
+```html
+<span *ngIf="item.esMensual && item.mesesPendientes > 1" class="btn-chip chip-orange">
+  {{ item.mesesPendientes }} meses pendientes
+</span>
+```
+
+### CSS añadido
+
+En `empresa.css`, `trabajadores.css`, `equipos.css`:
+- `.archivo-list`, `.archivo-item`, `.archivo-item--subiendo`, `.archivo-item--error`
+- `.archivo-nombre`, `.archivo-zip-badge`, `.archivo-estado`, `.archivo-estado--error`
+
+En `empresa.css` además: `.mes-estado-aprobado/enviado/rechazado/falta`.
+
+**Commit**: `d763264` en master.
