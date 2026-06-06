@@ -347,8 +347,10 @@
   <input #popoverDateInput
          type="date"
          class="inline-date-picker"
-         [(ngModel)]="inlineEditValue"
-         (keydown.enter)="commitInlineEdit()"
+         [value]="inlineEditValue"
+         (change)="inlineEditValue = $any($event.target).value"
+         (input)="inlineEditValue = $any($event.target).value"
+         (keydown.enter)="$event.stopPropagation(); commitInlineEdit()"
          (keydown.escape)="cancelInlineEdit()" />
   <div class="inline-popover-footer">
     <button class="inline-btn-cancel" type="button" (click)="cancelInlineEdit()">✗ Cancelar</button>

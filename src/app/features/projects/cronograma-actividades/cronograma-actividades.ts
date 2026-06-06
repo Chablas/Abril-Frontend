@@ -105,6 +105,7 @@ export class CronogramaActividades implements OnInit {
   lineaBaseVisible = false;
 
   // Edición inline — popover flotante
+  private inlineEditInFlight = false;
   inlineEditCell: { id: number; field: 'start' | 'end' | 'lbStart' | 'lbEnd' } | null = null;
   inlineEditValue = '';
   inlinePopoverPos = { top: 0, left: 0 };
@@ -1182,20 +1183,22 @@ export class CronogramaActividades implements OnInit {
   }
 
   commitInlineEdit(): void {
-    if (!this.inlineEditCell) return;
+    const nativeVal = this.popoverDateInputRef?.nativeElement?.value;
+    if (!this.inlineEditCell || this.inlineEditInFlight) return;
+    this.inlineEditInFlight = true;
 
-    const value = this.inlineEditValue;
+    const value = nativeVal ?? this.inlineEditValue;
     const cell  = this.inlineEditCell;
     this.inlineEditCell = null;
     this.cdr.detectChanges();
 
     const act = this.actividades.find((a) => a.projectActivityId === cell.id);
-    if (!act) return;
+    if (!act) { this.inlineEditInFlight = false; return; }
 
     if (cell.field === 'start' || cell.field === 'end') {
       const cur = (cell.field === 'start'
         ? act.plannedStartDate : act.plannedEndDate)?.slice(0, 10) ?? '';
-      if ((value || '') === cur) return;
+      if ((value || '') === cur) { this.inlineEditInFlight = false; return; }
 
       const body: EditarActividadRequest = {
         activityDescription: act.activityDescription,
@@ -1206,8 +1209,16 @@ export class CronogramaActividades implements OnInit {
       };
 
       this.service.editarActividad(act.projectActivityId, body).subscribe({
-        next: (res: EditarActividadResultDto) => { this.patchActividadLocal(res.actividad); this.buildAvanceMap(); this.cdr.detectChanges(); },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        next: (res: EditarActividadResultDto) => {
+          this.patchActividadLocal(res.actividad);
+          this.buildAvanceMap();
+          this.inlineEditInFlight = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.inlineEditInFlight = false;
+          this.errorService.handleError(err);
+        },
       });
     } else {
       // Edición de línea base
@@ -1226,9 +1237,13 @@ export class CronogramaActividades implements OnInit {
               if (cell.field === 'lbStart') this.actividades[idx].baselineStartDate = value || null;
               else                          this.actividades[idx].baselineEndDate   = value || null;
             }
+            this.inlineEditInFlight = false;
             this.cdr.detectChanges();
           },
-          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+          error: (err: HttpErrorResponse) => {
+            this.inlineEditInFlight = false;
+            this.errorService.handleError(err);
+          },
         });
       };
 
@@ -1242,7 +1257,10 @@ export class CronogramaActividades implements OnInit {
           cancelButtonText:  'Cancelar',
           confirmButtonColor: '#2596be',
           cancelButtonColor:  '#9ca3af',
-        }).then((result) => { if (result.isConfirmed) doSave(); });
+        }).then((result) => {
+          if (result.isConfirmed) doSave();
+          else this.inlineEditInFlight = false;
+        });
       } else {
         doSave();
       }
