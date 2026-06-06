@@ -12,6 +12,11 @@ export interface BandejaItemDto {
   obsContratista?: string;
   responsable: string;
   fechaEnvio?: string;
+  itemId?: number;
+  esMensual?: boolean;
+  mes?: number;
+  anio?: number;
+  mesesPendientes?: number;
 }
 
 export interface BandejaAprobarDto {

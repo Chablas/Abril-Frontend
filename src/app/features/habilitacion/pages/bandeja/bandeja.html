@@ -78,6 +78,11 @@
               <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
             </div>
             <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+            <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
+              class="btn-chip chip-orange"
+              style="font-size:0.68rem;margin-top:2px">
+              {{ item.mesesPendientes }} meses pendientes
+            </span>
             <div class="bc-entidad">{{ item.entidadNombre }}</div>
             <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
               <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>

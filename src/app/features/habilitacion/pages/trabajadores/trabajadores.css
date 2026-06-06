@@ -1518,3 +1518,30 @@ textarea.field-input {
 .label-aceptado      { background: #f0fdf4; color: #16a34a; }
 .label-atencion      { background: #fefce8; color: #ca8a04; }
 .label-interconsulta { background: #fdf4ff; color: #9333ea; }
+
+/* ── Staging multi-archivo ── */
+.archivo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.archivo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #374151;
+}
+.archivo-item--subiendo { opacity: 0.6; }
+.archivo-item--error { border-color: #fca5a5; background: #fef2f2; }
+.archivo-nombre { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.archivo-zip-badge {
+  font-size: 0.65rem; font-weight: 600; color: #7c3aed;
+  background: #ede9fe; padding: 1px 5px; border-radius: 3px;
+}
+.archivo-estado { font-size: 0.75rem; color: #94a3b8; }
+.archivo-estado--error { color: #dc2626; }

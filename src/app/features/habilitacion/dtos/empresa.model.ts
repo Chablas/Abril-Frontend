@@ -62,6 +62,18 @@ export interface ContratistaTokenDto {
   proyectoIds?: number[];
 }
 
+export interface EntregableMesDto {
+  id: number;
+  mes: number;
+  anio: number;
+  estado: string;
+  vigencia?: string;
+  archivoUrl?: string;
+  obsAbril?: string;
+  obsContratista?: string;
+  motivoRechazo?: string;
+}
+
 export interface EmpresaEntregableDto {
   id: number;
   itemId: number;
@@ -71,10 +83,13 @@ export interface EmpresaEntregableDto {
   archivoUrl?: string;
   obsAbril?: string;
   obsContratista?: string;
+  motivoRechazo?: string;
   requiereVigencia: boolean;
+  esMensual: boolean;
   responsable: string;
   mes?: number;
   anio?: number;
+  meses: EntregableMesDto[];
 }
 
 export interface EmpresaEntregableUpdateDto {
@@ -83,6 +98,9 @@ export interface EmpresaEntregableUpdateDto {
   archivoUrl?: string;
   obsAbril?: string;
   obsContratista?: string;
+  motivoRechazo?: string;
+  mes?: number;
+  anio?: number;
 }
 
 export interface EmpresaProyectoDto {

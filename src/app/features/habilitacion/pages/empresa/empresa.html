@@ -247,7 +247,7 @@
 
 <!-- DRAWER -->
 <div class="drawer" [class.open]="drawerOpen">
-  <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+  <input #fileInput type="file" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip" (change)="onFileSelected($event)" />
 
   <ng-container *ngIf="selectedEntregable">
 
@@ -277,82 +277,147 @@
         <span>Este entregable se gestiona en la pantalla SCTR / Vida Ley.</span>
       </div>
 
-      <!-- CONTRATISTA -->
-      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey">
-
-        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
-          <label class="field-lbl">VIGENCIA</label>
-          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
-        </div>
+      <!-- CONTRATISTA — item mensual -->
+      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey && selectedEntregable.esMensual">
 
         <div class="field-grp">
-          <label class="field-lbl">DOCUMENTO ADJUNTO</label>
-          <div class="upload-zone upload-zone--disabled"
-            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
-            <div class="upload-empty">
-              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
-            </div>
-          </div>
-          <div class="upload-zone upload-zone--active"
-            *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl"
-            (click)="triggerFileInput()">
-            <div class="upload-empty">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
+          <label class="field-lbl">MES AL QUE CORRESPONDE</label>
+          <select class="field-input"
+            (change)="onMesChange(+$any($event.target).value.split('-')[0], +$any($event.target).value.split('-')[1])">
+            <option *ngFor="let m of mesesDisponibles"
+              [value]="m.mes + '-' + m.anio"
+              [selected]="m.mes === mesPanelMes + 1 && m.anio === mesPanelAnio">
+              {{ m.label }}
+            </option>
+          </select>
+        </div>
+
+        <ng-container *ngIf="mesSeleccionado">
+          <div class="field-grp" *ngIf="mesSeleccionado.estado === 'Aprobado' || mesSeleccionado.estado === 'Rechazado'">
+            <div class="info-readonly-block">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
+              Este mes ya fue {{ mesSeleccionado.estado === 'Aprobado' ? 'aprobado' : 'rechazado' }} y no puede modificarse.
+              <span *ngIf="mesSeleccionado.motivoRechazo"> Motivo: {{ mesSeleccionado.motivoRechazo }}</span>
             </div>
           </div>
-          <div class="upload-zone" *ngIf="uploadingFile">
-            <div class="upload-state">
-              <span class="upload-spinner"></span>
-              <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
-            </div>
-          </div>
-          <div class="upload-file-card"
-            *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
-            <div class="ufc-name">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+          <div class="field-grp" *ngIf="mesSeleccionado.archivoUrl && mesSeleccionado.estado === 'Enviado'">
+            <label class="field-lbl">ARCHIVO ENVIADO</label>
+            <div class="archivo-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
-              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
+              <span class="archivo-nombre">{{ nombreArchivo(mesSeleccionado.archivoUrl) }}</span>
+              <button type="button" class="ufc-btn" (click)="abrirDocumento(mesSeleccionado.archivoUrl!)">Ver</button>
             </div>
-            <div class="ufc-actions">
-              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Visualizar
-              </button>
-              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Descargar
-              </button>
-            </div>
-            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-              </svg>
-              Reemplazar archivo
-            </button>
           </div>
-          <div class="upload-state"
-            *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
-            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
-            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </ng-container>
+
+        <ng-container *ngIf="!mesSeleccionado || mesSeleccionado.estado === 'Enviado' || mesSeleccionado.estado === 'Falta'">
+          <div class="field-grp">
+            <label class="field-lbl">DOCUMENTOS ADJUNTOS</label>
+            <div class="upload-zone upload-zone--active" (click)="triggerFileInput()">
+              <div class="upload-empty">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span class="upload-txt">
+                  {{ archivosPendientes.length === 0 ? 'Arrastra o haz clic para adjuntar' : '+ Agregar otro archivo' }}
+                </span>
+              </div>
+            </div>
+            <div class="archivo-list" *ngIf="archivosPendientes.length > 0">
+              <div class="archivo-item"
+                *ngFor="let a of archivosPendientes; let i = index"
+                [class.archivo-item--subiendo]="a.subiendo"
+                [class.archivo-item--error]="a.error">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span class="archivo-nombre">{{ a.nombre }}</span>
+                <span class="archivo-estado" *ngIf="a.subiendo">Subiendo…</span>
+                <span class="archivo-estado archivo-estado--error" *ngIf="a.error">Error</span>
+                <button type="button" class="btn-remove" *ngIf="!a.subiendo" (click)="quitarArchivo(i)">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia && !esPermanente">
+            <label class="field-lbl">VIGENCIA</label>
+            <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          </div>
+
+          <div class="field-grp">
+            <label class="field-lbl">TUS OBSERVACIONES</label>
+            <textarea class="field-input" rows="2" [(ngModel)]="panelObsContratista"
+              placeholder="Notas que verá Abril…"></textarea>
+          </div>
+        </ng-container>
+
+      </ng-container>
+
+      <!-- CONTRATISTA — item no mensual -->
+      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey && !selectedEntregable.esMensual">
+
+        <div class="field-grp" *ngIf="!esPermanente">
+          <label class="field-lbl">VIGENCIA</label>
+          <input
+            *ngIf="selectedEntregable.requiereVigencia"
+            type="date"
+            class="field-input"
+            [(ngModel)]="panelVigencia"
+          />
+          <span
+            *ngIf="!selectedEntregable.requiereVigencia"
+            class="field-input field-readonly"
+            style="display:block;padding:8px 12px;color:#64748b"
+          >{{ panelVigencia ? (panelVigencia | date:'dd/MM/yyyy') : '—' }}</span>
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">DOCUMENTOS ADJUNTOS</label>
+          <div class="upload-zone upload-zone--disabled"
+            *ngIf="uploadBloqueadoPorVigencia && archivosPendientes.length === 0">
+            <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
+          </div>
+          <div class="upload-zone upload-zone--active"
+            *ngIf="!uploadBloqueadoPorVigencia"
+            (click)="triggerFileInput()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="upload-txt">
+              {{ archivosPendientes.length === 0 ? 'Arrastra o haz clic para adjuntar' : '+ Agregar otro archivo' }}
+            </span>
+          </div>
+          <div class="archivo-list" *ngIf="archivosPendientes.length > 0">
+            <div class="archivo-item"
+              *ngFor="let a of archivosPendientes; let i = index"
+              [class.archivo-item--subiendo]="a.subiendo"
+              [class.archivo-item--error]="a.error">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
               </svg>
-            </button>
+              <span class="archivo-nombre">{{ a.nombre }}</span>
+              <span class="archivo-zip-badge" *ngIf="a.esZip">ZIP</span>
+              <span class="archivo-estado" *ngIf="a.subiendo">Subiendo…</span>
+              <span class="archivo-estado archivo-estado--error" *ngIf="a.error">Error</span>
+              <button type="button" class="btn-remove" *ngIf="!a.subiendo" (click)="quitarArchivo(i)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -379,8 +444,67 @@
 
       </ng-container>
 
-      <!-- ADMIN -->
-      <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey">
+      <!-- ADMIN — item mensual -->
+      <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey && selectedEntregable.esMensual">
+
+        <div class="field-grp">
+          <label class="field-lbl">MESES</label>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="border-bottom:1px solid #f1f5f9">
+                <th style="text-align:left;padding:6px 8px;font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase">Mes</th>
+                <th style="padding:6px 8px;font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase">Estado</th>
+                <th style="padding:6px 8px;font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of selectedEntregable.meses" style="border-bottom:1px solid #f8fafc">
+                <td style="padding:7px 8px;color:#0f172a;font-weight:500">
+                  {{ mesesNombres[m.mes - 1] }} {{ m.anio }}
+                </td>
+                <td style="padding:7px 8px">
+                  <span [class]="'btn-chip ' + getChipEstado(m.estado)">{{ m.estado }}</span>
+                </td>
+                <td style="padding:7px 8px;white-space:nowrap">
+                  <button type="button" class="ufc-btn" *ngIf="m.archivoUrl"
+                    (click)="abrirVisor(m.archivoUrl!)">Ver</button>
+                  <button type="button" class="btn-approve"
+                    style="padding:3px 8px;font-size:11px;margin-left:4px"
+                    *ngIf="m.estado === 'Enviado'"
+                    (click)="aprobarMesEspecifico(m)">✓</button>
+                  <button type="button" class="btn-reject-act"
+                    style="padding:3px 8px;font-size:11px;margin-left:4px"
+                    *ngIf="m.estado === 'Enviado'"
+                    (click)="rechazarMesEspecifico(m)">✕</button>
+                  <span *ngIf="m.estado === 'Rechazado' && m.motivoRechazo"
+                    style="font-size:11px;color:#dc2626;margin-left:4px"
+                    [title]="m.motivoRechazo">⚠ {{ m.motivoRechazo | slice:0:20 }}…</span>
+                </td>
+              </tr>
+              <tr *ngIf="!selectedEntregable.meses?.length">
+                <td colspan="3" style="padding:12px 8px;color:#94a3b8;font-size:12px;text-align:center">
+                  Sin meses registrados aún.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia && !esPermanente">
+          <label class="field-lbl">VIGENCIA AL APROBAR</label>
+          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+        </div>
+
+        <div class="field-grp">
+          <label class="field-lbl">OBS. ABRIL</label>
+          <textarea class="field-input" rows="2" [(ngModel)]="panelObsAbril"
+            placeholder="Observación para el contratista…"></textarea>
+        </div>
+
+      </ng-container>
+
+      <!-- ADMIN — item no mensual -->
+      <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey && !selectedEntregable.esMensual">
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
@@ -397,77 +521,46 @@
 
         <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
           <label class="field-lbl">VIGENCIA</label>
-          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          <input *ngIf="!esPermanente" type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          <span *ngIf="esPermanente" class="field-input field-readonly" style="display:block;padding:8px 12px;color:#64748b">Permanente</span>
         </div>
 
         <div class="field-grp">
-          <label class="field-lbl">DOCUMENTO ADJUNTO <span class="field-lbl-opt">(opcional)</span></label>
+          <label class="field-lbl">DOCUMENTOS ADJUNTOS <span class="field-lbl-opt">(opcional)</span></label>
           <div class="upload-zone upload-zone--disabled"
-            *ngIf="uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl">
-            <div class="upload-empty">
-              <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
-            </div>
+            *ngIf="uploadBloqueadoPorVigencia && archivosPendientes.length === 0">
+            <span class="upload-txt" style="color:#94a3b8">Ingresa la fecha de vigencia primero.</span>
           </div>
           <div class="upload-zone upload-zone--active"
-            *ngIf="!uploadBloqueadoPorVigencia && !uploadingFile && !panelArchivoUrl"
+            *ngIf="!uploadBloqueadoPorVigencia"
             (click)="triggerFileInput()">
-            <div class="upload-empty">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <span class="upload-txt">Arrastra o haz clic para adjuntar</span>
-            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="upload-txt">
+              {{ archivosPendientes.length === 0 ? 'Arrastra o haz clic para adjuntar' : '+ Agregar otro archivo' }}
+            </span>
           </div>
-          <div class="upload-zone" *ngIf="uploadingFile">
-            <div class="upload-state">
-              <span class="upload-spinner"></span>
-              <span class="upload-txt">Subiendo {{ panelArchivoNombre }}…</span>
-            </div>
-          </div>
-          <div class="upload-file-card"
-            *ngIf="!uploadingFile && panelArchivoUrl && !panelArchivoUrl.startsWith('pending-upload://')">
-            <div class="ufc-name">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+          <div class="archivo-list" *ngIf="archivosPendientes.length > 0">
+            <div class="archivo-item"
+              *ngFor="let a of archivosPendientes; let i = index"
+              [class.archivo-item--subiendo]="a.subiendo"
+              [class.archivo-item--error]="a.error">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
-              <span>{{ nombreArchivo(panelArchivoUrl) }}</span>
-            </div>
-            <div class="ufc-actions">
-              <button type="button" class="ufc-btn" (click)="abrirVisor(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+              <span class="archivo-nombre">{{ a.nombre }}</span>
+              <span class="archivo-zip-badge" *ngIf="a.esZip">ZIP</span>
+              <span class="archivo-estado" *ngIf="a.subiendo">Subiendo…</span>
+              <span class="archivo-estado archivo-estado--error" *ngIf="a.error">Error</span>
+              <button type="button" class="btn-remove" *ngIf="!a.subiendo" (click)="quitarArchivo(i)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
-                Visualizar
-              </button>
-              <button type="button" class="ufc-btn" (click)="descargarDocumento(panelArchivoUrl)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Descargar
               </button>
             </div>
-            <button type="button" class="ufc-replace" (click)="clearArchivo(); triggerFileInput()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-              </svg>
-              Reemplazar archivo
-            </button>
-          </div>
-          <div class="upload-state"
-            *ngIf="!uploadingFile && panelArchivoUrl && panelArchivoUrl.startsWith('pending-upload://')">
-            <span class="upload-pending">{{ panelArchivoNombre }} — pendiente de subir</span>
-            <button type="button" class="btn-remove" title="Quitar" (click)="clearArchivo()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -496,6 +589,27 @@
     </div>
 
     <div class="drawer-footer">
+      <!-- Contratista: enviar mensual -->
+      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey && selectedEntregable.esMensual">
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="uploadingFile || archivosPendientes.length === 0 ||
+            mesSeleccionado?.estado === 'Aprobado' || mesSeleccionado?.estado === 'Rechazado'"
+          (click)="enviarDocumento()"
+        >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR ' + mesActualLabel }}</button>
+      </ng-container>
+
+      <!-- Contratista: enviar no mensual -->
+      <ng-container *ngIf="isContratista() && !esSCTRoVidaLey && !selectedEntregable.esMensual">
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="uploadingFile || archivosPendientes.length === 0"
+          (click)="enviarDocumento()"
+        >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR' }}</button>
+      </ng-container>
+
       <!-- Admin: guardar + aprobar/rechazar -->
       <ng-container *ngIf="isAdmin() && !esSCTRoVidaLey">
         <button

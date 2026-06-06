@@ -19,13 +19,14 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empresa';
-import { DocumentoVersionDto } from '../../dtos/trabajador.model';
+import { ArchivoStagingDto, DocumentoVersionDto } from '../../dtos/trabajador.model';
 import { Observable, EMPTY } from 'rxjs';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 import {
   EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
+  EntregableMesDto,
   ProyectoDisponibleDto,
 } from '../../dtos/empresa.model';
 
@@ -62,13 +63,35 @@ export class Empresa implements OnInit {
   progresoPorProyecto = new Map<number, ProgresoProyecto>();
   loadingProgreso = new Set<number>();
 
-  panelArchivoUrl = '';
-  panelArchivoNombre = '';
+  archivosPendientes: ArchivoStagingDto[] = [];
   panelVigencia = '';
   panelObsAbril = '';
   panelObsContratista = '';
   panelEstado = '';
-  uploadingFile = false;
+
+  mesSeleccionado: EntregableMesDto | null = null;
+  mesPanelMes: number = new Date().getMonth();
+  mesPanelAnio: number = new Date().getFullYear();
+  readonly mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  get mesesDisponibles(): { mes: number; anio: number; label: string }[] {
+    const result: { mes: number; anio: number; label: string }[] = [];
+    const hoy = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      result.push({ mes: d.getMonth() + 1, anio: d.getFullYear(),
+        label: `${this.mesesNombres[d.getMonth()]} ${d.getFullYear()}` });
+    }
+    return result;
+  }
+
+  get mesActualLabel(): string {
+    return `${this.mesesNombres[this.mesPanelMes]} ${this.mesPanelAnio}`;
+  }
+
+  get uploadingFile(): boolean { return this.archivosPendientes.some(a => a.subiendo); }
+  get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   private readonly SCTR_VIDA_LEY_IDS = [15, 16];
   private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
@@ -82,7 +105,11 @@ export class Empresa implements OnInit {
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
-    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia && !this.esPermanente;
+  }
+
+  get esPermanente(): boolean {
+    return !!this.selectedEntregable && (this.selectedEntregable.itemId === 12 || this.selectedEntregable.itemId === 13);
   }
 
   visorArchivoUrl = '';
@@ -300,13 +327,41 @@ export class Empresa implements OnInit {
 
   selectEntregable(e: EmpresaEntregableDto): void {
     this.selectedEntregable = e;
+    this.archivosPendientes = [];
+    this.mesSeleccionado = null;
+
+    const hoy = new Date();
+    const mesAnterior = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
+    const anioAnterior = hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear();
+    this.mesPanelMes = mesAnterior - 1;
+    this.mesPanelAnio = anioAnterior;
+
+    if (e.esMensual && e.meses?.length > 0) {
+      const mesExistente = e.meses.find(m => m.mes === mesAnterior && m.anio === anioAnterior);
+      this.mesSeleccionado = mesExistente ?? null;
+    }
+
     this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
-    this.panelArchivoUrl = e.archivoUrl ?? '';
-    this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
+    if (!e.vigencia && e.itemId !== 12 && e.itemId !== 13) {
+      const mesSig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 27);
+      this.panelVigencia = mesSig.toISOString().substring(0, 10);
+    }
     this.panelObsAbril = e.obsAbril ?? '';
     this.panelObsContratista = e.obsContratista ?? '';
     this.panelEstado = e.estado;
     this.drawerOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  onMesChange(mes: number, anio: number): void {
+    this.mesPanelMes = mes - 1;
+    this.mesPanelAnio = anio;
+    this.archivosPendientes = [];
+    if (this.selectedEntregable?.meses) {
+      this.mesSeleccionado = this.selectedEntregable.meses.find(
+        m => m.mes === mes && m.anio === anio
+      ) ?? null;
+    }
     this.cdr.detectChanges();
   }
 
@@ -386,28 +441,18 @@ export class Empresa implements OnInit {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file) return;
-    this.panelArchivoNombre = file.name;
-    this.uploadingFile = true;
+    const files = Array.from(input?.files ?? []);
+    if (!files.length) return;
+    input.value = '';
+
+    for (const file of files) {
+      const item: ArchivoStagingDto = {
+        file, nombre: file.name, esZip: file.name.endsWith('.zip'),
+        subiendo: false, error: false,
+      };
+      this.archivosPendientes.push(item);
+    }
     this.cdr.detectChanges();
-    const contexto = `habilitacion/empresas/${this.empresaId ?? 'sin-empresa'}`;
-    this.sharepointService.subirArchivo(file, contexto).subscribe({
-      next: (res) => {
-        this.panelArchivoUrl = res.path;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.panelArchivoUrl = `pending-upload://${file.name}`;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   private autoMarcarEnviado(): void {
@@ -433,8 +478,12 @@ export class Empresa implements OnInit {
   }
 
   clearArchivo(): void {
-    this.panelArchivoUrl = '';
-    this.panelArchivoNombre = '';
+    this.archivosPendientes = [];
+  }
+
+  quitarArchivo(idx: number): void {
+    this.archivosPendientes.splice(idx, 1);
+    this.cdr.detectChanges();
   }
 
   abrirVisor(url: string): void {
@@ -450,27 +499,78 @@ export class Empresa implements OnInit {
 
   enviarDocumento(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
-    const payload: EmpresaEntregableUpdateDto = {
-      estado: 'Enviado',
-      vigencia: this.panelVigencia || undefined,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsContratista: this.panelObsContratista || undefined,
-    };
-    this.loaderService.show();
-    this.habEmpresaService
-      .updateEntregable(this.empresaId, this.selectedEntregable.id, payload)
-      .subscribe({
-        next: () => {
-          this.loaderService.hide();
-          Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
-          this.closeDrawer();
-          this.recargarEntregables();
+    if (this.archivosPendientes.length === 0) {
+      Swal.fire({ icon: 'error', title: 'Debes adjuntar al menos un archivo' });
+      return;
+    }
+    if (this.selectedEntregable.requiereVigencia && !this.panelVigencia && !this.esPermanente) {
+      Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+      return;
+    }
+
+    const contexto = `habilitacion/empresas/${this.empresaId}`;
+    const entregableId = this.selectedEntregable.id;
+
+    this.archivosPendientes.forEach(a => a.subiendo = true);
+    this.cdr.detectChanges();
+
+    const subir = (idx: number): void => {
+      if (idx >= this.archivosPendientes.length) {
+        const archivos = this.archivosPendientes.map(a => ({
+          archivoUrl: a.path!,
+          nombreArchivo: a.nombre,
+          esZip: a.esZip,
+          zipContenido: a.zipContenido,
+        }));
+        this.sharepointService.enviarDocumento({
+          habEmpresaId: entregableId,
+          vigencia: (this.isContratista() && this.selectedEntregable!.requiereVigencia)
+            ? (this.panelVigencia || undefined)
+            : (!this.isContratista() ? (this.panelVigencia || undefined) : undefined),
+          obsContratista: this.isContratista() ? this.panelObsContratista || undefined : undefined,
+          ...(this.selectedEntregable!.esMensual ? {
+            mes: this.mesPanelMes + 1,
+            anio: this.mesPanelAnio,
+          } : {}),
+          archivos,
+        }).subscribe({
+          next: () => {
+            this.loaderService.hide();
+            Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
+            this.archivosPendientes = [];
+            this.closeDrawer();
+            this.recargarEntregables();
+          },
+          error: (err: HttpErrorResponse) => {
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+        return;
+      }
+
+      const item = this.archivosPendientes[idx];
+      this.sharepointService.subirArchivoMultiple(item.file, contexto).subscribe({
+        next: (res) => {
+          item.path = res.path;
+          item.esZip = res.esZip;
+          item.zipContenido = res.zipContenido;
+          item.subiendo = false;
+          this.cdr.detectChanges();
+          subir(idx + 1);
         },
-        error: (err: HttpErrorResponse) => {
+        error: () => {
+          item.error = true;
+          item.subiendo = false;
           this.loaderService.hide();
-          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+          Swal.fire({ icon: 'error', title: `Error al subir ${item.nombre}` });
         },
       });
+    };
+
+    this.loaderService.show();
+    subir(0);
   }
 
   guardarEntregable(): void {
@@ -628,5 +728,89 @@ export class Empresa implements OnInit {
 
   onProyectosChanged(): void {
     this.loadProyectos();
+  }
+
+  aprobarMesEspecifico(mes: EntregableMesDto): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${this.mesesNombres[mes.mes - 1]} ${mes.anio}?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.empresaId) return;
+      this.loaderService.show();
+      this.habEmpresaService.aprobarMes(this.empresaId, mes.id, {
+        estado: 'Aprobado',
+        vigencia: this.panelVigencia || undefined,
+      }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Mes aprobado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  rechazarMesEspecifico(mes: EntregableMesDto): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    Swal.fire({
+      icon: 'warning',
+      title: `Rechazar ${this.mesesNombres[mes.mes - 1]} ${mes.anio}`,
+      input: 'textarea',
+      inputLabel: 'Motivo del rechazo',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      inputValidator: (v) => (!v?.trim() ? 'Debes indicar un motivo' : null),
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.empresaId) return;
+      this.loaderService.show();
+      this.habEmpresaService.aprobarMes(this.empresaId, mes.id, {
+        estado: 'Rechazado',
+        motivoRechazo: res.value,
+      }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  eliminarArchivoVersion(archivoId: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar archivo?',
+      text: 'Solo puedes eliminar archivos de documentos aún no revisados.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.habEmpresaService.eliminarArchivo(archivoId).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1200, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
   }
 }
