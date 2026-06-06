@@ -187,37 +187,46 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     if (!this.avanceRef?.nativeElement) return;
     const data = this.avanceSemanal;
     this.avanceChart = new Chart(this.avanceRef.nativeElement, {
-      type: 'bar',
+      type: 'line',
       data: {
-        labels  : data.map(s => s.semana),
+        labels: data.map(s => s.semana),
         datasets: [
           {
-            label          : 'Programado %',
-            data           : data.map(s => s.programado),
-            backgroundColor: 'rgba(147,197,253,0.5)',
-            borderColor    : '#2E6DB4',
-            borderWidth    : 1,
-            borderRadius   : 4,
+            label: 'Programado',
+            data: data.map(s => s.programado),
+            borderColor: '#B0BAD0',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            pointRadius: 0,
+            tension: 0.3,
           },
           {
-            label          : 'Real %',
-            data           : data.map(s => s.real),
-            backgroundColor: 'rgba(27,107,58,0.75)',
-            borderColor    : '#1B6B3A',
-            borderWidth    : 1,
-            borderRadius   : 4,
+            label: 'Real',
+            data: data.map(s => s.real),
+            borderColor: '#4A7FD4',
+            backgroundColor: 'rgba(74,127,212,0.08)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#4A7FD4',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            fill: true,
+            tension: 0.4,
           },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index' as const, intersect: false },
         plugins: {
           datalabels: { display: false },
-          legend    : { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
+          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
         },
         scales: {
-          y: { beginAtZero: true, max: 100, ticks: { callback: v => `${v}%`, font: { size: 10 } } },
-          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true, max: 100, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
     });
@@ -225,39 +234,36 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   private renderEficienciaChart() {
     if (!this.eficienciaRef?.nativeElement) return;
-    const data = this.eficienciaSpi.slice(-3);
+    const data = this.eficienciaSpi.slice(-6);
+    const vals = data.map(s => Number((s.spi * 100).toFixed(1)));
     this.eficienciaChart = new Chart(this.eficienciaRef.nativeElement, {
       type: 'line',
       data: {
-        labels  : data.map(s => s.semana),
+        labels: data.map(s => s.semana),
         datasets: [{
-          label          : 'SPI Promedio',
-          data           : data.map(s => Number((s.spi * 100).toFixed(1))),
-          borderColor    : '#2E6DB4',
-          backgroundColor: 'rgba(46,109,180,0.12)',
-          borderWidth    : 2,
-          pointRadius    : 5,
-          pointBackgroundColor: '#2E6DB4',
-          fill           : true,
-          tension        : 0.4,
+          label: 'SPI %',
+          data: vals,
+          borderColor: '#2D9E5F',
+          backgroundColor: 'rgba(45,158,95,0.08)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: vals.map(v => v >= 95 ? '#2D9E5F' : v >= 80 ? '#C4860A' : '#C94040'),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1.5,
+          fill: true,
+          tension: 0.4,
         }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          datalabels: {
-            anchor: 'end', align: 'end', color: '#1E3A5F',
-            font: { weight: 'bold', size: 11 },
-            formatter: v => `${v}%`,
-          },
+          datalabels: { anchor: 'end' as const, align: 'end' as const, offset: 2, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
           legend: { display: false },
+          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
         },
         scales: {
-          y: {
-            beginAtZero: true, max: 130,
-            ticks: { callback: v => `${v}%`, font: { size: 10 } },
-          },
-          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { min: 50, max: 130, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
     });
@@ -268,21 +274,29 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.distribucionChart = new Chart(this.distribucionRef.nativeElement, {
       type: 'doughnut',
       data: {
-        labels  : ['Culminadas', 'En Proceso', 'Vencidas', 'Pendientes'],
+        labels: ['Culminadas', 'En Proceso', 'Vencidas', 'Pendientes'],
         datasets: [{
-          data           : [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes],
-          backgroundColor: ['#1B6B3A', '#2E6DB4', '#C0392B', '#D97706'],
-          borderWidth    : 2,
-          borderColor    : '#fff',
+          data: [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes],
+          backgroundColor: ['#2D9E5F', '#4A7FD4', '#C94040', '#C4860A'],
+          borderWidth: 3,
+          borderColor: '#F7F8FC',
+          hoverOffset: 6,
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        responsive: true, maintainAspectRatio: false, cutout: '70%',
         plugins: {
-          legend    : { display: false },
-          datalabels: {
-            color: '#fff', font: { weight: 'bold', size: 11 },
-            formatter: v => v > 0 ? v : '',
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: {
+            backgroundColor: '#1E293B',
+            callbacks: {
+              label: (ctx: any) => {
+                const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              },
+            },
           },
         },
       },
@@ -298,38 +312,22 @@ export class Dashboard implements AfterViewInit, OnDestroy {
       data: {
         labels,
         datasets: [
-          {
-            label          : 'Hitos',
-            data           : data.map(d => d.hitos),
-            backgroundColor: '#2E6DB4',
-            borderRadius   : 3,
-            stack          : 'stack',
-          },
-          {
-            label          : 'Entregables',
-            data           : data.map(d => d.entregables),
-            backgroundColor: '#1B6B3A',
-            borderRadius   : 3,
-            stack          : 'stack',
-          },
-          {
-            label          : 'Consultas',
-            data           : data.map(d => d.consultas),
-            backgroundColor: '#D97706',
-            borderRadius   : 3,
-            stack          : 'stack',
-          },
+          { label: 'Hitos', data: data.map(d => d.hitos), backgroundColor: '#4A7FD4', borderRadius: 4, stack: 'stack' },
+          { label: 'Entregables', data: data.map(d => d.entregables), backgroundColor: '#2D9E5F', borderRadius: 4, stack: 'stack' },
+          { label: 'Consultas', data: data.map(d => d.consultas), backgroundColor: '#C4860A', borderRadius: 4, stack: 'stack' },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index' as const, intersect: false },
         plugins: {
           datalabels: { display: false },
-          legend    : { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
+          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
         },
         scales: {
-          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
-          y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+          x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
+          y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { precision: 0, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
         },
       },
     });
@@ -429,20 +427,41 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     return nombre.trim().split(/\s+/)[0] ?? nombre;
   }
 
-  getAvatarBg(p: number)        { return p >= 80 ? '#D1FAE5' : p >= 60 ? '#DBEAFE' : '#FEE2E2'; }
-  getAvatarColor(p: number)     { return p >= 80 ? '#1B6B3A' : p >= 60 ? '#2E6DB4' : '#C0392B'; }
+  getAvatarBg(p: number): string {
+    if (p >= 75) return '#EAF5EF';
+    if (p >= 60) return '#EAF0FB';
+    if (p >= 45) return '#FBF3E4';
+    return '#FAE9E9';
+  }
+
+  getAvatarColor(p: number): string {
+    if (p >= 75) return '#2D9E5F';
+    if (p >= 60) return '#4A7FD4';
+    if (p >= 45) return '#C4860A';
+    return '#C94040';
+  }
 
   getComentario(sup: SupervisorProgresoDTO): string {
-    const d = sup.progreso - this.promedioEficiencia;
-    if (sup.progreso >= 90) return 'Top equipo';
-    if (d >= 15) return `+${Math.round(d)}pp`;
-    if (d >= 5)  return 'Sobre prom.';
-    if (d >= -5) return 'En promedio';
-    if (d >= -15)return 'Bajo prom.';
+    if (sup.progreso >= 85) return 'Excelente';
+    if (sup.progreso >= 75) return 'Sobre prom.';
+    if (sup.progreso >= 60) return 'En promedio';
+    if (sup.progreso >= 45) return 'Bajo prom.';
     return 'Crítico';
   }
-  getComentarioBg(sup: SupervisorProgresoDTO)    { const d = sup.progreso - this.promedioEficiencia; return d >= 5 ? '#D1FAE5' : d >= -5 ? '#DBEAFE' : '#FEE2E2'; }
-  getComentarioColor(sup: SupervisorProgresoDTO) { const d = sup.progreso - this.promedioEficiencia; return d >= 5 ? '#1B6B3A' : d >= -5 ? '#2E6DB4' : '#C0392B'; }
+
+  getComentarioBg(sup: SupervisorProgresoDTO): string {
+    if (sup.progreso >= 75) return '#EAF5EF';
+    if (sup.progreso >= 60) return '#EAF0FB';
+    if (sup.progreso >= 45) return '#FBF3E4';
+    return '#FAE9E9';
+  }
+
+  getComentarioColor(sup: SupervisorProgresoDTO): string {
+    if (sup.progreso >= 75) return '#2D9E5F';
+    if (sup.progreso >= 60) return '#4A7FD4';
+    if (sup.progreso >= 45) return '#C4860A';
+    return '#C94040';
+  }
   getProyectada(p: number)     { return Math.min(100, Math.round(p * 1.12)); }
 
   getHitoColor(dias: number): string {
