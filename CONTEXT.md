@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-06 (v2) — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
+> **Última actualización**: 2026-06-06 (v3) — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. Cambios: NgZone inyectado en constructor, optimistic update de estado='Enviado' envuelto en ngZone.run(), setTimeout 500ms antes de recargarEntregables() en enviarDocumento() next, console.log de diagnóstico en recargarEntregables(). Bug raíz pendiente de confirmar: probable race condition backend o sobreescritura por reload con datos stale.
+>
+> **2026-06-06 (v2)** — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
 >
 > **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
 >
@@ -2440,6 +2442,23 @@ abrirProgramarInduccion(): void {
   - `guardarObservaciones()`: captura `id` y `obs` como locales antes del posible reset; llama `updateEntregable(id, { obsContratista })` sin `estado`; errores a través de `errorService.handleError`.
   - `closeDrawer()`: llama `guardarObservaciones()` ANTES de `selectedEntregable = null` — cubre overlay click, botón X, ESC y selección de nuevo trabajador.
   - HTML: `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+### Panel entregables empresa — bug estado post-ENVIAR (2026-06-06)
+
+`features/habilitacion/pages/empresa/empresa.ts` — investigación activa:
+
+**Síntoma**: tras ENVIAR un entregable mensual, el chip de estado en la tabla no cambia a "Enviado" hasta refrescar la página manualmente.
+
+**Cambios aplicados en esta sesión**:
+- `NgZone` añadido al import y al constructor (`private ngZone: NgZone`).
+- Optimistic update en `enviarDocumento()` next: `this.entregables[idx] = { ...this.entregables[idx], estado: 'Enviado' }` + `this.entregables = [...this.entregables]` envuelto en `this.ngZone.run(() => {...})`.
+- `recargarEntregables()` diferida 500ms con `setTimeout(..., 500)` para evitar race condition donde el backend aún no ha committeado el nuevo estado al momento del GET.
+- `console.log('entregables frescos:', ...)` en el `next` de `recargarEntregables()` (diagnóstico — quitar en producción).
+- afterLoad callback también hace `this.entregables[idx] = { ...frescoEntregable }` + `this.entregables = [...this.entregables]` + `cdr.detectChanges()`.
+
+**Hipótesis pendiente de confirmar**: `recargarEntregables()` obtiene datos stale del backend (el estado del entregable padre no se recalcula inmediatamente tras el POST a `/archivos/enviar`) y sobreescribe el optimistic update. Confirmar con el console.log: si muestra `estado: 'Falta'` (viejo), es race condition backend → incrementar timeout o no sobreescribir estado en afterLoad. Si muestra `estado: 'Enviado'` (correcto), el problema es Angular CD y debe revisarse si algún ancestro usa OnPush.
+
+**Estado del Layout**: no usa `ChangeDetectionStrategy.OnPush` (Default). `App` tampoco. El componente `Empresa` tampoco.
 
 ### Panel entregables empresa — auto-save y reglas por itemId
 

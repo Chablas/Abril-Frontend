@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  NgZone,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -134,6 +135,7 @@ export class Empresa implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
@@ -614,18 +616,39 @@ export class Empresa implements OnInit {
             Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
             this.archivosPendientes = [];
             const itemIdFijo = this.selectedEntregable!.itemId;
-            this.closeDrawer();
-            this.recargarEntregables((list) => {
-              const frescoEntregable = list.find(
-                e => e.id === entregableId || e.itemId === itemIdFijo
-              );
-              if (frescoEntregable) this.selectedEntregable = frescoEntregable;
-              this.mesPanelMes = mesFijo - 1;
-              this.mesPanelAnio = anioFijo;
-              this.mesSeleccionado = this.selectedEntregable?.meses
-                ?.find(m => m.mes === mesFijo && m.anio === anioFijo) ?? null;
-              this.cdr.markForCheck();
+            const idx = this.entregables.findIndex(
+              e => e.itemId === this.selectedEntregable?.itemId
+            );
+            this.ngZone.run(() => {
+              if (idx !== -1) {
+                this.entregables[idx] = { ...this.entregables[idx], estado: 'Enviado' };
+                this.entregables = [...this.entregables];
+              }
             });
+            this.closeDrawer();
+            setTimeout(() => {
+              this.recargarEntregables((list) => {
+                const frescoEntregable = list.find(
+                  e => e.id === entregableId || e.itemId === itemIdFijo
+                );
+                if (frescoEntregable) {
+                  this.selectedEntregable = frescoEntregable;
+                  const idx = this.entregables.findIndex(
+                    e => e.id === frescoEntregable.id || e.itemId === frescoEntregable.itemId
+                  );
+                  if (idx !== -1) {
+                    this.entregables[idx] = { ...frescoEntregable };
+                  }
+                  this.entregables = [...this.entregables];
+                  this.cdr.detectChanges();
+                }
+                this.mesPanelMes = mesFijo - 1;
+                this.mesPanelAnio = anioFijo;
+                this.mesSeleccionado = this.selectedEntregable?.meses
+                  ?.find(m => m.mes === mesFijo && m.anio === anioFijo) ?? null;
+                this.cdr.markForCheck();
+              });
+            }, 500);
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
@@ -780,6 +803,10 @@ export class Empresa implements OnInit {
     this.habEmpresaService.getEntregables(eid, pid).subscribe({
       next: (items) => {
         const list = items ?? [];
+        console.log('entregables frescos:', list.map(e => ({
+          id: e.id, itemId: e.itemId, estado: e.estado,
+          meses: e.meses?.length
+        })));
         this.entregables = [...list];
         this.cdr.detectChanges();
         this.progresoPorProyecto.set(pid, {
