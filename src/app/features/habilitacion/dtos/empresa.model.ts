@@ -90,6 +90,7 @@ export interface EmpresaEntregableDto {
   estado: string;
   vigencia?: string;
   archivoUrl?: string;
+  archivos?: EntregableMesArchivoDto[];
   obsAbril?: string;
   obsContratista?: string;
   motivoRechazo?: string;

@@ -303,6 +303,13 @@
               </div>
             </div>
           </div>
+          <span class="mes-vigencia" *ngIf="mesSeleccionado?.vigencia">
+            Vence: {{ mesSeleccionado!.vigencia | date:'dd/MM/yyyy' }}
+          </span>
+          <div class="vigencia-estimada" *ngIf="getVigenciaEstimada()">
+            <span class="vigencia-label">Vigencia estimada:</span>
+            <span class="vigencia-valor">{{ getVigenciaEstimada() }}</span>
+          </div>
         </div>
 
         <ng-container *ngIf="mesSeleccionado">
@@ -407,12 +414,26 @@
             type="date"
             class="field-input"
             [(ngModel)]="panelVigencia"
+            [attr.placeholder]="(selectedEntregable.estado === 'Enviado' || selectedEntregable.estado === 'Rechazado') ? 'Ingresa nueva fecha' : null"
           />
           <span
             *ngIf="!selectedEntregable.requiereVigencia"
             class="field-input field-readonly"
             style="display:block;padding:8px 12px;color:#64748b"
           >{{ panelVigencia ? (panelVigencia | date:'dd/MM/yyyy') : '—' }}</span>
+        </div>
+
+        <div class="archivos-enviados"
+          *ngIf="selectedEntregable.archivos?.length">
+          <label class="field-lbl">ARCHIVOS ENVIADOS</label>
+          <div class="archivo-item"
+            *ngFor="let arch of selectedEntregable.archivos">
+            <span class="archivo-nombre">{{ arch.nombreArchivo }}</span>
+            <button type="button" class="ufc-btn"
+              (click)="abrirVisor(arch.archivoUrl)">👁 Ver</button>
+            <a [href]="arch.archivoUrl" target="_blank"
+              download class="ufc-btn">⬇</a>
+          </div>
         </div>
 
         <div class="field-grp">

@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-06 (v3) — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. Cambios: NgZone inyectado en constructor, optimistic update de estado='Enviado' envuelto en ngZone.run(), setTimeout 500ms antes de recargarEntregables() en enviarDocumento() next, console.log de diagnóstico en recargarEntregables(). Bug raíz pendiente de confirmar: probable race condition backend o sobreescritura por reload con datos stale.
+> **Última actualización**: 2026-06-07 — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, mes, selector archivos múltiples), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto. Diagnóstico pendiente: item.mes/anio llegan null desde backend en entregables mensuales de bandeja.
+>
+> **2026-06-06 (v3)** — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. NgZone inyectado, optimistic update en ngZone.run(), setTimeout 500ms antes de recargarEntregables(). Bug raíz pendiente: probable race condition backend.
 >
 > **2026-06-06 (v2)** — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
 >

@@ -809,6 +809,23 @@ textarea.field-input {
 .mes-estado-rechazado { color: #dc2626; font-weight: 600; }
 .mes-estado-falta     { color: #94a3b8; }
 
+.mes-vigencia {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.vigencia-estimada {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.vigencia-label { color: #64748b; }
+.vigencia-valor { color: #0f172a; font-weight: 600; }
+
 /* ── Staging multi-archivo ── */
 .archivo-list {
   display: flex;

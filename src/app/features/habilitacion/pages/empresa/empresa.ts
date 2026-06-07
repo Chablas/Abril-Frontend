@@ -350,10 +350,14 @@ export class Empresa implements OnInit {
       this.mesSeleccionado = mesExistente ?? null;
     }
 
-    this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
-    if (!e.vigencia && e.itemId !== 12 && e.itemId !== 13) {
-      const mesSig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 27);
-      this.panelVigencia = mesSig.toISOString().substring(0, 10);
+    if (e.requiereVigencia && !e.esMensual && (e.estado === 'Enviado' || e.estado === 'Rechazado')) {
+      this.panelVigencia = '';
+    } else {
+      this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
+      if (!e.vigencia && e.itemId !== 12 && e.itemId !== 13) {
+        const mesSig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 27);
+        this.panelVigencia = mesSig.toISOString().substring(0, 10);
+      }
     }
     this.panelObsAbril = e.obsAbril ?? '';
     this.panelObsContratista = e.obsContratista ?? '';
@@ -463,6 +467,22 @@ export class Empresa implements OnInit {
       case 'No Aplica': return 'chip-gray';
       default: return 'chip-gray';
     }
+  }
+
+  getVigenciaEstimada(): string {
+    if (!this.selectedEntregable) return '';
+    const itemId = this.selectedEntregable.itemId;
+    const sentinel = [12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+    if (sentinel.includes(itemId)) return '31/12/2040';
+    if (this.selectedEntregable.esMensual) {
+      const mes = this.mesPanelMes + 1;
+      const anio = this.mesPanelAnio;
+      const mesSig = mes === 12 ? 1 : mes + 1;
+      const anioSig = mes === 12 ? anio + 1 : anio;
+      const fecha = new Date(anioSig, mesSig - 1, 27);
+      return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    return '';
   }
 
   private _dropJustHappened = false;
@@ -581,6 +601,15 @@ export class Empresa implements OnInit {
     if (this.selectedEntregable.requiereVigencia && !this.panelVigencia && !this.esPermanente) {
       Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
       return;
+    }
+    if (this.selectedEntregable.requiereVigencia && !this.selectedEntregable.esMensual && !this.esPermanente) {
+      const hoyVal = new Date(); hoyVal.setHours(0, 0, 0, 0);
+      const fechaVal = this.panelVigencia ? new Date(this.panelVigencia) : null;
+      if (!fechaVal || fechaVal <= hoyVal) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar una fecha de vigencia válida',
+          confirmButtonColor: '#64bc04' });
+        return;
+      }
     }
 
     const contexto = `habilitacion/empresas/${this.empresaId}`;

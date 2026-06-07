@@ -124,6 +124,34 @@
           </div>
         </div>
 
+        <!-- Panel vigencia + archivos -->
+        <div class="detalle-meta" style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e7eb;flex-shrink:0;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+
+          <!-- Vigencia editable -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.78rem;color:#6b7280;font-weight:600">VIGENCIA</label>
+            <input type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
+          </div>
+
+          <!-- Mes si es mensual -->
+          <div *ngIf="selectedItem.esMensual && selectedItem.mes"
+            style="font-size:0.78rem;color:#6b7280">
+            <strong>Mes:</strong> {{ selectedItem.mes }}/{{ selectedItem.anio }}
+          </div>
+
+          <!-- Archivos múltiples -->
+          <div *ngIf="selectedItem.archivos && selectedItem.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of selectedItem.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
+        </div>
+
         <div class="doc-body">
           <div *ngIf="loadingDoc" class="doc-empty">Cargando documento…</div>
           <iframe

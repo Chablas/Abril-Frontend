@@ -9,6 +9,7 @@ export interface BandejaItemDto {
   estado: string;
   vigencia?: string;
   archivoUrl?: string;
+  archivos?: { nombreArchivo: string; archivoUrl: string }[];
   obsContratista?: string;
   responsable: string;
   fechaEnvio?: string;

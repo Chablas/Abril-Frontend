@@ -57,6 +57,8 @@ export class Bandeja implements OnInit, OnDestroy {
   selectedItem: BandejaItemDto | null = null;
   docSafeUrl: SafeResourceUrl | null = null;
   loadingDoc = false;
+  vigenciaEditable: string = '';
+  archivoSeleccionadoIdx: number = 0;
   private docBlobUrl = '';
 
   // ── Inducciones agrupadas ─────────────────────────────────
@@ -378,10 +380,28 @@ export class Bandeja implements OnInit, OnDestroy {
     if (this.selectedItem?.id === item.id) return;
     this.clearDocPanel();
     this.selectedItem = item;
-    this.loadingDoc = !!item.archivoUrl;
-    if (item.archivoUrl) {
-      this.loadDocBlob(item.archivoUrl);
+    this.archivoSeleccionadoIdx = 0;
+    console.log('itemId:', item.itemId, 'esMensual:', item.esMensual, 'mes:', item.mes, 'anio:', item.anio);
+    const sentinel = [12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+    if (item.itemId && sentinel.includes(item.itemId)) {
+      this.vigenciaEditable = '2040-12-31';
+    } else if (item.esMensual && item.mes && item.anio) {
+      const mesSig = item.mes === 12 ? 1 : item.mes + 1;
+      const anioSig = item.mes === 12 ? item.anio + 1 : item.anio;
+      this.vigenciaEditable = `${anioSig}-${String(mesSig).padStart(2, '0')}-27`;
+    } else {
+      this.vigenciaEditable = item.vigencia
+        ? new Date(item.vigencia).toISOString().substring(0, 10) : '';
     }
+    const urlInicial = item.archivos?.[0]?.archivoUrl ?? item.archivoUrl;
+    this.loadingDoc = !!urlInicial;
+    if (urlInicial) this.loadDocBlob(urlInicial);
+  }
+
+  seleccionarArchivo(idx: number): void {
+    this.archivoSeleccionadoIdx = idx;
+    const url = this.selectedItem?.archivos?.[idx]?.archivoUrl;
+    if (url) this.loadDocBlob(url);
   }
 
   private clearDocPanel(): void {
@@ -451,7 +471,7 @@ export class Bandeja implements OnInit, OnDestroy {
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
-    this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
+    this.executeAction(item, { estado: 'Aprobado', vigencia: this.vigenciaEditable || undefined }, 'Aprobado');
   }
 
   rechazar(item: BandejaItemDto): void {
