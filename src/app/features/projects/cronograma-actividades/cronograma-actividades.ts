@@ -90,6 +90,7 @@ export class CronogramaActividades implements OnInit {
   formActualEnd = '';
   formProgress = 0;
   errorFechaReal = false;
+  nuevaDuracionDias: number | null = null;
 
   // Predecesoras
   formPredecesoras: number[] = [];
@@ -720,6 +721,7 @@ export class CronogramaActividades implements OnInit {
     this.formNivel = 1;
     this.formPadreId = null;
     this.guardando = false;
+    this.nuevaDuracionDias = null;
     this.modalOpen = true;
   }
 
@@ -748,12 +750,37 @@ export class CronogramaActividades implements OnInit {
     this.formPredecesoras = [];
     this.predSearch = '';
     this.predDropdownIdx = -1;
+    this.nuevaDuracionDias = null;
   }
 
   onOverlayClick(e: MouseEvent): void {
     if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
       this.cerrarModal();
     }
+  }
+
+  onFormPlannedEndChange(val: string): void {
+    this.formPlannedEnd = val;
+    if (!this.formPlannedStart || !val || val.length < 10) {
+      this.nuevaDuracionDias = null;
+      return;
+    }
+    const [sy, sm, sd] = this.formPlannedStart.split('-').map(Number);
+    const [ey, em, ed] = val.split('-').map(Number);
+    const diff = Math.round(
+      (new Date(ey, em - 1, ed).getTime() - new Date(sy, sm - 1, sd).getTime()) / 86400000
+    ) + 1;
+    this.nuevaDuracionDias = diff >= 1 ? diff : null;
+  }
+
+  onNuevaDuracionChange(val: string): void {
+    const n = parseInt(val, 10);
+    this.nuevaDuracionDias = isNaN(n) || n < 1 ? null : n;
+    if (!this.formPlannedStart || this.nuevaDuracionDias === null) return;
+    const [y, m, d] = this.formPlannedStart.split('-').map(Number);
+    const end = new Date(y, m - 1, d);
+    end.setDate(end.getDate() + this.nuevaDuracionDias - 1);
+    this.formPlannedEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
   }
 
   // ── Cascada ────────────────────────────────────────────────────────────────

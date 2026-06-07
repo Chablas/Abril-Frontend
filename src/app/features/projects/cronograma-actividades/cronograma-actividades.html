@@ -480,8 +480,28 @@
             type="date"
             class="field-input"
             [class.field-input-readonly]="editandoAct?.esPadre"
-            [(ngModel)]="formPlannedEnd"
+            [ngModel]="formPlannedEnd"
+            (change)="onFormPlannedEndChange($any($event.target).value)"
+            (input)="onFormPlannedEndChange($any($event.target).value)"
             [disabled]="!!editandoAct?.esPadre"
+          />
+        </div>
+      </div>
+
+      <!-- Duración (helper visual, solo crear) -->
+      <div class="field-row" *ngIf="modalMode === 'crear'">
+        <div></div>
+        <div class="field">
+          <label class="field-label">Duración (días)</label>
+          <input
+            type="number"
+            class="field-input"
+            min="1"
+            step="1"
+            [disabled]="!formPlannedStart"
+            [placeholder]="formPlannedStart ? '' : 'Primero ingresa inicio'"
+            [value]="nuevaDuracionDias ?? ''"
+            (input)="onNuevaDuracionChange($any($event.target).value)"
           />
         </div>
       </div>
