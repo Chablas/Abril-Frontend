@@ -9,6 +9,7 @@ import {
   CascadaResultDto,
   ActualizarPredecesorasResultDto,
   CrearActividadRequest,
+  CrearActividadResultDto,
   ReordenarItem,
   EditarActividadRequest,
   EditarActividadResultDto,
@@ -37,8 +38,8 @@ export class CronogramaActividadesService {
     });
   }
 
-  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<ActividadDto> {
-    return this.http.post<ActividadDto>(`${this.base}/${proyectoId}/actividades`, body, {
+  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<CrearActividadResultDto> {
+    return this.http.post<CrearActividadResultDto>(`${this.base}/${proyectoId}/actividades`, body, {
       headers: buildAuthHeaders(),
     });
   }

@@ -79,7 +79,13 @@ export interface EditarActividadRequest {
   predecessorIds?: number[] | null;
 }
 
+export interface CrearActividadResultDto {
+  actividad: ActividadDto;
+  padresActualizados?: ActividadDto[];
+}
+
 export interface EditarActividadResultDto {
   actividad: ActividadDto;
   cascada: CascadaResultDto | null;
+  padresActualizados?: ActividadDto[];
 }

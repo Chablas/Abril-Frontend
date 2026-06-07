@@ -12,6 +12,7 @@ import {
   ActividadesProyectoResponseDto,
   ProyectoCronogramaHeaderDto,
   CrearActividadRequest,
+  CrearActividadResultDto,
   EditarActividadRequest,
   EditarActividadResultDto,
   ReordenarItem,
@@ -1038,7 +1039,16 @@ export class CronogramaActividades implements OnInit {
         parentId: this.formNivel > 1 ? this.formPadreId : null,
       };
       this.service.crearActividad(this.selectedProyectoId, body).subscribe({
-        next: () => { this.cerrarModal(); this.recargar(); },
+        next: (res: CrearActividadResultDto) => {
+          (res.padresActualizados ?? []).forEach((padre) => {
+            const idx = this.actividades.findIndex(
+              (a) => a.projectActivityId === padre.projectActivityId,
+            );
+            if (idx !== -1) this.actividades[idx] = { ...this.actividades[idx], ...padre };
+          });
+          this.cerrarModal();
+          this.recargar();
+        },
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
       });
     } else {
@@ -1061,6 +1071,12 @@ export class CronogramaActividades implements OnInit {
       this.service.editarActividad(actividadId, body).subscribe({
         next: (res: EditarActividadResultDto) => {
           this.patchActividadLocal(res.actividad);
+          (res.padresActualizados ?? []).forEach((padre) => {
+            const idx = this.actividades.findIndex(
+              (a) => a.projectActivityId === padre.projectActivityId,
+            );
+            if (idx !== -1) this.actividades[idx] = { ...this.actividades[idx], ...padre };
+          });
           this.buildAvanceMap();
           this.guardando = false;
           this.cerrarModal();
