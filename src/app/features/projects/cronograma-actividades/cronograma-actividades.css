@@ -1164,6 +1164,8 @@
 /* ── Columnas de línea base / desfase / semáforo ──────────────────────────── */
 .col-desfase { width: 90px; }
 .col-sema    { width: 70px; }
+.col-dur     { width: 80px; }
+.td-dur      { text-align: center; font-size: 0.82rem; letter-spacing: 0.01em; }
 
 /* ── Celda de fecha editable — modo lectura ───────────────────────────────── */
 .td-fecha-editable { cursor: pointer; }

@@ -4,6 +4,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { CronogramaActividadesService } from './services/cronograma-actividades.service';
 import {
   ActividadDto,
@@ -254,6 +256,13 @@ export class CronogramaActividades implements OnInit {
   getChevronStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
     return info ? { color: info.text } : {};
+  }
+
+  getDuracion(act: ActividadDto): number | null {
+    if (!act.plannedStartDate || !act.plannedEndDate) return null;
+    const diff = new Date(act.plannedEndDate.slice(0, 10)).getTime()
+               - new Date(act.plannedStartDate.slice(0, 10)).getTime();
+    return Math.abs(Math.round(diff / 86400000)) + 1;
   }
 
   getFechaRealStyle(act: ActividadDto): Record<string, string> {
@@ -1378,5 +1387,121 @@ export class CronogramaActividades implements OnInit {
     } else {
       doImport();
     }
+  }
+
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+
+  exportarPDF(): void {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const today = new Date();
+    const dd    = String(today.getDate()).padStart(2, '0');
+    const mm    = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy  = today.getFullYear();
+    const fechaLabel = `${dd}/${mm}/${yyyy}`;
+    const fechaFile  = `${yyyy}-${mm}-${dd}`;
+
+    // ── Encabezado ──
+    doc.setFillColor(27, 38, 59); // #1B263B
+    doc.rect(0, 0, pageW, 18, 'F');
+    doc.setTextColor(224, 225, 221); // #E0E1DD
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    const titulo = this.proyectoHeader?.projectDescription ?? 'Cronograma de Actividades';
+    doc.text(titulo, 10, 11);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exportado: ${fechaLabel}`, pageW - 10, 11, { align: 'right' });
+
+    // ── Columnas dinámicas ──
+    const colsBase = [
+      { header: '#',           dataKey: 'num'     },
+      { header: 'Actividad',   dataKey: 'act'     },
+      { header: 'Inicio Prog.',dataKey: 'ini'     },
+      { header: 'Fin Prog.',   dataKey: 'fin'     },
+      { header: 'Duración',    dataKey: 'dur'     },
+      { header: 'Avance%',     dataKey: 'avance'  },
+      { header: 'Estado',      dataKey: 'estado'  },
+    ];
+    const colsLb = [
+      { header: 'LB Inicio',   dataKey: 'lbIni'   },
+      { header: 'LB Fin',      dataKey: 'lbFin'   },
+      { header: 'Desfase Ini.',dataKey: 'dsfIni'  },
+      { header: 'Desfase Fin.',dataKey: 'dsfFin'  },
+      { header: 'Semáforo',    dataKey: 'semaforo'},
+    ];
+    const columns = this.lineaBaseVisible ? [...colsBase, ...colsLb] : colsBase;
+
+    // ── Filas ──
+    const semaforoText = (cls: string) => {
+      if (cls === 'semaforo-verde')    return 'Verde';
+      if (cls === 'semaforo-amarillo') return 'Amarillo';
+      if (cls === 'semaforo-rojo')     return 'Rojo';
+      return '—';
+    };
+
+    const rows = this.actividades.map((act, i) => {
+      const indent = '  '.repeat(act.hierarchyLevel ?? 0);
+      const dur    = this.getDuracion(act);
+      const row: Record<string, string> = {
+        num:    String(i + 1),
+        act:    indent + act.activityDescription,
+        ini:    this.formatDate(act.plannedStartDate),
+        fin:    this.formatDate(act.plannedEndDate),
+        dur:    dur !== null ? `${dur}d` : '—',
+        avance: `${this.getAvance(act)}%`,
+        estado: this.getEstado(act),
+      };
+      if (this.lineaBaseVisible) {
+        row['lbIni']    = this.formatDate(act.baselineStartDate);
+        row['lbFin']    = this.formatDate(act.baselineEndDate);
+        row['dsfIni']   = this.formatDesfase(this.getDesfaseDias(act, 'start'));
+        row['dsfFin']   = this.formatDesfase(this.getDesfaseDias(act, 'end'));
+        row['semaforo'] = semaforoText(this.getSemaforoClass(act));
+      }
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 22,
+      columns,
+      body: rows,
+      theme: 'grid',
+      styles:       { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+      headStyles:   { fillColor: [27, 38, 59], textColor: [224, 225, 221], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        num:    { cellWidth: 8,  halign: 'center' },
+        act:    { cellWidth: 'auto' },
+        ini:    { cellWidth: 22, halign: 'center' },
+        fin:    { cellWidth: 22, halign: 'center' },
+        dur:    { cellWidth: 18, halign: 'center' },
+        avance: { cellWidth: 18, halign: 'center' },
+        estado: { cellWidth: 22, halign: 'center' },
+        lbIni:  { cellWidth: 22, halign: 'center' },
+        lbFin:  { cellWidth: 22, halign: 'center' },
+        dsfIni: { cellWidth: 20, halign: 'center' },
+        dsfFin: { cellWidth: 20, halign: 'center' },
+        semaforo:{ cellWidth: 20, halign: 'center' },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.dataKey === 'estado') {
+          const v = data.cell.raw as string;
+          if (v === 'CULMINADA')    { data.cell.styles.textColor = [20, 83, 45]; data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'VENCIDO')      { data.cell.styles.textColor = [127, 29, 29]; data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'EN PROGRESO')  { data.cell.styles.textColor = [30, 58, 95]; }
+        }
+        if (data.section === 'body' && data.column.dataKey === 'semaforo') {
+          const v = data.cell.raw as string;
+          if (v === 'Verde')    { data.cell.styles.textColor = [20, 83, 45]; data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Amarillo') { data.cell.styles.textColor = [120, 80, 0]; data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Rojo')     { data.cell.styles.textColor = [127, 29, 29]; data.cell.styles.fontStyle = 'bold'; }
+        }
+      },
+    });
+
+    const nombre = this.proyectoHeader?.projectDescription ?? 'cronograma';
+    const safe   = nombre.replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑ ]/g, '').trim().replace(/\s+/g, '_');
+    doc.save(`${safe}_cronograma_${fechaFile}.pdf`);
   }
 }
