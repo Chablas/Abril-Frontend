@@ -64,12 +64,14 @@ export class Empresa implements OnInit {
   loadingProgreso = new Set<number>();
 
   archivosPendientes: ArchivoStagingDto[] = [];
+  isDragging = false;
   panelVigencia = '';
   panelObsAbril = '';
   panelObsContratista = '';
   panelEstado = '';
 
   mesSeleccionado: EntregableMesDto | null = null;
+  mesDropdownOpen = false;
   mesPanelMes: number = new Date().getMonth();
   mesPanelAnio: number = new Date().getFullYear();
   readonly mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -118,6 +120,9 @@ export class Empresa implements OnInit {
   mostrarProyectos = false;
 
   modalVersionesOpen = false;
+  historialVersiones: DocumentoVersionDto[] = [];
+  loadingHistorial = false;
+  mostrarHistorial = false;
   versionesLoader = (id: number): Observable<DocumentoVersionDto[]> =>
     this.empresaId ? this.habEmpresaService.getVersiones(this.empresaId, id) : EMPTY;
 
@@ -329,6 +334,8 @@ export class Empresa implements OnInit {
     this.selectedEntregable = e;
     this.archivosPendientes = [];
     this.mesSeleccionado = null;
+    this.historialVersiones = [];
+    this.mostrarHistorial = false;
 
     const hoy = new Date();
     const mesAnterior = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
@@ -351,6 +358,27 @@ export class Empresa implements OnInit {
     this.panelEstado = e.estado;
     this.drawerOpen = true;
     this.cdr.detectChanges();
+  }
+
+  getMesEstado(mes: number, anio: number): string {
+    return this.selectedEntregable?.meses?.find(
+      m => m.mes === mes && m.anio === anio
+    )?.estado ?? 'Falta';
+  }
+
+  toggleMesDropdown(): void {
+    this.mesDropdownOpen = !this.mesDropdownOpen;
+    this.cdr.markForCheck();
+  }
+
+  cerrarMesDropdown(): void {
+    this.mesDropdownOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  seleccionarMes(mes: number, anio: number): void {
+    this.onMesChange(mes, anio);
+    this.cerrarMesDropdown();
   }
 
   onMesChange(mes: number, anio: number): void {
@@ -435,24 +463,69 @@ export class Empresa implements OnInit {
     }
   }
 
+  private _dropJustHappened = false;
+
   triggerFileInput(): void {
+    if (this._dropJustHappened) return;
     this.fileInput?.nativeElement.click();
+  }
+
+  private addFiles(fileList: FileList | null | undefined): void {
+    const files = Array.from(fileList ?? []);
+    if (!files.length) return;
+    const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx', '.csv'];
+    for (const file of files) {
+      const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+      if (!extensionesPermitidas.includes(ext)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Archivo no permitido',
+          text: `"${file.name}" no es un formato aceptado. Formatos válidos: PDF, JPG, PNG, DOCX, XLSX, CSV.`,
+          confirmButtonColor: '#64bc04',
+        });
+        continue;
+      }
+      this.archivosPendientes.push({
+        file, nombre: file.name, esZip: false,
+        subiendo: false, error: false,
+      });
+    }
+    this.cdr.markForCheck();
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const files = Array.from(input?.files ?? []);
-    if (!files.length) return;
+    this.addFiles(input?.files);
     input.value = '';
+  }
 
-    for (const file of files) {
-      const item: ArchivoStagingDto = {
-        file, nombre: file.name, esZip: file.name.endsWith('.zip'),
-        subiendo: false, error: false,
-      };
-      this.archivosPendientes.push(item);
-    }
-    this.cdr.detectChanges();
+  onDragOver(event: DragEvent): void {
+    console.log('onDragOver fired');
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+    this.cdr.markForCheck();
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    this.cdr.markForCheck();
+  }
+
+  onDrop(event: DragEvent): void {
+    console.log('onDrop fired', event.dataTransfer?.files?.length);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    this.isDragging = false;
+    this.addFiles(event.dataTransfer?.files);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+    this._dropJustHappened = true;
+    setTimeout(() => { this._dropJustHappened = false; }, 300);
+    this.cdr.markForCheck();
   }
 
   private autoMarcarEnviado(): void {
@@ -510,6 +583,8 @@ export class Empresa implements OnInit {
 
     const contexto = `habilitacion/empresas/${this.empresaId}`;
     const entregableId = this.selectedEntregable.id;
+    const mesFijo = this.mesPanelMes + 1;
+    const anioFijo = this.mesPanelAnio;
 
     this.archivosPendientes.forEach(a => a.subiendo = true);
     this.cdr.detectChanges();
@@ -529,8 +604,8 @@ export class Empresa implements OnInit {
             : (!this.isContratista() ? (this.panelVigencia || undefined) : undefined),
           obsContratista: this.isContratista() ? this.panelObsContratista || undefined : undefined,
           ...(this.selectedEntregable!.esMensual ? {
-            mes: this.mesPanelMes + 1,
-            anio: this.mesPanelAnio,
+            mes: mesFijo,
+            anio: anioFijo,
           } : {}),
           archivos,
         }).subscribe({
@@ -538,8 +613,19 @@ export class Empresa implements OnInit {
             this.loaderService.hide();
             Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
             this.archivosPendientes = [];
+            const itemIdFijo = this.selectedEntregable!.itemId;
             this.closeDrawer();
-            this.recargarEntregables();
+            this.recargarEntregables((list) => {
+              const frescoEntregable = list.find(
+                e => e.id === entregableId || e.itemId === itemIdFijo
+              );
+              if (frescoEntregable) this.selectedEntregable = frescoEntregable;
+              this.mesPanelMes = mesFijo - 1;
+              this.mesPanelAnio = anioFijo;
+              this.mesSeleccionado = this.selectedEntregable?.meses
+                ?.find(m => m.mes === mesFijo && m.anio === anioFijo) ?? null;
+              this.cdr.markForCheck();
+            });
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
@@ -687,14 +773,15 @@ export class Empresa implements OnInit {
     });
   }
 
-  private recargarEntregables(): void {
+  private recargarEntregables(afterLoad?: (list: EmpresaEntregableDto[]) => void): void {
     if (!this.selectedProyecto || !this.empresaId) return;
     const pid = this.selectedProyecto.id;
     const eid = this.empresaId;
     this.habEmpresaService.getEntregables(eid, pid).subscribe({
       next: (items) => {
         const list = items ?? [];
-        this.entregables = list;
+        this.entregables = [...list];
+        this.cdr.detectChanges();
         this.progresoPorProyecto.set(pid, {
           total: list.length,
           aprobadosEquiv: list.filter(
@@ -705,8 +792,17 @@ export class Empresa implements OnInit {
         });
         if (this.selectedEntregable) {
           const updated = list.find((e) => e.id === this.selectedEntregable!.id);
-          if (updated) this.selectedEntregable = updated;
+          if (updated) {
+            this.selectedEntregable = updated;
+            if (this.mesSeleccionado && updated.meses) {
+              const { mes, anio } = this.mesSeleccionado;
+              this.mesSeleccionado = updated.meses.find(
+                m => m.mes === mes && m.anio === anio
+              ) ?? null;
+            }
+          }
         }
+        afterLoad?.(list);
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -720,6 +816,26 @@ export class Empresa implements OnInit {
   verVersiones(): void {
     if (!this.selectedEntregable) return;
     this.modalVersionesOpen = true;
+  }
+
+  cargarHistorial(): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    this.mostrarHistorial = !this.mostrarHistorial;
+    if (this.mostrarHistorial && this.historialVersiones.length === 0) {
+      this.loadingHistorial = true;
+      this.habEmpresaService
+        .getVersiones(this.empresaId, this.selectedEntregable.id)
+        .subscribe({
+          next: (res) => {
+            this.historialVersiones = (res ?? []).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            this.loadingHistorial = false;
+            this.cdr.markForCheck();
+          },
+          error: () => { this.loadingHistorial = false; this.cdr.markForCheck(); },
+        });
+    }
   }
 
   closeVersiones(): void {
@@ -804,7 +920,7 @@ export class Empresa implements OnInit {
       cancelButtonColor: '#6b7280',
     }).then((res) => {
       if (!res.isConfirmed) return;
-      this.habEmpresaService.eliminarArchivo(archivoId).subscribe({
+      this.habEmpresaService.eliminarArchivo(this.empresaId!, archivoId).subscribe({
         next: () => {
           Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1200, showConfirmButton: false });
           this.recargarEntregables();

@@ -62,6 +62,14 @@ export interface ContratistaTokenDto {
   proyectoIds?: number[];
 }
 
+export interface EntregableMesArchivoDto {
+  id: number;
+  nombreArchivo: string;
+  archivoUrl: string;
+  esZip: boolean;
+  orden: number;
+}
+
 export interface EntregableMesDto {
   id: number;
   mes: number;
@@ -69,6 +77,7 @@ export interface EntregableMesDto {
   estado: string;
   vigencia?: string;
   archivoUrl?: string;
+  archivos?: EntregableMesArchivoDto[];
   obsAbril?: string;
   obsContratista?: string;
   motivoRechazo?: string;

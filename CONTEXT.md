@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-06 — Habilitación: upload multi-archivo (staging), vigencia contratista, entregables mensuales con tabla de meses. Ver §12 y sesión 2026-06-06 abajo.
+> **Última actualización**: 2026-06-06 (v2) — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
 >
 > **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
 >
@@ -3772,3 +3772,53 @@ En `empresa.css`, `trabajadores.css`, `equipos.css`:
 En `empresa.css` además: `.mes-estado-aprobado/enviado/rechazado/falta`.
 
 **Commit**: `d763264` en master.
+
+---
+
+## Sesión 2026-06-06 (v2) — Empresa mensual: UX, bugs, drag&drop, validaciones
+
+### Dropdown selector de mes
+- Reemplazado `<select>` por dropdown custom con backdrop invisible (click-outside), dot de color + estado por mes.
+- `mesDropdownOpen`, `getMesEstado(mes,anio)`, `toggleMesDropdown()`, `cerrarMesDropdown()`, `seleccionarMes(mes,anio)` en `empresa.ts`.
+- Clases CSS: `.mes-dropdown`, `.mes-dropdown-trigger`, `.mes-dropdown-list`, `.mes-dropdown-item--active`, `.mes-estado-dot`, `.mes-estado-label`.
+
+### Historial de envíos inline (solo mensual)
+- Botón toggle "Ver historial de envíos" en footer del drawer; panel inline con `*ngFor` de versiones ordenadas por `createdAt` desc.
+- `historialVersiones`, `loadingHistorial`, `mostrarHistorial`, `cargarHistorial()` en `empresa.ts`.
+- Para no-mensuales: mantiene modal `VersionesDoc` genérico.
+
+### Admin tabla de meses
+- Celda "Ver" → `*ngFor` sobre `m.archivos[]`; fallback a `m.archivoUrl` con `ng-template #archivoFallback`.
+- Botones APROBAR/RECHAZAR del footer deshabilitados con `*ngIf="!selectedEntregable.esMensual"`.
+
+### Bug — mes incorrecto al enviar
+- `mesFijo` y `anioFijo` capturados ANTES del async en `enviarDocumento()`.
+- `recargarEntregables()` extendido con `afterLoad?: (list) => void` callback.
+- En `next` de `enviarDocumento`: captura `itemIdFijo = selectedEntregable.itemId` antes de `closeDrawer()`, llama `recargarEntregables(callback)` donde el callback busca el entregable fresco y restaura `mesPanelMes`/`mesPanelAnio`/`mesSeleccionado`.
+
+### Bug — archivos del mes no visibles
+- `recargarEntregables` ahora llama `afterLoad?.(list)` después de actualizar `selectedEntregable`/`mesSeleccionado`.
+- `this.entregables = [...list]` (nueva referencia) + `detectChanges()` adicional fuerzan re-render inmediato de la lista.
+
+### Drag & drop
+- `_dropJustHappened` flag: bloquea `triggerFileInput()` 300ms post-drop para evitar que el browser abra el picker.
+- `onDrop()`: `stopImmediatePropagation()` + reset del fileInput value + flag.
+- Drop zones: `(click)` movido al `div.upload-empty` interior (no en el contenedor de drag).
+- `console.log` de diagnóstico agregado en `onDragOver`/`onDrop` (pendiente quitar en prod).
+
+### Validación de extensiones en addFiles()
+- Extensiones permitidas: `.pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv` (sin `.zip`).
+- Archivo rechazado → `Swal.fire` warning + `continue` (no se agrega al staging).
+- `accept` del input actualizado a las mismas extensiones.
+
+### Fix eliminarArchivo URL
+- `hab-empresa.service.ts`: `eliminarArchivo(empresaId, archivoId)` → `DELETE /empresas/{empresaId}/archivos/{archivoId}`.
+- `empresa.ts`: llama `eliminarArchivo(this.empresaId!, archivoId)`.
+
+### Backend (commits previos)
+- `EnviarDocumentoRequest`: campos `Mes?` y `Anio?` agregados.
+- `ArchivoHabilitacionController.Enviar()`: cuando `Mes`/`Anio` presentes → `CrearOActualizarEntregableMesAsync` en vez de `FindAsync`; `version.HabEmpresaId = ent.Id`.
+- `IHabEmpresaRepository` inyectado en el controller.
+- `HabEmpresaRepository.GetEntregablesEmpresaAsync`: archivos de cada `EntregableMesDto` con fallback al registro base (datos legacy).
+
+**Commit frontend**: pendiente (esta sesión).

@@ -105,9 +105,9 @@ export class HabEmpresaService {
     );
   }
 
-  eliminarArchivo(archivoId: number): Observable<void> {
+  eliminarArchivo(empresaId: number, archivoId: number): Observable<void> {
     return this.http.delete<void>(
-      `${HABILITACION_BASE}/archivos/${archivoId}`,
+      `${this.base}/${empresaId}/archivos/${archivoId}`,
       { headers: buildHabHeaders() },
     );
   }
