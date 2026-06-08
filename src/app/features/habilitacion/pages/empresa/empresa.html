@@ -537,11 +537,11 @@
                   </ng-template>
                   <button type="button" class="btn-approve"
                     style="padding:3px 8px;font-size:11px;margin-left:4px"
-                    *ngIf="m.estado === 'Enviado'"
+                    *ngIf="m.estado === 'Enviado' && puedeAprobarEntregableActual"
                     (click)="aprobarMesEspecifico(m)">✓</button>
                   <button type="button" class="btn-reject-act"
                     style="padding:3px 8px;font-size:11px;margin-left:4px"
-                    *ngIf="m.estado === 'Enviado'"
+                    *ngIf="m.estado === 'Enviado' && puedeAprobarEntregableActual"
                     (click)="rechazarMesEspecifico(m)">✕</button>
                   <span *ngIf="m.estado === 'Rechazado' && m.motivoRechazo"
                     style="font-size:11px;color:#dc2626;margin-left:4px"
@@ -575,21 +575,34 @@
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
-          <select class="field-input" [(ngModel)]="panelEstado">
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-            <option value="Falta">Falta</option>
-            <option value="No Aplica">No Aplica</option>
-            <option value="En Plazo">En Plazo</option>
-            <option value="Vencido">Vencido</option>
-            <option value="Enviado">Enviado</option>
-          </select>
+          <ng-container *ngIf="puedeAprobarEntregableActual; else estadoReadonly">
+            <select class="field-input" [(ngModel)]="panelEstado">
+              <option value="Aprobado">Aprobado</option>
+              <option value="Rechazado">Rechazado</option>
+              <option value="Falta">Falta</option>
+              <option value="No Aplica">No Aplica</option>
+              <option value="En Plazo">En Plazo</option>
+              <option value="Vencido">Vencido</option>
+              <option value="Enviado">Enviado</option>
+            </select>
+          </ng-container>
+          <ng-template #estadoReadonly>
+            <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
+              {{ selectedEntregable.estado }}
+            </span>
+          </ng-template>
         </div>
 
         <div class="field-grp" *ngIf="selectedEntregable.requiereVigencia">
           <label class="field-lbl">VIGENCIA</label>
-          <input *ngIf="!esPermanente" type="date" class="field-input" [(ngModel)]="panelVigencia" />
-          <span *ngIf="esPermanente" class="field-input field-readonly" style="display:block;padding:8px 12px;color:#64748b">Permanente</span>
+          <ng-container *ngIf="puedeAprobarEntregableActual && !esPermanente">
+            <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          </ng-container>
+          <span *ngIf="!puedeAprobarEntregableActual || esPermanente"
+            class="field-input field-readonly"
+            style="display:block;padding:8px 12px;color:#64748b">
+            {{ esPermanente ? 'Permanente' : (panelVigencia ? (panelVigencia | date:'dd/MM/yyyy') : '—') }}
+          </span>
         </div>
 
         <div class="field-grp">
@@ -686,11 +699,11 @@
         <button
           type="button"
           class="btn-primary"
-          [disabled]="selectedEntregable.requiereVigencia && !panelVigencia"
+          [disabled]="!puedeAprobarEntregableActual || (selectedEntregable.requiereVigencia && !panelVigencia)"
           (click)="guardarEntregable()"
         >GUARDAR</button>
         <div class="panel-actions"
-          *ngIf="selectedEntregable.estado === 'Enviado' && !selectedEntregable.esMensual">
+          *ngIf="selectedEntregable.estado === 'Enviado' && !selectedEntregable.esMensual && puedeAprobarEntregableActual">
           <button type="button" class="btn-approve" (click)="aprobarEntregable()">✓ APROBAR</button>
           <button type="button" class="btn-reject-act" (click)="rechazarEntregable()">✕ RECHAZAR</button>
         </div>

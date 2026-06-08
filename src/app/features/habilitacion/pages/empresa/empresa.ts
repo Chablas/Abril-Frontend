@@ -157,8 +157,21 @@ export class Empresa implements OnInit {
   isAdmin(): boolean {
     return (
       this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
       this.authService.hasRole('ADMINISTRADOR DE UDP')
     );
+  }
+
+  get puedeAprobarEntregableActual(): boolean {
+    if (!this.selectedEntregable) return false;
+    const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
+    if (resp === 'SSOMA')
+      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    if (resp === 'ADMINISTRACION')
+      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    return this.isAdmin();
   }
 
   private readEmpresaIdFromJwt(): number | null {
