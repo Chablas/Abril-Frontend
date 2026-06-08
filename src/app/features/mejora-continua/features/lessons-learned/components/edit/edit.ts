@@ -14,7 +14,10 @@ import { environment } from '../../../../../../../environments/environment';
 import { LessonFiltersDTO } from '../../dtos/lessonFilters.model';
 import { ScopeItemDTO } from '../../dtos/scope-item.model';
 import { LessonImageDTO } from '../../dtos/lessonDetail.model';
-import { LessonAreaConfigItemDto } from '../../../configuration/lesson-areas/dtos/lesson-area.dto';
+import {
+  LessonAreaConfigItemDto,
+  LessonAreaSegmentDto,
+} from '../../../configuration/lesson-areas/dtos/lesson-area.dto';
 
 /** Nodo del árbol de áreas (igual que en create). */
 interface AreaTreeNode {
@@ -116,13 +119,59 @@ export class EditLesson implements OnInit {
 
   private buildAreaTree(items: LessonAreaConfigItemDto[]): AreaTreeNode[] {
     this.areaNodeSeq = 0;
-    const roots: AreaTreeNode[] = [];
-    for (const item of items) {
+
+    const stripGerencia = (path: LessonAreaSegmentDto[]): LessonAreaSegmentDto[] => {
       let start = 0;
-      while (start < item.path.length && (item.path[start].areaTypeName ?? '').trim() === 'Área de Gerencia') start++;
-      const trimmed = item.path.slice(start);
+      while (
+        start < path.length &&
+        (path[start].areaTypeName ?? '').trim() === 'Área de Gerencia'
+      ) {
+        start++;
+      }
+      return path.slice(start);
+    };
+
+    const keyOf = (path: LessonAreaSegmentDto[]): string =>
+      path.map((s) => `${s.areaTypeName} ${s.areaItemName}`).join('');
+
+    // Paths (sin 'Área de Gerencia') de los nodos marcados como independientes.
+    const independentKeys = new Set(
+      items.filter((i) => i.includeAsIndependent).map((i) => keyOf(stripGerencia(i.path))),
+    );
+
+    const independentRoots: AreaTreeNode[] = [];
+    const cascadeRoots: AreaTreeNode[] = [];
+
+    for (const item of items) {
+      const trimmed = stripGerencia(item.path);
       if (trimmed.length === 0) continue;
-      let level = roots;
+
+      // Independiente → opción de primer nivel (hoja), va directo a sus plantillas.
+      if (item.includeAsIndependent) {
+        const leaf = trimmed[trimmed.length - 1];
+        independentRoots.push({
+          id: ++this.areaNodeSeq,
+          name: leaf.areaItemName,
+          typeName: leaf.areaTypeName,
+          lessonAreaId: item.lessonAreaId!,
+          children: [],
+        });
+        continue;
+      }
+
+      // Si algún ancestro es independiente, este nodo queda oculto (la independencia
+      // corta el subárbol). Revisamos cada prefijo propio del path.
+      let underIndependent = false;
+      for (let k = 1; k < trimmed.length; k++) {
+        if (independentKeys.has(keyOf(trimmed.slice(0, k)))) {
+          underIndependent = true;
+          break;
+        }
+      }
+      if (underIndependent) continue;
+
+      // Construcción normal en cascada.
+      let level = cascadeRoots;
       let node: AreaTreeNode | undefined;
       for (const seg of trimmed) {
         node = level.find((n) => n.name === seg.areaItemName && n.typeName === seg.areaTypeName);
@@ -132,9 +181,12 @@ export class EditLesson implements OnInit {
         }
         level = node.children;
       }
+      // El último segmento es la hoja: lleva el lessonAreaId.
       if (node) node.lessonAreaId = item.lessonAreaId!;
     }
-    return roots;
+
+    // Independientes primero (priorizados), luego la cascada normal.
+    return [...independentRoots, ...cascadeRoots];
   }
 
   private findAreaPath(nodes: AreaTreeNode[], targetLessonAreaId: number): AreaTreeNode[] | null {

@@ -46,4 +46,12 @@ export class LessonAreaService {
       { headers: this.authHeaders() },
     );
   }
+
+  setIncludeAsIndependent(areaScopeId: number, value: boolean): Observable<SetLessonAreaFlagResultDto> {
+    return this.http.put<SetLessonAreaFlagResultDto>(
+      `${this.apiUrl}/include-as-independent/${areaScopeId}?value=${value}`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
 }

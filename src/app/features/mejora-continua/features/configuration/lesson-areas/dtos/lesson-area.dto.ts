@@ -12,6 +12,8 @@ export interface LessonAreaConfigItemDto {
   includeInForm: boolean;
   /** En filtros del dashboard, agrupa a sus descendientes (requiere active + hijos). */
   includeDescendants: boolean;
+  /** Se muestra como opción independiente en el formulario (requiere active + includeInForm). */
+  includeAsIndependent: boolean;
   /** El nodo tiene plantilla (scope_item). */
   hasScope: boolean;
   /** El nodo tiene hijos en el árbol. */

@@ -29,6 +29,8 @@
           <th class="text-center px-[16px] py-[10px] font-semibold w-[120px]"
             title="Aparece en el formulario de creación de lecciones (requiere plantilla)">En formulario</th>
           <th class="text-center px-[16px] py-[10px] font-semibold w-[130px]"
+            title="Se muestra como opción independiente en el formulario y no despliega a sus áreas hijas (requiere 'En formulario')">Área independiente</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[130px]"
             title="En los filtros del dashboard, agrupa a sus subáreas">Agrupar subáreas</th>
         </tr>
       </thead>
@@ -77,6 +79,21 @@
             </button>
           </td>
 
+          <!-- Área independiente -->
+          <td class="px-[16px] py-[8px] text-center">
+            <button type="button" (click)="toggleIncludeAsIndependent(r)"
+              [disabled]="!r.active || !r.includeInForm"
+              [title]="!r.active ? 'Activa el área primero' : (!r.includeInForm ? 'Marca primero En formulario' : '')"
+              class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors"
+              [ngClass]="(!r.active || !r.includeInForm)
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                : (r.includeAsIndependent
+                    ? 'border-green-300 text-green-700 bg-green-50 cursor-pointer hover:bg-green-100'
+                    : 'border-gray-300 text-gray-500 cursor-pointer hover:bg-gray-50')">
+              {{ r.includeAsIndependent ? 'Sí' : 'No' }}
+            </button>
+          </td>
+
           <!-- Agrupar subáreas -->
           <td class="px-[16px] py-[8px] text-center">
             <button type="button" (click)="toggleIncludeDescendants(r)"
@@ -94,7 +111,7 @@
         </tr>
 
         <tr *ngIf="filteredRows.length === 0">
-          <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+          <td colspan="6" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
             {{ searchText ? 'Sin resultados.' : 'No hay ramas configuradas. Crea relaciones en Configuración → Áreas → Jerarquía.' }}
           </td>
         </tr>

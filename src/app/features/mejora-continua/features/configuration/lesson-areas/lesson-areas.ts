@@ -87,6 +87,21 @@ export class LessonAreas implements OnInit {
     });
   }
 
+  toggleIncludeAsIndependent(item: LessonAreaConfigItemDto): void {
+    if (!item.active || !item.includeInForm) return;
+    this.loaderService.show();
+    this.service.setIncludeAsIndependent(item.areaScopeId, !item.includeAsIndependent).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        item.includeAsIndependent = res.value;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   get filteredRows(): LessonAreaConfigItemDto[] {
     const term = this.searchText.trim().toLowerCase();
     if (!term) return this.rows;
