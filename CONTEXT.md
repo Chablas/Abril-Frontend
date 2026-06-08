@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-08 — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario).
+> **Última actualización**: 2026-06-08 — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario). versiones-doc: columna "Subido por" → "Archivo" (muestra nombreArchivo del primer archivo o nombre extraído de archivoUrl).
 >
 > **2026-06-07** — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, selector archivos múltiples por mes), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto.
 >
