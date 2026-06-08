@@ -10,6 +10,7 @@ import {
   ProjectStaffReminderConfigItemDTO,
   ToggleProjectStaffReminderResultDTO,
 } from '../dtos/projectStaffReminder.model';
+import { JefeReminderConfigItemDTO, ToggleJefeReminderResultDTO } from '../dtos/jefeReminder.model';
 
 @Injectable({ providedIn: 'root' })
 export class LessonReminderService {
@@ -71,6 +72,21 @@ export class LessonReminderService {
   toggleProjectStaff(projectId: number): Observable<ToggleProjectStaffReminderResultDTO> {
     return this.http.put<ToggleProjectStaffReminderResultDTO>(
       `${this.apiUrl}/project-staff/toggle/${projectId}`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // Jefaturas (lesson_jefe_reminder) — recordatorio del 4.º día
+  getJefes(): Observable<JefeReminderConfigItemDTO[]> {
+    return this.http.get<JefeReminderConfigItemDTO[]>(`${this.apiUrl}/jefe`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  toggleJefe(workerId: number): Observable<ToggleJefeReminderResultDTO> {
+    return this.http.put<ToggleJefeReminderResultDTO>(
+      `${this.apiUrl}/jefe/toggle/${workerId}`,
       {},
       { headers: this.authHeaders() },
     );
