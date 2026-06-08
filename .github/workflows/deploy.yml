@@ -28,5 +28,5 @@ jobs:
           source: "dist/Abril/browser/*"
           target: /var/www/abril
           strip_components: 3   # quita "dist/Abril/browser" para que los archivos caigan en la raíz web
-          rm: true
+          rm: false             # deploy no puede borrar /var/www/abril (su padre es de root); solo sobrescribe adentro
           overwrite: true
