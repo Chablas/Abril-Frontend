@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
-import { InduccionBatchCreateDto, InduccionCreateDto, InduccionDto, InduccionListDto, InduccionReprogramarDto, InduccionTrabajadorDto } from '../dtos/induccion.model';
+import { InduccionBatchCreateDto, InduccionCreateDto, InduccionDto, InduccionListDto, InduccionTrabajadorDto } from '../dtos/induccion.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
 @Injectable({ providedIn: 'root' })
@@ -70,9 +70,4 @@ export class InduccionService {
     });
   }
 
-  reprogramar(id: number, dto: InduccionReprogramarDto): Observable<void> {
-    return this.http.patch<void>(`${this.base}/${id}/reprogramar`, dto, {
-      headers: buildHabHeaders(),
-    });
-  }
 }

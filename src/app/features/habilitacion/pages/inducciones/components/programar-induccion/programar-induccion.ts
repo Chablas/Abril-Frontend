@@ -34,7 +34,7 @@ import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model
 import { InduccionService } from '../../../../services/induccion.service';
 import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
-import { InduccionBatchCreateDto, InduccionReprogramarDto } from '../../../../dtos/induccion.model';
+import { InduccionBatchCreateDto } from '../../../../dtos/induccion.model';
 
 @Component({
   selector: 'app-programar-induccion',
@@ -201,37 +201,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
     this.saving = true;
     this.loaderService.show();
 
-    if (this.workerPreseleccionado?.induccionId) {
-      const dto: InduccionReprogramarDto = {
-        fechaProgramada: this.fechaProgramada,
-        proyectoId: this.proyectoId,
-        trabajoAltura: this.trabajoAltura,
-      };
-      console.log('RAMA REPROGRAMAR - induccionId:', this.workerPreseleccionado?.induccionId, 'proyectoId:', this.proyectoId, 'fecha:', this.fechaProgramada);
-      console.log('Enviando PATCH reprogramar', this.workerPreseleccionado.induccionId, dto);
-      this.induccionService.reprogramar(this.workerPreseleccionado.induccionId, dto).subscribe({
-        next: () => {
-          console.log('PATCH reprogramar exitoso, emitiendo saved');
-          this.saving = false;
-          this.loaderService.hide();
-          Swal.fire({
-            icon: 'success',
-            title: 'Inducción reprogramada',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          this.saved.emit();
-        },
-        error: (err: HttpErrorResponse) => {
-          console.log('PATCH reprogramar error', err);
-          console.error('REPROGRAMAR ERROR:', err);
-          this.saving = false;
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-          this.cdr.detectChanges();
-        },
-      });
-    } else {
+    {
       const payload: InduccionBatchCreateDto = {
         proyectoId: this.proyectoId,
         empresaId: this.selectedWorker.empresaId,
@@ -240,10 +210,8 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
         equipoElectrico: this.equipoElectrico,
         workerIds: [this.selectedWorker.workerId],
       };
-      console.log('Enviando POST induccion', payload);
       this.induccionService.crearBatch(payload).subscribe({
         next: () => {
-          console.log('POST exitoso, emitiendo saved');
           this.saving = false;
           this.loaderService.hide();
           Swal.fire({
@@ -255,7 +223,6 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
           this.saved.emit();
         },
         error: (err: HttpErrorResponse) => {
-          console.log('POST error', err);
           this.saving = false;
           this.loaderService.hide();
           this.errorService.handleError(err);
