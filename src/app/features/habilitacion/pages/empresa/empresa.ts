@@ -400,7 +400,7 @@ export class Empresa implements OnInit {
   }
 
   closeDrawer(): void {
-    if (this.isContratista()) {
+    if (this.isContratista() && this.panelObsContratista?.trim()) {
       this.guardarObservaciones();
     }
     this.drawerOpen = false;

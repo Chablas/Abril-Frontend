@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-07 — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, mes, selector archivos múltiples), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto. Diagnóstico pendiente: item.mes/anio llegan null desde backend en entregables mensuales de bandeja.
+> **Última actualización**: 2026-06-08 — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario).
+>
+> **2026-06-07** — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, selector archivos múltiples por mes), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto.
 >
 > **2026-06-06 (v3)** — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. NgZone inyectado, optimistic update en ngZone.run(), setTimeout 500ms antes de recargarEntregables(). Bug raíz pendiente: probable race condition backend.
 >
@@ -1301,10 +1303,68 @@ aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
 - Header de lista: checkbox "Seleccionar todos" (`[indeterminate]`) + botón "✓ Aprobar (N)" visible cuando `selectedIds.size > 0`.
 - Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
 
-#### Flujo aprobación unitaria (sin cambios)
+#### Panel detalle-meta (col derecha, entre detalle-header y doc-body)
 
-- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
-- **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
+Campos visibles cuando hay `selectedItem`:
+
+- **VIGENCIA**: `<input type="date" [(ngModel)]="vigenciaEditable">` — siempre visible. Valor pre-calculado en `selectItem()` y `seleccionarMesBandeja()`.
+- **Chips de mes** (`*ngIf="selectedItem.esMensual && selectedItem.meses?.length > 0"`): un chip por mes (`mes.mes/mes.anio`). El chip seleccionado toma el color del estado del mes (verde=Aprobado, naranja=Enviado, rojo=Rechazado). Los no-seleccionados siempre gris. Click → `seleccionarMesBandeja(m)`.
+- **Archivos múltiples del mes** (`*ngIf="mesSeleccionadoBandeja?.archivos?.length > 1"`): chips "📄 N" para items mensuales.
+- **Archivos múltiples sin mes** (`*ngIf="!esMensual && selectedItem.archivos?.length > 1"`): chips "📄 N" para items no-mensuales.
+
+#### Lógica vigenciaEditable (pre-calculada al seleccionar)
+
+```ts
+// En selectItem():
+if (item.esMensual && item.meses?.length > 0) {
+  mesSeleccionadoBandeja = item.meses[0];
+  vigenciaEditable = item.meses[0].vigencia ? new Date(...).toISOString().substring(0,10) : '';
+  // luego carga archivo del mes[0]
+} else {
+  mesSeleccionadoBandeja = null;
+  sentinel → '2040-12-31'; else → item.vigencia ?? ''
+}
+
+// En seleccionarMesBandeja(mes):
+sentinel → '2040-12-31'
+else → día 27 del mes siguiente (mesSig/anioSig)
+si mes.vigencia existe → lo usa directamente
+```
+
+#### Aprobación/rechazo con mes seleccionado
+
+```ts
+aprobar(item): void {
+  const id = (item.esMensual && mesSeleccionadoBandeja) ? mesSeleccionadoBandeja.id : item.id;
+  executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: vigenciaEditable || undefined }, 'Aprobado');
+}
+```
+
+El `executeAction()` redirige a `aprobarEmpresa(mesId, payload)` — el backend espera el ID del mes, no del item padre.
+
+#### BandejaItemDto — campos clave
+
+```ts
+interface BandejaItemDto {
+  id: number; tipo: string; nombreEntregable: string;
+  entidadNombre: string; empresaNombre?: string; proyectoNombre?: string;
+  estado: string; vigencia?: string; archivoUrl?: string;
+  archivos?: { nombreArchivo: string; archivoUrl: string }[];
+  itemId?: number; esMensual?: boolean; mes?: number; anio?: number;
+  mesesPendientes?: number;
+  meses?: {
+    id: number; mes: number; anio: number; estado: string; vigencia?: string;
+    archivos?: { id: number; nombreArchivo: string; archivoUrl: string; esZip: boolean; orden: number }[];
+  }[];
+}
+```
+
+#### Flujo aprobación unitaria
+
+- **TRABAJADOR/EQUIPO**: `executeAction(item, { estado, vigencia })` → `aprobarTrabajador/Equipo(item.id, payload)`.
+- **EMPRESA no-mensual**: `executeAction(item, { estado, vigencia })` → `aprobarEmpresa(item.id, payload)`.
+- **EMPRESA mensual**: `executeAction({ ...item, id: mesSeleccionadoBandeja.id }, { estado, vigencia })` → `aprobarEmpresa(mesId, payload)`.
+- **INDUCCION**: aprobación masiva via `aprobarGrupo()` — sin vigencia.
 
 #### Nomenclatura — colisión resuelta
 

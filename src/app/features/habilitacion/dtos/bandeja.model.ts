@@ -18,6 +18,14 @@ export interface BandejaItemDto {
   mes?: number;
   anio?: number;
   mesesPendientes?: number;
+  meses?: {
+    id: number;
+    mes: number;
+    anio: number;
+    estado: string;
+    vigencia?: string;
+    archivos?: { id: number; nombreArchivo: string; archivoUrl: string; esZip: boolean; orden: number }[];
+  }[];
 }
 
 export interface BandejaAprobarDto {

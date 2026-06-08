@@ -133,14 +133,35 @@
             <input type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
           </div>
 
-          <!-- Mes si es mensual -->
-          <div *ngIf="selectedItem.esMensual && selectedItem.mes"
-            style="font-size:0.78rem;color:#6b7280">
-            <strong>Mes:</strong> {{ selectedItem.mes }}/{{ selectedItem.anio }}
+          <!-- Selector de mes para items mensuales con meses cargados -->
+          <div *ngIf="selectedItem.esMensual && selectedItem.meses && selectedItem.meses.length > 0"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center">
+            <span style="font-size:0.78rem;color:#6b7280;font-weight:600">MES:</span>
+            <button *ngFor="let m of selectedItem.meses"
+              type="button"
+              class="btn-chip"
+              [class.chip-green]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Aprobado'"
+              [class.chip-orange]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Enviado'"
+              [class.chip-red]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Rechazado'"
+              [class.chip-gray]="mesSeleccionadoBandeja?.id !== m.id"
+              (click)="seleccionarMesBandeja(m)">
+              {{ m.mes }}/{{ m.anio }}
+            </button>
           </div>
 
-          <!-- Archivos múltiples -->
-          <div *ngIf="selectedItem.archivos && selectedItem.archivos.length > 1"
+          <!-- Archivos múltiples del mes seleccionado -->
+          <div *ngIf="mesSeleccionadoBandeja?.archivos && mesSeleccionadoBandeja.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of mesSeleccionadoBandeja.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
+          <!-- Archivos múltiples para items no mensuales -->
+          <div *ngIf="!selectedItem.esMensual && selectedItem.archivos && selectedItem.archivos.length > 1"
             style="display:flex;gap:0.35rem;flex-wrap:wrap">
             <button *ngFor="let a of selectedItem.archivos; let i=index"
               type="button" class="btn-chip chip-gray"
