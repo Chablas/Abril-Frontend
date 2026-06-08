@@ -17,7 +17,6 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ProjectService } from '../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
@@ -142,7 +141,6 @@ export class Trabajadores implements OnInit, OnDestroy {
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-    private projectService: ProjectService,
     private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -156,6 +154,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   private loadCatalogos(): void {
+    console.log('[loadCatalogos] isContratista:', this.authService.isContratista(), 'roles:', this.authService.getRoles());
     const roles = this.authService.getRoles();
     const esContratista = this.authService.isContratista();
     console.log('[DIAG loadCatalogos] roles:', roles, '| esContratista:', esContratista);
@@ -182,15 +181,18 @@ export class Trabajadores implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('[DIAG loadCatalogos] → rama CASA/ADMIN — llamando getProjectsPaged y getEmpresas');
-    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+    console.log('[DIAG loadCatalogos] → rama CASA/ADMIN — llamando getProyectosActivos y getEmpresas');
+    this.trabajadorHabService.getProyectosActivos().subscribe({
       next: (res) => {
-        this.catalogoProyectos = res.data ?? [];
-        console.log('[DIAG loadCatalogos] getProjectsPaged OK — items:', this.catalogoProyectos.length, '| totalRecords:', res.totalRecords);
+        this.catalogoProyectos = (res ?? []).map(p => ({
+          projectId: p.id,
+          projectDescription: p.nombre,
+        })) as unknown as ProjectGetDTO[];
+        console.log('[DIAG loadCatalogos] getProyectosActivos OK — items:', this.catalogoProyectos.length);
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        console.error('[DIAG loadCatalogos] getProjectsPaged ERROR:', err?.status, err?.message, err);
+        console.error('[DIAG loadCatalogos] getProyectosActivos ERROR:', err?.status, err?.message, err);
         this.catalogoProyectos = [];
       },
     });
@@ -227,10 +229,12 @@ export class Trabajadores implements OnInit, OnDestroy {
       soloEmoVencido: this.soloEmoVencido || undefined,
       soloSinVidaLey: this.soloSinVidaLey || undefined,
     };
+    console.log('[trabajadores] params:', JSON.stringify(params));
     this.trabajadorHabService.getTrabajadores(params).subscribe({
       next: (res) => {
+        console.log('[trabajadores] total:', res.totalRecords, 'items:', res.data?.length);
         console.log('worker[0]:', res.data?.[0]);
-        this.workers = [...new Map((res.data ?? []).map(w => [w.workerId, w])).values()];
+        this.workers = res.data ?? [];
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;

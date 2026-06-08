@@ -17,9 +17,9 @@
       <option value="">Todas las empresas</option>
       <option *ngFor="let e of empresasDisponibles" [value]="e">{{ e }}</option>
     </select>
-    <select class="filter-input" [(ngModel)]="filtroProyecto">
-      <option value="">Todos los proyectos</option>
-      <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
+    <select class="filter-input" [(ngModel)]="filtroProyectoId" (change)="loadItems(1)">
+      <option [ngValue]="null">Todos los proyectos</option>
+      <option *ngFor="let p of catalogoProyectos" [ngValue]="p.id">{{ p.nombre }}</option>
     </select>
     <select class="filter-input" [(ngModel)]="filtroEntregable">
       <option value="">Todos los entregables</option>

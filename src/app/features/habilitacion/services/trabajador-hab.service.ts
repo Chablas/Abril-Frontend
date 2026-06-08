@@ -132,4 +132,10 @@ export class TrabajadorHabService {
       { headers: buildHabHeaders() },
     );
   }
+
+  getProyectosActivos(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(`${HABILITACION_BASE}/proyectos`, {
+      headers: buildHabHeaders(),
+    });
+  }
 }

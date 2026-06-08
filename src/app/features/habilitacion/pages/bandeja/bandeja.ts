@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, debounceTime, forkJoin, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -13,7 +13,9 @@ import { BandejaService } from '../../services/bandeja.service';
 import { InduccionService } from '../../services/induccion.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { BandejaAprobarDto, BandejaItemDto } from '../../dtos/bandeja.model';
+import { environment } from '../../../../../environments/environment';
 import { InduccionListDto } from '../../dtos/induccion.model';
+import { buildHabHeaders } from '../../services/http-base';
 
 interface InduccionGrupo {
   key: string;
@@ -48,7 +50,7 @@ export class Bandeja implements OnInit, OnDestroy {
   filtroResponsable = '';
   filtroTexto = '';
   filtroEmpresa = '';
-  filtroProyecto = '';
+  filtroProyectoId: number | null = null;
   filtroEntregable = '';
 
   // ── Selección masiva ──────────────────────────────────────
@@ -71,14 +73,7 @@ export class Bandeja implements OnInit, OnDestroy {
   private filterChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
-  get proyectosDisponibles(): string[] {
-    const names = new Set<string>();
-    for (const item of this.items) {
-      if (item.proyectoNombre) names.add(item.proyectoNombre);
-    }
-    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
-  }
-
+  catalogoProyectos: { id: number; nombre: string }[] = [];
   empresasList: string[] = [];
 
   get empresasDisponibles(): string[] { return this.empresasList; }
@@ -96,9 +91,6 @@ export class Bandeja implements OnInit, OnDestroy {
     let result = this.items;
     if (empresa) {
       result = result.filter((i) => i.empresaNombre?.toLowerCase().includes(empresa));
-    }
-    if (this.filtroProyecto) {
-      result = result.filter((i) => i.proyectoNombre === this.filtroProyecto);
     }
     if (this.filtroEntregable) {
       result = result.filter((i) => i.nombreEntregable === this.filtroEntregable);
@@ -140,6 +132,7 @@ export class Bandeja implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
+    private http: HttpClient,
   ) {}
 
   ngOnInit(): void {
@@ -157,6 +150,10 @@ export class Bandeja implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => console.error('error empresas:', err),
+    });
+    this.http.get<{ id: number; nombre: string }[]>(`${environment.apiUrl}api/v1/habilitacion/bandeja/proyectos`, { headers: buildHabHeaders() }).subscribe({
+      next: (res) => { this.catalogoProyectos = res; this.cdr.detectChanges(); },
+      error: (err) => console.error('error proyectos bandeja:', err),
     });
   }
 
@@ -180,6 +177,7 @@ export class Bandeja implements OnInit, OnDestroy {
       tipo: this.filtroTipo || undefined,
       responsable: this.filtroResponsable || undefined,
       search: this.filtroTexto.trim() || undefined,
+      proyectoId: this.filtroProyectoId ?? undefined,
     };
     this.bandejaService.getPendientes(params).subscribe({
       next: (res) => {
