@@ -676,7 +676,7 @@
       <button
         type="button"
         class="btn-primary"
-        [disabled]="uploadingFile || archivosPendientes.length === 0"
+        [disabled]="uploadingFile || archivosPendientes.length === 0 || (selectedEntregable.requiereVigencia && !panelVigencia)"
         (click)="enviarDocumento()"
       >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR' }}</button>
     </div>

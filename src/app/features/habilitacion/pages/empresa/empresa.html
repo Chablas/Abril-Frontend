@@ -679,7 +679,7 @@
         <button
           type="button"
           class="btn-primary"
-          [disabled]="uploadingFile || archivosPendientes.length === 0"
+          [disabled]="uploadingFile || archivosPendientes.length === 0 || (selectedEntregable.requiereVigencia && !panelVigencia && !esPermanente)"
           (click)="enviarDocumento()"
         >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR ' + mesActualLabel }}</button>
       </ng-container>
@@ -689,7 +689,7 @@
         <button
           type="button"
           class="btn-primary"
-          [disabled]="uploadingFile || archivosPendientes.length === 0"
+          [disabled]="uploadingFile || archivosPendientes.length === 0 || (selectedEntregable.requiereVigencia && !panelVigencia && !esPermanente)"
           (click)="enviarDocumento()"
         >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR' }}</button>
       </ng-container>
