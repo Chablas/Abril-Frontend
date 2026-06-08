@@ -1,0 +1,32 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [master]      # usa "main" si ese es tu branch por defecto
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci           # si falla por falta de package-lock.json, cámbialo por: npm install
+      - run: npm run build    # genera dist/Abril/browser con el apiUrl de producción
+
+      - name: Subir estáticos al VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "dist/Abril/browser/*"
+          target: /var/www/abril
+          strip_components: 3   # quita "dist/Abril/browser" para que los archivos caigan en la raíz web
+          rm: true
+          overwrite: true
