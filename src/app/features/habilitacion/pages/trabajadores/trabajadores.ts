@@ -95,6 +95,20 @@ export class Trabajadores implements OnInit, OnDestroy {
     return this.requiereVigenciaAnteUpload && !this.panelVigencia;
   }
 
+  get puedeAprobarEntregableActual(): boolean {
+    if (!this.selectedEntregable) return false;
+    const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
+    if (resp === 'SSOMA')
+      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    if (resp === 'ADMINISTRACION')
+      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+           this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+           this.authService.hasRole('ADMINISTRADOR DE UDP');
+  }
+
   drawerOpen = false;
   visorArchivoUrl = '';
   visorNombre = '';

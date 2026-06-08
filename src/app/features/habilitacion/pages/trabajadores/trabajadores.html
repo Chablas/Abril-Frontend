@@ -575,19 +575,32 @@
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
-          <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-            <option value="Falta">Falta</option>
-            <option value="No Aplica">No Aplica</option>
-            <option value="En Plazo">En Plazo</option>
-            <option value="Vencido">Vencido</option>
-          </select>
+          <ng-container *ngIf="puedeAprobarEntregableActual; else estadoReadonlyTrab">
+            <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
+              <option value="Aprobado">Aprobado</option>
+              <option value="Rechazado">Rechazado</option>
+              <option value="Falta">Falta</option>
+              <option value="No Aplica">No Aplica</option>
+              <option value="En Plazo">En Plazo</option>
+              <option value="Vencido">Vencido</option>
+              <option value="Enviado">Enviado</option>
+            </select>
+          </ng-container>
+          <ng-template #estadoReadonlyTrab>
+            <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
+              {{ selectedEntregable.estado }}
+            </span>
+          </ng-template>
         </div>
 
         <div class="field-grp">
           <label class="field-lbl">VIGENCIA</label>
-          <input type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          <input *ngIf="puedeAprobarEntregableActual" type="date" class="field-input" [(ngModel)]="panelVigencia" />
+          <span *ngIf="!puedeAprobarEntregableActual"
+            class="field-input field-readonly"
+            style="display:block;padding:8px 12px;color:#64748b">
+            {{ panelVigencia ? (panelVigencia | date:'dd/MM/yyyy') : '—' }}
+          </span>
         </div>
 
         <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
