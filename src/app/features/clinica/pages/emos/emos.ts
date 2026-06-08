@@ -16,6 +16,7 @@ import { aptitudBadgeClass, APTITUD_CHART_ORDER } from '../../../ssoma/salud-ocu
 import { diasVencerBadgeClass, diasVencerStyle } from '../../../ssoma/salud-ocupacional/shared/dias-vencer.utils';
 import { EmoDetail } from '../../../ssoma/salud-ocupacional/emos/components/emo-detail/emo-detail';
 import { ProgramarEmoDialogComponent } from './programar-emo-dialog/programar-emo-dialog';
+import { EditarEmoModal } from './components/editar-emo-modal/editar-emo-modal';
 
 interface FilterOption {
   id: string;
@@ -25,7 +26,7 @@ interface FilterOption {
 @Component({
   selector: 'app-clinica-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail, ProgramarEmoDialogComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail, ProgramarEmoDialogComponent, EditarEmoModal],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })
@@ -64,6 +65,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
 
   selectedEmoId: number | null = null;
   selectedWorkerForProgramar: EmoPorTrabajadorDto | null = null;
+  emoSeleccionado: EmoPorTrabajadorDto | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -125,6 +127,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
         this.totalRecords = res.totalRecords;
         this.loading = false;
         this.loaderService.hide();
+        console.log('[emos] primer item:', this.items[0]);
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -180,6 +183,20 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   onProgramarEmoCerrado(reload: boolean): void {
     this.selectedWorkerForProgramar = null;
     if (reload) this.load(this.currentPage);
+  }
+
+  abrirEditar(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.emoSeleccionado = item;
+  }
+
+  onEditarClosed(): void {
+    this.emoSeleccionado = null;
+  }
+
+  onEditarSaved(): void {
+    this.emoSeleccionado = null;
+    this.load(this.currentPage);
   }
 
   aptitudClass(aptitud?: string): string {
