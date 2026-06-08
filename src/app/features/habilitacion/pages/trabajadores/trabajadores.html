@@ -681,6 +681,16 @@
       >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR' }}</button>
     </div>
 
+    <!-- Footer admin/Casa: GUARDAR con archivo -->
+    <div class="modal-footer" *ngIf="!isContratista() && !esSoloLecturaPanel(selectedEntregable) && puedeEditar(selectedEntregable) && archivosPendientes.length > 0">
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="uploadingFile"
+        (click)="guardarEntregable()"
+      >{{ uploadingFile ? 'Subiendo…' : 'GUARDAR' }}</button>
+    </div>
+
   </ng-container>
 </div>
 

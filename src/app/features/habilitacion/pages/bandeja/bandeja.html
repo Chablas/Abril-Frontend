@@ -120,7 +120,8 @@
           </div>
           <div class="detalle-acciones">
             <ng-container *ngIf="puedeAprobarItemActual; else estadoSoloLectura">
-              <select class="filter-input" style="width:auto" [(ngModel)]="estadoEditable">
+              <select class="filter-input" style="width:auto" [(ngModel)]="estadoEditable"
+                (ngModelChange)="guardarEstado(selectedItem)">
                 <option value="Aprobado">Aprobado</option>
                 <option value="Rechazado">Rechazado</option>
                 <option value="Falta">Falta</option>
@@ -129,10 +130,6 @@
                 <option value="Vencido">Vencido</option>
                 <option value="Enviado">Enviado</option>
               </select>
-              <button type="button" class="btn-chip chip-green"
-                (click)="guardarEstado(selectedItem)">✓ Guardar</button>
-              <button type="button" class="btn-chip chip-red"
-                (click)="rechazar(selectedItem)">✕ Rechazar</button>
             </ng-container>
             <ng-template #estadoSoloLectura>
               <span [class]="'btn-chip ' + getEstadoClass(selectedItem.estado)">

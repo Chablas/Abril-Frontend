@@ -517,6 +517,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: Event): void {
+    console.log('[onFileSelected] files:', (event.target as HTMLInputElement)?.files?.length);
     const input = event.target as HTMLInputElement;
     const files = Array.from(input?.files ?? []);
     if (!files.length) return;
@@ -530,6 +531,8 @@ export class Trabajadores implements OnInit, OnDestroy {
       this.archivosPendientes.push(item);
     }
     this.cdr.detectChanges();
+    // Forzar re-render del footer
+    setTimeout(() => this.cdr.detectChanges(), 0);
   }
 
   private autoMarcarEnviado(): void {
@@ -592,6 +595,13 @@ export class Trabajadores implements OnInit, OnDestroy {
       Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
       return;
     }
+    if (this.panelVigencia) {
+      const hoy = new Date().toISOString().substring(0, 10);
+      if (this.panelVigencia <= hoy) {
+        Swal.fire({ icon: 'error', title: 'La fecha de vigencia debe ser posterior a hoy' });
+        return;
+      }
+    }
 
     const contexto = `habilitacion/trabajadores/${this.selectedWorker.workerId}`;
     const entregableId = this.selectedEntregable.id;
@@ -619,7 +629,11 @@ export class Trabajadores implements OnInit, OnDestroy {
             this.loaderService.hide();
             Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
             this.archivosPendientes = [];
-            this.actualizarEntregableLocal({ estado: 'Enviado' });
+            this.actualizarEntregableLocal({
+              estado: 'Enviado',
+              vigencia: this.panelVigencia || undefined,
+            });
+            if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
@@ -656,6 +670,12 @@ export class Trabajadores implements OnInit, OnDestroy {
   guardarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedWorker) return;
 
+    // Si hay archivos pendientes (flujo multi-archivo) → usar enviarDocumento
+    if (!this.isContratista() && this.archivosPendientes.length > 0) {
+      this.enviarDocumento();
+      return;
+    }
+
     let payload: WorkerEntregableUpdateDto;
 
     if (this.isContratista()) {
@@ -679,7 +699,6 @@ export class Trabajadores implements OnInit, OnDestroy {
       payload = {
         estado: this.panelEstado,
         vigencia,
-        archivoUrl: this.panelArchivoUrl || undefined,
         obsAbril: this.panelObsAbril || undefined,
       };
     }
@@ -701,7 +720,6 @@ export class Trabajadores implements OnInit, OnDestroy {
           this.actualizarEntregableLocal({
             estado: this.panelEstado,
             vigencia,
-            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
             obsAbril: this.panelObsAbril || undefined,
           });
         }
