@@ -32,4 +32,5 @@ export interface BandejaAprobarDto {
   estado: string;
   obsAbril?: string;
   vigencia?: string;
+  motivoRechazo?: string;
 }

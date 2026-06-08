@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { BandejaService } from '../../services/bandeja.service';
 import { InduccionService } from '../../services/induccion.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
@@ -58,6 +59,7 @@ export class Bandeja implements OnInit, OnDestroy {
   docSafeUrl: SafeResourceUrl | null = null;
   loadingDoc = false;
   vigenciaEditable: string = '';
+  estadoEditable: string = '';
   archivoSeleccionadoIdx: number = 0;
   mesSeleccionadoBandeja: any = null;
   private docBlobUrl = '';
@@ -115,6 +117,20 @@ export class Bandeja implements OnInit, OnDestroy {
     return this.filteredItems.some((i) => this.selectedIds.has(i.id));
   }
 
+  get puedeAprobarItemActual(): boolean {
+    if (!this.selectedItem) return false;
+    const resp = (this.selectedItem as any).responsable?.toUpperCase?.() ?? '';
+    if (resp === 'SSOMA')
+      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    if (resp === 'ADMINISTRACION')
+      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+           this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+           this.authService.hasRole('ADMINISTRADOR DE UDP');
+  }
+
   constructor(
     private bandejaService: BandejaService,
     private induccionService: InduccionService,
@@ -122,6 +138,7 @@ export class Bandeja implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -388,6 +405,7 @@ export class Bandeja implements OnInit, OnDestroy {
       this.vigenciaEditable = item.meses[0].vigencia
         ? new Date(item.meses[0].vigencia).toISOString().substring(0, 10)
         : this.vigenciaEditable;
+      this.estadoEditable = item.estado ?? 'Enviado';
       const url = item.meses[0].archivos?.[0]?.archivoUrl ?? item.archivoUrl;
       this.loadingDoc = !!url;
       if (url) this.loadDocBlob(url);
@@ -400,6 +418,7 @@ export class Bandeja implements OnInit, OnDestroy {
         this.vigenciaEditable = item.vigencia
           ? new Date(item.vigencia).toISOString().substring(0, 10) : '';
       }
+      this.estadoEditable = item.estado ?? 'Enviado';
       const urlInicial = item.archivos?.[0]?.archivoUrl ?? item.archivoUrl;
       this.loadingDoc = !!urlInicial;
       if (urlInicial) this.loadDocBlob(urlInicial);
@@ -427,6 +446,7 @@ export class Bandeja implements OnInit, OnDestroy {
     if (mes.vigencia) {
       this.vigenciaEditable = new Date(mes.vigencia).toISOString().substring(0, 10);
     }
+    this.estadoEditable = mes.estado ?? 'Enviado';
     const url = mes.archivos?.[0]?.archivoUrl ?? this.selectedItem?.archivoUrl;
     this.loadingDoc = !!url;
     if (url) this.loadDocBlob(url);
@@ -500,13 +520,36 @@ export class Bandeja implements OnInit, OnDestroy {
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
+    if (!this.puedeAprobarItemActual) return;
     const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
     this.executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: this.vigenciaEditable || undefined }, 'Aprobado');
   }
 
   rechazar(item: BandejaItemDto): void {
+    if (!this.puedeAprobarItemActual) return;
+    Swal.fire({
+      icon: 'warning',
+      title: 'Rechazar documento',
+      input: 'textarea',
+      inputLabel: 'Motivo del rechazo',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      inputValidator: (v) => (!v?.trim() ? 'Debes indicar un motivo' : null),
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
+      this.executeAction({ ...item, id }, { estado: 'Rechazado', motivoRechazo: res.value }, 'Rechazado');
+    });
+  }
+
+  guardarEstado(item: BandejaItemDto): void {
+    if (!this.puedeAprobarItemActual || !this.estadoEditable) return;
+    if (this.estadoEditable === 'Rechazado') { this.rechazar(item); return; }
     const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
-    this.executeAction({ ...item, id }, { estado: 'Rechazado' }, 'Rechazado');
+    this.executeAction({ ...item, id }, { estado: this.estadoEditable, vigencia: this.vigenciaEditable || undefined }, this.estadoEditable);
   }
 
   private executeAction(

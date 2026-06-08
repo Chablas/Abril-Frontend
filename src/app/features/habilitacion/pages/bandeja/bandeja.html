@@ -119,8 +119,26 @@
             </p>
           </div>
           <div class="detalle-acciones">
-            <button type="button" class="btn-chip chip-green" (click)="aprobar(selectedItem)">✓ Aprobar</button>
-            <button type="button" class="btn-chip chip-red" (click)="rechazar(selectedItem)">✕ Rechazar</button>
+            <ng-container *ngIf="puedeAprobarItemActual; else estadoSoloLectura">
+              <select class="filter-input" style="width:auto" [(ngModel)]="estadoEditable">
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+                <option value="Falta">Falta</option>
+                <option value="No Aplica">No Aplica</option>
+                <option value="En Plazo">En Plazo</option>
+                <option value="Vencido">Vencido</option>
+                <option value="Enviado">Enviado</option>
+              </select>
+              <button type="button" class="btn-chip chip-green"
+                (click)="guardarEstado(selectedItem)">✓ Guardar</button>
+              <button type="button" class="btn-chip chip-red"
+                (click)="rechazar(selectedItem)">✕ Rechazar</button>
+            </ng-container>
+            <ng-template #estadoSoloLectura>
+              <span [class]="'btn-chip ' + getEstadoClass(selectedItem.estado)">
+                {{ selectedItem.estado }}
+              </span>
+            </ng-template>
           </div>
         </div>
 
@@ -130,7 +148,11 @@
           <!-- Vigencia editable -->
           <div style="display:flex;align-items:center;gap:0.5rem">
             <label style="font-size:0.78rem;color:#6b7280;font-weight:600">VIGENCIA</label>
-            <input type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
+            <input *ngIf="puedeAprobarItemActual" type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
+            <span *ngIf="!puedeAprobarItemActual"
+              style="font-size:0.82rem;color:#374151">
+              {{ vigenciaEditable ? (vigenciaEditable | date:'dd/MM/yyyy') : '—' }}
+            </span>
           </div>
 
           <!-- Selector de mes para items mensuales con meses cargados -->
