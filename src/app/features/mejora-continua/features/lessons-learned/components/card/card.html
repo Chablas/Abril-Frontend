@@ -5,6 +5,14 @@
   <!-- ── Cabecera con datos generales ──────────────────────────── -->
   <div class="bg-[#E5F7D1] px-4 py-3 flex flex-col gap-1">
 
+    <!-- Estado de aprobación -->
+    <span class="self-start inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
+      [ngClass]="{
+        'bg-amber-100 text-amber-700': item.approvalStatus === 'PENDIENTE',
+        'bg-green-100 text-green-700': item.approvalStatus === 'APROBADA',
+        'bg-red-100 text-red-700': item.approvalStatus === 'RECHAZADA'
+      }">{{ item.approvalStatus }}</span>
+
     <!-- Proyecto -->
     <p class="text-xs font-semibold text-[#64BC04] line-clamp-1" [title]="item.projectDescription">
       {{ item.projectDescription ?? '—' }}
@@ -17,31 +25,12 @@
       <span class="text-[11px] text-gray-500">{{ item.period?.toUpperCase() }}</span>
     </div>
 
-    <!-- Fase / Etapa / Nivel / Subetapa / Subespecialidad (solo los que existan) -->
-    <div class="flex flex-wrap gap-1 mt-0.5">
-      <span *ngIf="item.phaseDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.phaseDescription }}
-      </span>
-      <span *ngIf="item.stageDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.stageDescription }}
-      </span>
-      <span *ngIf="item.layerDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.layerDescription }}
-      </span>
-      <span *ngIf="item.subStageDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.subStageDescription }}
-      </span>
-      <span *ngIf="item.subSpecialtyDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.subSpecialtyDescription }}
-      </span>
-      <span *ngIf="item.partidaDescription"
-        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full">
-        {{ item.partidaDescription }}
+    <!-- Clasificación: un pill por cada segmento (Fase / Etapa / Nivel / …). -->
+    <div *ngIf="item.classificationSegments?.length" class="flex flex-wrap gap-1 mt-0.5">
+      <span *ngFor="let seg of item.classificationSegments"
+        class="inline-block bg-white/70 text-[#57a803] text-[10px] font-medium px-2 py-0.5 rounded-full"
+        [title]="seg.catalogTypeName + ': ' + seg.catalogItemDescription">
+        {{ seg.catalogItemDescription }}
       </span>
     </div>
 

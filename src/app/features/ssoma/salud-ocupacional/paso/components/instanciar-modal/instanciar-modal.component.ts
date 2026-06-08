@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { PasoService } from '../../services/paso.service';
-import { PasoDto, InstanciarPasoDto } from '../../dtos/paso.dtos';
+import { PasoListItemDto, InstanciarPasoDto } from '../../dtos/paso.dtos';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectScheduleSimpleDTO } from '../../../../../../core/dtos/project/projectScheduleSimple.model';
 
@@ -26,7 +26,7 @@ export class InstanciarModalComponent implements OnInit {
   @Input() pasoPlantillaId!: number;
   @Input() plantillaNombre = '';
   @Output() closed = new EventEmitter<void>();
-  @Output() instanciaCreada = new EventEmitter<PasoDto>();
+  @Output() instanciaCreada = new EventEmitter<PasoListItemDto>();
 
   step = 1;
   proyectos: ProjectScheduleSimpleDTO[] = [];

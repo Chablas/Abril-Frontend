@@ -9,9 +9,23 @@ export interface BandejaItemDto {
   estado: string;
   vigencia?: string;
   archivoUrl?: string;
+  archivos?: { nombreArchivo: string; archivoUrl: string }[];
   obsContratista?: string;
   responsable: string;
   fechaEnvio?: string;
+  itemId?: number;
+  esMensual?: boolean;
+  mes?: number;
+  anio?: number;
+  mesesPendientes?: number;
+  meses?: {
+    id: number;
+    mes: number;
+    anio: number;
+    estado: string;
+    vigencia?: string;
+    archivos?: { id: number; nombreArchivo: string; archivoUrl: string; esZip: boolean; orden: number }[];
+  }[];
 }
 
 export interface BandejaAprobarDto {

@@ -39,5 +39,5 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - ASIGNACIONES', featureKey: 'evaluaciones.asignaciones' },
   },
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];

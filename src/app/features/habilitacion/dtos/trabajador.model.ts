@@ -39,6 +39,15 @@ export interface WorkerEntregableUpdateDto {
   obsContratista?: string;
 }
 
+export interface DocumentoArchivoDto {
+  id: number;
+  archivoUrl: string;
+  nombreArchivo?: string;
+  esZip: boolean;
+  zipContenido?: { nombre: string; tamaño: number }[];
+  orden: number;
+}
+
 export interface DocumentoVersionDto {
   id: number;
   version: number;
@@ -48,6 +57,17 @@ export interface DocumentoVersionDto {
   subidoPorNombre?: string;
   estadoAlSubir?: string;
   createdAt: string;
+  archivos?: DocumentoArchivoDto[];
+}
+
+export interface ArchivoStagingDto {
+  file: File;
+  nombre: string;
+  path?: string;
+  esZip: boolean;
+  zipContenido?: string;
+  subiendo: boolean;
+  error: boolean;
 }
 
 export interface WorkerDetalleDto {

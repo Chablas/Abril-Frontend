@@ -7,11 +7,19 @@ import { WorkItemCategoryService } from '../../../services/work-item-category.se
 import {
   WorkItemCategoryEditDto,
   WorkItemCategoryClauseUpsertDto,
+  WorkItemCategoryAnexo3ClauseUpsertDto,
+  WorkItemCategoryAnexo4ClauseUpsertDto,
 } from '../../../dtos/work-item-category-edit.dto';
-import { WorkItemCategoryClauseDto } from '../../../dtos/work-item-category.dto';
+import {
+  WorkItemCategoryClauseDto,
+  WorkItemCategoryAnexo3ClauseDto,
+  WorkItemCategoryAnexo4ClauseDto,
+} from '../../../dtos/work-item-category.dto';
 import { LoaderService } from '../../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
+
+type ClauseSection = 'principales' | 'anexo3' | 'anexo4';
 
 @Component({
   selector: 'app-work-item-category-edit',
@@ -25,16 +33,33 @@ export class WorkItemCategoryEdit implements OnInit {
     workItemCategoryDescription: '',
     active: true,
     clauses: [],
+    anexo3Clauses: [],
+    anexo4Clauses: [],
   };
-  /** Cláusulas ya guardadas que vienen del item seleccionado */
+  /** Cláusulas 9.x ya guardadas (suministro e instalación / instalación) */
   @Input() existingClauses: WorkItemCategoryClauseDto[] = [];
+  /** Cláusulas Anexo 3 ya guardadas (suministro) */
+  @Input() existingAnexo3Clauses: WorkItemCategoryAnexo3ClauseDto[] = [];
+  /** Cláusulas Anexo 4 ya guardadas (suministro) */
+  @Input() existingAnexo4Clauses: WorkItemCategoryAnexo4ClauseDto[] = [];
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  /** Copia de trabajo de las cláusulas (incluye nuevas y las que ya existían) */
+  /** Sección visible en el paginador de secciones */
+  activeSection: ClauseSection = 'principales';
+
+  /** Cláusulas 9.x — copia de trabajo */
   clauses: WorkItemCategoryClauseUpsertDto[] = [];
   newClauseText = '';
+
+  /** Cláusulas Anexo 3 — copia de trabajo */
+  anexo3Clauses: WorkItemCategoryAnexo3ClauseUpsertDto[] = [];
+  newAnexo3ClauseText = '';
+
+  /** Cláusulas Anexo 4 — copia de trabajo */
+  anexo4Clauses: WorkItemCategoryAnexo4ClauseUpsertDto[] = [];
+  newAnexo4ClauseText = '';
 
   constructor(
     private service: WorkItemCategoryService,
@@ -48,37 +73,111 @@ export class WorkItemCategoryEdit implements OnInit {
       clauseText: c.clauseText,
       sortOrder: c.sortOrder,
     }));
+    this.anexo3Clauses = this.existingAnexo3Clauses.map((c) => ({
+      workItemCategoryAnexo3ClauseId: c.workItemCategoryAnexo3ClauseId,
+      clauseText: c.clauseText,
+      sortOrder: c.sortOrder,
+    }));
+    this.anexo4Clauses = this.existingAnexo4Clauses.map((c) => ({
+      workItemCategoryAnexo4ClauseId: c.workItemCategoryAnexo4ClauseId,
+      clauseText: c.clauseText,
+      sortOrder: c.sortOrder,
+    }));
   }
 
+  setSection(section: ClauseSection): void {
+    this.activeSection = section;
+  }
+
+  // ── Cláusulas 9.x (principales) ──────────────────────────────────────
   addClause(): void {
     const text = this.newClauseText.trim();
     if (!text) return;
-    this.clauses.push({
-      clauseText: text,
-      sortOrder: this.clauses.length,
-    });
+    this.clauses.push({ clauseText: text, sortOrder: this.clauses.length });
     this.newClauseText = '';
   }
 
   removeClause(index: number): void {
     this.clauses.splice(index, 1);
-    this.recalcSortOrder();
+    this.recalcSortOrder(this.clauses);
   }
 
-  moveUp(index: number): void {
+  moveClauseUp(index: number): void {
     if (index === 0) return;
     [this.clauses[index - 1], this.clauses[index]] = [this.clauses[index], this.clauses[index - 1]];
-    this.recalcSortOrder();
+    this.recalcSortOrder(this.clauses);
   }
 
-  moveDown(index: number): void {
+  moveClauseDown(index: number): void {
     if (index === this.clauses.length - 1) return;
     [this.clauses[index], this.clauses[index + 1]] = [this.clauses[index + 1], this.clauses[index]];
-    this.recalcSortOrder();
+    this.recalcSortOrder(this.clauses);
   }
 
-  private recalcSortOrder(): void {
-    this.clauses.forEach((c, i) => (c.sortOrder = i));
+  // ── Cláusulas Anexo 3 ────────────────────────────────────────────────
+  addAnexo3Clause(): void {
+    const text = this.newAnexo3ClauseText.trim();
+    if (!text) return;
+    this.anexo3Clauses.push({ clauseText: text, sortOrder: this.anexo3Clauses.length });
+    this.newAnexo3ClauseText = '';
+  }
+
+  removeAnexo3Clause(index: number): void {
+    this.anexo3Clauses.splice(index, 1);
+    this.recalcSortOrder(this.anexo3Clauses);
+  }
+
+  moveAnexo3ClauseUp(index: number): void {
+    if (index === 0) return;
+    [this.anexo3Clauses[index - 1], this.anexo3Clauses[index]] = [
+      this.anexo3Clauses[index],
+      this.anexo3Clauses[index - 1],
+    ];
+    this.recalcSortOrder(this.anexo3Clauses);
+  }
+
+  moveAnexo3ClauseDown(index: number): void {
+    if (index === this.anexo3Clauses.length - 1) return;
+    [this.anexo3Clauses[index], this.anexo3Clauses[index + 1]] = [
+      this.anexo3Clauses[index + 1],
+      this.anexo3Clauses[index],
+    ];
+    this.recalcSortOrder(this.anexo3Clauses);
+  }
+
+  // ── Cláusulas Anexo 4 ────────────────────────────────────────────────
+  addAnexo4Clause(): void {
+    const text = this.newAnexo4ClauseText.trim();
+    if (!text) return;
+    this.anexo4Clauses.push({ clauseText: text, sortOrder: this.anexo4Clauses.length });
+    this.newAnexo4ClauseText = '';
+  }
+
+  removeAnexo4Clause(index: number): void {
+    this.anexo4Clauses.splice(index, 1);
+    this.recalcSortOrder(this.anexo4Clauses);
+  }
+
+  moveAnexo4ClauseUp(index: number): void {
+    if (index === 0) return;
+    [this.anexo4Clauses[index - 1], this.anexo4Clauses[index]] = [
+      this.anexo4Clauses[index],
+      this.anexo4Clauses[index - 1],
+    ];
+    this.recalcSortOrder(this.anexo4Clauses);
+  }
+
+  moveAnexo4ClauseDown(index: number): void {
+    if (index === this.anexo4Clauses.length - 1) return;
+    [this.anexo4Clauses[index], this.anexo4Clauses[index + 1]] = [
+      this.anexo4Clauses[index + 1],
+      this.anexo4Clauses[index],
+    ];
+    this.recalcSortOrder(this.anexo4Clauses);
+  }
+
+  private recalcSortOrder(list: { sortOrder: number }[]): void {
+    list.forEach((c, i) => (c.sortOrder = i));
   }
 
   save(): void {
@@ -87,12 +186,14 @@ export class WorkItemCategoryEdit implements OnInit {
       return;
     }
 
-    // Agregar cláusula pendiente de texto si el usuario olvidó presionar "Agregar"
-    if (this.newClauseText.trim()) {
-      this.addClause();
-    }
+    // Agregar texto pendiente de cualquiera de las secciones si el usuario olvidó pulsar "Agregar"
+    if (this.newClauseText.trim()) this.addClause();
+    if (this.newAnexo3ClauseText.trim()) this.addAnexo3Clause();
+    if (this.newAnexo4ClauseText.trim()) this.addAnexo4Clause();
 
     this.dto.clauses = this.clauses;
+    this.dto.anexo3Clauses = this.anexo3Clauses;
+    this.dto.anexo4Clauses = this.anexo4Clauses;
 
     this.loaderService.show();
     this.service.edit(this.dto).subscribe({

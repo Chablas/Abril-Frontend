@@ -1,96 +1,84 @@
-<section class="p-6 space-y-5">
-  <header class="flex items-center justify-between flex-wrap gap-3">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">Alertas PASO</h2>
-      <p class="text-sm text-gray-500">Actividades vencidas y próximas a vencer</p>
+<div>
+  <!-- ── Hero ─────────────────────────────────────────────────── -->
+  <app-ssoma-page-header
+    badge="SSOMA · PASO"
+    titulo="Alertas PASO"
+    subtitulo="Actividades vencidas y próximas a vencer"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-ssoma-page-header>
+  <app-paso-nav></app-paso-nav>
+
+  <div class="alertas-body">
+
+    <!-- ── Tabs ─────────────────────────────────────────────────── -->
+    <div class="alert-tabs">
+      <button type="button" class="alert-tab tab--red" [class.active]="tabActiva==='vencidas'" (click)="tabActiva='vencidas'">
+        <i class="ti ti-alert-circle"></i>
+        Vencidas
+        <span class="tab-pill" [ngClass]="tabActiva==='vencidas' ? 'tab-pill--red' : 'tab-pill--gray'">{{ vencidas.length }}</span>
+      </button>
+      <button type="button" class="alert-tab tab--yellow" [class.active]="tabActiva==='proximas'" (click)="tabActiva='proximas'">
+        <i class="ti ti-clock"></i>
+        Próximas a vencer
+        <span class="tab-pill" [ngClass]="tabActiva==='proximas' ? 'tab-pill--yellow' : 'tab-pill--gray'">{{ proximas.length }}</span>
+      </button>
     </div>
-    <button type="button" (click)="load()"
-      class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700">
-      <i class="ti ti-refresh"></i> Actualizar
-    </button>
-  </header>
 
-  <!-- Tabs -->
-  <div class="border-b border-gray-100">
-    <nav class="flex gap-6">
-      <button type="button" (click)="tabActiva='vencidas'"
-        class="pb-3 text-sm transition-colors flex items-center gap-2"
-        [class.border-b-2]="tabActiva==='vencidas'" [class.border-red-500]="tabActiva==='vencidas'"
-        [class.text-red-700]="tabActiva==='vencidas'" [class.font-semibold]="tabActiva==='vencidas'"
-        [class.text-gray-500]="tabActiva!=='vencidas'">
-        <i class="ti ti-alert-circle"></i> Vencidas
-        <span class="px-1.5 py-0.5 rounded-full text-xs font-bold"
-          [class.bg-red-100]="tabActiva==='vencidas'" [class.text-red-700]="tabActiva==='vencidas'"
-          [class.bg-gray-100]="tabActiva!=='vencidas'" [class.text-gray-500]="tabActiva!=='vencidas'">
-          {{ vencidas.length }}
-        </span>
-      </button>
-      <button type="button" (click)="tabActiva='proximas'"
-        class="pb-3 text-sm transition-colors flex items-center gap-2"
-        [class.border-b-2]="tabActiva==='proximas'" [class.border-yellow-500]="tabActiva==='proximas'"
-        [class.text-yellow-700]="tabActiva==='proximas'" [class.font-semibold]="tabActiva==='proximas'"
-        [class.text-gray-500]="tabActiva!=='proximas'">
-        <i class="ti ti-clock"></i> Próximas a vencer
-        <span class="px-1.5 py-0.5 rounded-full text-xs font-bold"
-          [class.bg-yellow-100]="tabActiva==='proximas'" [class.text-yellow-700]="tabActiva==='proximas'"
-          [class.bg-gray-100]="tabActiva!=='proximas'" [class.text-gray-500]="tabActiva!=='proximas'">
-          {{ proximas.length }}
-        </span>
-      </button>
-    </nav>
-  </div>
+    <!-- ── Loading ───────────────────────────────────────────────── -->
+    <div *ngIf="loading" class="loading-center">
+      <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+      <span>Cargando alertas…</span>
+    </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="flex items-center justify-center py-12 text-gray-400">
-    <i class="ti ti-loader-2 animate-spin text-2xl mr-2"></i> Cargando alertas...
-  </div>
+    <!-- ── Cards de alertas ───────────────────────────────────────── -->
+    <div *ngIf="!loading">
 
-  <!-- Tabla -->
-  <div *ngIf="!loading" class="card">
-    <div class="table-wrapper">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-gray-100">
-            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actividad</th>
-            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Proyecto</th>
-            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha Programada</th>
-            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              {{ tabActiva === 'vencidas' ? 'Días vencida' : 'Días restantes' }}
-            </th>
-            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let a of activas" class="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-            [class.bg-red-50]="a.tipo==='Vencida'">
-            <td class="py-3 px-4 font-medium text-gray-800">{{ a.actividadNombre }}</td>
-            <td class="py-3 px-4 text-gray-600">{{ a.proyectoNombre }}</td>
-            <td class="py-3 px-4 text-center text-gray-600">{{ a.fechaProgramada | date:'dd/MM/yyyy' }}</td>
-            <td class="py-3 px-4 text-center">
-              <span class="badge text-xs font-bold"
-                [class.bg-red-100]="a.tipo==='Vencida'" [class.text-red-700]="a.tipo==='Vencida'"
-                [class.bg-yellow-100]="a.tipo==='ProximaVencer'" [class.text-yellow-700]="a.tipo==='ProximaVencer'">
-                {{ a.diasVencido > 0 ? a.diasVencido + 'd' : '—' }}
-              </span>
-            </td>
-            <td class="py-3 px-4 text-center">
-              <button type="button" (click)="registrar(a)" [disabled]="loadingActividad"
-                class="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
-                <i class="ti" [ngClass]="loadingActividad ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
-                Registrar
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="!activas.length">
-            <td colspan="5" class="empty">
-              {{ tabActiva === 'vencidas' ? 'Sin actividades vencidas' : 'Sin actividades próximas a vencer' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div *ngIf="!activas.length" class="empty-state">
+        <i class="ti ti-circle-check" style="color:#16a34a"></i>
+        <p>
+          {{ tabActiva === 'vencidas' ? 'Sin actividades vencidas — todo al día' : 'Sin actividades próximas a vencer' }}
+        </p>
+      </div>
+
+      <div *ngIf="activas.length" class="alert-cards">
+        <div *ngFor="let a of activas"
+          class="alert-card"
+          [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card--red' : 'alert-card--yellow'">
+
+          <div class="alert-card__icon"
+            [ngClass]="a.tipoAlerta === 'Vencido' ? 'alert-card__icon--red' : 'alert-card__icon--yellow'">
+            <i class="ti" [ngClass]="a.tipoAlerta === 'Vencido' ? 'ti-alert-triangle' : 'ti-clock'"></i>
+          </div>
+
+          <div class="alert-card__body">
+            <div class="alert-card__name">{{ a.actividadNombre }}</div>
+            <div class="alert-card__meta">
+              <span><i class="ti ti-building" style="font-size:.7rem"></i> {{ a.proyectoNombre || '—' }}</span>
+              <span><i class="ti ti-calendar" style="font-size:.7rem"></i> {{ a.fechaProgramada | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+          <div class="alert-card__right">
+            <span class="days-badge" [ngClass]="a.tipoAlerta === 'Vencido' ? 'days-badge--red' : 'days-badge--yellow'">
+              <ng-container *ngIf="a.tipoAlerta === 'Vencido'">
+                <i class="ti ti-clock-x"></i> Vencida
+              </ng-container>
+              <ng-container *ngIf="a.tipoAlerta === 'ProximaAVencer'">
+                <i class="ti ti-clock-hour-4"></i> Vence pronto
+              </ng-container>
+            </span>
+            <button type="button" class="registrar-btn" (click)="registrar(a)" [disabled]="loadingActividad">
+              <i class="ti" [ngClass]="loadingActividad ? 'ti-loader-2 animate-spin' : 'ti-plus'"></i>
+              Registrar
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-</section>
+</div>
 
 <app-ejecucion-modal *ngIf="actividadEjecutando"
   [actividad]="actividadEjecutando"

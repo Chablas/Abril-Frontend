@@ -4,7 +4,15 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-03 — Módulo PASO (Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente) creado completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores (GET/PUT `/api/v1/evaluaciones/asignaciones-supervisor`), rediseño completo de `/evaluaciones/evaluar` (grid 2-col de cards con color por proyecto, SPI badge, contador evaluados). Ver historial más antiguo abajo.
+> **Última actualización**: 2026-06-08 — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario). versiones-doc: columna "Subido por" → "Archivo" (muestra nombreArchivo del primer archivo o nombre extraído de archivoUrl).
+>
+> **2026-06-07** — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, selector archivos múltiples por mes), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto.
+>
+> **2026-06-06 (v3)** — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. NgZone inyectado, optimistic update en ngZone.run(), setTimeout 500ms antes de recargarEntregables(). Bug raíz pendiente: probable race condition backend.
+>
+> **2026-06-06 (v2)** — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
+>
+> **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
 >
 > **2026-06-02** — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
 
@@ -1295,10 +1303,68 @@ aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
 - Header de lista: checkbox "Seleccionar todos" (`[indeterminate]`) + botón "✓ Aprobar (N)" visible cuando `selectedIds.size > 0`.
 - Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
 
-#### Flujo aprobación unitaria (sin cambios)
+#### Panel detalle-meta (col derecha, entre detalle-header y doc-body)
 
-- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
-- **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
+Campos visibles cuando hay `selectedItem`:
+
+- **VIGENCIA**: `<input type="date" [(ngModel)]="vigenciaEditable">` — siempre visible. Valor pre-calculado en `selectItem()` y `seleccionarMesBandeja()`.
+- **Chips de mes** (`*ngIf="selectedItem.esMensual && selectedItem.meses?.length > 0"`): un chip por mes (`mes.mes/mes.anio`). El chip seleccionado toma el color del estado del mes (verde=Aprobado, naranja=Enviado, rojo=Rechazado). Los no-seleccionados siempre gris. Click → `seleccionarMesBandeja(m)`.
+- **Archivos múltiples del mes** (`*ngIf="mesSeleccionadoBandeja?.archivos?.length > 1"`): chips "📄 N" para items mensuales.
+- **Archivos múltiples sin mes** (`*ngIf="!esMensual && selectedItem.archivos?.length > 1"`): chips "📄 N" para items no-mensuales.
+
+#### Lógica vigenciaEditable (pre-calculada al seleccionar)
+
+```ts
+// En selectItem():
+if (item.esMensual && item.meses?.length > 0) {
+  mesSeleccionadoBandeja = item.meses[0];
+  vigenciaEditable = item.meses[0].vigencia ? new Date(...).toISOString().substring(0,10) : '';
+  // luego carga archivo del mes[0]
+} else {
+  mesSeleccionadoBandeja = null;
+  sentinel → '2040-12-31'; else → item.vigencia ?? ''
+}
+
+// En seleccionarMesBandeja(mes):
+sentinel → '2040-12-31'
+else → día 27 del mes siguiente (mesSig/anioSig)
+si mes.vigencia existe → lo usa directamente
+```
+
+#### Aprobación/rechazo con mes seleccionado
+
+```ts
+aprobar(item): void {
+  const id = (item.esMensual && mesSeleccionadoBandeja) ? mesSeleccionadoBandeja.id : item.id;
+  executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: vigenciaEditable || undefined }, 'Aprobado');
+}
+```
+
+El `executeAction()` redirige a `aprobarEmpresa(mesId, payload)` — el backend espera el ID del mes, no del item padre.
+
+#### BandejaItemDto — campos clave
+
+```ts
+interface BandejaItemDto {
+  id: number; tipo: string; nombreEntregable: string;
+  entidadNombre: string; empresaNombre?: string; proyectoNombre?: string;
+  estado: string; vigencia?: string; archivoUrl?: string;
+  archivos?: { nombreArchivo: string; archivoUrl: string }[];
+  itemId?: number; esMensual?: boolean; mes?: number; anio?: number;
+  mesesPendientes?: number;
+  meses?: {
+    id: number; mes: number; anio: number; estado: string; vigencia?: string;
+    archivos?: { id: number; nombreArchivo: string; archivoUrl: string; esZip: boolean; orden: number }[];
+  }[];
+}
+```
+
+#### Flujo aprobación unitaria
+
+- **TRABAJADOR/EQUIPO**: `executeAction(item, { estado, vigencia })` → `aprobarTrabajador/Equipo(item.id, payload)`.
+- **EMPRESA no-mensual**: `executeAction(item, { estado, vigencia })` → `aprobarEmpresa(item.id, payload)`.
+- **EMPRESA mensual**: `executeAction({ ...item, id: mesSeleccionadoBandeja.id }, { estado, vigencia })` → `aprobarEmpresa(mesId, payload)`.
+- **INDUCCION**: aprobación masiva via `aprobarGrupo()` — sin vigencia.
 
 #### Nomenclatura — colisión resuelta
 
@@ -1398,15 +1464,27 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 
 1. `selectEquipo(eq)` → llama `loadEntregablesEquipo(eq.id)`.
 2. `selectEntregable(e)` → puebla `panelVigencia`, `panelArchivoUrl`, `panelArchivoNombre`, `panelObsAbril`, `panelEstado`; abre drawer.
-3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
+3. Upload → staging local: `archivosPendientes: ArchivoStagingDto[]`. Botón **ENVIAR** llama `enviarDocumento()` → sube archivos secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar todos. **Ya NO existe `autoMarcarEnviado()`.**
 4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
 5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
-6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin. Sin botón "ENVIAR DOCUMENTO" (eliminado); flujo es auto-save en upload.
+6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin.
 7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
 
-**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
+**Staging multi-archivo** (los 3 componentes):
+- `panelArchivoUrl` y `panelArchivoNombre` eliminados como propiedades → reemplazados por `archivosPendientes: ArchivoStagingDto[]`.
+- Getters: `get uploadingFile()` = `archivosPendientes.some(a => a.subiendo)`, `get panelArchivoUrl()` = primer archivo con path.
+- `onFileSelected()`: acepta múltiples archivos, los agrega al staging sin subir inmediatamente.
+- `quitarArchivo(idx)`: elimina un archivo del staging.
+- `enviarDocumento()`: sube secuencialmente + llama `/archivos/enviar` al final.
 
-**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
+**Vigencia contratista** (los 3 componentes):
+- `requiereVigencia=true` → input date editable.
+- `requiereVigencia=false` → span readonly con fecha formateada.
+- Items permanentes en empresa (itemId 12/13): muestra texto "Permanente", no input.
+
+**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`.
+
+**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false` (en `guardarEntregable` admin).
 
 ### Página Control de Acceso — mobile-first operaciones en obra
 
@@ -2426,6 +2504,23 @@ abrirProgramarInduccion(): void {
   - `guardarObservaciones()`: captura `id` y `obs` como locales antes del posible reset; llama `updateEntregable(id, { obsContratista })` sin `estado`; errores a través de `errorService.handleError`.
   - `closeDrawer()`: llama `guardarObservaciones()` ANTES de `selectedEntregable = null` — cubre overlay click, botón X, ESC y selección de nuevo trabajador.
   - HTML: `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
+
+### Panel entregables empresa — bug estado post-ENVIAR (2026-06-06)
+
+`features/habilitacion/pages/empresa/empresa.ts` — investigación activa:
+
+**Síntoma**: tras ENVIAR un entregable mensual, el chip de estado en la tabla no cambia a "Enviado" hasta refrescar la página manualmente.
+
+**Cambios aplicados en esta sesión**:
+- `NgZone` añadido al import y al constructor (`private ngZone: NgZone`).
+- Optimistic update en `enviarDocumento()` next: `this.entregables[idx] = { ...this.entregables[idx], estado: 'Enviado' }` + `this.entregables = [...this.entregables]` envuelto en `this.ngZone.run(() => {...})`.
+- `recargarEntregables()` diferida 500ms con `setTimeout(..., 500)` para evitar race condition donde el backend aún no ha committeado el nuevo estado al momento del GET.
+- `console.log('entregables frescos:', ...)` en el `next` de `recargarEntregables()` (diagnóstico — quitar en producción).
+- afterLoad callback también hace `this.entregables[idx] = { ...frescoEntregable }` + `this.entregables = [...this.entregables]` + `cdr.detectChanges()`.
+
+**Hipótesis pendiente de confirmar**: `recargarEntregables()` obtiene datos stale del backend (el estado del entregable padre no se recalcula inmediatamente tras el POST a `/archivos/enviar`) y sobreescribe el optimistic update. Confirmar con el console.log: si muestra `estado: 'Falta'` (viejo), es race condition backend → incrementar timeout o no sobreescribir estado en afterLoad. Si muestra `estado: 'Enviado'` (correcto), el problema es Angular CD y debe revisarse si algún ancestro usa OnPush.
+
+**Estado del Layout**: no usa `ChangeDetectionStrategy.OnPush` (Default). `App` tampoco. El componente `Empresa` tampoco.
 
 ### Panel entregables empresa — auto-save y reglas por itemId
 
@@ -3679,3 +3774,132 @@ Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). 
 ### CSS — budget Angular
 
 `anyComponentStyle` subido de `20kB → 28kB` en `angular.json` para acomodar el crecimiento del CSS del cronograma (actualmente ~21kB tras agregar estilos de popover, línea base, semáforo y predecesoras).
+
+---
+
+## Sesión 2026-06-06 — Habilitación: multi-archivo staging + vigencia contratista + entregables mensuales
+
+### Upload multi-archivo (empresa, trabajadores, equipos)
+
+**Patrón anterior eliminado**: `panelArchivoUrl: string`, `panelArchivoNombre: string`, `uploadingFile: boolean`, `autoMarcarEnviado()`, `subirArchivo()` en upload zone.
+
+**Nuevo patrón** (`ArchivoStagingDto` en `trabajador.model.ts`):
+```ts
+interface ArchivoStagingDto { file: File; nombre: string; path?: string; esZip: boolean; zipContenido?: string; subiendo: boolean; error: boolean; }
+```
+- Los 3 componentes tienen `archivosPendientes: ArchivoStagingDto[]`.
+- `onFileSelected()` acepta múltiples archivos (input con `multiple`) y los agrega al array local.
+- Botón ENVIAR llama `enviarDocumento()` → sube secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar.
+- `quitarArchivo(idx)` elimina del array.
+- **Nuevos endpoints** en `sharepoint-upload.service.ts`: `POST /archivos/subir-multiple`, `POST /archivos/enviar`.
+
+### Vigencia contratista
+
+Los 3 componentes muestran siempre el campo vigencia en la sección contratista:
+- `requiereVigencia = true` → `<input type="date">` editable.
+- `requiereVigencia = false` → `<span>` con fecha formateada o "—".
+- `esPermanente` (empresa itemId 12/13) → texto "Permanente", input deshabilitado.
+
+Lógica en `enviarDocumento()`:
+- Contratista + requiereVigencia → envía `panelVigencia`.
+- Admin → envía `panelVigencia`.
+- Contratista + !requiereVigencia → `undefined` (backend calcula).
+
+### Entregables mensuales (empresa.ts / empresa.html)
+
+**Nuevos DTOs** en `empresa.model.ts`:
+- `EntregableMesDto { id, mes, anio, estado, vigencia?, archivoUrl?, obsAbril?, obsContratista?, motivoRechazo? }`.
+- `EmpresaEntregableDto` extendido: `esMensual: boolean`, `motivoRechazo?`, `meses: EntregableMesDto[]`.
+- `EmpresaEntregableUpdateDto` extendido: `motivoRechazo?`, `mes?`, `anio?`.
+
+**Nuevas propiedades en empresa.ts**:
+- `mesSeleccionado: EntregableMesDto | null` — mes activo en el selector.
+- `mesPanelMes: number` (0-indexed), `mesPanelAnio: number` — mes/año del selector.
+- `mesesNombres[]`, getters `mesesDisponibles` (últimos 12 meses), `mesActualLabel`.
+
+**Drawer empresa — bloques mensuales**:
+- **Contratista + esMensual**: selector de mes (`onMesChange(mes, anio)`), info de estado del mes seleccionado (si ya aprobado/rechazado → bloque bloqueado), zona de upload, textarea obs. Botón ENVIAR = "ENVIAR {mesActualLabel}"; disabled si mes ya aprobado/rechazado.
+- **Admin + esMensual**: tabla de meses con columnas Mes/Estado/Acciones. Por cada mes en estado `Enviado`: botones ✓ (`aprobarMesEspecifico`) y ✕ (`rechazarMesEspecifico`). Motivo de rechazo en tooltip.
+- Bloques no-mensuales: condición añadida `&& !selectedEntregable.esMensual`.
+
+**Nuevos métodos en empresa.ts**:
+- `onMesChange(mes, anio)`: actualiza selector + busca `mesSeleccionado` en `e.meses`.
+- `aprobarMesEspecifico(mes: EntregableMesDto)`: Swal confirm → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Aprobado', vigencia? })`.
+- `rechazarMesEspecifico(mes: EntregableMesDto)`: Swal textarea → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Rechazado', motivoRechazo })`.
+- `eliminarArchivoVersion(archivoId)`: Swal confirm → `habEmpresaService.eliminarArchivo(archivoId)`.
+
+**Nuevos métodos en `hab-empresa.service.ts`**:
+- `getMesesEntregable(empresaId, itemId, proyectoId)` → `GET /empresas/{id}/entregables/{itemId}/meses`.
+- `aprobarMes(empresaId, entregableId, dto)` → `PATCH /empresas/{id}/entregables/{entregableId}/mes`.
+- `eliminarArchivo(archivoId)` → `DELETE /archivos/{archivoId}`.
+
+### Bandeja — badge meses pendientes
+
+`BandejaItemDto` extendido con `itemId?`, `esMensual?`, `mes?`, `anio?`, `mesesPendientes?`.
+
+En `bandeja.html`, debajo del nombre del entregable:
+```html
+<span *ngIf="item.esMensual && item.mesesPendientes > 1" class="btn-chip chip-orange">
+  {{ item.mesesPendientes }} meses pendientes
+</span>
+```
+
+### CSS añadido
+
+En `empresa.css`, `trabajadores.css`, `equipos.css`:
+- `.archivo-list`, `.archivo-item`, `.archivo-item--subiendo`, `.archivo-item--error`
+- `.archivo-nombre`, `.archivo-zip-badge`, `.archivo-estado`, `.archivo-estado--error`
+
+En `empresa.css` además: `.mes-estado-aprobado/enviado/rechazado/falta`.
+
+**Commit**: `d763264` en master.
+
+---
+
+## Sesión 2026-06-06 (v2) — Empresa mensual: UX, bugs, drag&drop, validaciones
+
+### Dropdown selector de mes
+- Reemplazado `<select>` por dropdown custom con backdrop invisible (click-outside), dot de color + estado por mes.
+- `mesDropdownOpen`, `getMesEstado(mes,anio)`, `toggleMesDropdown()`, `cerrarMesDropdown()`, `seleccionarMes(mes,anio)` en `empresa.ts`.
+- Clases CSS: `.mes-dropdown`, `.mes-dropdown-trigger`, `.mes-dropdown-list`, `.mes-dropdown-item--active`, `.mes-estado-dot`, `.mes-estado-label`.
+
+### Historial de envíos inline (solo mensual)
+- Botón toggle "Ver historial de envíos" en footer del drawer; panel inline con `*ngFor` de versiones ordenadas por `createdAt` desc.
+- `historialVersiones`, `loadingHistorial`, `mostrarHistorial`, `cargarHistorial()` en `empresa.ts`.
+- Para no-mensuales: mantiene modal `VersionesDoc` genérico.
+
+### Admin tabla de meses
+- Celda "Ver" → `*ngFor` sobre `m.archivos[]`; fallback a `m.archivoUrl` con `ng-template #archivoFallback`.
+- Botones APROBAR/RECHAZAR del footer deshabilitados con `*ngIf="!selectedEntregable.esMensual"`.
+
+### Bug — mes incorrecto al enviar
+- `mesFijo` y `anioFijo` capturados ANTES del async en `enviarDocumento()`.
+- `recargarEntregables()` extendido con `afterLoad?: (list) => void` callback.
+- En `next` de `enviarDocumento`: captura `itemIdFijo = selectedEntregable.itemId` antes de `closeDrawer()`, llama `recargarEntregables(callback)` donde el callback busca el entregable fresco y restaura `mesPanelMes`/`mesPanelAnio`/`mesSeleccionado`.
+
+### Bug — archivos del mes no visibles
+- `recargarEntregables` ahora llama `afterLoad?.(list)` después de actualizar `selectedEntregable`/`mesSeleccionado`.
+- `this.entregables = [...list]` (nueva referencia) + `detectChanges()` adicional fuerzan re-render inmediato de la lista.
+
+### Drag & drop
+- `_dropJustHappened` flag: bloquea `triggerFileInput()` 300ms post-drop para evitar que el browser abra el picker.
+- `onDrop()`: `stopImmediatePropagation()` + reset del fileInput value + flag.
+- Drop zones: `(click)` movido al `div.upload-empty` interior (no en el contenedor de drag).
+- `console.log` de diagnóstico agregado en `onDragOver`/`onDrop` (pendiente quitar en prod).
+
+### Validación de extensiones en addFiles()
+- Extensiones permitidas: `.pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv` (sin `.zip`).
+- Archivo rechazado → `Swal.fire` warning + `continue` (no se agrega al staging).
+- `accept` del input actualizado a las mismas extensiones.
+
+### Fix eliminarArchivo URL
+- `hab-empresa.service.ts`: `eliminarArchivo(empresaId, archivoId)` → `DELETE /empresas/{empresaId}/archivos/{archivoId}`.
+- `empresa.ts`: llama `eliminarArchivo(this.empresaId!, archivoId)`.
+
+### Backend (commits previos)
+- `EnviarDocumentoRequest`: campos `Mes?` y `Anio?` agregados.
+- `ArchivoHabilitacionController.Enviar()`: cuando `Mes`/`Anio` presentes → `CrearOActualizarEntregableMesAsync` en vez de `FindAsync`; `version.HabEmpresaId = ent.Id`.
+- `IHabEmpresaRepository` inyectado en el controller.
+- `HabEmpresaRepository.GetEntregablesEmpresaAsync`: archivos de cada `EntregableMesDto` con fallback al registro base (datos legacy).
+
+**Commit frontend**: pendiente (esta sesión).

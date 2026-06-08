@@ -5,6 +5,7 @@ import {
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
   EmpresaProyectoDto,
+  EntregableMesDto,
   ProyectoDisponibleDto,
 } from '../dtos/empresa.model';
 import { DocumentoVersionDto } from '../dtos/trabajador.model';
@@ -75,6 +76,39 @@ export class HabEmpresaService {
     return this.http.delete<void>(
       `${this.base}/${empresaId}/desactivar-proyecto`,
       { headers: buildHabHeaders(), body: { proyectoId } },
+    );
+  }
+
+  getMesesEntregable(
+    empresaId: number,
+    itemId: number,
+    proyectoId: number,
+  ): Observable<EntregableMesDto[]> {
+    return this.http.get<EntregableMesDto[]>(
+      `${this.base}/${empresaId}/entregables/${itemId}/meses`,
+      {
+        headers: buildHabHeaders(),
+        params: buildHabParams({ proyectoId }),
+      },
+    );
+  }
+
+  aprobarMes(
+    empresaId: number,
+    entregableId: number,
+    dto: EmpresaEntregableUpdateDto,
+  ): Observable<EmpresaEntregableDto> {
+    return this.http.patch<EmpresaEntregableDto>(
+      `${this.base}/${empresaId}/entregables/${entregableId}/mes`,
+      dto,
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  eliminarArchivo(empresaId: number, archivoId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.base}/${empresaId}/archivos/${archivoId}`,
+      { headers: buildHabHeaders() },
     );
   }
 }

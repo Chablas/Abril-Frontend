@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LeccionesAprendidasService } from '../services/lecciones-aprendidas.service';
 import { LessonListDTO } from '../dtos/lessonList.model';
-import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
+import { LessonFiltersDTO, CatalogFilterGroupDTO, CatalogFilterItemDTO } from '../dtos/lessonFilters.model';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { CreateLesson } from './create/create';
 import { DetailLesson } from './detail/detail';
+import { EditLesson } from './edit/edit';
 import { LessonList } from './list/list';
 import { LessonCard } from './card/card';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -20,7 +22,7 @@ import { jwtDecode } from 'jwt-decode';
 @Component({
   selector: 'app-lecciones-aprendidas',
   standalone: true,
-  imports: [CommonModule, Paginator, CreateLesson, DetailLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
+  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson, EditLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
   templateUrl: './lecciones-aprendidas.html',
 })
 export class LeccionesAprendidas implements OnInit {
@@ -35,34 +37,42 @@ export class LeccionesAprendidas implements OnInit {
 
   // Filters raw
   filtersData: LessonFiltersDTO = {
-    projects: [], areas: [], periods: [], phases: [],
-    stages: [], layers: [], subStages: [], subSpecialties: [], users: [],
+    projects: [], areas: [], periods: [], users: [], categories: [],
   };
 
   // Computed SearchSelect options (with null "Todos" prepended)
   projectOptions: any[] = [];
   areaOptions: any[] = [];
-  phaseOptions: any[] = [];
-  stageOptions: any[] = [];
-  layerOptions: any[] = [];
-  subStageOptions: any[] = [];
-  subSpecialtyOptions: any[] = [];
   userOptions: any[] = [];
   periodOptions: any[] = [];
+  /**
+   * Por cada catalog_type, las opciones del dropdown (con el "Todos" inicial).
+   * Indexado por `catalogTypeId` para conservar el orden de catalog_type.
+   */
+  categoryOptions: { group: CatalogFilterGroupDTO; options: any[] }[] = [];
 
   filtersTable = {
     projectId: null as number | null,
     areaId: null as number | null,
     periodDate: null as string | null,
-    phaseId: null as number | null,
-    stageId: null as number | null,
-    layerId: null as number | null,
-    subStageId: null as number | null,
-    subSpecialtyId: null as number | null,
     userId: null as number | null,
+    /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
+    catalogSelections: {} as Record<number, number | null>,
+    /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. */
+    approvalStatus: null as string | null,
+    /** Solo lecciones pendientes de mi revisión (subordinados). */
+    onlyMyPendingReview: false,
     page: 1 as number | null,
   };
   showFilters = false;
+
+  // Opciones del filtro de estado de aprobación.
+  approvalStatusOptions = [
+    { value: null, label: 'Todos los estados' },
+    { value: 'PENDIENTE', label: 'Pendiente' },
+    { value: 'APROBADA', label: 'Aprobada' },
+    { value: 'RECHAZADA', label: 'Rechazada' },
+  ];
 
   // View mode
   viewMode = 'table';
@@ -83,6 +93,7 @@ export class LeccionesAprendidas implements OnInit {
   showCreateModal = false;
   selectedLessonId: number | null = null;
   selectedLessonTab: 'general' | 'images' = 'general';
+  editLessonId: number | null = null;
 
   constructor(
     private leccionesAprendidasService: LeccionesAprendidasService,
@@ -101,7 +112,7 @@ export class LeccionesAprendidas implements OnInit {
 
   private loadInitial(): void {
     this.loaderService.show();
-    this.leccionesAprendidasService.getLessonsPagedWithFilters(this.filtersTable).subscribe({
+    this.leccionesAprendidasService.getLessonsPagedWithFilters(this.buildQueryFilters()).subscribe({
       next: ({ paged, filters }) => {
         this.lessons = paged.data;
         this.filtersData = filters;
@@ -118,11 +129,6 @@ export class LeccionesAprendidas implements OnInit {
   private buildFilterOptions(fd: LessonFiltersDTO): void {
     this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
     this.areaOptions = [{ areaId: null, areaDescription: 'Todas las areas' }, ...fd.areas];
-    this.phaseOptions = [{ phaseId: null, phaseDescription: 'Todas las fases' }, ...(fd.phases ?? [])];
-    this.stageOptions = [{ stageId: null, stageDescription: 'Todas las etapas' }, ...(fd.stages ?? [])];
-    this.layerOptions = [{ layerId: null, layerDescription: 'Todos los niveles' }, ...(fd.layers ?? [])];
-    this.subStageOptions = [{ subStageId: null, subStageDescription: 'Todas las subetapas' }, ...(fd.subStages ?? [])];
-    this.subSpecialtyOptions = [{ subSpecialtyId: null, subSpecialtyDescription: 'Todas' }, ...(fd.subSpecialties ?? [])];
     this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
     this.periodOptions = [
       { periodDate: null, periodLabel: 'Todos los periodos' },
@@ -131,6 +137,53 @@ export class LeccionesAprendidas implements OnInit {
         periodLabel: this.formatPeriodLabel(p.periodDate),
       })),
     ];
+
+    // Dropdowns dinámicos por catalog_type. Inicializa la selección a null
+    // (Todos) si todavía no había un valor en filtersTable.catalogSelections.
+    this.categoryOptions = (fd.categories ?? []).map((group) => ({
+      group,
+      options: [
+        { catalogItemId: null, catalogItemDescription: `Todos los ${group.catalogTypeName.toLowerCase()}` },
+        ...group.items,
+      ],
+    }));
+    for (const { group } of this.categoryOptions) {
+      if (!(group.catalogTypeId in this.filtersTable.catalogSelections)) {
+        this.filtersTable.catalogSelections[group.catalogTypeId] = null;
+      }
+    }
+  }
+
+  /** Setter usado por los dropdowns dinámicos del template. */
+  onCatalogSelectionChange(catalogTypeId: number, value: number | null): void {
+    this.filtersTable.catalogSelections[catalogTypeId] = value;
+  }
+
+  /** Valor actual de un dropdown dinámico (para que el template no haga indexación rara). */
+  getCatalogSelection(catalogTypeId: number): number | null {
+    return this.filtersTable.catalogSelections[catalogTypeId] ?? null;
+  }
+
+  /** Convierte el state a query params para el service (catalogItemIds como CSV). */
+  private buildQueryFilters(): any {
+    const selected = Object.values(this.filtersTable.catalogSelections)
+      .filter((v): v is number => v != null);
+    return {
+      projectId: this.filtersTable.projectId,
+      areaId: this.filtersTable.areaId,
+      periodDate: this.filtersTable.periodDate,
+      userId: this.filtersTable.userId,
+      catalogItemIds: selected.length > 0 ? selected.join(',') : null,
+      approvalStatus: this.filtersTable.approvalStatus,
+      onlyMyPendingReview: this.filtersTable.onlyMyPendingReview ? true : null,
+      page: this.filtersTable.page,
+    };
+  }
+
+  /** Atajo: alterna "pendientes de mi revisión" y recarga. */
+  toggleMyPendingReview(): void {
+    this.filtersTable.onlyMyPendingReview = !this.filtersTable.onlyMyPendingReview;
+    this.loadLessons(1);
   }
 
   private formatPeriodValue(date: Date): string {
@@ -146,7 +199,7 @@ export class LeccionesAprendidas implements OnInit {
   loadLessons(page: number = 1): void {
     this.filtersTable.page = page;
     this.loaderService.show();
-    this.leccionesAprendidasService.getLessonsUsingFilters(this.filtersTable).subscribe({
+    this.leccionesAprendidasService.getLessonsUsingFilters(this.buildQueryFilters()).subscribe({
       next: (data) => {
         this.lessons = data.data;
         this.currentPage = data.page;
@@ -164,7 +217,7 @@ export class LeccionesAprendidas implements OnInit {
 
   downloadExcel(): void {
     this.loaderService.show();
-    this.leccionesAprendidasService.getExcel(this.filtersTable).subscribe({
+    this.leccionesAprendidasService.getExcel(this.buildQueryFilters()).subscribe({
       next: (blob: Blob) => {
         const file = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = window.URL.createObjectURL(file);
@@ -192,5 +245,21 @@ export class LeccionesAprendidas implements OnInit {
   onCardClick(lessonId: number): void {
     this.selectedLessonId = lessonId;
     this.selectedLessonTab = 'general';
+  }
+
+  /** Desde el detalle: abrir el modal de edición (solo el autor). */
+  onEditLesson(lessonId: number): void {
+    this.selectedLessonId = null;
+    this.editLessonId = lessonId;
+  }
+
+  onEditSaved(): void {
+    this.editLessonId = null;
+    this.loadLessons(this.currentPage || 1);
+  }
+
+  /** Tras aprobar/rechazar en el detalle, recargar la lista. */
+  onReviewed(): void {
+    this.loadLessons(this.currentPage || 1);
   }
 }

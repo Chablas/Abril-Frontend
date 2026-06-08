@@ -6,11 +6,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
-import { PasoDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
+import { PasoDetalleDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
+import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
+import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
@@ -19,23 +21,25 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
 @Component({
   selector: 'app-paso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
   templateUrl: './paso-detalle.component.html',
+  styleUrl: './paso-detalle.component.css',
 })
 export class PasoDetalleComponent implements OnInit {
-  paso: PasoDto | null = null;
+  paso: PasoDetalleDto | null = null;
   spi: PasoSpiDto | null = null;
   categorias: PasoCategoriaDto[] = [];
   loading = false;
   tabActiva: TabAmbito = 'Seguridad';
 
-  // Agregar actividad offcanvas
   agregarOpen = false;
   agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
 
-  // Instanciar
   instanciarOpen = false;
+  exportOpen = false;
+
+  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
 
   constructor(
     private route: ActivatedRoute,
@@ -91,14 +95,27 @@ export class PasoDetalleComponent implements OnInit {
     return this.categorias.filter(c => c.ambito === this.tabActiva);
   }
 
-  setTab(tab: TabAmbito): void { this.tabActiva = tab; }
+  countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
+    const valores = [...new Set(this.paso?.actividades?.map(a => a.categoriaAmbito) ?? [])];
+    console.log('[PASO] categoriaAmbito valores únicos:', valores);
+    return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
+  }
+
+  setTab(tab: TabAmbito): void {
+    this.tabActiva = tab;
+    this.exportOpen = false;
+  }
 
   aprobar(): void {
     if (!this.paso) return;
     Swal.fire({ icon: 'question', title: '¿Aprobar programa?', showCancelButton: true, confirmButtonText: 'Aprobar' }).then(r => {
       if (!r.isConfirmed) return;
       this.pasoService.aprobar(this.paso!.id).subscribe({
-        next: (p) => { this.paso = p; Swal.fire('Aprobado', '', 'success'); this.cdr.detectChanges(); },
+        next: (p) => {
+          if (this.paso) this.paso = { ...this.paso, estado: p.estado, aprobadoPorNombre: p.aprobadoPorNombre, aprobadoEn: p.aprobadoEn };
+          Swal.fire('Aprobado', '', 'success');
+          this.cdr.detectChanges();
+        },
         error: (err) => this.errorService.handleError(err),
       });
     });
@@ -131,12 +148,11 @@ export class PasoDetalleComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onInstanciaCreada(): void {
-    this.instanciarOpen = false;
-  }
+  onInstanciaCreada(): void { this.instanciarOpen = false; }
 
   exportar(format: 'excel' | 'pdf'): void {
     if (!this.paso) return;
+    this.exportOpen = false;
     this.pasoService.exportReporte(this.paso.id, format).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -151,18 +167,28 @@ export class PasoDetalleComponent implements OnInit {
   }
 
   estadoBadge(e: string): string {
-    const m: Record<string, string> = { Borrador: 'bg-gray-100 text-gray-600', Aprobado: 'bg-blue-100 text-blue-700', Activo: 'bg-green-100 text-green-700', Cerrado: 'bg-gray-200 text-gray-800' };
+    const m: Record<string, string> = {
+      Borrador: 'bg-gray-100 text-gray-600',
+      Aprobado: 'bg-blue-100 text-blue-700',
+      Activo: 'bg-green-100 text-green-700',
+      Cerrado: 'bg-gray-200 text-gray-800',
+    };
     return m[e] ?? 'bg-gray-100 text-gray-500';
   }
 
-  volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
-
-  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
-  tabColors: Record<TabAmbito, string> = { Seguridad: 'blue', Salud: 'green', Ambiente: 'teal', Gantt: 'gray' };
-
-  tabClass(t: TabAmbito): string {
-    return this.tabActiva === t
-      ? 'border-b-2 border-blue-600 text-blue-700 font-semibold'
-      : 'text-gray-500 hover:text-gray-700';
+  tabColor(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb', Gantt: 'tab--gantt' };
+    return m[t];
   }
+
+  tabIcon(t: TabAmbito): string {
+    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf', Gantt: 'ti-chart-gantt' };
+    return m[t];
+  }
+
+  tabLabel(t: TabAmbito): string {
+    return t === 'Salud' ? 'Salud Ocupacional' : t;
+  }
+
+  volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }
 }

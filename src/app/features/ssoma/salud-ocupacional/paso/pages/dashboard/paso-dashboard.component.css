@@ -40,7 +40,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  background: #f4f6f9 !important;
 }
 
 .paso-root {
@@ -48,120 +48,92 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #eef0f6;
+  background: #f8fafc;
+  min-height: 0;
 }
 
 /* ── HERO ─────────────────────────────────────────────────────── */
 .paso-hero {
   flex-shrink: 0;
-  height: 56px;
-  padding: 0 24px !important;
+  padding: 0.25rem 1.75rem !important;
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #080f27 !important;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-  position: relative;
-  overflow: hidden;
-  box-shadow: none;
-}
-.paso-hero::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, #0db39e, #3b82f6) !important;
-}
-.paso-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px) !important;
-  background-size: 20px 20px;
-  pointer-events: none;
+  background: #fff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
 }
 .paso-hero__left {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  z-index: 1;
 }
 .paso-hero__badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  color: #0db39e !important;
-  background: rgba(13,179,158,.12) !important;
-  border: 1px solid rgba(13,179,158,.22);
-  padding: 3px 8px;
-  border-radius: 4px;
-}
-.hero-vline { width: 1px; height: 20px; background: rgba(255,255,255,.1) !important; }
-.paso-hero__title-wrap { line-height: 1.2; }
-.paso-hero__title {
-  font-family: 'Sora', sans-serif;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
   color: #fff !important;
-  margin: 0;
-  letter-spacing: -.01em;
+  background: #064e3b !important;
+  padding: 3px 10px;
+  border-radius: 999px;
 }
-.paso-hero__sub { font-size: 11px; color: rgba(255,255,255,.38) !important; margin: 0; }
-.paso-hero__center { display: flex; gap: 7px; z-index: 1; }
+.hero-vline { width: 1px; height: 28px; background: #e5e7eb !important; }
+.paso-hero__title-wrap { line-height: 1.3; }
+.paso-hero__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a !important;
+  margin: 0;
+}
+.paso-hero__sub { font-size: 0.8rem; color: #64748b !important; margin: 0; }
+.paso-hero__center { display: flex; gap: 7px; flex: 1; justify-content: center; }
 .hero-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255,255,255,.6) !important;
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(255,255,255,.09);
+  color: #475569 !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0;
   padding: 4px 11px;
   border-radius: 20px;
 }
 .hero-pill i { font-size: 12px; }
-.hero-pill--warn { color: #f59e0b !important; background: rgba(245,158,11,.14) !important; border-color: rgba(245,158,11,.22); }
-.paso-hero__right { display: flex; align-items: center; gap: 8px; z-index: 1; flex-shrink: 0; }
-.hero-avatar-gap { width: 56px; flex-shrink: 0; }
+.hero-pill--warn { color: #92400e !important; background: #fef3c7 !important; border-color: #fde68a; }
+.paso-hero__right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-right: 56px; }
+.hero-avatar-gap { display: none; }
 .hero-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
   padding: 6px 13px;
-  border-radius: var(--r-sm);
-  border: none;
+  border-radius: 8px;
   cursor: pointer;
   transition: all .15s;
   line-height: 1;
 }
 .hero-btn i { font-size: 13px; }
 .hero-btn--ghost {
-  background: rgba(255,255,255,.08) !important;
-  color: rgba(255,255,255,.7) !important;
-  border: 1px solid rgba(255,255,255,.11);
+  background: #fff !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0;
 }
-.hero-btn--ghost:hover { background: rgba(255,255,255,.14) !important; color: #fff !important; }
-.hero-btn--primary { background: #0a8c80 !important; color: #fff !important; }
-.hero-btn--primary:hover {
-  background: #0db39e !important;
-  box-shadow: 0 3px 10px rgba(10,140,128,.3);
-  transform: translateY(-1px);
-}
+.hero-btn--ghost:hover { background: #f8fafc !important; border-color: #cbd5e1; }
+.hero-btn--primary { background: #16a34a !important; color: #fff !important; border: none; }
+.hero-btn--primary:hover { background: #15803d !important; }
 
 /* ── CONTENT ──────────────────────────────────────────────────── */
 .dashboard-content {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px 24px !important;
+  padding: 1.5rem !important;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  background: #f8fafc;
 }
 .dashboard-content::-webkit-scrollbar { width: 4px; }
 .dashboard-content::-webkit-scrollbar-thumb { background: #e2e6f0 !important; border-radius: 2px; }
@@ -198,6 +170,13 @@
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 12px !important;
+}
+.kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 .kpi-card {
   background: #ffffff !important;
@@ -511,12 +490,89 @@
 .alert-chip--amber { background: #fffbeb !important; color: #b45309 !important; }
 .alert-tipo { font-size: 10px; color: #9aa2bb !important; letter-spacing: .03em; }
 
+/* ── ÁMBITO GRID ─────────────────────────────────────────────── */
+.ambito-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 12px !important;
+}
+.ambito-card {
+  background: #ffffff !important;
+  border: 1px solid #eceef6 !important;
+  border-radius: var(--r-lg) !important;
+  padding: 14px 16px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 4px rgba(8,15,39,.06) !important;
+}
+.ambito-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+}
+.ambito-card--green::before { background: linear-gradient(180deg, #0a7c52, #34d399) !important; }
+.ambito-card--amber::before { background: linear-gradient(180deg, #b45309, #f59e0b) !important; }
+.ambito-card--red::before   { background: linear-gradient(180deg, #b91c1c, #f87171) !important; }
+.ambito-card--green { background: linear-gradient(135deg, #fff 60%, #ecfdf5) !important; }
+.ambito-card--amber { background: linear-gradient(135deg, #fff 60%, #fffbeb) !important; }
+.ambito-card--red   { background: linear-gradient(135deg, #fff 60%, #fef2f2) !important; }
+.ambito-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.ambito-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #5a6480 !important;
+  margin-bottom: 2px;
+}
+.ambito-spi {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 600;
+  color: #080f27 !important;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.ambito-stats {
+  margin-left: auto;
+  text-align: right;
+  font-size: 11px;
+  color: #9aa2bb !important;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ambito-vencidas {
+  color: #b91c1c !important;
+  font-weight: 600;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .bottom-grid { grid-template-columns: 1fr !important; }
+  .paso-hero__center { display: none; }
+}
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .ambito-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 760px) {
   .ambito-grid { grid-template-columns: 1fr !important; }
   .dashboard-content { padding: 12px 14px !important; }
-  .paso-hero__center { display: none; }
+  .paso-hero__title { font-size: 12px !important; }
+  .paso-hero__sub { display: none; }
 }
+

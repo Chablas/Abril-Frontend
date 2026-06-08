@@ -78,6 +78,11 @@
               <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
             </div>
             <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+            <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
+              class="btn-chip chip-orange"
+              style="font-size:0.68rem;margin-top:2px">
+              {{ item.mesesPendientes }} meses pendientes
+            </span>
             <div class="bc-entidad">{{ item.entidadNombre }}</div>
             <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
               <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
@@ -117,6 +122,55 @@
             <button type="button" class="btn-chip chip-green" (click)="aprobar(selectedItem)">✓ Aprobar</button>
             <button type="button" class="btn-chip chip-red" (click)="rechazar(selectedItem)">✕ Rechazar</button>
           </div>
+        </div>
+
+        <!-- Panel vigencia + archivos -->
+        <div class="detalle-meta" style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e7eb;flex-shrink:0;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+
+          <!-- Vigencia editable -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.78rem;color:#6b7280;font-weight:600">VIGENCIA</label>
+            <input type="date" class="filter-input" style="width:auto" [(ngModel)]="vigenciaEditable" />
+          </div>
+
+          <!-- Selector de mes para items mensuales con meses cargados -->
+          <div *ngIf="selectedItem.esMensual && selectedItem.meses && selectedItem.meses.length > 0"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center">
+            <span style="font-size:0.78rem;color:#6b7280;font-weight:600">MES:</span>
+            <button *ngFor="let m of selectedItem.meses"
+              type="button"
+              class="btn-chip"
+              [class.chip-green]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Aprobado'"
+              [class.chip-orange]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Enviado'"
+              [class.chip-red]="mesSeleccionadoBandeja?.id === m.id && m.estado === 'Rechazado'"
+              [class.chip-gray]="mesSeleccionadoBandeja?.id !== m.id"
+              (click)="seleccionarMesBandeja(m)">
+              {{ m.mes }}/{{ m.anio }}
+            </button>
+          </div>
+
+          <!-- Archivos múltiples del mes seleccionado -->
+          <div *ngIf="mesSeleccionadoBandeja?.archivos && mesSeleccionadoBandeja.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of mesSeleccionadoBandeja.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
+          <!-- Archivos múltiples para items no mensuales -->
+          <div *ngIf="!selectedItem.esMensual && selectedItem.archivos && selectedItem.archivos.length > 1"
+            style="display:flex;gap:0.35rem;flex-wrap:wrap">
+            <button *ngFor="let a of selectedItem.archivos; let i=index"
+              type="button" class="btn-chip chip-gray"
+              [class.chip-green]="archivoSeleccionadoIdx === i"
+              (click)="seleccionarArchivo(i)">
+              📄 {{ i + 1 }}
+            </button>
+          </div>
+
         </div>
 
         <div class="doc-body">

@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  NgZone,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -19,13 +20,14 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empresa';
-import { DocumentoVersionDto } from '../../dtos/trabajador.model';
+import { ArchivoStagingDto, DocumentoVersionDto } from '../../dtos/trabajador.model';
 import { Observable, EMPTY } from 'rxjs';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 import {
   EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
+  EntregableMesDto,
   ProyectoDisponibleDto,
 } from '../../dtos/empresa.model';
 
@@ -62,13 +64,37 @@ export class Empresa implements OnInit {
   progresoPorProyecto = new Map<number, ProgresoProyecto>();
   loadingProgreso = new Set<number>();
 
-  panelArchivoUrl = '';
-  panelArchivoNombre = '';
+  archivosPendientes: ArchivoStagingDto[] = [];
+  isDragging = false;
   panelVigencia = '';
   panelObsAbril = '';
   panelObsContratista = '';
   panelEstado = '';
-  uploadingFile = false;
+
+  mesSeleccionado: EntregableMesDto | null = null;
+  mesDropdownOpen = false;
+  mesPanelMes: number = new Date().getMonth();
+  mesPanelAnio: number = new Date().getFullYear();
+  readonly mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  get mesesDisponibles(): { mes: number; anio: number; label: string }[] {
+    const result: { mes: number; anio: number; label: string }[] = [];
+    const hoy = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      result.push({ mes: d.getMonth() + 1, anio: d.getFullYear(),
+        label: `${this.mesesNombres[d.getMonth()]} ${d.getFullYear()}` });
+    }
+    return result;
+  }
+
+  get mesActualLabel(): string {
+    return `${this.mesesNombres[this.mesPanelMes]} ${this.mesPanelAnio}`;
+  }
+
+  get uploadingFile(): boolean { return this.archivosPendientes.some(a => a.subiendo); }
+  get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   private readonly SCTR_VIDA_LEY_IDS = [15, 16];
   private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
@@ -82,7 +108,11 @@ export class Empresa implements OnInit {
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
-    return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+    return this.requiereVigenciaAnteUpload && !this.panelVigencia && !this.esPermanente;
+  }
+
+  get esPermanente(): boolean {
+    return !!this.selectedEntregable && (this.selectedEntregable.itemId === 12 || this.selectedEntregable.itemId === 13);
   }
 
   visorArchivoUrl = '';
@@ -91,6 +121,9 @@ export class Empresa implements OnInit {
   mostrarProyectos = false;
 
   modalVersionesOpen = false;
+  historialVersiones: DocumentoVersionDto[] = [];
+  loadingHistorial = false;
+  mostrarHistorial = false;
   versionesLoader = (id: number): Observable<DocumentoVersionDto[]> =>
     this.empresaId ? this.habEmpresaService.getVersiones(this.empresaId, id) : EMPTY;
 
@@ -102,6 +135,7 @@ export class Empresa implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
@@ -123,8 +157,21 @@ export class Empresa implements OnInit {
   isAdmin(): boolean {
     return (
       this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
       this.authService.hasRole('ADMINISTRADOR DE UDP')
     );
+  }
+
+  get puedeAprobarEntregableActual(): boolean {
+    if (!this.selectedEntregable) return false;
+    const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
+    if (resp === 'SSOMA')
+      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    if (resp === 'ADMINISTRACION')
+      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    return this.isAdmin();
   }
 
   private readEmpresaIdFromJwt(): number | null {
@@ -300,9 +347,31 @@ export class Empresa implements OnInit {
 
   selectEntregable(e: EmpresaEntregableDto): void {
     this.selectedEntregable = e;
-    this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
-    this.panelArchivoUrl = e.archivoUrl ?? '';
-    this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
+    this.archivosPendientes = [];
+    this.mesSeleccionado = null;
+    this.historialVersiones = [];
+    this.mostrarHistorial = false;
+
+    const hoy = new Date();
+    const mesAnterior = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
+    const anioAnterior = hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear();
+    this.mesPanelMes = mesAnterior - 1;
+    this.mesPanelAnio = anioAnterior;
+
+    if (e.esMensual && e.meses?.length > 0) {
+      const mesExistente = e.meses.find(m => m.mes === mesAnterior && m.anio === anioAnterior);
+      this.mesSeleccionado = mesExistente ?? null;
+    }
+
+    if (e.requiereVigencia && !e.esMensual && (e.estado === 'Enviado' || e.estado === 'Rechazado')) {
+      this.panelVigencia = '';
+    } else {
+      this.panelVigencia = e.vigencia ? e.vigencia.substring(0, 10) : '';
+      if (!e.vigencia && e.itemId !== 12 && e.itemId !== 13) {
+        const mesSig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 27);
+        this.panelVigencia = mesSig.toISOString().substring(0, 10);
+      }
+    }
     this.panelObsAbril = e.obsAbril ?? '';
     this.panelObsContratista = e.obsContratista ?? '';
     this.panelEstado = e.estado;
@@ -310,8 +379,41 @@ export class Empresa implements OnInit {
     this.cdr.detectChanges();
   }
 
+  getMesEstado(mes: number, anio: number): string {
+    return this.selectedEntregable?.meses?.find(
+      m => m.mes === mes && m.anio === anio
+    )?.estado ?? 'Falta';
+  }
+
+  toggleMesDropdown(): void {
+    this.mesDropdownOpen = !this.mesDropdownOpen;
+    this.cdr.markForCheck();
+  }
+
+  cerrarMesDropdown(): void {
+    this.mesDropdownOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  seleccionarMes(mes: number, anio: number): void {
+    this.onMesChange(mes, anio);
+    this.cerrarMesDropdown();
+  }
+
+  onMesChange(mes: number, anio: number): void {
+    this.mesPanelMes = mes - 1;
+    this.mesPanelAnio = anio;
+    this.archivosPendientes = [];
+    if (this.selectedEntregable?.meses) {
+      this.mesSeleccionado = this.selectedEntregable.meses.find(
+        m => m.mes === mes && m.anio === anio
+      ) ?? null;
+    }
+    this.cdr.detectChanges();
+  }
+
   closeDrawer(): void {
-    if (this.isContratista()) {
+    if (this.isContratista() && this.panelObsContratista?.trim()) {
       this.guardarObservaciones();
     }
     this.drawerOpen = false;
@@ -380,34 +482,85 @@ export class Empresa implements OnInit {
     }
   }
 
+  getVigenciaEstimada(): string {
+    if (!this.selectedEntregable) return '';
+    const itemId = this.selectedEntregable.itemId;
+    const sentinel = [12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+    if (sentinel.includes(itemId)) return '31/12/2040';
+    if (this.selectedEntregable.esMensual) {
+      const mes = this.mesPanelMes + 1;
+      const anio = this.mesPanelAnio;
+      const mesSig = mes === 12 ? 1 : mes + 1;
+      const anioSig = mes === 12 ? anio + 1 : anio;
+      const fecha = new Date(anioSig, mesSig - 1, 27);
+      return fecha.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    return '';
+  }
+
+  private _dropJustHappened = false;
+
   triggerFileInput(): void {
+    if (this._dropJustHappened) return;
     this.fileInput?.nativeElement.click();
+  }
+
+  private addFiles(fileList: FileList | null | undefined): void {
+    const files = Array.from(fileList ?? []);
+    if (!files.length) return;
+    const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx', '.csv'];
+    for (const file of files) {
+      const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+      if (!extensionesPermitidas.includes(ext)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Archivo no permitido',
+          text: `"${file.name}" no es un formato aceptado. Formatos válidos: PDF, JPG, PNG, DOCX, XLSX, CSV.`,
+          confirmButtonColor: '#64bc04',
+        });
+        continue;
+      }
+      this.archivosPendientes.push({
+        file, nombre: file.name, esZip: false,
+        subiendo: false, error: false,
+      });
+    }
+    this.cdr.markForCheck();
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file) return;
-    this.panelArchivoNombre = file.name;
-    this.uploadingFile = true;
-    this.cdr.detectChanges();
-    const contexto = `habilitacion/empresas/${this.empresaId ?? 'sin-empresa'}`;
-    this.sharepointService.subirArchivo(file, contexto).subscribe({
-      next: (res) => {
-        this.panelArchivoUrl = res.path;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.panelArchivoUrl = `pending-upload://${file.name}`;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-    });
+    this.addFiles(input?.files);
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    console.log('onDragOver fired');
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+    this.cdr.markForCheck();
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+    this.cdr.markForCheck();
+  }
+
+  onDrop(event: DragEvent): void {
+    console.log('onDrop fired', event.dataTransfer?.files?.length);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    this.isDragging = false;
+    this.addFiles(event.dataTransfer?.files);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+    this._dropJustHappened = true;
+    setTimeout(() => { this._dropJustHappened = false; }, 300);
+    this.cdr.markForCheck();
   }
 
   private autoMarcarEnviado(): void {
@@ -433,8 +586,12 @@ export class Empresa implements OnInit {
   }
 
   clearArchivo(): void {
-    this.panelArchivoUrl = '';
-    this.panelArchivoNombre = '';
+    this.archivosPendientes = [];
+  }
+
+  quitarArchivo(idx: number): void {
+    this.archivosPendientes.splice(idx, 1);
+    this.cdr.detectChanges();
   }
 
   abrirVisor(url: string): void {
@@ -450,27 +607,121 @@ export class Empresa implements OnInit {
 
   enviarDocumento(): void {
     if (!this.selectedEntregable || !this.empresaId) return;
-    const payload: EmpresaEntregableUpdateDto = {
-      estado: 'Enviado',
-      vigencia: this.panelVigencia || undefined,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsContratista: this.panelObsContratista || undefined,
-    };
-    this.loaderService.show();
-    this.habEmpresaService
-      .updateEntregable(this.empresaId, this.selectedEntregable.id, payload)
-      .subscribe({
-        next: () => {
-          this.loaderService.hide();
-          Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
-          this.closeDrawer();
-          this.recargarEntregables();
+    if (this.archivosPendientes.length === 0) {
+      Swal.fire({ icon: 'error', title: 'Debes adjuntar al menos un archivo' });
+      return;
+    }
+    if (this.selectedEntregable.requiereVigencia && !this.panelVigencia && !this.esPermanente) {
+      Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+      return;
+    }
+    if (this.selectedEntregable.requiereVigencia && !this.selectedEntregable.esMensual && !this.esPermanente) {
+      const hoyVal = new Date(); hoyVal.setHours(0, 0, 0, 0);
+      const fechaVal = this.panelVigencia ? new Date(this.panelVigencia) : null;
+      if (!fechaVal || fechaVal <= hoyVal) {
+        Swal.fire({ icon: 'error', title: 'Debes ingresar una fecha de vigencia válida',
+          confirmButtonColor: '#64bc04' });
+        return;
+      }
+    }
+
+    const contexto = `habilitacion/empresas/${this.empresaId}`;
+    const entregableId = this.selectedEntregable.id;
+    const mesFijo = this.mesPanelMes + 1;
+    const anioFijo = this.mesPanelAnio;
+
+    this.archivosPendientes.forEach(a => a.subiendo = true);
+    this.cdr.detectChanges();
+
+    const subir = (idx: number): void => {
+      if (idx >= this.archivosPendientes.length) {
+        const archivos = this.archivosPendientes.map(a => ({
+          archivoUrl: a.path!,
+          nombreArchivo: a.nombre,
+          esZip: a.esZip,
+          zipContenido: a.zipContenido,
+        }));
+        this.sharepointService.enviarDocumento({
+          habEmpresaId: entregableId,
+          vigencia: (this.isContratista() && this.selectedEntregable!.requiereVigencia)
+            ? (this.panelVigencia || undefined)
+            : (!this.isContratista() ? (this.panelVigencia || undefined) : undefined),
+          obsContratista: this.isContratista() ? this.panelObsContratista || undefined : undefined,
+          ...(this.selectedEntregable!.esMensual ? {
+            mes: mesFijo,
+            anio: anioFijo,
+          } : {}),
+          archivos,
+        }).subscribe({
+          next: () => {
+            this.loaderService.hide();
+            Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
+            this.archivosPendientes = [];
+            const itemIdFijo = this.selectedEntregable!.itemId;
+            const idx = this.entregables.findIndex(
+              e => e.itemId === this.selectedEntregable?.itemId
+            );
+            this.ngZone.run(() => {
+              if (idx !== -1) {
+                this.entregables[idx] = { ...this.entregables[idx], estado: 'Enviado' };
+                this.entregables = [...this.entregables];
+              }
+            });
+            this.closeDrawer();
+            setTimeout(() => {
+              this.recargarEntregables((list) => {
+                const frescoEntregable = list.find(
+                  e => e.id === entregableId || e.itemId === itemIdFijo
+                );
+                if (frescoEntregable) {
+                  this.selectedEntregable = frescoEntregable;
+                  const idx = this.entregables.findIndex(
+                    e => e.id === frescoEntregable.id || e.itemId === frescoEntregable.itemId
+                  );
+                  if (idx !== -1) {
+                    this.entregables[idx] = { ...frescoEntregable };
+                  }
+                  this.entregables = [...this.entregables];
+                  this.cdr.detectChanges();
+                }
+                this.mesPanelMes = mesFijo - 1;
+                this.mesPanelAnio = anioFijo;
+                this.mesSeleccionado = this.selectedEntregable?.meses
+                  ?.find(m => m.mes === mesFijo && m.anio === anioFijo) ?? null;
+                this.cdr.markForCheck();
+              });
+            }, 500);
+          },
+          error: (err: HttpErrorResponse) => {
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+        return;
+      }
+
+      const item = this.archivosPendientes[idx];
+      this.sharepointService.subirArchivoMultiple(item.file, contexto).subscribe({
+        next: (res) => {
+          item.path = res.path;
+          item.esZip = res.esZip;
+          item.zipContenido = res.zipContenido;
+          item.subiendo = false;
+          this.cdr.detectChanges();
+          subir(idx + 1);
         },
-        error: (err: HttpErrorResponse) => {
+        error: () => {
+          item.error = true;
+          item.subiendo = false;
           this.loaderService.hide();
-          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+          Swal.fire({ icon: 'error', title: `Error al subir ${item.nombre}` });
         },
       });
+    };
+
+    this.loaderService.show();
+    subir(0);
   }
 
   guardarEntregable(): void {
@@ -587,14 +838,19 @@ export class Empresa implements OnInit {
     });
   }
 
-  private recargarEntregables(): void {
+  private recargarEntregables(afterLoad?: (list: EmpresaEntregableDto[]) => void): void {
     if (!this.selectedProyecto || !this.empresaId) return;
     const pid = this.selectedProyecto.id;
     const eid = this.empresaId;
     this.habEmpresaService.getEntregables(eid, pid).subscribe({
       next: (items) => {
         const list = items ?? [];
-        this.entregables = list;
+        console.log('entregables frescos:', list.map(e => ({
+          id: e.id, itemId: e.itemId, estado: e.estado,
+          meses: e.meses?.length
+        })));
+        this.entregables = [...list];
+        this.cdr.detectChanges();
         this.progresoPorProyecto.set(pid, {
           total: list.length,
           aprobadosEquiv: list.filter(
@@ -605,8 +861,17 @@ export class Empresa implements OnInit {
         });
         if (this.selectedEntregable) {
           const updated = list.find((e) => e.id === this.selectedEntregable!.id);
-          if (updated) this.selectedEntregable = updated;
+          if (updated) {
+            this.selectedEntregable = updated;
+            if (this.mesSeleccionado && updated.meses) {
+              const { mes, anio } = this.mesSeleccionado;
+              this.mesSeleccionado = updated.meses.find(
+                m => m.mes === mes && m.anio === anio
+              ) ?? null;
+            }
+          }
         }
+        afterLoad?.(list);
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -622,11 +887,115 @@ export class Empresa implements OnInit {
     this.modalVersionesOpen = true;
   }
 
+  cargarHistorial(): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    this.mostrarHistorial = !this.mostrarHistorial;
+    if (this.mostrarHistorial && this.historialVersiones.length === 0) {
+      this.loadingHistorial = true;
+      this.habEmpresaService
+        .getVersiones(this.empresaId, this.selectedEntregable.id)
+        .subscribe({
+          next: (res) => {
+            this.historialVersiones = (res ?? []).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            this.loadingHistorial = false;
+            this.cdr.markForCheck();
+          },
+          error: () => { this.loadingHistorial = false; this.cdr.markForCheck(); },
+        });
+    }
+  }
+
   closeVersiones(): void {
     this.modalVersionesOpen = false;
   }
 
   onProyectosChanged(): void {
     this.loadProyectos();
+  }
+
+  aprobarMesEspecifico(mes: EntregableMesDto): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${this.mesesNombres[mes.mes - 1]} ${mes.anio}?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.empresaId) return;
+      this.loaderService.show();
+      this.habEmpresaService.aprobarMes(this.empresaId, mes.id, {
+        estado: 'Aprobado',
+        vigencia: this.panelVigencia || undefined,
+      }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Mes aprobado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  rechazarMesEspecifico(mes: EntregableMesDto): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    Swal.fire({
+      icon: 'warning',
+      title: `Rechazar ${this.mesesNombres[mes.mes - 1]} ${mes.anio}`,
+      input: 'textarea',
+      inputLabel: 'Motivo del rechazo',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      inputValidator: (v) => (!v?.trim() ? 'Debes indicar un motivo' : null),
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.empresaId) return;
+      this.loaderService.show();
+      this.habEmpresaService.aprobarMes(this.empresaId, mes.id, {
+        estado: 'Rechazado',
+        motivoRechazo: res.value,
+      }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Rechazado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  eliminarArchivoVersion(archivoId: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar archivo?',
+      text: 'Solo puedes eliminar archivos de documentos aún no revisados.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.habEmpresaService.eliminarArchivo(this.empresaId!, archivoId).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1200, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
   }
 }

@@ -25,6 +25,7 @@ import { EmpresaContratistaService } from '../../services/empresa-contratista.se
 import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import {
+  ArchivoStagingDto,
   WorkerEntregableDto,
   WorkerEntregableUpdateDto,
   WorkerHabilitacionListDto,
@@ -78,12 +79,13 @@ export class Trabajadores implements OnInit, OnDestroy {
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
 
+  archivosPendientes: ArchivoStagingDto[] = [];
   panelVigencia = '';
-  panelArchivoUrl = '';
-  panelArchivoNombre = '';
   panelObsAbril = '';
   panelEstado = '';
-  uploadingFile = false;
+
+  get uploadingFile(): boolean { return this.archivosPendientes.some(a => a.subiendo); }
+  get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   get requiereVigenciaAnteUpload(): boolean {
     return !!this.selectedEntregable && this.selectedEntregable.requiereVigencia;
@@ -91,6 +93,20 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   get uploadBloqueadoPorVigencia(): boolean {
     return this.requiereVigenciaAnteUpload && !this.panelVigencia;
+  }
+
+  get puedeAprobarEntregableActual(): boolean {
+    if (!this.selectedEntregable) return false;
+    const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
+    if (resp === 'SSOMA')
+      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    if (resp === 'ADMINISTRACION')
+      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+             this.authService.hasRole('ADMINISTRADOR DE UDP');
+    return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
+           this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
+           this.authService.hasRole('ADMINISTRADOR DE UDP');
   }
 
   drawerOpen = false;
@@ -309,12 +325,11 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   selectEntregable(e: WorkerEntregableDto): void {
+    this.archivosPendientes = [];
     this.selectedEntregable = e;
     this.panelVigencia = !e.requiereVigencia
       ? '2040-12-31'
       : (e.vigencia ? e.vigencia.substring(0, 10) : '');
-    this.panelArchivoUrl = e.archivoUrl ?? '';
-    this.panelArchivoNombre = e.archivoUrl ? this.extractFileName(e.archivoUrl) : '';
     this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
@@ -345,9 +360,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   private resetPanel(): void {
+    this.archivosPendientes = [];
     this.panelVigencia = '';
-    this.panelArchivoUrl = '';
-    this.panelArchivoNombre = '';
     this.panelObsAbril = '';
     this.panelEstado = '';
   }
@@ -390,7 +404,10 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   esSctrVidaley(e: WorkerEntregableDto | null): boolean {
-    return !!e?.esSctrVidaley;
+    if (!e) return false;
+    // Items 11 (SCTR trabajador) y 13 (Vida Ley trabajador) se gestionan directamente aquí
+    if (e.itemId === 11 || e.itemId === 13) return false;
+    return !!e.esSctrVidaley;
   }
 
   esEmo(e: WorkerEntregableDto): boolean {
@@ -501,32 +518,18 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input?.files?.[0];
-    if (!file) return;
-    if (!this.selectedEntregable || !this.selectedWorker) return;
+    const files = Array.from(input?.files ?? []);
+    if (!files.length) return;
+    input.value = '';
 
-    this.panelArchivoNombre = file.name;
-    this.uploadingFile = true;
+    for (const file of files) {
+      const item: ArchivoStagingDto = {
+        file, nombre: file.name, esZip: file.name.endsWith('.zip'),
+        subiendo: false, error: false,
+      };
+      this.archivosPendientes.push(item);
+    }
     this.cdr.detectChanges();
-
-    const contexto = `habilitacion/trabajadores/${this.selectedWorker.workerId}`;
-    this.sharepointService.subirArchivo(file, contexto).subscribe({
-      next: (res) => {
-        this.panelArchivoUrl = res.path;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        // Endpoint backend no implementado aún → fallback temporal
-        this.panelArchivoUrl = `pending-upload://${file.name}`;
-        this.uploadingFile = false;
-        input.value = '';
-        this.autoMarcarEnviado();
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   private autoMarcarEnviado(): void {
@@ -571,50 +574,83 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   clearArchivo(): void {
-    this.panelArchivoUrl = '';
-    this.panelArchivoNombre = '';
+    this.archivosPendientes = [];
+  }
+
+  quitarArchivo(idx: number): void {
+    this.archivosPendientes.splice(idx, 1);
+    this.cdr.detectChanges();
   }
 
   enviarDocumento(): void {
     if (!this.selectedEntregable || !this.selectedWorker) return;
-
-    let nuevoEstado = this.selectedEntregable.estado;
-    if (this.isContratista()) {
-      nuevoEstado = 'Enviado';
-    } else if (this.isAdmin() && this.selectedEntregable.estado === 'Falta') {
-      nuevoEstado = 'Enviado';
+    if (this.archivosPendientes.length === 0) {
+      Swal.fire({ icon: 'error', title: 'Debes adjuntar al menos un archivo' });
+      return;
+    }
+    if (this.selectedEntregable.requiereVigencia && !this.panelVigencia) {
+      Swal.fire({ icon: 'error', title: 'Debes ingresar la fecha de vigencia' });
+      return;
     }
 
-    const payload: WorkerEntregableUpdateDto = {
-      estado: nuevoEstado,
-      vigencia: this.panelVigencia || undefined,
-      archivoUrl: this.panelArchivoUrl || undefined,
-      obsContratista: this.isContratista() ? this.panelObsAbril : undefined,
+    const contexto = `habilitacion/trabajadores/${this.selectedWorker.workerId}`;
+    const entregableId = this.selectedEntregable.id;
+
+    this.archivosPendientes.forEach(a => a.subiendo = true);
+    this.cdr.detectChanges();
+
+    const subir = (idx: number): void => {
+      if (idx >= this.archivosPendientes.length) {
+        const archivos = this.archivosPendientes.map(a => ({
+          archivoUrl: a.path!,
+          nombreArchivo: a.nombre,
+          esZip: a.esZip,
+          zipContenido: a.zipContenido,
+        }));
+        this.sharepointService.enviarDocumento({
+          habTrabajadorId: entregableId,
+          vigencia: (this.isContratista() && this.selectedEntregable!.requiereVigencia)
+            ? (this.panelVigencia || undefined)
+            : (!this.isContratista() ? (this.panelVigencia || undefined) : undefined),
+          obsContratista: this.isContratista() ? this.panelObsAbril || undefined : undefined,
+          archivos,
+        }).subscribe({
+          next: () => {
+            this.loaderService.hide();
+            Swal.fire({ icon: 'success', title: 'Enviado', timer: 1500, showConfirmButton: false });
+            this.archivosPendientes = [];
+            this.actualizarEntregableLocal({ estado: 'Enviado' });
+          },
+          error: (err: HttpErrorResponse) => {
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+        return;
+      }
+
+      const item = this.archivosPendientes[idx];
+      this.sharepointService.subirArchivoMultiple(item.file, contexto).subscribe({
+        next: (res) => {
+          item.path = res.path;
+          item.esZip = res.esZip;
+          item.zipContenido = res.zipContenido;
+          item.subiendo = false;
+          this.cdr.detectChanges();
+          subir(idx + 1);
+        },
+        error: () => {
+          item.error = true;
+          item.subiendo = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          Swal.fire({ icon: 'error', title: `Error al subir ${item.nombre}` });
+        },
+      });
     };
 
     this.loaderService.show();
-    this.trabajadorHabService
-      .updateEntregable(this.selectedEntregable.id, payload)
-      .subscribe({
-        next: () => {
-          this.loaderService.hide();
-          Swal.fire({
-            icon: 'success',
-            title: 'Enviado',
-            text: 'Documento enviado.',
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          this.actualizarEntregableLocal({
-            estado: 'Enviado',
-            archivoUrl: this.panelArchivoUrl || this.selectedEntregable?.archivoUrl,
-          });
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-        },
-      });
+    subir(0);
   }
 
   guardarEntregable(): void {

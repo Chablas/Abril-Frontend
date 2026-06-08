@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { WorkItemCategoryService } from '../../services/work-item-category.service';
 import { WorkItemCategoryDto } from '../../dtos/work-item-category.dto';
 import { WorkItemCategoryEditDto } from '../../dtos/work-item-category-edit.dto';
-import { WorkItemCategoryClauseDto } from '../../dtos/work-item-category.dto';
+import { WorkItemCategoryClauseDto, WorkItemCategoryAnexo3ClauseDto, WorkItemCategoryAnexo4ClauseDto } from '../../dtos/work-item-category.dto';
 import { WorkItemCategoryFilterDto } from '../../dtos/work-item-category-filter.dto';
 import { WorkItemCategoryEdit } from './edit/edit';
 import { PagedResponseDTO } from '../../../../../../../core/dtos/api/pagedResponse.model';
@@ -25,8 +25,10 @@ export class WorkItemCategoryList implements OnInit {
 
   items: WorkItemCategoryDto[] = [];
   showEditModal = false;
-  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true, clauses: [] };
+  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true, clauses: [], anexo3Clauses: [], anexo4Clauses: [] };
   editingClauses: WorkItemCategoryClauseDto[] = [];
+  editingAnexo3Clauses: WorkItemCategoryAnexo3ClauseDto[] = [];
+  editingAnexo4Clauses: WorkItemCategoryAnexo4ClauseDto[] = [];
 
   uploadingInstructivoId: number | null = null;
   private pendingUploadId: number | null = null;
@@ -60,8 +62,12 @@ export class WorkItemCategoryList implements OnInit {
       workItemCategoryDescription: item.workItemCategoryDescription,
       active: item.active,
       clauses: [],
+      anexo3Clauses: [],
+      anexo4Clauses: [],
     };
     this.editingClauses = item.clauses ?? [];
+    this.editingAnexo3Clauses = item.anexo3Clauses ?? [];
+    this.editingAnexo4Clauses = item.anexo4Clauses ?? [];
     this.showEditModal = true;
   }
 

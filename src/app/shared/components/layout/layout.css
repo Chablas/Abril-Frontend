@@ -1,3 +1,9 @@
+/* updated */
+
+.layout-content {
+  border-left: 1px solid #e5e7eb;
+}
+
 .full-page-wrapper,
 .full-page-wrapper > div {
   background: transparent !important;
@@ -17,4 +23,43 @@
  */
 .page-content > *:not(router-outlet) {
   flex: 1 0 auto;
+}
+
+.full-page-wrapper ::ng-deep app-header {
+  position: fixed;
+  top: 12px;
+  right: 8px;
+  z-index: 999;
+}
+
+.full-page-wrapper ::ng-deep app-header > div {
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .sm\:flex-8,
+.full-page-wrapper ::ng-deep app-header a,
+.full-page-wrapper ::ng-deep app-header img[alt="Logo"] {
+  display: none !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .shrink-0.relative {
+  width: 40px !important;
+  height: 40px !important;
+  overflow: visible !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .shrink-0.relative img {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255,255,255,.4) !important;
+}
+
+.full-page-wrapper ::ng-deep app-header .sm\:hidden {
+  display: none !important;
 }

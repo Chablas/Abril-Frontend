@@ -31,4 +31,38 @@ export class SharepointUploadService {
       params: { path },
     });
   }
+
+  subirArchivoMultiple(file: File, contexto: string): Observable<{
+    path: string;
+    nombreArchivo: string;
+    esZip: boolean;
+    zipContenido?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('contexto', contexto);
+    return this.http.post<any>(`${HABILITACION_BASE}/archivos/subir-multiple`, formData, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  enviarDocumento(dto: {
+    habTrabajadorId?: number;
+    habEmpresaId?: number;
+    habEquipoId?: number;
+    vigencia?: string;
+    obsContratista?: string;
+    mes?: number;
+    anio?: number;
+    archivos: {
+      archivoUrl: string;
+      nombreArchivo?: string;
+      esZip: boolean;
+      zipContenido?: string;
+    }[];
+  }): Observable<{ versionId: number; archivos: number }> {
+    return this.http.post<any>(`${HABILITACION_BASE}/archivos/enviar`, dto, {
+      headers: buildHabHeaders(),
+    });
+  }
 }

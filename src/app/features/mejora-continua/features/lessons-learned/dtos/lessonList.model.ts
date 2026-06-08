@@ -16,22 +16,15 @@ export interface LessonListDTO {
   /** Path "corto" para tabla/tarjetas: sin Gerencia, en MAYÚSCULAS. */
   areaListDescription?: string;
 
-  phaseStageSubStageSubSpecialtyId?: number;
-  phaseId?: number;
-  phaseDescription?: string;
-  stageId?: number;
-  stageDescription?: string;
-  layerId?: number;
-  layerDescription?: string;
-  subStageId?: number;
-  subStageDescription?: string;
-  subSpecialtyId?: number;
-  subSpecialtyDescription?: string;
-  partidaId?: number;
-  partidaDescription?: string;
+  /** ID del nodo hoja en el árbol de scope (catalog_item) — clasificación de la lección. */
+  catalogItemId?: number;
+  /** Segmentos de clasificación caminando scope_item (raíz → hoja). */
+  classificationSegments?: LessonClassificationSegment[];
 
   stateId: number;
   stateDescription: string;
+  /** PENDIENTE | APROBADA | RECHAZADA */
+  approvalStatus: string;
   images: LessonImage[];
 
   createdDateTime: string;
@@ -61,4 +54,10 @@ interface LessonImage {
   lessonId: number;
   imageTypeId: number;
   imageTypeDescription: string;
+}
+
+/** Un nivel de la clasificación (Fase / Etapa / Nivel / …) con su descripción. */
+export interface LessonClassificationSegment {
+  catalogTypeName: string;
+  catalogItemDescription: string;
 }

@@ -1,5 +1,5 @@
-<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" [ngClass]="badgeClass">
+<span class="spi-badge" [ngClass]="[nivel, size]">
   <i [ngClass]="iconClass"></i>
-  <span>{{ formatted }}</span>
-  <span class="opacity-70">{{ label }}</span>
+  <span class="spi-val">{{ formatted }}</span>
+  <span style="opacity:.7">{{ label }}</span>
 </span>

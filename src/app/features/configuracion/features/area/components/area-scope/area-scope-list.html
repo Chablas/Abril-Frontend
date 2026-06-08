@@ -4,6 +4,7 @@
       <tr class="text-[#64BC04]">
         <th class="text-left px-[16px] py-[10px] font-semibold w-[80px]"></th>
         <th class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
+        <th class="text-left px-[16px] py-[10px] font-semibold w-[140px]">Area_Scope_Id</th>
       </tr>
     </thead>
     <tbody>
@@ -26,9 +27,10 @@
             <span *ngIf="!last" class="text-gray-400 mx-2">&rsaquo;</span>
           </span>
         </td>
+        <td class="px-[16px] py-[8px] text-gray-500 text-sm">{{ row.leafScopeId }}</td>
       </tr>
       <tr *ngIf="rows.length === 0">
-        <td colspan="2" class="text-center py-8 text-gray-400 text-sm">
+        <td colspan="3" class="text-center py-8 text-gray-400 text-sm">
           Sin relaciones. Crea una con el botón superior.
         </td>
       </tr>

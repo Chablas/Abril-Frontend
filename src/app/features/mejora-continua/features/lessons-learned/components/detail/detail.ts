@@ -23,6 +23,10 @@ export class DetailLesson implements OnInit {
   @Input() defaultTab: 'general' | 'images' = 'general';
   @Output() closeModal = new EventEmitter<void>();
   @Output() deleted = new EventEmitter<void>();
+  /** Emite el lessonId para que el padre abra el modal de edición. */
+  @Output() edit = new EventEmitter<number>();
+  /** Emite cuando la lección fue aprobada/rechazada (para que el padre recargue la lista). */
+  @Output() reviewed = new EventEmitter<void>();
 
   lesson: LessonDetailDTO | null = null;
   activeTab: 'general' | 'images' = 'general';
@@ -52,6 +56,53 @@ export class DetailLesson implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  approve(event: MouseEvent): void {
+    event.stopPropagation();
+    this.loaderService.show();
+    this.lessonService.approveLesson(this.lessonId).subscribe({
+      next: (res: ApiMessageDTO) => {
+        this.loaderService.hide();
+        Swal.fire({ title: 'Lección aprobada', text: res.message ?? '', icon: 'success', confirmButtonColor: '#64BC04' });
+        this.reviewed.emit();
+        this.loadLesson();
+      },
+      error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+    });
+  }
+
+  reject(event: MouseEvent): void {
+    event.stopPropagation();
+    Swal.fire({
+      title: 'Rechazar lección',
+      input: 'textarea',
+      inputLabel: 'Comentario para el autor (opcional)',
+      inputPlaceholder: 'Indica qué debe corregir...',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#64BC04',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: 'Rechazar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      const comment = ((result.value as string) || '').trim() || null;
+      this.loaderService.show();
+      this.lessonService.rejectLesson(this.lessonId, comment).subscribe({
+        next: (res: ApiMessageDTO) => {
+          this.loaderService.hide();
+          Swal.fire({ title: 'Lección rechazada', text: res.message ?? '', icon: 'success', confirmButtonColor: '#64BC04' });
+          this.reviewed.emit();
+          this.loadLesson();
+        },
+        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+      });
+    });
+  }
+
+  editLesson(event: MouseEvent): void {
+    event.stopPropagation();
+    this.edit.emit(this.lessonId);
   }
 
   deleteLesson(event: MouseEvent): void {

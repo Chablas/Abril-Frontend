@@ -68,11 +68,6 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Fases',              route: '/projects/configuration/phases',          featureKey: 'projects.config.phases' },
-            { label: 'Etapas',             route: '/projects/configuration/stages',          featureKey: 'projects.config.stages' },
-            { label: 'Niveles',            route: '/projects/configuration/layers',          featureKey: 'projects.config.layers' },
-            { label: 'Subetapas',          route: '/projects/configuration/sub-stages',      featureKey: 'projects.config.sub-stages' },
-            { label: 'Subespecialidades',  route: '/projects/configuration/sub-specialties', featureKey: 'projects.config.sub-specialties' },
             { label: 'Hitos',              route: '/projects/configuration/milestones',      featureKey: 'projects.config.milestones' },
           ],
         },

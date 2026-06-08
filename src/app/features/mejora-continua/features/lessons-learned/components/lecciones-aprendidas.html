@@ -47,61 +47,29 @@
         </app-search-select>
       </div>
 
+      <div class="w-[200px]">
+        <app-search-select
+          label="Estado"
+          [options]="approvalStatusOptions"
+          valueField="value"
+          displayField="label"
+          [value]="filtersTable.approvalStatus"
+          (valueChange)="filtersTable.approvalStatus = $event">
+        </app-search-select>
+      </div>
+
       <!-- Advanced filters -->
       <ng-container *ngIf="showFilters">
 
-        <div class="w-[220px]">
+        <!-- Un dropdown por cada catalog_type activo en scope_item -->
+        <div *ngFor="let cat of categoryOptions" class="w-[220px]">
           <app-search-select
-            label="Fase"
-            [options]="phaseOptions"
-            valueField="phaseId"
-            displayField="phaseDescription"
-            [value]="filtersTable.phaseId"
-            (valueChange)="filtersTable.phaseId = $event">
-          </app-search-select>
-        </div>
-
-        <div class="w-[220px]">
-          <app-search-select
-            label="Etapa"
-            [options]="stageOptions"
-            valueField="stageId"
-            displayField="stageDescription"
-            [value]="filtersTable.stageId"
-            (valueChange)="filtersTable.stageId = $event">
-          </app-search-select>
-        </div>
-
-        <div class="w-[220px]">
-          <app-search-select
-            label="Nivel"
-            [options]="layerOptions"
-            valueField="layerId"
-            displayField="layerDescription"
-            [value]="filtersTable.layerId"
-            (valueChange)="filtersTable.layerId = $event">
-          </app-search-select>
-        </div>
-
-        <div class="w-[220px]">
-          <app-search-select
-            label="Subetapa"
-            [options]="subStageOptions"
-            valueField="subStageId"
-            displayField="subStageDescription"
-            [value]="filtersTable.subStageId"
-            (valueChange)="filtersTable.subStageId = $event">
-          </app-search-select>
-        </div>
-
-        <div class="w-[220px]">
-          <app-search-select
-            label="Subespecialidad"
-            [options]="subSpecialtyOptions"
-            valueField="subSpecialtyId"
-            displayField="subSpecialtyDescription"
-            [value]="filtersTable.subSpecialtyId"
-            (valueChange)="filtersTable.subSpecialtyId = $event">
+            [label]="cat.group.catalogTypeName"
+            [options]="cat.options"
+            valueField="catalogItemId"
+            displayField="catalogItemDescription"
+            [value]="getCatalogSelection(cat.group.catalogTypeId)"
+            (valueChange)="onCatalogSelectionChange(cat.group.catalogTypeId, $event)">
           </app-search-select>
         </div>
 
@@ -128,6 +96,14 @@
         </div>
 
       </ng-container>
+
+      <button type="button" (click)="toggleMyPendingReview()"
+        class="h-[38px] px-4 rounded-xl text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        [ngClass]="filtersTable.onlyMyPendingReview
+          ? 'bg-[#64BC04] text-white border-[#64BC04]'
+          : 'bg-white text-[#64BC04] border-[#64BC04] hover:bg-[#E5F7D1]'">
+        Pendientes de mi revisión
+      </button>
 
       <button type="button" (click)="showFilters = !showFilters"
         class="h-[38px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
@@ -197,5 +173,15 @@
   [currentUserId]="currentUserId"
   [defaultTab]="selectedLessonTab"
   (closeModal)="selectedLessonId = null"
-  (deleted)="loadLessons(currentPage)">
+  (deleted)="loadLessons(currentPage)"
+  (edit)="onEditLesson($event)"
+  (reviewed)="onReviewed()">
 </app-detail-lesson>
+
+<app-edit-lesson
+  *ngIf="editLessonId"
+  [lessonId]="editLessonId"
+  [filtersData]="filtersData"
+  (closeModal)="editLessonId = null"
+  (saved)="onEditSaved()">
+</app-edit-lesson>

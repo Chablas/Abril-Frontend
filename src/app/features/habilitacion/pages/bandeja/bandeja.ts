@@ -57,6 +57,9 @@ export class Bandeja implements OnInit, OnDestroy {
   selectedItem: BandejaItemDto | null = null;
   docSafeUrl: SafeResourceUrl | null = null;
   loadingDoc = false;
+  vigenciaEditable: string = '';
+  archivoSeleccionadoIdx: number = 0;
+  mesSeleccionadoBandeja: any = null;
   private docBlobUrl = '';
 
   // ── Inducciones agrupadas ─────────────────────────────────
@@ -378,10 +381,56 @@ export class Bandeja implements OnInit, OnDestroy {
     if (this.selectedItem?.id === item.id) return;
     this.clearDocPanel();
     this.selectedItem = item;
-    this.loadingDoc = !!item.archivoUrl;
-    if (item.archivoUrl) {
-      this.loadDocBlob(item.archivoUrl);
+    this.archivoSeleccionadoIdx = 0;
+
+    if (item.esMensual && item.meses && item.meses.length > 0) {
+      this.mesSeleccionadoBandeja = item.meses[0];
+      this.vigenciaEditable = item.meses[0].vigencia
+        ? new Date(item.meses[0].vigencia).toISOString().substring(0, 10)
+        : this.vigenciaEditable;
+      const url = item.meses[0].archivos?.[0]?.archivoUrl ?? item.archivoUrl;
+      this.loadingDoc = !!url;
+      if (url) this.loadDocBlob(url);
+    } else {
+      this.mesSeleccionadoBandeja = null;
+      const sentinel = [12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+      if (item.itemId && sentinel.includes(item.itemId)) {
+        this.vigenciaEditable = '2040-12-31';
+      } else {
+        this.vigenciaEditable = item.vigencia
+          ? new Date(item.vigencia).toISOString().substring(0, 10) : '';
+      }
+      const urlInicial = item.archivos?.[0]?.archivoUrl ?? item.archivoUrl;
+      this.loadingDoc = !!urlInicial;
+      if (urlInicial) this.loadDocBlob(urlInicial);
     }
+  }
+
+  seleccionarArchivo(idx: number): void {
+    this.archivoSeleccionadoIdx = idx;
+    const url = this.mesSeleccionadoBandeja?.archivos?.[idx]?.archivoUrl
+      ?? this.selectedItem?.archivos?.[idx]?.archivoUrl;
+    if (url) this.loadDocBlob(url);
+  }
+
+  seleccionarMesBandeja(mes: any): void {
+    this.mesSeleccionadoBandeja = mes;
+    this.archivoSeleccionadoIdx = 0;
+    const sentinel = [12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25];
+    if (this.selectedItem?.itemId && sentinel.includes(this.selectedItem.itemId)) {
+      this.vigenciaEditable = '2040-12-31';
+    } else {
+      const mesSig = mes.mes === 12 ? 1 : mes.mes + 1;
+      const anioSig = mes.mes === 12 ? mes.anio + 1 : mes.anio;
+      this.vigenciaEditable = `${anioSig}-${String(mesSig).padStart(2, '0')}-27`;
+    }
+    if (mes.vigencia) {
+      this.vigenciaEditable = new Date(mes.vigencia).toISOString().substring(0, 10);
+    }
+    const url = mes.archivos?.[0]?.archivoUrl ?? this.selectedItem?.archivoUrl;
+    this.loadingDoc = !!url;
+    if (url) this.loadDocBlob(url);
+    this.cdr.detectChanges();
   }
 
   private clearDocPanel(): void {
@@ -451,11 +500,13 @@ export class Bandeja implements OnInit, OnDestroy {
   // ── Acciones ──────────────────────────────────────────────
 
   aprobar(item: BandejaItemDto): void {
-    this.executeAction(item, { estado: 'Aprobado' }, 'Aprobado');
+    const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
+    this.executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: this.vigenciaEditable || undefined }, 'Aprobado');
   }
 
   rechazar(item: BandejaItemDto): void {
-    this.executeAction(item, { estado: 'Rechazado' }, 'Rechazado');
+    const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
+    this.executeAction({ ...item, id }, { estado: 'Rechazado' }, 'Rechazado');
   }
 
   private executeAction(

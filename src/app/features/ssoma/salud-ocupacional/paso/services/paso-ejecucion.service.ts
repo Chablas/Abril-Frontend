@@ -15,6 +15,10 @@ export class PasoEjecucionService {
     return this.http.post<PasoEjecucionDto>(EJECUCION_BASE, dto, { headers: buildAuthHeaders() });
   }
 
+  reprogramar(id: number, dto: { nuevaFecha: string; motivo: string }): Observable<PasoEjecucionDto> {
+    return this.http.patch<PasoEjecucionDto>(`${EJECUCION_BASE}/${id}/reprogramar`, dto, { headers: buildAuthHeaders() });
+  }
+
   subirEvidencia(id: number, file: File): Observable<PasoEjecucionDto> {
     const fd = new FormData();
     fd.append('file', file, file.name);

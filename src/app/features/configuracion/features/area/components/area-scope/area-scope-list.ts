@@ -53,16 +53,14 @@ export class AreaScopeList implements OnInit {
     });
   }
 
-  /** Recorre el árbol y devuelve una fila por cada hoja con su path completo. */
+  /** Recorre el árbol y devuelve una fila por CADA nodo (hoja o intermedio) con su path completo. */
   private computeBranches(tree: AreaScopeTreeDto[]): BranchRow[] {
     const result: BranchRow[] = [];
     const walk = (node: AreaScopeTreeDto, ancestors: BranchSegment[]) => {
       const segments = [...ancestors, { name: node.areaItemName, areaTypeName: node.areaTypeName }];
-      if (!node.children?.length) {
-        result.push({ leafScopeId: node.areaScopeId, segments });
-        return;
-      }
-      for (const child of node.children) walk(child, segments);
+      // Incluir cualquier nodo, no solo las hojas: un nodo intermedio también es una rama válida.
+      result.push({ leafScopeId: node.areaScopeId, segments });
+      for (const child of node.children ?? []) walk(child, segments);
     };
     for (const root of tree) walk(root, []);
     return result;
