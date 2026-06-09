@@ -151,7 +151,9 @@ export class NavigationService {
       label: 'Gestión de Ingresos',
       iconKey: 'habilitacion',
       baseRoute: '/habilitacion',
-      items: [],
+      items: [
+        { label: 'Dashboard', route: '/habilitacion/dashboard', featureKey: 'habilitacion.dashboard' },
+      ],
       groups: [
         {
           label: 'Gestión',

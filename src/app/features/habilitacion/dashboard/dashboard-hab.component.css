@@ -1,0 +1,276 @@
+.dashboard-hab-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────── */
+.skeleton-wrap { animation: pulse 1.5s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.skeleton-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.skeleton-card {
+  height: 96px;
+  border-radius: 0.75rem;
+  background: #e5e7eb;
+}
+
+.skeleton-table {
+  height: 200px;
+  border-radius: 0.75rem;
+  background: #e5e7eb;
+}
+
+/* ── KPI Grid ─────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  border-left: 4px solid transparent;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7280;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #111827;
+}
+
+.kpi-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.kpi-blue   { border-left-color: #3b82f6; }
+.kpi-green  { border-left-color: #22c55e; }
+.kpi-red    { border-left-color: #ef4444; }
+.kpi-yellow { border-left-color: #eab308; }
+.kpi-orange { border-left-color: #f97316; }
+
+/* ── Sections ─────────────────────────────────────────────── */
+.table-section {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── Table ────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+
+.hab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.hab-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.hab-table td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.hab-table tbody tr:last-child td { border-bottom: none; }
+.hab-table tbody tr:hover { background: #f9fafb; }
+
+/* ── Badges de riesgo ─────────────────────────────────────── */
+.badge-riesgo {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.badge-riesgo-alto  { background: #fee2e2; color: #b91c1c; }
+.badge-riesgo-medio { background: #fef9c3; color: #92400e; }
+.badge-riesgo-bajo  { background: #dcfce7; color: #15803d; }
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.fill-green  { background: #22c55e; }
+.fill-yellow { background: #eab308; }
+.fill-red    { background: #ef4444; }
+
+.progress-pct {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* ── Vencimientos ─────────────────────────────────────────── */
+.vencimientos-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vencimiento-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  gap: 1rem;
+}
+
+.venc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.venc-nombre {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.venc-doc {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.venc-empresa {
+  font-size: 0.75rem;
+}
+
+.venc-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.venc-tipo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.venc-fecha {
+  font-size: 0.8rem;
+}
+
+.venc-dias {
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-width: 2rem;
+  text-align: right;
+}
+
+.dias-rojo    { color: #dc2626; }
+.dias-naranja { color: #ea580c; }
+.dias-verde   { color: #16a34a; }
+
+/* ── Misc ─────────────────────────────────────────────────── */
+.font-medium { font-weight: 500; }
+.text-center { text-align: center; }
+.text-gray-500 { color: #6b7280; }
+.text-gray-400 { color: #9ca3af; }
+.text-sm { font-size: 0.875rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.btn-retry {
+  margin-top: 1rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-retry:hover { background: #2563eb; }

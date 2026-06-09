@@ -1,0 +1,214 @@
+<div class="dashboard-hab-container">
+
+  <!-- ── Skeleton ──────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="skeleton-wrap">
+      <div class="skeleton-grid-4">
+        @for (_ of [1,2,3,4,5,6,7,8]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+      <div class="skeleton-table mt-6"></div>
+      <div class="skeleton-table mt-4"></div>
+    </div>
+  }
+
+  <!-- ── Contenido ─────────────────────────────────────────── -->
+  @if (!loading && data) {
+
+    <!-- KPI Cards (8) -->
+    <section class="kpi-grid">
+
+      <div class="kpi-card kpi-blue">
+        <span class="kpi-label">Total Empresas</span>
+        <span class="kpi-value">{{ kpis?.empresasTotal ?? 0 }}</span>
+      </div>
+
+      <div class="kpi-card kpi-green">
+        <span class="kpi-label">Empresas Habilitadas</span>
+        <span class="kpi-value">{{ kpis?.empresasHabilitadas ?? 0 }}</span>
+        <span class="kpi-sub">
+          {{ pct(kpis?.empresasHabilitadas ?? 0, kpis?.empresasTotal ?? 0) }}%
+        </span>
+      </div>
+
+      <div class="kpi-card kpi-red">
+        <span class="kpi-label">Empresas en Riesgo</span>
+        <span class="kpi-value">{{ empresasEnRiesgo.length }}</span>
+      </div>
+
+      <div class="kpi-card kpi-blue">
+        <span class="kpi-label">Total Trabajadores</span>
+        <span class="kpi-value">{{ kpis?.workersTotal ?? 0 }}</span>
+      </div>
+
+      <div class="kpi-card kpi-green">
+        <span class="kpi-label">Trabajadores Habilitados</span>
+        <span class="kpi-value">{{ kpis?.workersHabilitados ?? 0 }}</span>
+        <span class="kpi-sub">
+          {{ pct(kpis?.workersHabilitados ?? 0, kpis?.workersTotal ?? 0) }}%
+        </span>
+      </div>
+
+      <div class="kpi-card kpi-red">
+        <span class="kpi-label">Trabajadores en Riesgo</span>
+        <span class="kpi-value">{{ workersEnRiesgo.length }}</span>
+      </div>
+
+      <div class="kpi-card kpi-yellow">
+        <span class="kpi-label">Entregables Vencidos</span>
+        <span class="kpi-value">{{ kpis?.entregablesVencidos ?? 0 }}</span>
+      </div>
+
+      <div class="kpi-card kpi-orange">
+        <span class="kpi-label">Vencimientos Próximos</span>
+        <span class="kpi-value">{{ vencimientosProximos.length }}</span>
+      </div>
+
+    </section>
+
+    <!-- Empresas en Riesgo -->
+    @if (empresasEnRiesgo.length > 0) {
+      <section class="table-section">
+        <h2 class="section-title">Empresas en Riesgo</h2>
+        <div class="table-wrap">
+          <table class="hab-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Nivel Riesgo</th>
+                <th>Entreg. Vencidos</th>
+                <th>Entreg. Por Vencer</th>
+                <th>Workers Activos</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (emp of empresasEnRiesgo; track emp.empresaId) {
+                <tr>
+                  <td class="font-medium">{{ emp.nombre }}</td>
+                  <td>
+                    <span [class]="'badge-riesgo ' + riesgoClass(emp.nivelRiesgo)">
+                      {{ emp.nivelRiesgo }}
+                    </span>
+                  </td>
+                  <td class="text-center">{{ emp.entregablesVencidos }}</td>
+                  <td class="text-center">{{ emp.entregablesPorVencer }}</td>
+                  <td class="text-center">{{ emp.workersActivos }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Workers en Riesgo -->
+    @if (workersEnRiesgo.length > 0) {
+      <section class="table-section">
+        <h2 class="section-title">Trabajadores en Riesgo</h2>
+        <div class="table-wrap">
+          <table class="hab-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>DNI</th>
+                <th>Empresa</th>
+                <th>Proyecto</th>
+                <th>Docs. Vencidos</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (w of workersEnRiesgo; track w.workerId) {
+                <tr>
+                  <td class="font-medium">{{ w.nombre }}</td>
+                  <td class="text-gray-500">{{ w.dni }}</td>
+                  <td>{{ w.empresa }}</td>
+                  <td class="text-gray-500 text-sm">{{ w.proyecto }}</td>
+                  <td class="text-sm">{{ (w.documentosVencidos ?? []).join(', ') }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Estado por Proyecto -->
+    @if (estadoPorProyecto.length > 0) {
+      <section class="table-section">
+        <h2 class="section-title">Estado por Proyecto</h2>
+        <div class="table-wrap">
+          <table class="hab-table">
+            <thead>
+              <tr>
+                <th>Proyecto</th>
+                <th>Empresas Activas</th>
+                <th>Workers Hab. / Total</th>
+                <th>% Avance</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of estadoPorProyecto; track p.proyectoId) {
+                <tr>
+                  <td class="font-medium">{{ p.nombre }}</td>
+                  <td class="text-center">{{ p.empresasActivas }}</td>
+                  <td class="text-center">
+                    {{ p.workersHabilitados }} / {{ p.workersTotal }}
+                  </td>
+                  <td>
+                    <div class="progress-wrap">
+                      <div class="progress-bar">
+                        <div
+                          class="progress-fill"
+                          [style.width.%]="pct(p.workersHabilitados, p.workersTotal)"
+                          [class.fill-green]="pct(p.workersHabilitados, p.workersTotal) >= 80"
+                          [class.fill-yellow]="pct(p.workersHabilitados, p.workersTotal) >= 50 && pct(p.workersHabilitados, p.workersTotal) < 80"
+                          [class.fill-red]="pct(p.workersHabilitados, p.workersTotal) < 50"
+                        ></div>
+                      </div>
+                      <span class="progress-pct">{{ pct(p.workersHabilitados, p.workersTotal) }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Vencimientos Próximos -->
+    @if (vencimientosProximos.length > 0) {
+      <section class="table-section">
+        <h2 class="section-title">Vencimientos Próximos</h2>
+        <ul class="vencimientos-list">
+          @for (v of vencimientosProximos; track $index) {
+            <li class="vencimiento-item">
+              <div class="venc-info">
+                <span class="venc-nombre">{{ v.entidad }}</span>
+                <span class="venc-doc">{{ v.nombre }}</span>
+              </div>
+              <div class="venc-right">
+                <span class="venc-tipo">{{ entidadTipoLabel(v.tipo) }}</span>
+                <span class="venc-fecha text-gray-400">{{ v.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
+                <span [class]="'venc-dias ' + diasClass(v.diasRestantes)">
+                  {{ v.diasRestantes }}d
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+  }
+
+  <!-- Sin datos -->
+  @if (!loading && !data) {
+    <div class="empty-state">
+      <p>No se pudo cargar el dashboard. Intente nuevamente.</p>
+      <button class="btn-retry" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+</div>
