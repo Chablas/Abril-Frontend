@@ -118,9 +118,9 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   onModuleClick(module: NavModule): void {
     if (module.key === 'habilitacion') {
       if (this.authService.isContratista()) {
-        this.router.navigate(['/habilitacion']);
+        this.router.navigate(['/habilitacion/dashboard-contratista']);
       } else {
-        this.router.navigate(['/']);
+        this.router.navigate(['/habilitacion/gestion']);
       }
       this.activeMenu = null;
       return;

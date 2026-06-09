@@ -150,38 +150,11 @@ export class NavigationService {
       key: 'habilitacion',
       label: 'Gestión de Ingresos',
       iconKey: 'habilitacion',
-      baseRoute: '/habilitacion',
+      baseRoute: '/habilitacion/gestion',
       items: [
-        { label: 'Dashboard', route: '/habilitacion/dashboard', featureKey: 'habilitacion.dashboard' },
+        { label: 'Gestión de Ingresos', route: '/habilitacion/gestion' },
       ],
-      groups: [
-        {
-          label: 'Gestión',
-          items: [
-            { label: 'Trabajadores',       route: '/habilitacion/trabajadores', featureKey: 'habilitacion.trabajadores' },
-            { label: 'Empresa',            route: '/habilitacion/empresa',      featureKey: 'habilitacion.empresa' },
-            { label: 'Equipos y Máquinas', route: '/habilitacion/equipos',      featureKey: 'habilitacion.equipos' },
-            { label: 'SCTR y Vida Ley',    route: '/habilitacion/sctr-vidaley', featureKey: 'habilitacion.sctr-vidaley' },
-            { label: 'Inducciones',        route: '/habilitacion/inducciones',  featureKey: 'habilitacion.inducciones' },
-          ],
-        },
-        {
-          label: 'Operaciones',
-          items: [
-            { label: 'Reglas de Entregables', route: '/habilitacion/reglas',    featureKey: 'habilitacion.reglas' },
-            { label: 'Auditoría',             route: '/habilitacion/auditoria', featureKey: 'habilitacion.auditoria' },
-            { label: 'Clínicas',              route: '/habilitacion/clinicas',  featureKey: 'habilitacion.clinicas' },
-          ],
-        },
-        {
-          label: 'Administración',
-          items: [
-            { label: 'Bandeja de Aprobaciones', route: '/habilitacion/bandeja',                 featureKey: 'habilitacion.bandeja' },
-            { label: 'Registros Modelo',        route: '/habilitacion/registros-modelo',        featureKey: 'habilitacion.registros-modelo' },
-            { label: 'Evaluación Supervisores', route: '/habilitacion/evaluacion-supervisores', featureKey: 'habilitacion.evaluacion-supervisores' },
-          ],
-        },
-      ],
+      groups: [],
     },
     {
       key: 'control-acceso',
@@ -253,12 +226,25 @@ export class NavigationService {
   }
 
   getModules(): NavModule[] {
+    const isContratista = this.authService.isContratista();
     return this.config
-      .map((m) => ({
-        ...m,
-        items: this.filterItems(m.items),
-        groups: this.filterGroups(m.groups),
-      }))
+      .map((m) => {
+        if (m.key === 'habilitacion') {
+          const route = isContratista
+            ? '/habilitacion/dashboard-contratista'
+            : '/habilitacion/gestion';
+          return {
+            ...m,
+            items: [{ label: m.items[0].label, route }],
+            groups: this.filterGroups(m.groups),
+          };
+        }
+        return {
+          ...m,
+          items: this.filterItems(m.items),
+          groups: this.filterGroups(m.groups),
+        };
+      })
       .filter((m) => m.items.length > 0 || (m.groups && m.groups.length > 0));
   }
 

@@ -28,7 +28,8 @@ export class Layout {
       this.router.url.includes('/evaluaciones/evaluar') ||
       this.router.url.includes('/evaluaciones/historial') ||
       this.router.url.includes('/evaluaciones/configuracion') ||
-      this.router.url.includes('/ssoma/gestion/paso')
+      this.router.url.includes('/ssoma/gestion/paso') ||
+      this.router.url.includes('/habilitacion/gestion')
     );
   }
 }
