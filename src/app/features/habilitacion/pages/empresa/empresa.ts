@@ -508,7 +508,7 @@ export class Empresa implements OnInit {
   private addFiles(fileList: FileList | null | undefined): void {
     const files = Array.from(fileList ?? []);
     if (!files.length) return;
-    const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx', '.csv'];
+    const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx', '.csv', '.txt'];
     for (const file of files) {
       const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
       if (!extensionesPermitidas.includes(ext)) {

@@ -455,7 +455,7 @@
 
 <!-- Modal entregable -->
 <div class="modal-entregable" [class.open]="drawerOpen">
-  <input #fileInput type="file" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip" (change)="onFileSelected($event)" />
+  <input #fileInput type="file" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip,.txt" (change)="onFileSelected($event)" />
 
   <ng-container *ngIf="selectedEntregable">
 

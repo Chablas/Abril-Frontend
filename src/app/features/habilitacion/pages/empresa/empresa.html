@@ -247,7 +247,7 @@
 
 <!-- DRAWER -->
 <div class="drawer" [class.open]="drawerOpen">
-  <input #fileInput type="file" multiple hidden style="display:none" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv" (change)="onFileSelected($event)" />
+  <input #fileInput type="file" multiple hidden style="display:none" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv,.txt" (change)="onFileSelected($event)" />
 
   <ng-container *ngIf="selectedEntregable">
 
