@@ -1,21 +1,29 @@
 <div class="flex flex-col gap-[20px]">
-  <div class="flex items-center justify-between gap-4">
-    <p class="text-[0.78rem] text-gray-500">
-      Activa las jefaturas (<span class="font-semibold">workers.categoria = 'Jefe'</span>) que recibirán el
-      recordatorio del <span class="font-semibold">4.º día hábil</span> para revisar las Lecciones Aprendidas.
-      Por defecto todas están inactivas; al activar una por primera vez se registra. Si está inactiva no recibe el correo.
-    </p>
+  <div class="flex items-end justify-start gap-3 flex-wrap">
+    <!-- Filtro por categoría -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Categoría"
+        [options]="categoryOptions"
+        valueField="value"
+        displayField="label"
+        [value]="categoryFilter"
+        (valueChange)="categoryFilter = $event"
+        placeholder="Todas las categorías"
+      ></app-search-select>
+    </div>
 
+    <!-- Buscar por nombre -->
     <div
       class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
-              focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all w-[280px] flex-shrink-0"
+              focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all w-[280px]"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
         <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
       </svg>
       <input
         type="text"
-        placeholder="Buscar jefe o correo..."
+        placeholder="Buscar por nombre..."
         [(ngModel)]="searchText"
         class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
       />
@@ -26,7 +34,8 @@
     <table class="w-full">
       <thead class="bg-[#E5F7D1]">
         <tr class="text-[#64BC04]">
-          <th class="text-left px-[16px] py-[10px] font-semibold">Jefe</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Nombre</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold w-[160px]">Categoría</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Correo</th>
           <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Estado</th>
           <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Acciones</th>
@@ -35,6 +44,7 @@
       <tbody>
         <tr *ngFor="let r of filteredRows" class="border-b border-[#D6DEE5] hover:bg-gray-50">
           <td class="px-[16px] py-[8px] text-gray-700">{{ r.fullName }}</td>
+          <td class="px-[16px] py-[8px] text-gray-700">{{ r.categoria }}</td>
           <td class="px-[16px] py-[8px] text-gray-700">{{ r.email }}</td>
           <td class="px-[16px] py-[8px] text-center">
             <app-status-badge
@@ -59,8 +69,8 @@
         </tr>
 
         <tr *ngIf="filteredRows.length === 0">
-          <td colspan="4" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
-            {{ searchText ? 'Sin resultados.' : 'No hay jefaturas (workers con categoría Jefe).' }}
+          <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            {{ hasActiveFilter ? 'Sin resultados.' : 'No hay jefaturas (workers con categoría Jefe, Coordinador o Residente).' }}
           </td>
         </tr>
       </tbody>

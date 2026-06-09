@@ -3,6 +3,7 @@ export interface JefeReminderConfigItemDTO {
   workerId: number;
   fullName?: string;
   email?: string;
+  categoria?: string; // Jefe | Coordinador | Residente
   active: boolean;
 }
 

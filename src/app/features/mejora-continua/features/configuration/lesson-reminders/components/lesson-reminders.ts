@@ -37,7 +37,7 @@ type ReminderSection = 'users' | 'staff' | 'jefes';
 export class LessonReminders implements OnInit {
   activeSection: ReminderSection = 'users';
   readonly sectionTabs: SectionTab[] = [
-    { id: 'users', label: 'Usuarios' },
+    { id: 'users', label: 'Trabajadores' },
     { id: 'staff', label: 'Staff de proyectos' },
     { id: 'jefes', label: 'Jefaturas' },
   ];
@@ -151,7 +151,7 @@ export class LessonReminders implements OnInit {
     event.stopPropagation();
     Swal.fire({
       title: '¿Estás seguro/a?',
-      text: `Se eliminará el recordatorio de "${item.userFullName ?? ''}" en "${item.projectDescription ?? ''}".`,
+      text: `Se eliminará el recordatorio de "${item.workerFullName ?? ''}" en "${item.projectDescription ?? ''}".`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#64BC04',

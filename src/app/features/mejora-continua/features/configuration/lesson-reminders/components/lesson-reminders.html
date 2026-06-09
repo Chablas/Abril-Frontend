@@ -41,7 +41,7 @@
         <thead class="bg-[#E5F7D1]">
           <tr class="text-[#64BC04]">
             <th class="text-center px-[16px] py-[10px] font-semibold w-[90px]"></th>
-            <th class="text-left px-[16px] py-[10px] font-semibold">Usuario</th>
+            <th class="text-left px-[16px] py-[10px] font-semibold">Trabajador</th>
             <th class="text-left px-[16px] py-[10px] font-semibold">Proyecto</th>
             <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Estado</th>
             <th class="text-center px-[16px] py-[10px] font-semibold w-[140px]">Acciones</th>
@@ -61,8 +61,8 @@
                 </button>
               </div>
             </td>
-            <td class="px-[16px] py-[8px] text-gray-700" [title]="item.userFullName ?? ''">
-              {{ item.userFullName }}
+            <td class="px-[16px] py-[8px] text-gray-700" [title]="item.workerFullName ?? ''">
+              {{ item.workerFullName }}
             </td>
             <td class="px-[16px] py-[8px] text-gray-700" [title]="item.projectDescription ?? ''">
               {{ item.projectDescription }}

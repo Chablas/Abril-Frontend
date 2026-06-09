@@ -1,6 +1,7 @@
-export interface LessonReminderUserDTO {
-  userId: number;
+export interface LessonReminderWorkerDTO {
+  workerId: number;
   fullName?: string;
+  email?: string;
 }
 
 export interface LessonReminderProjectDTO {
@@ -9,6 +10,6 @@ export interface LessonReminderProjectDTO {
 }
 
 export interface LessonReminderCreateDataDTO {
-  users: LessonReminderUserDTO[];
+  workers: LessonReminderWorkerDTO[];
   projects: LessonReminderProjectDTO[];
 }

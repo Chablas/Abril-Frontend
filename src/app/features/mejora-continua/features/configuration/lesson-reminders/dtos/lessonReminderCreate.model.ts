@@ -1,5 +1,5 @@
 export interface LessonReminderCreateDTO {
-  userId: number;
+  workerId: number;
   projectId: number;
   active: boolean;
 }

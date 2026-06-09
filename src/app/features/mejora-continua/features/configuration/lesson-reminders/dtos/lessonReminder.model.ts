@@ -1,7 +1,8 @@
 export interface LessonReminderDTO {
   userProjectId: number;
-  userId: number;
-  userFullName?: string;
+  workerId: number;
+  workerFullName?: string;
+  email?: string;
   projectId: number;
   projectDescription?: string;
   createdDateTime: string;

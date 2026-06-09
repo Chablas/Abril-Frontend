@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { StatusBadge } from '../../../../../../../shared/components/status-badge/status-badge';
+import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
 import { LessonReminderService } from '../../services/lesson-reminder.service';
@@ -11,12 +12,21 @@ import { JefeReminderConfigItemDTO } from '../../dtos/jefeReminder.model';
 @Component({
   selector: 'app-jefe-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatusBadge],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect],
   templateUrl: './jefe-list.html',
 })
 export class JefeList implements OnInit {
   rows: JefeReminderConfigItemDTO[] = [];
   searchText = '';
+  /** Filtro por categoría: null = todas | 'Jefe' | 'Coordinador' | 'Residente'. */
+  categoryFilter: string | null = null;
+
+  /** Opciones del desplegable de categoría (search-select). */
+  readonly categoryOptions = [
+    { value: 'Jefe', label: 'Jefe' },
+    { value: 'Coordinador', label: 'Coordinador' },
+    { value: 'Residente', label: 'Residente' },
+  ];
 
   constructor(
     private service: LessonReminderService,
@@ -59,11 +69,15 @@ export class JefeList implements OnInit {
 
   get filteredRows(): JefeReminderConfigItemDTO[] {
     const term = this.searchText.trim().toLowerCase();
-    if (!term) return this.rows;
-    return this.rows.filter(
-      (r) =>
-        (r.fullName ?? '').toLowerCase().includes(term) ||
-        (r.email ?? '').toLowerCase().includes(term),
-    );
+    return this.rows.filter((r) => {
+      const matchesName = !term || (r.fullName ?? '').toLowerCase().includes(term);
+      const matchesCategory = !this.categoryFilter || r.categoria === this.categoryFilter;
+      return matchesName && matchesCategory;
+    });
+  }
+
+  /** true si hay algún filtro aplicado (para el mensaje de tabla vacía). */
+  get hasActiveFilter(): boolean {
+    return !!this.searchText.trim() || !!this.categoryFilter;
   }
 }

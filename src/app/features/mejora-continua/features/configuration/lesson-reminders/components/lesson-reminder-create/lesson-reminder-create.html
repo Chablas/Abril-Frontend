@@ -1,21 +1,21 @@
 <app-base-modal
-  title="AGREGAR RECORDATORIO DE LECCIÓN"
+  [title]="'AGREGAR RECORDATORIO DE LECCIÓN'"
   width="w-[720px]"
   (closeModal)="closeModal.emit()"
 >
   <div class="flex flex-col gap-[15px] mt-[15px]">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div class="flex flex-col">
-        <p class="text-[#64BC04]">Usuario</p>
+        <p class="text-[#64BC04]">Trabajador</p>
         <app-search-select
-          [options]="users"
-          valueField="userId"
+          [options]="workers"
+          valueField="workerId"
           displayField="fullName"
-          [value]="dto.userId"
-          (valueChange)="dto.userId = $event"
+          [value]="dto.workerId"
+          (valueChange)="dto.workerId = $event"
           [showLabel]="false"
           [allowClear]="false"
-          placeholder="Seleccionar usuario"
+          placeholder="Seleccionar trabajador"
         ></app-search-select>
       </div>
       <div class="flex flex-col">

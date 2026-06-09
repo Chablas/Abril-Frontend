@@ -11,7 +11,7 @@ import { LessonReminderService } from '../../services/lesson-reminder.service';
 import { LessonReminderCreateDTO } from '../../dtos/lessonReminderCreate.model';
 import {
   LessonReminderProjectDTO,
-  LessonReminderUserDTO,
+  LessonReminderWorkerDTO,
 } from '../../dtos/lessonReminderCreateData.model';
 
 @Component({
@@ -30,12 +30,12 @@ export class LessonReminderCreate implements OnInit {
   ];
 
   dto: LessonReminderCreateDTO = {
-    userId: 0,
+    workerId: 0,
     projectId: 0,
     active: true,
   };
 
-  users: LessonReminderUserDTO[] = [];
+  workers: LessonReminderWorkerDTO[] = [];
   projects: LessonReminderProjectDTO[] = [];
 
   constructor(
@@ -48,7 +48,7 @@ export class LessonReminderCreate implements OnInit {
     this.loaderService.show();
     this.service.getCreateData().subscribe({
       next: (data) => {
-        this.users = data.users ?? [];
+        this.workers = data.workers ?? [];
         this.projects = data.projects ?? [];
         this.loaderService.hide();
       },
@@ -60,8 +60,8 @@ export class LessonReminderCreate implements OnInit {
   }
 
   save(): void {
-    if (!this.dto.userId) {
-      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccione un usuario.' });
+    if (!this.dto.workerId) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Seleccione un trabajador.' });
       return;
     }
     if (!this.dto.projectId) {
