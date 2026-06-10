@@ -215,6 +215,18 @@
             <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de inicio</label>
             <input type="date" [(ngModel)]="step2Form.startDate"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+
+            <!-- Plazo calculado automáticamente -->
+            <div *ngIf="plazoEnDias !== null" class="mt-[6px]">
+              <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
+              <p class="text-sm font-semibold"
+                [ngClass]="plazoEnDias >= 0 ? 'text-[#64BC04]' : 'text-red-500'">
+                {{ plazoEnDias }} {{ plazoEnDias === 1 ? 'día' : 'días' }}
+                <span *ngIf="plazoEnDias < 0" class="text-xs font-normal text-red-400 ml-1">
+                  (la fecha de fin es anterior a la de inicio)
+                </span>
+              </p>
+            </div>
           </div>
 
           <div class="flex flex-col">
@@ -259,18 +271,6 @@
               min="0" step="1"
               placeholder="Ej: 365"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
-          </div>
-
-          <!-- Plazo calculado automáticamente -->
-          <div *ngIf="plazoEnDias !== null" class="sm:col-span-2">
-            <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
-            <p class="text-sm font-semibold"
-              [ngClass]="plazoEnDias >= 0 ? 'text-[#64BC04]' : 'text-red-500'">
-              {{ plazoEnDias }} {{ plazoEnDias === 1 ? 'día' : 'días' }}
-              <span *ngIf="plazoEnDias < 0" class="text-xs font-normal text-red-400 ml-1">
-                (la fecha de fin es anterior a la de inicio)
-              </span>
-            </p>
           </div>
 
         </div>

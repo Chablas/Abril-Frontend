@@ -156,6 +156,19 @@
             />
           </div>
 
+          <!-- ── N° de partida registral ── -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm text-[#64BC04] font-medium">N° de partida registral <span class="text-red-400">*</span></label>
+            <input
+              type="text"
+              inputmode="numeric"
+              [(ngModel)]="form.legalEntityRegistryNumber"
+              (keydown)="onNumericKeydown($event)"
+              placeholder="Ej. 01234567"
+              class="border border-[#D6DEE5] rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
+            />
+          </div>
+
           <!-- ── Logo de la empresa ── -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm text-[#64BC04] font-medium">Logo / imagen de la empresa <span class="text-red-400">*</span></label>
@@ -260,18 +273,6 @@
               [readonly]="!!reniecData"
               class="border rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors"
               [ngClass]="reniecData ? 'border-[#D6DEE5] bg-gray-50 text-gray-600 cursor-not-allowed' : 'border-[#D6DEE5] bg-white'"
-            />
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm text-[#64BC04] font-medium">N° de partida registral <span class="text-red-400">*</span></label>
-            <input
-              type="text"
-              inputmode="numeric"
-              [(ngModel)]="form.legalEntityRegistryNumber"
-              (keydown)="onNumericKeydown($event)"
-              placeholder="Ej. 01234567"
-              class="border border-[#D6DEE5] rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 bg-white"
             />
           </div>
 
