@@ -150,6 +150,12 @@
           <p *ngIf="submitted && !createDto.paymentFormId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
+        <!-- ¿Incluye carta de fianza? — solo Suministro (modalidad 2) + contrato con adelanto (pago 2) -->
+        <div *ngIf="createDto.contractModalityId === 2 && createDto.paymentMethodId === 2" class="flex flex-col gap-[4px]">
+          <app-search-select label="¿Incluye carta de fianza?" [options]="cartaFianzaOptions"
+            valueField="value" displayField="label" [allowClear]="false" [(value)]="createDto.includesCartaFianza" />
+        </div>
+
         <div *ngIf="createDto.paymentMethodId === 2" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
 
           <!-- Porcentaje de adelanto -->

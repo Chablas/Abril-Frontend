@@ -5,6 +5,7 @@ export interface ProjectSubContractorCreateDTO {
   contractModalityId?: number | null;
   paymentMethodId: number;
   paymentFormId?: number | null;
+  includesCartaFianza?: boolean;
   advancePercentage?: number;
   advanceAmount?: number;
   amount: number;

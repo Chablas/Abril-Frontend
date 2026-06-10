@@ -40,6 +40,7 @@ export class Create implements OnInit {
     contractModalityId: null,
     paymentMethodId: 0,
     paymentFormId: null,
+    includesCartaFianza: false,
     amount: 0,
     currencyId: 0,
     hasIgv: false,
@@ -48,6 +49,12 @@ export class Create implements OnInit {
     quotationFiles: [],
     comparativeFiles: [],
   };
+
+  /** Opciones No/Sí para el search-select de carta de fianza. */
+  readonly cartaFianzaOptions = [
+    { value: false, label: 'No' },
+    { value: true, label: 'Sí' },
+  ];
 
   contractorEmails: string[] = [];
   advanceAmount: number | undefined = undefined;
@@ -171,6 +178,10 @@ export class Create implements OnInit {
     if (this.createDto.paymentFormId != null) {
       form.append('paymentFormId', this.createDto.paymentFormId.toString());
     }
+    // Carta de fianza solo aplica en Suministro (modalidad 2) + contrato con adelanto (pago 2)
+    const includesCartaFianza =
+      this.createDto.contractModalityId === 2 && this.createDto.paymentMethodId === 2 && !!this.createDto.includesCartaFianza;
+    form.append('includesCartaFianza', includesCartaFianza.toString());
     if (this.createDto.paymentMethodId === 2 && this.createDto.advancePercentage != null) {
       form.append('advancePercentage', this.createDto.advancePercentage.toString());
       if (this.advanceAmount != null) {

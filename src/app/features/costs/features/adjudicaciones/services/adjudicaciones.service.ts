@@ -93,6 +93,19 @@ export class AdjudicacionesService {
     });
   }
 
+  /** Actualiza los datos del paso 1 (información de la adjudicación). Solo permitido en pasos 1–4. */
+  updateInfo(projectSubContractorId: number, dto: {
+    projectId: number; contractorId: number; contractTypeId: number; contractModalityId: number | null;
+    paymentMethodId: number; paymentFormId: number | null; includesCartaFianza: boolean;
+    advancePercentage: number; advanceAmount: number | null;
+    amount: number; currencyId: number; hasIgv: boolean; workItemId: number; workItemCategoryId: number;
+  }): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/info`, dto, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
   generateDocument(
     projectSubContractorId: number,
     documentType: string,

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
+import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -47,6 +48,31 @@ export class Detail implements OnInit {
 
   /** Formulario del paso 2. */
   step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null };
+
+  // ── Edición de pasos 1 y 2 (solo mientras la adjudicación esté en pasos 1–4) ──
+  /** Catálogos para los desplegables de edición del paso 1. Se cargan bajo demanda. */
+  formData: ProjectSubContractorFormDataDTO | null = null;
+  step1EditMode = false;
+  step2EditMode = false;
+  step1Form = {
+    projectId: 0, contractorId: 0, contractTypeId: 0, contractModalityId: null as number | null,
+    paymentMethodId: 0, paymentFormId: null as number | null, includesCartaFianza: false,
+    advancePercentage: null as number | null,
+    amount: 0, currencyId: 0, hasIgv: false, workItemId: 0, workItemCategoryId: 0,
+  };
+  step1ContractorEmails: string[] = [];
+  step1AdvanceAmount: number | undefined = undefined;
+
+  /** Opciones No/Sí para el search-select de carta de fianza. */
+  readonly cartaFianzaOptions = [
+    { value: false, label: 'No' },
+    { value: true, label: 'Sí' },
+  ];
+
+  /** Solo se puede editar la info de paso 1/2 mientras la adjudicación esté en pasos 1–4. */
+  get canEditInfo(): boolean {
+    return this.actualStatus <= 4;
+  }
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
   documents: { key: string; label: string }[] = [];
@@ -1050,7 +1076,8 @@ export class Detail implements OnInit {
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        this.item.projectSubContractorStatusId = 3;
+        // Solo avanza a paso 3 cuando viene desde el paso 2 (progresión). En edición (pasos 3/4) conserva estado.
+        const wasStep2 = this.item.projectSubContractorStatusId === 2;
         this.item.signingDate              = this.step2Form.signingDate;
         this.item.startDate                = this.step2Form.startDate;
         this.item.endDate                  = this.step2Form.endDate;
@@ -1059,11 +1086,196 @@ export class Detail implements OnInit {
         this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
         this.item.guaranteeFundDays        = guaranteeFundDays;
         this.item.guaranteeValidityDays    = guaranteeValidityDays;
-        this.viewStep = 3;
+        if (wasStep2) {
+          this.item.projectSubContractorStatusId = 3;
+          this.viewStep = 3;
+        }
+        this.step2EditMode = false;
         this.statusChanged.emit();
-        Swal.fire({ icon: 'success', title: res.message ?? 'Fechas guardadas exitosamente', draggable: true });
+        Swal.fire({ icon: 'success', title: res.message ?? 'Datos guardados exitosamente', draggable: true });
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  // ── Edición del paso 2 en pasos 3/4 (guardar sin avanzar) ──────────────
+  enterStep2Edit(): void {
+    this.step2EditMode = true;
+  }
+
+  cancelStep2Edit(): void {
+    this.step2EditMode = false;
+    // Restaurar el formulario desde el item guardado
+    this.step2Form.signingDate            = this.item.signingDate ? this.item.signingDate.substring(0, 10) : '';
+    this.step2Form.startDate              = this.item.startDate ? this.item.startDate.substring(0, 10) : '';
+    this.step2Form.endDate                = this.item.endDate ? this.item.endDate.substring(0, 10) : '';
+    this.step2Form.contractNumber         = this.item.contractNumber ?? null;
+    this.step2Form.promissoryNoteNumber   = this.item.promissoryNoteNumber ?? null;
+    this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage ?? null;
+    this.step2Form.guaranteeFundDays      = this.item.guaranteeFundDays ?? null;
+    this.step2Form.guaranteeValidityDays  = this.item.guaranteeValidityDays ?? null;
+  }
+
+  /** Guardar cambios del paso 2 en modo edición (reutiliza la validación/guardado de saveStep2Dates). */
+  saveStep2Edit(): void {
+    this.saveStep2Dates();
+  }
+
+  // ── Edición del paso 1 (información de la adjudicación) ─────────────────
+  private ensureFormData(after: () => void): void {
+    if (this.formData) { after(); return; }
+    this.loaderService.show();
+    this.adjudicacionesService.getFormData().subscribe({
+      next: (res) => {
+        this.formData = res;
+        this.loaderService.hide();
+        after();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  enterStep1Edit(): void {
+    this.ensureFormData(() => {
+      this.step1Form = {
+        projectId:          this.item.projectId,
+        contractorId:       this.item.contractorId,
+        contractTypeId:     this.item.contractTypeId,
+        contractModalityId: this.item.contractModalityId ?? null,
+        paymentMethodId:    this.item.paymentMethodId,
+        paymentFormId:      this.item.paymentFormId ?? null,
+        includesCartaFianza: this.item.includesCartaFianza ?? false,
+        advancePercentage:  this.item.advancePercentage ?? null,
+        amount:             this.item.amount,
+        currencyId:         this.item.currencyId,
+        hasIgv:             this.item.amountHasIgv,
+        workItemId:         this.item.workItemId,
+        workItemCategoryId: this.item.workItemCategoryId,
+      };
+      // Correos del contratista seleccionado
+      const contractor = this.formData!.contributors.find(c => c.contractorId === this.item.contractorId);
+      this.step1ContractorEmails = contractor?.emails ?? this.item.contractorEmails ?? [];
+      // Monto de adelanto inicial
+      this.step1AdvanceAmount = (this.step1Form.advancePercentage != null && this.step1Form.amount)
+        ? Math.round((this.step1Form.advancePercentage / 100) * this.step1Form.amount * 1_000_000) / 1_000_000
+        : undefined;
+      this.step1EditMode = true;
+    });
+  }
+
+  cancelStep1Edit(): void {
+    this.step1EditMode = false;
+  }
+
+  get step1SelectedCurrencyCode(): string {
+    return this.formData?.currencies.find(c => c.currencyId === this.step1Form.currencyId)?.currencyCode ?? '';
+  }
+
+  onStep1CompanyChange(contractorId: number): void {
+    this.step1Form.contractorId = contractorId;
+    const contractor = this.formData?.contributors.find(c => c.contractorId === contractorId);
+    this.step1ContractorEmails = contractor?.emails ?? [];
+  }
+
+  onStep1AmountChange(): void {
+    if (this.step1Form.advancePercentage != null && this.step1Form.amount) {
+      this.step1AdvanceAmount = Math.round((this.step1Form.advancePercentage / 100) * this.step1Form.amount * 1_000_000) / 1_000_000;
+    } else {
+      this.step1AdvanceAmount = undefined;
+    }
+  }
+
+  onStep1PercentageInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const match = input.value.match(/^\d*\.?\d{0,6}/);
+    let clamped = match ? match[0] : '';
+    const numeric = parseFloat(clamped);
+    if (!isNaN(numeric) && numeric > 100) clamped = '100';
+    if (input.value !== clamped) input.value = clamped;
+    this.step1Form.advancePercentage = clamped !== '' ? parseFloat(clamped) : null;
+    if (this.step1Form.advancePercentage != null && this.step1Form.amount) {
+      this.step1AdvanceAmount = Math.round((this.step1Form.advancePercentage / 100) * this.step1Form.amount * 1_000_000) / 1_000_000;
+    } else {
+      this.step1AdvanceAmount = undefined;
+    }
+  }
+
+  onStep1AdvanceAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const match = input.value.match(/^\d*\.?\d{0,6}/);
+    let clamped = match ? match[0] : '';
+    const numeric = parseFloat(clamped);
+    // No permitir que el adelanto supere el monto total
+    if (!isNaN(numeric) && this.step1Form.amount && numeric > this.step1Form.amount) {
+      clamped = this.step1Form.amount.toString();
+    }
+    if (input.value !== clamped) input.value = clamped;
+    this.step1AdvanceAmount = clamped !== '' ? parseFloat(clamped) : undefined;
+    if (this.step1AdvanceAmount != null && this.step1Form.amount) {
+      // Math.floor con epsilon para evitar que 499.9999/500 redondee a 100%
+      const raw = (this.step1AdvanceAmount / this.step1Form.amount) * 100;
+      this.step1Form.advancePercentage = Math.floor(raw * 1_000_000 + 1e-9) / 1_000_000;
+    } else {
+      this.step1Form.advancePercentage = null;
+    }
+  }
+
+  saveStep1(): void {
+    const f = this.step1Form;
+    const missing: string[] = [];
+    if (!f.projectId)          missing.push('Proyecto');
+    if (!f.contractorId)       missing.push('Empresa / Subcontratista');
+    else if (this.step1ContractorEmails.length === 0)
+      missing.push('La empresa seleccionada no tiene correos registrados');
+    if (!f.workItemCategoryId) missing.push('Partida de control');
+    if (!f.workItemId)         missing.push('Partida');
+    if (!f.contractTypeId)     missing.push('Tipo de contrato');
+    if (!f.amount)             missing.push('Monto');
+    if (!f.currencyId)         missing.push('Moneda');
+    if (!f.paymentMethodId)    missing.push('Modalidad de pago');
+    if (!f.paymentFormId)      missing.push('Forma de pago');
+    if (f.paymentMethodId === 2 && !f.advancePercentage) missing.push('Porcentaje de adelanto');
+
+    if (missing.length > 0) {
+      Swal.fire({
+        title: 'Campos requeridos',
+        html: `<ul class="text-left text-sm list-disc pl-4">${missing.map(m => `<li>${m}</li>`).join('')}</ul>`,
+        icon: 'warning',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
+    const isAdvance = f.paymentMethodId === 2;
+    // Carta de fianza solo aplica en Suministro (modalidad 2) + contrato con adelanto (pago 2)
+    const includesCartaFianza = f.contractModalityId === 2 && f.paymentMethodId === 2 && !!f.includesCartaFianza;
+    this.loaderService.show();
+    this.adjudicacionesService.updateInfo(this.item.projectSubContractorId, {
+      projectId:          f.projectId,
+      contractorId:       f.contractorId,
+      contractTypeId:     f.contractTypeId,
+      contractModalityId: f.contractModalityId,
+      paymentMethodId:    f.paymentMethodId,
+      paymentFormId:      f.paymentFormId,
+      includesCartaFianza,
+      advancePercentage:  isAdvance ? (f.advancePercentage ?? 0) : 0,
+      advanceAmount:      isAdvance ? (this.step1AdvanceAmount ?? null) : null,
+      amount:             f.amount,
+      currencyId:         f.currencyId,
+      hasIgv:             f.hasIgv,
+      workItemId:         f.workItemId,
+      workItemCategoryId: f.workItemCategoryId,
+    }).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.step1EditMode = false;
+        this.statusChanged.emit(); // el padre recarga y refresca el item con los datos nuevos
+        Swal.fire({ icon: 'success', title: res.message ?? 'Información actualizada exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 }

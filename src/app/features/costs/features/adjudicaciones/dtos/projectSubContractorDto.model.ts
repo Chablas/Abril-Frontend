@@ -21,6 +21,7 @@ export interface ProjectSubContractorDTO {
   paymentMethodDescription: string;
   paymentFormId?: number | null;
   paymentFormDescription?: string | null;
+  includesCartaFianza?: boolean;
   advancePercentage?: number;
   advanceAmount?: number | null;
   termDays?: number | null;
