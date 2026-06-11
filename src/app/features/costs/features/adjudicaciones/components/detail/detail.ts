@@ -227,6 +227,11 @@ export class Detail implements OnInit {
     return this.item.projectSubContractorStatusId;
   }
 
+  /** Solo Oficina Técnica puede enviar al SC (avanzar del paso 4 al 5). */
+  get canSendToSc(): boolean {
+    return this.hasOfTecnica;
+  }
+
   /** Plazo en días calculado desde el formulario (paso 2 en edición). */
   get plazoEnDias(): number | null {
     if (!this.step2Form.startDate || !this.step2Form.endDate) return null;
@@ -307,6 +312,8 @@ export class Detail implements OnInit {
       return this.allDocsApproved && this.contractApproved;
     }
     if (this.actualStatus === 4 && this.viewStep === 4) {
+      // Solo Oficina Técnica puede enviar al SC (avanzar del paso 4 al 5).
+      if (!this.hasOfTecnica) return false;
       return this.step4File !== null || !!this.item.package;
     }
     if (this.actualStatus === 5 && this.viewStep === 5) {
@@ -754,6 +761,11 @@ export class Detail implements OnInit {
   }
 
   private async sendScNotification(): Promise<void> {
+    // Solo Oficina Técnica puede enviar al SC (paso 4 → 5).
+    if (!this.hasOfTecnica) {
+      Swal.fire({ icon: 'warning', title: 'Acción no permitida', text: 'Solo Oficina Técnica puede enviar al SC.', draggable: true });
+      return;
+    }
     if (!this.step4File && !this.item.package) return;
     this.loaderService.show();
 

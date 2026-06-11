@@ -20,6 +20,8 @@ export class SearchSelect {
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
   @Input() compact: boolean = false;
+  /** Si es true, muestra el texto completo (sin truncar con "…") tanto en el trigger como en las opciones. */
+  @Input() fullText: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
