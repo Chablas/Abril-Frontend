@@ -68,6 +68,18 @@ export class LeccionesAprendidasService {
     );
   }
 
+  /**
+   * Áreas para el FILTRO del listado: incluye contenedores (include_descendants),
+   * no solo las de formulario. Así se puede filtrar por un área padre que agrupa
+   * lecciones aunque no esté marcada para el formulario.
+   */
+  getLessonAreasForFilter(): Observable<LessonAreaConfigItemDto[]> {
+    return this.http.get<LessonAreaConfigItemDto[]>(
+      `${environment.apiUrl}api/v1/mejora-continua/lesson-areas/for-filter`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   createLesson(form: FormData): Observable<unknown> {
     return this.http.post(this.apiUrl, form, {
       headers: this.authHeaders(),

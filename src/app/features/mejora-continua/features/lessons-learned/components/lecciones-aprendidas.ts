@@ -17,7 +17,21 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { ViewToggle } from '../../../../../shared/components/view-toggle/view-toggle';
 import { ViewToggleMode } from '../../../../../shared/components/view-toggle/view-toggle.model';
 import { environment } from '../../../../../../environments/environment';
+import { formatPeriodLabel as periodMonthYear } from '../../../../../shared/pipes/period-label.pipe';
 import { jwtDecode } from 'jwt-decode';
+import {
+  LessonAreaConfigItemDto,
+  LessonAreaSegmentDto,
+} from '../../configuration/lesson-areas/dtos/lesson-area.dto';
+
+/** Nodo del árbol de áreas para el filtro de área (misma lógica que el formulario de creación). */
+interface AreaTreeNode {
+  id: number;
+  name: string;
+  typeName: string;
+  lessonAreaId?: number;
+  children: AreaTreeNode[];
+}
 
 @Component({
   selector: 'app-lecciones-aprendidas',
@@ -28,6 +42,14 @@ import { jwtDecode } from 'jwt-decode';
 export class LeccionesAprendidas implements OnInit {
   currentUserId = 0;
   apiUrl = environment.apiUrl;
+
+  // Selector de área en cascada (misma lógica que el formulario de creación).
+  private areaTreeRoots: AreaTreeNode[] = [];
+  areaLevels: AreaTreeNode[][] = [];
+  selectedAreaNodes: (AreaTreeNode | undefined)[] = [];
+  private areaNodeSeq = 0;
+  /** lesson_area_ids efectivos: subárbol del nodo donde se detuvo el usuario. */
+  selectedAreaIds: number[] = [];
 
   // List data
   lessons: LessonListDTO[] = [];
@@ -42,7 +64,6 @@ export class LeccionesAprendidas implements OnInit {
 
   // Computed SearchSelect options (with null "Todos" prepended)
   projectOptions: any[] = [];
-  areaOptions: any[] = [];
   userOptions: any[] = [];
   periodOptions: any[] = [];
   /**
@@ -53,7 +74,6 @@ export class LeccionesAprendidas implements OnInit {
 
   filtersTable = {
     projectId: null as number | null,
-    areaId: null as number | null,
     periodDate: null as string | null,
     userId: null as number | null,
     /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
@@ -108,6 +128,118 @@ export class LeccionesAprendidas implements OnInit {
       this.currentUserId = Number(decoded.sub);
     }
     this.loadInitial();
+    this.loadAreaTree();
+  }
+
+  // ── Selector de área en cascada (filtro de la lista) ─────────────────────────
+
+  private loadAreaTree(): void {
+    this.leccionesAprendidasService.getLessonAreasForFilter().subscribe({
+      next: (data: LessonAreaConfigItemDto[]) => {
+        this.areaTreeRoots = this.buildAreaTree(data.filter((d) => d.lessonAreaId != null));
+        this.areaLevels = this.areaTreeRoots.length ? [this.areaTreeRoots] : [];
+        this.selectedAreaNodes = this.areaTreeRoots.length ? [undefined] : [];
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  /** Igual que el formulario de creación: independientes como hojas de 1er nivel, resto en cascada. */
+  private buildAreaTree(items: LessonAreaConfigItemDto[]): AreaTreeNode[] {
+    this.areaNodeSeq = 0;
+
+    const stripGerencia = (path: LessonAreaSegmentDto[]): LessonAreaSegmentDto[] => {
+      let start = 0;
+      while (start < path.length && (path[start].areaTypeName ?? '').trim() === 'Área de Gerencia') start++;
+      return path.slice(start);
+    };
+    const keyOf = (path: LessonAreaSegmentDto[]): string =>
+      path.map((s) => `${s.areaTypeName} ${s.areaItemName}`).join('');
+
+    const independentKeys = new Set(
+      items.filter((i) => i.includeAsIndependent).map((i) => keyOf(stripGerencia(i.path))),
+    );
+
+    const independentRoots: AreaTreeNode[] = [];
+    const cascadeRoots: AreaTreeNode[] = [];
+
+    for (const item of items) {
+      const trimmed = stripGerencia(item.path);
+      if (trimmed.length === 0) continue;
+
+      if (item.includeAsIndependent) {
+        const leaf = trimmed[trimmed.length - 1];
+        independentRoots.push({
+          id: ++this.areaNodeSeq,
+          name: leaf.areaItemName,
+          typeName: leaf.areaTypeName,
+          lessonAreaId: item.lessonAreaId!,
+          children: [],
+        });
+        continue;
+      }
+
+      let underIndependent = false;
+      for (let k = 1; k < trimmed.length; k++) {
+        if (independentKeys.has(keyOf(trimmed.slice(0, k)))) { underIndependent = true; break; }
+      }
+      if (underIndependent) continue;
+
+      let level = cascadeRoots;
+      let node: AreaTreeNode | undefined;
+      for (const seg of trimmed) {
+        node = level.find((n) => n.name === seg.areaItemName && n.typeName === seg.areaTypeName);
+        if (!node) {
+          node = { id: ++this.areaNodeSeq, name: seg.areaItemName, typeName: seg.areaTypeName, children: [] };
+          level.push(node);
+        }
+        level = node.children;
+      }
+      if (node) node.lessonAreaId = item.lessonAreaId!;
+    }
+
+    return [...independentRoots, ...cascadeRoots];
+  }
+
+  getAreaLevelLabel(levelIndex: number): string {
+    return this.areaLevels[levelIndex]?.[0]?.typeName ?? 'Área';
+  }
+
+  onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
+    const selected = selectedId
+      ? this.areaLevels[levelIndex]?.find((n) => n.id === selectedId)
+      : undefined;
+
+    this.selectedAreaNodes[levelIndex] = selected;
+    this.areaLevels = this.areaLevels.slice(0, levelIndex + 1);
+    this.selectedAreaNodes = this.selectedAreaNodes.slice(0, levelIndex + 1);
+
+    if (selected?.children?.length) {
+      this.areaLevels.push(selected.children);
+      this.selectedAreaNodes.push(undefined);
+    }
+
+    this.syncSelectedAreaIds();
+  }
+
+  /**
+   * Filtro de área: toma el nodo más profundo SELECCIONADO y junta todos los
+   * lesson_area_id de su subárbol. Si te detienes en un padre (p. ej. Unidad de
+   * Proyectos) → incluye todas sus subáreas; si bajas a una hoja → solo esa.
+   */
+  private syncSelectedAreaIds(): void {
+    let deepest: AreaTreeNode | undefined;
+    for (let i = this.selectedAreaNodes.length - 1; i >= 0; i--) {
+      if (this.selectedAreaNodes[i]) { deepest = this.selectedAreaNodes[i]; break; }
+    }
+    this.selectedAreaIds = deepest ? this.collectAreaIds(deepest) : [];
+  }
+
+  private collectAreaIds(node: AreaTreeNode): number[] {
+    const ids: number[] = [];
+    if (node.lessonAreaId) ids.push(node.lessonAreaId);
+    for (const c of node.children) ids.push(...this.collectAreaIds(c));
+    return ids;
   }
 
   private loadInitial(): void {
@@ -128,7 +260,6 @@ export class LeccionesAprendidas implements OnInit {
 
   private buildFilterOptions(fd: LessonFiltersDTO): void {
     this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
-    this.areaOptions = [{ areaId: null, areaDescription: 'Todas las areas' }, ...fd.areas];
     this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
     this.periodOptions = [
       { periodDate: null, periodLabel: 'Todos los periodos' },
@@ -170,7 +301,7 @@ export class LeccionesAprendidas implements OnInit {
       .filter((v): v is number => v != null);
     return {
       projectId: this.filtersTable.projectId,
-      areaId: this.filtersTable.areaId,
+      lessonAreaIds: this.selectedAreaIds.length ? this.selectedAreaIds.join(',') : null,
       periodDate: this.filtersTable.periodDate,
       userId: this.filtersTable.userId,
       catalogItemIds: selected.length > 0 ? selected.join(',') : null,
@@ -192,8 +323,7 @@ export class LeccionesAprendidas implements OnInit {
   }
 
   private formatPeriodLabel(date: Date): string {
-    const d = new Date(date);
-    return `${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    return periodMonthYear(date);
   }
 
   loadLessons(page: number = 1): void {

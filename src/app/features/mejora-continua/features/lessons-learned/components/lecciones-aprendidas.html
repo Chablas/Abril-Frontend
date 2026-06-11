@@ -25,15 +25,23 @@
   <div class="flex flex-col">
     <div class="flex flex-wrap gap-4 py-3 items-end">
       
-      <div class="w-[220px]">
-        <app-search-select
-          label="Area"
-          [options]="areaOptions"
-          valueField="areaId"
-          displayField="areaDescription"
-          [value]="filtersTable.areaId"
-          (valueChange)="filtersTable.areaId = $event">
-        </app-search-select>
+      <!-- Área en cascada (recuadro verde para destacar). Mantiene padding vertical
+           (py-2); el margen inferior negativo (-mb-2) cancela ese padding inferior
+           para que, con items-end, los controles queden alineados con el resto. -->
+      <div class="bg-[#E5F7D1] rounded-xl px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+        <ng-container *ngFor="let level of areaLevels; let i = index">
+          <div class="w-[200px]">
+            <app-search-select
+              [label]="i === 0 ? 'Área' : 'Subárea'"
+              [options]="level"
+              valueField="id"
+              displayField="name"
+              [value]="selectedAreaNodes[i]?.id"
+              (valueChange)="onAreaNodeChange(i, $event)"
+              [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
+            </app-search-select>
+          </div>
+        </ng-container>
       </div>
 
       <div class="w-[220px]">

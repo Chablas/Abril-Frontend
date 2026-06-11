@@ -35,11 +35,19 @@ export class SearchSelect {
     }
   }
 
+  /** Quita tildes/diacríticos y pasa a minúsculas para comparar (ej. "Máximo" ≈ "maximo"). */
+  private normalize(text: string): string {
+    return text
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase();
+  }
+
   get filteredOptions(): any[] {
     if (!this.searchText.trim()) return this.options;
-    const q = this.searchText.toLowerCase();
+    const q = this.normalize(this.searchText.trim());
     return this.options.filter(opt =>
-      String(opt[this.displayField]).toLowerCase().includes(q)
+      this.normalize(String(opt[this.displayField])).includes(q)
     );
   }
 

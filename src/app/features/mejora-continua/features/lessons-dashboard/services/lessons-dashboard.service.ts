@@ -7,6 +7,7 @@ import {
   LessonsDashboardFiltersDTO,
   SelectedDashboardFilters,
 } from '../dtos/dashboard.model';
+import { LessonAreaConfigItemDto } from '../../configuration/lesson-areas/dtos/lesson-area.dto';
 
 @Injectable({ providedIn: 'root' })
 export class LessonsDashboardService {
@@ -23,7 +24,9 @@ export class LessonsDashboardService {
     let params = new HttpParams();
     if (filters.periodDate) params = params.set('periodDate', filters.periodDate);
     if (filters.userId) params = params.set('userId', String(filters.userId));
-    if (filters.lessonAreaId) params = params.set('lessonAreaId', String(filters.lessonAreaId));
+    (filters.lessonAreaIds ?? []).forEach((id) => {
+      params = params.append('lessonAreaIds', String(id));
+    });
     (filters.projectIds ?? []).forEach((id) => {
       params = params.append('projectIds', String(id));
     });
@@ -32,6 +35,14 @@ export class LessonsDashboardService {
       params,
       headers: this.authHeaders(),
     });
+  }
+
+  /** Árbol de áreas para el filtro en cascada (mismo endpoint que Lecciones Aprendidas). */
+  getLessonAreasForFilter(): Observable<LessonAreaConfigItemDto[]> {
+    return this.http.get<LessonAreaConfigItemDto[]>(
+      `${environment.apiUrl}api/v1/mejora-continua/lesson-areas/for-filter`,
+      { headers: this.authHeaders() },
+    );
   }
 
   getFilters(): Observable<LessonsDashboardFiltersDTO> {

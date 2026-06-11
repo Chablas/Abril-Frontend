@@ -9,12 +9,13 @@ import { LessonDetailDTO, LessonImageDTO } from '../../dtos/lessonDetail.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../../../environments/environment';
+import { PeriodLabelPipe } from '../../../../../../shared/pipes/period-label.pipe';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-detail-lesson',
   standalone: true,
-  imports: [CommonModule, BaseModal, DraggableImage],
+  imports: [CommonModule, BaseModal, DraggableImage, PeriodLabelPipe],
   templateUrl: './detail.html',
 })
 export class DetailLesson implements OnInit {

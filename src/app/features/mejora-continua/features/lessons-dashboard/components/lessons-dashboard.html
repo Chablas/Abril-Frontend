@@ -2,6 +2,27 @@
 
   <!-- Barra superior: filtros + acciones -->
   <div class="flex flex-wrap items-end gap-3 bg-white p-[15px] rounded-2xl">
+    <!-- Área en cascada (PRIMERO, recuadro verde): al escoger un área padre aparece
+         otro desplegable con sus subáreas; detente en el padre para todas sus
+         lecciones, o baja a una subárea específica. Mantiene padding vertical (py-2)
+         y el margen inferior negativo (-mb-2) cancela ese padding inferior para que,
+         con items-end, los controles queden alineados con el resto de filtros. -->
+    <div class="bg-[#E5F7D1] rounded-xl px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+      <ng-container *ngFor="let level of areaLevels; let i = index">
+        <div class="w-[200px]">
+          <app-search-select
+            [label]="i === 0 ? 'Área' : 'Subárea'"
+            [options]="level"
+            valueField="id"
+            displayField="name"
+            [value]="selectedAreaNodes[i]?.id"
+            (valueChange)="onAreaNodeChange(i, $event)"
+            [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
+          </app-search-select>
+        </div>
+      </ng-container>
+    </div>
+
     <!-- Período -->
     <div class="w-[200px]">
       <app-search-select
@@ -25,19 +46,6 @@
         [value]="selected.userId"
         (valueChange)="selected.userId = $event ?? 0"
         placeholder="Todos los usuarios">
-      </app-search-select>
-    </div>
-
-    <!-- Área -->
-    <div class="w-[220px]">
-      <app-search-select
-        label="Área"
-        [options]="filters.areas"
-        valueField="lessonAreaId"
-        displayField="areaDescription"
-        [value]="selected.lessonAreaId"
-        (valueChange)="selected.lessonAreaId = $event ?? 0"
-        placeholder="Todas las áreas">
       </app-search-select>
     </div>
 

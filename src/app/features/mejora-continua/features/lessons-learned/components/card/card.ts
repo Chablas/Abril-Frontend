@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LessonListDTO } from '../../dtos/lessonList.model';
+import { PeriodLabelPipe } from '../../../../../../shared/pipes/period-label.pipe';
 
 @Component({
   selector: 'app-lesson-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PeriodLabelPipe],
   templateUrl: './card.html',
 })
 export class LessonCard {
