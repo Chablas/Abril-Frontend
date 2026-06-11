@@ -166,4 +166,37 @@
 
   </ng-container>
 
+  <!-- Guías de Mejora Continua (solo ADMINISTRADOR DE MEJORA CONTINUA / USUARIO DE ABRIL) -->
+  <ng-container *ngIf="puedeVerGuiasMejoraContinua">
+    <div class="flex items-center gap-2 mt-6 mb-2">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#4f46e5">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#4f46e5;font-weight:600;margin:0">
+        Guías de Mejora Continua
+      </p>
+    </div>
+
+    <div class="grid gap-[10px] w-full" style="grid-template-columns:repeat(3, 1fr)">
+      <a
+        *ngFor="let guia of guiasMejoraContinua"
+        [href]="guia.url" target="_blank" rel="noopener noreferrer"
+        class="group flex items-center gap-3 rounded-[14px] border no-underline transition-all duration-200
+               hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(79,70,229,0.10)]"
+        style="background:#f5f4ff;border-color:#e4deff;padding:14px"
+      >
+        <div class="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
+             style="background:#ede9ff;color:#4f46e5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <p class="text-[13px] leading-tight" style="color:#1f2937;font-weight:600;margin:0">{{ guia.titulo }}</p>
+          <span class="text-[12px]" style="color:#4f46e5;font-weight:600">Ver guía →</span>
+        </div>
+      </a>
+    </div>
+  </ng-container>
+
 </div>

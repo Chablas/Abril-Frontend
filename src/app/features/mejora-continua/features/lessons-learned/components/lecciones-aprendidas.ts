@@ -19,6 +19,7 @@ import { ViewToggleMode } from '../../../../../shared/components/view-toggle/vie
 import { environment } from '../../../../../../environments/environment';
 import { formatPeriodLabel as periodMonthYear } from '../../../../../shared/pipes/period-label.pipe';
 import { jwtDecode } from 'jwt-decode';
+import { GUIA_LECCIONES_APRENDIDAS } from '../../../../../shared/constants/mejora-continua-guia';
 import {
   LessonAreaConfigItemDto,
   LessonAreaSegmentDto,
@@ -42,6 +43,9 @@ interface AreaTreeNode {
 export class LeccionesAprendidas implements OnInit {
   currentUserId = 0;
   apiUrl = environment.apiUrl;
+
+  /** Enlace al video-guía mostrado en la cabecera ("Click para ver guía"). */
+  readonly guia = GUIA_LECCIONES_APRENDIDAS;
 
   // Selector de área en cascada (misma lógica que el formulario de creación).
   private areaTreeRoots: AreaTreeNode[] = [];

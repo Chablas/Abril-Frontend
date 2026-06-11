@@ -9,6 +9,16 @@
       </svg>
       Nuevo registro
     </button>
+
+    <!-- Enlace al video-guía -->
+    <a [href]="guia.url" target="_blank" rel="noopener noreferrer"
+      class="group flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-[#eef2ff] py-[5px] px-4 text-sm text-[#4f46e5] cursor-pointer hover:bg-[#e0e7ff] transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      <span class="group-hover:underline">Click para ver guía</span>
+    </a>
+
     <div class="flex items-center gap-3">
       <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
       <button class="group flex items-center cursor-pointer gap-1.5" (click)="downloadExcel()">
