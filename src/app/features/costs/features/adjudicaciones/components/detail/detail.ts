@@ -264,6 +264,11 @@ export class Detail implements OnInit {
     });
   }
 
+  /** El contrato (obligatorio) debe estar Aprobado (estado 4) y tener archivo subido. */
+  get contractApproved(): boolean {
+    return this.docForms['Contract']?.statusId === 4 && !!this.getDocFile('Contract');
+  }
+
   get forwardLabel(): string {
     if (this.actualStatus === 1) return 'Enviar correos';
     if (this.actualStatus === 2 && this.viewStep === 2) return 'Guardar y continuar';
@@ -298,7 +303,8 @@ export class Detail implements OnInit {
       return true;
     }
     if (this.actualStatus === 3 && this.viewStep === 3) {
-      return this.allDocsApproved;
+      // Al menos el Contrato debe estar Aprobado para poder avanzar.
+      return this.allDocsApproved && this.contractApproved;
     }
     if (this.actualStatus === 4 && this.viewStep === 4) {
       return this.step4File !== null || !!this.item.package;
@@ -887,6 +893,17 @@ export class Detail implements OnInit {
   }
 
   private async advanceToApproved(): Promise<void> {
+    // Validación: el contrato debe estar Aprobado (con archivo) para poder avanzar.
+    if (!this.contractApproved) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Contrato no aprobado',
+        text: 'El contrato debe estar en estado "Aprobado" (con su archivo subido) para poder avanzar al siguiente paso.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     this.loaderService.show();
 
     // El correo de notificación al Staff de Obra se envía vía Graph como el usuario autenticado.
