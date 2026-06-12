@@ -2,9 +2,8 @@ export interface WorkItemCategoryClauseDto {
   workItemCategoryClauseId: number;
   clauseText: string;
   sortOrder: number;
-  appliesSuministro: boolean;
-  appliesInstalacion: boolean;
-  appliesSuministroInstalacion: boolean;
+  /** Modalidad de contrato: 1=Suministro e Instalación, 2=Suministro, 3=Instalación */
+  contractModalityId: number;
 }
 
 export interface WorkItemCategoryAnexo3ClauseDto {

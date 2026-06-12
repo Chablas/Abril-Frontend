@@ -25,12 +25,11 @@ type MajorSection = 'suministro' | 'instalacion' | 'suministroInstalacion';
 /** Mini-secciones dentro de Suministro */
 type SuministroSub = 'clausulas' | 'anexo3' | 'anexo4';
 
-type ApplyFlag = 'appliesSuministro' | 'appliesInstalacion' | 'appliesSuministroInstalacion';
-
-const FLAG_BY_SECTION: Record<MajorSection, ApplyFlag> = {
-  suministro: 'appliesSuministro',
-  instalacion: 'appliesInstalacion',
-  suministroInstalacion: 'appliesSuministroInstalacion',
+/** Modalidad de contrato por sección (FK a contract_modality) */
+const MODALITY_BY_SECTION: Record<MajorSection, number> = {
+  suministroInstalacion: 1,
+  suministro: 2,
+  instalacion: 3,
 };
 
 @Component({
@@ -70,9 +69,8 @@ export class WorkItemCategoryEdit implements OnInit {
   ];
 
   /**
-   * Cláusulas 9.x/7.x — lista maestra única (no se triplica el texto).
-   * Cada cláusula lleva 3 flags que indican a qué tipos de contrato aplica;
-   * cada sección mayor muestra solo las que tienen su flag activo.
+   * Cláusulas 9.x/7.x — lista maestra. Cada cláusula pertenece a UNA modalidad de
+   * contrato (contractModalityId) y es independiente: editarla no afecta a otras modalidades.
    */
   clauses: WorkItemCategoryClauseUpsertDto[] = [];
   // Indexado por MajorSection; tipado laxo porque el contexto de ng-template llega como `any`
@@ -101,9 +99,7 @@ export class WorkItemCategoryEdit implements OnInit {
       workItemCategoryClauseId: c.workItemCategoryClauseId,
       clauseText: c.clauseText,
       sortOrder: c.sortOrder,
-      appliesSuministro: c.appliesSuministro ?? true,
-      appliesInstalacion: c.appliesInstalacion ?? true,
-      appliesSuministroInstalacion: c.appliesSuministroInstalacion ?? true,
+      contractModalityId: c.contractModalityId,
     }));
     this.anexo3Clauses = this.existingAnexo3Clauses.map((c) => ({
       workItemCategoryAnexo3ClauseId: c.workItemCategoryAnexo3ClauseId,
@@ -125,19 +121,10 @@ export class WorkItemCategoryEdit implements OnInit {
     this.suministroSub = sub;
   }
 
-  // ── Cláusulas 9.x/7.x por tipo de contrato ──────────────────────────
+  // ── Cláusulas 9.x/7.x por modalidad de contrato ─────────────────────
   clausesFor(section: MajorSection): WorkItemCategoryClauseUpsertDto[] {
-    const flag = FLAG_BY_SECTION[section];
-    return this.clauses.filter((c) => c[flag]);
-  }
-
-  /** Cantidad de tipos de contrato a los que aplica la cláusula (para mostrar aviso de compartida) */
-  appliesCount(clause: WorkItemCategoryClauseUpsertDto): number {
-    return (
-      (clause.appliesSuministro ? 1 : 0) +
-      (clause.appliesInstalacion ? 1 : 0) +
-      (clause.appliesSuministroInstalacion ? 1 : 0)
-    );
+    const modalityId = MODALITY_BY_SECTION[section];
+    return this.clauses.filter((c) => c.contractModalityId === modalityId);
   }
 
   addClause(section: MajorSection): void {
@@ -146,23 +133,14 @@ export class WorkItemCategoryEdit implements OnInit {
     this.clauses.push({
       clauseText: text,
       sortOrder: this.clauses.length,
-      appliesSuministro: section === 'suministro',
-      appliesInstalacion: section === 'instalacion',
-      appliesSuministroInstalacion: section === 'suministroInstalacion',
+      contractModalityId: MODALITY_BY_SECTION[section],
     });
     this.newClauseText[section] = '';
   }
 
-  /**
-   * Quitar la cláusula de la sección: desactiva el flag del tipo de contrato.
-   * Si ya no aplica a ningún tipo, se elimina por completo.
-   */
   removeClause(section: MajorSection, clause: WorkItemCategoryClauseUpsertDto): void {
-    clause[FLAG_BY_SECTION[section]] = false;
-    if (this.appliesCount(clause) === 0) {
-      const idx = this.clauses.indexOf(clause);
-      if (idx >= 0) this.clauses.splice(idx, 1);
-    }
+    const idx = this.clauses.indexOf(clause);
+    if (idx >= 0) this.clauses.splice(idx, 1);
     this.recalcSortOrder(this.clauses);
   }
 
