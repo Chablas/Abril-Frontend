@@ -31,6 +31,8 @@ export class StaffProjectEmailService {
     let params = new HttpParams().set('page', filters.page.toString());
     if (filters.projectId != null) params = params.set('projectId', filters.projectId.toString());
     if (filters.email) params = params.set('email', filters.email);
+    if (filters.staffProjectEmailTypeId != null)
+      params = params.set('staffProjectEmailTypeId', filters.staffProjectEmailTypeId.toString());
 
     return this.http.get<PagedResponseDTO<StaffProjectEmailDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,

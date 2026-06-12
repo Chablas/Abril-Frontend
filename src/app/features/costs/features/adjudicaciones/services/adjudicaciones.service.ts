@@ -86,7 +86,7 @@ export class AdjudicacionesService {
     });
   }
 
-  saveDates(projectSubContractorId: number, dto: { signingDate: string; startDate: string; endDate: string; contractNumber: number | null; promissoryNoteNumber: number | null; guaranteeFundPercentage: number | null; guaranteeFundDays: number | null; guaranteeValidityDays: number | null }): Observable<ApiMessageDTO> {
+  saveDates(projectSubContractorId: number, dto: { signingDate: string; startDate: string; endDate: string; contractNumber: number | null; promissoryNoteNumber: number | null; guaranteeFundPercentage: number | null; guaranteeFundDays: number | null; guaranteeValidityDays: number | null; paymentDays: number | null }): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/dates`, dto, {
       headers: { Authorization: `Bearer ${token}` },

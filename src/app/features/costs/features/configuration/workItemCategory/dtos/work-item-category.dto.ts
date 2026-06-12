@@ -2,6 +2,9 @@ export interface WorkItemCategoryClauseDto {
   workItemCategoryClauseId: number;
   clauseText: string;
   sortOrder: number;
+  appliesSuministro: boolean;
+  appliesInstalacion: boolean;
+  appliesSuministroInstalacion: boolean;
 }
 
 export interface WorkItemCategoryAnexo3ClauseDto {

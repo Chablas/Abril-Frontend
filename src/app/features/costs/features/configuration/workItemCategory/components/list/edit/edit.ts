@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../../../shared/components/search-select/search-select';
 import { WorkItemCategoryService } from '../../../services/work-item-category.service';
 import {
   WorkItemCategoryEditDto,
@@ -19,12 +20,23 @@ import { LoaderService } from '../../../../../../../../core/services/loader.serv
 import { ErrorService } from '../../../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
 
-type ClauseSection = 'principales' | 'anexo3' | 'anexo4';
+/** Secciones mayores: una por tipo de contrato */
+type MajorSection = 'suministro' | 'instalacion' | 'suministroInstalacion';
+/** Mini-secciones dentro de Suministro */
+type SuministroSub = 'clausulas' | 'anexo3' | 'anexo4';
+
+type ApplyFlag = 'appliesSuministro' | 'appliesInstalacion' | 'appliesSuministroInstalacion';
+
+const FLAG_BY_SECTION: Record<MajorSection, ApplyFlag> = {
+  suministro: 'appliesSuministro',
+  instalacion: 'appliesInstalacion',
+  suministroInstalacion: 'appliesSuministroInstalacion',
+};
 
 @Component({
   selector: 'app-work-item-category-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './edit.html',
 })
 export class WorkItemCategoryEdit implements OnInit {
@@ -36,28 +48,45 @@ export class WorkItemCategoryEdit implements OnInit {
     anexo3Clauses: [],
     anexo4Clauses: [],
   };
-  /** Cláusulas 9.x ya guardadas (suministro e instalación / instalación) */
+  /** Cláusulas 9.x/7.x ya guardadas (con flags por tipo de contrato) */
   @Input() existingClauses: WorkItemCategoryClauseDto[] = [];
-  /** Cláusulas Anexo 3 ya guardadas (suministro) */
+  /** Cláusulas Anexo 3 ya guardadas (solo suministro) */
   @Input() existingAnexo3Clauses: WorkItemCategoryAnexo3ClauseDto[] = [];
-  /** Cláusulas Anexo 4 ya guardadas (suministro) */
+  /** Cláusulas Anexo 4 ya guardadas (solo suministro) */
   @Input() existingAnexo4Clauses: WorkItemCategoryAnexo4ClauseDto[] = [];
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  /** Sección visible en el paginador de secciones */
-  activeSection: ClauseSection = 'principales';
+  /** Sección mayor visible (tipo de contrato) */
+  activeSection: MajorSection = 'suministro';
+  /** Mini-sección visible dentro de Suministro */
+  suministroSub: SuministroSub = 'clausulas';
 
-  /** Cláusulas 9.x — copia de trabajo */
+  /** Opciones del desplegable de Estado */
+  estadoOptions = [
+    { value: true, label: 'ACTIVO' },
+    { value: false, label: 'INACTIVO' },
+  ];
+
+  /**
+   * Cláusulas 9.x/7.x — lista maestra única (no se triplica el texto).
+   * Cada cláusula lleva 3 flags que indican a qué tipos de contrato aplica;
+   * cada sección mayor muestra solo las que tienen su flag activo.
+   */
   clauses: WorkItemCategoryClauseUpsertDto[] = [];
-  newClauseText = '';
+  // Indexado por MajorSection; tipado laxo porque el contexto de ng-template llega como `any`
+  newClauseText: { [key: string]: string } = {
+    suministro: '',
+    instalacion: '',
+    suministroInstalacion: '',
+  };
 
-  /** Cláusulas Anexo 3 — copia de trabajo */
+  /** Cláusulas Anexo 3 — copia de trabajo (solo suministro) */
   anexo3Clauses: WorkItemCategoryAnexo3ClauseUpsertDto[] = [];
   newAnexo3ClauseText = '';
 
-  /** Cláusulas Anexo 4 — copia de trabajo */
+  /** Cláusulas Anexo 4 — copia de trabajo (solo suministro) */
   anexo4Clauses: WorkItemCategoryAnexo4ClauseUpsertDto[] = [];
   newAnexo4ClauseText = '';
 
@@ -72,6 +101,9 @@ export class WorkItemCategoryEdit implements OnInit {
       workItemCategoryClauseId: c.workItemCategoryClauseId,
       clauseText: c.clauseText,
       sortOrder: c.sortOrder,
+      appliesSuministro: c.appliesSuministro ?? true,
+      appliesInstalacion: c.appliesInstalacion ?? true,
+      appliesSuministroInstalacion: c.appliesSuministroInstalacion ?? true,
     }));
     this.anexo3Clauses = this.existingAnexo3Clauses.map((c) => ({
       workItemCategoryAnexo3ClauseId: c.workItemCategoryAnexo3ClauseId,
@@ -85,36 +117,76 @@ export class WorkItemCategoryEdit implements OnInit {
     }));
   }
 
-  setSection(section: ClauseSection): void {
+  setSection(section: MajorSection): void {
     this.activeSection = section;
   }
 
-  // ── Cláusulas 9.x (principales) ──────────────────────────────────────
-  addClause(): void {
-    const text = this.newClauseText.trim();
+  setSuministroSub(sub: SuministroSub): void {
+    this.suministroSub = sub;
+  }
+
+  // ── Cláusulas 9.x/7.x por tipo de contrato ──────────────────────────
+  clausesFor(section: MajorSection): WorkItemCategoryClauseUpsertDto[] {
+    const flag = FLAG_BY_SECTION[section];
+    return this.clauses.filter((c) => c[flag]);
+  }
+
+  /** Cantidad de tipos de contrato a los que aplica la cláusula (para mostrar aviso de compartida) */
+  appliesCount(clause: WorkItemCategoryClauseUpsertDto): number {
+    return (
+      (clause.appliesSuministro ? 1 : 0) +
+      (clause.appliesInstalacion ? 1 : 0) +
+      (clause.appliesSuministroInstalacion ? 1 : 0)
+    );
+  }
+
+  addClause(section: MajorSection): void {
+    const text = this.newClauseText[section].trim();
     if (!text) return;
-    this.clauses.push({ clauseText: text, sortOrder: this.clauses.length });
-    this.newClauseText = '';
+    this.clauses.push({
+      clauseText: text,
+      sortOrder: this.clauses.length,
+      appliesSuministro: section === 'suministro',
+      appliesInstalacion: section === 'instalacion',
+      appliesSuministroInstalacion: section === 'suministroInstalacion',
+    });
+    this.newClauseText[section] = '';
   }
 
-  removeClause(index: number): void {
-    this.clauses.splice(index, 1);
+  /**
+   * Quitar la cláusula de la sección: desactiva el flag del tipo de contrato.
+   * Si ya no aplica a ningún tipo, se elimina por completo.
+   */
+  removeClause(section: MajorSection, clause: WorkItemCategoryClauseUpsertDto): void {
+    clause[FLAG_BY_SECTION[section]] = false;
+    if (this.appliesCount(clause) === 0) {
+      const idx = this.clauses.indexOf(clause);
+      if (idx >= 0) this.clauses.splice(idx, 1);
+    }
     this.recalcSortOrder(this.clauses);
   }
 
-  moveClauseUp(index: number): void {
+  moveClauseUp(section: MajorSection, index: number): void {
     if (index === 0) return;
-    [this.clauses[index - 1], this.clauses[index]] = [this.clauses[index], this.clauses[index - 1]];
+    this.swapInMaster(this.clausesFor(section)[index - 1], this.clausesFor(section)[index]);
+  }
+
+  moveClauseDown(section: MajorSection, index: number): void {
+    const visible = this.clausesFor(section);
+    if (index === visible.length - 1) return;
+    this.swapInMaster(visible[index], visible[index + 1]);
+  }
+
+  /** Intercambia la posición de dos cláusulas dentro de la lista maestra y recalcula el orden */
+  private swapInMaster(a: WorkItemCategoryClauseUpsertDto, b: WorkItemCategoryClauseUpsertDto): void {
+    const ia = this.clauses.indexOf(a);
+    const ib = this.clauses.indexOf(b);
+    if (ia < 0 || ib < 0) return;
+    [this.clauses[ia], this.clauses[ib]] = [this.clauses[ib], this.clauses[ia]];
     this.recalcSortOrder(this.clauses);
   }
 
-  moveClauseDown(index: number): void {
-    if (index === this.clauses.length - 1) return;
-    [this.clauses[index], this.clauses[index + 1]] = [this.clauses[index + 1], this.clauses[index]];
-    this.recalcSortOrder(this.clauses);
-  }
-
-  // ── Cláusulas Anexo 3 ────────────────────────────────────────────────
+  // ── Cláusulas Anexo 3 (solo Suministro) ──────────────────────────────
   addAnexo3Clause(): void {
     const text = this.newAnexo3ClauseText.trim();
     if (!text) return;
@@ -145,7 +217,7 @@ export class WorkItemCategoryEdit implements OnInit {
     this.recalcSortOrder(this.anexo3Clauses);
   }
 
-  // ── Cláusulas Anexo 4 ────────────────────────────────────────────────
+  // ── Cláusulas Anexo 4 (solo Suministro) ──────────────────────────────
   addAnexo4Clause(): void {
     const text = this.newAnexo4ClauseText.trim();
     if (!text) return;
@@ -187,7 +259,9 @@ export class WorkItemCategoryEdit implements OnInit {
     }
 
     // Agregar texto pendiente de cualquiera de las secciones si el usuario olvidó pulsar "Agregar"
-    if (this.newClauseText.trim()) this.addClause();
+    (Object.keys(this.newClauseText) as MajorSection[]).forEach((s) => {
+      if (this.newClauseText[s].trim()) this.addClause(s);
+    });
     if (this.newAnexo3ClauseText.trim()) this.addAnexo3Clause();
     if (this.newAnexo4ClauseText.trim()) this.addAnexo4Clause();
 

@@ -48,7 +48,7 @@ export class Detail implements OnInit {
   viewStep = 1;
 
   /** Formulario del paso 2. */
-  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null };
+  step2Form = { signingDate: '', startDate: '', endDate: '', contractNumber: null as number | null, promissoryNoteNumber: null as number | null, guaranteeFundPercentage: 5 as number | null, guaranteeFundDays: 365 as number | null, guaranteeValidityDays: 365 as number | null, paymentDays: 7 as number | null };
 
   // ── Edición de pasos 1 y 2 (solo mientras la adjudicación esté en pasos 1–4) ──
   /** Catálogos para los desplegables de edición del paso 1. Se cargan bajo demanda. */
@@ -211,6 +211,7 @@ export class Detail implements OnInit {
     if (this.item.guaranteeFundPercentage != null) this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage;
     if (this.item.guaranteeFundDays != null)       this.step2Form.guaranteeFundDays       = this.item.guaranteeFundDays;
     if (this.item.guaranteeValidityDays != null)   this.step2Form.guaranteeValidityDays   = this.item.guaranteeValidityDays;
+    if (this.item.paymentDays != null)             this.step2Form.paymentDays             = this.item.paymentDays;
     this.documents = this.buildDocuments();
     this.initDocForms();
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
@@ -1238,6 +1239,13 @@ export class Detail implements OnInit {
       return;
     }
 
+    // Forma de pago (días hábiles): si queda vacío se usa el default 7
+    const rawPd = this.step2Form.paymentDays;
+    const paymentDays: number =
+      rawPd === null || rawPd === undefined || (rawPd as any) === ''
+        ? 7
+        : Math.trunc(Number(rawPd));
+
     if (this.step2Form.startDate && this.step2Form.endDate &&
         new Date(this.step2Form.startDate) > new Date(this.step2Form.endDate)) {
       Swal.fire({ icon: 'warning', title: 'La fecha de inicio no puede ser posterior a la fecha fin del contrato.', draggable: true });
@@ -1254,6 +1262,7 @@ export class Detail implements OnInit {
       guaranteeFundPercentage,
       guaranteeFundDays,
       guaranteeValidityDays,
+      paymentDays,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();
@@ -1267,6 +1276,7 @@ export class Detail implements OnInit {
         this.item.guaranteeFundPercentage  = guaranteeFundPercentage;
         this.item.guaranteeFundDays        = guaranteeFundDays;
         this.item.guaranteeValidityDays    = guaranteeValidityDays;
+        this.item.paymentDays              = paymentDays;
         if (wasStep2) {
           this.item.projectSubContractorStatusId = 3;
           this.viewStep = 3;
@@ -1295,6 +1305,7 @@ export class Detail implements OnInit {
     this.step2Form.guaranteeFundPercentage = this.item.guaranteeFundPercentage ?? null;
     this.step2Form.guaranteeFundDays      = this.item.guaranteeFundDays ?? null;
     this.step2Form.guaranteeValidityDays  = this.item.guaranteeValidityDays ?? null;
+    this.step2Form.paymentDays            = this.item.paymentDays ?? 7;
   }
 
   /** Guardar cambios del paso 2 en modo edición (reutiliza la validación/guardado de saveStep2Dates). */

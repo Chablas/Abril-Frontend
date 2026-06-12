@@ -115,14 +115,14 @@
         </div>
 
 
-        <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Tipo de contrato</p>
-          <p class="text-sm text-gray-700">{{ item.contractTypeDescription }}</p>
-        </div>
-
         <div *ngIf="item.contractModalityDescription">
           <p class="text-xs text-gray-400 mb-[2px]">Modalidad de contrato</p>
           <p class="text-sm text-gray-700">{{ item.contractModalityDescription }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Tipo de contrato</p>
+          <p class="text-sm text-gray-700">{{ item.contractTypeDescription }}</p>
         </div>
 
         <div>
@@ -142,7 +142,7 @@
         </div>
 
         <div>
-          <p class="text-xs text-gray-400 mb-[2px]">Forma de pago</p>
+          <p class="text-xs text-gray-400 mb-[2px]">Forma de valorización</p>
           <p class="text-sm text-gray-700" *ngIf="item.paymentFormDescription">{{ item.paymentFormDescription }}</p>
           <p class="text-sm text-gray-400 italic" *ngIf="!item.paymentFormDescription">—</p>
         </div>
@@ -329,7 +329,7 @@
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select [fullText]="true" label="Forma de pago" [options]="formData.paymentForms"
+              <app-search-select [fullText]="true" label="Forma de valorización" [options]="formData.paymentForms"
                 valueField="paymentFormId" displayField="paymentFormDescription" [(value)]="step1Form.paymentFormId" />
             </div>
 
@@ -489,6 +489,18 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
+          <!-- Forma de pago en días hábiles — usado en el "pago a x días hábiles" de la hoja resumen -->
+          <div class="flex flex-col sm:col-span-2 sm:w-1/2">
+            <label class="text-xs text-[#64BC04] mb-[4px]">Forma de pago</label>
+            <div class="flex items-center gap-[8px]">
+              <input type="number" [(ngModel)]="step2Form.paymentDays" [disabled]="!canEditInfo"
+                min="0" step="1"
+                placeholder="Ej: 7"
+                class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04] w-full" />
+              <span class="text-sm text-gray-500 shrink-0">días</span>
+            </div>
+          </div>
+
         </div>
 
         <!-- Botones de edición (solo al editar en pasos 3/4; en estado 2 el avance lo hace el footer) -->
@@ -569,6 +581,11 @@
           <div *ngIf="item.guaranteeValidityDays != null">
             <p class="text-xs text-gray-400 mb-[2px]">Periodo de validez de garantía</p>
             <p class="text-sm font-semibold text-gray-800">{{ item.guaranteeValidityDays }} días</p>
+          </div>
+
+          <div *ngIf="item.paymentDays != null">
+            <p class="text-xs text-gray-400 mb-[2px]">Forma de pago</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.paymentDays }} días</p>
           </div>
 
         </div>

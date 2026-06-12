@@ -24,8 +24,9 @@ export class StaffProjectEmail implements OnInit {
 
   formData: StaffProjectEmailFormDataDto = { projects: [], types: [] };
   projectOptions: any[] = [];
+  typeOptions: any[] = [];
 
-  filters: StaffProjectEmailFilterDto = { projectId: null, email: null, page: 1 };
+  filters: StaffProjectEmailFilterDto = { projectId: null, email: null, staffProjectEmailTypeId: null, page: 1 };
 
   currentPage = 1;
   totalPages = 0;
@@ -45,6 +46,10 @@ export class StaffProjectEmail implements OnInit {
         this.projectOptions = [
           { projectId: null, projectDescription: 'Todos los proyectos' },
           ...data.projects,
+        ];
+        this.typeOptions = [
+          { staffProjectEmailTypeId: null, description: 'Todos los tipos' },
+          ...data.types,
         ];
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),

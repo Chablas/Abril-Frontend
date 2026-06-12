@@ -48,6 +48,8 @@ export interface ProjectSubContractorDTO {
   guaranteeFundPercentage?: number | null;
   guaranteeFundDays?: number | null;
   guaranteeValidityDays?: number | null;
+  /** Forma de pago en días hábiles (paso 2) — "pago a x días hábiles" en la hoja resumen */
+  paymentDays?: number | null;
   arrivedWithObservations?: boolean | null;
   arrivalObservation?: string | null;
   // Procesos de firma (paso 6)
