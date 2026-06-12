@@ -67,6 +67,7 @@ export interface LessonsDashboardFiltersDTO {
 export interface SelectedDashboardFilters {
   periodDate: string | null;
   userId: number;
-  lessonAreaId: number;
+  /** lesson_area_ids efectivos (subárbol del nodo de área donde se detuvo el usuario). */
+  lessonAreaIds: number[];
   projectIds: number[];
 }

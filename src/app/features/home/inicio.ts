@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation/navigation.service';
 import { NavGroup, NavModule } from '../../core/navigation/nav.model';
+import { AuthService } from '../../core/services/auth.service';
+import { GUIA_LECCIONES_APRENDIDAS } from '../../shared/constants/mejora-continua-guia';
 
 @Component({
   selector: 'app-inicio',
@@ -12,7 +14,24 @@ import { NavGroup, NavModule } from '../../core/navigation/nav.model';
   styleUrl: './inicio.css',
 })
 export class Inicio {
-  constructor(public navService: NavigationService) {}
+  /** Guías en video de Mejora Continua (por ahora solo Lecciones Aprendidas). */
+  readonly guiasMejoraContinua = [GUIA_LECCIONES_APRENDIDAS];
+
+  constructor(
+    public navService: NavigationService,
+    private authService: AuthService,
+  ) {}
+
+  /**
+   * La sección de guías de Mejora Continua solo es visible para los roles
+   * 'ADMINISTRADOR DE MEJORA CONTINUA' y 'USUARIO DE ABRIL'.
+   */
+  get puedeVerGuiasMejoraContinua(): boolean {
+    return (
+      this.authService.hasRole('ADMINISTRADOR DE MEJORA CONTINUA') ||
+      this.authService.hasRole('USUARIO DE ABRIL')
+    );
+  }
 
   get habilitacionModule(): NavModule | undefined {
     return this.navService.getModules().find((m) => m.key === 'habilitacion');

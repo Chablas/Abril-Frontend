@@ -764,6 +764,18 @@
         Envío al subcontratista
       </p>
 
+      <!-- Aviso: solo Oficina Técnica puede enviar al SC -->
+      <div *ngIf="actualStatus === 4 && !canSendToSc"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede enviar al SC y avanzar al paso 5.
+        </p>
+      </div>
+
       <input #fileInputStep4 type="file" class="hidden" (change)="onStep4FileSelected($event)" />
 
       <div class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px] max-w-sm">
@@ -860,12 +872,25 @@
           Indica el estado en que llegaron los documentos físicos del contratista.
         </p>
 
+        <!-- Aviso: solo Oficina Central puede confirmar la recepción -->
+        <div *ngIf="actualStatus === 5 && !canConfirmArrival"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede marcar la llegada y confirmar la recepción.
+          </p>
+        </div>
+
         <!-- Opción: Llegó completo -->
-        <label class="flex items-center gap-[10px] cursor-pointer select-none group"
-          [class.opacity-50]="actualStatus !== 5">
+        <label class="flex items-center gap-[10px] select-none group"
+          [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+          [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
           <div class="relative shrink-0">
             <input type="radio" class="sr-only"
-              [disabled]="actualStatus !== 5"
+              [disabled]="actualStatus !== 5 || !canConfirmArrival"
               [checked]="step5ArrivalOption === 'complete'"
               (change)="onArrivalOptionChange('complete')" />
             <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
@@ -883,11 +908,12 @@
         </label>
 
         <!-- Opción: Llegó con observaciones -->
-        <label class="flex items-center gap-[10px] cursor-pointer select-none group"
-          [class.opacity-50]="actualStatus !== 5">
+        <label class="flex items-center gap-[10px] select-none group"
+          [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+          [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
           <div class="relative shrink-0">
             <input type="radio" class="sr-only"
-              [disabled]="actualStatus !== 5"
+              [disabled]="actualStatus !== 5 || !canConfirmArrival"
               [checked]="step5ArrivalOption === 'with_observations'"
               (change)="onArrivalOptionChange('with_observations')" />
             <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
@@ -910,12 +936,13 @@
           <p class="text-xs text-orange-600 leading-relaxed">
             No podrá continuar hasta confirmar que las observaciones han sido subsanadas.
           </p>
-          <label class="flex items-start gap-[10px] cursor-pointer select-none group"
-            [class.opacity-50]="actualStatus !== 5">
+          <label class="flex items-start gap-[10px] select-none group"
+            [class.cursor-pointer]="actualStatus === 5 && canConfirmArrival"
+            [class.opacity-50]="actualStatus !== 5 || !canConfirmArrival">
             <div class="relative mt-[2px] shrink-0">
               <input type="checkbox" class="sr-only"
                 [(ngModel)]="step5ObservationsResolved"
-                [disabled]="actualStatus !== 5" />
+                [disabled]="actualStatus !== 5 || !canConfirmArrival" />
               <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
                 [ngClass]="step5ObservationsResolved
                   ? 'bg-[#64BC04] border-[#64BC04]'

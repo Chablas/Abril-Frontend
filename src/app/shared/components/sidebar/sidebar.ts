@@ -39,6 +39,7 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   private allModules: NavModule[] = [];
   private moduleHeights: number[] = [];
   private resizeObserver?: ResizeObserver;
+  private resizeRafId = 0;
 
   @ViewChildren('moduleItem') moduleItems!: QueryList<ElementRef<HTMLElement>>;
 
@@ -77,12 +78,30 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    if (this.resizeRafId) cancelAnimationFrame(this.resizeRafId);
+  }
+
+  /**
+   * Recalcula los módulos visibles cuando cambia el viewport (cambio de pestaña,
+   * modo responsive de devtools, redimensionar la ventana). El ResizeObserver del
+   * host no siempre dispara en estos casos (p. ej. cuando el sidebar estaba oculto),
+   * así que escuchamos también window:resize. Se coalesce con rAF para no recalcular
+   * en cada evento; calculateVisibleModules fuerza change detection.
+   */
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.resizeRafId) cancelAnimationFrame(this.resizeRafId);
+    this.resizeRafId = requestAnimationFrame(() => {
+      this.resizeRafId = 0;
+      this.calculateVisibleModules();
+    });
   }
 
   private calculateVisibleModules(): void {
     if (!this.moduleHeights.length) return;
 
     const hostHeight = this.elementRef.nativeElement.getBoundingClientRect().height;
+    if (hostHeight <= 0) return; // sidebar oculto (móvil): no recalcular ni borrar la lista
     const paddingY = 40; // py-[20px] top + bottom
     const gap = 5; // gap-[5px] between items
     const dotsReservation = 63; // dots button (~58px) + one gap (5px)
@@ -106,6 +125,11 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
     if (this.overflowModules.length === 0) {
       this.overflowOpen = false;
     }
+
+    // Forzar refresco: el recálculo viene de callbacks async (ResizeObserver /
+    // window:resize) donde la change detection no corre sola; sin esto el cambio
+    // solo se reflejaba tras un click.
+    this.cdr.detectChanges();
   }
 
   isActiveModule(baseRoute: string): boolean {

@@ -21,16 +21,22 @@
   <!-- Tabla -->
   <div class="w-full rounded-lg overflow-auto border border-[#D6DEE5] bg-white">
     <table class="w-full">
-      <thead class="bg-[#E5F7D1]">
-        <tr class="text-[#64BC04]">
-          <th class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Estado</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Acciones</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold w-[120px]"
+      <thead class="bg-[#E5F7D1] text-[#64BC04]">
+        <!-- Fila 1: encabezados de grupo -->
+        <tr>
+          <th rowspan="2" class="text-left px-[16px] py-[10px] font-semibold">Rama</th>
+          <th rowspan="2" class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Estado</th>
+          <th rowspan="2" class="text-center px-[16px] py-[10px] font-semibold w-[110px]">Acciones</th>
+          <th colspan="2" class="text-center px-[16px] py-[8px] font-semibold border-b border-l border-[#D6DEE5]">Formulario</th>
+          <th colspan="1" class="text-center px-[16px] py-[8px] font-semibold border-b border-l border-[#D6DEE5]">Filtros</th>
+        </tr>
+        <!-- Fila 2: columnas -->
+        <tr>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[120px] border-l border-[#D6DEE5]"
             title="Aparece en el formulario de creación de lecciones (requiere plantilla)">En formulario</th>
           <th class="text-center px-[16px] py-[10px] font-semibold w-[130px]"
             title="Se muestra como opción independiente en el formulario y no despliega a sus áreas hijas (requiere 'En formulario')">Área independiente</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold w-[130px]"
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[130px] border-l border-[#D6DEE5]"
             title="En los filtros del dashboard, agrupa a sus subáreas">Agrupar subáreas</th>
         </tr>
       </thead>

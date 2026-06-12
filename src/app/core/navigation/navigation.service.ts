@@ -39,11 +39,7 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Áreas', route: '/mejora-continua/configuration/areas', featureKey: 'mejora-continua.config.areas' },
-            { label: 'Relaciones por área', route: '/mejora-continua/configuration/area-relations', featureKey: 'mejora-continua.config.area-relations' },
-            { label: 'Plantillas', route: '/mejora-continua/configuration/templates', featureKey: 'mejora-continua.config.templates' },
-            { label: 'Tipos de Catálogo', route: '/mejora-continua/configuration/catalog-types', featureKey: 'mejora-continua.config.catalog-types' },
-            { label: 'Ítems de Catálogo', route: '/mejora-continua/configuration/catalog-items', featureKey: 'mejora-continua.config.catalog-items' },
+            { label: 'Configuración de Lecciones', route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
             { label: 'Recordatorios Lecciones', route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' },
           ],
         },

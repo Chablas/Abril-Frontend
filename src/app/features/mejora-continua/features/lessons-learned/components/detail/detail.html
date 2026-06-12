@@ -27,7 +27,7 @@
            datos básicos haya en la izquierda). -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 bg-[#E5F7D1] rounded-xl p-5">
         <div class="flex flex-col gap-2">
-          <p class="text-sm"><span class="text-[#64BC04] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period }}</span></p>
+          <p class="text-sm"><span class="text-[#64BC04] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period | periodLabel }}</span></p>
           <p class="text-sm"><span class="text-[#64BC04] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
           <p class="text-sm"><span class="text-[#64BC04] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
           <p class="text-sm"><span class="text-[#64BC04] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>

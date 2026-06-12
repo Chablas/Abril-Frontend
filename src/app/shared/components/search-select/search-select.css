@@ -13,3 +13,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* fullText=true → muestra el texto completo (sin "…"), permitiendo que se ajuste en varias líneas. */
+.ss-trigger-label.ss-full,
+.ss-option.ss-full {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+  word-break: break-word;
+}

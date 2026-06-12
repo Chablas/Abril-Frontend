@@ -9,6 +9,16 @@
       </svg>
       Nuevo registro
     </button>
+
+    <!-- Enlace al video-guía -->
+    <a [href]="guia.url" target="_blank" rel="noopener noreferrer"
+      class="group flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-[#eef2ff] py-[5px] px-4 text-sm text-[#4f46e5] cursor-pointer hover:bg-[#e0e7ff] transition-colors">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      <span class="group-hover:underline">Click para ver guía</span>
+    </a>
+
     <div class="flex items-center gap-3">
       <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
       <button class="group flex items-center cursor-pointer gap-1.5" (click)="downloadExcel()">
@@ -25,15 +35,23 @@
   <div class="flex flex-col">
     <div class="flex flex-wrap gap-4 py-3 items-end">
       
-      <div class="w-[220px]">
-        <app-search-select
-          label="Area"
-          [options]="areaOptions"
-          valueField="areaId"
-          displayField="areaDescription"
-          [value]="filtersTable.areaId"
-          (valueChange)="filtersTable.areaId = $event">
-        </app-search-select>
+      <!-- Área en cascada (recuadro verde para destacar). Mantiene padding vertical
+           (py-2); el margen inferior negativo (-mb-2) cancela ese padding inferior
+           para que, con items-end, los controles queden alineados con el resto. -->
+      <div class="bg-[#E5F7D1] rounded-xl px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+        <ng-container *ngFor="let level of areaLevels; let i = index">
+          <div class="w-[200px]">
+            <app-search-select
+              [label]="i === 0 ? 'Área' : 'Subárea'"
+              [options]="level"
+              valueField="id"
+              displayField="name"
+              [value]="selectedAreaNodes[i]?.id"
+              (valueChange)="onAreaNodeChange(i, $event)"
+              [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
+            </app-search-select>
+          </div>
+        </ng-container>
       </div>
 
       <div class="w-[220px]">

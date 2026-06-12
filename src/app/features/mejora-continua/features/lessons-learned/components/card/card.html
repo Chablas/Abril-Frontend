@@ -22,7 +22,7 @@
     <div class="flex items-center gap-2 flex-wrap">
       <span class="text-[11px] text-gray-600 font-medium">{{ (item.areaListDescription ?? item.areaDescription)?.replace('ARQUITECTURA', 'ARQ.') }}</span>
       <span class="text-gray-300 text-xs">·</span>
-      <span class="text-[11px] text-gray-500">{{ item.period?.toUpperCase() }}</span>
+      <span class="text-[11px] text-gray-500">{{ item.period | periodLabel }}</span>
     </div>
 
     <!-- Clasificación: un pill por cada segmento (Fase / Etapa / Nivel / …). -->

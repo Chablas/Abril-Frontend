@@ -227,6 +227,16 @@ export class Detail implements OnInit {
     return this.item.projectSubContractorStatusId;
   }
 
+  /** Solo Oficina Técnica puede enviar al SC (avanzar del paso 4 al 5). */
+  get canSendToSc(): boolean {
+    return this.hasOfTecnica;
+  }
+
+  /** Solo Oficina Central puede marcar la llegada y confirmar la recepción (paso 5 → 6). */
+  get canConfirmArrival(): boolean {
+    return this.hasOfCentral;
+  }
+
   /** Plazo en días calculado desde el formulario (paso 2 en edición). */
   get plazoEnDias(): number | null {
     if (!this.step2Form.startDate || !this.step2Form.endDate) return null;
@@ -264,6 +274,11 @@ export class Detail implements OnInit {
     });
   }
 
+  /** El contrato (obligatorio) debe estar Aprobado (estado 4) y tener archivo subido. */
+  get contractApproved(): boolean {
+    return this.docForms['Contract']?.statusId === 4 && !!this.getDocFile('Contract');
+  }
+
   get forwardLabel(): string {
     if (this.actualStatus === 1) return 'Enviar correos';
     if (this.actualStatus === 2 && this.viewStep === 2) return 'Guardar y continuar';
@@ -298,12 +313,17 @@ export class Detail implements OnInit {
       return true;
     }
     if (this.actualStatus === 3 && this.viewStep === 3) {
-      return this.allDocsApproved;
+      // Al menos el Contrato debe estar Aprobado para poder avanzar.
+      return this.allDocsApproved && this.contractApproved;
     }
     if (this.actualStatus === 4 && this.viewStep === 4) {
+      // Solo Oficina Técnica puede enviar al SC (avanzar del paso 4 al 5).
+      if (!this.hasOfTecnica) return false;
       return this.step4File !== null || !!this.item.package;
     }
     if (this.actualStatus === 5 && this.viewStep === 5) {
+      // Solo Oficina Central puede confirmar la recepción (avanzar del paso 5 al 6).
+      if (!this.hasOfCentral) return false;
       if (this.step5ArrivalOption === 'complete') return true;
       if (this.step5ArrivalOption === 'with_observations') return this.step5ObservationsResolved;
       return false;
@@ -748,6 +768,11 @@ export class Detail implements OnInit {
   }
 
   private async sendScNotification(): Promise<void> {
+    // Solo Oficina Técnica puede enviar al SC (paso 4 → 5).
+    if (!this.hasOfTecnica) {
+      Swal.fire({ icon: 'warning', title: 'Acción no permitida', text: 'Solo Oficina Técnica puede enviar al SC.', draggable: true });
+      return;
+    }
     if (!this.step4File && !this.item.package) return;
     this.loaderService.show();
 
@@ -840,6 +865,8 @@ export class Detail implements OnInit {
   }
 
   onArrivalOptionChange(option: 'complete' | 'with_observations'): void {
+    // Solo Oficina Central puede marcar la llegada.
+    if (!this.hasOfCentral) return;
     this.step5ArrivalOption = option;
     this.step5ObservationsResolved = false;
     this.adjudicacionesService.setArrivalOption(this.item.projectSubContractorId, option === 'with_observations').subscribe({
@@ -853,6 +880,11 @@ export class Detail implements OnInit {
   }
 
   private async confirmStep5(): Promise<void> {
+    // Solo Oficina Central puede confirmar la recepción (paso 5 → 6).
+    if (!this.hasOfCentral) {
+      Swal.fire({ icon: 'warning', title: 'Acción no permitida', text: 'Solo Oficina Central puede confirmar la recepción.', draggable: true });
+      return;
+    }
     this.loaderService.show();
 
     let graphToken: string;
@@ -887,6 +919,17 @@ export class Detail implements OnInit {
   }
 
   private async advanceToApproved(): Promise<void> {
+    // Validación: el contrato debe estar Aprobado (con archivo) para poder avanzar.
+    if (!this.contractApproved) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Contrato no aprobado',
+        text: 'El contrato debe estar en estado "Aprobado" (con su archivo subido) para poder avanzar al siguiente paso.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     this.loaderService.show();
 
     // El correo de notificación al Staff de Obra se envía vía Graph como el usuario autenticado.
