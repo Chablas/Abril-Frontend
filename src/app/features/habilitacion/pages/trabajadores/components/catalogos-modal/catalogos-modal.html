@@ -1,0 +1,79 @@
+<div class="cat-overlay" (click)="cerrar.emit()"></div>
+
+<div class="cat-modal">
+  <div class="cat-header">
+    <div class="cat-header-icon">
+      <i class="ti ti-category-2"></i>
+    </div>
+    <div>
+      <h2 class="cat-title">Catálogos</h2>
+      <p class="cat-subtitle">Categorías y ocupaciones</p>
+    </div>
+    <button class="cat-close" (click)="cerrar.emit()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  <div class="cat-tabs">
+    <button class="cat-tab" [class.cat-tab--active]="tab === 'categoria'" (click)="tab = 'categoria'">
+      <i class="ti ti-tag"></i> Categorías
+    </button>
+    <button class="cat-tab" [class.cat-tab--active]="tab === 'ocupacion'" (click)="tab = 'ocupacion'">
+      <i class="ti ti-briefcase"></i> Ocupaciones
+    </button>
+  </div>
+
+  <div class="cat-body">
+    <div class="cat-list">
+      @for (item of items; track item.id) {
+        <div class="cat-item" [class.cat-item--inactivo]="!item.activo">
+          @if (editandoId === item.id) {
+            <input
+              class="cat-input-edit"
+              [(ngModel)]="editandoNombre"
+              (keydown.enter)="guardarEdicion(item)"
+              (keydown.escape)="cancelarEdicion()"
+              autofocus
+            />
+            <div class="cat-item-actions">
+              <button class="cat-btn cat-btn--save" (click)="guardarEdicion(item)" title="Guardar">
+                <i class="ti ti-check"></i>
+              </button>
+              <button class="cat-btn cat-btn--cancel" (click)="cancelarEdicion()" title="Cancelar">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          } @else {
+            <span class="cat-item-nombre">{{ item.nombre }}</span>
+            <div class="cat-item-actions">
+              <button class="cat-btn cat-btn--edit" (click)="iniciarEdicion(item)" title="Editar">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button
+                class="cat-btn"
+                [class.cat-btn--toggle-off]="item.activo"
+                [class.cat-btn--toggle-on]="!item.activo"
+                (click)="toggleActivo(item)"
+                [title]="item.activo ? 'Desactivar' : 'Activar'"
+              >
+                <i class="ti" [class.ti-eye-off]="item.activo" [class.ti-eye]="!item.activo"></i>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="cat-add">
+      <input
+        class="cat-input-new"
+        [(ngModel)]="nuevoNombre"
+        [placeholder]="tab === 'categoria' ? 'Nueva categoría...' : 'Nueva ocupación...'"
+        (keydown.enter)="agregar()"
+      />
+      <button class="cat-btn-add" (click)="agregar()" [disabled]="guardando || !nuevoNombre.trim()">
+        <i class="ti ti-plus"></i> Agregar
+      </button>
+    </div>
+  </div>
+</div>
