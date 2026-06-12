@@ -31,6 +31,12 @@
       <button class="btn-ghost-sm btn-induccion" (click)="abrirEmosProgramados()">
         EMOs Programados
       </button>
+      @if (puedeGestionarCatalogos) {
+        <button class="btn-catalogos" (click)="mostrarCatalogos = true" title="Gestionar catálogos">
+          <i class="ti ti-adjustments-horizontal"></i>
+          Catálogos
+        </button>
+      }
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 5v14M5 12h14"/>
@@ -764,3 +770,6 @@
   [proyectos]="catalogoProyectos"
   (closed)="mostrarEmosProgramados = false">
 </app-emos-programados>
+@if (mostrarCatalogos) {
+  <app-catalogos-modal (cerrar)="mostrarCatalogos = false" />
+}
