@@ -71,26 +71,23 @@
       (click)="setTab(t)">
       <i class="ti" [ngClass]="tabIcon(t)"></i>
       {{ tabLabel(t) }}
-      <span *ngIf="t !== 'Gantt'" class="tab-count">{{ countTab(t) }}</span>
+      <span class="tab-count">{{ countTab(t) }}</span>
     </button>
   </nav>
 
   <!-- ── Tab content ────────────────────────────────────────────── -->
   <div class="tab-body">
-    <ng-container *ngIf="tabActiva !== 'Gantt'">
-      <div class="tab-toolbar">
-        <button type="button" class="btn-add" (click)="abrirAgregar()">
-          <i class="ti ti-plus"></i> Agregar actividad
-        </button>
-      </div>
-      <app-actividad-tree
-        [actividades]="actividadesTab"
-        [pasoId]="paso.id"
-        [ambito]="tabActiva"
-        (actividadEliminada)="onEliminada($event)">
-      </app-actividad-tree>
-    </ng-container>
-    <app-paso-gantt *ngIf="tabActiva === 'Gantt'" [pasoId]="paso.id"></app-paso-gantt>
+    <div class="tab-toolbar">
+      <button type="button" class="btn-add" (click)="abrirAgregar()">
+        <i class="ti ti-plus"></i> Agregar actividad
+      </button>
+    </div>
+    <app-actividad-tree
+      [actividades]="actividadesTab"
+      [pasoId]="paso.id"
+      [ambito]="tabActiva"
+      (actividadEliminada)="onEliminada($event)">
+    </app-actividad-tree>
   </div>
 
 </ng-container>

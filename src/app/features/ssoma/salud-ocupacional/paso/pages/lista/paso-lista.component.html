@@ -17,11 +17,15 @@
       <div class="selector-row">
         <div class="selector-wrap">
           <select class="selector-select" [(ngModel)]="selectedPasoId" (ngModelChange)="onProyectoChange()">
-            <option *ngFor="let p of programas" [ngValue]="p.id">
+            <option *ngFor="let p of programasFiltrados" [ngValue]="p.id">
               {{ p.proyectoNombre ?? p.nombre }} · {{ p.anio }}
             </option>
           </select>
           <i class="ti ti-chevron-down selector-chev"></i>
+        <label class="historicos-check">
+          <input type="checkbox" [(ngModel)]="verHistoricos">
+          Ver históricos
+        </label>
         </div>
         <span *ngIf="paso" class="estado-pill" [ngClass]="'estado-pill--' + paso.estado.toLowerCase()">
           {{ paso.estado }}
@@ -31,25 +35,37 @@
 
     <div class="bar-sep"></div>
 
-    <!-- KPI mini-cards -->
-    <div class="kpi-strip" *ngIf="spi && !loadingDetalle">
-      <div class="kpi-strip__item">
+    <!-- KPI mini-cards + toggle de vista -->
+    <div class="kpi-strip" *ngIf="!kpiLoading">
+      <div class="kpi-strip__item" *ngIf="vista !== 'mes' && kpiSpiValue !== null">
         <span class="kpi-strip__label">SPI</span>
-        <app-spi-badge [spi]="spi.spiGeneral" size="sm"></app-spi-badge>
+        <app-spi-badge [spi]="kpiSpiValue" size="sm"></app-spi-badge>
       </div>
-      <div class="kpi-strip__item">
+      <div class="kpi-strip__item" *ngIf="kpiAvance !== null">
         <span class="kpi-strip__label">Avance</span>
-        <span class="kpi-strip__value" style="color:#2563eb">{{ spi.porcentajeAvance | number:'1.0-1' }}%</span>
+        <span class="kpi-strip__value" style="color:#2563eb">{{ kpiAvance | number:'1.0-1' }}%</span>
       </div>
-      <div class="kpi-strip__item">
-        <span class="kpi-strip__label">Ejecutadas</span>
-        <span class="kpi-strip__value" style="color:#16a34a">{{ spi.totalEjecutadas }}</span>
+      <div class="kpi-strip__item" *ngIf="kpiEjecutadas !== null">
+        <span class="kpi-strip__label">{{ vista === 'mes' ? 'Completadas' : 'Ejecutadas' }}</span>
+        <span class="kpi-strip__value" style="color:#16a34a">{{ kpiEjecutadas }}</span>
       </div>
-      <div class="kpi-strip__item">
+      <div class="kpi-strip__item" *ngIf="kpiVencidas !== null">
         <span class="kpi-strip__label">Vencidas</span>
-        <span class="kpi-strip__value" [style.color]="spi.totalVencidas > 0 ? '#dc2626' : '#16a34a'">
-          {{ spi.totalVencidas }}
+        <span class="kpi-strip__value" [style.color]="(kpiVencidas ?? 0) > 0 ? '#dc2626' : '#16a34a'">
+          {{ kpiVencidas }}
         </span>
+      </div>
+      <div class="bar-sep"></div>
+      <div class="vista-toggle">
+        <button [class.active]="vista==='mes'" (click)="cambiarVista('mes')" type="button">
+          <i class="ti ti-calendar-month"></i> Mes
+        </button>
+        <button [class.active]="vista==='año'" (click)="cambiarVista('año')" type="button">
+          <i class="ti ti-calendar-stats"></i> Año
+        </button>
+        <button [class.active]="vista==='proyecto'" (click)="cambiarVista('proyecto')" type="button">
+          <i class="ti ti-history"></i> Proyecto
+        </button>
       </div>
     </div>
 
@@ -57,6 +73,10 @@
     <div class="proyecto-actions" *ngIf="paso">
       <button *ngIf="paso.estado === 'Borrador'" type="button" class="hdr-btn hdr-btn--green" (click)="aprobar()">
         <i class="ti ti-check"></i> Aprobar
+      </button>
+      <button *ngIf="paso.esPlantilla || proyectoSinPasoAnioActual"
+        type="button" class="hdr-btn hdr-btn--blue" (click)="instanciarOpen = true">
+        <i class="ti ti-copy"></i> Instanciar {{ anioActual }}
       </button>
       <div class="export-wrap" *ngIf="exportOpen">
         <div class="export-menu">
@@ -71,14 +91,10 @@
     </div>
   </div>
 
-  <!-- Toggle de vista -->
-  <div class="vista-toggle">
-    <button [class.active]="vistaActual==='mensual'" (click)="cambiarVista('mensual')" type="button">
-      <i class="ti ti-calendar-month"></i> Mensual
-    </button>
-    <button [class.active]="vistaActual==='anual'" (click)="cambiarVista('anual')" type="button">
-      <i class="ti ti-calendar-stats"></i> Anual
-    </button>
+  <!-- Sin PASO del año actual -->
+  <div *ngIf="!loadingDetalle && !paso && programas.length > 0" class="loading-center">
+    <i class="ti ti-info-circle" style="font-size:1.5rem;opacity:0.4"></i>
+    <span>No hay programa PASO {{ anioActual }} para este proyecto</span>
   </div>
 
   <!-- Loading -->
@@ -89,8 +105,8 @@
 
   <ng-container *ngIf="!loadingDetalle && paso">
 
-    <!-- ══ VISTA MENSUAL ══ -->
-    <ng-container *ngIf="vistaActual==='mensual'">
+    <!-- ══ VISTA MES ══ -->
+    <ng-container *ngIf="vista==='mes'">
 
       <div class="mes-header">
         <button (click)="cambiarMes(-1)" type="button">‹</button>
@@ -159,7 +175,7 @@
 
       <!-- Lista de actividades del mes -->
       <div class="mes-actividades" *ngIf="resumenMes && !loadingMes">
-        <div *ngFor="let a of resumenMes.actividades" class="mes-act-row"
+        <div *ngFor="let a of (resumenMes.actividades ?? [])" class="mes-act-row"
           [class.mes-act--ejecutado]="a.estado === 'Ejecutado'"
           [class.mes-act--vencido]="a.estado === 'Vencido'"
           [class.mes-act--programado]="a.estado === 'Programado'"
@@ -172,7 +188,12 @@
             {{ a.fechaEjecutada ? (a.fechaEjecutada | date:'dd/MM') : (a.fechaProgramada | date:'dd/MM') }}
           </div>
           <div class="mes-act__evidencia">
-            <span *ngIf="a.evidenciaNombre" class="evidencia-chip">
+            <button *ngIf="a.evidenciaUrl" type="button"
+               class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''"
+               (click)="verEvidencia(a.evidenciaUrl)">
+              <i class="ti ti-external-link"></i> Ver evidencia
+            </button>
+            <span *ngIf="!a.evidenciaUrl && a.evidenciaNombre" class="evidencia-chip">
               <i class="ti ti-paperclip"></i> {{ a.evidenciaNombre }}
             </span>
           </div>
@@ -200,8 +221,8 @@
 
     </ng-container>
 
-    <!-- ══ VISTA ANUAL ══ -->
-    <ng-container *ngIf="vistaActual==='anual'">
+    <!-- ══ VISTA AÑO ══ -->
+    <ng-container *ngIf="vista==='año'">
 
       <!-- Tabs de ámbito -->
       <nav class="paso-tabs">
@@ -211,12 +232,12 @@
           (click)="setTab(t)">
           <i class="ti" [ngClass]="tabIcon(t)"></i>
           {{ tabLabel(t) }}
-          <span *ngIf="t !== 'Gantt'" class="tab-count">{{ countTab($any(t)) }}</span>
+          <span class="tab-count">{{ countTab(t) }}</span>
         </button>
       </nav>
 
       <!-- Toolbar entre tabs y contenido -->
-      <div class="actividades-toolbar" *ngIf="tabActiva !== 'Gantt'">
+      <div class="actividades-toolbar">
         <div class="filtro-pills">
           <button [class.active]="filtroEstado===''" (click)="filtroEstado=''" type="button">Todas</button>
           <button [class.active]="filtroEstado==='pendiente'" (click)="filtroEstado='pendiente'" type="button">Pendientes</button>
@@ -230,18 +251,83 @@
 
       <!-- Contenido del tab -->
       <div class="tab-body">
-        <ng-container *ngIf="tabActiva !== 'Gantt'">
-          <app-actividad-tree
-            [actividades]="actividadesTab"
-            [pasoId]="paso.id"
-            [ambito]="tabActiva"
-            [filtroEstado]="filtroEstado"
-            (actividadEliminada)="onEliminada($event)">
-          </app-actividad-tree>
-        </ng-container>
-        <app-paso-gantt *ngIf="tabActiva === 'Gantt'" [pasoId]="paso.id"></app-paso-gantt>
+        <app-actividad-tree
+          [actividades]="actividadesTab"
+          [pasoId]="paso.id"
+          [ambito]="tabActiva"
+          [filtroEstado]="filtroEstado"
+          (actividadEliminada)="onEliminada($event)">
+        </app-actividad-tree>
       </div>
 
+    </ng-container>
+
+    <!-- ══ VISTA PROYECTO ══ -->
+    <ng-container *ngIf="vista==='proyecto'">
+      <div *ngIf="loadingHistorico" class="loading-center">
+        <i class="ti ti-loader-2 animate-spin" style="font-size:1.5rem"></i>
+        <span>Cargando histórico…</span>
+      </div>
+      <div *ngIf="!loadingHistorico && !paso?.proyectoId" class="loading-center">
+        <i class="ti ti-info-circle" style="font-size:1.5rem;opacity:0.4"></i>
+        <span>Este programa no está asociado a un proyecto</span>
+      </div>
+      <div *ngIf="!loadingHistorico && paso?.proyectoId && !historicoData?.length" class="loading-center">
+        <i class="ti ti-info-circle" style="font-size:1.5rem;opacity:0.4"></i>
+        <span>Sin datos históricos para este proyecto</span>
+      </div>
+      <div class="historico-table-wrap" *ngIf="historicoDataFiltrada.length && !loadingHistorico">
+        <table class="historico-table">
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>Programadas</th>
+              <th>Ejecutadas</th>
+              <th>Vencidas</th>
+              <th>SPI</th>
+              <th>Avance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of historicoDataFiltrada">
+              <td class="historico-anio">{{ h.anio }}</td>
+              <td>{{ h.totalProgramadas }}</td>
+              <td class="hist-green">{{ h.totalEjecutadas }}</td>
+              <td [class.hist-red]="h.totalVencidas > 0">{{ h.totalVencidas }}</td>
+              <td>
+                <span *ngIf="h.spiGeneral == null">— Sin datos</span>
+                <app-spi-badge *ngIf="h.spiGeneral != null" [spi]="h.spiGeneral" size="sm"></app-spi-badge>
+              </td>
+              <td>
+                <div class="hist-avance">
+                  <div class="hist-avance__bar">
+                    <div class="hist-avance__fill" [style.width.%]="h.porcentajeAvance"
+                      [class.hist-avance__fill--green]="h.porcentajeAvance >= 90"
+                      [class.hist-avance__fill--amber]="h.porcentajeAvance >= 70 && h.porcentajeAvance < 90"
+                      [class.hist-avance__fill--red]="h.porcentajeAvance < 70"></div>
+                  </div>
+                  <span>{{ h.porcentajeAvance | number:'1.0-0' }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot *ngIf="historicoTotales">
+            <tr class="historico-total">
+              <td><strong>Total</strong></td>
+              <td><strong>{{ historicoTotales.totalProgramadas }}</strong></td>
+              <td class="hist-green"><strong>{{ historicoTotales.totalEjecutadas }}</strong></td>
+              <td [class.hist-red]="historicoTotales.totalVencidas > 0">
+                <strong>{{ historicoTotales.totalVencidas }}</strong>
+              </td>
+              <td>
+                <span *ngIf="historicoTotales.spiGeneral == null">— Sin datos</span>
+                <app-spi-badge *ngIf="historicoTotales.spiGeneral != null" [spi]="historicoTotales.spiGeneral" size="sm"></app-spi-badge>
+              </td>
+              <td><strong>{{ historicoTotales.porcentajeAvance | number:'1.0-0' }}%</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </ng-container>
 
   </ng-container>
@@ -301,9 +387,11 @@
   </div>
 </div>
 
-<app-instanciar-modal *ngIf="instanciarOpen && paso"
-  [pasoPlantillaId]="paso.id" [plantillaNombre]="paso.nombre"
-  (closed)="instanciarOpen=false" (instanciaCreada)="onInstanciaCreada()">
+<app-instanciar-modal *ngIf="instanciarOpen && plantillaId"
+  [pasoPlantillaId]="plantillaId!"
+  [plantillaNombre]="plantillaNombre"
+  (closed)="instanciarOpen=false"
+  (instanciaCreada)="onInstanciaCreada()">
 </app-instanciar-modal>
 
 <app-ejecucion-modal

@@ -16,6 +16,7 @@ import {
   InstanciarPasoDto,
   PasoResumenMesDto,
   PasoAuditoriaDto,
+  PasoHistoricoAnioDto,
 } from '../dtos/paso.dtos';
 
 const BASE = `${environment.apiUrl}api/v1/ssoma-paso`;
@@ -88,6 +89,12 @@ export class PasoService {
   getResumenMes(id: number, anio: number, mes: number): Observable<PasoResumenMesDto> {
     return this.http.get<PasoResumenMesDto>(`${BASE}/${id}/resumen-mes`, {
       params: buildParams({ anio, mes } as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getHistorico(proyectoId: number): Observable<PasoHistoricoAnioDto[]> {
+    return this.http.get<PasoHistoricoAnioDto[]>(`${BASE}/proyecto/${proyectoId}/historico`, {
       headers: buildAuthHeaders(),
     });
   }

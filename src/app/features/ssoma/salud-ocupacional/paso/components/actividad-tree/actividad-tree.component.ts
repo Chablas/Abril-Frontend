@@ -37,7 +37,7 @@ export class ActividadTreeComponent {
   get filtroEstado(): string { return this._filtroEstado; }
 
   @Input() pasoId!: number;
-  @Input() ambito: 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt' = 'Seguridad';
+  @Input() ambito: 'Seguridad' | 'Salud' | 'Ambiente' = 'Seguridad';
   @Output() actividadEditarClick = new EventEmitter<PasoActividadDto>();
   @Output() actividadEliminada = new EventEmitter<number>();
   @Output() ejecucionRegistrada = new EventEmitter<PasoEjecucionDto>();

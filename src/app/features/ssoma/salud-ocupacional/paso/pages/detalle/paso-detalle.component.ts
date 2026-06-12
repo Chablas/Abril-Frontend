@@ -9,19 +9,18 @@ import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoDetalleDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
-import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
 import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
-type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
+type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
 @Component({
   selector: 'app-paso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, PasoGanttComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
   templateUrl: './paso-detalle.component.html',
   styleUrl: './paso-detalle.component.css',
 })
@@ -39,7 +38,7 @@ export class PasoDetalleComponent implements OnInit {
   instanciarOpen = false;
   exportOpen = false;
 
-  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
+  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente'];
 
   constructor(
     private route: ActivatedRoute,
@@ -92,12 +91,10 @@ export class PasoDetalleComponent implements OnInit {
   }
 
   get categoriasFiltradas(): PasoCategoriaDto[] {
-    return this.categorias.filter(c => c.ambito === this.tabActiva);
+    return this.categorias.filter(c => c.ambito === (this.tabActiva as string));
   }
 
-  countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
-    const valores = [...new Set(this.paso?.actividades?.map(a => a.categoriaAmbito) ?? [])];
-    console.log('[PASO] categoriaAmbito valores únicos:', valores);
+  countTab(tab: TabAmbito): number {
     return this.paso?.actividades?.filter(a => a.categoriaAmbito === tab && a.activo).length ?? 0;
   }
 
@@ -177,17 +174,18 @@ export class PasoDetalleComponent implements OnInit {
   }
 
   tabColor(t: TabAmbito): string {
-    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb', Gantt: 'tab--gantt' };
+    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb' };
     return m[t];
   }
 
   tabIcon(t: TabAmbito): string {
-    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf', Gantt: 'ti-chart-gantt' };
+    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf' };
     return m[t];
   }
 
   tabLabel(t: TabAmbito): string {
-    return t === 'Salud' ? 'Salud Ocupacional' : t;
+    if (t === 'Salud') return 'Salud Ocupacional';
+    return t;
   }
 
   volver(): void { this.router.navigate(['/ssoma/gestion/paso/lista']); }

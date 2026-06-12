@@ -112,6 +112,11 @@
   <div *ngIf="activeSection === 'jefes'">
     <app-jefe-list></app-jefe-list>
   </div>
+
+  <!-- SECCIÓN: Revisor de Trabajadores (jefe directo por worker) -->
+  <div *ngIf="activeSection === 'revisores'">
+    <app-worker-revisor-list></app-worker-revisor-list>
+  </div>
 </div>
 
 <app-lesson-reminder-create

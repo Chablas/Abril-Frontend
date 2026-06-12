@@ -9,12 +9,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { PasoService } from '../../services/paso.service';
 import { PasoListItemDto, InstanciarPasoDto } from '../../dtos/paso.dtos';
 import { ProjectService } from '../../../../../../core/services/project.service';
-import { ProjectScheduleSimpleDTO } from '../../../../../../core/dtos/project/projectScheduleSimple.model';
+import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 
 @Component({
   selector: 'app-instanciar-modal',
@@ -29,14 +30,35 @@ export class InstanciarModalComponent implements OnInit {
   @Output() instanciaCreada = new EventEmitter<PasoListItemDto>();
 
   step = 1;
-  proyectos: ProjectScheduleSimpleDTO[] = [];
+  proyectos: ProjectGetDTO[] = [];
   loadingProyectos = false;
 
   proyectoId: number | null = null;
-  anio = new Date().getFullYear();
+  mesInicio: number = new Date().getMonth() + 1;
   nombreGenerado = '';
-
   saving = false;
+
+  meses = [
+    { valor: 1,  nombre: 'Enero' },
+    { valor: 2,  nombre: 'Febrero' },
+    { valor: 3,  nombre: 'Marzo' },
+    { valor: 4,  nombre: 'Abril' },
+    { valor: 5,  nombre: 'Mayo' },
+    { valor: 6,  nombre: 'Junio' },
+    { valor: 7,  nombre: 'Julio' },
+    { valor: 8,  nombre: 'Agosto' },
+    { valor: 9,  nombre: 'Septiembre' },
+    { valor: 10, nombre: 'Octubre' },
+    { valor: 11, nombre: 'Noviembre' },
+    { valor: 12, nombre: 'Diciembre' },
+  ];
+
+  private _anio = new Date().getFullYear();
+  get anio(): number { return this._anio; }
+  set anio(value: number) {
+    this._anio = value;
+    this.loadProyectos();
+  }
 
   constructor(
     private pasoService: PasoService,
@@ -50,9 +72,18 @@ export class InstanciarModalComponent implements OnInit {
 
   private loadProyectos(): void {
     this.loadingProyectos = true;
-    this.projectService.getWithResidentByUserId().subscribe({
-      next: (list) => {
-        this.proyectos = list;
+    this.proyectoId = null;
+    forkJoin({
+      pasos: this.pasoService.getAll({ esPlantilla: false, anio: this._anio, pageSize: 100 }),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200 }),
+    }).subscribe({
+      next: ({ pasos, proyectos }) => {
+        const proyectosConPaso = new Set(
+          pasos.items.map(p => p.proyectoId).filter((id): id is number => id !== null)
+        );
+        this.proyectos = proyectos.data
+          .filter(p => p.estado === 'ACTIVO' && !proyectosConPaso.has(p.projectId))
+          .sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProyectos = false;
         this.cdr.detectChanges();
       },
@@ -87,6 +118,7 @@ export class InstanciarModalComponent implements OnInit {
       proyectoId: this.proyectoId,
       anio: this.anio,
       nombre: this.nombreGenerado,
+      mesInicio: this.mesInicio,
     };
     this.pasoService.instanciar(this.pasoPlantillaId, dto).subscribe({
       next: (paso) => {

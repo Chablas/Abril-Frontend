@@ -140,11 +140,11 @@ export class AdjudicacionesService {
     );
   }
 
-  confirmStep5(projectSubContractorId: number, arrivedWithObservations: boolean, graphAccessToken: string): Observable<ApiMessageDTO> {
+  confirmStep5(projectSubContractorId: number, arrivedWithObservations: boolean, arrivalObservation: string | null, graphAccessToken: string): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(
       `${this.apiUrl}/${projectSubContractorId}/confirm-step5`,
-      { arrivedWithObservations, graphAccessToken },
+      { arrivedWithObservations, arrivalObservation, graphAccessToken },
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }

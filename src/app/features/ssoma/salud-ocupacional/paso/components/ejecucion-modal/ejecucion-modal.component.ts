@@ -11,18 +11,24 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
+import { SharepointUploadService } from '../../../../../habilitacion/services/sharepoint-upload.service';
+import { ErrorService } from '../../../../../../core/services/error.service';
 import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto } from '../../dtos/paso.dtos';
 
 @Component({
   selector: 'app-ejecucion-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, DocumentViewer],
   templateUrl: './ejecucion-modal.component.html',
   styleUrl: './ejecucion-modal.component.css',
 })
 export class EjecucionModalComponent implements OnInit {
   @Input() actividad!: PasoActividadDto;
+  // FIX-F4: receive the selected month/year from parent so fechaProgramada is correct
+  @Input() mesSeleccionado: number = new Date().getMonth() + 1;
+  @Input() anioSeleccionado: number = new Date().getFullYear();
   @Output() closed = new EventEmitter<void>();
   @Output() ejecucionCreada = new EventEmitter<PasoEjecucionDto>();
 
@@ -34,16 +40,30 @@ export class EjecucionModalComponent implements OnInit {
   };
 
   evidenciaFile: File | null = null;
+  ejecucionGuardada: PasoEjecucionDto | null = null;
   isDragOver = false;
   saving = false;
   uploadProgress = false;
 
+  visorUrl = '';
+  visorNombre = '';
+
   ngOnInit(): void {
+    this.ejecucionGuardada = null;
     this.form.actividadId = this.actividad.id;
+    // FIX-F4: set fechaProgramada to first day of selected month (ISO format)
+    const anio = this.anioSeleccionado;
+    const mes  = String(this.mesSeleccionado).padStart(2, '0');
+    this.form.fechaProgramada = `${anio}-${mes}-01`;
+    // Default fechaEjecutada to today
+    const hoy = new Date();
+    this.form.fechaEjecutada = hoy.toISOString().substring(0, 10);
   }
 
   constructor(
     private ejecucionService: PasoEjecucionService,
+    private sharepointService: SharepointUploadService,
+    private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -76,6 +96,36 @@ export class EjecucionModalComponent implements OnInit {
     return !!this.form.fechaEjecutada;
   }
 
+  get ultimaEjecucionConEvidencia(): PasoEjecucionDto | null {
+    return this.ejecucionGuardada ??
+      (this.actividad?.ejecuciones?.slice().reverse().find(e => !!e.evidenciaUrl) ?? null);
+  }
+
+  nombreArchivo(url: string): string {
+    return url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
+  }
+
+  abrirVisor(archivoUrl: string): void {
+    this.visorNombre = this.nombreArchivo(archivoUrl);
+    this.visorUrl = archivoUrl;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+  }
+
+  descargarDocumento(archivoUrl: string): void {
+    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+      next: (res) => {
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.download = this.nombreArchivo(archivoUrl);
+        a.click();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
   guardar(): void {
     if (!this.canSave) return;
     this.saving = true;
@@ -87,6 +137,7 @@ export class EjecucionModalComponent implements OnInit {
             next: (updated) => {
               this.saving = false;
               this.uploadProgress = false;
+              this.ejecucionGuardada = updated;
               this.ejecucionCreada.emit(updated);
               this.cdr.detectChanges();
             },

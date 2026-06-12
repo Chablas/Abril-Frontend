@@ -231,6 +231,7 @@ export interface PasoResumenMesDto {
   seguridad: PasoResumenMesAmbitoDto;
   salud: PasoResumenMesAmbitoDto;
   ambiente: PasoResumenMesAmbitoDto;
+  ssoma: PasoResumenMesAmbitoDto;
   actividades: PasoResumenMesActividadDto[];
 }
 
@@ -250,6 +251,16 @@ export interface PasoResumenMesAmbitoDto {
   completadas: number;
   pendientes: number;
   vencidas: number;
+}
+
+export interface PasoHistoricoAnioDto {
+  anio: number;
+  totalProgramadas: number;
+  totalEjecutadas: number;
+  totalVencidas: number;
+  spiGeneral: number;
+  spiColor: 'verde' | 'amarillo' | 'rojo';
+  porcentajeAvance: number;
 }
 
 export interface PasoResumenMesActividadDto {

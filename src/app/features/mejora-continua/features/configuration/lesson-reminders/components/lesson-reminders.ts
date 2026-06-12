@@ -15,8 +15,9 @@ import { LessonReminderDTO, LessonReminderPagedDTO } from '../dtos/lessonReminde
 import { LessonReminderCreate } from './lesson-reminder-create/lesson-reminder-create';
 import { ProjectStaffList } from './project-staff-list/project-staff-list';
 import { JefeList } from './jefe-list/jefe-list';
+import { WorkerRevisorList } from './worker-revisor-list/worker-revisor-list';
 
-type ReminderSection = 'users' | 'staff' | 'jefes';
+type ReminderSection = 'users' | 'staff' | 'jefes' | 'revisores';
 
 @Component({
   selector: 'app-lesson-reminders',
@@ -31,6 +32,7 @@ type ReminderSection = 'users' | 'staff' | 'jefes';
     LessonReminderCreate,
     ProjectStaffList,
     JefeList,
+    WorkerRevisorList,
   ],
   templateUrl: './lesson-reminders.html',
 })
@@ -40,6 +42,7 @@ export class LessonReminders implements OnInit {
     { id: 'users', label: 'Trabajadores' },
     { id: 'staff', label: 'Staff de proyectos' },
     { id: 'jefes', label: 'Jefaturas' },
+    { id: 'revisores', label: 'Revisor de Trabajadores' },
   ];
 
   // Subáreas (hardcodeadas) para el filtro de la lista de usuarios.

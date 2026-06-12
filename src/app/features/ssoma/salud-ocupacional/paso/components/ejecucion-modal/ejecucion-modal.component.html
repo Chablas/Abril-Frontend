@@ -34,6 +34,19 @@
     <div class="ej-field span2">
       <label class="ej-label">Evidencia</label>
 
+      <div *ngIf="ultimaEjecucionConEvidencia" class="evidencia-existente">
+        <i class="ti ti-paperclip"></i>
+        <span>{{ ultimaEjecucionConEvidencia.evidenciaNombre ?? 'Evidencia adjunta' }}</span>
+        <button type="button" class="btn-ver-evidencia"
+          (click)="abrirVisor(ultimaEjecucionConEvidencia!.evidenciaUrl!)">
+          <i class="ti ti-eye"></i> Ver
+        </button>
+        <button type="button" class="btn-ver-evidencia"
+          (click)="descargarDocumento(ultimaEjecucionConEvidencia!.evidenciaUrl!)">
+          <i class="ti ti-download"></i> Descargar
+        </button>
+      </div>
+
       <ng-container *ngIf="!evidenciaFile">
         <div class="dropzone" [class.over]="isDragOver"
           (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
@@ -74,3 +87,9 @@
   </div>
 
 </app-base-modal>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()"
+/>

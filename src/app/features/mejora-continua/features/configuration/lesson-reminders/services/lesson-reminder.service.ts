@@ -11,6 +11,11 @@ import {
   ToggleProjectStaffReminderResultDTO,
 } from '../dtos/projectStaffReminder.model';
 import { JefeReminderConfigItemDTO, ToggleJefeReminderResultDTO } from '../dtos/jefeReminder.model';
+import {
+  WorkerRevisorItemDTO,
+  WorkerRevisorOptionDTO,
+  WorkerRevisorUpdateDTO,
+} from '../dtos/workerRevisor.model';
 
 @Injectable({ providedIn: 'root' })
 export class LessonReminderService {
@@ -90,5 +95,24 @@ export class LessonReminderService {
       {},
       { headers: this.authHeaders() },
     );
+  }
+
+  // Revisor de Trabajadores (workers.worker_lesson_jefe_id)
+  getWorkerRevisores(): Observable<WorkerRevisorItemDTO[]> {
+    return this.http.get<WorkerRevisorItemDTO[]>(`${this.apiUrl}/worker-revisor`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getWorkerRevisorOptions(): Observable<WorkerRevisorOptionDTO[]> {
+    return this.http.get<WorkerRevisorOptionDTO[]>(`${this.apiUrl}/worker-revisor/options`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  updateWorkerRevisor(workerId: number, dto: WorkerRevisorUpdateDTO): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/worker-revisor/${workerId}`, dto, {
+      headers: this.authHeaders(),
+    });
   }
 }
