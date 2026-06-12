@@ -960,7 +960,25 @@
           </label>
         </div>
 
+        <!-- Observación de la llegada (se guarda al confirmar la recepción) -->
+        <div *ngIf="actualStatus === 5 && canConfirmArrival" class="flex flex-col gap-[6px]">
+          <label class="text-xs font-medium text-gray-600">Observación (opcional)</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="step5ArrivalObservation"
+            placeholder="Escriba una observación sobre la llegada del expediente..."
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-3 py-2 outline-none resize-none
+                   focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
+          ></textarea>
+        </div>
+
         <!-- Modo lectura (cuando ya se pasó el paso 5) -->
+        <div *ngIf="actualStatus > 5 && step5ArrivalObservation"
+          class="flex flex-col gap-[4px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+          <span class="text-xs font-medium text-gray-500">Observación</span>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ step5ArrivalObservation }}</p>
+        </div>
+
         <div *ngIf="actualStatus > 5 && step5ArrivalOption"
           class="flex items-center gap-2 text-xs px-[10px] py-[6px] rounded-full w-fit"
           [ngClass]="step5ArrivalOption === 'complete'

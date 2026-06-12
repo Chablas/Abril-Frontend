@@ -117,6 +117,7 @@ export class Detail implements OnInit {
 
   /** Paso 5 — opción de llegada y subsanación */
   step5ArrivalOption: 'complete' | 'with_observations' | null = null;
+  step5ArrivalObservation = '';
   step5ObservationsResolved = false;
 
   /** Paso 6 — confirmación de firmas */
@@ -207,6 +208,7 @@ export class Detail implements OnInit {
     if (this.item.projectSubContractorStatusId >= 5 && this.item.arrivedWithObservations != null) {
       this.step5ArrivalOption = this.item.arrivedWithObservations ? 'with_observations' : 'complete';
     }
+    this.step5ArrivalObservation = this.item.arrivalObservation ?? '';
     this.step6ConfirmedOriundo  = this.item.projectSubContractorStatusId > 6;
     this.step6ConfirmedToratto  = this.item.projectSubContractorStatusId > 6;
     this.step6ConfirmedCostos   = this.item.projectSubContractorStatusId > 6;
@@ -902,11 +904,13 @@ export class Detail implements OnInit {
     }
 
     const arrivedWithObservations = this.step5ArrivalOption === 'with_observations';
-    this.adjudicacionesService.confirmStep5(this.item.projectSubContractorId, arrivedWithObservations, graphToken).subscribe({
+    const arrivalObservation = this.step5ArrivalObservation.trim() || null;
+    this.adjudicacionesService.confirmStep5(this.item.projectSubContractorId, arrivedWithObservations, arrivalObservation, graphToken).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.item.projectSubContractorStatusId = 6;
         this.item.arrivedWithObservations = arrivedWithObservations;
+        this.item.arrivalObservation = arrivalObservation;
         this.viewStep = 6;
         this.statusChanged.emit();
         Swal.fire({ icon: 'success', title: res.message ?? 'Recepción confirmada exitosamente', draggable: true });
