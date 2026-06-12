@@ -166,6 +166,8 @@
 }
 .hdr-btn--green  { background: #198754; color: #fff; border-color: #198754; }
 .hdr-btn--green:hover  { background: #157347; }
+.hdr-btn--blue   { background: #2563eb; color: #fff; border-color: #2563eb; }
+.hdr-btn--blue:hover   { background: #1d4ed8; }
 
 /* ── Export dropdown ─────────────────────────────────────────── */
 .export-wrap { position: relative; }
@@ -622,6 +624,16 @@
   max-width: 120px;
   text-overflow: ellipsis;
 }
+.evidencia-chip--link {
+  cursor: pointer;
+  text-decoration: none;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+.evidencia-chip--link:hover {
+  background: #bfdbfe;
+  text-decoration: underline;
+}
 
 .mes-act__actions {
   display: flex;
@@ -1048,3 +1060,38 @@
 }
 .reprogramar-btn-confirm:hover:not(:disabled) { background: #b45309; }
 .reprogramar-btn-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Tabla histórico por proyecto ────────────────────────────── */
+.historico-table-wrap {
+  padding: 1.5rem;
+  overflow-x: auto;
+}
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.historico-table thead tr { background: #f1f5f9; }
+.historico-table thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+}
+.historico-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.historico-table tbody tr:hover { background: #f8fafc; }
+.historico-table tbody td { padding: 0.75rem 1rem; color: #1e293b; }
+.historico-table tfoot tr { background: #1e293b; border-top: 2px solid #334155; }
+.historico-table tfoot td { padding: 0.75rem 1rem; color: #f1f5f9; font-weight: 600; }
+.historico-anio { font-weight: 700; color: #1e293b; }
+.hist-green { color: #16a34a; font-weight: 600; }
+.hist-red   { color: #dc2626; font-weight: 600; }
+.hist-avance { display: flex; align-items: center; gap: 0.5rem; }
+.hist-avance__bar { width: 80px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+.hist-avance__fill { height: 100%; border-radius: 3px; background: #64bc04; }
+.hist-avance__fill--green { background: #16a34a; }
+.hist-avance__fill--amber { background: #d97706; }
+.hist-avance__fill--red   { background: #dc2626; }

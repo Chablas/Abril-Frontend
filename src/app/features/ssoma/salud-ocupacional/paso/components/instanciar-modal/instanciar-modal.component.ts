@@ -14,7 +14,7 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { PasoService } from '../../services/paso.service';
 import { PasoListItemDto, InstanciarPasoDto } from '../../dtos/paso.dtos';
 import { ProjectService } from '../../../../../../core/services/project.service';
-import { ProjectScheduleSimpleDTO } from '../../../../../../core/dtos/project/projectScheduleSimple.model';
+import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 
 @Component({
   selector: 'app-instanciar-modal',
@@ -29,7 +29,7 @@ export class InstanciarModalComponent implements OnInit {
   @Output() instanciaCreada = new EventEmitter<PasoListItemDto>();
 
   step = 1;
-  proyectos: ProjectScheduleSimpleDTO[] = [];
+  proyectos: ProjectGetDTO[] = [];
   loadingProyectos = false;
 
   proyectoId: number | null = null;
@@ -50,9 +50,9 @@ export class InstanciarModalComponent implements OnInit {
 
   private loadProyectos(): void {
     this.loadingProyectos = true;
-    this.projectService.getWithResidentByUserId().subscribe({
-      next: (list) => {
-        this.proyectos = list;
+    this.projectService.getProjectsPaged({ pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.proyectos = res.data;
         this.loadingProyectos = false;
         this.cdr.detectChanges();
       },

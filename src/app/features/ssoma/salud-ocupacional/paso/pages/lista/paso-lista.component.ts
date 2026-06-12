@@ -1,16 +1,16 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { forkJoin } from 'rxjs';
 import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
-import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto } from '../../dtos/paso.dtos';
+import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto, PasoHistoricoAnioDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
-import { PasoGanttComponent } from '../../components/paso-gantt/paso-gantt.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
 import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
@@ -18,13 +18,13 @@ import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecuc
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
-type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente' | 'Gantt';
+type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
 @Component({
   selector: 'app-paso-lista',
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
-            PasoGanttComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent,
+            InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent,
             EjecucionModalComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
@@ -40,13 +40,15 @@ export class PasoListaComponent implements OnInit {
   loading = false;
   loadingDetalle = false;
   tabActiva: TabAmbito = 'Seguridad';
-  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente', 'Gantt'];
+  tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente'];
 
   filtroEstado = '';
   agregarOpen = false;
   agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
   instanciarOpen = false;
+  plantillaId: number | null = null;
+  plantillaNombre = '';
   exportOpen = false;
   actividadEjecutando: PasoActividadDto | null = null;
   actividadDetalle: PasoActividadDto | null = null;
@@ -63,11 +65,13 @@ export class PasoListaComponent implements OnInit {
 
   readonly anioActual = new Date().getFullYear();
 
-  vistaActual: 'mensual' | 'anual' = 'mensual';
+  vista: 'mes' | 'año' | 'proyecto' = 'mes';
   mesSeleccionado = new Date().getMonth() + 1;
   anioSeleccionado = new Date().getFullYear();
   resumenMes: PasoResumenMesDto | null = null;
   loadingMes = false;
+  historicoData: PasoHistoricoAnioDto[] | null = null;
+  loadingHistorico = false;
 
   meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
            'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -78,21 +82,32 @@ export class PasoListaComponent implements OnInit {
     private pasoEjecucionService: PasoEjecucionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    // FIX-F1: Remove anio filter so ALL project PASOs load (not just current year).
+    // Auto-select the first PASO of current year if available.
     forkJoin({
-      programas: this.pasoService.getAll({ esPlantilla: false, anio: this.anioActual, pageSize: 50 }),
+      programas: this.pasoService.getAll({ pageSize: 100 }),
       categorias: this.pasoService.getCategorias(),
     }).subscribe({
       next: ({ programas, categorias }) => {
         this.programas = programas.items;
         this.categorias = categorias;
-        if (this.programas.length > 0) {
-          this.selectedPasoId = this.programas[0].id;
-          this.loadDetalle(this.programas[0].id);
-          this.loadResumenMes(this.programas[0].id);
+        const plantilla = programas.items.find(p => p.esPlantilla);
+        if (plantilla) { this.plantillaId = plantilla.id; this.plantillaNombre = plantilla.nombre; }
+        const paso2026 = this.programas.find(p => p.anio === this.anioActual && !p.esPlantilla);
+        const defaultPaso = paso2026 ?? this.programas.find(p => p.anio === this.anioActual) ?? this.programas[0];
+        if (defaultPaso) {
+          this.selectedPasoId = defaultPaso.id;
+          this.loadDetalle(defaultPaso.id);
+          this.loadResumenMes(defaultPaso.id);
+        }
+        if (sessionStorage.getItem('paso_abrir_instanciar') === '1') {
+          sessionStorage.removeItem('paso_abrir_instanciar');
+          this.instanciarOpen = true;
         }
         this.cdr.detectChanges();
       },
@@ -102,14 +117,16 @@ export class PasoListaComponent implements OnInit {
 
   onProyectoChange(): void {
     this.filtroEstado = '';
+    this.vista = 'mes';
     if (this.selectedPasoId) {
       this.loadDetalle(this.selectedPasoId);
-      if (this.vistaActual === 'mensual') this.loadResumenMes(this.selectedPasoId);
+      this.loadResumenMes(this.selectedPasoId);
     }
   }
 
   private loadDetalle(id: number): void {
     this.loadingDetalle = true;
+    this.historicoData = null;
     this.loaderService.show();
     forkJoin({
       paso: this.pasoService.getById(id),
@@ -120,6 +137,13 @@ export class PasoListaComponent implements OnInit {
         this.spi = spi;
         this.loadingDetalle = false;
         this.loaderService.hide();
+        // DEBUG — quitar después de confirmar valores de categoriaAmbito
+        console.log('AMBITOS:', [...new Set(paso.actividades?.map(a => a.categoriaAmbito))]);
+        console.log('SPI AMBITOS:', spi);
+        if (this.vista === 'proyecto' && paso.proyectoId) {
+          this.historicoData = null;
+          this.loadHistorico(paso.proyectoId);
+        }
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -130,22 +154,21 @@ export class PasoListaComponent implements OnInit {
     });
   }
 
-  private normAmbito(raw: string): string {
-    return raw === 'Salud Ocupacional' ? 'Salud' : raw;
-  }
-
   get actividadesTab() {
     if (!this.paso?.actividades) return [];
-    return this.paso.actividades.filter(a => this.normAmbito(a.categoriaAmbito) === this.tabActiva && a.activo);
+    return this.paso.actividades.filter(a =>
+      a.categoriaAmbito === this.tabActiva && a.activo !== false
+    );
   }
 
   get categoriasFiltradas() {
-    return this.categorias.filter(c => c.ambito === (this.tabActiva as 'Seguridad' | 'Salud' | 'Ambiente'));
+    return this.categorias.filter(c => c.ambito === (this.tabActiva as string));
   }
 
-  countTab(tab: Exclude<TabAmbito, 'Gantt'>): number {
-    console.log('ambitos:', [...new Set(this.paso?.actividades?.map(a => a.categoriaAmbito))]);
-    return this.paso?.actividades?.filter(a => this.normAmbito(a.categoriaAmbito) === tab && a.activo).length ?? 0;
+  countTab(tab: TabAmbito): number {
+    return this.paso?.actividades?.filter(a =>
+      a.categoriaAmbito === tab && a.activo !== false
+    ).length ?? 0;
   }
 
   setTab(tab: TabAmbito): void { this.tabActiva = tab; this.exportOpen = false; this.filtroEstado = ''; }
@@ -189,7 +212,7 @@ export class PasoListaComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onInstanciaCreada(): void { this.instanciarOpen = false; this.ngOnInit(); }
+  onInstanciaCreada(): void { this.instanciarOpen = false; this.plantillaId = null; this.plantillaNombre = ''; this.ngOnInit(); }
 
   exportar(format: 'excel' | 'pdf'): void {
     if (!this.paso) return;
@@ -208,22 +231,102 @@ export class PasoListaComponent implements OnInit {
   }
 
   tabColor(t: TabAmbito): string {
-    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb', Gantt: 'tab--gantt' };
+    const m: Record<TabAmbito, string> = { Seguridad: 'tab--seg', Salud: 'tab--sal', Ambiente: 'tab--amb' };
     return m[t];
   }
 
   tabIcon(t: TabAmbito): string {
-    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf', Gantt: 'ti-chart-gantt' };
+    const m: Record<TabAmbito, string> = { Seguridad: 'ti-shield', Salud: 'ti-heart-pulse', Ambiente: 'ti-leaf' };
     return m[t];
   }
 
-  tabLabel(t: TabAmbito): string { return t === 'Salud' ? 'Salud Ocupacional' : t; }
-
-  cambiarVista(v: 'mensual' | 'anual'): void {
-    this.vistaActual = v;
-    if (v === 'mensual' && this.selectedPasoId)
-      this.loadResumenMes(this.selectedPasoId);
+  tabLabel(t: TabAmbito): string {
+    if (t === 'Salud') return 'Salud Ocupacional';
+    return t;
   }
+
+  cambiarVista(v: 'mes' | 'año' | 'proyecto'): void {
+    this.vista = v;
+    if (v === 'mes' && this.selectedPasoId) this.loadResumenMes(this.selectedPasoId);
+    if (v === 'proyecto') {
+      const pid = this.paso?.proyectoId;
+      if (pid) this.loadHistorico(pid);
+    }
+  }
+
+  private loadHistorico(proyectoId: number): void {
+    this.loadingHistorico = true;
+    this.pasoService.getHistorico(proyectoId).subscribe({
+      next: (h) => {
+        console.log('HISTORICO raw:', h);
+        this.historicoData = h;
+        this.loadingHistorico = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('HISTORICO error:', err);
+        this.loadingHistorico = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get historicoDataFiltrada() {
+    return this.historicoData ?? [];
+  }
+
+  get historicoTotales() {
+    const conDatos = this.historicoDataFiltrada;
+    if (!conDatos.length) return null;
+    const prog = conDatos.reduce((s, a) => s + a.totalProgramadas, 0);
+    const ejec = conDatos.reduce((s, a) => s + a.totalEjecutadas, 0);
+    const spis = conDatos.filter(a => a.spiGeneral != null && a.spiGeneral > 0);
+    return {
+      totalProgramadas: prog,
+      totalEjecutadas: ejec,
+      totalVencidas: conDatos.reduce((s, a) => s + a.totalVencidas, 0),
+      porcentajeAvance: prog > 0 ? Math.round((ejec / prog) * 100) : 0,
+      spiGeneral: spis.length > 0 ? spis.reduce((s, a) => s + a.spiGeneral, 0) / spis.length : 0,
+    };
+  }
+
+  get proyectoSinPasoAnioActual(): boolean {
+    if (!this.paso) return false;
+    if (this.paso.esPlantilla) return true;
+    return this.paso.anio !== this.anioActual;
+  }
+
+  get kpiLoading(): boolean {
+    if (this.vista === 'proyecto') return this.loadingHistorico;
+    if (this.vista === 'año') return this.loadingDetalle;
+    return false;
+  }
+
+  get kpiSpiValue(): number | null {
+    if (this.vista === 'año') return this.spi?.spiGeneral ?? null;
+    if (this.vista === 'proyecto') return this.historicoTotales?.spiGeneral ?? null;
+    return null;
+  }
+
+  get kpiAvance(): number | null {
+    if (this.vista === 'año') return this.spi?.porcentajeAvance ?? null;
+    if (this.vista === 'proyecto') return this.historicoTotales?.porcentajeAvance ?? null;
+    return null;
+  }
+
+  get kpiEjecutadas(): number | null {
+    if (this.vista === 'año') return this.spi?.totalEjecutadas ?? null;
+    if (this.vista === 'proyecto') return this.historicoTotales?.totalEjecutadas ?? null;
+    return null;
+  }
+
+  get kpiVencidas(): number | null {
+    if (this.vista === 'año') return this.spi?.totalVencidas ?? null;
+    if (this.vista === 'proyecto') return this.historicoTotales?.totalVencidas ?? null;
+    return null;
+  }
+
+  get kpiProgramadas(): number | null { return null; }
 
   cambiarMes(delta: number): void {
     this.mesSeleccionado += delta;
@@ -329,7 +432,7 @@ export class PasoListaComponent implements OnInit {
     this.actividadService.delete(this.eliminarActividad.id, this.motivoEliminacion.trim()).subscribe({
       next: () => {
         this.onEliminada(this.eliminarActividad!.id);
-        if (this.selectedPasoId) this.loadResumenMes(this.selectedPasoId);
+        if (this.selectedPasoId && this.vista === 'mes') this.loadResumenMes(this.selectedPasoId);
         this.eliminarOpen = false;
         this.eliminarActividad = null;
         this.motivoEliminacion = '';
@@ -344,7 +447,7 @@ export class PasoListaComponent implements OnInit {
 
   onEjecucionCreada(e: PasoEjecucionDto): void {
     this.actividadEjecutando = null;
-    if (this.selectedPasoId) this.loadResumenMes(this.selectedPasoId);
+    if (this.selectedPasoId && this.vista === 'mes') this.loadResumenMes(this.selectedPasoId);
     this.cdr.detectChanges();
   }
 

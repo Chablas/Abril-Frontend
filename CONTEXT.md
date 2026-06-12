@@ -4,7 +4,9 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-08 — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario). versiones-doc: columna "Subido por" → "Archivo" (muestra nombreArchivo del primer archivo o nombre extraído de archivoUrl).
+> **Última actualización**: 2026-06-11 (v2) — PASO: ruta correcta es `/ssoma/gestion/paso/` (ssoma.routes.ts monta PASO en `path: 'gestion/paso'`, NO en `salud-ocupacional/paso`). Fixes paso-lista: TabAmbito sin SSOMA, `activo !== false` en countTab/actividadesTab, historicoData como `PasoHistoricoAnioDto[]`, getter historicoTotales agrega array, historicoDataFiltrada sin filtro, cambiarVista siempre recarga historico, onProyectoChange resetea vista a 'mes', loadDetalle resetea historicoData y recarga historico al cambiar proyecto en vista proyecto, CSS tabla histórica, SPI null handling. paso-dashboard: irADetalle/irANuevoPrograma usan `/ssoma/gestion/paso/`, botón "Nuevo programa" usa sessionStorage. instanciar-modal: usa ProjectGetDTO y getProjectsPaged. paso-nav: rutas `/ssoma/gestion/paso/...`.
+>
+> **2026-06-08** — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario). versiones-doc: columna "Subido por" → "Archivo" (muestra nombreArchivo del primer archivo o nombre extraído de archivoUrl).
 >
 > **2026-06-07** — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, selector archivos múltiples por mes), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto.
 >
@@ -12,7 +14,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 >
 > **2026-06-06 (v2)** — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
 >
-> **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/salud-ocupacional/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
+> **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/gestion/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
 >
 > **2026-06-02** — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
 
@@ -96,7 +98,7 @@ src/app/
             ├── services/         # http-base.ts + un servicio por recurso
             ├── dtos/
             ├── shared/           # utils del módulo (no UI compartida global)
-            └── paso/             # Módulo PASO — lazy desde ssoma.routes.ts → /ssoma/salud-ocupacional/paso
+            └── paso/             # Módulo PASO — lazy desde ssoma.routes.ts → /ssoma/gestion/paso
                 ├── paso.routes.ts
                 ├── dtos/paso.dtos.ts
                 ├── services/     # paso.service.ts | paso-actividad.service.ts | paso-ejecucion.service.ts
@@ -155,7 +157,7 @@ Redirect interno: `''` → `'proyectos'`. Reutiliza servicios/DTOs de SSOMA (`Ca
    /arquitectura-comercial                  → ArquitecturaComercialModule
    /ssoma                                   → SSOMA_ROUTES
      /ssoma/salud-ocupacional               → SALUD_OCUPACIONAL_ROUTES
-     /ssoma/salud-ocupacional/paso          → PASO_ROUTES (lazy, featureKey: ssoma.paso.*)
+     /ssoma/gestion/paso                    → PASO_ROUTES (lazy, featureKey: ssoma.gestion.paso)
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
    /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
@@ -580,8 +582,15 @@ Base: `${apiUrl}api/v1/ssoma-paso` — controller unificado. Actividades y ejecu
 | DELETE | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.delete` |
 | POST   | `/api/v1/ssoma-paso/ejecucion` | `PasoEjecucionService.create` |
 | PATCH  | `/api/v1/ssoma-paso/ejecucion/{id}/evidencia` | `PasoEjecucionService.subirEvidencia` (multipart, campo `file`) |
+| GET    | `/api/v1/ssoma-paso/{id}/resumen-mes?anio=&mes=` | `PasoService.getResumenMes` → `PasoResumenMesDto` |
+| GET    | `/api/v1/ssoma-paso/proyecto/{proyectoId}/historico` | `PasoService.getHistorico` → `PasoHistoricoAnioDto[]` |
+| GET    | `/api/v1/ssoma-paso/actividad/{id}/auditoria` | `PasoService.getAuditoria` → `PasoAuditoriaDto[]` |
 
-**DTOs clave** (`paso/dtos/paso.dtos.ts`): `PasoDto`, `PasoActividadDto`, `PasoEjecucionDto`, `PasoSpiDto`, `PasoDashboardDto`, `PasoAlertaDto`, `PasoGanttDto`, `PasoCategoriaDto`. Colores por ámbito: Seguridad→azul, Salud→verde, Ambiente→teal. SPI: ≥0.95=verde, 0.80-0.94=amarillo, <0.80=rojo.
+**DTOs clave** (`paso/dtos/paso.dtos.ts`):
+- `PasoActividadDto.categoriaAmbito: 'Seguridad' | 'Salud' | 'Ambiente'` — SSOMA **no** es valor válido.
+- `PasoResumenMesDto`: `totalProgramadas`, `completadas`, `pendientes`, `vencidas`, `porcentajeAvance`, `seguridad/salud/ambiente/ssoma: PasoResumenMesAmbitoDto`, `actividades: PasoResumenMesActividadDto[]`.
+- `PasoHistoricoAnioDto`: `anio`, `totalProgramadas`, `totalEjecutadas`, `totalVencidas`, `spiGeneral`, `spiColor`, `porcentajeAvance`.
+- Colores por ámbito: Seguridad→azul, Salud→verde, Ambiente→teal. SPI: ≥0.95=verde, 0.80-0.94=amarillo, <0.80=rojo.
 
 ### Evaluaciones — Asignaciones de Supervisores
 
@@ -714,7 +723,7 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
 
-### `features/ssoma/salud-ocupacional/paso/` — ✅ Módulo PASO (2026-06-03)
+### `features/ssoma/salud-ocupacional/paso/` — 🔵 Módulo PASO (2026-06-11)
 
 Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente. Lazy bajo `/ssoma/salud-ocupacional/paso/`.
 
@@ -727,12 +736,19 @@ Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente. Lazy bajo `/sso
 /paso/:id              → PasoDetalleComponent
 ```
 
+**Vista lista** (`PasoListaComponent`) — toggle `vista: 'mes'|'año'|'proyecto'`:
+- **Mes**: navegador de mes + `resumenMes` (endpoint `resumen-mes`). KPI strip solo muestra toggle; KPIs de mes aparecen en sección `mes-kpis` abajo.
+- **Año**: árbol de actividades por ámbito (tabs Seguridad / Salud / Ambiente). `actividadesTab` filtra por `categoriaAmbito === tabActiva`.
+- **Proyecto**: tabla por año (`PasoHistoricoAnioDto[]`) con columnas Año | Programadas | Ejecutadas | Vencidas | SPI | Avance + fila de totales (`historicoTotales` getter). Si `paso.proyectoId` es null muestra aviso.
+- `TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente'` — SSOMA eliminado en lista, detalle y actividad-tree.
+- `loadHistorico(proyectoId)` se dispara en `loadDetalle()` si ya estás en vista Proyecto, o en `cambiarVista('proyecto')` si `historicoData` es null.
+
 **Componentes reutilizables**:
 - `SpiBadgeComponent` — pill con semáforo: ≥0.95 verde / 0.80-0.94 amarillo / <0.80 rojo.
-- `EjecucionModalComponent` — BaseModal. Registra ejecución + drag & drop evidencia (POST create → PATCH evidencia).
-- `InstanciarModalComponent` — BaseModal wizard 2 pasos: proyecto+año → confirmar. Usa `ProjectService.getWithResidentByUserId()`.
-- `ActividadTreeComponent` — agrupa `PasoActividadDto[]` por `categoriaId`, muestra progreso bar + SPI por actividad.
-- `PasoGanttComponent` — wrapper dhtmlx-gantt v9 (`import 'dhtmlx-gantt'; declare const gantt: any`). Read-only, escala mensual. Destruye gantt en `ngOnDestroy`.
+- `EjecucionModalComponent` — registra ejecución + drag & drop evidencia.
+- `InstanciarModalComponent` — wizard 2 pasos: proyecto+año → confirmar. Usa `ProjectService.getWithResidentByUserId()`.
+- `ActividadTreeComponent` — agrupa `PasoActividadDto[]` por `categoriaId`. `@Input() ambito: 'Seguridad'|'Salud'|'Ambiente'`.
+- `PasoGanttComponent` — existe pero **desconectado** (no se usa en lista/detalle).
 
 **Sidebar**: entrada "Prog. Anual SSOMA" en grupo "Salud Ocupacional" de `navigation.service.ts` (featureKey `ssoma.paso.dashboard`).
 

@@ -122,4 +122,8 @@ export class PasoDashboardComponent implements OnInit, OnDestroy {
   irALista(): void    { this.router.navigate(['/ssoma/gestion/paso/lista']); }
   irAAlertas(): void  { this.router.navigate(['/ssoma/gestion/paso/alertas']); }
   irADetalle(pasoId: number): void { this.router.navigate(['/ssoma/gestion/paso', pasoId]); }
+  irANuevoPrograma(): void {
+    sessionStorage.setItem('paso_abrir_instanciar', '1');
+    this.router.navigate(['/ssoma/gestion/paso/lista']);
+  }
 }

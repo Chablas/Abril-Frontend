@@ -23,6 +23,9 @@ import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto } from '../../dt
 })
 export class EjecucionModalComponent implements OnInit {
   @Input() actividad!: PasoActividadDto;
+  // FIX-F4: receive the selected month/year from parent so fechaProgramada is correct
+  @Input() mesSeleccionado: number = new Date().getMonth() + 1;
+  @Input() anioSeleccionado: number = new Date().getFullYear();
   @Output() closed = new EventEmitter<void>();
   @Output() ejecucionCreada = new EventEmitter<PasoEjecucionDto>();
 
@@ -40,6 +43,13 @@ export class EjecucionModalComponent implements OnInit {
 
   ngOnInit(): void {
     this.form.actividadId = this.actividad.id;
+    // FIX-F4: set fechaProgramada to first day of selected month (ISO format)
+    const anio = this.anioSeleccionado;
+    const mes  = String(this.mesSeleccionado).padStart(2, '0');
+    this.form.fechaProgramada = `${anio}-${mes}-01`;
+    // Default fechaEjecutada to today
+    const hoy = new Date();
+    this.form.fechaEjecutada = hoy.toISOString().substring(0, 10);
   }
 
   constructor(
