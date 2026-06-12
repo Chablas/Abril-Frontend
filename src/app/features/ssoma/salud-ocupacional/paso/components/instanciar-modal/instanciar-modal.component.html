@@ -1,4 +1,4 @@
-<app-base-modal [title]="step === 1 ? 'Instanciar Plantilla — Paso 1' : 'Instanciar Plantilla — Confirmar'" width="w-full max-w-md" (closed)="close()">
+<app-base-modal [title]="step === 1 ? 'Agregar PASO al Proyecto' : 'Instanciar Plantilla — Confirmar'" width="w-full max-w-md" (closed)="close()">
   <div class="mt-2">
 
     <!-- Origen info -->
@@ -24,6 +24,13 @@
           <label class="block text-xs font-semibold text-gray-600 mb-1">Año <span class="text-red-500">*</span></label>
           <input type="number" min="2020" max="2035" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
             [(ngModel)]="anio" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Mes de inicio <span class="text-red-500">*</span></label>
+          <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
+            [(ngModel)]="mesInicio">
+            <option *ngFor="let m of meses" [ngValue]="m.valor">{{ m.nombre }}</option>
+          </select>
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-4 mt-2 border-t border-gray-100">

@@ -5,6 +5,16 @@
   --paso-gantt: #64748b;
 }
 
+.historicos-check {
+  font-size: 0.72rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
 :host {
   display: flex;
   flex-direction: column;

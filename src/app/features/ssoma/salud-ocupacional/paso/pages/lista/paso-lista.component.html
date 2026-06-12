@@ -17,11 +17,15 @@
       <div class="selector-row">
         <div class="selector-wrap">
           <select class="selector-select" [(ngModel)]="selectedPasoId" (ngModelChange)="onProyectoChange()">
-            <option *ngFor="let p of programas" [ngValue]="p.id">
+            <option *ngFor="let p of programasFiltrados" [ngValue]="p.id">
               {{ p.proyectoNombre ?? p.nombre }} · {{ p.anio }}
             </option>
           </select>
           <i class="ti ti-chevron-down selector-chev"></i>
+        <label class="historicos-check">
+          <input type="checkbox" [(ngModel)]="verHistoricos">
+          Ver históricos
+        </label>
         </div>
         <span *ngIf="paso" class="estado-pill" [ngClass]="'estado-pill--' + paso.estado.toLowerCase()">
           {{ paso.estado }}
@@ -184,10 +188,11 @@
             {{ a.fechaEjecutada ? (a.fechaEjecutada | date:'dd/MM') : (a.fechaProgramada | date:'dd/MM') }}
           </div>
           <div class="mes-act__evidencia">
-            <a *ngIf="a.evidenciaUrl" [href]="a.evidenciaUrl" target="_blank"
-               class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''">
+            <button *ngIf="a.evidenciaUrl" type="button"
+               class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''"
+               (click)="verEvidencia(a.evidenciaUrl)">
               <i class="ti ti-external-link"></i> Ver evidencia
-            </a>
+            </button>
             <span *ngIf="!a.evidenciaUrl && a.evidenciaNombre" class="evidencia-chip">
               <i class="ti ti-paperclip"></i> {{ a.evidenciaNombre }}
             </span>

@@ -17,6 +17,8 @@ import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssom
 import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecucion-modal.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ProjectService } from '../../../../../../core/services/project.service';
+import { environment } from '../../../../../../../environments/environment';
 
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
@@ -43,6 +45,8 @@ export class PasoListaComponent implements OnInit {
   tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente'];
 
   filtroEstado = '';
+  verHistoricos = false;
+  proyectosActivos = new Set<number>();
   agregarOpen = false;
   agregarForm: Partial<CreateActividadDto> = {};
   saving = false;
@@ -82,6 +86,7 @@ export class PasoListaComponent implements OnInit {
     private pasoEjecucionService: PasoEjecucionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private projectService: ProjectService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -92,8 +97,12 @@ export class PasoListaComponent implements OnInit {
     forkJoin({
       programas: this.pasoService.getAll({ pageSize: 100 }),
       categorias: this.pasoService.getCategorias(),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200 }),
     }).subscribe({
-      next: ({ programas, categorias }) => {
+      next: ({ programas, categorias, proyectos }) => {
+        this.proyectosActivos = new Set(
+          proyectos.data.filter(p => p.estado === 'ACTIVO').map(p => p.projectId)
+        );
         this.programas = programas.items;
         this.categorias = categorias;
         const plantilla = programas.items.find(p => p.esPlantilla);
@@ -152,6 +161,16 @@ export class PasoListaComponent implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  get programasFiltrados(): PasoListItemDto[] {
+    if (this.verHistoricos) return this.programas;
+    const anioMin = this.anioActual - 1;
+    return this.programas.filter(p =>
+      p.esPlantilla ||
+      (p.anio != null && p.anio >= anioMin &&
+       (p.proyectoId == null || this.proyectosActivos.has(p.proyectoId)))
+    );
   }
 
   get actividadesTab() {
@@ -444,6 +463,18 @@ export class PasoListaComponent implements OnInit {
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
   abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
+
+  verEvidencia(url: string): void {
+    const token = localStorage.getItem('access_token');
+    const apiUrl = `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(url)}`;
+    fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      })
+      .catch(() => Swal.fire('Error', 'No se pudo abrir el archivo', 'error'));
+  }
 
   onEjecucionCreada(e: PasoEjecucionDto): void {
     this.actividadEjecutando = null;

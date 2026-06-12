@@ -83,6 +83,34 @@
 .dropzone-text { font-size: 0.78rem; color: #9ca3af; line-height: 1.3; }
 .dropzone-hint { font-size: 0.68rem; color: #c4c9d1; }
 
+.evidencia-existente {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.evidencia-existente span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-ver-evidencia {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-ver-evidencia:hover { background: #eff6ff; }
+
 .file-preview {
   display: flex;
   align-items: center;
