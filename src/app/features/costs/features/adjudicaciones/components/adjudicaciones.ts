@@ -52,7 +52,7 @@ export class Adjudicaciones implements OnInit {
   showCreateModal = false;
   selectedItem: ProjectSubContractorDTO | null = null;
 
-  /** Solo Oficina Central puede crear adjudicaciones. Oficina Técnica lo tiene bloqueado. */
+  /** Solo Oficina Central y el Administrador pueden crear adjudicaciones. Oficina Técnica lo tiene bloqueado. */
   canCreate = false;
 
   constructor(
@@ -63,7 +63,9 @@ export class Adjudicaciones implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.canCreate = this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL);
+    this.canCreate =
+      this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL) ||
+      this.authService.hasRole(Roles.COSTOS_ADMINISTRADOR);
     this.loadPagedWithFilters();
   }
 

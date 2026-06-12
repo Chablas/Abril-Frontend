@@ -30,6 +30,18 @@ export class ErrorService {
       return;
     }
 
+    // 422 — falta configuración (p. ej. correos de staff no asociados al proyecto).
+    // Se muestra como advertencia para que el usuario no lo confunda con un error del sistema.
+    if (err.status === 422) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta configuración',
+        text: err.error?.message ?? 'Falta completar una configuración para continuar.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     if (err.status >= 400 && err.status < 500) {
       Swal.fire({
         icon: 'error',

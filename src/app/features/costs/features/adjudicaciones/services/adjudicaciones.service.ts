@@ -149,6 +149,45 @@ export class AdjudicacionesService {
     );
   }
 
+  /** Paso 6 — persiste el estado de los checkboxes de firma. */
+  updateStep6Checks(
+    projectSubContractorId: number,
+    dto: { signedCostos: boolean; signedGerenteInmobiliario: boolean; signedGerenteGeneral: boolean },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/step6-checks`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  /** Paso 5 — Oficina Central envía las observaciones de la llegada a Oficina Técnica. */
+  sendStep5ObservationsEmail(
+    projectSubContractorId: number,
+    dto: { graphAccessToken: string; observation: string },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-step5-observations-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  /** Paso 5 — Oficina Técnica notifica a Oficina Central el levantamiento de las observaciones. */
+  sendStep5LevantamientoEmail(
+    projectSubContractorId: number,
+    dto: { graphAccessToken: string; message: string | null },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-step5-levantamiento-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   sendStep6Notification(projectSubContractorId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(

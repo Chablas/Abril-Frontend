@@ -50,6 +50,10 @@ export interface ProjectSubContractorDTO {
   guaranteeValidityDays?: number | null;
   arrivedWithObservations?: boolean | null;
   arrivalObservation?: string | null;
+  // Procesos de firma (paso 6)
+  step6SignedCostos?: boolean;
+  step6SignedGerenteInmobiliario?: boolean;
+  step6SignedGerenteGeneral?: boolean;
   // Documentos del contrato (paso 3)
   contract?: ProjectSubContractorFileDTO;
   summarySheet?: ProjectSubContractorFileDTO;

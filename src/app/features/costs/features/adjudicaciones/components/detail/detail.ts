@@ -70,9 +70,12 @@ export class Detail implements OnInit {
     { value: true, label: 'Sí' },
   ];
 
-  /** Solo se puede editar la info de paso 1/2 mientras la adjudicación esté en pasos 1–4. */
+  /**
+   * Solo se puede editar la info de paso 1/2 mientras la adjudicación esté en pasos 1–4.
+   * Solo Oficina Técnica (o el Administrador) puede llenar los campos de los pasos 1 y 2.
+   */
   get canEditInfo(): boolean {
-    return this.actualStatus <= 4;
+    return this.actualStatus <= 4 && this.hasOfTecnica;
   }
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
@@ -120,6 +123,10 @@ export class Detail implements OnInit {
   step5ArrivalOption: 'complete' | 'with_observations' | null = null;
   step5ArrivalObservation = '';
   step5ObservationsResolved = false;
+  /** Paso 5 — mensaje opcional de Of. Técnica al notificar el levantamiento de observaciones. */
+  step5LevantamientoMessage = '';
+  sendingStep5Observations = false;
+  sendingStep5Levantamiento = false;
 
   /** Paso 6 — confirmación de firmas */
   step6ConfirmedOriundo = false;
@@ -139,8 +146,9 @@ export class Detail implements OnInit {
   isOfTecnica = false;
   fileStatuses: { id: number; label: string }[] = [];
 
-  private hasOfTecnica = false;
-  private hasOfCentral = false;
+  hasOfTecnica = false;
+  hasOfCentral = false;
+  hasAdmin = false;
 
   /** Formulario local de estado/observación por clave de documento. */
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
@@ -167,8 +175,10 @@ export class Detail implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.hasOfTecnica = this.authService.hasRole(Roles.COSTOS_OFICINA_TECNICA);
-    this.hasOfCentral = this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL);
+    // El Administrador de Costos y Presupuestos tiene acceso total: equivale a tener ambos roles.
+    this.hasAdmin     = this.authService.hasRole(Roles.COSTOS_ADMINISTRADOR);
+    this.hasOfTecnica = this.authService.hasRole(Roles.COSTOS_OFICINA_TECNICA) || this.hasAdmin;
+    this.hasOfCentral = this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL) || this.hasAdmin;
 
     // Solo OF Técnica (sin Central): opciones restringidas
     this.isOfTecnica = this.hasOfTecnica && !this.hasOfCentral;
@@ -207,9 +217,12 @@ export class Detail implements OnInit {
       this.step5ArrivalOption = this.item.arrivedWithObservations ? 'with_observations' : 'complete';
     }
     this.step5ArrivalObservation = this.item.arrivalObservation ?? '';
-    this.step6ConfirmedOriundo  = this.item.projectSubContractorStatusId > 6;
-    this.step6ConfirmedToratto  = this.item.projectSubContractorStatusId > 6;
-    this.step6ConfirmedCostos   = this.item.projectSubContractorStatusId > 6;
+    // Paso 6 — estado persistido en BD (las adjudicaciones antiguas que ya pasaron
+    // el paso 6 pueden no tener los flags guardados: se asumen confirmadas).
+    const step6Done = this.item.projectSubContractorStatusId > 6;
+    this.step6ConfirmedOriundo  = step6Done || !!this.item.step6SignedGerenteInmobiliario;
+    this.step6ConfirmedToratto  = step6Done || !!this.item.step6SignedGerenteGeneral;
+    this.step6ConfirmedCostos   = step6Done || !!this.item.step6SignedCostos;
   }
 
   private initDocForms(): void {
@@ -296,8 +309,10 @@ export class Detail implements OnInit {
   }
 
   canGoForward(): boolean {
-    if (this.actualStatus === 1) return true;
+    // Solo Oficina Técnica (o Administrador) puede llenar y avanzar los pasos 1 y 2.
+    if (this.actualStatus === 1) return this.hasOfTecnica;
     if (this.actualStatus === 2 && this.viewStep === 2) {
+      if (!this.hasOfTecnica) return false;
       const baseOk = !!(
         this.step2Form.signingDate &&
         this.step2Form.startDate &&
@@ -313,6 +328,8 @@ export class Detail implements OnInit {
       return true;
     }
     if (this.actualStatus === 3 && this.viewStep === 3) {
+      // Solo Oficina Central (o Administrador) puede aprobar y avanzar el paso 3.
+      if (!this.hasOfCentral) return false;
       // Al menos el Contrato debe estar Aprobado para poder avanzar.
       return this.allDocsApproved && this.contractApproved;
     }
@@ -329,13 +346,16 @@ export class Detail implements OnInit {
       return false;
     }
     if (this.actualStatus === 6 && this.viewStep === 6) {
-      return this.step6AllConfirmed;
+      // Solo Oficina Central (o Administrador) puede marcar las firmas y avanzar.
+      return this.hasOfCentral && this.step6AllConfirmed;
     }
     if (this.actualStatus === 7 && this.viewStep === 7) {
-      return this.hasAnyScannedDoc;
+      // Solo Oficina Central (o Administrador) puede subir el escaneado y avanzar.
+      return this.hasOfCentral && this.hasAnyScannedDoc;
     }
     if (this.actualStatus === 8 && this.viewStep === 8) {
-      return true;
+      // Solo Oficina Central (o Administrador) puede enviar a obra y avanzar.
+      return this.hasOfCentral;
     }
     return this.viewStep < this.actualStatus;
   }
@@ -710,6 +730,8 @@ export class Detail implements OnInit {
   }
 
   generatePackage(): void {
+    // Solo Oficina Técnica (o Administrador) puede generar el contrato completo.
+    if (!this.canSendToSc) return;
     this.generatingPackage = true;
     this.loaderService.show();
     this.adjudicacionesService.generateContractPackage(this.item.projectSubContractorId).subscribe({
@@ -847,6 +869,118 @@ export class Detail implements OnInit {
     });
   }
 
+  /** Paso 6 — solo Oficina Central (o Administrador) puede marcar las firmas. */
+  get canMarkStep6(): boolean {
+    return this.hasOfCentral;
+  }
+
+  /** Paso 6 — persiste en BD el estado de los checkboxes al marcarlos/desmarcarlos. */
+  onStep6CheckChange(): void {
+    if (!this.canMarkStep6 || this.actualStatus !== 6) return;
+    this.adjudicacionesService.updateStep6Checks(this.item.projectSubContractorId, {
+      signedCostos:              this.step6ConfirmedCostos,
+      signedGerenteInmobiliario: this.step6ConfirmedOriundo,
+      signedGerenteGeneral:      this.step6ConfirmedToratto,
+    }).subscribe({
+      next: () => {
+        this.item.step6SignedCostos              = this.step6ConfirmedCostos;
+        this.item.step6SignedGerenteInmobiliario = this.step6ConfirmedOriundo;
+        this.item.step6SignedGerenteGeneral      = this.step6ConfirmedToratto;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Paso 5 — Of. Central envía las observaciones de la llegada a Oficina Técnica. */
+  async sendStep5ObservationsEmail(): Promise<void> {
+    const observation = this.step5ArrivalObservation.trim();
+    if (!observation) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Observación requerida',
+        text: 'Escriba la observación antes de enviar el correo a Oficina Técnica.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
+    this.sendingStep5Observations = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingStep5Observations = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendStep5ObservationsEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken, observation })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingStep5Observations = false;
+          this.item.arrivalObservation = observation;
+          Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado exitosamente', draggable: true });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingStep5Observations = false;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  /** Paso 5 — Of. Técnica notifica a Oficina Central que las observaciones fueron levantadas. */
+  async sendStep5LevantamientoEmail(): Promise<void> {
+    this.sendingStep5Levantamiento = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingStep5Levantamiento = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendStep5LevantamientoEmail(this.item.projectSubContractorId, {
+        graphAccessToken: graphToken,
+        message: this.step5LevantamientoMessage.trim() || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingStep5Levantamiento = false;
+          this.step5LevantamientoMessage = '';
+          Swal.fire({ icon: 'success', title: res.message ?? 'Correo enviado exitosamente', draggable: true });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingStep5Levantamiento = false;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
   private sendStep6Notification(): void {
     this.loaderService.show();
     this.adjudicacionesService.sendStep6Notification(this.item.projectSubContractorId).subscribe({
@@ -965,6 +1099,8 @@ export class Detail implements OnInit {
   }
 
   triggerUploadScanned(docKey: string): void {
+    // Solo Oficina Central (o Administrador) puede subir el documento escaneado.
+    if (!this.hasOfCentral) return;
     this.currentScannedDocType = docKey;
     this.fileInputStep7.nativeElement.value = '';
     this.fileInputStep7.nativeElement.click();

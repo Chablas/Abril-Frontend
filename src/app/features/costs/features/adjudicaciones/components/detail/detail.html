@@ -78,6 +78,18 @@
         </button>
       </div>
 
+      <!-- Aviso: solo Oficina Técnica puede llenar/avanzar el paso 1 -->
+      <div *ngIf="actualStatus === 1 && !hasOfTecnica"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede editar la información y enviar los correos del paso 1.
+        </p>
+      </div>
+
       <!-- ── VISTA DE LECTURA ──────────────────────────────────────── -->
       <div *ngIf="!step1EditMode">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[14px]">
@@ -218,24 +230,24 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Proyecto" [options]="formData.projects" valueField="projectId"
+              <app-search-select [fullText]="true" label="Proyecto" [options]="formData.projects" valueField="projectId"
                 displayField="projectDescription" [(value)]="step1Form.projectId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Empresa / Subcontratista" [options]="formData.contributors"
+              <app-search-select [fullText]="true" label="Empresa / Subcontratista" [options]="formData.contributors"
                 valueField="contractorId" displayField="contributorName"
                 [value]="step1Form.contractorId" (valueChange)="onStep1CompanyChange($event)" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Partida de control" [options]="formData.workItemCategories"
+              <app-search-select [fullText]="true" label="Partida de control" [options]="formData.workItemCategories"
                 valueField="workItemCategoryId" displayField="workItemCategoryDescription"
                 [(value)]="step1Form.workItemCategoryId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Partida" [options]="formData.workItems"
+              <app-search-select [fullText]="true" label="Partida" [options]="formData.workItems"
                 valueField="workItemId" displayField="workItemDescription" [(value)]="step1Form.workItemId" />
             </div>
 
@@ -277,13 +289,13 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Modalidad de contrato" [options]="formData.contractModalities"
+              <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="formData.contractModalities"
                 valueField="contractModalityId" displayField="contractModalityDescription"
                 [(value)]="step1Form.contractModalityId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Tipo de contrato" [options]="formData.contractTypes"
+              <app-search-select [fullText]="true" label="Tipo de contrato" [options]="formData.contractTypes"
                 valueField="contractTypeId" displayField="contractTypeDescription" [(value)]="step1Form.contractTypeId" />
             </div>
 
@@ -307,23 +319,23 @@
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Moneda" [options]="formData.currencies" valueField="currencyId"
+              <app-search-select [fullText]="true" label="Moneda" [options]="formData.currencies" valueField="currencyId"
                 displayField="currencyCode" [(value)]="step1Form.currencyId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Modalidad de pago" [options]="formData.paymentMethods"
+              <app-search-select [fullText]="true" label="Modalidad de pago" [options]="formData.paymentMethods"
                 valueField="paymentMethodId" displayField="paymentMethodDescription" [(value)]="step1Form.paymentMethodId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Forma de pago" [options]="formData.paymentForms"
+              <app-search-select [fullText]="true" label="Forma de pago" [options]="formData.paymentForms"
                 valueField="paymentFormId" displayField="paymentFormDescription" [(value)]="step1Form.paymentFormId" />
             </div>
 
             <!-- ¿Incluye carta de fianza? — solo Suministro (modalidad 2) + contrato con adelanto (pago 2) -->
             <div *ngIf="step1Form.contractModalityId === 2 && step1Form.paymentMethodId === 2" class="flex flex-col gap-[4px]">
-              <app-search-select label="¿Incluye carta de fianza?" [options]="cartaFianzaOptions"
+              <app-search-select [fullText]="true" label="¿Incluye carta de fianza?" [options]="cartaFianzaOptions"
                 valueField="value" displayField="label" [allowClear]="false" [(value)]="step1Form.includesCartaFianza" />
             </div>
 
@@ -394,17 +406,30 @@
 
       <!-- Modo edición: en estado 2 (progresión) o al editar en pasos 3/4 -->
       <ng-container *ngIf="actualStatus === 2 || step2EditMode">
+
+        <!-- Aviso: solo Oficina Técnica puede llenar los datos del contrato -->
+        <div *ngIf="actualStatus === 2 && !canEditInfo"
+          class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede llenar los datos del contrato y avanzar al paso 3.
+          </p>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[16px]">
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de firma</label>
-            <input type="date" [(ngModel)]="step2Form.signingDate"
+            <input type="date" [(ngModel)]="step2Form.signingDate" [disabled]="!canEditInfo"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
           <div class="flex flex-col">
             <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de inicio</label>
-            <input type="date" [(ngModel)]="step2Form.startDate"
+            <input type="date" [(ngModel)]="step2Form.startDate" [disabled]="!canEditInfo"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
 
             <!-- Plazo calculado automáticamente -->
@@ -422,27 +447,27 @@
 
           <div class="flex flex-col">
             <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de fin</label>
-            <input type="date" [(ngModel)]="step2Form.endDate"
+            <input type="date" [(ngModel)]="step2Form.endDate" [disabled]="!canEditInfo"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">Número de contrato <span class="text-red-400">*</span></label>
-            <input type="number" [(ngModel)]="step2Form.contractNumber"
+            <input type="number" [(ngModel)]="step2Form.contractNumber" [disabled]="!canEditInfo"
               min="0" max="2147483647" step="1"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
           <div *ngIf="item.paymentMethodId === 2" class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">Número de pagaré <span class="text-red-400">*</span></label>
-            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber"
+            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditInfo"
               min="0" max="2147483647" step="1"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">% fondo de garantía</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage"
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage" [disabled]="!canEditInfo"
               min="0" max="100" step="1"
               placeholder="Ej: 5"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
@@ -450,7 +475,7 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">Días del fondo de garantía</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays"
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays" [disabled]="!canEditInfo"
               min="0" step="1"
               placeholder="Ej: 365"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
@@ -458,7 +483,7 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs text-[#64BC04] mb-[4px]">Periodo de validez de garantía (días)</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays"
+            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays" [disabled]="!canEditInfo"
               min="0" step="1"
               placeholder="Ej: 365"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
@@ -825,7 +850,7 @@
 
           <!-- Generar paquete PDF -->
           <button (click)="generatePackage()"
-            [disabled]="actualStatus !== 4 || generatingPackage"
+            [disabled]="actualStatus !== 4 || generatingPackage || !canSendToSc"
             class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
             <svg *ngIf="!generatingPackage" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -840,7 +865,7 @@
 
           <!-- Seleccionar archivo manualmente -->
           <button (click)="fileInputStep4.click()"
-            [disabled]="actualStatus !== 4"
+            [disabled]="actualStatus !== 4 || !canSendToSc"
             class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -970,6 +995,55 @@
             class="w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-3 py-2 outline-none resize-none
                    focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
           ></textarea>
+
+          <!-- Of. Central: enviar las observaciones por correo a Oficina Técnica -->
+          <button type="button" (click)="sendStep5ObservationsEmail()"
+            [disabled]="sendingStep5Observations || !step5ArrivalObservation.trim()"
+            class="self-end mt-[4px] flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="sendingStep5Observations" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <svg *ngIf="!sendingStep5Observations" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {{ sendingStep5Observations ? 'Enviando…' : 'Enviar observaciones a Of. Técnica' }}
+          </button>
+        </div>
+
+        <!-- Of. Técnica: ver la observación y notificar su levantamiento -->
+        <div *ngIf="actualStatus === 5 && hasOfTecnica && !canConfirmArrival"
+          class="flex flex-col gap-[10px]">
+
+          <div *ngIf="item.arrivalObservation"
+            class="flex flex-col gap-[4px] bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+            <span class="text-xs font-medium text-orange-600">Observación de Oficina Central</span>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.arrivalObservation }}</p>
+          </div>
+
+          <label class="text-xs font-medium text-gray-600">Mensaje (opcional)</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="step5LevantamientoMessage"
+            placeholder="Escriba un mensaje sobre el levantamiento de las observaciones..."
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-3 py-2 outline-none resize-none
+                   focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
+          ></textarea>
+
+          <button type="button" (click)="sendStep5LevantamientoEmail()"
+            [disabled]="sendingStep5Levantamiento"
+            class="self-end flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <svg *ngIf="sendingStep5Levantamiento" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <svg *ngIf="!sendingStep5Levantamiento" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            {{ sendingStep5Levantamiento ? 'Enviando…' : 'Notificar levantamiento de observaciones' }}
+          </button>
         </div>
 
         <!-- Modo lectura (cuando ya se pasó el paso 5) -->
@@ -1007,13 +1081,26 @@
           Al confirmar se enviará un correo de notificación a <strong>costos y presupuestos</strong> y al <strong>staff de obra</strong> del proyecto.
         </p>
 
+        <!-- Aviso: solo Oficina Central puede marcar las firmas -->
+        <div *ngIf="actualStatus === 6 && !canMarkStep6"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede marcar las firmas y avanzar al paso 7.
+          </p>
+        </div>
+
         <!-- Checkbox Costos y Presupuestos -->
         <label class="flex items-start gap-[10px] cursor-pointer select-none group"
-          [class.opacity-50]="actualStatus !== 6">
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
           <div class="relative mt-[2px] shrink-0">
             <input type="checkbox" class="sr-only"
               [(ngModel)]="step6ConfirmedCostos"
-              [disabled]="actualStatus !== 6" />
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedCostos
                 ? 'bg-[#64BC04] border-[#64BC04]'
@@ -1032,11 +1119,12 @@
 
         <!-- Checkbox Gerente Inmobiliario -->
         <label class="flex items-start gap-[10px] cursor-pointer select-none group"
-          [class.opacity-50]="actualStatus !== 6">
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
           <div class="relative mt-[2px] shrink-0">
             <input type="checkbox" class="sr-only"
               [(ngModel)]="step6ConfirmedOriundo"
-              [disabled]="actualStatus !== 6" />
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedOriundo
                 ? 'bg-[#64BC04] border-[#64BC04]'
@@ -1055,11 +1143,12 @@
 
         <!-- Checkbox Gerente General -->
         <label class="flex items-start gap-[10px] cursor-pointer select-none group"
-          [class.opacity-50]="actualStatus !== 6">
+          [class.opacity-50]="actualStatus !== 6 || !canMarkStep6">
           <div class="relative mt-[2px] shrink-0">
             <input type="checkbox" class="sr-only"
               [(ngModel)]="step6ConfirmedToratto"
-              [disabled]="actualStatus !== 6" />
+              (ngModelChange)="onStep6CheckChange()"
+              [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedToratto
                 ? 'bg-[#64BC04] border-[#64BC04]'
@@ -1085,6 +1174,18 @@
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-[14px]">
         Documentos escaneados
       </p>
+
+      <!-- Aviso: solo Oficina Central puede subir el escaneado -->
+      <div *ngIf="actualStatus === 7 && !hasOfCentral"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          Solo un usuario de <span class="font-semibold">Oficina Central</span> puede subir el documento escaneado y avanzar al paso 8.
+        </p>
+      </div>
 
       <!-- Input oculto compartido para los 3 slots del paso 7 -->
       <input #fileInputStep7 type="file" class="hidden" (change)="onFileSelectedScanned($event)" />
@@ -1125,7 +1226,7 @@
             <!-- Botón subir (sin estado ni observación) -->
             <div class="flex gap-[8px] mt-auto">
               <button (click)="triggerUploadScanned(doc.key)"
-                [disabled]="uploadingDoc !== null"
+                [disabled]="uploadingDoc !== null || !hasOfCentral"
                 class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 [class.cursor-wait]="uploadingDoc === doc.key">
 
@@ -1162,6 +1263,18 @@
           Al confirmar se enviará un correo a los contactos de <strong>Staff de Obra</strong> del proyecto
           con los documentos escaneados del paso anterior como adjuntos.
         </p>
+
+        <!-- Aviso: solo Oficina Central puede enviar a obra -->
+        <div *ngIf="actualStatus === 8 && !hasOfCentral"
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="text-xs text-amber-700 font-medium leading-relaxed">
+            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede enviar el correo a obra y completar la adjudicación.
+          </p>
+        </div>
 
         <!-- Documentos que se adjuntarán -->
         <div class="flex flex-col gap-[8px]">
