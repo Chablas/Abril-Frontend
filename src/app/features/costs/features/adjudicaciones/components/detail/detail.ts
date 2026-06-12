@@ -10,6 +10,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { MicrosoftAuthService } from '../../../../../auth/pages/login/services/microsoft-auth.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
@@ -164,12 +165,9 @@ export class Detail implements OnInit {
     private authService: AuthService,
   ) {}
 
-  private static readonly ROLE_OF_TECNICA = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA TÉCNICA';
-  private static readonly ROLE_OF_CENTRAL = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA CENTRAL';
-
   ngOnInit(): void {
-    this.hasOfTecnica = this.authService.hasRole(Detail.ROLE_OF_TECNICA);
-    this.hasOfCentral = this.authService.hasRole(Detail.ROLE_OF_CENTRAL);
+    this.hasOfTecnica = this.authService.hasRole(Roles.COSTOS_OFICINA_TECNICA);
+    this.hasOfCentral = this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL);
 
     // Solo OF Técnica (sin Central): opciones restringidas
     this.isOfTecnica = this.hasOfTecnica && !this.hasOfCentral;

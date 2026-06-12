@@ -10,6 +10,7 @@ import { AdjudicacionesService } from '../services/adjudicaciones.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { Roles } from '../../../../../core/constants/roles';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ProjectSubContractorDTO } from '../dtos/projectSubContractorDto.model';
 import { ProjectSubContractorFiltersDTO } from '../dtos/projectSubContractorFilters.model';
@@ -52,7 +53,6 @@ export class Adjudicaciones implements OnInit {
   selectedItem: ProjectSubContractorDTO | null = null;
 
   /** Solo Oficina Central puede crear adjudicaciones. Oficina Técnica lo tiene bloqueado. */
-  private static readonly ROLE_OF_CENTRAL = 'USUARIO DE COSTOS Y PRESUPUESTOS DE OFICINA CENTRAL';
   canCreate = false;
 
   constructor(
@@ -63,7 +63,7 @@ export class Adjudicaciones implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.canCreate = this.authService.hasRole(Adjudicaciones.ROLE_OF_CENTRAL);
+    this.canCreate = this.authService.hasRole(Roles.COSTOS_OFICINA_CENTRAL);
     this.loadPagedWithFilters();
   }
 
