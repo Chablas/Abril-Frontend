@@ -1330,6 +1330,14 @@
       </p>
     </div>
 
+    <!-- ── MODAL CRONOGRAMA (paso 3 — documento Cronograma) ─────────── -->
+    <app-cronograma-modal
+      *ngIf="showCronogramaModal"
+      [projectSubContractorId]="item.projectSubContractorId"
+      (closeModal)="showCronogramaModal = false"
+      (saved)="statusChanged.emit()">
+    </app-cronograma-modal>
+
     <!-- ── NAVEGACIÓN DE PASOS ──────────────────────────────────────── -->
     <div class="flex items-center justify-between pt-[4px] border-t border-[#F0F0F0]">
 

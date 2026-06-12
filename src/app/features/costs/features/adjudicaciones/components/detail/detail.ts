@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { CronogramaModal } from './cronograma/cronograma-modal';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
 import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
 import { AdjudicacionesService } from '../../services/adjudicaciones.service';
@@ -17,7 +18,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, CronogramaModal],
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })
@@ -154,7 +155,10 @@ export class Detail implements OnInit {
   docForms: Record<string, { statusId: number | null; observation: string }> = {};
 
   /** Tipos de documento que ya tienen generación implementada en el backend. */
-  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'PromissoryNote', 'Instructivo']);
+  private readonly generableKeys = new Set(['SummarySheet', 'Contract', 'PromissoryNote', 'Instructivo', 'Schedule']);
+
+  /** Modal del armado del cronograma (paso 3 — documento "Cronograma"). */
+  showCronogramaModal = false;
 
   /**
    * Documentos que NO se suben ni generan: usan un PDF de plantilla fijo del servidor.
@@ -416,6 +420,11 @@ export class Detail implements OnInit {
   }
 
   generateDoc(docKey: string): void {
+    // El cronograma no se autogenera: primero se arma en el modal (actividades + jerarquía).
+    if (docKey === 'Schedule') {
+      this.showCronogramaModal = true;
+      return;
+    }
     this.generatingDoc = docKey;
     this.loaderService.show();
     this.adjudicacionesService.generateDocument(this.item.projectSubContractorId, docKey).subscribe({
