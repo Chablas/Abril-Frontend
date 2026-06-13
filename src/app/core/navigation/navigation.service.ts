@@ -9,7 +9,7 @@ export class NavigationService {
     {
       key: 'gestion-administrativa',
       label: 'Gestión Administrativa',
-      iconKey: 'gestion-administrativa',
+      iconKey: 'briefcase',
       baseRoute: '/gestion-administrativa',
       items: [
         { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
@@ -29,7 +29,7 @@ export class NavigationService {
     {
       key: 'mejora-continua',
       label: 'Mejora Continua',
-      iconKey: 'mejora-continua',
+      iconKey: 'trending-up',
       baseRoute: '/mejora-continua',
       items: [
         { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned', featureKey: 'mejora-continua.lessons-learned' },
@@ -48,7 +48,7 @@ export class NavigationService {
     {
       key: 'proyectos',
       label: 'Proyectos',
-      iconKey: 'projects',
+      iconKey: 'building-estate',
       baseRoute: '/projects',
       items: [
         { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
@@ -72,7 +72,7 @@ export class NavigationService {
     {
       key: 'contratistas',
       label: 'Contratistas',
-      iconKey: 'contractors',
+      iconKey: 'file-certificate',
       baseRoute: '/contractors',
       items: [
         { label: 'Registro de contratistas',    route: '/contractors/registro', featureKey: 'contractors.registro' },
@@ -82,7 +82,7 @@ export class NavigationService {
     {
       key: 'costos',
       label: 'Costos y Presupuesto',
-      iconKey: 'costs',
+      iconKey: 'coins',
       baseRoute: '/costs',
       items: [
         { label: 'Adjudicaciones', route: '/costs/adjudicaciones', featureKey: 'costs.adjudicaciones' },
@@ -103,7 +103,7 @@ export class NavigationService {
     {
       key: 'arquitectura-comercial',
       label: 'Arquitectura Comercial',
-      iconKey: 'projects',
+      iconKey: 'building',
       baseRoute: '/arquitectura-comercial',
       items: [
         { label: 'Dashboard',   route: '/arquitectura-comercial/dashboard',  featureKey: 'arquitectura-comercial.dashboard' },
@@ -115,7 +115,7 @@ export class NavigationService {
     {
       key: 'ssoma',
       label: 'Salud',
-      iconKey: 'ssoma',
+      iconKey: 'heart-rate-monitor',
       baseRoute: '/ssoma',
       items: [],
       groups: [
@@ -136,7 +136,7 @@ export class NavigationService {
     {
       key: 'gestion-ssoma',
       label: 'Gestión SSOMA',
-      iconKey: 'gestion-ssoma',
+      iconKey: 'shield',
       baseRoute: '/ssoma/gestion',
       items: [
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
@@ -146,7 +146,7 @@ export class NavigationService {
     {
       key: 'habilitacion',
       label: 'Gestión de Ingresos',
-      iconKey: 'habilitacion',
+      iconKey: 'users-group',
       baseRoute: '/habilitacion/gestion',
       items: [
         { label: 'Gestión de Ingresos', route: '/habilitacion/gestion' },
@@ -156,7 +156,7 @@ export class NavigationService {
     {
       key: 'control-acceso',
       label: 'Control de Acceso',
-      iconKey: 'security',
+      iconKey: 'shield-check',
       baseRoute: '/habilitacion/control-acceso',
       items: [
         { label: 'Control de Acceso', route: '/habilitacion/control-acceso', featureKey: 'habilitacion.control-acceso' },
@@ -165,7 +165,7 @@ export class NavigationService {
     {
       key: 'clinica',
       label: 'Clínica',
-      iconKey: 'clinica',
+      iconKey: 'heart-rate-monitor',
       baseRoute: '/clinica',
       items: [
         { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
@@ -174,7 +174,7 @@ export class NavigationService {
     {
       key: 'evaluaciones',
       label: 'Evaluaciones',
-      iconKey: 'star',
+      iconKey: 'clipboard-check',
       baseRoute: '/evaluaciones',
       items: [
         { label: 'Dashboard',          route: '/evaluaciones/dashboard',     featureKey: 'evaluaciones.dashboard' },
@@ -187,7 +187,7 @@ export class NavigationService {
     {
       key: 'seguridad',
       label: 'Seguridad',
-      iconKey: 'security',
+      iconKey: 'shield-lock',
       baseRoute: '/security',
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
@@ -197,7 +197,7 @@ export class NavigationService {
     {
       key: 'configuracion',
       label: 'Configuración',
-      iconKey: 'settings',
+      iconKey: 'adjustments-horizontal',
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos',        route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },

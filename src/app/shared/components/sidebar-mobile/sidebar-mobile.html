@@ -1,70 +1,62 @@
-<div [ngClass]="{'fixed top-17 inset-0 bg-black/40 z-50': menuOpen}">
-  <div class="fixed top-17 left-0 bottom-0 w-[290px] bg-white z-50 shadow-lg transform transition-transform duration-300 overflow-auto"
-    [class.-translate-x-full]="!menuOpen">
+<!-- Backdrop -->
+<div
+  *ngIf="menuOpen"
+  class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+  (click)="close()"
+></div>
 
-    <div class="p-4 flex justify-between items-center">
-      <span class="text-xs text-[#64BC04]">MENU</span>
-    </div>
+<!-- Drawer -->
+<div
+  class="fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[280px]
+         transition-transform duration-300 ease-out"
+  style="background: var(--color-abril-sidebar-bg);
+         box-shadow: 4px 0 24px rgba(0,0,0,0.3);"
+  [class.-translate-x-full]="!menuOpen"
+>
 
-    <nav class="flex flex-col py-4 px-8 gap-4">
+  <!-- Header del drawer -->
+  <div class="flex items-center justify-between px-4 h-[52px] shrink-0"
+       style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <span class="text-xs font-semibold tracking-widest uppercase"
+          style="color: var(--color-abril-sidebar-muted)">Menú</span>
+    <button (click)="close()"
+      class="w-8 h-8 flex items-center justify-center rounded-lg
+             border-0 cursor-pointer transition-colors hover:bg-white/10">
+      <i class="ti ti-x text-lg" style="color: var(--color-abril-sidebar-text)"></i>
+    </button>
+  </div>
 
-      <ng-container *ngFor="let module of navService.getModules(); trackBy: trackByModuleKey">
+  <!-- Navegación -->
+  <nav class="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
+    <ng-container *ngFor="let module of navService.getModules(); trackBy: trackByModuleKey">
 
-        <!-- Encabezado del módulo -->
-        <div (click)="toggleModule(module.key, $event)" class="flex items-center gap-[10px] cursor-pointer hover:text-[#64BC04]">
-          <app-nav-icon [key]="module.iconKey" [size]="28" />
-          <span class="text-sm">{{ module.label }}</span>
-
-          <!-- Chevron -->
-          <svg *ngIf="openModule !== module.key" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none">
-            <path d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z" fill="#64BC04"/>
-          </svg>
-          <svg *ngIf="openModule === module.key" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none">
-            <path d="M1.30763 9L0 7.66147L7.1266 0.37084C7.24079 0.253319 7.37658 0.160052 7.52616 0.0964085C7.67574 0.0327647 7.83614 0 7.99815 0C8.16015 0 8.32056 0.0327647 8.47014 0.0964085C8.61971 0.160052 8.75551 0.253319 8.8697 0.37084L16 7.66147L14.6924 8.99874L8 2.15597L1.30763 9Z" fill="#64BC04"/>
-          </svg>
+      <!-- Item de módulo -->
+      <button
+        type="button"
+        (click)="navigateTo(module)"
+        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl
+               border-0 cursor-pointer text-left outline-none
+               transition-colors hover:bg-white/8"
+      >
+        <div class="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
+             [style.background]="'rgba(76,175,80,0.15)'">
+          <i class="ti text-lg" [class]="'ti-' + module.iconKey"
+             style="color: var(--color-abril-sidebar-active)"></i>
         </div>
+        <span class="text-sm font-medium flex-1"
+              style="color: var(--color-abril-sidebar-text)">{{ module.label }}</span>
+        <i *ngIf="module.items?.length || module.groups?.length"
+           class="ti ti-chevron-right text-sm shrink-0"
+           style="color: var(--color-abril-sidebar-muted)"></i>
+      </button>
 
-        <!-- Contenido del módulo expandido -->
-        <div *ngIf="openModule === module.key" class="flex flex-col gap-[10px] pl-[37px]">
+    </ng-container>
+  </nav>
 
-          <!-- Items directos -->
-          <a
-            *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
-            [routerLink]="item.route"
-            (click)="close()"
-            class="block text-sm"
-          >
-            {{ item.label }}
-          </a>
-
-          <!-- Grupos (ej. Configuración) -->
-          <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
-            <div (click)="toggleGroup(group.label, $event)" class="flex items-center text-sm cursor-pointer">
-              <span>{{ group.label }}</span>
-              <svg *ngIf="openGroup !== group.label" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none">
-                <path d="M14.6924 0L16 1.33853L8.8734 8.62916C8.75921 8.74668 8.62342 8.83995 8.47384 8.90359C8.32426 8.96724 8.16386 9 8.00185 9C7.83985 9 7.67944 8.96724 7.52986 8.90359C7.38029 8.83995 7.24449 8.74668 7.1303 8.62916L0 1.33853L1.30763 0.00126076L8 6.84403L14.6924 0Z" fill="#64BC04"/>
-              </svg>
-              <svg *ngIf="openGroup === group.label" class="ml-auto" width="16" height="9" viewBox="0 0 16 9" fill="none">
-                <path d="M1.30763 9L0 7.66147L7.1266 0.37084C7.24079 0.253319 7.37658 0.160052 7.52616 0.0964085C7.67574 0.0327647 7.83614 0 7.99815 0C8.16015 0 8.32056 0.0327647 8.47014 0.0964085C8.61971 0.160052 8.75551 0.253319 8.8697 0.37084L16 7.66147L14.6924 8.99874L8 2.15597L1.30763 9Z" fill="#64BC04"/>
-              </svg>
-            </div>
-
-            <div *ngIf="openGroup === group.label" class="flex flex-col gap-[10px] pl-[10px]">
-              <a
-                *ngFor="let item of group.items; trackBy: trackByItemRoute"
-                [routerLink]="item.route"
-                (click)="close()"
-                class="block text-sm"
-              >
-                {{ item.label }}
-              </a>
-            </div>
-          </ng-container>
-
-        </div>
-
-      </ng-container>
-
-    </nav>
+  <!-- Footer del drawer -->
+  <div class="px-4 py-3 shrink-0" style="border-top: 1px solid rgba(255,255,255,0.08);">
+    <span class="text-[10px]" style="color: var(--color-abril-sidebar-muted)">
+      Abril · SSOMA 2026
+    </span>
   </div>
 </div>

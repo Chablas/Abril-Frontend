@@ -1,14 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
-import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 
 @Component({
   selector: 'app-sidebar-mobile',
   standalone: true,
-  imports: [RouterModule, CommonModule, NavIcon],
+  imports: [RouterModule, CommonModule],
   templateUrl: './sidebar-mobile.html',
   styleUrl: './sidebar-mobile.css',
 })
@@ -19,10 +18,15 @@ export class SidebarMobile {
   openModule: string | null = null;
   openGroup: string | null = null;
 
-  constructor(public navService: NavigationService) {}
+  constructor(public navService: NavigationService, private router: Router) {}
 
   close(): void {
     this.menuOpenChange.emit(false);
+  }
+
+  navigateTo(module: NavModule): void {
+    this.router.navigate([module.baseRoute]);
+    this.close();
   }
 
   toggleModule(key: string, event: MouseEvent): void {
