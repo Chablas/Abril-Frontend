@@ -196,6 +196,30 @@ export class RacNuevo implements OnInit {
     return this.infracciones.find((i) => i.id === this.model.infraccionId);
   }
 
+  readonly UIT_VIGENTE = 5350;
+
+  get montoReferencia(): number | null {
+    const inf = this.infraccionSeleccionada;
+    if (!inf) return null;
+    if (inf.montoFijo != null && inf.montoFijo > 0) return inf.montoFijo;
+    if (inf.factorUit != null && inf.factorUit > 0) return inf.factorUit * this.UIT_VIGENTE;
+    return null;
+  }
+
+  get esEmpresaAbril(): boolean {
+    return this.empresaSeleccionada?.esAbril === true;
+  }
+
+  onEmpresaChange(id: number | undefined): void {
+    this.model.empresaReportadaId = id;
+    if (this.empresaSeleccionada?.esAbril) {
+      this.model.aplicaPenalidad = false;
+      this.model.infraccionId = undefined;
+      this.model.descripcionOcurrido = undefined;
+    }
+    this.cdr.markForCheck();
+  }
+
   // ── Guardar ───────────────────────────────────────────────────────────────
   guardar(): void {
     if (this.guardando || !this.todoCompleto) return;

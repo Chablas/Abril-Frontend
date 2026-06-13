@@ -169,6 +169,8 @@ export interface RacInfraccionDto {
   tipo?: string;    // ACTO | CONDICION
   ambito?: string;
   orden: number;
+  montoFijo?: number;
+  factorUit?: number;
 }
 
 export interface RacCreadoDto {

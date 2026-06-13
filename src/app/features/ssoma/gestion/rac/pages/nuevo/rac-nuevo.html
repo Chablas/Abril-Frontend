@@ -150,7 +150,7 @@
           [showLabel]="false"
           placeholder="Selecciona una empresa"
           [allowClear]="true"
-          (valueChange)="model.empresaReportadaId = $event"
+          (valueChange)="onEmpresaChange($event)"
         />
         <span class="form-hint-error"
               *ngIf="pasoActual === 1 && !model.empresaReportadaId">
@@ -236,33 +236,38 @@
     <!-- ────────────────────────────────────────────────── -->
     <div class="paso-content" *ngIf="pasoActual === 3">
 
-      <!-- PENALIDAD -->
-      <div class="form-group">
-        <label class="form-check-label toggle-row">
-          <span class="toggle-label-text">¿Aplica penalidad?</span>
-          <input type="checkbox" [(ngModel)]="model.aplicaPenalidad"
-               (ngModelChange)="$event && (model.esAnonimoReportante = false)"
-               class="check-input" />
-        </label>
-      </div>
+      <!-- PENALIDAD — oculta si la empresa observada es de tipo Casa (Abril) -->
+      <ng-container *ngIf="!esEmpresaAbril">
+        <div class="form-group">
+          <label class="form-check-label toggle-row">
+            <span class="toggle-label-text">¿Aplica penalidad?</span>
+            <input type="checkbox" [(ngModel)]="model.aplicaPenalidad"
+                 (ngModelChange)="$event && (model.esAnonimoReportante = false)"
+                 class="check-input" />
+          </label>
+        </div>
 
-      <ng-container *ngIf="model.aplicaPenalidad">
-        <div class="form-group">
-          <label class="form-label">Infracción</label>
-          <select class="form-control" [(ngModel)]="model.infraccionId">
-            <option [ngValue]="undefined">Selecciona una infracción</option>
-            <option *ngFor="let inf of infraccionesFiltradas" [ngValue]="inf.id">
-              {{ inf.nombre }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Descripción del ocurrido</label>
-          <textarea class="form-control form-textarea"
-                    [(ngModel)]="model.descripcionOcurrido"
-                    placeholder="Describa los hechos que generan la penalidad..."
-                    rows="3"></textarea>
-        </div>
+        <ng-container *ngIf="model.aplicaPenalidad">
+          <div class="form-group">
+            <label class="form-label">Infracción</label>
+            <select class="form-control" [(ngModel)]="model.infraccionId">
+              <option [ngValue]="undefined">Selecciona una infracción</option>
+              <option *ngFor="let inf of infraccionesFiltradas" [ngValue]="inf.id">
+                {{ inf.nombre }}
+              </option>
+            </select>
+            <span class="form-hint" *ngIf="montoReferencia !== null">
+              Monto de referencia: S/ {{ montoReferencia | number:'1.2-2' }}
+            </span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción del ocurrido</label>
+            <textarea class="form-control form-textarea"
+                      [(ngModel)]="model.descripcionOcurrido"
+                      placeholder="Describa los hechos que generan la penalidad..."
+                      rows="3"></textarea>
+          </div>
+        </ng-container>
       </ng-container>
 
       <!-- ANONIMATO -->
