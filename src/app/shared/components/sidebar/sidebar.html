@@ -1,186 +1,116 @@
-<div class="h-screen flex flex-col py-[20px] px-[5px]">
-  <div class="flex flex-col items-center w-[100px] gap-[5px] h-full" [class.invisible]="!isReady">
+<div class="flex flex-col h-screen py-4 px-2 gap-1"
+     style="background: var(--color-abril-sidebar-bg); width: 88px;">
 
-    <ng-container *ngFor="let module of visibleModules; trackBy: trackByModuleKey">
-      <div
-        #moduleItem
-        class="relative flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
-        [ngClass]="{
-          'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
-          'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
-        }"
-        (click)="onModuleClick(module)"
-      >
-        <!-- Icono -->
-        <app-nav-icon [key]="module.iconKey" [size]="28" />
-
-        <p class="font-sans text-sm text-center mt-1">{{ module.label }}</p>
-
-        <!-- Dropdown -->
-        <div
-          *ngIf="activeMenu === module.key"
-          class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50"
-          (click)="$event.stopPropagation()"
-        >
-          <!-- Items directos -->
-          <a
-            *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
-            [routerLink]="item.route"
-            (click)="closeAllMenus()"
-            class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
-          >
-            <span>{{ item.label }}</span>
-            <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
-              <span *ngIf="count > 0"
-                style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
-                {{ count }}
-              </span>
-            </ng-container>
-          </a>
-
-          <!-- Grupos (ej. Configuración) -->
-          <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
-            <div class="relative" (click)="toggleGroup(group.label)">
-              <div class="flex justify-between items-center px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer">
-                <span>{{ group.label }}</span>
-                <svg width="9" height="16" viewBox="0 0 9 16" fill="none">
-                  <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-                </svg>
-              </div>
-
-              <!-- Submenú del grupo -->
-              <div
-                *ngIf="activeGroup === group.label"
-                class="absolute left-full top-0 ml-2 w-56 bg-white rounded-xl shadow-lg z-50 p-[5px]"
-              >
-                <a
-                  *ngFor="let item of group.items"
-                  [routerLink]="item.route"
-                  (click)="closeAllMenus()"
-                  class="block px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl"
-                >
-                  {{ item.label }}
-                </a>
-              </div>
-            </div>
-          </ng-container>
-        </div>
-      </div>
-    </ng-container>
-
-    <!-- Botón "Más" (overflow) -->
-    <div
-      *ngIf="overflowModules.length > 0"
-      class="mt-auto flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
-      [ngClass]="{
-        'bg-[#E5F7D1]': overflowOpen,
-        'hover:bg-[#E5F7D1]': !overflowOpen
-      }"
-      (click)="toggleOverflow()"
+  <!-- Módulos visibles -->
+  <ng-container *ngFor="let module of visibleModules; trackBy: trackByModuleKey">
+    <button
+      #moduleItem
+      type="button"
+      (click)="onModuleClick(module)"
+      class="relative flex flex-col items-center justify-center gap-1 w-full
+             py-2 px-1 rounded-xl cursor-pointer border-0 outline-none
+             transition-all duration-150 group"
+      [style.background]="isActiveModule(module.baseRoute)
+        ? 'var(--color-abril-sidebar-active-bg)' : 'transparent'"
     >
-      <div class="flex gap-1 items-center justify-center" style="height:28px">
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
-      </div>
-      <p class="font-sans text-sm text-center mt-1">Más</p>
-    </div>
+      <!-- Indicador activo izquierda -->
+      <span
+        class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full transition-all duration-200"
+        [style.background]="isActiveModule(module.baseRoute)
+          ? 'var(--color-abril-sidebar-active)' : 'transparent'"
+      ></span>
 
-  </div>
+      <!-- Ícono Tabler -->
+      <i class="ti text-2xl transition-colors duration-150"
+         [class]="'ti-' + module.iconKey"
+         [style.color]="isActiveModule(module.baseRoute)
+           ? 'var(--color-abril-sidebar-active)'
+           : 'var(--color-abril-sidebar-text)'"
+      ></i>
+
+      <!-- Badge de alertas (programaciones rechazadas) -->
+      <ng-container *ngIf="module.key === 'clinica' && (alertaSvc.rechazados$ | async) as count">
+        <span *ngIf="count > 0"
+          class="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1
+                 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
+          style="background: var(--color-abril-danger);">
+          {{ count }}
+        </span>
+      </ng-container>
+
+      <!-- Label -->
+      <span class="text-[10px] font-medium leading-tight text-center transition-colors duration-150"
+            [style.color]="isActiveModule(module.baseRoute)
+              ? 'var(--color-abril-sidebar-active)'
+              : 'var(--color-abril-sidebar-text)'">
+        {{ module.label }}
+      </span>
+    </button>
+  </ng-container>
+
+  <!-- Spacer -->
+  <div class="flex-1"></div>
+
+  <!-- Botón "Más" overflow -->
+  <button
+    *ngIf="overflowModules.length > 0"
+    type="button"
+    (click)="toggleOverflow()"
+    class="flex flex-col items-center justify-center gap-1 w-full
+           py-2 px-1 rounded-xl cursor-pointer border-0 outline-none transition-all"
+    [style.background]="overflowOpen ? 'var(--color-abril-sidebar-active-bg)' : 'transparent'"
+  >
+    <i class="ti ti-dots text-2xl"
+       [style.color]="overflowOpen
+         ? 'var(--color-abril-sidebar-active)'
+         : 'var(--color-abril-sidebar-text)'"></i>
+    <span class="text-[10px] font-medium" style="color: var(--color-abril-sidebar-muted)">Más</span>
+  </button>
+
 </div>
 
-<!-- Backdrop -->
+<!-- Backdrop overflow -->
 <div
   class="fixed inset-0 z-40 bg-black transition-opacity duration-300"
   [ngClass]="overflowOpen ? 'opacity-40 pointer-events-auto' : 'opacity-0 pointer-events-none'"
   (click)="closeOverflow()"
 ></div>
 
-<!-- Panel de módulos extra -->
+<!-- Panel overflow (módulos extra) -->
 <div
-  class="fixed top-[20px] bottom-[20px] left-[110px] w-64 bg-white z-50 shadow-xl rounded-xl flex flex-col transition-all duration-300 overflow-hidden"
-  [ngClass]="overflowOpen ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0 pointer-events-none'"
+  class="fixed top-4 bottom-4 left-[96px] w-64 z-50 rounded-xl overflow-hidden
+         flex flex-col transition-all duration-300"
+  style="background: var(--color-abril-sidebar-bg); box-shadow: var(--shadow-modal);"
+  [ngClass]="overflowOpen ? 'translate-x-0 opacity-100' : '-translate-x-3 opacity-0 pointer-events-none'"
 >
-  <!-- Header del panel -->
-  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-    <span class="font-semibold text-gray-700 font-sans text-sm">Módulos</span>
-    <button class="p-1 hover:bg-gray-100 rounded-lg transition-colors" (click)="closeOverflow()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#666"/>
-      </svg>
+  <div class="flex items-center justify-between px-4 py-3"
+       style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <span class="text-sm font-semibold" style="color: var(--color-abril-sidebar-text)">Módulos</span>
+    <button class="p-1 rounded-lg transition-colors hover:bg-white/10 border-0 cursor-pointer" (click)="closeOverflow()">
+      <i class="ti ti-x text-base" style="color: var(--color-abril-sidebar-muted)"></i>
     </button>
   </div>
-
-  <!-- Lista de módulos en acordeón -->
-  <div class="flex-1 overflow-y-auto p-2">
-    <ng-container *ngFor="let module of overflowModules; trackBy: trackByModuleKey">
-
-      <!-- Cabecera del módulo -->
-      <div
-        class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors"
-        [ngClass]="{
-          'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
-          'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
-        }"
-        (click)="toggleOverflowMenu(module.key)"
-      >
-        <app-nav-icon [key]="module.iconKey" [size]="22" />
-        <span class="text-sm font-sans flex-1 leading-tight">{{ module.label }}</span>
-        <svg
-          width="7" height="12" viewBox="0 0 9 16" fill="none"
-          class="shrink-0 transition-transform duration-200"
-          [style.transform]="activeOverflowMenu === module.key ? 'rotate(90deg)' : 'rotate(0deg)'"
-        >
-          <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-        </svg>
-      </div>
-
-      <!-- Contenido del acordeón -->
-      <div *ngIf="activeOverflowMenu === module.key" class="ml-2 mb-1">
-        <!-- Items directos -->
-        <a
-          *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
-          [routerLink]="item.route"
-          (click)="closeOverflow(); closeAllMenus()"
-          class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
-        >
-          <span>{{ item.label }}</span>
-          <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
-            <span *ngIf="count > 0"
-              style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
-              {{ count }}
-            </span>
-          </ng-container>
-        </a>
-
-        <!-- Grupos -->
-        <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
-          <div
-            class="flex justify-between items-center px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer"
-            (click)="toggleOverflowGroup(group.label)"
-          >
-            <span>{{ group.label }}</span>
-            <svg
-              width="7" height="12" viewBox="0 0 9 16" fill="none"
-              class="shrink-0 transition-transform duration-200"
-              [style.transform]="activeOverflowGroup === group.label ? 'rotate(90deg)' : 'rotate(0deg)'"
-            >
-              <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-            </svg>
-          </div>
-          <div *ngIf="activeOverflowGroup === group.label" class="ml-4 mb-1">
-            <a
-              *ngFor="let item of group.items"
-              [routerLink]="item.route"
-              (click)="closeOverflow(); closeAllMenus()"
-              class="block px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl font-sans"
-            >
-              {{ item.label }}
-            </a>
-          </div>
-        </ng-container>
-      </div>
-
-    </ng-container>
+  <div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+    <button
+      *ngFor="let module of overflowModules; trackBy: trackByModuleKey"
+      type="button"
+      (click)="onModuleClick(module); closeOverflow()"
+      class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer border-0 outline-none
+             transition-colors text-left w-full hover:bg-white/5"
+      [style.background]="isActiveModule(module.baseRoute)
+        ? 'var(--color-abril-sidebar-active-bg)' : 'transparent'"
+    >
+      <i class="ti text-xl shrink-0"
+         [class]="'ti-' + module.iconKey"
+         [style.color]="isActiveModule(module.baseRoute)
+           ? 'var(--color-abril-sidebar-active)'
+           : 'var(--color-abril-sidebar-text)'"></i>
+      <span class="text-sm"
+            [style.color]="isActiveModule(module.baseRoute)
+              ? 'var(--color-abril-sidebar-active)'
+              : 'var(--color-abril-sidebar-text)'">
+        {{ module.label }}
+      </span>
+    </button>
   </div>
 </div>
