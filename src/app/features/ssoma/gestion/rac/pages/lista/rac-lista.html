@@ -1,0 +1,143 @@
+<div class="lista-root">
+
+  <!-- HEADER -->
+  <div class="rac-header">
+    <div class="rac-header__left">
+      <span class="rac-header__badge">SSOMA · {{ anioActual }}</span>
+      <h1 class="rac-header__titulo">Actos &amp; Condiciones Subestándar</h1>
+    </div>
+    <div class="rac-header__actions">
+      <button type="button" class="hdr-btn hdr-btn--outline" (click)="load()">
+        <i class="ti ti-refresh"></i> Actualizar
+      </button>
+      <button type="button" class="hdr-btn hdr-btn--primary" (click)="irANuevo()">
+        <i class="ti ti-plus"></i> Nuevo RAC
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-bar">
+    <select class="filtro-select" [(ngModel)]="filtroEstado">
+      <option value="">Todos los estados</option>
+      <option value="Abierto">Abierto</option>
+      <option value="Cerrado">Cerrado</option>
+    </select>
+
+    <select class="filtro-select" [(ngModel)]="filtroSeveridad">
+      <option value="">Toda severidad</option>
+      <option value="CRITICO">Crítico</option>
+      <option value="ALTO">Alto</option>
+      <option value="MEDIO">Medio</option>
+      <option value="BAJO">Bajo</option>
+    </select>
+
+    <select class="filtro-select" [(ngModel)]="filtroTipo">
+      <option value="">Todos los tipos</option>
+      <option value="ACTO">Acto</option>
+      <option value="CONDICION">Condición</option>
+    </select>
+
+    <label class="filtro-check">
+      <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" />
+      Solo con penalidad
+    </label>
+
+    <button type="button" class="hdr-btn hdr-btn--primary" (click)="load()">
+      <i class="ti ti-search"></i> Buscar
+    </button>
+
+    <button *ngIf="hayFiltrosActivos" type="button" class="hdr-btn hdr-btn--outline" (click)="limpiarFiltros()">
+      <i class="ti ti-x"></i> Limpiar
+    </button>
+  </div>
+
+  <!-- SKELETON -->
+  <div *ngIf="loading" class="skeleton-wrap">
+    <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+  </div>
+
+  <!-- TABLA -->
+  <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="tabla-wrap">
+    <table class="tabla-rac">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Código</th>
+          <th>Proyecto</th>
+          <th>Tipo</th>
+          <th>Categoría</th>
+          <th>Severidad</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Penalidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of result!.items; let i = index"
+            (click)="irADetalle(item.id)"
+            class="tabla-row">
+          <td class="col-num">{{ ((query.page ?? 1) - 1) * (query.pageSize ?? 20) + i + 1 }}</td>
+          <td class="col-codigo">{{ item.codigo }}</td>
+          <td class="col-proyecto">
+            <span class="proyecto-abrev" *ngIf="item.proyectoAbreviacion">{{ item.proyectoAbreviacion }}</span>
+            <span *ngIf="!item.proyectoAbreviacion">{{ item.proyectoNombre ?? '—' }}</span>
+          </td>
+          <td>
+            <span class="chip-tipo" [class.chip-tipo--acto]="item.tipo === 'ACTO'"
+                  [class.chip-tipo--condicion]="item.tipo === 'CONDICION'">
+              {{ item.tipo }}
+            </span>
+          </td>
+          <td class="col-categoria">{{ item.categoriaNombre }}</td>
+          <td>
+            <span class="badge-sev" [ngClass]="severidadClass(item.severidad)">
+              {{ item.severidad }}
+            </span>
+          </td>
+          <td>
+            <span class="chip-estado" [ngClass]="estadoClass(item.estado)">
+              {{ item.estado }}
+            </span>
+          </td>
+          <td class="col-fecha">{{ item.fechaReporte | date:'dd/MM/yyyy' }}</td>
+          <td class="col-penalidad">
+            <i *ngIf="item.aplicaPenalidad" class="ti ti-currency-sol penalidad-icon" title="Con penalidad"></i>
+            <span *ngIf="!item.aplicaPenalidad" class="sin-penalidad">—</span>
+          </td>
+          <td class="col-acciones" (click)="$event.stopPropagation()">
+            <button type="button" class="btn-icon" title="Ver detalle" (click)="irADetalle(item.id)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div *ngIf="!loading && (result?.items?.length ?? 0) === 0 && result !== null" class="empty-state">
+    <i class="ti ti-inbox empty-state__icon"></i>
+    <p class="empty-state__text">No se encontraron registros con los filtros aplicados.</p>
+    <button *ngIf="hayFiltrosActivos" type="button" class="hdr-btn hdr-btn--outline" (click)="limpiarFiltros()">
+      Limpiar filtros
+    </button>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div *ngIf="(result?.totalPages ?? 0) > 1" class="paginacion">
+    <button type="button" class="pag-btn"
+            [disabled]="(query.page ?? 1) <= 1"
+            (click)="cambiarPagina((query.page ?? 1) - 1)">
+      <i class="ti ti-chevron-left"></i> Anterior
+    </button>
+    <span class="pag-info">Página {{ query.page }} de {{ result!.totalPages }}</span>
+    <button type="button" class="pag-btn"
+            [disabled]="(query.page ?? 1) >= result!.totalPages"
+            (click)="cambiarPagina((query.page ?? 1) + 1)">
+      Siguiente <i class="ti ti-chevron-right"></i>
+    </button>
+  </div>
+
+</div>
