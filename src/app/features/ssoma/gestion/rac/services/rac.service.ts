@@ -38,6 +38,10 @@ export class RacService {
     return this.http.get<RacInfraccionDto[]>(`${this.base}/infracciones`);
   }
 
+  getNiveles(projectId: number): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/proyecto/${projectId}/niveles`);
+  }
+
   // ── RAC ──────────────────────────────────────────────────────────
 
   getList(q: RacListQuery): Observable<RacPagedResult<RacListItemDto>> {

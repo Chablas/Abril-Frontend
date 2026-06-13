@@ -166,11 +166,9 @@ export interface RacCategoriaDto {
 export interface RacInfraccionDto {
   id: number;
   nombre: string;
-  factorUit?: number;
-  montoFijo?: number;
-  descripcion?: string;
-  montoCalculado: number;
-  uitReferencia: number;
+  tipo?: string;    // ACTO | CONDICION
+  ambito?: string;
+  orden: number;
 }
 
 export interface RacCreadoDto {

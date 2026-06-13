@@ -409,3 +409,34 @@
   border-top: 1px solid #f0f0f0;
   margin-top: 20px;
 }
+
+/* ── ERROR HINT ──────────────────────────────────────────── */
+.form-hint-error {
+  display: block;
+  font-size: 11px;
+  color: #b91c1c;
+  margin-top: 4px;
+}
+
+/* ── ANONIMO ─────────────────────────────────────────────── */
+.anonimo-group .form-hint {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+  padding-left: 20px;
+}
+
+/* ── RESUMEN INCOMPLETO ──────────────────────────────────── */
+.resumen-card--incompleto {
+  border: 1px solid #fca5a5;
+  background: #fff7f7;
+}
+.resumen-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b91c1c;
+  font-size: 13px;
+  margin-top: 8px;
+}

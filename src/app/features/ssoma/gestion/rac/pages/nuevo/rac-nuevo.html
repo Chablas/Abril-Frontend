@@ -11,8 +11,8 @@
   <!-- LOADING CATÁLOGOS -->
   <div *ngIf="loadingCatalogos" class="catalogos-loading">
     <div class="skeleton-row" style="width:100%;height:40px;border-radius:8px"></div>
-    <div class="skeleton-row" style="width:80%;height:40px;border-radius:8px"></div>
-    <div class="skeleton-row" style="width:60%;height:40px;border-radius:8px"></div>
+    <div class="skeleton-row" style="width:80%;height:40px;border-radius:8px;margin-top:12px"></div>
+    <div class="skeleton-row" style="width:60%;height:40px;border-radius:8px;margin-top:12px"></div>
   </div>
 
   <ng-container *ngIf="!loadingCatalogos">
@@ -32,19 +32,41 @@
       </div>
     </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- PASO 0 — Proyecto & Tipo                  -->
-    <!-- ────────────────────────────────────────── -->
+    <!-- ────────────────────────────────────────────────── -->
+    <!-- PASO 0 — Ubicación                               -->
+    <!-- ────────────────────────────────────────────────── -->
     <div class="paso-content" *ngIf="pasoActual === 0">
 
       <div class="form-group">
         <label class="form-label">Proyecto *</label>
-        <select class="form-control" [(ngModel)]="model.proyectoId">
+        <select class="form-control"
+                [(ngModel)]="model.proyectoId"
+                (ngModelChange)="onProyectoChange()">
           <option [ngValue]="0" disabled>Selecciona un proyecto</option>
           <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
             {{ p.projectDescription }}
           </option>
         </select>
+      </div>
+
+      <div class="form-group" *ngIf="model.proyectoId > 0">
+        <label class="form-label">Piso / Nivel *</label>
+        <div *ngIf="loadingNiveles" class="skeleton-row" style="height:38px;border-radius:6px"></div>
+        <ng-container *ngIf="!loadingNiveles">
+          <select class="form-control"
+                  [(ngModel)]="model.proyectoPiso"
+                  *ngIf="niveles.length > 0; else pisoLibre">
+            <option [ngValue]="undefined" disabled>Selecciona un nivel</option>
+            <option *ngFor="let n of niveles" [ngValue]="n">{{ n }}</option>
+          </select>
+          <ng-template #pisoLibre>
+            <input type="text"
+                   class="form-control"
+                   [(ngModel)]="model.proyectoPiso"
+                   placeholder="Ej: Piso 3, Sótano 1, Azotea" />
+            <span class="form-hint">El proyecto no tiene niveles configurados — ingresa manualmente.</span>
+          </ng-template>
+        </ng-container>
       </div>
 
       <div class="form-group">
@@ -67,12 +89,16 @@
 
       <div class="form-group" *ngIf="model.tipo">
         <label class="form-label">Categoría *</label>
-        <select class="form-control" [(ngModel)]="model.categoriaId">
-          <option [ngValue]="0" disabled>Selecciona una categoría</option>
-          <option *ngFor="let c of categoriasFiltradas" [ngValue]="c.id">
-            {{ c.nombre }}
-          </option>
-        </select>
+        <app-search-select
+          [options]="categoriasFiltradas"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.categoriaId"
+          [showLabel]="false"
+          placeholder="Selecciona una categoría"
+          [allowClear]="true"
+          (valueChange)="model.categoriaId = $event"
+        />
         <span class="form-hint" *ngIf="!categoriasFiltradas.length">
           No hay categorías para el tipo seleccionado.
         </span>
@@ -109,61 +135,52 @@
       </div>
     </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- PASO 1 — Observado & Ubicación            -->
-    <!-- ────────────────────────────────────────── -->
+    <!-- ────────────────────────────────────────────────── -->
+    <!-- PASO 1 — Observado                               -->
+    <!-- ────────────────────────────────────────────────── -->
     <div class="paso-content" *ngIf="pasoActual === 1">
 
       <div class="form-group">
-        <label class="form-check-label">
-          <input type="checkbox" [(ngModel)]="model.esAnonimoObservado" class="check-input" />
-          Observado anónimo
-        </label>
-      </div>
-
-      <div class="form-group" *ngIf="!model.esAnonimoObservado">
-        <label class="form-label">Nombre del observado</label>
-        <input type="text"
-               class="form-control"
-               [(ngModel)]="model.reportanteNombre"
-               placeholder="Nombre completo" />
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Piso / Área</label>
-        <input type="text"
-               class="form-control"
-               [(ngModel)]="model.proyectoPiso"
-               placeholder="Ej: Piso 3, Área de excavación" />
+        <label class="form-label">Empresa observada *</label>
+        <app-search-select
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.empresaReportadaId"
+          [showLabel]="false"
+          placeholder="Selecciona una empresa"
+          [allowClear]="true"
+          (valueChange)="model.empresaReportadaId = $event"
+        />
+        <span class="form-hint-error"
+              *ngIf="pasoActual === 1 && !model.empresaReportadaId">
+          Campo obligatorio
+        </span>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Descripción del lugar</label>
+        <label class="form-label">Área de trabajo *</label>
         <input type="text"
                class="form-control"
                [(ngModel)]="model.lugarDescripcion"
                placeholder="Ej: Frente a la escalera de emergencia" />
+        <span class="form-hint-error"
+              *ngIf="pasoActual === 1 && !model.lugarDescripcion?.trim()">
+          Campo obligatorio
+        </span>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Fecha de reporte *</label>
+        <label class="form-label">Fecha de reporte</label>
         <input type="date"
                class="form-control"
                [(ngModel)]="model.fechaReporte" />
       </div>
-
-      <div class="form-group">
-        <label class="form-label">Plazo de levantamiento</label>
-        <input type="date"
-               class="form-control"
-               [(ngModel)]="model.plazoLevantamiento" />
-        <span class="form-hint">Opcional — fecha límite para corregir el hallazgo</span>
-      </div>
     </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- PASO 2 — Descripción & Acción             -->
-    <!-- ────────────────────────────────────────── -->
+    <!-- ────────────────────────────────────────────────── -->
+    <!-- PASO 2 — Detalle                                  -->
+    <!-- ────────────────────────────────────────────────── -->
     <div class="paso-content" *ngIf="pasoActual === 2">
 
       <div class="form-group">
@@ -177,10 +194,17 @@
           {{ model.descripcion.length }} / 2000
           <span *ngIf="model.descripcion.trim().length < 10"> — mínimo 10 caracteres</span>
         </div>
-        <div class="form-hint">
-          <i class="ti ti-info-circle"></i>
-          Sea específico: qué se observó, dónde y qué riesgo genera.
-        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Plazo de levantamiento *</label>
+        <input type="date"
+               class="form-control"
+               [(ngModel)]="model.plazoLevantamiento" />
+        <span class="form-hint-error"
+              *ngIf="pasoActual === 2 && !model.plazoLevantamiento">
+          Campo obligatorio — ingrese la fecha límite para corregir el hallazgo
+        </span>
       </div>
 
       <div class="form-group">
@@ -189,16 +213,30 @@
                   [(ngModel)]="model.planAccion"
                   placeholder="Describa las acciones correctivas a tomar..."
                   maxlength="2000"
-                  rows="4"></textarea>
-        <span class="form-hint">Opcional — acciones para corregir el hallazgo</span>
+                  rows="3"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Foto del hallazgo <span class="opcional">(opcional)</span></label>
+        <input type="file"
+               class="form-control"
+               accept="image/*"
+               (change)="onFotoChange($event)" />
+        <span class="form-hint" *ngIf="fotoFile">
+          <i class="ti ti-photo"></i> {{ fotoFile.name }}
+        </span>
+        <span class="form-hint" *ngIf="!fotoFile">
+          También puedes agregar fotos desde el detalle del RAC.
+        </span>
       </div>
     </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- PASO 3 — Penalidad & Confirmar            -->
-    <!-- ────────────────────────────────────────── -->
+    <!-- ────────────────────────────────────────────────── -->
+    <!-- PASO 3 — Revisión                                 -->
+    <!-- ────────────────────────────────────────────────── -->
     <div class="paso-content" *ngIf="pasoActual === 3">
 
+      <!-- PENALIDAD -->
       <div class="form-group">
         <label class="form-check-label toggle-row">
           <span class="toggle-label-text">¿Aplica penalidad?</span>
@@ -211,23 +249,11 @@
           <label class="form-label">Infracción</label>
           <select class="form-control" [(ngModel)]="model.infraccionId">
             <option [ngValue]="undefined">Selecciona una infracción</option>
-            <option *ngFor="let inf of infracciones" [ngValue]="inf.id">
+            <option *ngFor="let inf of infraccionesFiltradas" [ngValue]="inf.id">
               {{ inf.nombre }}
             </option>
           </select>
         </div>
-
-        <div class="monto-card" *ngIf="infraccionSeleccionada">
-          <span class="monto-label">Monto calculado</span>
-          <span class="monto-valor">
-            S/ {{ infraccionSeleccionada.montoCalculado | number:'1.2-2' }}
-          </span>
-          <span class="monto-uit" *ngIf="infraccionSeleccionada.factorUit">
-            {{ infraccionSeleccionada.factorUit }} UIT
-            (ref. S/ {{ infraccionSeleccionada.uitReferencia | number:'1.2-2' }})
-          </span>
-        </div>
-
         <div class="form-group">
           <label class="form-label">Descripción del ocurrido</label>
           <textarea class="form-control form-textarea"
@@ -237,13 +263,29 @@
         </div>
       </ng-container>
 
+      <!-- ANONIMATO -->
+      <div class="form-group anonimo-group">
+        <label class="form-check-label">
+          <input type="checkbox" [(ngModel)]="model.esAnonimoReportante" class="check-input" />
+          Registrar como reporte anónimo
+        </label>
+        <span class="form-hint">
+          Tu identidad queda guardada internamente para auditoría, pero en listas y reportes
+          se mostrará "Reporte anónimo".
+        </span>
+      </div>
+
       <!-- RESUMEN -->
       <div class="resumen-titulo">Resumen del RAC</div>
 
-      <div class="resumen-card">
+      <div class="resumen-card" [class.resumen-card--incompleto]="!todoCompleto">
         <div class="resumen-row">
           <span class="resumen-key">Proyecto</span>
           <span class="resumen-val">{{ proyectoSeleccionado?.projectDescription ?? '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Nivel</span>
+          <span class="resumen-val">{{ model.proyectoPiso || '—' }}</span>
         </div>
         <div class="resumen-row">
           <span class="resumen-key">Tipo</span>
@@ -260,6 +302,18 @@
           </span>
         </div>
         <div class="resumen-row">
+          <span class="resumen-key">Empresa</span>
+          <span class="resumen-val">{{ empresaSeleccionada?.nombre ?? '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Área</span>
+          <span class="resumen-val">{{ model.lugarDescripcion || '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Plazo</span>
+          <span class="resumen-val">{{ model.plazoLevantamiento || '—' }}</span>
+        </div>
+        <div class="resumen-row">
           <span class="resumen-key">Descripción</span>
           <span class="resumen-val resumen-desc">
             {{ model.descripcion.length > 100
@@ -268,11 +322,26 @@
           </span>
         </div>
         <div class="resumen-row">
+          <span class="resumen-key">Foto</span>
+          <span class="resumen-val">{{ fotoFile ? fotoFile.name : 'Sin foto' }}</span>
+        </div>
+        <div class="resumen-row">
           <span class="resumen-key">Penalidad</span>
           <span class="resumen-val" [style.color]="model.aplicaPenalidad ? '#b91c1c' : '#0a7c52'">
             {{ model.aplicaPenalidad ? 'SÍ' : 'NO' }}
           </span>
         </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Autor</span>
+          <span class="resumen-val">
+            {{ model.esAnonimoReportante ? 'Anónimo' : 'Identificado' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="resumen-aviso" *ngIf="!todoCompleto">
+        <i class="ti ti-alert-triangle"></i>
+        Faltan campos obligatorios en pasos anteriores. Regresa y complétalos.
       </div>
     </div>
 
@@ -296,7 +365,7 @@
       <button *ngIf="pasoActual === totalPasos - 1"
               type="button"
               class="btn-primary btn-guardar"
-              [disabled]="guardando"
+              [disabled]="guardando || !todoCompleto"
               (click)="guardar()">
         <i class="ti ti-check"></i>
         {{ guardando ? 'Guardando...' : 'Crear RAC' }}
