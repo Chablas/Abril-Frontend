@@ -1,0 +1,307 @@
+<div class="nuevo-root">
+
+  <!-- HEADER -->
+  <div class="rac-header">
+    <h1 class="rac-header__titulo">Nuevo RAC</h1>
+    <button type="button" class="btn-ghost" (click)="cancelar()">
+      <i class="ti ti-x"></i> Cancelar
+    </button>
+  </div>
+
+  <!-- LOADING CATÁLOGOS -->
+  <div *ngIf="loadingCatalogos" class="catalogos-loading">
+    <div class="skeleton-row" style="width:100%;height:40px;border-radius:8px"></div>
+    <div class="skeleton-row" style="width:80%;height:40px;border-radius:8px"></div>
+    <div class="skeleton-row" style="width:60%;height:40px;border-radius:8px"></div>
+  </div>
+
+  <ng-container *ngIf="!loadingCatalogos">
+
+    <!-- STEPPER VISUAL -->
+    <div class="stepper">
+      <div
+        *ngFor="let label of pasoLabels; let i = index"
+        class="stepper__item"
+        [class.stepper__item--active]="pasoActual === i"
+        [class.stepper__item--done]="pasoActual > i">
+        <div class="stepper__dot">
+          <i class="ti ti-check" *ngIf="pasoActual > i"></i>
+          <span *ngIf="pasoActual <= i">{{ i + 1 }}</span>
+        </div>
+        <span class="stepper__label">{{ label }}</span>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- PASO 0 — Proyecto & Tipo                  -->
+    <!-- ────────────────────────────────────────── -->
+    <div class="paso-content" *ngIf="pasoActual === 0">
+
+      <div class="form-group">
+        <label class="form-label">Proyecto *</label>
+        <select class="form-control" [(ngModel)]="model.proyectoId">
+          <option [ngValue]="0" disabled>Selecciona un proyecto</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.projectId">
+            {{ p.projectDescription }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo *</label>
+        <div class="radio-group">
+          <button type="button"
+                  class="radio-chip"
+                  [class.selected]="model.tipo === 'ACTO'"
+                  (click)="model.tipo = 'ACTO'; onTipoChange()">
+            Acto
+          </button>
+          <button type="button"
+                  class="radio-chip"
+                  [class.selected]="model.tipo === 'CONDICION'"
+                  (click)="model.tipo = 'CONDICION'; onTipoChange()">
+            Condición
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="model.tipo">
+        <label class="form-label">Categoría *</label>
+        <select class="form-control" [(ngModel)]="model.categoriaId">
+          <option [ngValue]="0" disabled>Selecciona una categoría</option>
+          <option *ngFor="let c of categoriasFiltradas" [ngValue]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+        <span class="form-hint" *ngIf="!categoriasFiltradas.length">
+          No hay categorías para el tipo seleccionado.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Severidad *</label>
+        <div class="radio-group">
+          <button type="button"
+                  class="radio-chip radio-chip--bajo"
+                  [class.selected]="model.severidad === 'BAJO'"
+                  (click)="model.severidad = 'BAJO'">
+            Bajo
+          </button>
+          <button type="button"
+                  class="radio-chip radio-chip--medio"
+                  [class.selected]="model.severidad === 'MEDIO'"
+                  (click)="model.severidad = 'MEDIO'">
+            Medio
+          </button>
+          <button type="button"
+                  class="radio-chip radio-chip--alto"
+                  [class.selected]="model.severidad === 'ALTO'"
+                  (click)="model.severidad = 'ALTO'">
+            Alto
+          </button>
+          <button type="button"
+                  class="radio-chip radio-chip--critico"
+                  [class.selected]="model.severidad === 'CRITICO'"
+                  (click)="model.severidad = 'CRITICO'">
+            Crítico
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- PASO 1 — Observado & Ubicación            -->
+    <!-- ────────────────────────────────────────── -->
+    <div class="paso-content" *ngIf="pasoActual === 1">
+
+      <div class="form-group">
+        <label class="form-check-label">
+          <input type="checkbox" [(ngModel)]="model.esAnonimoObservado" class="check-input" />
+          Observado anónimo
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="!model.esAnonimoObservado">
+        <label class="form-label">Nombre del observado</label>
+        <input type="text"
+               class="form-control"
+               [(ngModel)]="model.reportanteNombre"
+               placeholder="Nombre completo" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Piso / Área</label>
+        <input type="text"
+               class="form-control"
+               [(ngModel)]="model.proyectoPiso"
+               placeholder="Ej: Piso 3, Área de excavación" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descripción del lugar</label>
+        <input type="text"
+               class="form-control"
+               [(ngModel)]="model.lugarDescripcion"
+               placeholder="Ej: Frente a la escalera de emergencia" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Fecha de reporte *</label>
+        <input type="date"
+               class="form-control"
+               [(ngModel)]="model.fechaReporte" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Plazo de levantamiento</label>
+        <input type="date"
+               class="form-control"
+               [(ngModel)]="model.plazoLevantamiento" />
+        <span class="form-hint">Opcional — fecha límite para corregir el hallazgo</span>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- PASO 2 — Descripción & Acción             -->
+    <!-- ────────────────────────────────────────── -->
+    <div class="paso-content" *ngIf="pasoActual === 2">
+
+      <div class="form-group">
+        <label class="form-label">Descripción del hallazgo *</label>
+        <textarea class="form-control form-textarea"
+                  [(ngModel)]="model.descripcion"
+                  placeholder="Describa detalladamente el acto o condición subestándar observada..."
+                  maxlength="2000"
+                  rows="5"></textarea>
+        <div class="char-counter" [class.char-counter--error]="model.descripcion.trim().length < 10">
+          {{ model.descripcion.length }} / 2000
+          <span *ngIf="model.descripcion.trim().length < 10"> — mínimo 10 caracteres</span>
+        </div>
+        <div class="form-hint">
+          <i class="ti ti-info-circle"></i>
+          Sea específico: qué se observó, dónde y qué riesgo genera.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Plan de acción</label>
+        <textarea class="form-control form-textarea"
+                  [(ngModel)]="model.planAccion"
+                  placeholder="Describa las acciones correctivas a tomar..."
+                  maxlength="2000"
+                  rows="4"></textarea>
+        <span class="form-hint">Opcional — acciones para corregir el hallazgo</span>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- PASO 3 — Penalidad & Confirmar            -->
+    <!-- ────────────────────────────────────────── -->
+    <div class="paso-content" *ngIf="pasoActual === 3">
+
+      <div class="form-group">
+        <label class="form-check-label toggle-row">
+          <span class="toggle-label-text">¿Aplica penalidad?</span>
+          <input type="checkbox" [(ngModel)]="model.aplicaPenalidad" class="check-input" />
+        </label>
+      </div>
+
+      <ng-container *ngIf="model.aplicaPenalidad">
+        <div class="form-group">
+          <label class="form-label">Infracción</label>
+          <select class="form-control" [(ngModel)]="model.infraccionId">
+            <option [ngValue]="undefined">Selecciona una infracción</option>
+            <option *ngFor="let inf of infracciones" [ngValue]="inf.id">
+              {{ inf.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="monto-card" *ngIf="infraccionSeleccionada">
+          <span class="monto-label">Monto calculado</span>
+          <span class="monto-valor">
+            S/ {{ infraccionSeleccionada.montoCalculado | number:'1.2-2' }}
+          </span>
+          <span class="monto-uit" *ngIf="infraccionSeleccionada.factorUit">
+            {{ infraccionSeleccionada.factorUit }} UIT
+            (ref. S/ {{ infraccionSeleccionada.uitReferencia | number:'1.2-2' }})
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción del ocurrido</label>
+          <textarea class="form-control form-textarea"
+                    [(ngModel)]="model.descripcionOcurrido"
+                    placeholder="Describa los hechos que generan la penalidad..."
+                    rows="3"></textarea>
+        </div>
+      </ng-container>
+
+      <!-- RESUMEN -->
+      <div class="resumen-titulo">Resumen del RAC</div>
+
+      <div class="resumen-card">
+        <div class="resumen-row">
+          <span class="resumen-key">Proyecto</span>
+          <span class="resumen-val">{{ proyectoSeleccionado?.projectDescription ?? '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Tipo</span>
+          <span class="resumen-val">{{ model.tipo || '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Categoría</span>
+          <span class="resumen-val">{{ categoriaSeleccionada?.nombre ?? '—' }}</span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Severidad</span>
+          <span class="resumen-val resumen-sev" [attr.data-sev]="model.severidad">
+            {{ model.severidad || '—' }}
+          </span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Descripción</span>
+          <span class="resumen-val resumen-desc">
+            {{ model.descripcion.length > 100
+               ? (model.descripcion | slice:0:100) + '…'
+               : model.descripcion || '—' }}
+          </span>
+        </div>
+        <div class="resumen-row">
+          <span class="resumen-key">Penalidad</span>
+          <span class="resumen-val" [style.color]="model.aplicaPenalidad ? '#b91c1c' : '#0a7c52'">
+            {{ model.aplicaPenalidad ? 'SÍ' : 'NO' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER NAVEGACIÓN -->
+    <div class="stepper-footer">
+      <button type="button"
+              class="btn-ghost"
+              [disabled]="pasoActual === 0"
+              (click)="retroceder()">
+        <i class="ti ti-arrow-left"></i> Anterior
+      </button>
+
+      <button *ngIf="pasoActual < totalPasos - 1"
+              type="button"
+              class="btn-primary"
+              [disabled]="!puedeAvanzar"
+              (click)="avanzar()">
+        Siguiente <i class="ti ti-arrow-right"></i>
+      </button>
+
+      <button *ngIf="pasoActual === totalPasos - 1"
+              type="button"
+              class="btn-primary btn-guardar"
+              [disabled]="guardando"
+              (click)="guardar()">
+        <i class="ti ti-check"></i>
+        {{ guardando ? 'Guardando...' : 'Crear RAC' }}
+      </button>
+    </div>
+
+  </ng-container>
+</div>
