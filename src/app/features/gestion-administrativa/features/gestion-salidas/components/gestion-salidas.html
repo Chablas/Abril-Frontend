@@ -1,9 +1,9 @@
-<div class="flex flex-col gap-[20px] bg-white rounded-lg p-[20px] mb-[20px]">
+<div class="page-container flex flex-col gap-[20px] bg-white rounded-lg mb-[20px]">
 
   <!-- ── Filtros ────────────────────────────────────────────────────────── -->
-  <div class="flex flex-wrap gap-4 items-end">
+  <div class="filter-row">
 
-    <div class="w-[220px]">
+    <div>
       <app-search-select
         label="Trabajador"
         [options]="trabajadorOptions"
@@ -14,7 +14,7 @@
       </app-search-select>
     </div>
 
-    <div class="w-[220px]">
+    <div>
       <app-search-select
         label="Lugar de proyecto"
         [options]="lugarProyectoOptions"
@@ -25,7 +25,7 @@
       </app-search-select>
     </div>
 
-    <div class="w-[180px]">
+    <div>
       <app-search-select
         label="Aprobación"
         [options]="estadoAprobacionOptions"
@@ -36,7 +36,7 @@
       </app-search-select>
     </div>
 
-    <div class="w-[180px]">
+    <div>
       <app-search-select
         label="Rendición"
         [options]="estadoRendicionOptions"
@@ -47,8 +47,7 @@
       </app-search-select>
     </div>
 
-    <button type="button" (click)="onSearch()"
-      class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+    <button type="button" (click)="onSearch()" class="btn-primary">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
       </svg>
@@ -56,11 +55,11 @@
     </button>
 
     <button class="group flex items-center cursor-pointer gap-1.5 h-[38px] ml-auto" (click)="exportarExcel()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="#0086A5"/>
-        <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="#0086A5"/>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="color:var(--color-abril-accent)">
+        <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="currentColor"/>
+        <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
       </svg>
-      <span class="text-[#64BC04] group-hover:underline text-sm">Exportar a excel</span>
+      <span style="color:var(--color-abril-primary)" class="group-hover:underline text-sm">Exportar a excel</span>
     </button>
 
   </div>
@@ -71,7 +70,8 @@
       type="button"
       (click)="marcarRendidasBulk()"
       [disabled]="selectedIds.size === 0"
-      class="h-[36px] px-4 bg-[#0086A5] text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-[#006a83] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300">
+      class="h-[36px] px-4 text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+      style="background:var(--color-abril-accent)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
@@ -83,10 +83,10 @@
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+  <div class="table-scroll">
     <table class="w-full text-sm">
-      <thead class="bg-[#E5F7D1]">
-        <tr class="text-[#64BC04]">
+      <thead style="background:var(--color-abril-primary-light)">
+        <tr style="color:var(--color-abril-primary-dark)">
           <th class="text-left px-[16px] py-[10px] font-semibold">#</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Trabajador</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Fecha</th>
@@ -104,7 +104,8 @@
                 [checked]="allSelected"
                 [disabled]="seleccionables.length === 0"
                 (change)="toggleSelectAll()"
-                class="accent-[#0086A5] cursor-pointer disabled:cursor-not-allowed"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-accent)"
                 title="Seleccionar todas las aprobadas no rendidas" />
               Rendición
             </label>
@@ -129,7 +130,8 @@
           *ngFor="let s of salidas; let i = index"
           (click)="abrirDetalle(s)"
           title="Ver detalle"
-          class="border-b border-[#D6DEE5] hover:bg-[#FAFAFA] transition-colors cursor-pointer">
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          style="border-color:var(--color-abril-border)">
 
           <td class="px-[16px] py-[10px] text-gray-500">{{ i + 1 }}</td>
 
@@ -140,7 +142,8 @@
           <td class="px-[16px] py-[10px] text-gray-700">
             {{ s.horaSalida }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -149,7 +152,8 @@
           <td class="px-[16px] py-[10px] text-gray-400">
             {{ s.horaRetorno ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -158,7 +162,8 @@
           <td class="px-[16px] py-[10px] text-gray-700">
             {{ s.motivo }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -167,7 +172,8 @@
           <td class="px-[16px] py-[10px] text-gray-500">
             {{ s.lugarOrigen ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -176,7 +182,8 @@
           <td class="px-[16px] py-[10px] text-gray-500">
             {{ s.lugarDestino ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -210,7 +217,8 @@
                 type="checkbox"
                 [checked]="selectedIds.has(s.id)"
                 (change)="toggleSelection(s)"
-                class="accent-[#0086A5] cursor-pointer" />
+                class="cursor-pointer"
+                style="accent-color:var(--color-abril-accent)" />
               <app-status-badge
                 [text]="s.estadoRendicion"
                 [bgColor]="rendicionColors(s.estadoRendicion).bg"
@@ -242,7 +250,8 @@
               type="time"
               [value]="horaRealInput(s)"
               (change)="guardarHoraReal(s, $any($event.target).value)"
-              class="border border-[#D6DEE5] rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none focus:border-[#64BC04] focus:ring-2 focus:ring-[#64BC04]/20 w-[110px]"
+              class="rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none w-[110px]"
+              style="border: 1.5px solid var(--color-abril-border)"
               title="Registra la hora real en que la persona salió" />
           </td>
 
