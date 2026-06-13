@@ -1,11 +1,12 @@
 <div class="penalidades-root">
 
-  <!-- HEADER -->
   <app-ssoma-page-header
-    badge="SSOMA"
+    [badge]="'SSOMA · ' + anioActual"
     titulo="Penalidades RAC"
     subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
-  ></app-ssoma-page-header>
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-ssoma-page-header>
 
   <app-rac-nav></app-rac-nav>
 

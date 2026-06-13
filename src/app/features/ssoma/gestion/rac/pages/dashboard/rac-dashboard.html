@@ -1,21 +1,14 @@
 <div class="dashboard-root">
 
-  <!-- HEADER -->
-  <div class="rac-header">
-    <div class="rac-header__left">
-      <span class="rac-header__badge">SSOMA · {{ anioActual }}</span>
-      <h1 class="rac-header__titulo">Gestión RAC</h1>
-      <p class="rac-header__sub">Actos &amp; Condiciones Subestándar</p>
-    </div>
-    <div class="rac-header__actions">
-      <button type="button" class="hdr-btn hdr-btn--outline" (click)="load()">
-        <i class="ti ti-refresh"></i> Actualizar
-      </button>
-      <button type="button" class="hdr-btn hdr-btn--primary" (click)="irANuevo()">
-        <i class="ti ti-plus"></i> Nuevo RAC
-      </button>
-    </div>
-  </div>
+  <app-ssoma-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Actos &amp; Condiciones Subestándar"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    [botonPrimario]="{ label: 'Nuevo RAC', icono: 'ti-plus' }"
+    (secondaryClick)="load()"
+    (primaryClick)="irANuevo()">
+  </app-ssoma-page-header>
 
   <app-rac-nav></app-rac-nav>
 

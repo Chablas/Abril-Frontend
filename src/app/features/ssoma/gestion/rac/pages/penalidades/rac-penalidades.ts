@@ -30,6 +30,8 @@ export class RacPenalidades implements OnInit {
   result: RacPagedResult<PenalidadListItemDto> | null = null;
   loading = false;
 
+  readonly anioActual = new Date().getFullYear();
+
   filtroEstado = '';
   filtroProyectoId: number | undefined = undefined;
 

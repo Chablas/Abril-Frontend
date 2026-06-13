@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { RacService } from '../../services/rac.service';
 import { RacDashboardDto } from '../../dtos/rac.dtos';
 import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
+import { SsomaPageHeaderComponent } from '../../../../salud-ocupacional/shared/ssoma-page-header/ssoma-page-header.component';
 
 @Component({
   selector: 'app-rac-dashboard',
   standalone: true,
-  imports: [CommonModule, RacNavComponent],
+  imports: [CommonModule, RacNavComponent, SsomaPageHeaderComponent],
   templateUrl: './rac-dashboard.html',
   styleUrl: './rac-dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -29,8 +29,7 @@ export class RacLista implements OnInit {
   filtroTipo = '';
   filtroSoloConPenalidad = false;
   filtrosAbiertos = false;
-
-  readonly headerBtn = { label: 'Nuevo RAC', icono: 'ti-plus' };
+  readonly anioActual = new Date().getFullYear();
 
   constructor(
     private racService: RacService,
