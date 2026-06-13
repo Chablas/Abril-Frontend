@@ -7,13 +7,15 @@ import { RacService } from '../../services/rac.service';
 import { RacListItemDto, RacListQuery, RacPagedResult } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
+import { SsomaPageHeaderComponent } from '../../../../salud-ocupacional/shared/ssoma-page-header/ssoma-page-header.component';
 
 @Component({
   selector: 'app-rac-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RacNavComponent],
+  imports: [CommonModule, FormsModule, RacNavComponent, SsomaPageHeaderComponent],
   templateUrl: './rac-lista.html',
   styleUrl: './rac-lista.css',
 })
@@ -26,16 +28,22 @@ export class RacLista implements OnInit {
   filtroSeveridad = '';
   filtroTipo = '';
   filtroSoloConPenalidad = false;
+  filtrosAbiertos = false;
 
-  readonly anioActual = new Date().getFullYear();
+  readonly headerBtn = { label: 'Nuevo RAC', icono: 'ti-plus' };
 
   constructor(
     private racService: RacService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  get esContratista(): boolean {
+    return this.authService.isContratista();
+  }
 
   ngOnInit(): void {
     this.load();
@@ -58,13 +66,13 @@ export class RacLista implements OnInit {
         this.result = res;
         this.loading = false;
         this.loaderService.hide();
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
   }
@@ -83,12 +91,47 @@ export class RacLista implements OnInit {
     this.load();
   }
 
+  toggleFiltros(): void {
+    this.filtrosAbiertos = !this.filtrosAbiertos;
+    this.cdr.detectChanges();
+  }
+
   irADetalle(id: number): void {
     this.router.navigate(['/ssoma/gestion/rac', id]);
   }
 
   irANuevo(): void {
     this.router.navigate(['/ssoma/gestion/rac/nuevo']);
+  }
+
+  irACerrar(id: number): void {
+    this.router.navigate(['/ssoma/gestion/rac', id, 'cerrar']);
+  }
+
+  irARegularizar(id: number): void {
+    this.router.navigate(['/ssoma/gestion/rac', id, 'regularizar']);
+  }
+
+  descargarPdf(id: number): void {
+    this.loaderService.show();
+    this.racService.getReportePdf(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `RAC-${id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.loaderService.hide();
+      },
+      error: () => {
+        this.loaderService.hide();
+      },
+    });
+  }
+
+  puedeVerBotonCerrar(item: RacListItemDto): boolean {
+    return item.estado !== 'Cerrado';
   }
 
   get hayFiltrosActivos(): boolean {
@@ -105,11 +148,23 @@ export class RacLista implements OnInit {
     }
   }
 
+  severidadDotClass(sev: string): string {
+    switch (sev?.toUpperCase()) {
+      case 'CRITICO': return 'dot--critico';
+      case 'ALTO':    return 'dot--alto';
+      case 'MEDIO':   return 'dot--medio';
+      case 'BAJO':    return 'dot--bajo';
+      default:        return 'dot--default';
+    }
+  }
+
   estadoClass(est: string): string {
     switch (est) {
-      case 'Abierto': return 'estado-abierto';
-      case 'Cerrado': return 'estado-cerrado';
-      default:        return '';
+      case 'Abierto':     return 'estado-abierto';
+      case 'Cerrado':     return 'estado-cerrado';
+      case 'Vencido':     return 'estado-vencido';
+      case 'En proceso':  return 'estado-proceso';
+      default:            return '';
     }
   }
 }

@@ -217,12 +217,14 @@ export interface PenalidadDetalleDto extends PenalidadListItemDto {
   infraccionId?: number;
   descripcionOcurrido?: string;
   descargoTexto?: string;
+  documentoUrl?: string;
   resolucionTexto?: string;
   pdfResolucionUrl?: string;
 }
 
 export interface PenalidadDescargaRequest {
   descargoTexto: string;
+  documentoUrl: string;
 }
 
 export interface PenalidadResolverRequest {

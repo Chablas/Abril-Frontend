@@ -1,19 +1,15 @@
 <div class="penalidades-root">
 
   <!-- HEADER -->
-  <div class="rac-header">
-    <div class="rac-header__left">
-      <span class="rac-header__badge">SSOMA · RAC</span>
-      <h1 class="rac-header__titulo">Penalidades RAC</h1>
-    </div>
-    <div class="rac-header__actions">
-      <button type="button" class="hdr-btn hdr-btn--outline" (click)="load()">
-        <i class="ti ti-refresh"></i> Actualizar
-      </button>
-    </div>
-  </div>
+  <app-ssoma-page-header
+    badge="SSOMA"
+    titulo="Penalidades RAC"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+  ></app-ssoma-page-header>
 
   <app-rac-nav></app-rac-nav>
+
+  <div class="penalidades-body">
 
   <!-- FILTROS -->
   <div class="filtros-bar">
@@ -98,6 +94,14 @@
       Siguiente <i class="ti ti-chevron-right"></i>
     </button>
   </div>
+
+  </div><!-- /penalidades-body -->
+
+  <!-- FAB -->
+  <button type="button" class="fab" (click)="irANuevo()" title="Nuevo RAC">
+    <i class="ti ti-plus"></i>
+    <span class="fab__label">Nuevo RAC</span>
+  </button>
 
 </div>
 
@@ -186,10 +190,32 @@
                 *ngIf="descargoTexto.length > 0 && descargoTexto.trim().length < 10">
             Mínimo 10 caracteres
           </span>
+
+          <!-- Documento de sustento -->
+          <div class="descargo-doc">
+            <label class="doc-label">Documento de sustento *</label>
+            <input type="file"
+                   class="form-control"
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                   (change)="seleccionarDocumento($event)" />
+
+            <span class="doc-subiendo" *ngIf="subiendoDocumento">
+              <i class="ti ti-loader-2 spin"></i> Subiendo documento...
+            </span>
+
+            <span class="doc-ok" *ngIf="documentoUrl && !subiendoDocumento">
+              <i class="ti ti-circle-check"></i> Documento subido correctamente
+            </span>
+
+            <span class="doc-hint" *ngIf="!documentoArchivo && !subiendoDocumento">
+              Adjunta el documento de sustento (PDF, imagen o Word)
+            </span>
+          </div>
+
           <div class="modal-acciones">
             <button type="button"
                     class="btn-accion btn-accion--blue"
-                    [disabled]="descargoTexto.trim().length < 10 || guardandoAccion"
+                    [disabled]="!puedeDescargar"
                     (click)="presentarDescargo()">
               <i class="ti ti-send"></i>
               {{ guardandoAccion ? 'Enviando...' : 'Presentar descargo' }}

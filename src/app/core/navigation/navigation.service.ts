@@ -236,6 +236,13 @@ export class NavigationService {
             groups: this.filterGroups(m.groups),
           };
         }
+        if (m.key === 'gestion-ssoma' && isContratista) {
+          return {
+            ...m,
+            items: [{ label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' }],
+            groups: [],
+          };
+        }
         return {
           ...m,
           items: this.filterItems(m.items),

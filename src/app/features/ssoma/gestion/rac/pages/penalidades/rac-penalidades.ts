@@ -16,12 +16,13 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
 import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
+import { SsomaPageHeaderComponent } from '../../../../salud-ocupacional/shared/ssoma-page-header/ssoma-page-header.component';
 
 @Component({
   selector: 'app-rac-penalidades',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RacNavComponent],
+  imports: [CommonModule, FormsModule, RacNavComponent, SsomaPageHeaderComponent],
   templateUrl: './rac-penalidades.html',
   styleUrl: './rac-penalidades.css',
 })
@@ -40,6 +41,10 @@ export class RacPenalidades implements OnInit {
   resolucionTexto = '';
   resolucionTipo = '';
   guardandoAccion = false;
+
+  documentoArchivo: File | null = null;
+  documentoUrl: string | null = null;
+  subiendoDocumento = false;
 
   query: PenalidadListQuery = { page: 1, pageSize: 20 };
 
@@ -69,13 +74,13 @@ export class RacPenalidades implements OnInit {
         this.result = res;
         this.loading = false;
         this.loaderService.hide();
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
   }
@@ -86,6 +91,37 @@ export class RacPenalidades implements OnInit {
     this.load();
   }
 
+  get puedeDescargar(): boolean {
+    return this.descargoTexto.trim().length >= 10 && !!this.documentoUrl && !this.guardandoAccion;
+  }
+
+  seleccionarDocumento(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.penalidadSeleccionada) return;
+    this.documentoArchivo = file;
+    this.documentoUrl = null;
+    this.subirDocumento();
+  }
+
+  subirDocumento(): void {
+    if (!this.documentoArchivo || !this.penalidadSeleccionada || this.subiendoDocumento) return;
+    this.subiendoDocumento = true;
+    this.cdr.detectChanges();
+    this.racService.subirFoto(this.penalidadSeleccionada.racId, this.documentoArchivo, 'Descargo').subscribe({
+      next: (res) => {
+        this.documentoUrl = res.url;
+        this.subiendoDocumento = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.subiendoDocumento = false;
+        Swal.fire('Error', 'No se pudo subir el documento', 'error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   abrirDetalle(id: number): void {
     this.loadingDetalle = true;
     this.mostrarModal = true;
@@ -93,18 +129,21 @@ export class RacPenalidades implements OnInit {
     this.descargoTexto = '';
     this.resolucionTexto = '';
     this.resolucionTipo = '';
-    this.cdr.markForCheck();
+    this.documentoArchivo = null;
+    this.documentoUrl = null;
+    this.subiendoDocumento = false;
+    this.cdr.detectChanges();
     this.racService.getPenalidadDetalle(id).subscribe({
       next: (p) => {
         this.penalidadSeleccionada = p;
         this.loadingDetalle = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.loadingDetalle = false;
         this.mostrarModal = false;
         this.errorService.handleError(err);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
   }
@@ -112,14 +151,14 @@ export class RacPenalidades implements OnInit {
   cerrarModal(): void {
     this.mostrarModal = false;
     this.penalidadSeleccionada = null;
-    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   presentarDescargo(): void {
-    if (!this.penalidadSeleccionada) return;
-    if (this.descargoTexto.trim().length < 10) return;
+    if (!this.penalidadSeleccionada || !this.puedeDescargar) return;
     const req: PenalidadDescargaRequest = {
       descargoTexto: this.descargoTexto.trim(),
+      documentoUrl: this.documentoUrl!,
     };
     this.guardandoAccion = true;
     this.racService.presentarDescargo(this.penalidadSeleccionada.id, req).subscribe({
@@ -128,12 +167,12 @@ export class RacPenalidades implements OnInit {
         Swal.fire('Descargo presentado', '', 'success');
         this.cerrarModal();
         this.load();
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.guardandoAccion = false;
         this.errorService.handleError(err);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
     });
   }
@@ -160,12 +199,12 @@ export class RacPenalidades implements OnInit {
           Swal.fire('Listo', `Penalidad ${tipo.toLowerCase()}`, 'success');
           this.cerrarModal();
           this.load();
-          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.guardandoAccion = false;
           this.errorService.handleError(err);
-          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         },
       });
     });
@@ -173,6 +212,10 @@ export class RacPenalidades implements OnInit {
 
   irARac(racId: number): void {
     this.router.navigate(['/ssoma/gestion/rac', racId]);
+  }
+
+  irANuevo(): void {
+    this.router.navigate(['/ssoma/gestion/rac/nuevo']);
   }
 
   estadoPenalClass(est: string): string {
