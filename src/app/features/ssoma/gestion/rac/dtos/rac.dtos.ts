@@ -47,6 +47,7 @@ export interface RacCreateRequest {
 
 export interface RacCerrarRequest {
   cierreDescripcion: string;
+  fotoCierreUrl?: string;
 }
 
 export interface RacFotoDto {

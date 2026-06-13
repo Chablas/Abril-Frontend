@@ -72,6 +72,33 @@
       </div>
     </div>
 
+    <!-- FOTO DE CIERRE -->
+    <div class="cierre-form">
+      <div class="form-group">
+        <label class="form-label">Foto del levantamiento *</label>
+        <input type="file"
+               class="form-control"
+               accept="image/*"
+               (change)="seleccionarFoto($event)" />
+
+        <div class="foto-preview" *ngIf="fotoCierrePreview">
+          <img [src]="fotoCierrePreview" alt="Vista previa" />
+        </div>
+
+        <span class="foto-subiendo" *ngIf="subiendoFoto">
+          <i class="ti ti-loader-2 spin"></i> Subiendo foto...
+        </span>
+
+        <span class="foto-ok" *ngIf="fotoCierreUrl">
+          <i class="ti ti-circle-check"></i> Foto subida correctamente
+        </span>
+
+        <span class="form-hint-error" *ngIf="!fotoCierreUrl && !fotoCierre">
+          Debes adjuntar y subir una foto del levantamiento para cerrar el RAC
+        </span>
+      </div>
+    </div>
+
     <!-- FOOTER -->
     <div class="cierre-footer">
       <button type="button" class="btn-ghost" (click)="cancelar()">

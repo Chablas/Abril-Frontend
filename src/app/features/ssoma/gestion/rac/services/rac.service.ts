@@ -73,7 +73,7 @@ export class RacService {
   }
 
   getReportePdf(id: number): Observable<Blob> {
-    return this.http.get(`${this.base}/${id}/reporte`, { responseType: 'blob' });
+    return this.http.get(`${this.base}/${id}/pdf`, { responseType: 'blob' });
   }
 
   // ── Penalidades ──────────────────────────────────────────────────

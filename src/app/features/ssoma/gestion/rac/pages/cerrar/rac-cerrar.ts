@@ -22,6 +22,10 @@ export class RacCerrar implements OnInit {
   loading = false;
   guardando = false;
   cierreDescripcion = '';
+  fotoCierre: File | null = null;
+  fotoCierrePreview: string | null = null;
+  subiendoFoto = false;
+  fotoCierreUrl: string | null = null;
 
   constructor(
     private racService: RacService,
@@ -65,7 +69,42 @@ export class RacCerrar implements OnInit {
   }
 
   get puedeGuardar(): boolean {
-    return this.cierreDescripcion.trim().length >= 10 && !this.guardando;
+    return this.cierreDescripcion.trim().length >= 10
+      && !!this.fotoCierreUrl
+      && !this.guardando;
+  }
+
+  seleccionarFoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.fotoCierre = file;
+    this.fotoCierreUrl = null;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.fotoCierrePreview = reader.result as string;
+      this.cdr.markForCheck();
+    };
+    reader.readAsDataURL(file);
+    this.subirFotoCierre();
+  }
+
+  subirFotoCierre(): void {
+    if (!this.fotoCierre || !this.rac || this.subiendoFoto) return;
+    this.subiendoFoto = true;
+    this.cdr.markForCheck();
+    this.racService.subirFoto(this.rac.id, this.fotoCierre, 'Cierre').subscribe({
+      next: (res) => {
+        this.fotoCierreUrl = res.url;
+        this.subiendoFoto = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.subiendoFoto = false;
+        Swal.fire('Error', 'No se pudo subir la foto', 'error');
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   confirmarCierre(): void {
@@ -87,6 +126,7 @@ export class RacCerrar implements OnInit {
   guardar(): void {
     const req: RacCerrarRequest = {
       cierreDescripcion: this.cierreDescripcion.trim(),
+      fotoCierreUrl: this.fotoCierreUrl!,
     };
     this.guardando = true;
     this.loaderService.show();

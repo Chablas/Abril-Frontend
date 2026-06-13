@@ -21,6 +21,8 @@ export class RacDetalle implements OnInit {
   loading = false;
   descargandoPdf = false;
   readonly anioActual = new Date().getFullYear();
+  private readonly SP_FOTOS_BASE =
+    'https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/RacFotos2026';
 
   constructor(
     private racService: RacService,
@@ -105,6 +107,12 @@ export class RacDetalle implements OnInit {
       case 'Cerrado': return 'estado-cerrado';
       default:        return '';
     }
+  }
+
+  fotoUrl(url: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return this.SP_FOTOS_BASE + (url.startsWith('/') ? url : '/' + url);
   }
 
   formatFecha(f: string | undefined): string {
