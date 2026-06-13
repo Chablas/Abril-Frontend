@@ -15,12 +15,13 @@ import {
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
+import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
 
 @Component({
   selector: 'app-rac-penalidades',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RacNavComponent],
   templateUrl: './rac-penalidades.html',
   styleUrl: './rac-penalidades.css',
 })

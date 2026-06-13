@@ -25,7 +25,12 @@ export class ErrorService {
         text: err.error?.message ?? '',
       });
 
-      localStorage.clear();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('allowed_features');
+      localStorage.removeItem('contratista_scope');
+      localStorage.removeItem('contratista_proyectos');
+      localStorage.removeItem('session_token');
       this.router.navigate(['/auth/login']);
       return;
     }

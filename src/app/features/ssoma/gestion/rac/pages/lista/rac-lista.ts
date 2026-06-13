@@ -7,12 +7,13 @@ import { RacService } from '../../services/rac.service';
 import { RacListItemDto, RacListQuery, RacPagedResult } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
 
 @Component({
   selector: 'app-rac-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RacNavComponent],
   templateUrl: './rac-lista.html',
   styleUrl: './rac-lista.css',
 })
