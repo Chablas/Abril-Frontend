@@ -2,14 +2,16 @@
      style="background: var(--color-abril-sidebar-bg); width: 88px;">
 
   <!-- Logo -->
-  <div class="flex items-center justify-center py-4 mb-2 shrink-0">
+  <div class="flex flex-col items-center justify-center pt-3 pb-3 px-2 shrink-0">
     <img src="/images/abril-logo.png"
          alt="Abril"
-         class="w-10 h-10 object-contain rounded-xl"
-         style="filter: brightness(0) invert(1); opacity: 0.9;" />
+         class="w-14 h-14 object-contain"
+         style="filter: brightness(0) invert(1); opacity: 0.95;" />
+    <span class="text-[9px] font-semibold tracking-[0.15em] uppercase mt-1"
+          style="color: rgba(255,255,255,0.25);">ABRIL</span>
   </div>
-  <div class="w-8 mx-auto mb-2 shrink-0"
-       style="height:1px; background:rgba(255,255,255,0.08);"></div>
+  <div class="mx-3 mb-1 shrink-0"
+       style="height:1px; background:rgba(255,255,255,0.06);"></div>
 
   <!-- Módulos visibles -->
   <ng-container *ngFor="let module of visibleModules; trackBy: trackByModuleKey">
