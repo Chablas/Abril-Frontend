@@ -140,6 +140,9 @@ export class NavigationService {
       baseRoute: '/ssoma/gestion',
       items: [
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
+        { label: 'RAC - Observación BBS', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
+        { label: 'RAC - Lista', route: '/ssoma/gestion/rac/lista', featureKey: 'ssoma.gestion.rac' },
+        { label: 'RAC - Penalidades', route: '/ssoma/gestion/rac/penalidades', featureKey: 'ssoma.gestion.rac' },
       ],
     },
     {
