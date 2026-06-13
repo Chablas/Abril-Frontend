@@ -3,24 +3,189 @@
 @import 'tailwindcss';
 
 @theme {
-  /* ── Paleta BCS — jerarquía oscura ──────────────────────────────────────── */
-  --color-abril-ink:       #0D1B2A;   /* nivel 0 */
-  --color-abril-prussian:  #1B263B;   /* nivel 1a */
-  --color-abril-steel:     #415A77;   /* nivel 1b */
-  --color-abril-dusk:      #778DA9;   /* nivel 1c */
-  --color-abril-light:     #E0E1DD;   /* nivel 1d / texto claro */
+  /* ── Marca Abril ─────────────────────────────────── */
+  --color-abril-primary:        #4CAF50;
+  --color-abril-primary-hover:  #43A047;
+  --color-abril-primary-light:  #E8F5E9;
+  --color-abril-primary-dark:   #2E7D32;
 
-  /* Derivados nivel 2 */
-  --color-abril-n2a:       #2C3E56;
-  --color-abril-n2b:       #557090;
-  --color-abril-n2c:       #8fa3b8;
-  --color-abril-n2d:       #cacbc7;
+  --color-abril-accent:         #00897B;
+  --color-abril-accent-hover:   #00796B;
+  --color-abril-accent-light:   #E0F2F1;
 
-  /* Semánticos */
-  --color-abril-success:   #86efac;   /* verde claro — badge culminado */
-  --color-abril-danger:    #fca5a5;   /* rojo claro  — badge vencido  */
-  --color-abril-info:      #93c5fd;   /* azul claro  — badge en proceso */
-  --color-abril-warning:   #fde68a;   /* amarillo    — badge pendiente */
+  /* ── Neutros ─────────────────────────────────────── */
+  --color-abril-ink:            #0D1B2A;
+  --color-abril-body:           #374151;
+  --color-abril-muted:          #6B7280;
+  --color-abril-placeholder:    #9CA3AF;
+  --color-abril-border:         #E5E7EB;
+  --color-abril-border-strong:  #D1D5DB;
+  --color-abril-surface:        #FFFFFF;
+  --color-abril-bg:             #F3F4F6;
+  --color-abril-bg-alt:         #F9FAFB;
+
+  /* ── Sidebar ─────────────────────────────────────── */
+  --color-abril-sidebar-bg:         #1A2332;
+  --color-abril-sidebar-text:       #CBD5E1;
+  --color-abril-sidebar-muted:      #64748B;
+  --color-abril-sidebar-active:     #4CAF50;
+  --color-abril-sidebar-hover:      #243044;
+  --color-abril-sidebar-active-bg:  rgba(76,175,80,0.15);
+
+  /* ── Semáforo ────────────────────────────────────── */
+  --color-abril-success:        #16A34A;
+  --color-abril-success-light:  #DCFCE7;
+  --color-abril-success-dark:   #14532D;
+
+  --color-abril-warning:        #D97706;
+  --color-abril-warning-light:  #FEF3C7;
+  --color-abril-warning-dark:   #92400E;
+
+  --color-abril-danger:         #DC2626;
+  --color-abril-danger-light:   #FEE2E2;
+  --color-abril-danger-dark:    #991B1B;
+
+  --color-abril-info:           #2563EB;
+  --color-abril-info-light:     #DBEAFE;
+  --color-abril-info-dark:      #1E40AF;
+
+  /* ── Tipografía ──────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ── Sombras ─────────────────────────────────────── */
+  --shadow-card:       0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.12);
+  --shadow-dropdown:   0 8px 24px rgba(0,0,0,0.12);
+  --shadow-modal:      0 20px 60px rgba(0,0,0,0.2);
+
+  /* ── Radios ──────────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-pill: 999px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.abril-card {
+  background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+.abril-card:hover { box-shadow: var(--shadow-card-hover); }
+
+/* ── Botón primario ─────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 38px;
+  background: var(--color-abril-primary);
+  color: #fff; font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover { background: var(--color-abril-primary-hover); }
+.btn-primary:disabled { background: var(--color-abril-border-strong); cursor: not-allowed; }
+
+/* ── Botón ghost ────────────────────────────────────────────── */
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 38px;
+  background: transparent;
+  color: var(--color-abril-primary); font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-abril-primary);
+  cursor: pointer; transition: background 0.15s ease;
+}
+.btn-ghost:hover { background: var(--color-abril-primary-light); }
+
+/* ── Botón accent ───────────────────────────────────────────── */
+.btn-accent {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 16px; height: 38px;
+  background: var(--color-abril-accent);
+  color: #fff; font-size: 0.875rem; font-weight: 500;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-accent:hover { background: var(--color-abril-accent-hover); }
+
+/* ── Badges de estado ───────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: var(--radius-pill);
+  font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+}
+.badge-success  { background: var(--color-abril-success-light);  color: var(--color-abril-success-dark); }
+.badge-warning  { background: var(--color-abril-warning-light);  color: var(--color-abril-warning-dark); }
+.badge-danger   { background: var(--color-abril-danger-light);   color: var(--color-abril-danger-dark); }
+.badge-info     { background: var(--color-abril-info-light);     color: var(--color-abril-info-dark); }
+.badge-neutral  { background: var(--color-abril-bg);             color: var(--color-abril-muted); }
+.badge-primary  { background: var(--color-abril-primary-light);  color: var(--color-abril-primary-dark); }
+
+/* ── Tabla estándar ─────────────────────────────────────────── */
+.abril-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+.abril-table thead tr {
+  background: var(--color-abril-primary-light);
+  color: var(--color-abril-primary-dark);
+}
+.abril-table th {
+  text-align: left; padding: 10px 16px;
+  font-weight: 600; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.abril-table td { padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border); color: var(--color-abril-body); }
+.abril-table tbody tr { transition: background 0.1s; cursor: pointer; }
+.abril-table tbody tr:hover { background: var(--color-abril-bg-alt); }
+
+/* ── Input estándar ─────────────────────────────────────────── */
+.abril-input {
+  height: 38px; padding: 0 12px; width: 100%;
+  border: 1.5px solid var(--color-abril-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem; color: var(--color-abril-ink);
+  background: var(--color-abril-surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.abril-input:focus {
+  border-color: var(--color-abril-primary);
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+}
+.abril-input::placeholder { color: var(--color-abril-placeholder); }
+
+/* ── Label ──────────────────────────────────────────────────── */
+.abril-label {
+  display: block; margin-bottom: 4px;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--color-abril-primary-dark);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ── Page container ─────────────────────────────────────────── */
+.page-container { padding: 16px; }
+@media (min-width: 640px) {
+  .page-container { padding: 24px; }
+}
+
+/* ── Scroll horizontal en tablas mobile ─────────────────────── */
+.table-scroll {
+  width: 100%; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-abril-border);
+}
+
+/* ── Filtros responsive ─────────────────────────────────────── */
+.filter-row {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+}
+@media (max-width: 639px) {
+  .filter-row { gap: 10px; }
+  .filter-row > * { min-width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
+  .filter-row > .filter-full { min-width: 100%; flex: 1 1 100%; }
 }
 
 /* HTML: <div class="loader"></div> */
