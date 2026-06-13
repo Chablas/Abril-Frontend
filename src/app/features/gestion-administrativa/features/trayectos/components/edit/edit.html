@@ -24,21 +24,22 @@
     </div>
 
     <div class="flex flex-col gap-[4px]">
-      <label class="text-sm text-[#64BC04] font-medium">Monto (S/)</label>
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Monto (S/)</label>
       <input
         type="number"
         step="0.01"
         min="0"
         placeholder="0.00"
         [(ngModel)]="monto"
-        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
       <p *ngIf="submitted && (monto === null || monto < 0)" class="text-xs text-red-500">Ingresa un monto válido</p>
     </div>
 
     <div class="flex justify-center pt-[4px]">
       <button
         (click)="save()"
-        class="w-[200px] bg-[#64BC04] py-[8px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
+        class="w-[200px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
         <p class="text-white text-base font-medium text-center">Actualizar</p>
       </button>
     </div>

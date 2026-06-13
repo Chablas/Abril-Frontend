@@ -39,7 +39,7 @@
     </div>
 
     <!-- ── Trayectos ──────────────────────────────────────────────────── -->
-    <div class="border-t border-[#D6DEE5] pt-4 flex flex-col gap-3">
+    <div class="border-t pt-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-semibold text-gray-700">
           Trayectos
@@ -50,13 +50,13 @@
         </div>
       </div>
 
-      <div *ngFor="let t of detalle.trayectos" class="border border-[#D6DEE5] rounded-lg p-3 flex flex-col gap-2">
+      <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
         <div class="flex items-center justify-between">
-          <div class="text-xs font-semibold text-[#64BC04] uppercase">Trayecto {{ t.orden + 1 }}</div>
+          <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-primary)">Trayecto {{ t.orden + 1 }}</div>
           <div *ngIf="t.montoTotal > 0" class="text-xs font-medium text-gray-700">
             S/ {{ t.montoTotal | number:'1.2-2' }}
             <span *ngIf="totalCapturas(t) === 0 && t.montoCatalogo !== null"
-                  class="ml-1 text-[10px] text-[#0086A5] font-semibold uppercase tracking-wider">
+                  class="ml-1 text-[10px] font-semibold uppercase tracking-wider" style="color:var(--color-abril-accent)">
               catálogo
             </span>
           </div>
@@ -96,7 +96,7 @@
           Sin capturas en este trayecto.
         </div>
         <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
-             class="text-xs text-[#0086A5] bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit">
+             class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit" style="color:var(--color-abril-accent)">
           Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
           <span class="text-gray-500 ml-1">— no requieres subir captura.</span>
         </div>

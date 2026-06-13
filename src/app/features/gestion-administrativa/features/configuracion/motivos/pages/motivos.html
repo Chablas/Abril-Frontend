@@ -6,10 +6,10 @@
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+  <div class="w-full rounded-lg overflow-auto border-t border-x" style="border-color:var(--color-abril-border)">
     <table class="w-full text-sm">
-      <thead class="bg-[#E5F7D1]">
-        <tr class="text-[#64BC04]">
+      <thead style="background:var(--color-abril-primary-light)">
+        <tr style="color:var(--color-abril-primary-dark)">
           <th class="text-left px-[16px] py-[10px] font-semibold">Descripción</th>
           <th class="text-center px-[16px] py-[10px] font-semibold">Estado</th>
           <th class="text-center px-[16px] py-[10px] font-semibold">Acciones</th>
@@ -23,7 +23,7 @@
           </td>
         </tr>
 
-        <tr *ngFor="let m of motivos" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+        <tr *ngFor="let m of motivos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
 
           <td class="px-[16px] py-[10px] text-gray-700">{{ m.descripcion }}</td>
 
@@ -46,7 +46,7 @@
               </button>
               <button
                 (click)="openEdit(m)"
-                class="text-xs font-medium text-[#64BC04] hover:text-[#57a803] transition-colors cursor-pointer">
+                class="text-xs font-medium transition-colors cursor-pointer" style="color:var(--color-abril-primary)">
                 Editar
               </button>
             </div>

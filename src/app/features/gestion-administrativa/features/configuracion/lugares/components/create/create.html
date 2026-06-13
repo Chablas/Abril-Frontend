@@ -15,7 +15,7 @@
           type="text"
           [(ngModel)]="nombres[i]"
           placeholder="Ej. Oficina Central"
-          class="flex-1 border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none focus:border-[#64BC04]" />
+          class="flex-1 border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none" />
         <button
           *ngIf="nombres.length > 1"
           (click)="removeNombre(i)"
@@ -35,7 +35,8 @@
     <!-- Agregar fila -->
     <button
       (click)="addNombre()"
-      class="flex items-center gap-[6px] text-sm text-[#64BC04] hover:text-[#57a803] transition-colors cursor-pointer w-fit">
+      class="flex items-center gap-[6px] text-sm transition-colors cursor-pointer w-fit"
+      style="color:var(--color-abril-primary)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -46,7 +47,8 @@
     <div class="flex justify-center mt-[8px]">
       <button
         (click)="save()"
-        class="w-[180px] bg-[#64BC04] py-[8px] rounded-[10px] cursor-pointer hover:bg-[#57a803] transition-colors">
+        class="w-[180px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
         <p class="text-white text-base font-medium text-center">Guardar</p>
       </button>
     </div>

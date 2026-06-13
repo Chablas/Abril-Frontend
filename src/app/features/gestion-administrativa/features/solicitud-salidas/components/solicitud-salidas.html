@@ -42,7 +42,7 @@
     </div>
 
     <button type="button" (click)="onSearch()"
-      class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+      class="h-[38px] px-5 rounded-xl text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2" style="background:var(--color-abril-primary)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
       </svg>
@@ -52,10 +52,10 @@
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+  <div class="w-full rounded-lg overflow-auto border-t border-x" style="border-color:var(--color-abril-border)">
     <table class="w-full text-sm">
-      <thead class="bg-[#E5F7D1]">
-        <tr class="text-[#64BC04]">
+      <thead style="background:var(--color-abril-primary-light)">
+        <tr style="color:var(--color-abril-primary-dark)">
           <th class="text-left px-[16px] py-[10px] font-semibold">#</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Fecha</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Salida</th>
@@ -79,13 +79,13 @@
           *ngFor="let s of solicitudes; let i = index"
           (click)="abrirDetalle(s)"
           title="Ver detalle"
-          class="border-b border-[#D6DEE5] hover:bg-[#FAFAFA] transition-colors cursor-pointer">
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer" style="border-color:var(--color-abril-border)">
           <td class="px-[16px] py-[10px] text-gray-500">{{ i + 1 }}</td>
           <td class="px-[16px] py-[10px] text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
           <td class="px-[16px] py-[10px] text-gray-700">
             {{ s.horaSalida }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-primary-light);color:var(--color-abril-primary)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -93,7 +93,7 @@
           <td class="px-[16px] py-[10px] text-gray-400">
             {{ s.horaRetorno ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-primary-light);color:var(--color-abril-primary)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -101,7 +101,7 @@
           <td class="px-[16px] py-[10px] text-gray-700">
             {{ s.motivo }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-primary-light);color:var(--color-abril-primary)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -109,7 +109,7 @@
           <td class="px-[16px] py-[10px] text-gray-500">
             {{ s.lugarOrigen ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-primary-light);color:var(--color-abril-primary)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
@@ -117,7 +117,7 @@
           <td class="px-[16px] py-[10px] text-gray-500">
             {{ s.lugarDestino ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
-                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#E5F7D1] text-[#64BC04] font-semibold align-middle"
+                  class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-primary-light);color:var(--color-abril-primary)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>

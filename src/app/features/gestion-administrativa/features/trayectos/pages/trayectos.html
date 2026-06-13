@@ -6,10 +6,10 @@
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full rounded-lg overflow-auto border-t border-x border-[#D6DEE5]">
+  <div class="w-full rounded-lg overflow-auto border-t border-x" style="border-color:var(--color-abril-border)">
     <table class="w-full text-sm">
-      <thead class="bg-[#E5F7D1]">
-        <tr class="text-[#64BC04]">
+      <thead style="background:var(--color-abril-primary-light)">
+        <tr style="color:var(--color-abril-primary-dark)">
           <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
           <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
           <th class="text-right px-[16px] py-[10px] font-semibold">Monto (S/)</th>
@@ -25,7 +25,7 @@
           </td>
         </tr>
 
-        <tr *ngFor="let t of trayectos" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+        <tr *ngFor="let t of trayectos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
 
           <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarOrigenNombre }}</td>
           <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarDestinoNombre }}</td>
@@ -52,7 +52,7 @@
               </button>
               <button
                 (click)="openEdit(t)"
-                class="text-xs font-medium text-[#64BC04] hover:text-[#57a803] transition-colors cursor-pointer">
+                class="text-xs font-medium transition-colors cursor-pointer" style="color:var(--color-abril-primary)">
                 Editar
               </button>
             </div>
