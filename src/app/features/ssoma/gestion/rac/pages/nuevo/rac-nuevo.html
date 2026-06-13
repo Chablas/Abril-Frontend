@@ -240,7 +240,9 @@
       <div class="form-group">
         <label class="form-check-label toggle-row">
           <span class="toggle-label-text">¿Aplica penalidad?</span>
-          <input type="checkbox" [(ngModel)]="model.aplicaPenalidad" class="check-input" />
+          <input type="checkbox" [(ngModel)]="model.aplicaPenalidad"
+               (ngModelChange)="$event && (model.esAnonimoReportante = false)"
+               class="check-input" />
         </label>
       </div>
 
@@ -265,13 +267,14 @@
 
       <!-- ANONIMATO -->
       <div class="form-group anonimo-group">
-        <label class="form-check-label">
-          <input type="checkbox" [(ngModel)]="model.esAnonimoReportante" class="check-input" />
+        <label class="form-check-label" [style.opacity]="model.aplicaPenalidad ? '0.45' : '1'">
+          <input type="checkbox" [(ngModel)]="model.esAnonimoReportante"
+                 [disabled]="model.aplicaPenalidad"
+                 class="check-input" />
           Registrar como reporte anónimo
         </label>
-        <span class="form-hint">
-          Tu identidad queda guardada internamente para auditoría, pero en listas y reportes
-          se mostrará "Reporte anónimo".
+        <span class="form-hint" *ngIf="model.aplicaPenalidad">
+          No disponible cuando se registra una penalidad
         </span>
       </div>
 

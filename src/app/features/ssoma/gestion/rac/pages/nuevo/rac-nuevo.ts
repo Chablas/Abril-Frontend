@@ -76,6 +76,7 @@ export class RacNuevo implements OnInit {
         this.proyectos = proyectos.data;
         this.categorias = categorias;
         this.infracciones = infracciones;
+        console.log('infracciones:', infracciones);
         this.empresas = empresas;
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
