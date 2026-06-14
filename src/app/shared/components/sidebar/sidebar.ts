@@ -174,6 +174,11 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
+    if (module.key === 'ssoma') {
+      this.router.navigate(['/ssoma/salud-ocupacional/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
     if (module.key === 'arquitectura-comercial') {
       this.router.navigate(['/arquitectura-comercial/dashboard']);
       this.activeMenu = null;
