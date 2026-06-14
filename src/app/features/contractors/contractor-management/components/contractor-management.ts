@@ -13,6 +13,7 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { ViewToggleMode } from '../../../../shared/components/view-toggle/view-toggle.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-contractor-management',
@@ -26,8 +27,10 @@ import { ErrorService } from '../../../../core/services/error.service';
     Paginator,
     ViewToggle,
     SearchSelect,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './contractor-management.html',
+  styleUrl: './contractor-management.css',
 })
 export class ContractorManagement implements OnInit {
   contractors: ContractorManagementDTO[] = [];

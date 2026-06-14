@@ -37,7 +37,8 @@ export class Layout {
       this.router.url.includes('/ssoma/gestion/rac') ||
       this.router.url.includes('/habilitacion/gestion') ||
       this.router.url.includes('/gestion-administrativa') ||
-      this.router.url.includes('/projects')
+      this.router.url.includes('/projects') ||
+      this.router.url.includes('/contractors/management')
     );
   }
 }
