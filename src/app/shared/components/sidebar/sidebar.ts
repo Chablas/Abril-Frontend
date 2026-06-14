@@ -14,13 +14,14 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, NavIcon],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
@@ -145,11 +146,20 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       } else {
         this.router.navigate(['/habilitacion/gestion']);
       }
-    } else {
-      this.router.navigate([module.baseRoute]);
+      this.activeMenu = null;
+      return;
     }
-    this.activeMenu = null;
-    this.activeGroup = null;
+    if (module.key === 'control-acceso') {
+      this.router.navigate(['/habilitacion/control-acceso']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'clinica') {
+      this.router.navigate(['/clinica/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
+    this.toggleMenu(module.key);
   }
 
   toggleMenu(key: string): void {

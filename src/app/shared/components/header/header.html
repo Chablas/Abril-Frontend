@@ -1,78 +1,113 @@
 <ng-container>
-
-  <!-- ── DESKTOP ──────────────────────────────────────────── -->
-  <div class="hidden sm:flex h-[56px] items-center justify-between px-5 bg-white border-b border-abril-border">
-    <!-- Título de ruta -->
-    <span class="text-[15px] font-semibold text-abril-ink truncate">{{ titulo }}</span>
-
+<div class="hidden sm:block sm:flex sm:h-[70px] sm:items-center sm:justify-center sm:bg-[#f2f5f2]">
+    <a class="hidden sm:block sm:h-full" routerLink="/">
+        <img class="h-full" src="/images/abril-logo.png" alt="Logo" />
+    </a>
+    <div class="hidden sm:block sm:flex-8 sm:text-center sm:text-2xl sm:font-bold">{{titulo}}</div>
     <!-- Avatar + dropdown -->
-    <div class="relative shrink-0">
+    <div class="hidden sm:block shrink-0 relative">
+
       <button (click)="toggleUserMenu($event)"
-        class="cursor-pointer rounded-full focus:outline-none
-               ring-2 ring-transparent hover:ring-abril-primary/30 transition-all">
-        <img *ngIf="userPhotoSrc; else defaultIconD"
-          [src]="userPhotoSrc" alt="Foto"
-          class="w-9 h-9 rounded-full object-cover" />
-        <ng-template #defaultIconD>
-          <div class="w-9 h-9 rounded-full bg-abril-primary-light flex items-center justify-center">
-            <i class="ti ti-user text-abril-primary-dark text-lg"></i>
-          </div>
+        class="cursor-pointer rounded-full focus:outline-none hover:ring-2 hover:ring-[#64BC04]/40 transition-all">
+        <img *ngIf="userPhotoSrc; else defaultIcon"
+          [src]="userPhotoSrc"
+          alt="Foto de perfil"
+          class="w-[40px] h-[40px] rounded-full object-cover" />
+        <ng-template #defaultIcon>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_1309_9960)">
+              <path d="M27.5 17.5C27.5 21.65 24.15 25 20 25C15.85 25 12.5 21.65 12.5 17.5C12.5 13.35 15.85 10 20 10C24.15 10 27.5 13.35 27.5 17.5Z" fill="black" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M40 20C40 31.05 31.05 40 20 40C8.95 40 0 31.05 0 20C0 8.95 8.95 0 20 0C31.05 0 40 8.95 40 20ZM10 34.375C10.4 33.71 14.275 27.5 19.975 27.5C25.65 27.5 29.55 33.725 29.95 34.375C32.2747 32.7675 34.1741 30.6193 35.4849 28.1153C36.7957 25.6113 37.4786 22.8264 37.475 20C37.475 10.325 29.65 2.5 19.975 2.5C10.3 2.5 2.475 10.325 2.475 20C2.475 25.95 5.45 31.225 10 34.375Z" fill="black" />
+            </g>
+            <defs>
+              <clipPath id="clip0_1309_9960"><rect width="40" height="40" fill="white" /></clipPath>
+            </defs>
+          </svg>
         </ng-template>
       </button>
-      <ng-container *ngTemplateOutlet="userDropdown"></ng-container>
+
+      <!-- Dropdown -->
+      <div *ngIf="showUserMenu"
+        class="absolute right-0 top-[48px] w-[220px] bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+
+        <!-- Info del usuario -->
+        <div class="px-4 py-3 border-b border-gray-100">
+          <p class="text-sm font-semibold text-gray-800 truncate">{{ userName ?? 'Usuario' }}</p>
+          <p *ngIf="userJobTitle" class="text-xs text-[#64BC04] font-medium truncate">{{ userJobTitle }}</p>
+          <p class="text-xs text-gray-400 truncate">{{ userEmail ?? '' }}</p>
+        </div>
+
+        <!-- Cerrar sesión -->
+        <button (click)="logout()"
+          class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          Cerrar sesión
+        </button>
+
+      </div>
     </div>
-  </div>
-
-  <!-- ── MOBILE ───────────────────────────────────────────── -->
-  <div class="sm:hidden flex items-center h-[52px] px-3 gap-3 bg-white border-b border-abril-border">
-    <!-- Hamburger -->
-    <button (click)="menuOpen = !menuOpen"
-      class="w-9 h-9 flex items-center justify-center rounded-lg
-             text-abril-primary hover:bg-abril-primary-light transition-colors shrink-0">
-      <i class="ti text-xl" [class.ti-menu-2]="!menuOpen" [class.ti-x]="menuOpen"></i>
-    </button>
-
-    <!-- Título -->
-    <span class="flex-1 text-[14px] font-semibold text-abril-ink truncate">{{ titulo }}</span>
-
-    <!-- Avatar -->
-    <div class="relative shrink-0">
-      <button (click)="toggleUserMenu($event)"
-        class="cursor-pointer rounded-full ring-2 ring-transparent
-               hover:ring-abril-primary/30 transition-all">
-        <img *ngIf="userPhotoSrc; else defaultIconM"
-          [src]="userPhotoSrc" alt="Foto"
-          class="w-8 h-8 rounded-full object-cover" />
-        <ng-template #defaultIconM>
-          <div class="w-8 h-8 rounded-full bg-abril-primary-light flex items-center justify-center">
-            <i class="ti ti-user text-abril-primary-dark"></i>
-          </div>
-        </ng-template>
-      </button>
-      <ng-container *ngTemplateOutlet="userDropdown"></ng-container>
-    </div>
-  </div>
-
-  <!-- Sidebar mobile -->
-  <app-sidebar-mobile [(menuOpen)]="menuOpen"></app-sidebar-mobile>
-
+</div>
 </ng-container>
+<div class="sm:hidden">
+    <div class="p-[20px] flex items-center gap-[20px] border border-gray-200">
+        <button (click)="menuOpen = !menuOpen">
+            <svg *ngIf="!menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 18V16H21V18H3ZM3 13V11H21V13H3ZM3 8V6H21V8H3Z" fill="#64BC04" />
+            </svg>
+            <svg *ngIf="menuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </button>
 
-<!-- ── DROPDOWN compartido ────────────────────────────────────── -->
-<ng-template #userDropdown>
-  <div *ngIf="showUserMenu"
-    class="absolute right-0 top-[44px] w-[220px] bg-white rounded-xl z-50 overflow-hidden"
-    style="box-shadow: var(--shadow-dropdown); border: 1px solid var(--color-abril-border);">
-    <div class="px-4 py-3 border-b border-abril-border">
-      <p class="text-sm font-semibold text-abril-ink truncate">{{ userName ?? 'Usuario' }}</p>
-      <p *ngIf="userJobTitle" class="text-xs font-medium truncate" style="color:var(--color-abril-primary)">{{ userJobTitle }}</p>
-      <p class="text-xs text-abril-muted truncate">{{ userEmail ?? '' }}</p>
+        <div class="flex-1 min-w-0">
+            <span [title]="titulo" class="text-center font-bold line-clamp-1 text-ellipsis">{{titulo}}</span>
+        </div>
+
+        <!-- Avatar + dropdown (móvil) -->
+        <div class="shrink-0 relative ml-auto">
+            <button (click)="toggleUserMenu($event)"
+                class="cursor-pointer rounded-full focus:outline-none hover:ring-2 hover:ring-[#64BC04]/40 transition-all">
+                <img *ngIf="userPhotoSrc; else defaultIconMobile"
+                    [src]="userPhotoSrc"
+                    alt="Foto de perfil"
+                    class="w-[36px] h-[36px] rounded-full object-cover" />
+                <ng-template #defaultIconMobile>
+                    <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1309_9960_m)">
+                            <path d="M27.5 17.5C27.5 21.65 24.15 25 20 25C15.85 25 12.5 21.65 12.5 17.5C12.5 13.35 15.85 10 20 10C24.15 10 27.5 13.35 27.5 17.5Z" fill="black" />
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M40 20C40 31.05 31.05 40 20 40C8.95 40 0 31.05 0 20C0 8.95 8.95 0 20 0C31.05 0 40 8.95 40 20ZM10 34.375C10.4 33.71 14.275 27.5 19.975 27.5C25.65 27.5 29.55 33.725 29.95 34.375C32.2747 32.7675 34.1741 30.6193 35.4849 28.1153C36.7957 25.6113 37.4786 22.8264 37.475 20C37.475 10.325 29.65 2.5 19.975 2.5C10.3 2.5 2.475 10.325 2.475 20C2.475 25.95 5.45 31.225 10 34.375Z" fill="black" />
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1309_9960_m"><rect width="40" height="40" fill="white" /></clipPath>
+                        </defs>
+                    </svg>
+                </ng-template>
+            </button>
+
+            <!-- Dropdown -->
+            <div *ngIf="showUserMenu"
+                class="absolute right-0 top-[44px] w-[220px] bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-100">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ userName ?? 'Usuario' }}</p>
+                    <p *ngIf="userJobTitle" class="text-xs text-[#64BC04] font-medium truncate">{{ userJobTitle }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ userEmail ?? '' }}</p>
+                </div>
+                <button (click)="logout()"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Cerrar sesión
+                </button>
+            </div>
+        </div>
     </div>
-    <button (click)="logout()"
-      class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-abril-danger
-             hover:bg-abril-danger-light transition-colors cursor-pointer">
-      <i class="ti ti-logout w-4 h-4 shrink-0"></i>
-      Cerrar sesión
-    </button>
-  </div>
-</ng-template>
+    <app-sidebar-mobile [(menuOpen)]="menuOpen">
+    </app-sidebar-mobile>
+</div>
