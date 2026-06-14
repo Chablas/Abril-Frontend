@@ -6,15 +6,14 @@ import { forkJoin } from 'rxjs';
 import { PasoService } from '../../services/paso.service';
 import { PasoDashboardDto, PasoAlertaDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
-import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
-import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
 @Component({
   selector: 'app-paso-dashboard',
   standalone: true,
-  imports: [CommonModule, SpiBadgeComponent, PasoNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, SpiBadgeComponent, AbrilPageHeaderComponent],
   templateUrl: './paso-dashboard.component.html',
   styleUrl: './paso-dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,4 +1,4 @@
-<app-ssoma-page-header
+<app-abril-page-header
   [badge]="'SSOMA · ' + anioActual"
   titulo="Programa Anual SSOMA"
   subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
@@ -6,13 +6,16 @@
     { icono: 'ti-layout-grid', texto: (data?.programasActivos ?? 0) + ' activos' },
     { icono: 'ti-alert-triangle', texto: alertas.length + ' alertas', warn: alertas.length > 0 }
   ]"
+  [tabs]="[
+    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/paso/dashboard' },
+    { label: 'Programas', icono: 'ti-list', route: '/ssoma/gestion/paso/lista' },
+    { label: 'Alertas', icono: 'ti-bell', route: '/ssoma/gestion/paso/alertas' }
+  ]"
   [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
   [botonPrimario]="{ label: 'Nuevo programa', icono: 'ti-plus' }"
   (secondaryClick)="load()"
   (primaryClick)="irANuevoPrograma()">
-</app-ssoma-page-header>
-
-<app-paso-nav></app-paso-nav>
+</app-abril-page-header>
 
 <!-- ═══════════════════  CONTENT  ═══════════════════ -->
 <div class="dashboard-content">
