@@ -81,6 +81,11 @@
 .ssoma-hero__btn--primary { background: #16a34a; color: #fff; border: none; }
 .ssoma-hero__btn--primary:hover { background: #15803d; }
 
+/* ── Hamburger (hidden on desktop) ── */
+.hamburger-btn {
+  display: none;
+}
+
 /* ── Tabs ── */
 .abril-tabs {
   background: #ffffff;
@@ -115,4 +120,47 @@
   background: #ffffff;
   border-bottom: 3px solid #16a34a;
   box-shadow: none;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .ssoma-hero { padding: 8px 12px; }
+
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+  }
+  .hamburger-btn i { font-size: 16px; color: #374151; }
+
+  .ssoma-hero__vline { display: none; }
+
+  .ssoma-hero__title {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  .ssoma-hero__sub { display: none; }
+  .ssoma-hero__center { display: none; }
+  .ssoma-hero__right { padding-right: 0; }
+  .ssoma-hero__btn--ghost { display: none; }
+  .ssoma-hero__btn--primary span { display: none; }
+
+  .abril-tabs__nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  .abril-tabs__nav::-webkit-scrollbar { display: none; }
 }

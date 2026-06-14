@@ -1,19 +1,30 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
-import { Sidebar } from "../sidebar/sidebar";
-import { Header } from "../header/header";
+import { Sidebar } from '../sidebar/sidebar';
+import { Header } from '../header/header';
+import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
+import { LayoutService } from '../../../core/services/layout.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, Header, NgIf],
+  imports: [RouterOutlet, Sidebar, Header, SidebarMobile, NgIf],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
 export class Layout {
-  constructor(private router: Router) {}
+  mobileMenuOpen = false;
+
+  private layoutService = inject(LayoutService);
+
+  constructor(private router: Router) {
+    this.layoutService.openMobileMenu$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => (this.mobileMenuOpen = true));
+  }
 
   isFullPage(): boolean {
     return (

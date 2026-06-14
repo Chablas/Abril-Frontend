@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { LayoutService } from '../../../core/services/layout.service';
 
 export interface SsomaHeaderPill {
   icono: string;
@@ -36,4 +37,12 @@ export class AbrilPageHeaderComponent {
   @Input() botonSecundario?: SsomaHeaderBtn;
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();
+  @Output() menuClick = new EventEmitter<void>();
+
+  private layoutService = inject(LayoutService);
+
+  onHamburgerClick(): void {
+    this.menuClick.emit();
+    this.layoutService.openMobileMenu();
+  }
 }

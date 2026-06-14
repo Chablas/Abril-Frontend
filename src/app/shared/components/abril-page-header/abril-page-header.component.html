@@ -1,5 +1,8 @@
 <div class="ssoma-hero">
   <div class="ssoma-hero__left">
+    <button type="button" class="hamburger-btn" (click)="onHamburgerClick()" aria-label="Abrir menú">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
     <span class="ssoma-hero__badge">{{ badge }}</span>
     <div class="ssoma-hero__vline"></div>
     <div class="ssoma-hero__title-wrap">
@@ -23,14 +26,14 @@
             class="ssoma-hero__btn ssoma-hero__btn--ghost"
             (click)="secondaryClick.emit()">
       <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
-      {{ botonSecundario.label }}
+      <span>{{ botonSecundario.label }}</span>
     </button>
     <button *ngIf="botonPrimario"
             type="button"
             class="ssoma-hero__btn ssoma-hero__btn--primary"
             (click)="primaryClick.emit()">
       <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
-      {{ botonPrimario.label }}
+      <span>{{ botonPrimario.label }}</span>
     </button>
     <div class="ssoma-hero__avatar-gap"></div>
   </div>

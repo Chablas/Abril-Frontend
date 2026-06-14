@@ -1,5 +1,6 @@
 <div class="flex h-screen" style="background: var(--color-abril-surface);">
   <app-sidebar class="hidden sm:block shrink-0"></app-sidebar>
+  <app-sidebar-mobile [(menuOpen)]="mobileMenuOpen"></app-sidebar-mobile>
   <div class="flex-1 min-w-0 flex flex-col"
        style="background: var(--color-abril-page-bg); border-radius: 0; overflow: hidden;"
        [class.rounded-none]="isFullPage()">
