@@ -74,10 +74,10 @@ export class SidebarMobile implements OnInit {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
+  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas']);
+
   hasAccordion(module: NavModule): boolean {
-    const items = this.navService.filterItems(module.items);
-    const groups = this.navService.filterGroups(module.groups);
-    return items.length > 1 || groups.length > 0;
+    return this.accordionModuleKeys.has(module.key);
   }
 
   toggleGroup(label: string, event: MouseEvent): void {
@@ -86,26 +86,45 @@ export class SidebarMobile implements OnInit {
   }
 
   onModuleClick(module: NavModule): void {
+    // Módulos con accordion: toggle in-place, no cierra el drawer
+    if (this.accordionModuleKeys.has(module.key)) {
+      this.expandedModule = this.expandedModule === module.key ? null : module.key;
+      this.expandedGroup = null;
+      return;
+    }
+
+    // Todos los demás: navegación directa y cierra drawer
     if (module.key === 'habilitacion') {
       this.router.navigate([
         this.authService.isContratista()
           ? '/habilitacion/dashboard-contratista'
           : '/habilitacion/gestion',
       ]);
-      this.close();
-      return;
+    } else {
+      const directRoutes: Record<string, string> = {
+        'control-acceso': '/habilitacion/control-acceso',
+        clinica: '/clinica/dashboard',
+        'mejora-continua': '/mejora-continua/dashboard',
+        'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
+        proyectos: '/projects/projects-dashboard',
+        ssoma: '/ssoma/salud-ocupacional/dashboard',
+        'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
+        'arquitectura-comercial': '/arquitectura-comercial/dashboard',
+        evaluaciones: '/evaluaciones/dashboard',
+        seguridad: '/security/users',
+        configuracion: '/configuracion/proyectos',
+        costos: '/costs/adjudicaciones',
+        contratistas: '/contractors/management',
+      };
+      const route = directRoutes[module.key];
+      if (route) {
+        this.router.navigate([route]);
+      } else {
+        const items = this.navService.filterItems(module.items);
+        if (items.length > 0) this.router.navigate([items[0].route]);
+      }
     }
-
-    const items = this.navService.filterItems(module.items);
-    const groups = this.navService.filterGroups(module.groups);
-
-    if (items.length > 1 || groups.length > 0) {
-      this.expandedModule = this.expandedModule === module.key ? null : module.key;
-      this.expandedGroup = null;
-    } else if (items.length === 1) {
-      this.router.navigate([items[0].route]);
-      this.close();
-    }
+    this.close();
   }
 
   navigateAndClose(route: string): void {
