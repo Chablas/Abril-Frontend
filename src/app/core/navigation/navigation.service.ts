@@ -92,7 +92,9 @@ export class NavigationService {
       label: 'Salud',
       iconKey: 'heart-rate-monitor',
       baseRoute: '/ssoma',
-      items: [],
+      items: [
+        { label: 'Salud Ocupacional', route: '/ssoma/salud-ocupacional/dashboard', featureKey: 'ssoma.salud-ocupacional.dashboard' },
+      ],
       groups: [],
     },
     {
