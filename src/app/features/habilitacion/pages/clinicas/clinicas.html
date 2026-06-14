@@ -1,22 +1,12 @@
 <div class="p-6">
 
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-5">
-    <div>
-      <h1 class="text-xl font-bold text-gray-800">Clínicas</h1>
-      <p class="text-sm text-gray-500 mt-0.5">Gestión de clínicas habilitadas</p>
-    </div>
-    <button
-      type="button"
-      (click)="openCreate()"
-      class="flex items-center gap-2 bg-[#64BC04] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#58a804] transition-colors cursor-pointer"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-      Nueva Clínica
-    </button>
-  </div>
+  <app-abril-page-header
+    badge="HABILITACIÓN"
+    titulo="Clínicas"
+    subtitulo="Gestión de clínicas habilitadas"
+    [botonPrimario]="{ label: 'Nueva Clínica', icono: 'ti-plus' }"
+    (primaryClick)="openCreate()">
+  </app-abril-page-header>
 
   <!-- Search -->
   <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400

@@ -8,6 +8,7 @@ import { debounceTime, takeUntil } from 'rxjs/operators';
 import { ClinicaService } from '../../services/clinica.service';
 import { ClinicaListDto, ClinicaUpsertDto } from '../../dtos/clinica.model';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import Swal from 'sweetalert2';
@@ -15,7 +16,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-clinicas',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, AbrilPageHeaderComponent],
   templateUrl: './clinicas.html',
   styleUrl: './clinicas.css',
 })
