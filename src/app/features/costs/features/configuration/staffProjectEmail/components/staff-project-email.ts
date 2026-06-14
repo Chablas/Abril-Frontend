@@ -12,12 +12,14 @@ import { StaffProjectEmailFilterDto } from '../dtos/staff-project-email-filter.d
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { StaffProjectEmailDto } from '../dtos/staff-project-email.dto';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-staff-project-email',
   standalone: true,
-  imports: [CommonModule, FormsModule, StaffProjectEmailList, StaffProjectEmailCreate, Paginator, SearchSelect],
+  imports: [CommonModule, FormsModule, StaffProjectEmailList, StaffProjectEmailCreate, Paginator, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './staff-project-email.html',
+  styleUrl: './staff-project-email.css',
 })
 export class StaffProjectEmail implements OnInit {
   @ViewChild(StaffProjectEmailList) list!: StaffProjectEmailList;

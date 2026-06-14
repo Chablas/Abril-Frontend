@@ -7,12 +7,14 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { WorkItemFilterDto } from '../dtos/work-item-filter.dto';
 import { WorkItemDto } from '../dtos/work-item.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-work-item',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkItemList, WorkItemCreate, Paginator],
+  imports: [CommonModule, FormsModule, WorkItemList, WorkItemCreate, Paginator, AbrilPageHeaderComponent],
   templateUrl: './work-item.html',
+  styleUrl: './work-item.css',
 })
 export class WorkItem implements OnInit {
   @ViewChild(WorkItemList) list!: WorkItemList;

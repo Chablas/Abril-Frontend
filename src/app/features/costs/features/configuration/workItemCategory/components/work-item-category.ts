@@ -12,12 +12,14 @@ import { WorkItemCategoryService } from '../services/work-item-category.service'
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-work-item-category',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkItemCategoryList, WorkItemCategoryCreate, Paginator],
+  imports: [CommonModule, FormsModule, WorkItemCategoryList, WorkItemCategoryCreate, Paginator, AbrilPageHeaderComponent],
   templateUrl: './work-item-category.html',
+  styleUrl: './work-item-category.css',
 })
 export class WorkItemCategory implements OnInit {
   @ViewChild(WorkItemCategoryList) list!: WorkItemCategoryList;

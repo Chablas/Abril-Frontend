@@ -1,15 +1,19 @@
-<div class="flex flex-col gap-4 bg-white rounded-lg p-5 h-full">
+<app-abril-page-header
+  badge="COSTOS · CONFIGURACIÓN"
+  titulo="Links de Proyecto"
+  subtitulo="Enlaces y recursos externos asociados a cada proyecto."
+  [botonPrimario]="{ label: 'Nuevo link', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true"
+  [tabs]="[
+    { label: 'Correos Proyecto',  icono: 'ti-mail',     route: '/costs/configuration/staff-project-email' },
+    { label: 'Partidas Control',  icono: 'ti-category', route: '/costs/configuration/work-item-category' },
+    { label: 'Partidas',          icono: 'ti-list',     route: '/costs/configuration/work-item' },
+    { label: 'Links Proyecto',    icono: 'ti-link',     route: '/costs/configuration/project-link' },
+    { label: 'Correos C. Ppto.',  icono: 'ti-mail-cog', route: '/costs/configuration/costos-presupuestos-email' }
+  ]">
+</app-abril-page-header>
 
-  <!-- Header -->
-  <div class="flex justify-between items-center">
-    <button (click)="showCreateModal = true"
-      class="py-[5px] px-5 rounded-lg border text-sm flex items-center gap-2 cursor-pointer transition-colors" style="background:var(--color-abril-primary-light); border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:var(--color-abril-primary)">
-        <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="currentColor"/>
-      </svg>
-      Nuevo link
-    </button>
-  </div>
+<div class="flex flex-col gap-4 bg-white rounded-lg p-5 flex-1 min-h-0">
 
   <!-- Filtros -->
   <div class="flex flex-wrap gap-3 items-end">

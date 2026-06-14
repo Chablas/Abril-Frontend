@@ -7,12 +7,14 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { CostosPresupuestosEmailFilterDto } from '../dtos/costos-presupuestos-email-filter.dto';
 import { CostosPresupuestosEmailDto } from '../dtos/costos-presupuestos-email.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-costos-presupuestos-email',
   standalone: true,
-  imports: [CommonModule, FormsModule, CostosPresupuestosEmailList, CostosPresupuestosEmailCreate, Paginator],
+  imports: [CommonModule, FormsModule, CostosPresupuestosEmailList, CostosPresupuestosEmailCreate, Paginator, AbrilPageHeaderComponent],
   templateUrl: './costos-presupuestos-email.html',
+  styleUrl: './costos-presupuestos-email.css',
 })
 export class CostosPresupuestosEmail implements OnInit {
   @ViewChild(CostosPresupuestosEmailList) list!: CostosPresupuestosEmailList;

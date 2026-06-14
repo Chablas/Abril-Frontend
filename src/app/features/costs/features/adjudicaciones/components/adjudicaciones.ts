@@ -18,11 +18,12 @@ import { ProjectSimpleDTO } from '../../../../../core/dtos/project/projectSimple
 import { ContractTypeSimpleDTO } from '../dtos/contractTypeSimple.model';
 import { ContractModalitySimpleDTO } from '../dtos/contractModalitySimple.model';
 import { PaymentMethodSimpleDTO } from '../dtos/paymentMethodSimple.model';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-adjudicaciones',
-  imports: [Card, Create, Detail, CommonModule, FormsModule, Paginator, SearchSelect],
+  imports: [Card, Create, Detail, CommonModule, FormsModule, Paginator, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './adjudicaciones.html',
   styleUrl: './adjudicaciones.css',
 })
