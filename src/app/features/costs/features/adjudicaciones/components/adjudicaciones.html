@@ -9,7 +9,7 @@
       [title]="canCreate ? 'Crear nueva adjudicación' : 'Solo Oficina Central puede crear adjudicaciones'"
       class="h-[42px] px-4 rounded-xl border text-sm font-medium flex items-center gap-2 transition-colors self-end"
       [ngClass]="canCreate
-        ? 'bg-[#E5F7D1] border-[#64BC04] text-[#64BC04] cursor-pointer hover:bg-[#d4f0b8]'
+        ? 'bg-[var(--color-abril-primary-light)] border-[var(--color-abril-primary)] text-[var(--color-abril-primary)] cursor-pointer'
         : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'">
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
         <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z"
@@ -20,24 +20,24 @@
 
     <!-- Razón social -->
     <div class="w-[220px] flex flex-col gap-[6px]">
-      <label class="text-sm text-[#64BC04] font-medium">Razón social</label>
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Razón social</label>
       <input
         type="text"
         [(ngModel)]="filters.contributorName"
         (keyup.enter)="search()"
         placeholder="Buscar…"
-        class="border border-[#D6DEE5] rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+        class="border rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors" style="border-color:var(--color-abril-border)" />
     </div>
 
     <!-- RUC -->
     <div class="w-[160px] flex flex-col gap-[6px]">
-      <label class="text-sm text-[#64BC04] font-medium">RUC</label>
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC</label>
       <input
         type="text"
         [(ngModel)]="filters.contributorRuc"
         (keyup.enter)="search()"
         placeholder="Buscar…"
-        class="border border-[#D6DEE5] rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+        class="border rounded-xl bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors" style="border-color:var(--color-abril-border)" />
     </div>
 
     <!-- Proyecto -->
@@ -99,18 +99,18 @@
 
     <!-- Botón búsqueda avanzada -->
     <button type="button" (click)="showAdvanced = !showAdvanced"
-      class="h-[42px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
+      class="h-[42px] px-4 rounded-xl text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary)">
       <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
         <path fill-rule="evenodd" clip-rule="evenodd"
           d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
-          fill="#64BC04"/>
+          fill="currentColor"/>
       </svg>
       {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
     </button>
 
     <!-- Botón buscar -->
     <button type="button" (click)="search()"
-      class="h-[42px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+      class="h-[42px] px-5 rounded-xl text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
       </svg>

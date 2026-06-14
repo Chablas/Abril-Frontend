@@ -6,13 +6,13 @@
     <div class="hidden sm:flex items-start justify-between gap-1">
       <ng-container *ngFor="let step of steps; let i = index">
         <div *ngIf="i > 0" class="flex-1 mt-[18px] h-[2px] transition-colors"
-          [ngClass]="i < viewStep ? 'bg-[#64BC04]' : 'bg-gray-200'">
+          [ngClass]="i < viewStep ? 'bg-[var(--color-abril-primary)]' : 'bg-gray-200'">
         </div>
         <div class="flex flex-col items-center gap-[6px] min-w-[48px]">
           <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all"
             [ngClass]="{
-              'bg-[#64BC04] border-[#64BC04] text-white': i + 1 < viewStep,
-              'bg-white border-[#64BC04] text-[#64BC04] ring-4 ring-[#64BC04]/20': i + 1 === viewStep,
+              'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)] text-white': i + 1 < viewStep,
+              'bg-white border-[var(--color-abril-primary)] text-[var(--color-abril-primary)]': i + 1 === viewStep,
               'bg-white border-gray-200 text-gray-400': i + 1 > viewStep,
               'cursor-pointer hover:opacity-80': i + 1 <= actualStatus,
               'cursor-default': i + 1 > actualStatus
@@ -24,7 +24,7 @@
             <span *ngIf="i + 1 >= viewStep">{{ i + 1 }}</span>
           </div>
           <span class="text-[9px] text-center leading-tight max-w-[52px]"
-            [ngClass]="i + 1 === viewStep ? 'text-[#64BC04] font-semibold' : 'text-gray-400'">
+            [ngClass]="i + 1 === viewStep ? 'text-[var(--color-abril-primary)] font-semibold' : 'text-gray-400'">
             {{ step }}
           </span>
         </div>
@@ -35,8 +35,8 @@
     <div class="sm:hidden flex flex-col gap-[10px]">
       <!-- barra de progreso -->
       <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div class="h-full bg-[#64BC04] rounded-full transition-all duration-300"
-          [style.width.%]="(viewStep / totalSteps) * 100">
+        <div class="h-full rounded-full transition-all duration-300"
+          [style.width.%]="(viewStep / totalSteps) * 100" style="background:var(--color-abril-primary)">
         </div>
       </div>
       <!-- dots + paso actual -->
@@ -45,7 +45,7 @@
           <div *ngFor="let step of steps; let i = index"
             class="w-2 h-2 rounded-full transition-colors"
             [ngClass]="{
-              'bg-[#64BC04]': i + 1 <= viewStep,
+              'bg-[var(--color-abril-primary)]': i + 1 <= viewStep,
               'bg-gray-200': i + 1 > viewStep,
               'cursor-pointer': i + 1 <= actualStatus,
               'cursor-default': i + 1 > actualStatus
@@ -53,7 +53,7 @@
             (click)="goToStep(i + 1)">
           </div>
         </div>
-        <span class="text-xs font-semibold text-[#64BC04]">
+        <span class="text-xs font-semibold" style="color:var(--color-abril-primary)">
           Paso {{ viewStep }}/{{ totalSteps }} · {{ steps[viewStep - 1] }}
         </span>
       </div>
@@ -70,7 +70,7 @@
           Información de la adjudicación
         </p>
         <button *ngIf="canEditInfo && !step1EditMode" type="button" (click)="enterStep1Edit()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] cursor-pointer transition-colors">
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
@@ -130,7 +130,7 @@
           <p class="text-sm font-semibold text-gray-800">
             {{ item.currencyCode }} {{ item.amount | number:'1.2-2' }}
             <span class="ml-1 text-xs font-normal px-[6px] py-[2px] rounded-full"
-              [ngClass]="item.amountHasIgv ? 'bg-[#E5F7D1] text-[#64BC04]' : 'bg-gray-100 text-gray-400'">
+              [ngClass]="item.amountHasIgv ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]' : 'bg-gray-100 text-gray-400'">
               {{ item.amountHasIgv ? 'Con IGV' : 'Sin IGV' }}
             </span>
           </p>
@@ -193,7 +193,7 @@
           <p class="text-xs text-gray-400 mb-[8px]">Archivos de cotización</p>
           <div class="flex flex-col gap-[6px]">
             <a *ngFor="let file of item.quotationFiles" [href]="file.fileUrl" target="_blank"
-              class="flex items-center gap-2 text-xs text-[#64BC04] hover:underline break-all">
+              class="flex items-center gap-2 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
               <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
               </svg>
@@ -206,7 +206,7 @@
           <p class="text-xs text-gray-400 mb-[8px]">Archivos comparativos</p>
           <div class="flex flex-col gap-[6px]">
             <a *ngFor="let file of item.comparativeFiles" [href]="file.fileUrl" target="_blank"
-              class="flex items-center gap-2 text-xs text-[#64BC04] hover:underline break-all">
+              class="flex items-center gap-2 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
               <svg class="w-4 h-4 text-red-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
               </svg>
@@ -255,10 +255,10 @@
 
           <!-- Correos del contratista -->
           <div class="mt-[16px] flex flex-col gap-[8px]">
-            <p class="text-sm text-[#64BC04] font-medium">Correos de contacto del contratista</p>
+            <p class="text-sm font-medium" style="color:var(--color-abril-primary)">Correos de contacto del contratista</p>
             <div *ngIf="step1ContractorEmails.length > 0; else noStep1Emails" class="flex flex-wrap gap-[8px]">
               <span *ngFor="let email of step1ContractorEmails"
-                class="inline-flex items-center gap-[6px] bg-[#E5F7D1] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full">
+                class="inline-flex items-center gap-[6px] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full" style="background:var(--color-abril-primary-light)">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
                 </svg>
@@ -312,10 +312,10 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px]">
 
             <div class="flex flex-col gap-[6px]">
-              <label class="text-sm text-[#64BC04] font-medium">Monto</label>
+              <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Monto</label>
               <input type="number" min="0" step="0.01" [(ngModel)]="step1Form.amount"
                 (ngModelChange)="onStep1AmountChange()" placeholder="0.00"
-                class="border border-[#E2E2E2] rounded-xl p-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                class="border border-[#E2E2E2] rounded-xl p-[10px] text-sm focus:outline-none" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
@@ -342,20 +342,20 @@
             <!-- Adelanto (solo contrato con adelanto) -->
             <div *ngIf="step1Form.paymentMethodId === 2" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
               <div class="flex flex-col gap-[6px]">
-                <label class="text-sm text-[#64BC04] font-medium">Porcentaje de adelanto</label>
+                <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Porcentaje de adelanto</label>
                 <div class="relative">
                   <input type="text" inputmode="decimal" [value]="step1Form.advancePercentage" placeholder="0"
                     (input)="onStep1PercentageInput($event)"
-                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[36px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[36px] text-sm focus:outline-none" />
                   <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </div>
               <div class="flex flex-col gap-[6px]">
-                <label class="text-sm text-[#64BC04] font-medium">Monto de adelanto</label>
+                <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Monto de adelanto</label>
                 <div class="relative">
                   <input type="text" inputmode="decimal" [value]="step1AdvanceAmount" placeholder="0.00"
                     (input)="onStep1AdvanceAmountInput($event)"
-                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[44px] text-sm focus:outline-none" />
                   <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
                     {{ step1SelectedCurrencyCode }}
                   </span>
@@ -369,14 +369,14 @@
           <div class="mt-[16px] flex items-center gap-[12px]">
             <button type="button" (click)="step1Form.hasIgv = !step1Form.hasIgv"
               class="relative w-[44px] h-[24px] rounded-full transition-colors duration-200 cursor-pointer focus:outline-none"
-              [ngClass]="step1Form.hasIgv ? 'bg-[#64BC04]' : 'bg-gray-300'">
+              [ngClass]="step1Form.hasIgv ? 'bg-[var(--color-abril-primary)]' : 'bg-gray-300'">
               <span class="absolute left-0 top-[3px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform duration-200"
                 [ngClass]="step1Form.hasIgv ? 'translate-x-[23px]' : 'translate-x-[3px]'"></span>
             </button>
             <span class="text-sm text-gray-600">
               Incluye IGV
               <span class="ml-[6px] text-xs font-semibold px-[8px] py-[2px] rounded-full"
-                [ngClass]="step1Form.hasIgv ? 'bg-[#E5F7D1] text-[#64BC04]' : 'bg-gray-100 text-gray-400'">
+                [ngClass]="step1Form.hasIgv ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]' : 'bg-gray-100 text-gray-400'">
                 {{ step1Form.hasIgv ? 'SÍ' : 'NO' }}
               </span>
             </span>
@@ -386,11 +386,11 @@
         <!-- ── BOTONES ───────────────────────────────────────────────── -->
         <div class="flex justify-end gap-2 pt-[4px]">
           <button type="button" (click)="cancelStep1Edit()"
-            class="px-4 py-2 rounded-xl text-sm font-medium border border-[#D6DEE5] text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+            class="px-4 py-2 rounded-xl text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
             Cancelar
           </button>
           <button type="button" (click)="saveStep1()"
-            class="px-5 py-2 rounded-xl text-sm font-medium bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer transition-colors">
+            class="px-5 py-2 rounded-xl text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
             Guardar cambios
           </button>
         </div>
@@ -422,21 +422,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[24px] gap-y-[16px]">
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de firma</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de firma</label>
             <input type="date" [(ngModel)]="step2Form.signingDate" [disabled]="!canEditInfo"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de inicio</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de inicio</label>
             <input type="date" [(ngModel)]="step2Form.startDate" [disabled]="!canEditInfo"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
 
             <!-- Plazo calculado automáticamente -->
             <div *ngIf="plazoEnDias !== null" class="mt-[6px]">
               <p class="text-xs text-gray-400 mb-[2px]">Plazo en días <span class="text-gray-300">(calculado)</span></p>
               <p class="text-sm font-semibold"
-                [ngClass]="plazoEnDias >= 0 ? 'text-[#64BC04]' : 'text-red-500'">
+                [ngClass]="plazoEnDias >= 0 ? 'text-[var(--color-abril-primary)]' : 'text-red-500'">
                 {{ plazoEnDias }} {{ plazoEnDias === 1 ? 'día' : 'días' }}
                 <span *ngIf="plazoEnDias < 0" class="text-xs font-normal text-red-400 ml-1">
                   (la fecha de fin es anterior a la de inicio)
@@ -446,57 +446,57 @@
           </div>
 
           <div class="flex flex-col">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Fecha de fin</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de fin</label>
             <input type="date" [(ngModel)]="step2Form.endDate" [disabled]="!canEditInfo"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Número de contrato <span class="text-red-400">*</span></label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de contrato <span class="text-red-400">*</span></label>
             <input type="number" [(ngModel)]="step2Form.contractNumber" [disabled]="!canEditInfo"
               min="0" max="2147483647" step="1"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div *ngIf="item.paymentMethodId === 2" class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Número de pagaré <span class="text-red-400">*</span></label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de pagaré <span class="text-red-400">*</span></label>
             <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditInfo"
               min="0" max="2147483647" step="1"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">% fondo de garantía</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">% fondo de garantía</label>
             <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage" [disabled]="!canEditInfo"
               min="0" max="100" step="1"
               placeholder="Ej: 5"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Días del fondo de garantía</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Días del fondo de garantía</label>
             <input type="number" [(ngModel)]="step2Form.guaranteeFundDays" [disabled]="!canEditInfo"
               min="0" step="1"
               placeholder="Ej: 365"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Periodo de validez de garantía (días)</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Periodo de validez de garantía (días)</label>
             <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays" [disabled]="!canEditInfo"
               min="0" step="1"
               placeholder="Ej: 365"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04]" />
+              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <!-- Forma de pago en días hábiles — usado en el "pago a x días hábiles" de la hoja resumen -->
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
-            <label class="text-xs text-[#64BC04] mb-[4px]">Forma de pago</label>
+            <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Forma de pago</label>
             <div class="flex items-center gap-[8px]">
               <input type="number" [(ngModel)]="step2Form.paymentDays" [disabled]="!canEditInfo"
                 min="0" step="1"
                 placeholder="Ej: 7"
-                class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none focus:border-[#64BC04] w-full" />
+                class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none w-full" />
               <span class="text-sm text-gray-500 shrink-0">días</span>
             </div>
           </div>
@@ -506,11 +506,11 @@
         <!-- Botones de edición (solo al editar en pasos 3/4; en estado 2 el avance lo hace el footer) -->
         <div *ngIf="step2EditMode" class="flex justify-end gap-2 mt-[16px]">
           <button type="button" (click)="cancelStep2Edit()"
-            class="px-4 py-2 rounded-xl text-sm font-medium border border-[#D6DEE5] text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+            class="px-4 py-2 rounded-xl text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
             Cancelar
           </button>
           <button type="button" (click)="saveStep2Edit()"
-            class="px-5 py-2 rounded-xl text-sm font-medium bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer transition-colors">
+            class="px-5 py-2 rounded-xl text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
             Guardar cambios
           </button>
         </div>
@@ -521,7 +521,7 @@
         <!-- Botón editar (solo en pasos 3 y 4) -->
         <div *ngIf="canEditInfo" class="flex justify-end mb-[12px]">
           <button type="button" (click)="enterStep2Edit()"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] cursor-pointer transition-colors">
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
@@ -553,7 +553,7 @@
 
           <div *ngIf="storedPlazoEnDias !== null">
             <p class="text-xs text-gray-400 mb-[2px]">Plazo en días</p>
-            <p class="text-sm font-semibold text-[#64BC04]">
+            <p class="text-sm font-semibold" style="color:var(--color-abril-primary)">
               {{ storedPlazoEnDias }} {{ storedPlazoEnDias === 1 ? 'día' : 'días' }}
             </p>
           </div>
@@ -635,7 +635,7 @@
               <ng-template #fileStatus>
                 <a *ngIf="ctx.file; else noFile"
                   [href]="ctx.file.fileUrl" target="_blank"
-                  class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+                  class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
                   <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -695,7 +695,7 @@
               <!-- Subir -->
               <button (click)="triggerUpload(doc.key)"
                 [disabled]="uploadingDoc !== null"
-                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)"
                 [class.cursor-wait]="uploadingDoc === doc.key">
 
                 <!-- spinner mientras sube este doc -->
@@ -838,7 +838,7 @@
           <!-- 1. Paquete generado o guardado → link verde clickeable (tiene prioridad sobre el span) -->
           <a *ngIf="item.package; else noPackageLink"
             [href]="item.package.fileUrl" target="_blank"
-            class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+            class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
             <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -849,7 +849,7 @@
           <ng-template #noPackageLink>
             <!-- 2. Archivo seleccionado manualmente en esta sesión (sin paquete persistido) -->
             <span *ngIf="step4File; else noFile4"
-              class="text-[#64BC04] flex items-center gap-1 break-all">
+              class="flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
               <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
               </svg>
@@ -883,7 +883,7 @@
           <!-- Seleccionar archivo manualmente -->
           <button (click)="fileInputStep4.click()"
             [disabled]="actualStatus !== 4 || !canSendToSc"
-            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
@@ -937,14 +937,14 @@
               (change)="onArrivalOptionChange('complete')" />
             <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
               [ngClass]="step5ArrivalOption === 'complete'
-                ? 'border-[#64BC04]'
-                : 'border-gray-300 group-hover:border-[#64BC04]'">
+                ? 'border-[var(--color-abril-primary)]'
+                : 'border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
               <div *ngIf="step5ArrivalOption === 'complete'"
-                class="w-2.5 h-2.5 rounded-full bg-[#64BC04]"></div>
+                class="w-2.5 h-2.5 rounded-full bg-[var(--color-abril-primary)]"></div>
             </div>
           </div>
           <span class="text-sm font-medium"
-            [ngClass]="step5ArrivalOption === 'complete' ? 'text-[#64BC04]' : 'text-gray-600'">
+            [ngClass]="step5ArrivalOption === 'complete' ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
             Llegó completo
           </span>
         </label>
@@ -987,8 +987,8 @@
                 [disabled]="actualStatus !== 5 || !canConfirmArrival" />
               <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
                 [ngClass]="step5ObservationsResolved
-                  ? 'bg-[#64BC04] border-[#64BC04]'
-                  : 'bg-white border-orange-300 group-hover:border-[#64BC04]'">
+                  ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                  : 'bg-white border-orange-300 group-hover:border-[var(--color-abril-primary)]'">
                 <svg *ngIf="step5ObservationsResolved" class="w-3 h-3 text-white" fill="none"
                   stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -996,7 +996,7 @@
               </div>
             </div>
             <span class="text-sm font-medium"
-              [ngClass]="step5ObservationsResolved ? 'text-[#64BC04]' : 'text-orange-600'">
+              [ngClass]="step5ObservationsResolved ? 'text-[var(--color-abril-primary)]' : 'text-orange-600'">
               Confirmo que las observaciones han sido subsanadas
             </span>
           </label>
@@ -1073,7 +1073,7 @@
         <div *ngIf="actualStatus > 5 && step5ArrivalOption"
           class="flex items-center gap-2 text-xs px-[10px] py-[6px] rounded-full w-fit"
           [ngClass]="step5ArrivalOption === 'complete'
-            ? 'bg-[#E5F7D1] text-[#64BC04]'
+            ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]'
             : 'bg-orange-50 text-orange-500'">
           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -1120,8 +1120,8 @@
               [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedCostos
-                ? 'bg-[#64BC04] border-[#64BC04]'
-                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
               <svg *ngIf="step6ConfirmedCostos" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
                 stroke-width="3" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -1129,7 +1129,7 @@
             </div>
           </div>
           <span class="text-sm font-medium"
-            [ngClass]="step6ConfirmedCostos ? 'text-[#64BC04]' : 'text-gray-600'">
+            [ngClass]="step6ConfirmedCostos ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
             Firmado por Costos y Presupuestos
           </span>
         </label>
@@ -1144,8 +1144,8 @@
               [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedOriundo
-                ? 'bg-[#64BC04] border-[#64BC04]'
-                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
               <svg *ngIf="step6ConfirmedOriundo" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
                 stroke-width="3" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -1153,7 +1153,7 @@
             </div>
           </div>
           <span class="text-sm font-medium"
-            [ngClass]="step6ConfirmedOriundo ? 'text-[#64BC04]' : 'text-gray-600'">
+            [ngClass]="step6ConfirmedOriundo ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
             Firmado por el Gerente Inmobiliario
           </span>
         </label>
@@ -1168,8 +1168,8 @@
               [disabled]="actualStatus !== 6 || !canMarkStep6" />
             <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
               [ngClass]="step6ConfirmedToratto
-                ? 'bg-[#64BC04] border-[#64BC04]'
-                : 'bg-white border-gray-300 group-hover:border-[#64BC04]'">
+                ? 'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)]'
+                : 'bg-white border-gray-300 group-hover:border-[var(--color-abril-primary)]'">
               <svg *ngIf="step6ConfirmedToratto" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
                 stroke-width="3" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -1177,7 +1177,7 @@
             </div>
           </div>
           <span class="text-sm font-medium"
-            [ngClass]="step6ConfirmedToratto ? 'text-[#64BC04]' : 'text-gray-600'">
+            [ngClass]="step6ConfirmedToratto ? 'text-[var(--color-abril-primary)]' : 'text-gray-600'">
             Firmado por el Gerente General
           </span>
         </label>
@@ -1228,7 +1228,7 @@
             <div class="text-xs min-h-[18px]">
               <a *ngIf="ctx.file; else noScannedFile"
                 [href]="ctx.file.fileUrl" target="_blank"
-                class="text-[#64BC04] hover:underline flex items-center gap-1 break-all">
+                class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
                 <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round"
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -1244,7 +1244,7 @@
             <div class="flex gap-[8px] mt-auto">
               <button (click)="triggerUploadScanned(doc.key)"
                 [disabled]="uploadingDoc !== null || !hasOfCentral"
-                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border border-[#64BC04] text-[#64BC04] hover:bg-[#F0FAE5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                class="flex-1 flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg transition-colors border cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)"
                 [class.cursor-wait]="uploadingDoc === doc.key">
 
                 <svg *ngIf="uploadingDoc === doc.key"
@@ -1299,7 +1299,7 @@
           <ng-container *ngFor="let doc of scannedDocuments">
             <ng-container *ngIf="getDocFile(doc.key) as file">
               <a [href]="file.fileUrl" target="_blank"
-                class="flex items-center gap-1.5 text-xs text-[#64BC04] hover:underline break-all">
+                class="flex items-center gap-1.5 text-xs hover:underline break-all" style="color:var(--color-abril-primary)">
                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round"
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -1319,8 +1319,8 @@
 
     <!-- PASO 9: Completado (genérico) -->
     <div *ngIf="viewStep > 8" class="flex flex-col items-center justify-center py-[28px] gap-[12px] text-center">
-      <div class="w-14 h-14 rounded-full bg-[#E5F7D1] flex items-center justify-center">
-        <svg class="w-7 h-7 text-[#64BC04]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:var(--color-abril-primary-light)">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--color-abril-primary)">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
         </svg>
       </div>
@@ -1361,7 +1361,7 @@
         [disabled]="!canGoForward()"
         class="flex items-center gap-1.5 px-[12px] sm:px-[16px] py-[8px] rounded-lg text-sm font-medium transition-colors"
         [ngClass]="canGoForward()
-          ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
+          ? 'bg-[var(--color-abril-primary)] text-white cursor-pointer'
           : 'bg-gray-100 text-gray-300 cursor-not-allowed'">
         <span class="hidden xs:inline sm:inline">{{ forwardLabel }}</span>
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

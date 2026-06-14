@@ -1,5 +1,5 @@
 <div (click)="cardClick.emit(item.projectSubContractorId)"
-    class="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:shadow-md hover:border-[#64BC04]/50 transition-all">
+    class="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-all" style="--hover-border-color:var(--color-abril-primary)">
 
   <div class="flex justify-between items-start mb-3">
     <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
@@ -34,7 +34,7 @@
     <div class="flex gap-0.5">
       <div *ngFor="let dot of stepDots; let i = index"
         class="w-4 h-1.5 rounded-full"
-        [ngClass]="i < item.projectSubContractorStatusId ? 'bg-[#64BC04]' : 'bg-gray-200'">
+        [ngClass]="i < item.projectSubContractorStatusId ? 'bg-[var(--color-abril-primary)]' : 'bg-gray-200'">
       </div>
     </div>
   </div>
