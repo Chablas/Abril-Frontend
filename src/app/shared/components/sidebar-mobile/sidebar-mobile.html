@@ -1,24 +1,26 @@
 <!-- Backdrop -->
 <div
   *ngIf="menuOpen"
-  class="fixed inset-0 z-40 bg-black/50"
+  class="fixed inset-0 z-40 bg-black/40"
   (click)="close()"
 ></div>
 
 <!-- Drawer -->
 <div
   class="fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[260px] transition-transform duration-300 ease-out overflow-hidden"
-  style="background: var(--color-abril-sidebar-bg);"
+  style="background: var(--color-abril-surface);
+         border-right: 1px solid var(--color-abril-border);
+         box-shadow: 4px 0 24px rgba(0,0,0,0.08);"
   [class.-translate-x-full]="!menuOpen"
 >
   <div class="flex flex-col h-full px-2 py-3 gap-0 overflow-hidden box-border">
 
-    <!-- Toggle/close row -->
+    <!-- Close row -->
     <div class="flex justify-end mb-2">
       <button
         (click)="close()"
-        class="flex items-center justify-center w-8 h-8 rounded border-0 cursor-pointer transition-colors"
-        style="background: transparent; color: var(--color-abril-sidebar-muted);"
+        class="flex items-center justify-center w-8 h-8 rounded border-0 cursor-pointer transition-colors hover:bg-[var(--color-abril-bg)]"
+        style="background: transparent; color: var(--color-abril-muted); border-radius: var(--radius-sm);"
         title="Cerrar menú"
       >
         <i class="ti ti-x text-lg"></i>
@@ -27,14 +29,14 @@
 
     <!-- Logo -->
     <div class="flex items-center gap-3 px-2 pb-4 flex-shrink-0">
-      <div class="flex items-center justify-center w-8 h-8 rounded flex-shrink-0"
+      <div class="flex items-center justify-center w-8 h-8 flex-shrink-0"
            style="background: var(--color-abril-primary); color: #fff; font-size: 16px; border-radius: var(--radius-sm);">
         <i class="ti ti-leaf"></i>
       </div>
       <div class="flex flex-col overflow-hidden">
-        <span class="font-bold text-white leading-tight" style="font-size: 15px;">Abril</span>
+        <span class="font-bold leading-tight" style="font-size: 15px; color: var(--color-abril-ink);">Abril</span>
         <span class="font-semibold uppercase tracking-wider"
-              style="font-size: 8px; color: var(--color-abril-sidebar-muted); letter-spacing: 0.06em;">
+              style="font-size: 8px; color: var(--color-abril-muted); letter-spacing: 0.06em;">
           GRUPO INMOBILIARIO
         </span>
       </div>
@@ -42,73 +44,86 @@
 
     <!-- Profile -->
     <div class="flex items-center gap-2 px-2 py-2 rounded flex-shrink-0 mb-2"
-         style="border-radius: var(--radius-sm); background: var(--color-abril-sidebar-hover);">
+         style="border-radius: var(--radius-sm); background: var(--color-abril-bg);">
       <div class="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0"
-           style="background: #374151; font-size: 11px; font-weight: 700; color: #d1d5db;">
+           style="background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
+                  font-size: 11px; font-weight: 700; color: var(--color-abril-body);">
         {{ userInitials }}
       </div>
       <div class="flex flex-col min-w-0 overflow-hidden flex-1">
         <span class="font-semibold truncate leading-tight"
-              style="font-size: 12px; color: var(--color-abril-sidebar-text);">
+              style="font-size: 12px; color: var(--color-abril-body);">
           {{ userName || 'Usuario' }}
         </span>
         <span class="truncate leading-tight"
-              style="font-size: 10px; color: var(--color-abril-sidebar-muted);">
+              style="font-size: 10px; color: var(--color-abril-muted);">
           {{ userRole || '' }}
         </span>
       </div>
     </div>
 
     <!-- Separator -->
-    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 0.5px solid rgba(255,255,255,0.08);"></div>
+    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 1px solid var(--color-abril-border);"></div>
 
     <!-- Main modules -->
     <nav class="flex flex-col gap-0.5 overflow-y-auto flex-1 pb-1" style="scrollbar-width: none;">
       <div
         *ngFor="let module of mainModules; trackBy: trackByModuleKey"
-        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
-        [class.font-bold]="isActiveModule(module.baseRoute)"
-        style="border-radius: var(--radius-sm); color: var(--color-abril-sidebar-text); font-size: 13px;"
-        [style.color]="isActiveModule(module.baseRoute) ? '#fff' : 'var(--color-abril-sidebar-text)'"
+        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors hover:bg-[var(--color-abril-bg)]"
+        style="border-radius: var(--radius-sm); font-size: 13px;"
         (click)="onModuleClick(module)"
       >
         <div *ngIf="isActiveModule(module.baseRoute)"
-             class="absolute left-0 top-1/2 -translate-y-1/2 rounded-r"
+             class="absolute left-0 top-1/2 -translate-y-1/2"
              style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
         </div>
-        <app-nav-icon [key]="module.iconKey" [size]="19" />
-        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style="font-family: inherit;">
+        <!-- Icon wrapper: green when active, gray when not -->
+        <span [style.color]="isActiveModule(module.baseRoute) ? 'var(--color-abril-primary)' : 'var(--color-abril-muted)'">
+          <app-nav-icon [key]="module.iconKey" [size]="19" />
+        </span>
+        <!-- Label: ink (dark) when active, muted when not -->
+        <span
+          class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+          style="font-family: inherit;"
+          [style.color]="isActiveModule(module.baseRoute) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+          [class.font-bold]="isActiveModule(module.baseRoute)"
+        >
           {{ module.label }}
         </span>
       </div>
     </nav>
 
     <!-- Separator -->
-    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 0.5px solid rgba(255,255,255,0.08);"></div>
+    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 1px solid var(--color-abril-border);"></div>
 
     <!-- Bottom: configuración + logout -->
     <div class="flex flex-col gap-0.5 flex-shrink-0">
       <div
         *ngIf="configModule"
-        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
-        [class.font-bold]="isActiveModule(configModule.baseRoute)"
-        style="border-radius: var(--radius-sm); color: var(--color-abril-sidebar-text); font-size: 13px;"
-        [style.color]="isActiveModule(configModule.baseRoute) ? '#fff' : 'var(--color-abril-sidebar-text)'"
+        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors hover:bg-[var(--color-abril-bg)]"
+        style="border-radius: var(--radius-sm); font-size: 13px;"
         (click)="onModuleClick(configModule)"
       >
         <div *ngIf="isActiveModule(configModule.baseRoute)"
-             class="absolute left-0 top-1/2 -translate-y-1/2 rounded-r"
+             class="absolute left-0 top-1/2 -translate-y-1/2"
              style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
         </div>
-        <app-nav-icon [key]="configModule.iconKey" [size]="19" />
-        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style="font-family: inherit;">
+        <span [style.color]="isActiveModule(configModule.baseRoute) ? 'var(--color-abril-primary)' : 'var(--color-abril-muted)'">
+          <app-nav-icon [key]="configModule.iconKey" [size]="19" />
+        </span>
+        <span
+          class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+          style="font-family: inherit;"
+          [style.color]="isActiveModule(configModule.baseRoute) ? 'var(--color-abril-ink)' : 'var(--color-abril-muted)'"
+          [class.font-bold]="isActiveModule(configModule.baseRoute)"
+        >
           {{ configModule.label }}
         </span>
       </div>
 
       <button
         (click)="logout()"
-        class="flex items-center gap-3 px-3 py-2 rounded w-full border-0 cursor-pointer transition-colors flex-shrink-0"
+        class="flex items-center gap-3 px-3 py-2 rounded w-full border-0 cursor-pointer transition-colors flex-shrink-0 hover:bg-[var(--color-abril-danger-light)]"
         style="border-radius: var(--radius-sm); background: transparent; color: var(--color-abril-danger);
                font-size: 13px; font-family: inherit; text-align: left;"
       >

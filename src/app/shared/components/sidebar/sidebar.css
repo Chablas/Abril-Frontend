@@ -4,7 +4,8 @@
   width: 240px;
   transition: width 0.25s ease;
   overflow: hidden;
-  background: var(--color-abril-sidebar-bg);
+  background: var(--color-abril-surface);
+  border-right: 1px solid var(--color-abril-border);
 }
 
 :host(.collapsed) {
@@ -30,7 +31,7 @@
   width: 30px;
   height: 30px;
   border-radius: var(--radius-sm);
-  color: var(--color-abril-sidebar-muted);
+  color: var(--color-abril-muted);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -41,8 +42,8 @@
   line-height: 1;
 }
 .toggle-btn:hover {
-  color: var(--color-abril-sidebar-text);
-  background: var(--color-abril-sidebar-hover);
+  color: var(--color-abril-ink);
+  background: var(--color-abril-bg);
 }
 :host(.collapsed) .toggle-btn {
   align-self: center;
@@ -81,14 +82,14 @@
 .logo-name {
   font-size: 15px;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-abril-ink);
   line-height: 1.2;
   white-space: nowrap;
 }
 .logo-sub {
   font-size: 8px;
   font-weight: 600;
-  color: var(--color-abril-sidebar-muted);
+  color: var(--color-abril-muted);
   letter-spacing: 0.06em;
   white-space: nowrap;
   text-transform: uppercase;
@@ -109,7 +110,7 @@
 }
 .profile-section:hover,
 .profile-section.menu-open {
-  background: var(--color-abril-sidebar-hover);
+  background: var(--color-abril-bg);
 }
 :host(.collapsed) .profile-section {
   justify-content: center;
@@ -119,13 +120,14 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #374151;
+  background: var(--color-abril-bg);
+  border: 1px solid var(--color-abril-border);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #d1d5db;
+  color: var(--color-abril-body);
   flex-shrink: 0;
 }
 .profile-info {
@@ -138,7 +140,7 @@
 .profile-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-abril-sidebar-text);
+  color: var(--color-abril-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -146,7 +148,7 @@
 }
 .profile-role {
   font-size: 10px;
-  color: var(--color-abril-sidebar-muted);
+  color: var(--color-abril-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -154,7 +156,7 @@
 }
 .chev {
   font-size: 13px;
-  color: var(--color-abril-sidebar-muted);
+  color: var(--color-abril-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
 }
@@ -168,19 +170,20 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #111827;
+  background: var(--color-abril-surface);
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-abril-border);
+  box-shadow: var(--shadow-dropdown);
   z-index: 50;
   overflow: hidden;
 }
 .account-info {
   padding: 10px 12px 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--color-abril-border);
 }
 .account-email {
   font-size: 11px;
-  color: var(--color-abril-sidebar-muted);
+  color: var(--color-abril-muted);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -202,14 +205,14 @@
   font-family: inherit;
 }
 .account-logout:hover {
-  background: rgba(220, 38, 38, 0.1);
+  background: var(--color-abril-danger-light);
 }
 
 /* Separator */
 .separator {
   height: 0;
   border: none;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--color-abril-border);
   margin: 6px 4px;
   flex-shrink: 0;
 }
@@ -246,9 +249,9 @@
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  color: var(--color-abril-sidebar-text);
+  color: var(--color-abril-muted);
   font-size: 13px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
   background: transparent;
   border: none;
@@ -259,11 +262,15 @@
   box-sizing: border-box;
 }
 .module-item:hover {
-  background: var(--color-abril-sidebar-hover);
+  background: var(--color-abril-bg);
+  color: var(--color-abril-body);
 }
 .module-item.active {
   font-weight: 700;
-  color: #fff;
+  color: var(--color-abril-primary);
+}
+.module-item.active .module-label {
+  color: var(--color-abril-ink);
 }
 :host(.collapsed) .module-item {
   justify-content: center;
@@ -293,5 +300,6 @@
   color: var(--color-abril-danger) !important;
 }
 .logout-item:hover {
-  background: rgba(220, 38, 38, 0.08) !important;
+  background: var(--color-abril-danger-light) !important;
+  color: var(--color-abril-danger) !important;
 }
