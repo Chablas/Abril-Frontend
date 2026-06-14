@@ -5,15 +5,14 @@ import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoAlertaDto, PasoActividadDto } from '../../dtos/paso.dtos';
 import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecucion-modal.component';
-import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
-import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
 @Component({
   selector: 'app-paso-alertas',
   standalone: true,
-  imports: [CommonModule, EjecucionModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, EjecucionModalComponent, AbrilPageHeaderComponent],
   templateUrl: './paso-alertas.component.html',
   styleUrl: './paso-alertas.component.css',
 })

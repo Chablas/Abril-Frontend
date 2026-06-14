@@ -10,8 +10,7 @@ import { PasoDetalleDto, PasoActividadDto, PasoSpiDto, PasoCategoriaDto, CreateA
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
-import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
-import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
@@ -20,7 +19,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 @Component({
   selector: 'app-paso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, InstanciarModalComponent, AbrilPageHeaderComponent],
   templateUrl: './paso-detalle.component.html',
   styleUrl: './paso-detalle.component.css',
 })

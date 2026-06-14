@@ -12,8 +12,7 @@ import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, Pa
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
-import { PasoNavComponent } from '../../components/paso-nav/paso-nav.component';
-import { SsomaPageHeaderComponent } from '../../../shared/ssoma-page-header/ssoma-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecucion-modal.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -26,7 +25,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   selector: 'app-paso-lista',
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
-            InstanciarModalComponent, PasoNavComponent, SsomaPageHeaderComponent,
+            InstanciarModalComponent, AbrilPageHeaderComponent,
             EjecucionModalComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',

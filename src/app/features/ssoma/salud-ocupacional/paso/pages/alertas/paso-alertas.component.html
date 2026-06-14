@@ -1,13 +1,16 @@
 <div>
-  <!-- ── Hero ─────────────────────────────────────────────────── -->
-  <app-ssoma-page-header
+  <app-abril-page-header
     badge="SSOMA · PASO"
     titulo="Alertas PASO"
     subtitulo="Actividades vencidas y próximas a vencer"
+    [tabs]="[
+      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/paso/dashboard' },
+      { label: 'Programas', icono: 'ti-list',             route: '/ssoma/gestion/paso/lista' },
+      { label: 'Alertas',   icono: 'ti-bell',             route: '/ssoma/gestion/paso/alertas' }
+    ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
-  </app-ssoma-page-header>
-  <app-paso-nav></app-paso-nav>
+  </app-abril-page-header>
 
   <div class="alertas-body">
 

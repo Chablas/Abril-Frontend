@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { RacService } from '../../services/rac.service';
 import { RacDashboardDto } from '../../dtos/rac.dtos';
-import { RacNavComponent } from '../../components/rac-nav/rac-nav.component';
-import { SsomaPageHeaderComponent } from '../../../../salud-ocupacional/shared/ssoma-page-header/ssoma-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-rac-dashboard',
   standalone: true,
-  imports: [CommonModule, RacNavComponent, SsomaPageHeaderComponent],
+  imports: [CommonModule, AbrilPageHeaderComponent],
   templateUrl: './rac-dashboard.html',
   styleUrl: './rac-dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

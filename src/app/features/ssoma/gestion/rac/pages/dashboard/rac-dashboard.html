@@ -1,16 +1,19 @@
 <div class="dashboard-root">
 
-  <app-ssoma-page-header
+  <app-abril-page-header
     [badge]="'SSOMA · ' + anioActual"
     titulo="Actos &amp; Condiciones Subestándar"
     subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="[
+      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/rac/dashboard' },
+      { label: 'Lista',     icono: 'ti-list',             route: '/ssoma/gestion/rac/lista' },
+      { label: 'Penalidades', icono: 'ti-alert-triangle', route: '/ssoma/gestion/rac/penalidades' }
+    ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     [botonPrimario]="{ label: 'Nuevo RAC', icono: 'ti-plus' }"
     (secondaryClick)="load()"
     (primaryClick)="irANuevo()">
-  </app-ssoma-page-header>
-
-  <app-rac-nav></app-rac-nav>
+  </app-abril-page-header>
 
   <!-- ERROR -->
   @if (error) {
