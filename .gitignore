@@ -50,3 +50,6 @@ Thumbs.db
 !.dev.vars.example
 .env*
 !.env.example
+
+Abril_Backend/appsettings.Local.json
+Abril_Backend/appsettings.Production.json
