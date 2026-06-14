@@ -2,6 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, O
 import Chart from 'chart.js/auto';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvDashboardService } from '../../services/ev-dashboard.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
 import { EvDashboardGerenciaDto, EvResidenteResumenDto } from '../../dtos/ev-dashboard.model';
@@ -11,7 +12,7 @@ import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
 @Component({
   selector: 'app-dashboard-gerencia',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './dashboard-gerencia.html',
   styleUrl: './dashboard-gerencia.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,19 +6,21 @@ import { SolicitudSalidasService } from '../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudSalidaListItemDto } from '../dtos/solicitud-salida-list-item.dto';
-import { BtnNew } from '../../../../../shared/components/btn-new/btn-new';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
 import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/solicitud-salida-capturas-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, BtnNew, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './solicitud-salidas.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class SolicitudSalidas implements OnInit {
+  anioActual = new Date().getFullYear();
   solicitudes: SolicitudSalidaListItemDto[] = [];
   showModal = false;
 

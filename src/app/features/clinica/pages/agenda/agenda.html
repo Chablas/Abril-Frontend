@@ -1,14 +1,20 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Agenda"
+  subtitulo="Programaciones del día y gestión de interconsultas."
+  [tabs]="[
+    { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
+    { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
+    { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+  ]">
+</app-abril-page-header>
+
 <div class="agenda-root">
 
   <!-- ── Header ──────────────────────────────────────── -->
   <div class="agenda-header">
     <div class="header-main-row">
-      <div class="header-left">
-        <h2 class="agenda-title">Agenda del Día</h2>
-        <p class="agenda-sub" *ngIf="activeTab === 'agenda' && !loading">
-          {{ totalHoy }} programación{{ totalHoy !== 1 ? 'es' : '' }}
-        </p>
-      </div>
       <div class="header-right" *ngIf="activeTab === 'agenda'">
         <div class="date-picker-wrap">
           <span class="date-icon">📅</span>

@@ -1,13 +1,16 @@
-<div class="prog-root">
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Programaciones"
+  subtitulo="Historial de programaciones de la clínica."
+  [tabs]="[
+    { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
+    { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
+    { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+  ]">
+</app-abril-page-header>
 
-  <!-- ── Header ──────────────────────────────────────── -->
-  <div class="prog-header">
-    <div class="header-left">
-      <h2 class="prog-title">Programaciones</h2>
-      <p class="prog-sub">Historial de programaciones de la clínica</p>
-    </div>
-    <span class="header-count" *ngIf="!loading">{{ items.length }} registros</span>
-  </div>
+<div class="prog-root">
 
   <!-- ── Controls ─────────────────────────────────────── -->
   <div class="controls-row">

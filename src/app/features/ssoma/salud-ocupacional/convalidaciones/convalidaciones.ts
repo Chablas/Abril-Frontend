@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import {
@@ -36,11 +37,13 @@ interface FilterOption {
     Paginator,
     SearchSelect,
     ConvalidacionCreate,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './convalidaciones.html',
   styleUrl: './convalidaciones.css',
 })
 export class Convalidaciones implements OnInit, OnDestroy {
+  anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 
   filters = {

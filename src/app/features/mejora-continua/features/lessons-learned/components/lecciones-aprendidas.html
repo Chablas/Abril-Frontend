@@ -1,15 +1,21 @@
-<div class="bg-white rounded-lg p-5 flex flex-col mb-[20px]">
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Lecciones Aprendidas"
+  subtitulo="Registro y gestión de lecciones aprendidas por proyecto."
+  [tabs]="[
+    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard' },
+    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned' },
+    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion' },
+    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders' }
+  ]"
+  [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true">
+</app-abril-page-header>
 
-  <!-- Header -->
+<div class="flex flex-col flex-1 overflow-y-auto p-5 gap-4">
+
+  <!-- Acciones superiores -->
   <div class="flex justify-between items-center">
-    <button (click)="openCreateModal($event)"
-      class="bg-[#E5F7D1] py-[5px] px-5 rounded-lg border border-[#64BC04] text-[#64BC04] text-sm flex items-center gap-2 cursor-pointer hover:bg-[#d4f0b8] transition-colors">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z" fill="#64BC04"/>
-      </svg>
-      Nuevo registro
-    </button>
-
     <!-- Enlace al video-guía -->
     <a [href]="guia.url" target="_blank" rel="noopener noreferrer"
       class="group flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-[#eef2ff] py-[5px] px-4 text-sm text-[#4f46e5] cursor-pointer hover:bg-[#e0e7ff] transition-colors">

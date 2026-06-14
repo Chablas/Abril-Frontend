@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
@@ -17,7 +18,7 @@ type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención'
 @Component({
   selector: 'app-clinica-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, CompletarEmo],
+  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent],
   templateUrl: './agenda.html',
   styleUrls: ['./agenda.css'],
 })

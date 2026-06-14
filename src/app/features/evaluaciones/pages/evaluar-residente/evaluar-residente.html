@@ -1,26 +1,16 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar Residente"
+  subtitulo="Registro y seguimiento de evaluaciones por residente."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
+    { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
+    { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
+    { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+  ]">
+</app-abril-page-header>
+
 <div class="ev-root">
-  <!-- ══ TOPBAR ══════════════════════════════════════════════════════ -->
-  <div class="ev-topbar">
-    <div class="logo-area">
-      <div class="logo-mark">Ev</div>
-      <span class="logo-name">Evaluaciones</span>
-      <div class="logo-sep"></div>
-    </div>
-    <nav class="top-nav">
-      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
-      <span class="nt active"><i class="ti ti-pencil"></i> Evaluar</span>
-      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
-      <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
-      <span class="nt" *ngIf="hasAsignaciones" routerLink="/evaluaciones/asignaciones"><i class="ti ti-user-check"></i> Asignaciones</span>
-    </nav>
-    <div class="topbar-right" *ngIf="periodo">
-      <div class="period-chip">
-        <div class="period-dot"></div>
-        <b>{{ periodo.nombreMes }} {{ periodo.anio }}</b>
-        <span class="period-dias">· {{ periodo.diasRestantes }} días</span>
-      </div>
-    </div>
-  </div>
 
   <div class="ev-body">
 

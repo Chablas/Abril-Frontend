@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvEvaluacionService } from '../../services/ev-evaluacion.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
 import { EvEvaluacionResponseDto } from '../../dtos/ev-evaluacion.model';
@@ -10,7 +11,7 @@ import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
 @Component({
   selector: 'app-historial',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './historial.html',
   styleUrl: './historial.css',
 })

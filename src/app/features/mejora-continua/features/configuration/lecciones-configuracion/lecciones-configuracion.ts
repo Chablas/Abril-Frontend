@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
 import { LessonAreas } from '../lesson-areas/lesson-areas';
 import { Areas } from '../areas-subareas/components/areas';
@@ -32,10 +33,13 @@ type ConfigSection = 'areas' | 'area-relations' | 'templates' | 'catalog-types' 
     Templates,
     CatalogTypes,
     CatalogItems,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './lecciones-configuracion.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LeccionesConfiguracion implements OnInit {
+  anioActual = new Date().getFullYear();
   activeSection: ConfigSection = 'areas';
 
   readonly sectionTabs: SectionTab[] = [

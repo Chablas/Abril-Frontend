@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FormsModule } from '@angular/forms';
 import { LeccionesAprendidasService } from '../services/lecciones-aprendidas.service';
 import { LessonListDTO } from '../dtos/lessonList.model';
@@ -37,10 +38,12 @@ interface AreaTreeNode {
 @Component({
   selector: 'app-lecciones-aprendidas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson, EditLesson, LessonList, LessonCard, SearchSelect, ViewToggle],
+  imports: [CommonModule, FormsModule, Paginator, CreateLesson, DetailLesson, EditLesson, LessonList, LessonCard, SearchSelect, ViewToggle, AbrilPageHeaderComponent],
   templateUrl: './lecciones-aprendidas.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LeccionesAprendidas implements OnInit {
+  anioActual = new Date().getFullYear();
   currentUserId = 0;
   apiUrl = environment.apiUrl;
 

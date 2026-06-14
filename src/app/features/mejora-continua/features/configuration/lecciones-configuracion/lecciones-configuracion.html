@@ -1,4 +1,16 @@
-<div class="bg-white rounded-lg p-[20px] flex flex-col gap-5">
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Configuración"
+  subtitulo="Áreas, plantillas, catálogos y relaciones de lecciones aprendidas."
+  [tabs]="[
+    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard' },
+    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned' },
+    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion' },
+    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders' }
+  ]">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">
   <app-section-tabs
     [tabs]="sectionTabs"
     [value]="activeSection"

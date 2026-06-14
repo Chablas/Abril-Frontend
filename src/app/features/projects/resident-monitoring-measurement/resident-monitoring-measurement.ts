@@ -9,6 +9,7 @@ import { PeriodFilterDto, TrackingFiltersDto, TrackingResultDto } from '../../..
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 type ViewMode = 'cards' | 'table';
 
@@ -21,11 +22,13 @@ export interface SelectedFilters {
 
 @Component({
   selector: 'app-resident-monitoring-measurement',
-  imports: [ResidentCard, ResidentTable, CommonModule, FormsModule],
+  imports: [ResidentCard, ResidentTable, CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './resident-monitoring-measurement.html',
   styleUrl: './resident-monitoring-measurement.css',
 })
 export class ResidentMonitoringMeasurement implements OnInit {
+  anioActual = new Date().getFullYear();
+
   residentMonitoringData: TrackingResultDto = {
     items: [],
     summary: {

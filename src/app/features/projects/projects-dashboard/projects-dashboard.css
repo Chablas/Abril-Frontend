@@ -1,5 +1,9 @@
 /* ── Variables corporativas ───────────────────────────────────────────────── */
 :host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   --azul: #2596be;
   --azul-light: #e6f4f9;
   --verde: #63bf03;

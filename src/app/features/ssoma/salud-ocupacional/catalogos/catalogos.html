@@ -1,11 +1,19 @@
-<section class="p-6 space-y-4">
-  <header>
-    <h2 class="text-xl font-semibold text-gray-800">Catálogos</h2>
-    <p class="text-sm text-gray-500">
-      Maestros de Clínicas, Médicos Ocupacionales y Tipos de EMO.
-    </p>
-  </header>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Catálogos"
+  subtitulo="Maestros de Clínicas, Médicos Ocupacionales y Tipos de EMO."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]">
+</app-abril-page-header>
 
+<section class="p-6 space-y-4 flex-1 overflow-y-auto">
   <nav class="tabs">
     <button type="button" [class.active]="activeTab === 'clinicas'" (click)="setTab('clinicas')">
       Clínicas

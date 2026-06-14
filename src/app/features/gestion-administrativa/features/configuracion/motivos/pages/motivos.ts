@@ -7,16 +7,18 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { GaMotivoSalidaConfigItemDto } from '../dtos/ga-motivo.dto';
 import { GaMotivoCreate } from '../components/create/create';
 import { GaMotivoEdit } from '../components/edit/edit';
-import { BtnNew } from '../../../../../../shared/components/btn-new/btn-new';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-ga-motivos',
-  imports: [CommonModule, GaMotivoCreate, GaMotivoEdit, BtnNew, StatusBadge],
+  imports: [CommonModule, GaMotivoCreate, GaMotivoEdit, StatusBadge, AbrilPageHeaderComponent],
   templateUrl: './motivos.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GaMotivos implements OnInit {
+  anioActual = new Date().getFullYear();
   motivos: GaMotivoSalidaConfigItemDto[] = [];
   showCreateModal = false;
   showEditModal = false;

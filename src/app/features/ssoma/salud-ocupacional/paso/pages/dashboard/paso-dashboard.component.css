@@ -35,7 +35,6 @@
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
-  font-family: 'DM Sans', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -134,6 +133,7 @@
   flex-direction: column;
   gap: 14px;
   background: #f8fafc;
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
 .dashboard-content::-webkit-scrollbar { width: 4px; }
 .dashboard-content::-webkit-scrollbar-thumb { background: #e2e6f0 !important; border-radius: 2px; }

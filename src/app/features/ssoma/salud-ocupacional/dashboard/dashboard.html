@@ -1,22 +1,21 @@
-<section class="p-6 space-y-6">
-  <header class="flex items-center justify-between">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">Dashboard · Salud Ocupacional</h2>
-      <p class="text-sm text-gray-500">Estado general de EMOs, vencimientos y derivaciones.</p>
-    </div>
-    <button
-      type="button"
-      (click)="load()"
-      class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50 text-gray-700"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M23 4v6h-6M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-      </svg>
-      Actualizar
-    </button>
-  </header>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Salud Ocupacional"
+  subtitulo="Estado general de EMOs, vencimientos y derivaciones."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+</app-abril-page-header>
 
+<section class="p-6 space-y-6 flex-1 overflow-y-auto">
   <ng-container *ngIf="data; else loadingOrError">
     <!-- Fila 1: KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

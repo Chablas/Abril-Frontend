@@ -14,14 +14,17 @@ import {
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
   templateUrl: './gestion-salidas.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GestionSalidas implements OnInit {
+  anioActual = new Date().getFullYear();
   salidas: GestionSalidaListItemDto[] = [];
 
   trabajadorOptions: any[] = [];

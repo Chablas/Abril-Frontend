@@ -1,17 +1,19 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { ReporteService } from '../services/reporte.service';
 import { ErrorService } from '../../../../core/services/error.service';
 
 @Component({
   selector: 'app-salud-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './reportes.html',
   styleUrls: ['./reportes.css'],
 })
 export class Reportes {
+  anioActual = new Date().getFullYear();
   mes = new Date().getMonth() + 1;
   anio = new Date().getFullYear();
   loading = false;

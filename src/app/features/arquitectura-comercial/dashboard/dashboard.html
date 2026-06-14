@@ -1,11 +1,19 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Dashboard"
+  subtitulo="Vista general de actividades, hitos y eficiencia por arquitecto."
+  [tabs]="[
+    { label: 'Dashboard',   icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/dashboard' },
+    { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades' },
+    { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
+    { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' }
+  ]">
+</app-abril-page-header>
+
 <div class="dash-root">
 
-  <!-- ══ HEADER ══ -->
+  <!-- ══ FILTROS ══ -->
   <div class="dash-header">
-    <div class="dash-header-left">
-      <h1 class="dash-title">Dashboard Arquitectura Comercial</h1>
-      <p class="dash-subtitle">{{ getSubtitulo() }}</p>
-    </div>
     <div class="dash-filters">
       <select class="dash-select" [(ngModel)]="filtro.userId" name="userId">
         <option [ngValue]="null">Todos los arquitectos</option>

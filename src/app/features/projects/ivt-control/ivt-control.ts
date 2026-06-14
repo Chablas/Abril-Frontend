@@ -11,15 +11,18 @@ import { TableComponentData } from "../../../core/models/ivtControl/tableCompone
 import { ProjectResidentService } from '../../../core/services/projectResident.service';
 import { CreateModalData } from "../../../core/models/ivtControl/createModalData.model";
 import { DomSanitizer } from '@angular/platform-browser';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-ivt-control',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   standalone: true,
   templateUrl: './ivt-control.html',
   styleUrl: './ivt-control.css',
 })
 export class IvtControl {
+  anioActual = new Date().getFullYear();
+
   /*ivtControls: IvtControlPagedDTO = {
     page: 0,
     pageSize: 0,

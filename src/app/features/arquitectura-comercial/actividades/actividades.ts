@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
@@ -28,11 +29,12 @@ interface EtapaGroup {
 @Component({
   selector: 'app-arq-comercial-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable, RouterModule],
+  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
 export class Actividades implements OnInit {
+  anioActual = new Date().getFullYear();
   readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA'];
 
   proyectos: ProyectoConActividadesDTO[] = [];

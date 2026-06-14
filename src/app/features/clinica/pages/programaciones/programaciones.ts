@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { ClinicaProgramacionService } from '../../services/clinica-programacion.service';
 import { ProgramacionClinicaDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -9,7 +10,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
 @Component({
   selector: 'app-clinica-programaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './programaciones.html',
   styleUrls: ['./programaciones.css'],
 })

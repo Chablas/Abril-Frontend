@@ -12,15 +12,18 @@ import { ProjectResidentService } from '../../../core/services/projectResident.s
 import { CreateModalData } from '../../../core/models/constructionLogbookControl/createModalData.model';
 import { DomSanitizer } from '@angular/platform-browser';
 import { FilePreview } from '../../../shared/components/file-preview/file-preview';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-construction-logbook-control',
-  imports: [CommonModule, FormsModule, FilePreview],
+  imports: [CommonModule, FormsModule, FilePreview, AbrilPageHeaderComponent],
   standalone: true,
   templateUrl: './construction-logbook-control.html',
   styleUrl: './construction-logbook-control.css',
 })
 export class ConstructionLogbookControl {
+  anioActual = new Date().getFullYear();
+
   tableComponentData: TableComponentData = {
     tableData: [],
     iframeUrl: null,

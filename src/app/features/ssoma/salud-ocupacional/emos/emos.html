@@ -1,14 +1,21 @@
-<section class="px-3 py-4 space-y-3">
-  <header class="flex items-center justify-between">
-    <h2 class="text-base font-semibold text-gray-800">EMOs</h2>
-    <button type="button" class="btn-primary" (click)="openCreate()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M12 5v14M5 12h14"/>
-      </svg>
-      Nuevo EMO
-    </button>
-  </header>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="EMOs"
+  subtitulo="Exámenes Médico Ocupacionales por trabajador."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]"
+  [botonPrimario]="{ label: 'Nuevo EMO', icono: 'ti-plus' }"
+  (primaryClick)="openCreate()">
+</app-abril-page-header>
 
+<section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
   <!-- Filtros -->
   <div class="filters-card">
     <div class="filters-grid">

@@ -1,29 +1,16 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Dashboard"
+  subtitulo="Performance de residentes y métricas de evaluación."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
+    { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
+    { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
+    { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+  ]">
+</app-abril-page-header>
+
 <div class="db-root">
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="logo-area">
-      <div class="logo-mark">Ev</div>
-      <span class="logo-name">Evaluaciones</span>
-      <div class="logo-sep"></div>
-    </div>
-    <nav class="top-nav">
-      <span class="nt active"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
-      <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
-      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
-      <span class="nt" routerLink="/evaluaciones/configuracion"><i class="ti ti-settings"></i> Configuración</span>
-      <span class="nt" *ngIf="hasAsignaciones" routerLink="/evaluaciones/asignaciones"><i class="ti ti-user-check"></i> Asignaciones</span>
-    </nav>
-    <div class="topbar-right" *ngIf="periodo">
-      <div class="period-chip">
-        <div class="period-dot"></div>
-        <b>{{ periodo.nombreMes }} {{ periodo.anio }}</b> · Activo
-      </div>
-      <div class="view-toggle">
-        <span class="vt-btn" [class.active]="vistaActiva==='mensual'" (click)="setVista('mensual')">Mensual</span>
-        <span class="vt-btn" [class.active]="vistaActiva==='tendencia'" (click)="setVista('tendencia')">Tendencia</span>
-      </div>
-    </div>
-  </div>
 
   <!-- SUB-HEADER -->
   <div class="sub-header" *ngIf="!loading">

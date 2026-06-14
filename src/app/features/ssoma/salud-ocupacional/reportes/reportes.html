@@ -1,11 +1,19 @@
-<div class="p-6 space-y-4">
-  <div class="section-bar">
-    <div>
-      <h2 class="section-title">Reportes SUNAFIL</h2>
-      <p class="section-sub">Exportar registros de vigilancia médica ocupacional</p>
-    </div>
-  </div>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Reportes SUNAFIL"
+  subtitulo="Exportar registros de vigilancia médica ocupacional."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]">
+</app-abril-page-header>
 
+<div class="p-6 space-y-4 flex-1 overflow-y-auto">
   <div class="card" style="max-width:500px;padding:1.5rem;">
     <h3 style="font-weight:600;margin-bottom:1rem;color:#111827;">Reporte mensual de EMOs</h3>
     <div class="grid-2" style="margin-bottom:1rem;">

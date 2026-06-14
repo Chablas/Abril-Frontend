@@ -1,4 +1,18 @@
-<div id="dashboard" class="flex flex-col h-full w-full overflow-y-auto overflow-x-hidden gap-[20px]">
+<app-abril-page-header
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
+  titulo="Dashboard de Lecciones"
+  subtitulo="Indicadores y tendencias de lecciones aprendidas."
+  [tabs]="[
+    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard' },
+    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned' },
+    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion' },
+    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders' }
+  ]"
+  [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
+  (secondaryClick)="downloadPDF()">
+</app-abril-page-header>
+
+<div id="dashboard" class="flex flex-col flex-1 w-full overflow-y-auto overflow-x-hidden gap-[20px]">
 
   <!-- Barra superior: filtros + acciones -->
   <div class="flex flex-wrap items-end gap-3 bg-white p-[15px] rounded-2xl">

@@ -1,4 +1,16 @@
-<div class="flex h-full w-full bg-[#F5F7FA]">
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Gantt"
+  subtitulo="Cronograma visual de actividades por proyecto."
+  [tabs]="[
+    { label: 'Dashboard',   icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/dashboard' },
+    { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades' },
+    { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
+    { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' }
+  ]">
+</app-abril-page-header>
+
+<div class="flex flex-1 min-h-0 bg-[#F5F7FA]">
 
   <!-- ═══════════════ SIDEBAR DE PROYECTOS ═══════════════ -->
   <aside class="w-[260px] shrink-0 border-r border-gray-200 bg-[#F8FAFC] flex flex-col overflow-hidden">

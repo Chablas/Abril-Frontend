@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule }   from '@angular/common';
 import { FormsModule }    from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels    from 'chartjs-plugin-datalabels';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -37,11 +38,13 @@ type TabHito    = 'INICIAR' | 'VENCER' | 'VENCIDOS';
 @Component({
   selector   : 'app-arq-comercial-dashboard',
   standalone : true,
-  imports    : [CommonModule, FormsModule],
+  imports    : [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './dashboard.html',
   styleUrl   : './dashboard.css',
 })
 export class Dashboard implements AfterViewInit, OnDestroy {
+
+  anioActual = new Date().getFullYear();
 
   // ─── estado global ──────────────────────────────────────────────
   loader = true;

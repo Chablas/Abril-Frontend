@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { InterconsultaService } from '../../../ssoma/salud-ocupacional/services/interconsulta.service';
 import {
   InterconsultaListDto,
@@ -26,7 +27,7 @@ interface Paso1Data {
 @Component({
   selector: 'app-interconsultas-clinica',
   standalone: true,
-  imports: [CommonModule, FormsModule, CompletarEmo],
+  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent],
   templateUrl: './interconsultas.html',
   styleUrls: ['./interconsultas.css'],
 })

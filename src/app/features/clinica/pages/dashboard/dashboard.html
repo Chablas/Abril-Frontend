@@ -1,3 +1,15 @@
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Dashboard"
+  subtitulo="Vista general de la clínica ocupacional."
+  [tabs]="[
+    { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
+    { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
+    { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+  ]">
+</app-abril-page-header>
+
 <div class="dash-root">
 
   <!-- Loading overlay -->
@@ -5,22 +17,6 @@
     <div class="loading-spinner"></div>
     <span>Cargando datos...</span>
   </div>
-
-  <!-- ── HEADER (banda oscura) ─────────────────────── -->
-  <header class="dash-header">
-    <div class="dash-header-left">
-      <div class="dash-logo">🏥</div>
-      <div>
-        <h1 class="dash-title">Clínica Ocupacional</h1>
-        <p class="dash-sub">{{ hoy }}</p>
-      </div>
-    </div>
-    <!-- C4: pulse dot animado -->
-    <div class="clinica-activa-badge">
-      <span class="pulse-dot"></span>
-      Clínica activa
-    </div>
-  </header>
 
   <!-- ── BODY ──────────────────────────────────────── -->
   <div class="dash-body">

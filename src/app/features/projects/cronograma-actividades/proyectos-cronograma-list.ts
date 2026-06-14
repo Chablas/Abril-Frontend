@@ -6,6 +6,7 @@ import { CronogramaActividadesService } from './services/cronograma-actividades.
 import { ProyectoSimpleDto } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 const PROJECT_COLORS = [
   '#3B82F6', // azul
@@ -21,11 +22,12 @@ const PROJECT_COLORS = [
 @Component({
   selector: 'app-proyectos-cronograma-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AbrilPageHeaderComponent],
   templateUrl: './proyectos-cronograma-list.html',
   styleUrl: './proyectos-cronograma-list.css',
 })
 export class ProyectosCronogramaList implements OnInit {
+  anioActual = new Date().getFullYear();
   proyectos: ProyectoSimpleDto[] = [];
   loading = false;
 

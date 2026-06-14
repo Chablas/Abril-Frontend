@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
@@ -31,11 +32,12 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoCreate, EmoDetail],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoCreate, EmoDetail, AbrilPageHeaderComponent],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })
 export class Emos implements OnInit, OnDestroy {
+  anioActual = new Date().getFullYear();
   readonly pageSize = 50;
 
   filters = {

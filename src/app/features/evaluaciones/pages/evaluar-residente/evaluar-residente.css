@@ -1,7 +1,7 @@
 :host { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
 /* ══ ROOT ═══════════════════════════════════════════════════════════ */
-.ev-root { display:flex; flex-direction:column; height:100%; overflow:hidden; background:#f8fafc; font-family:var(--font-sans); }
+.ev-root { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; background:#f8fafc; font-family:var(--font-sans); }
 
 /* ══ TOPBAR ══════════════════════════════════════════════════════════ */
 .ev-topbar { background:#0f172a; height:44px; display:flex; align-items:center; padding:0 16px; gap:12px; flex-shrink:0; }

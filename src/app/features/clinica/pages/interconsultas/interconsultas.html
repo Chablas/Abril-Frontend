@@ -1,15 +1,16 @@
-<div class="inter-root">
+<app-abril-page-header
+  badge="CLÍNICA"
+  titulo="Interconsultas"
+  subtitulo="Derivaciones médicas pendientes de atención."
+  [tabs]="[
+    { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
+    { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
+    { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+  ]">
+</app-abril-page-header>
 
-  <!-- ── Header ──────────────────────────────────────── -->
-  <div class="inter-header">
-    <div class="header-left">
-      <h2 class="inter-title">Interconsultas</h2>
-      <p class="inter-sub">Derivaciones médicas pendientes de atención</p>
-    </div>
-    <span class="header-count" *ngIf="!loading && pendientesCount > 0">
-      {{ pendientesCount }} pendiente{{ pendientesCount !== 1 ? 's' : '' }}
-    </span>
-  </div>
+<div class="inter-root">
 
   <!-- ── Controls ─────────────────────────────────────── -->
   <div class="controls-row">

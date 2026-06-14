@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -46,11 +47,13 @@ interface FilterOption {
     ViewToggle,
     ProgramacionCreate,
     DatePipe,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './programaciones.html',
   styleUrl: './programaciones.css',
 })
 export class Programaciones implements OnInit, OnDestroy {
+  anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 
   filters = {

@@ -12,19 +12,9 @@ export class NavigationService {
       iconKey: 'briefcase',
       baseRoute: '/gestion-administrativa',
       items: [
-        { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
-        { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+        { label: 'Gestión Administrativa', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
       ],
-      groups: [
-        {
-          label: 'Configuración',
-          items: [
-            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
-            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
-            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
-          ],
-        },
-      ],
+      groups: [],
     },
     {
       key: 'mejora-continua',
@@ -32,18 +22,9 @@ export class NavigationService {
       iconKey: 'trending-up',
       baseRoute: '/mejora-continua',
       items: [
-        { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned', featureKey: 'mejora-continua.lessons-learned' },
-        { label: 'Dashboard Lecciones',  route: '/mejora-continua/dashboard',        featureKey: 'mejora-continua.dashboard' },
+        { label: 'Mejora Continua', route: '/mejora-continua/dashboard', featureKey: 'mejora-continua.dashboard' },
       ],
-      groups: [
-        {
-          label: 'Configuración',
-          items: [
-            { label: 'Configuración de Lecciones', route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
-            { label: 'Recordatorios Lecciones', route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' },
-          ],
-        },
-      ],
+      groups: [],
     },
     {
       key: 'proyectos',
@@ -51,23 +32,16 @@ export class NavigationService {
       iconKey: 'building-estate',
       baseRoute: '/projects',
       items: [
-        { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
-        { label: 'Cronograma de Actividades',     route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
-        // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
-        { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
-        { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
-        { label: 'Control de cuaderno de obra',   route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
-        { label: 'Control de respuesta de informes', route: '/projects/report-response-control',   featureKey: 'projects.report-response-control' },
-        { label: 'Seguimiento y medición de residentes', route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
+        { label: 'Dashboard de Proyectos',                  route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
+        { label: 'Cronograma de Actividades',               route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
+        { label: 'Cronograma de hitos',                     route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
+        { label: 'Control de IVTs',                         route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
+        { label: 'Control de cuaderno de obra',             route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
+        { label: 'Control de respuesta de informes',        route: '/projects/report-response-control',      featureKey: 'projects.report-response-control' },
+        { label: 'Seguimiento y medición de residentes',    route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
+        { label: 'Hitos',                                   route: '/projects/configuration/milestones',     featureKey: 'projects.config.milestones' },
       ],
-      groups: [
-        {
-          label: 'Configuración',
-          items: [
-            { label: 'Hitos',              route: '/projects/configuration/milestones',      featureKey: 'projects.config.milestones' },
-          ],
-        },
-      ],
+      groups: [],
     },
     {
       key: 'contratistas',
@@ -111,6 +85,7 @@ export class NavigationService {
         { label: 'Gantt',       route: '/arquitectura-comercial/gantt',       featureKey: 'arquitectura-comercial.gantt' },
         { label: 'Plantilla',   route: '/arquitectura-comercial/plantilla',   featureKey: 'arquitectura-comercial.plantilla' },
       ],
+      groups: [],
     },
     {
       key: 'ssoma',
@@ -183,6 +158,7 @@ export class NavigationService {
         { label: 'Configuración',      route: '/evaluaciones/configuracion', featureKey: 'evaluaciones.configuracion' },
         { label: 'Asignaciones',       route: '/evaluaciones/asignaciones',  featureKey: 'evaluaciones.asignaciones' },
       ],
+      groups: [],
     },
     {
       key: 'seguridad',

@@ -1,12 +1,13 @@
+<app-abril-page-header
+  badge="HABILITACIÓN"
+  titulo="Trabajadores"
+  subtitulo="Gestión de habilitación y entregables por trabajador.">
+</app-abril-page-header>
+
 <div class="page-root">
 
-  <!-- ── Topbar: breadcrumb + acciones ─────────────────────── -->
+  <!-- ── Topbar: acciones ────────────────────────────────────── -->
   <div class="page-topbar" *ngIf="isAdmin() || isContratista()">
-    <div class="page-breadcrumb">
-      <span>Gestión de Ingresos</span>
-      <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-current">Trabajadores</span>
-    </div>
     <div class="topbar-actions">
       <button class="btn-ghost-sm" (click)="actualizar()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

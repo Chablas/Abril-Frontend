@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -33,10 +34,13 @@ type ReminderSection = 'users' | 'staff' | 'jefes' | 'revisores';
     ProjectStaffList,
     JefeList,
     WorkerRevisorList,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './lesson-reminders.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LessonReminders implements OnInit {
+  anioActual = new Date().getFullYear();
   activeSection: ReminderSection = 'users';
   readonly sectionTabs: SectionTab[] = [
     { id: 'users', label: 'Trabajadores' },

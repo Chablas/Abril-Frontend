@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { InterconsultaService } from '../services/interconsulta.service';
@@ -32,11 +33,13 @@ interface FilterOption {
     Paginator,
     SearchSelect,
     InterconsultaDetail,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './interconsultas.html',
   styleUrl: './interconsultas.css',
 })
 export class Interconsultas implements OnInit, OnDestroy {
+  anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 
   filters = {

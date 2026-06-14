@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
@@ -18,11 +19,12 @@ const QUICKCHART_CREATE = 'https://quickchart.io/chart/create';
 @Component({
   selector: 'app-arq-comercial-gantt',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './gantt.html',
   styleUrl: './gantt.css',
 })
 export class Gantt implements OnInit {
+  anioActual = new Date().getFullYear();
   readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA'];
 
   proyectos: ProyectoConActividadesDTO[] = [];

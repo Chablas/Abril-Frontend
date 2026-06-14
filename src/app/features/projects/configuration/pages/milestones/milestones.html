@@ -1,19 +1,22 @@
-<div class="bg-white rounded-lg p-[20px]">
-    <div class="pb-[20px]">
-        <div class="flex w-full">
-            <button (click)="openCreateModal($event)"
-                class="py-[5px] px-[20px] rounded-lg border cursor-pointer" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
-                <div class="flex items-center gap-[10px]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
-                        <path
-                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
-                            fill="currentColor" />
-                    </svg>
-                    <p>Nuevo registro</p>
-                </div>
-            </button>
-        </div>
-    </div>
+<app-abril-page-header
+  [badge]="'PROYECTOS · ' + anioActual"
+  titulo="Hitos"
+  subtitulo="Configuración de hitos para los cronogramas."
+  [tabs]="[
+    { label: 'Dashboard',              icono: 'ti-layout-dashboard', route: '/projects/projects-dashboard' },
+    { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades' },
+    { label: 'Cronograma de Hitos',    icono: 'ti-flag',             route: '/projects/milestone-schedule' },
+    { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit' },
+    { label: 'Cuaderno de Obra',       icono: 'ti-notebook',         route: '/projects/construction-logbook' },
+    { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control' },
+    { label: 'Residentes',             icono: 'ti-users',            route: '/projects/resident-monitoring-measurement' },
+    { label: 'Hitos',                  icono: 'ti-settings',         route: '/projects/configuration/milestones' }
+  ]"
+  [botonPrimario]="{ label: 'Nuevo hito', icono: 'ti-plus' }"
+  (primaryClick)="showCreateModal = true">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px]">
 
     <div class="flex flex-col justify-center items-center">
         <div class="w-full rounded-lg overflow-auto border" style="border-color:var(--color-abril-border)">

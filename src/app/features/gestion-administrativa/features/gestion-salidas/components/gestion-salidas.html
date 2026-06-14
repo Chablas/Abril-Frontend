@@ -1,4 +1,17 @@
-<div class="page-container flex flex-col gap-[20px] bg-white rounded-lg mb-[20px]">
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Gestión de Salidas"
+  subtitulo="Aprobación y rendición de solicitudes de salida."
+  [tabs]="[
+    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas' },
+    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas' },
+    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares' },
+    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos' },
+    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos' }
+  ]">
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[20px] bg-white flex-1 overflow-y-auto">
 
   <!-- ── Filtros ────────────────────────────────────────────────────────── -->
   <div class="filter-row">

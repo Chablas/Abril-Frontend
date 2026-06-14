@@ -30,15 +30,18 @@ import { AuthService } from '../../../core/services/auth.service';
 import { MilestoneScheduleProjectsService } from './services/milestone-schedule-projects.service';
 import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-milestone-schedule',
   standalone: true,
-  imports: [DatePipe, CommonModule, FormsModule, BaseModal],
+  imports: [DatePipe, CommonModule, FormsModule, BaseModal, AbrilPageHeaderComponent],
   templateUrl: './milestone-schedule.html',
   styleUrl: './milestone-schedule.css',
 })
 export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
+  anioActual = new Date().getFullYear();
+
   currentPage = 1;
   totalPages = 0;
   pageSize = 10;

@@ -7,13 +7,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
 import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
 
 @Component({
   selector: 'app-gestion-hab',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, AbrilPageHeaderComponent],
   templateUrl: './gestion-hab.component.html',
   styleUrl: './gestion-hab.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,7 +13,7 @@ import { ProximoVencerDto } from '../../../ssoma/salud-ocupacional/dtos/dashboar
 @Component({
   selector: 'app-clinica-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
 })

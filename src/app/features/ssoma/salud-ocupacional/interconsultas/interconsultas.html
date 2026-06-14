@@ -1,11 +1,19 @@
-<section class="p-6 space-y-4">
-  <header>
-    <h2 class="text-xl font-semibold text-gray-800">Interconsultas</h2>
-    <p class="text-sm text-gray-500">
-      Derivaciones a especialistas a raíz de EMOs observados.
-    </p>
-  </header>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Interconsultas"
+  subtitulo="Derivaciones a especialistas a raíz de EMOs observados."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]">
+</app-abril-page-header>
 
+<section class="p-6 space-y-4 flex-1 overflow-y-auto">
   <div class="filters-card">
     <div class="filters-grid">
       <div class="filter-search">

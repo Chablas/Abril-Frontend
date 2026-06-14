@@ -1,25 +1,28 @@
-<section class="p-6 space-y-4">
-  <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">Programaciones</h2>
-      <p class="text-sm text-gray-500">
-        Citas médicas y exámenes programados por trabajador.
-      </p>
-    </div>
-    <div class="flex items-center gap-3">
-      <app-view-toggle
-        [modes]="viewModes"
-        [value]="viewMode"
-        (valueChange)="onViewModeChange($event)"
-      ></app-view-toggle>
-      <button type="button" class="btn-primary" (click)="openCreate()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-        Nueva programación
-      </button>
-    </div>
-  </header>
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Programaciones"
+  subtitulo="Citas médicas y exámenes programados por trabajador."
+  [tabs]="[
+    { label: 'Dashboard',       icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
+    { label: 'EMOs',            icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
+    { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
+    { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
+    { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
+    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
+    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' }
+  ]"
+  [botonPrimario]="{ label: 'Nueva programación', icono: 'ti-plus' }"
+  (primaryClick)="openCreate()">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 overflow-y-auto">
+  <div class="flex justify-end">
+    <app-view-toggle
+      [modes]="viewModes"
+      [value]="viewMode"
+      (valueChange)="onViewModeChange($event)"
+    ></app-view-toggle>
+  </div>
 
   <!-- KPIs -->
   <div class="kpis-row">

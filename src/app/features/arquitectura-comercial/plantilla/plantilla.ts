@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import {
@@ -18,11 +19,12 @@ type ActivoFiltro = 'todos' | 'activas' | 'inactivas';
 @Component({
   selector: 'app-arq-comercial-plantilla',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './plantilla.html',
   styleUrl: './plantilla.css',
 })
 export class Plantilla implements OnInit {
+  anioActual = new Date().getFullYear();
   plantilla: PlantillaActividadDTO[] = [];
   categorias: AcCategoriaDTO[] = [];
   especialidades: AcEspecialidadDTO[] = [];

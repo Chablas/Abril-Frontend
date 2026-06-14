@@ -2,13 +2,14 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvPlantillaService } from '../../services/ev-plantilla.service';
 import { EvPlantillaDto } from '../../dtos/ev-plantilla.model';
 
 @Component({
   selector: 'app-configuracion-plantilla',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './configuracion-plantilla.html',
   styleUrl: './configuracion-plantilla.css',
 })

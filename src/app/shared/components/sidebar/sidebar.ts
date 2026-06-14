@@ -159,6 +159,31 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
+    if (module.key === 'mejora-continua') {
+      this.router.navigate(['/mejora-continua/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'gestion-administrativa') {
+      this.router.navigate(['/gestion-administrativa/solicitud-salidas']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'proyectos') {
+      this.router.navigate(['/projects/projects-dashboard']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'arquitectura-comercial') {
+      this.router.navigate(['/arquitectura-comercial/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'evaluaciones') {
+      this.router.navigate(['/evaluaciones/dashboard']);
+      this.activeMenu = null;
+      return;
+    }
     this.toggleMenu(module.key);
   }
 

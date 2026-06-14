@@ -1,3 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .tabs {
   display: flex;
   gap: 0.25rem;

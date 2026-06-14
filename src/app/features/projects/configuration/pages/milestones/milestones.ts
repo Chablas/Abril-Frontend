@@ -11,14 +11,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-milestones',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './milestones.html',
   styleUrl: './milestones.css',
 })
 export class Milestones implements OnInit {
+  anioActual = new Date().getFullYear();
+
   milestones: PagedResponseDTO<MilestoneGetDTO> = {
     page: 0,
     pageSize: 0,

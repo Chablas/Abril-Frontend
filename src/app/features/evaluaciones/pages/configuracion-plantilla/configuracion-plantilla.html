@@ -1,16 +1,16 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Configuración"
+  subtitulo="Plantilla de criterios y áreas evaluadoras."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
+    { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
+    { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
+    { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+  ]">
+</app-abril-page-header>
+
 <div class="conf-root">
-  <div class="topbar">
-    <div class="logo-mark">Ev</div>
-    <span class="logo-name">Evaluaciones · Configuración</span>
-    <div class="logo-sep"></div>
-    <nav class="top-nav">
-      <span class="nt" routerLink="/evaluaciones/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</span>
-      <span class="nt" routerLink="/evaluaciones/evaluar"><i class="ti ti-pencil"></i> Evaluar</span>
-      <span class="nt" routerLink="/evaluaciones/historial"><i class="ti ti-history"></i> Historial</span>
-      <span class="nt active"><i class="ti ti-settings"></i> Configuración</span>
-      <span class="nt" *ngIf="hasAsignaciones" routerLink="/evaluaciones/asignaciones"><i class="ti ti-user-check"></i> Asignaciones</span>
-    </nav>
-  </div>
 
   <div class="conf-body">
     <div class="area-sidebar">

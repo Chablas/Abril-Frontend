@@ -6,6 +6,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -45,11 +46,12 @@ interface AreaTreeNode {
 @Component({
   selector: 'app-lessons-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, MultiSearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, MultiSearchSelect, AbrilPageHeaderComponent],
   templateUrl: './lessons-dashboard.html',
   styleUrl: './lessons-dashboard.css',
 })
 export class LessonsDashboard implements AfterViewInit {
+  anioActual = new Date().getFullYear();
   trendChart?: Chart;
   barChart?: Chart;
   userChart?: Chart;

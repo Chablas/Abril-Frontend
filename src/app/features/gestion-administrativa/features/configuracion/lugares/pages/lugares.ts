@@ -3,20 +3,22 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GaLugarCreate } from '../components/create/create';
 import { GaLugarEdit } from '../components/edit/edit';
-import { BtnNew } from '../../../../../../shared/components/btn-new/btn-new';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { GaLugarService } from '../services/lugares.service';
 import { GaLugarConfigItemDto } from '../dtos/ga-lugar.dto';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-ga-lugares',
-  imports: [CommonModule, GaLugarCreate, GaLugarEdit, BtnNew, StatusBadge],
+  imports: [CommonModule, GaLugarCreate, GaLugarEdit, StatusBadge, AbrilPageHeaderComponent],
   templateUrl: './lugares.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GaLugares implements OnInit {
+  anioActual = new Date().getFullYear();
   lugares: GaLugarConfigItemDto[] = [];
   showCreateModal = false;
   showEditModal = false;

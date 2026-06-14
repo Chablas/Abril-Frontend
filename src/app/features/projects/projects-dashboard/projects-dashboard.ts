@@ -19,6 +19,7 @@ import {
   ResponsableSimpleDTO,
 } from './dtos/projectsDashboard.model';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 Chart.register(...registerables, ChartDataLabels);
 declare const gantt: any;
@@ -26,11 +27,13 @@ declare const gantt: any;
 @Component({
   selector: 'app-projects-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './projects-dashboard.html',
   styleUrl: './projects-dashboard.css',
 })
 export class ProjectsDashboard implements OnInit, OnDestroy {
+  anioActual = new Date().getFullYear();
+
   @ViewChild('donutCanvas') donutCanvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('barrasCanvas') barrasCanvasRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('ganttPanel') ganttPanelRef?: ElementRef<HTMLDivElement>;

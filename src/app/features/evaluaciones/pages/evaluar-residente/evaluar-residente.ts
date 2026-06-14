@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvEvaluacionService } from '../../services/ev-evaluacion.service';
 import { EvPlantillaService } from '../../services/ev-plantilla.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
@@ -26,7 +27,7 @@ interface DetalleForm {
 @Component({
   selector: 'app-evaluar-residente',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AbrilPageHeaderComponent],
   templateUrl: './evaluar-residente.html',
   styleUrl: './evaluar-residente.css',
 })
