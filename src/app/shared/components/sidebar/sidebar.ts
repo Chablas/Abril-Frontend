@@ -179,11 +179,6 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
-    if (module.key === 'control-acceso') {
-      this.router.navigate(['/habilitacion/control-acceso']);
-      this.activeMenu = null;
-      return;
-    }
     if (module.key === 'arquitectura-comercial') {
       this.router.navigate(['/arquitectura-comercial/dashboard']);
       this.activeMenu = null;
@@ -221,6 +216,22 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleOverflowMenu(key: string): void {
+    const directNav: Record<string, string> = {
+      'control-acceso': '/habilitacion/control-acceso',
+      'ssoma': '/ssoma/salud-ocupacional/dashboard',
+      'habilitacion': '/habilitacion/gestion',
+      'clinica': '/clinica/dashboard',
+      'mejora-continua': '/mejora-continua/dashboard',
+      'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
+      'proyectos': '/projects/projects-dashboard',
+      'arquitectura-comercial': '/arquitectura-comercial/dashboard',
+      'evaluaciones': '/evaluaciones/dashboard',
+    };
+    if (directNav[key]) {
+      this.router.navigate([directNav[key]]);
+      this.closeOverflow();
+      return;
+    }
     this.activeOverflowMenu = this.activeOverflowMenu === key ? null : key;
     this.activeOverflowGroup = null;
   }
