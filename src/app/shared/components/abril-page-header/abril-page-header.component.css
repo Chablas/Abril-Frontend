@@ -142,12 +142,21 @@
 
   .ssoma-hero__vline { display: none; }
 
+  .ssoma-hero__left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .ssoma-hero__title-wrap {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
   .ssoma-hero__title {
     font-size: 1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 140px;
   }
 
   .ssoma-hero__sub { display: none; }
