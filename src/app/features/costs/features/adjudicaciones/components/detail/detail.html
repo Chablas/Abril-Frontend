@@ -80,7 +80,7 @@
 
       <!-- Aviso: solo Oficina Técnica puede llenar/avanzar el paso 1 -->
       <div *ngIf="actualStatus === 1 && !hasOfTecnica"
-        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
         <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
           <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -266,7 +266,7 @@
               </span>
             </div>
             <ng-template #noStep1Emails>
-              <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+              <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
                 <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
                   <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -315,7 +315,7 @@
               <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Monto</label>
               <input type="number" min="0" step="0.01" [(ngModel)]="step1Form.amount"
                 (ngModelChange)="onStep1AmountChange()" placeholder="0.00"
-                class="border border-[#E2E2E2] rounded-xl p-[10px] text-sm focus:outline-none" />
+                class="border border-[#E2E2E2] rounded-lg p-[10px] text-sm focus:outline-none" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
@@ -346,7 +346,7 @@
                 <div class="relative">
                   <input type="text" inputmode="decimal" [value]="step1Form.advancePercentage" placeholder="0"
                     (input)="onStep1PercentageInput($event)"
-                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[36px] text-sm focus:outline-none" />
+                    class="w-full border border-[#E2E2E2] rounded-lg p-[10px] pr-[36px] text-sm focus:outline-none" />
                   <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
                 </div>
               </div>
@@ -355,7 +355,7 @@
                 <div class="relative">
                   <input type="text" inputmode="decimal" [value]="step1AdvanceAmount" placeholder="0.00"
                     (input)="onStep1AdvanceAmountInput($event)"
-                    class="w-full border border-[#E2E2E2] rounded-xl p-[10px] pr-[44px] text-sm focus:outline-none" />
+                    class="w-full border border-[#E2E2E2] rounded-lg p-[10px] pr-[44px] text-sm focus:outline-none" />
                   <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
                     {{ step1SelectedCurrencyCode }}
                   </span>
@@ -386,11 +386,11 @@
         <!-- ── BOTONES ───────────────────────────────────────────────── -->
         <div class="flex justify-end gap-2 pt-[4px]">
           <button type="button" (click)="cancelStep1Edit()"
-            class="px-4 py-2 rounded-xl text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
+            class="px-4 py-2 rounded-lg text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
             Cancelar
           </button>
           <button type="button" (click)="saveStep1()"
-            class="px-5 py-2 rounded-xl text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+            class="px-5 py-2 rounded-lg text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
             Guardar cambios
           </button>
         </div>
@@ -409,7 +409,7 @@
 
         <!-- Aviso: solo Oficina Técnica puede llenar los datos del contrato -->
         <div *ngIf="actualStatus === 2 && !canEditInfo"
-          class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -506,11 +506,11 @@
         <!-- Botones de edición (solo al editar en pasos 3/4; en estado 2 el avance lo hace el footer) -->
         <div *ngIf="step2EditMode" class="flex justify-end gap-2 mt-[16px]">
           <button type="button" (click)="cancelStep2Edit()"
-            class="px-4 py-2 rounded-xl text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
+            class="px-4 py-2 rounded-lg text-sm font-medium border text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors" style="border-color:var(--color-abril-border)">
             Cancelar
           </button>
           <button type="button" (click)="saveStep2Edit()"
-            class="px-5 py-2 rounded-xl text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+            class="px-5 py-2 rounded-lg text-sm font-medium text-white cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
             Guardar cambios
           </button>
         </div>
@@ -605,7 +605,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
         <div *ngFor="let doc of documents; trackBy: trackByDocKey"
-          class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px]">
+          class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px]">
 
           <!-- Variable local: archivo actual del documento -->
           <ng-container *ngIf="{ file: getDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
@@ -761,7 +761,7 @@
         <button *ngIf="canSendLevantamiento"
           (click)="sendAllLevantamientoEmailGlobal()"
           [disabled]="sendingAllLevantamientoEmail"
-          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
           <svg *ngIf="sendingAllLevantamientoEmail"
             class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -779,7 +779,7 @@
         <button *ngIf="!isOfTecnica"
           (click)="sendAllObservationsEmailGlobal()"
           [disabled]="sendingAllObservationsEmail"
-          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
           <!-- spinner mientras envía -->
           <svg *ngIf="sendingAllObservationsEmail"
             class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -808,7 +808,7 @@
 
       <!-- Aviso: solo Oficina Técnica puede enviar al SC -->
       <div *ngIf="actualStatus === 4 && !canSendToSc"
-        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
         <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
           <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -820,7 +820,7 @@
 
       <input #fileInputStep4 type="file" class="hidden" (change)="onStep4FileSelected($event)" />
 
-      <div class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px] max-w-sm">
+      <div class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px] max-w-sm">
 
         <!-- Encabezado -->
         <div class="flex items-center gap-[8px]">
@@ -916,7 +916,7 @@
 
         <!-- Aviso: solo Oficina Central puede confirmar la recepción -->
         <div *ngIf="actualStatus === 5 && !canConfirmArrival"
-          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -974,7 +974,7 @@
 
         <!-- Checkbox de subsanación (solo si eligió "con observaciones") -->
         <div *ngIf="step5ArrivalOption === 'with_observations'"
-          class="ml-[30px] p-[12px] bg-orange-50 border border-orange-200 rounded-xl flex flex-col gap-[10px]">
+          class="ml-[30px] p-[12px] bg-orange-50 border border-orange-200 rounded-lg flex flex-col gap-[10px]">
           <p class="text-xs text-orange-600 leading-relaxed">
             No podrá continuar hasta confirmar que las observaciones han sido subsanadas.
           </p>
@@ -1009,14 +1009,14 @@
             rows="3"
             [(ngModel)]="step5ArrivalObservation"
             placeholder="Escriba una observación sobre la llegada del expediente..."
-            class="w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-3 py-2 outline-none resize-none
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2 outline-none resize-none
                    focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
           ></textarea>
 
           <!-- Of. Central: enviar las observaciones por correo a Oficina Técnica -->
           <button type="button" (click)="sendStep5ObservationsEmail()"
             [disabled]="sendingStep5Observations || !step5ArrivalObservation.trim()"
-            class="self-end mt-[4px] flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            class="self-end mt-[4px] flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
             <svg *ngIf="sendingStep5Observations" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
@@ -1034,7 +1034,7 @@
           class="flex flex-col gap-[10px]">
 
           <div *ngIf="item.arrivalObservation"
-            class="flex flex-col gap-[4px] bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+            class="flex flex-col gap-[4px] bg-orange-50 border border-orange-200 rounded-lg px-3 py-2.5">
             <span class="text-xs font-medium text-orange-600">Observación de Oficina Central</span>
             <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.arrivalObservation }}</p>
           </div>
@@ -1044,13 +1044,13 @@
             rows="3"
             [(ngModel)]="step5LevantamientoMessage"
             placeholder="Escriba un mensaje sobre el levantamiento de las observaciones..."
-            class="w-full text-sm text-gray-700 border border-gray-300 rounded-xl px-3 py-2 outline-none resize-none
+            class="w-full text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2 outline-none resize-none
                    focus:border-[#64bc04] focus:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
           ></textarea>
 
           <button type="button" (click)="sendStep5LevantamientoEmail()"
             [disabled]="sendingStep5Levantamiento"
-            class="self-end flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            class="self-end flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
             <svg *ngIf="sendingStep5Levantamiento" class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
@@ -1065,7 +1065,7 @@
 
         <!-- Modo lectura (cuando ya se pasó el paso 5) -->
         <div *ngIf="actualStatus > 5 && step5ArrivalObservation"
-          class="flex flex-col gap-[4px] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+          class="flex flex-col gap-[4px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
           <span class="text-xs font-medium text-gray-500">Observación</span>
           <p class="text-sm text-gray-700 whitespace-pre-line">{{ step5ArrivalObservation }}</p>
         </div>
@@ -1100,7 +1100,7 @@
 
         <!-- Aviso: solo Oficina Central puede marcar las firmas -->
         <div *ngIf="actualStatus === 6 && !canMarkStep6"
-          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1194,7 +1194,7 @@
 
       <!-- Aviso: solo Oficina Central puede subir el escaneado -->
       <div *ngIf="actualStatus === 7 && !hasOfCentral"
-        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
         <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
           <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1209,7 +1209,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
         <div *ngFor="let doc of scannedDocuments; trackBy: trackByDocKey"
-          class="border border-[#E2E2E2] rounded-xl p-[14px] flex flex-col gap-[10px]">
+          class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px]">
 
           <ng-container *ngIf="{ file: getDocFile(doc.key) } as ctx">
 
@@ -1283,7 +1283,7 @@
 
         <!-- Aviso: solo Oficina Central puede enviar a obra -->
         <div *ngIf="actualStatus === 8 && !hasOfCentral"
-          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

@@ -26,7 +26,7 @@
 .card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -72,7 +72,7 @@
 .kpi-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border-top-width: 3px;
   padding: 1.1rem 1.2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);

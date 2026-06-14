@@ -160,7 +160,7 @@
       <!-- Editar (siempre disponible) -->
       <div class="flex justify-start">
         <button type="button" (click)="openEdit()"
-          class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#64BC04] text-[#64BC04] text-sm font-semibold rounded-xl hover:bg-[#E5F7D1] transition-colors cursor-pointer">
+          class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#64BC04] text-[#64BC04] text-sm font-semibold rounded-lg hover:bg-[#E5F7D1] transition-colors cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -176,7 +176,7 @@
         <button
           type="button"
           (click)="reject()"
-          class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-xl hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+          class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-lg hover:bg-[#FAD5D4] transition-colors cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -187,7 +187,7 @@
         <button
           type="button"
           (click)="approve()"
-          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-xl hover:bg-[#57a803] transition-colors cursor-pointer">
+          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>
@@ -219,7 +219,7 @@
         <button
           type="button"
           (click)="sendCredentials()"
-          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors cursor-pointer">
+          class="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -238,7 +238,7 @@
         <div class="flex flex-col gap-2">
           <div
             *ngFor="let user of item.users"
-            class="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+            class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
             <div class="flex items-center gap-3">
               <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

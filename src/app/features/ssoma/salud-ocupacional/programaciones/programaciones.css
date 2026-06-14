@@ -54,7 +54,7 @@
   gap: 0.5rem;
   background: #ffffff;
   border: 1px solid #d6dee5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.75rem;
   color: #9ca3af;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -77,7 +77,7 @@
 .field-input {
   width: 100%;
   border: 1px solid #d6dee5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.75rem;
   font-size: 0.9rem;
   color: #111827;

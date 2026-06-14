@@ -331,7 +331,7 @@
 }
 
 .pd-badge-ctx {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1.5rem;
   border: 1px solid var(--pd-hairline);
 }
@@ -371,7 +371,7 @@
 
 /* ── Hierarchy table ─────────────────────────────────────────────────────── */
 .pd-hier-wrapper {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--pd-hairline);
   box-shadow: var(--pd-glow);

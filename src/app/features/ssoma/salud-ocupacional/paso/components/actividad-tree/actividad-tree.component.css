@@ -353,7 +353,7 @@
   text-align: center;
   background: #fafafa;
   border: 2px dashed #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   margin: 1rem;
 }
 .tree-empty i { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4; }
@@ -372,7 +372,7 @@
 }
 .eliminar-modal {
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   width: 100%;
   max-width: 420px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);

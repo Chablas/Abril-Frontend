@@ -1,11 +1,11 @@
 <div class="flex flex-col gap-3">
 
   <!-- Buscador -->
-  <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+  <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
     <label class="block text-[0.72rem] uppercase tracking-widest font-bold text-gray-500 mb-1.5">
       Buscar rol
     </label>
-    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-gray-400 max-w-xs
+    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400 max-w-xs
                 focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
         <circle cx="11" cy="11" r="7" />
@@ -21,7 +21,7 @@
   </div>
 
   <!-- Tabla desktop -->
-  <div class="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+  <div class="hidden md:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full border-collapse text-sm">
         <thead>
@@ -77,7 +77,7 @@
   <div class="flex flex-col gap-2 md:hidden">
     <div
       *ngFor="let item of filteredData"
-      class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-2"
+      class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-2"
     >
       <div class="flex items-start justify-between gap-2">
         <p class="font-semibold text-gray-900 text-sm leading-tight">{{ item.roleDescription }}</p>

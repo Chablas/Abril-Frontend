@@ -101,7 +101,7 @@
 .alert-card {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border-left: 4px solid transparent;
   padding: 0.9rem 1.1rem;
   display: flex;
@@ -187,7 +187,7 @@
   text-align: center;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty-state p { font-size: 0.88rem; margin: 0; }
@@ -203,5 +203,5 @@
   font-size: 0.9rem;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }

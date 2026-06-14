@@ -115,7 +115,7 @@
 
 .field-input {
   border: 1px solid #d6dee5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.75rem;
   width: 100%;
   font-size: 0.95rem;
@@ -239,7 +239,7 @@
 
 /* ── Tarjeta de detalle ──────────────────────────────────────────── */
 .ca-result-card {
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   margin-top: 0.5rem;
@@ -336,7 +336,7 @@
 /* ── Entregables ─────────────────────────────────────────────────── */
 .ca-ent-card {
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 4px 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   background: #fff;
@@ -426,7 +426,7 @@
 
 .ca-select {
   border: 1px solid #d6dee5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.75rem;
   width: 100%;
   max-width: 280px;
@@ -450,7 +450,7 @@
 .ca-noauth-list {
   margin-top: 0.5rem;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: #fff;
   overflow-y: auto;
   max-height: 500px;

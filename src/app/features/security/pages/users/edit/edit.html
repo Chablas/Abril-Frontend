@@ -52,7 +52,7 @@
       <p class="text-[#64BC04]">Rol</p>
       <select
         [(ngModel)]="editDto.roleId"
-        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-xl cursor-pointer"
+        class="w-full pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer"
       >
         <option [ngValue]="0" disabled>Selecciona un rol</option>
         <option *ngFor="let role of roles" [ngValue]="role.roleId">{{ role.roleDescription }}</option>

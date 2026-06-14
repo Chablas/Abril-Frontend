@@ -9,7 +9,7 @@
 
 .auth-card {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   padding: 2rem;
   width: 100%;
   max-width: 460px;
@@ -67,7 +67,7 @@
 .field-input {
   width: 100%;
   border: 1px solid #d6dee5;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.75rem;
   font-size: 0.92rem;
   color: #111827;

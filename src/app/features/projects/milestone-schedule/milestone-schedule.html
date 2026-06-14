@@ -29,7 +29,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div
                 *ngFor="let item of projectsFiltered"
-                class="bg-white rounded-xl border overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]" style="border-color:var(--color-abril-border)">
+                class="bg-white rounded-lg border overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]" style="border-color:var(--color-abril-border)">
                 <div
                     class="relative h-[120px] group"
                     (click)="openMilestoneScheduleHistory(item.projectId, item.projectDescription)">
@@ -348,7 +348,7 @@
                 <div class="flex flex-col flex-1">
                     <p class="text-sm mb-[4px]" style="color:var(--color-abril-primary)">Hito <span class="text-red-500">*</span></p>
                     <select [(ngModel)]="addMilestoneScheduleItem.milestoneId"
-                        class="w-full pl-[12px] pr-[25px] py-[10px] border rounded-xl cursor-pointer"
+                        class="w-full pl-[12px] pr-[25px] py-[10px] border rounded-lg cursor-pointer"
                         [ngClass]="{'border-red-400': addMilestoneScheduleItem.milestoneId === 0, 'border-[#D6DEE5]': addMilestoneScheduleItem.milestoneId !== 0}">
                         <option [ngValue]="0" disabled>Seleccionar hito</option>
                         <option *ngFor="let item of milestones" [ngValue]="item.milestoneId">{{item.milestoneDescription}}</option>

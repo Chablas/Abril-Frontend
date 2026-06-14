@@ -42,7 +42,7 @@
   min-height: 0;
   overflow-y: auto;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   margin: 0 16px;
   background: #fff;
 }

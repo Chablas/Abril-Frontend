@@ -64,7 +64,7 @@
 /* Drag & drop zone */
 .dropzone {
   border: 2px dashed #d1d5db;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1.25rem 1rem;
   text-align: center;
   cursor: pointer;

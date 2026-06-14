@@ -252,7 +252,7 @@
 .rank-legend {
   background: #F4F5FA;
   border: 1px solid #C8CEDC;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 10px 13px;
   margin-bottom: 0;
   margin-top: 10px;
@@ -278,7 +278,7 @@
 
 .rank-item {
   background:#FAFBFE;
-  border-radius:14px;
+  border-radius: var(--radius-md);
   padding:7px 12px 7px 12px;
   display:flex; align-items:center; gap:10px;
   border: 1.5px solid #C8CEDC;
@@ -350,7 +350,7 @@
   margin-top: 10px;
   padding: 8px 14px;
   background: #E8ECF4;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid #C4CADA;
   box-shadow: none;
 }
@@ -563,7 +563,7 @@
 
 .modal-box {
   background: #fff;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   width: 100%;
   max-width: 820px;
   max-height: 88vh;

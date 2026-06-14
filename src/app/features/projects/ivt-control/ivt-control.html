@@ -22,7 +22,7 @@
             <div class="w-[240px]">
                 <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Periodo</p>
                 <select [(ngModel)]="tableComponentData.selectedFilters.periodDate"
-                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-xl select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
                      name="periodDate">
                     <option [ngValue]="''">Todos los periodos</option>
                     <option *ngFor="let item of tableComponentData.filters.periods" [ngValue]="item">
@@ -33,7 +33,7 @@
             <div class="w-[240px]">
                 <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Residente</p>
                 <select [(ngModel)]="tableComponentData.selectedFilters.userId"
-                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-xl select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
                      name="periodDate">
                     <option [ngValue]="0">Todos los residentes</option>
                     <option *ngFor="let item of tableComponentData.filters.residents" [ngValue]="item.userId">
@@ -44,7 +44,7 @@
             <div class="w-[240px]">
                 <p class="w-[240px] text-lg" style="color:var(--color-abril-primary)">Proyecto</p>
                 <select [(ngModel)]="tableComponentData.selectedFilters.projectId"
-                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-xl select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
+                    class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)"
                      name="periodDate">
                     <option [ngValue]="0">Todos los proyectos</option>
                     <option *ngFor="let item of tableComponentData.filters.projects" [ngValue]="item.projectId">
@@ -164,14 +164,14 @@
         <div class="absolute inset-0" (click)="closeModal($event, 0)">
         </div>
         <div class="min-h-screen flex items-center justify-center py-10">
-            <div class="bg-white w-[800px] rounded-xl shadow-xl animate-modal-in relative"
+            <div class="bg-white w-[800px] rounded-lg shadow-xl animate-modal-in relative"
                 (click)="$event.stopPropagation()">
                 <div class="py-[15px] px-[45px] flex flex-col gap-[15px] items-center">
                     <h1 class="text-2xl text-center">AGREGAR IVT</h1>
                     <div class="flex justify-between w-full gap-[20px]">
                         <div class="flex flex-col flex-2">
                             <p style="color:var(--color-abril-primary)">Archivo</p>
-                            <div *ngIf="createModalData.showImageAdder" class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
+                            <div *ngIf="createModalData.showImageAdder" class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
                                 style="border-color:var(--color-abril-primary)"
                                 (click)="opFile.click()">
                                 <input #opFile type="file" accept="application/pdf" class="hidden" (change)="onFileSelected($event)"
@@ -224,14 +224,14 @@
                         </div>
                         <div class="flex-1">
                             <p style="color:var(--color-abril-primary)">Proyecto</p>
-                            <select [(ngModel)]="createModalData.createDto.projectId" class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-xl select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
+                            <select [(ngModel)]="createModalData.createDto.projectId" class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
                                 <option [ngValue]="0">Seleccionar</option>
                                 <option *ngFor="let item of createModalData.projectOptions" [ngValue]="item.projectId">{{item.projectDescription}}</option>
                             </select>
                             <p style="color:var(--color-abril-primary)">Periodo</p>
 
                             <select [(ngModel)]="createModalData.createDto.periodDate"
-                                class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-xl select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
+                                class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
 
                                 <option [ngValue]="''">Seleccionar</option>
 

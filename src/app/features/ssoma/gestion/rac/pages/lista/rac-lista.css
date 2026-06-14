@@ -179,7 +179,7 @@
 .tabla-wrap {
   display: none;
   overflow-x: auto;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 0.5px solid var(--rac-border);
   background: var(--rac-bg-card);
 }
@@ -352,7 +352,7 @@
 .rac-card {
   background: var(--rac-bg-card);
   border: 0.5px solid var(--rac-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 13px 14px;
   border-left: 3px solid var(--rac-text-light);
 }

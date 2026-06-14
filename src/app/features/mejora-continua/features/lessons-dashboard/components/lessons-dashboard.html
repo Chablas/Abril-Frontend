@@ -15,13 +15,13 @@
 <div id="dashboard" class="flex flex-col flex-1 w-full overflow-y-auto overflow-x-hidden gap-[20px]">
 
   <!-- Barra superior: filtros + acciones -->
-  <div class="flex flex-wrap items-end gap-3 bg-white p-[15px] rounded-2xl">
+  <div class="flex flex-wrap items-end gap-3 bg-white p-[15px] rounded-lg">
     <!-- Área en cascada (PRIMERO, recuadro verde): al escoger un área padre aparece
          otro desplegable con sus subáreas; detente en el padre para todas sus
          lecciones, o baja a una subárea específica. Mantiene padding vertical (py-2)
          y el margen inferior negativo (-mb-2) cancela ese padding inferior para que,
          con items-end, los controles queden alineados con el resto de filtros. -->
-    <div class="bg-[#E5F7D1] rounded-xl px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+    <div class="bg-[#E5F7D1] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
       <ng-container *ngFor="let level of areaLevels; let i = index">
         <div class="w-[200px]">
           <app-search-select
@@ -98,11 +98,11 @@
 
   <!-- Tarjetas resumen -->
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8 gap-[15px]">
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Total lecciones</span>
       <span class="text-3xl font-bold text-[#64BC04]">{{ data?.summary?.totalLessons ?? 0 }}</span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1 justify-between">
       <span class="text-xs text-gray-500">Lecciones {{ penultMonth?.label || 'mes' }}</span>
       <span class="text-3xl font-bold text-[#74c31d]">{{ penultMonth?.value ?? 0 }}</span>
       <span class="text-xs font-semibold flex items-center gap-1"
@@ -118,23 +118,23 @@
         <ng-template #noBase>sin comparación</ng-template>
       </span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Proyectos</span>
       <span class="text-3xl font-bold text-[#0086A5]">{{ data?.summary?.totalProjects ?? 0 }}</span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Áreas</span>
       <span class="text-3xl font-bold text-[#509603]">{{ data?.summary?.totalAreas ?? 0 }}</span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Fases</span>
       <span class="text-3xl font-bold text-[#a2d768]">{{ data?.summary?.totalPhases ?? 0 }}</span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Usuarios</span>
       <span class="text-3xl font-bold text-[#3c7102]">{{ data?.summary?.totalUsers ?? 0 }}</span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1 justify-between">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1 justify-between">
       <span class="text-xs text-gray-500">Proyecto líder</span>
       <span class="text-base font-bold text-gray-800 line-clamp-2 leading-tight" [title]="leaderProject?.label || ''">
         {{ leaderProject?.label || '—' }}
@@ -143,14 +143,14 @@
         {{ leaderProject?.value }} lecciones
       </span>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col gap-1">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-1">
       <span class="text-xs text-gray-500">Prom. por proyecto</span>
       <span class="text-3xl font-bold text-[#83c936]">{{ avgPerProject }}</span>
     </div>
   </div>
 
   <!-- Tendencia mensual -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+  <div class="rounded-lg border border-gray-200 bg-white p-5">
     <div class="flex items-center justify-between mb-2">
       <h3 class="font-semibold text-gray-800">TENDENCIA MENSUAL DE LECCIONES</h3>
       <span class="text-xs text-gray-400">Evolución por mes (no afectada por el filtro de período)</span>
@@ -162,13 +162,13 @@
 
   <!-- Fila: barras + pie -->
   <div class="flex flex-col lg:flex-row gap-[20px]">
-    <div class="flex-[2] rounded-2xl border border-gray-200 bg-white p-5">
+    <div class="flex-[2] rounded-lg border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR PROYECTO</h3>
       <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsChart class="absolute inset-0 w-full"></canvas>
       </div>
     </div>
-    <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
+    <div class="flex-1 rounded-lg border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR FASE</h3>
       <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsPieChart class="absolute inset-0 w-full"></canvas>
@@ -177,7 +177,7 @@
   </div>
 
   <!-- Lecciones por área (chips) -->
-  <div *ngIf="data?.lessonsByArea?.length" class="rounded-2xl border border-gray-200 bg-white p-5">
+  <div *ngIf="data?.lessonsByArea?.length" class="rounded-lg border border-gray-200 bg-white p-5">
     <h3 class="font-semibold text-gray-800 mb-3">LECCIONES APRENDIDAS POR ÁREA</h3>
     <div class="flex flex-wrap gap-3">
       <div *ngFor="let area of data?.lessonsByArea"
@@ -189,7 +189,7 @@
   </div>
 
   <!-- Fase → Etapa -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+  <div class="rounded-lg border border-gray-200 bg-white p-5">
     <h3 class="font-semibold text-gray-800 mb-4">LECCIONES APRENDIDAS POR ETAPA SEGÚN LA FASE</h3>
     <div *ngIf="phaseStageCharts.length; else noPhaseStage"
       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -215,14 +215,14 @@
 
   <!-- Fila: Top usuarios + Subetapa/especialidad -->
   <div class="flex flex-col lg:flex-row gap-[20px]">
-    <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
+    <div class="flex-1 rounded-lg border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">TOP USUARIOS (RANKING DE APORTES)</h3>
       <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsUserChart class="absolute inset-0 w-full"></canvas>
       </div>
     </div>
 
-    <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-5">
+    <div class="flex-1 rounded-lg border border-gray-200 bg-white p-5">
       <h3 class="font-semibold text-gray-800 mb-2">LECCIONES APRENDIDAS POR SUBETAPA / ESPECIALIDAD</h3>
       <div class="relative h-[300px] sm:h-[400px]">
         <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
@@ -231,7 +231,7 @@
   </div>
 
   <!-- Usuarios pendientes del mes (accionable) -->
-  <div class="rounded-2xl border border-gray-200 bg-white p-5">
+  <div class="rounded-lg border border-gray-200 bg-white p-5">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-gray-800">USUARIOS PENDIENTES</h3>

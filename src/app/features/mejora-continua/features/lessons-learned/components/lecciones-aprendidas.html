@@ -44,7 +44,7 @@
       <!-- Área en cascada (recuadro verde para destacar). Mantiene padding vertical
            (py-2); el margen inferior negativo (-mb-2) cancela ese padding inferior
            para que, con items-end, los controles queden alineados con el resto. -->
-      <div class="bg-[#E5F7D1] rounded-xl px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+      <div class="bg-[#E5F7D1] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
         <ng-container *ngFor="let level of areaLevels; let i = index">
           <div class="w-[200px]">
             <app-search-select
@@ -122,7 +122,7 @@
       </ng-container>
 
       <button type="button" (click)="toggleMyPendingReview()"
-        class="h-[38px] px-4 rounded-xl text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        class="h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
         [ngClass]="filtersTable.onlyMyPendingReview
           ? 'bg-[#64BC04] text-white border-[#64BC04]'
           : 'bg-white text-[#64BC04] border-[#64BC04] hover:bg-[#E5F7D1]'">
@@ -130,7 +130,7 @@
       </button>
 
       <button type="button" (click)="showFilters = !showFilters"
-        class="h-[38px] px-4 bg-[#E5F7D1] rounded-xl text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
+        class="h-[38px] px-4 bg-[#E5F7D1] rounded-lg text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
         <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
           <path fill-rule="evenodd" clip-rule="evenodd"
             d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
@@ -140,7 +140,7 @@
       </button>
 
       <button type="button" (click)="onSearch()"
-        class="h-[38px] px-5 bg-[#64BC04] rounded-xl text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+        class="h-[38px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
         </svg>

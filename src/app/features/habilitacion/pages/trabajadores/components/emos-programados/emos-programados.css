@@ -36,7 +36,7 @@
 .worker-name { font-weight: 500; }
 .worker-dni { font-size: 0.75rem; color: #94a3b8; }
 .td-check { text-align: center; }
-.badge { padding: 3px 9px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.badge { padding: 3px 9px; border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 600; }
 .badge-blue { background: #dbeafe; color: #1d4ed8; }
 .badge-green { background: #dcfce7; color: #15803d; }
 .badge-orange { background: #ffedd5; color: #c2410c; }

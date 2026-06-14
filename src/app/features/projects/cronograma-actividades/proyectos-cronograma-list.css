@@ -16,7 +16,7 @@
 /* ── Card contenedor ────────────────────────────────────────────────────── */
 .dash-card {
   background: #f0f4f8;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow:
     0 2px 12px rgba(27, 38, 59, 0.08),
