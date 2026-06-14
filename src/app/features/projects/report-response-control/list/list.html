@@ -1,8 +1,8 @@
-<div class="flex-1 w-full min-h-0 overflow-y-scroll rounded-lg border-t border-x border-[#D6DEE5]">
+<div class="flex-1 w-full min-h-0 overflow-y-scroll rounded-lg border-t border-x" style="border-color:var(--color-abril-border)">
 
     <table class="w-full table-fixed">
-        <thead class="bg-[#E5F7D1]">
-            <tr class="text-[#64BC04]">
+        <thead style="background:var(--color-abril-primary-light)">
+            <tr style="color:var(--color-abril-primary-dark)">
                 <!--<th class="w-[50px]"></th>-->
                 <th class="w-[150px]">Imagen</th>
                 <th class="w-[150px]">Proyecto</th>
@@ -15,7 +15,7 @@
 
         <tbody>
             <tr (click)="openReportViewModal(item)" *ngFor="let item of tableData.data"
-                class="cursor-pointer hover:bg-stone-100 border-b border-[#D6DEE5] h-[30px]">
+                class="cursor-pointer hover:bg-stone-100 border-b h-[30px]" style="border-color:var(--color-abril-border)">
                 <!--<td class="text-center">
                     <div class="flex items-center justify-center">
                         <button class="cursor-pointer" (click)="openEditModal(item, $event)">
@@ -62,12 +62,12 @@
                     </span>
 
                     <button *ngIf="authService.hasRole('RESIDENTE') && item.residentReportResponseDescriptions.length == 0" (click)="openResponseModal(item, $event)"
-                        class="bg-[#E5F7D1] py-[5px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer w-[180px]">
+                        class="py-[5px] px-[20px] rounded-lg border cursor-pointer w-[180px]" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
                         <div class="flex items-center gap-[10px]">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22 12C22 17.523 17.523 22 12 22H2V12C2 6.477 6.477 2 12 2C17.523 2 22 6.477 22 12Z" stroke="#64BC04"
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
+                                <path d="M22 12C22 17.523 17.523 22 12 22H2V12C2 6.477 6.477 2 12 2C17.523 2 22 6.477 22 12Z" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                <path d="M7 13L10 16L16.5 9.5" stroke="#64BC04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M7 13L10 16L16.5 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                             <p class="text-lg leading-5">Responder incidencia</p>
                         </div>
