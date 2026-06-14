@@ -140,6 +140,7 @@
   }
   .hamburger-btn i { font-size: 16px; color: #374151; }
 
+  .ssoma-hero__badge,
   .ssoma-hero__vline { display: none; }
 
   .ssoma-hero__left {
