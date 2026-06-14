@@ -1,22 +1,23 @@
 import {
-  AfterViewInit,
-  ChangeDetectorRef,
   Component,
   ElementRef,
+  HostBinding,
   HostListener,
-  NgZone,
   OnDestroy,
   OnInit,
-  QueryList,
-  ViewChildren,
+  PLATFORM_ID,
+  inject,
 } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
+import { MicrosoftAuthService } from '../../../features/auth/pages/login/services/microsoft-auth.service';
+
+const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
 
 @Component({
   selector: 'app-sidebar',
@@ -25,247 +26,123 @@ import { ProgramacionAlertasService } from '../../../core/services/programacion-
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
-export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
-  activeMenu: string | null = null;
-  activeGroup: string | null = null;
+export class Sidebar implements OnInit, OnDestroy {
+  collapsed = false;
+  accountMenuOpen = false;
+  allModules: NavModule[] = [];
+  userName: string | null = null;
+  userEmail: string | null = null;
+  userInitials = '';
+  userRole: string | null = null;
 
-  visibleModules: NavModule[] = [];
-  overflowModules: NavModule[] = [];
-  overflowOpen = false;
-  isReady = false;
-  activeOverflowMenu: string | null = null;
-  activeOverflowGroup: string | null = null;
-
-  private allModules: NavModule[] = [];
-  private moduleHeights: number[] = [];
-  private resizeObserver?: ResizeObserver;
-  private resizeRafId = 0;
-
-  @ViewChildren('moduleItem') moduleItems!: QueryList<ElementRef<HTMLElement>>;
+  private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
     private router: Router,
     public navService: NavigationService,
     public alertaSvc: ProgramacionAlertasService,
-    private elementRef: ElementRef,
-    private ngZone: NgZone,
-    private cdr: ChangeDetectorRef,
     private authService: AuthService,
+    private microsoftAuthService: MicrosoftAuthService,
+    private elementRef: ElementRef,
   ) {}
 
   ngOnInit(): void {
     this.alertaSvc.checkRechazados();
     setInterval(() => this.alertaSvc.checkRechazados(), 5 * 60 * 1000);
     this.allModules = this.navService.getModules();
-    this.visibleModules = [...this.allModules];
-  }
-
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.moduleHeights = this.moduleItems
-        .toArray()
-        .map((el) => el.nativeElement.getBoundingClientRect().height);
-      this.calculateVisibleModules();
-      this.isReady = true;
-      this.cdr.detectChanges();
-
-      this.resizeObserver = new ResizeObserver(() =>
-        this.ngZone.run(() => this.calculateVisibleModules()),
-      );
-      this.resizeObserver.observe(this.elementRef.nativeElement);
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
-    if (this.resizeRafId) cancelAnimationFrame(this.resizeRafId);
-  }
-
-  /**
-   * Recalcula los módulos visibles cuando cambia el viewport (cambio de pestaña,
-   * modo responsive de devtools, redimensionar la ventana). El ResizeObserver del
-   * host no siempre dispara en estos casos (p. ej. cuando el sidebar estaba oculto),
-   * así que escuchamos también window:resize. Se coalesce con rAF para no recalcular
-   * en cada evento; calculateVisibleModules fuerza change detection.
-   */
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    if (this.resizeRafId) cancelAnimationFrame(this.resizeRafId);
-    this.resizeRafId = requestAnimationFrame(() => {
-      this.resizeRafId = 0;
-      this.calculateVisibleModules();
-    });
-  }
-
-  private calculateVisibleModules(): void {
-    if (!this.moduleHeights.length) return;
-
-    const hostHeight = this.elementRef.nativeElement.getBoundingClientRect().height;
-    if (hostHeight <= 0) return; // sidebar oculto (móvil): no recalcular ni borrar la lista
-    const paddingY = 40; // py-[20px] top + bottom
-    const gap = 5; // gap-[5px] between items
-    const dotsReservation = 63; // dots button (~58px) + one gap (5px)
-    const available = hostHeight - paddingY - dotsReservation;
-
-    let used = 0;
-    let count = 0;
-    for (let i = 0; i < this.moduleHeights.length; i++) {
-      const h = this.moduleHeights[i] + (i > 0 ? gap : 0);
-      if (used + h <= available) {
-        used += h;
-        count++;
-      } else {
-        break;
-      }
+    if (isPlatformBrowser(this.platformId)) {
+      this.collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      this.userName = user?.displayName ?? null;
+      this.userEmail = user?.email ?? null;
+      this.userRole = user?.jobTitle ?? null;
+      this.userInitials = this.computeInitials(this.userName);
     }
+  }
 
-    this.visibleModules = this.allModules.slice(0, count);
-    this.overflowModules = this.allModules.slice(count);
+  ngOnDestroy(): void {}
 
-    if (this.overflowModules.length === 0) {
-      this.overflowOpen = false;
+  @HostBinding('class.collapsed')
+  get isCollapsed(): boolean {
+    return this.collapsed;
+  }
+
+  get mainModules(): NavModule[] {
+    return this.allModules.filter((m) => m.key !== 'configuracion');
+  }
+
+  get configModule(): NavModule | undefined {
+    return this.allModules.find((m) => m.key === 'configuracion');
+  }
+
+  private computeInitials(name: string | null): string {
+    if (!name) return '?';
+    return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+  }
+
+  toggleCollapsed(): void {
+    this.collapsed = !this.collapsed;
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(this.collapsed));
     }
+  }
 
-    // Forzar refresco: el recálculo viene de callbacks async (ResizeObserver /
-    // window:resize) donde la change detection no corre sola; sin esto el cambio
-    // solo se reflejaba tras un click.
-    this.cdr.detectChanges();
+  toggleAccountMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.accountMenuOpen = !this.accountMenuOpen;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.accountMenuOpen = false;
+    }
   }
 
   isActiveModule(baseRoute: string): boolean {
-    if (baseRoute === '/habilitacion') {
+    if (baseRoute.startsWith('/habilitacion')) {
       return this.router.url === '/' || this.router.url.startsWith('/habilitacion');
     }
     return this.router.url.startsWith(baseRoute);
   }
 
   onModuleClick(module: NavModule): void {
+    this.accountMenuOpen = false;
     if (module.key === 'habilitacion') {
-      if (this.authService.isContratista()) {
-        this.router.navigate(['/habilitacion/dashboard-contratista']);
-      } else {
-        this.router.navigate(['/habilitacion/gestion']);
-      }
-      this.activeMenu = null;
+      this.router.navigate([
+        this.authService.isContratista()
+          ? '/habilitacion/dashboard-contratista'
+          : '/habilitacion/gestion',
+      ]);
       return;
     }
-    if (module.key === 'control-acceso') {
-      this.router.navigate(['/habilitacion/control-acceso']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'clinica') {
-      this.router.navigate(['/clinica/dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'mejora-continua') {
-      this.router.navigate(['/mejora-continua/dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'gestion-administrativa') {
-      this.router.navigate(['/gestion-administrativa/solicitud-salidas']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'proyectos') {
-      this.router.navigate(['/projects/projects-dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'ssoma') {
-      this.router.navigate(['/ssoma/salud-ocupacional/dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'arquitectura-comercial') {
-      this.router.navigate(['/arquitectura-comercial/dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'evaluaciones') {
-      this.router.navigate(['/evaluaciones/dashboard']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'seguridad') {
-      this.router.navigate(['/security/users']);
-      this.activeMenu = null;
-      return;
-    }
-    if (module.key === 'configuracion') {
-      this.router.navigate(['/configuracion/proyectos']);
-      this.activeMenu = null;
-      return;
-    }
-    this.toggleMenu(module.key);
-  }
-
-  toggleMenu(key: string): void {
-    this.activeMenu = this.activeMenu === key ? null : key;
-    this.activeGroup = null;
-  }
-
-  toggleGroup(label: string): void {
-    this.activeGroup = this.activeGroup === label ? null : label;
-  }
-
-  toggleOverflow(): void {
-    this.overflowOpen = !this.overflowOpen;
-    if (!this.overflowOpen) {
-      this.activeOverflowMenu = null;
-      this.activeOverflowGroup = null;
-    }
-  }
-
-  closeOverflow(): void {
-    this.overflowOpen = false;
-    this.activeOverflowMenu = null;
-    this.activeOverflowGroup = null;
-  }
-
-  toggleOverflowMenu(key: string): void {
-    const directNav: Record<string, string> = {
+    const directRoutes: Record<string, string> = {
       'control-acceso': '/habilitacion/control-acceso',
-      'ssoma': '/ssoma/salud-ocupacional/dashboard',
-      'habilitacion': '/habilitacion/gestion',
-      'clinica': '/clinica/dashboard',
+      clinica: '/clinica/dashboard',
       'mejora-continua': '/mejora-continua/dashboard',
       'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-      'proyectos': '/projects/projects-dashboard',
+      proyectos: '/projects/projects-dashboard',
+      ssoma: '/ssoma/salud-ocupacional/dashboard',
+      'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
       'arquitectura-comercial': '/arquitectura-comercial/dashboard',
-      'evaluaciones': '/evaluaciones/dashboard',
-      'seguridad': '/security/users',
-      'configuracion': '/configuracion/proyectos',
+      evaluaciones: '/evaluaciones/dashboard',
+      seguridad: '/security/users',
+      configuracion: '/configuracion/proyectos',
+      costos: '/costs/adjudicaciones',
     };
-    if (directNav[key]) {
-      this.router.navigate([directNav[key]]);
-      this.closeOverflow();
+    if (directRoutes[module.key]) {
+      this.router.navigate([directRoutes[module.key]]);
       return;
     }
-    this.activeOverflowMenu = this.activeOverflowMenu === key ? null : key;
-    this.activeOverflowGroup = null;
-  }
-
-  toggleOverflowGroup(label: string): void {
-    this.activeOverflowGroup = this.activeOverflowGroup === label ? null : label;
-  }
-
-  @HostListener('document:click', ['$event'])
-  closeAll(event: MouseEvent): void {
-    if (!this.elementRef.nativeElement.contains(event.target as Node)) {
-      this.activeMenu = null;
-      this.activeGroup = null;
-      this.overflowOpen = false;
-      this.activeOverflowMenu = null;
-      this.activeOverflowGroup = null;
+    const items = this.navService.filterItems(module.items);
+    if (items.length > 0) {
+      this.router.navigate([items[0].route]);
     }
   }
 
-  closeAllMenus(): void {
-    this.activeMenu = null;
-    this.activeGroup = null;
+  async logout(): Promise<void> {
+    await this.microsoftAuthService.logout();
+    this.router.navigate(['/auth/login']);
   }
 
   trackByModuleKey(_: number, module: NavModule): string {

@@ -1,43 +1,113 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
+import { MicrosoftAuthService } from '../../../features/auth/pages/login/services/microsoft-auth.service';
 
 @Component({
   selector: 'app-sidebar-mobile',
   standalone: true,
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, NavIcon],
   templateUrl: './sidebar-mobile.html',
   styleUrl: './sidebar-mobile.css',
 })
-export class SidebarMobile {
+export class SidebarMobile implements OnInit {
   @Input() menuOpen: boolean = false;
   @Output() menuOpenChange = new EventEmitter<boolean>();
 
-  openModule: string | null = null;
-  openGroup: string | null = null;
+  allModules: NavModule[] = [];
+  userName: string | null = null;
+  userEmail: string | null = null;
+  userInitials = '';
+  userRole: string | null = null;
 
-  constructor(public navService: NavigationService, private router: Router) {}
+  private readonly platformId = inject(PLATFORM_ID);
+
+  constructor(
+    public navService: NavigationService,
+    private authService: AuthService,
+    private microsoftAuthService: MicrosoftAuthService,
+    private router: Router,
+  ) {}
+
+  ngOnInit(): void {
+    this.allModules = this.navService.getModules();
+    if (isPlatformBrowser(this.platformId)) {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      this.userName = user?.displayName ?? null;
+      this.userEmail = user?.email ?? null;
+      this.userRole = user?.jobTitle ?? null;
+      this.userInitials = this.computeInitials(this.userName);
+    }
+  }
+
+  get mainModules(): NavModule[] {
+    return this.allModules.filter((m) => m.key !== 'configuracion');
+  }
+
+  get configModule(): NavModule | undefined {
+    return this.allModules.find((m) => m.key === 'configuracion');
+  }
+
+  private computeInitials(name: string | null): string {
+    if (!name) return '?';
+    return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+  }
 
   close(): void {
     this.menuOpenChange.emit(false);
   }
 
-  navigateTo(module: NavModule): void {
-    this.router.navigate([module.baseRoute]);
+  isActiveModule(baseRoute: string): boolean {
+    if (baseRoute.startsWith('/habilitacion')) {
+      return this.router.url === '/' || this.router.url.startsWith('/habilitacion');
+    }
+    return this.router.url.startsWith(baseRoute);
+  }
+
+  onModuleClick(module: NavModule): void {
+    if (module.key === 'habilitacion') {
+      this.router.navigate([
+        this.authService.isContratista()
+          ? '/habilitacion/dashboard-contratista'
+          : '/habilitacion/gestion',
+      ]);
+      this.close();
+      return;
+    }
+    const directRoutes: Record<string, string> = {
+      'control-acceso': '/habilitacion/control-acceso',
+      clinica: '/clinica/dashboard',
+      'mejora-continua': '/mejora-continua/dashboard',
+      'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
+      proyectos: '/projects/projects-dashboard',
+      ssoma: '/ssoma/salud-ocupacional/dashboard',
+      'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
+      'arquitectura-comercial': '/arquitectura-comercial/dashboard',
+      evaluaciones: '/evaluaciones/dashboard',
+      seguridad: '/security/users',
+      configuracion: '/configuracion/proyectos',
+      costos: '/costs/adjudicaciones',
+    };
+    if (directRoutes[module.key]) {
+      this.router.navigate([directRoutes[module.key]]);
+      this.close();
+      return;
+    }
+    const items = this.navService.filterItems(module.items);
+    if (items.length > 0) {
+      this.router.navigate([items[0].route]);
+      this.close();
+    }
+  }
+
+  async logout(): Promise<void> {
     this.close();
-  }
-
-  toggleModule(key: string, event: MouseEvent): void {
-    event.stopPropagation();
-    this.openModule = this.openModule === key ? null : key;
-    this.openGroup = null;
-  }
-
-  toggleGroup(label: string, event: MouseEvent): void {
-    event.stopPropagation();
-    this.openGroup = this.openGroup === label ? null : label;
+    await this.microsoftAuthService.logout();
+    this.router.navigate(['/auth/login']);
   }
 
   trackByModuleKey(_: number, module: NavModule): string {

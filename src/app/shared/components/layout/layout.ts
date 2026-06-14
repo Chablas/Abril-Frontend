@@ -41,7 +41,9 @@ export class Layout {
       this.router.url.includes('/contractors/management') ||
       this.router.url.includes('/costs/adjudicaciones') ||
       this.router.url.includes('/costs/configuration') ||
-      this.router.url.includes('/habilitacion/control-acceso')
+      this.router.url.includes('/habilitacion/control-acceso') ||
+      this.router.url.includes('/security') ||
+      this.router.url.includes('/configuracion')
     );
   }
 }

@@ -1,186 +1,87 @@
-<div class="h-screen flex flex-col py-[20px] px-[5px]">
-  <div class="flex flex-col items-center w-[100px] gap-[5px] h-full" [class.invisible]="!isReady">
+<div class="sidebar-inner">
 
-    <ng-container *ngFor="let module of visibleModules; trackBy: trackByModuleKey">
-      <div
-        #moduleItem
-        class="relative flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
-        [ngClass]="{
-          'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
-          'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
-        }"
-        (click)="onModuleClick(module)"
-      >
-        <!-- Icono -->
-        <app-nav-icon [key]="module.iconKey" [size]="28" />
+  <!-- Toggle collapse button -->
+  <button class="toggle-btn" (click)="toggleCollapsed()" [title]="collapsed ? 'Expandir sidebar' : 'Contraer sidebar'">
+    <i class="ti ti-layout-sidebar"></i>
+  </button>
 
-        <p class="font-sans text-sm text-center mt-1">{{ module.label }}</p>
+  <!-- Logo -->
+  <div class="logo-section">
+    <div class="logo-icon">
+      <i class="ti ti-leaf"></i>
+    </div>
+    <div class="logo-text" *ngIf="!collapsed">
+      <span class="logo-name">Abril</span>
+      <span class="logo-sub">GRUPO INMOBILIARIO</span>
+    </div>
+  </div>
 
-        <!-- Dropdown -->
-        <div
-          *ngIf="activeMenu === module.key"
-          class="absolute left-28 top-0 p-2 w-60 bg-white rounded-xl shadow-lg z-50"
-          (click)="$event.stopPropagation()"
-        >
-          <!-- Items directos -->
-          <a
-            *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
-            [routerLink]="item.route"
-            (click)="closeAllMenus()"
-            class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
-          >
-            <span>{{ item.label }}</span>
-            <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
-              <span *ngIf="count > 0"
-                style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
-                {{ count }}
-              </span>
-            </ng-container>
-          </a>
-
-          <!-- Grupos (ej. Configuración) -->
-          <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
-            <div class="relative" (click)="toggleGroup(group.label)">
-              <div class="flex justify-between items-center px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer">
-                <span>{{ group.label }}</span>
-                <svg width="9" height="16" viewBox="0 0 9 16" fill="none">
-                  <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-                </svg>
-              </div>
-
-              <!-- Submenú del grupo -->
-              <div
-                *ngIf="activeGroup === group.label"
-                class="absolute left-full top-0 ml-2 w-56 bg-white rounded-xl shadow-lg z-50 p-[5px]"
-              >
-                <a
-                  *ngFor="let item of group.items"
-                  [routerLink]="item.route"
-                  (click)="closeAllMenus()"
-                  class="block px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl"
-                >
-                  {{ item.label }}
-                </a>
-              </div>
-            </div>
-          </ng-container>
-        </div>
+  <!-- User profile -->
+  <div class="profile-section" (click)="toggleAccountMenu($event)" [class.menu-open]="accountMenuOpen">
+    <div class="avatar">{{ userInitials }}</div>
+    <ng-container *ngIf="!collapsed">
+      <div class="profile-info">
+        <span class="profile-name">{{ userName || 'Usuario' }}</span>
+        <span class="profile-role">{{ userRole || '' }}</span>
       </div>
+      <i class="ti ti-chevron-down chev" [class.rotated]="accountMenuOpen"></i>
     </ng-container>
 
-    <!-- Botón "Más" (overflow) -->
-    <div
-      *ngIf="overflowModules.length > 0"
-      class="mt-auto flex flex-col items-center w-full cursor-pointer rounded-lg p-[5px]"
-      [ngClass]="{
-        'bg-[#E5F7D1]': overflowOpen,
-        'hover:bg-[#E5F7D1]': !overflowOpen
-      }"
-      (click)="toggleOverflow()"
-    >
-      <div class="flex gap-1 items-center justify-center" style="height:28px">
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
-        <span class="w-[6px] h-[6px] rounded-full bg-[#64BC04]"></span>
+    <!-- Account dropdown -->
+    <div class="account-menu" *ngIf="accountMenuOpen && !collapsed" (click)="$event.stopPropagation()">
+      <div class="account-info" *ngIf="userEmail">
+        <span class="account-email">{{ userEmail }}</span>
       </div>
-      <p class="font-sans text-sm text-center mt-1">Más</p>
+      <button class="account-logout" (click)="logout()">
+        <i class="ti ti-logout"></i>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- Separator -->
+  <div class="separator"></div>
+
+  <!-- Main module list -->
+  <nav class="modules-nav">
+    <div
+      *ngFor="let module of mainModules; trackBy: trackByModuleKey"
+      class="module-item"
+      [class.active]="isActiveModule(module.baseRoute)"
+      (click)="onModuleClick(module)"
+      [title]="collapsed ? module.label : ''"
+    >
+      <div class="active-bar" *ngIf="isActiveModule(module.baseRoute)"></div>
+      <app-nav-icon [key]="module.iconKey" [size]="20" />
+      <span class="module-label" *ngIf="!collapsed">{{ module.label }}</span>
+    </div>
+  </nav>
+
+  <!-- Separator -->
+  <div class="separator"></div>
+
+  <!-- Bottom: configuración + logout -->
+  <div class="bottom-nav">
+    <div
+      *ngIf="configModule"
+      class="module-item"
+      [class.active]="isActiveModule(configModule.baseRoute)"
+      (click)="onModuleClick(configModule)"
+      [title]="collapsed ? configModule.label : ''"
+    >
+      <div class="active-bar" *ngIf="isActiveModule(configModule.baseRoute)"></div>
+      <app-nav-icon [key]="configModule.iconKey" [size]="20" />
+      <span class="module-label" *ngIf="!collapsed">{{ configModule.label }}</span>
     </div>
 
-  </div>
-</div>
-
-<!-- Backdrop -->
-<div
-  class="fixed inset-0 z-40 bg-black transition-opacity duration-300"
-  [ngClass]="overflowOpen ? 'opacity-40 pointer-events-auto' : 'opacity-0 pointer-events-none'"
-  (click)="closeOverflow()"
-></div>
-
-<!-- Panel de módulos extra -->
-<div
-  class="fixed top-[20px] bottom-[20px] left-[110px] w-64 bg-white z-50 shadow-xl rounded-xl flex flex-col transition-all duration-300 overflow-hidden"
-  [ngClass]="overflowOpen ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0 pointer-events-none'"
->
-  <!-- Header del panel -->
-  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-    <span class="font-semibold text-gray-700 font-sans text-sm">Módulos</span>
-    <button class="p-1 hover:bg-gray-100 rounded-lg transition-colors" (click)="closeOverflow()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#666"/>
-      </svg>
+    <button
+      class="module-item logout-item"
+      (click)="logout()"
+      [title]="collapsed ? 'Cerrar sesión' : ''"
+    >
+      <app-nav-icon key="logout" [size]="20" />
+      <span class="module-label" *ngIf="!collapsed">Cerrar sesión</span>
     </button>
   </div>
 
-  <!-- Lista de módulos en acordeón -->
-  <div class="flex-1 overflow-y-auto p-2">
-    <ng-container *ngFor="let module of overflowModules; trackBy: trackByModuleKey">
-
-      <!-- Cabecera del módulo -->
-      <div
-        class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors"
-        [ngClass]="{
-          'bg-[#E5F7D1]': isActiveModule(module.baseRoute),
-          'hover:bg-[#E5F7D1]': !isActiveModule(module.baseRoute)
-        }"
-        (click)="toggleOverflowMenu(module.key)"
-      >
-        <app-nav-icon [key]="module.iconKey" [size]="22" />
-        <span class="text-sm font-sans flex-1 leading-tight">{{ module.label }}</span>
-        <svg
-          width="7" height="12" viewBox="0 0 9 16" fill="none"
-          class="shrink-0 transition-transform duration-200"
-          [style.transform]="activeOverflowMenu === module.key ? 'rotate(90deg)' : 'rotate(0deg)'"
-        >
-          <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-        </svg>
-      </div>
-
-      <!-- Contenido del acordeón -->
-      <div *ngIf="activeOverflowMenu === module.key" class="ml-2 mb-1">
-        <!-- Items directos -->
-        <a
-          *ngFor="let item of navService.filterItems(module.items); trackBy: trackByItemRoute"
-          [routerLink]="item.route"
-          (click)="closeOverflow(); closeAllMenus()"
-          class="flex items-center justify-between px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans"
-        >
-          <span>{{ item.label }}</span>
-          <ng-container *ngIf="item.route.includes('programaciones') && (alertaSvc.rechazados$ | async) as count">
-            <span *ngIf="count > 0"
-              style="background:#dc2626;color:#fff;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;margin-left:4px;">
-              {{ count }}
-            </span>
-          </ng-container>
-        </a>
-
-        <!-- Grupos -->
-        <ng-container *ngFor="let group of navService.filterGroups(module.groups); trackBy: trackByGroupLabel">
-          <div
-            class="flex justify-between items-center px-4 py-2 text-sm rounded-xl hover:bg-[#E5F7D1] font-sans cursor-pointer"
-            (click)="toggleOverflowGroup(group.label)"
-          >
-            <span>{{ group.label }}</span>
-            <svg
-              width="7" height="12" viewBox="0 0 9 16" fill="none"
-              class="shrink-0 transition-transform duration-200"
-              [style.transform]="activeOverflowGroup === group.label ? 'rotate(90deg)' : 'rotate(0deg)'"
-            >
-              <path d="M0 1.30763L1.33853 0L8.62916 7.1266C8.74668 7.24079 8.83995 7.37658 8.90359 7.52616C8.96724 7.67574 9 7.83614 9 7.99815C9 8.16016 8.96724 8.32056 8.90359 8.47014C8.83995 8.61971 8.74668 8.75551 8.62916 8.8697L1.33853 16L0.00126076 14.6924L6.84403 8L0 1.30763Z" fill="#64BC04"/>
-            </svg>
-          </div>
-          <div *ngIf="activeOverflowGroup === group.label" class="ml-4 mb-1">
-            <a
-              *ngFor="let item of group.items"
-              [routerLink]="item.route"
-              (click)="closeOverflow(); closeAllMenus()"
-              class="block px-4 py-2 text-sm hover:bg-[#E5F7D1] rounded-xl font-sans"
-            >
-              {{ item.label }}
-            </a>
-          </div>
-        </ng-container>
-      </div>
-
-    </ng-container>
-  </div>
 </div>

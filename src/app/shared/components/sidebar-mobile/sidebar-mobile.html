@@ -1,67 +1,121 @@
 <!-- Backdrop -->
 <div
   *ngIf="menuOpen"
-  class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+  class="fixed inset-0 z-40 bg-black/50"
   (click)="close()"
 ></div>
 
 <!-- Drawer -->
 <div
-  class="fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[280px]
-         transition-transform duration-300 ease-out"
-  style="background: var(--color-abril-sidebar-bg);
-         box-shadow: 4px 0 24px rgba(0,0,0,0.3);"
+  class="fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[260px] transition-transform duration-300 ease-out overflow-hidden"
+  style="background: var(--color-abril-sidebar-bg);"
   [class.-translate-x-full]="!menuOpen"
 >
+  <div class="flex flex-col h-full px-2 py-3 gap-0 overflow-hidden box-border">
 
-  <!-- Header del drawer -->
-  <div class="flex items-center justify-between px-4 h-[52px] shrink-0"
-       style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-    <div class="flex items-center gap-2">
-      <img src="/images/abril-logo.png" alt="Abril"
-           class="w-6 h-6 object-contain"
-           style="filter: brightness(0) invert(1); opacity: 0.85;" />
-      <span class="text-xs font-semibold tracking-widest uppercase"
-            style="color: var(--color-abril-sidebar-muted)">Abril</span>
-    </div>
-    <button (click)="close()"
-      class="w-8 h-8 flex items-center justify-center rounded-lg
-             border-0 cursor-pointer transition-colors hover:bg-white/10">
-      <i class="ti ti-x text-lg" style="color: var(--color-abril-sidebar-text)"></i>
-    </button>
-  </div>
-
-  <!-- Navegación -->
-  <nav class="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
-    <ng-container *ngFor="let module of navService.getModules(); trackBy: trackByModuleKey">
-
-      <!-- Item de módulo -->
+    <!-- Toggle/close row -->
+    <div class="flex justify-end mb-2">
       <button
-        type="button"
-        (click)="navigateTo(module)"
-        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl
-               border-0 cursor-pointer text-left outline-none
-               transition-colors hover:bg-white/8"
+        (click)="close()"
+        class="flex items-center justify-center w-8 h-8 rounded border-0 cursor-pointer transition-colors"
+        style="background: transparent; color: var(--color-abril-sidebar-muted);"
+        title="Cerrar menú"
       >
-        <div class="w-8 h-8 flex items-center justify-center rounded-lg shrink-0"
-             [style.background]="'rgba(76,175,80,0.15)'">
-          <i class="ti text-lg" [class]="'ti-' + module.iconKey"
-             style="color: var(--color-abril-sidebar-active)"></i>
-        </div>
-        <span class="text-sm font-medium flex-1"
-              style="color: var(--color-abril-sidebar-text)">{{ module.label }}</span>
-        <i *ngIf="module.items?.length || module.groups?.length"
-           class="ti ti-chevron-right text-sm shrink-0"
-           style="color: var(--color-abril-sidebar-muted)"></i>
+        <i class="ti ti-x text-lg"></i>
       </button>
+    </div>
 
-    </ng-container>
-  </nav>
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-2 pb-4 flex-shrink-0">
+      <div class="flex items-center justify-center w-8 h-8 rounded flex-shrink-0"
+           style="background: var(--color-abril-primary); color: #fff; font-size: 16px; border-radius: var(--radius-sm);">
+        <i class="ti ti-leaf"></i>
+      </div>
+      <div class="flex flex-col overflow-hidden">
+        <span class="font-bold text-white leading-tight" style="font-size: 15px;">Abril</span>
+        <span class="font-semibold uppercase tracking-wider"
+              style="font-size: 8px; color: var(--color-abril-sidebar-muted); letter-spacing: 0.06em;">
+          GRUPO INMOBILIARIO
+        </span>
+      </div>
+    </div>
 
-  <!-- Footer del drawer -->
-  <div class="px-4 py-3 shrink-0" style="border-top: 1px solid rgba(255,255,255,0.08);">
-    <span class="text-[10px]" style="color: var(--color-abril-sidebar-muted)">
-      Abril · SSOMA 2026
-    </span>
+    <!-- Profile -->
+    <div class="flex items-center gap-2 px-2 py-2 rounded flex-shrink-0 mb-2"
+         style="border-radius: var(--radius-sm); background: var(--color-abril-sidebar-hover);">
+      <div class="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0"
+           style="background: #374151; font-size: 11px; font-weight: 700; color: #d1d5db;">
+        {{ userInitials }}
+      </div>
+      <div class="flex flex-col min-w-0 overflow-hidden flex-1">
+        <span class="font-semibold truncate leading-tight"
+              style="font-size: 12px; color: var(--color-abril-sidebar-text);">
+          {{ userName || 'Usuario' }}
+        </span>
+        <span class="truncate leading-tight"
+              style="font-size: 10px; color: var(--color-abril-sidebar-muted);">
+          {{ userRole || '' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Separator -->
+    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 0.5px solid rgba(255,255,255,0.08);"></div>
+
+    <!-- Main modules -->
+    <nav class="flex flex-col gap-0.5 overflow-y-auto flex-1 pb-1" style="scrollbar-width: none;">
+      <div
+        *ngFor="let module of mainModules; trackBy: trackByModuleKey"
+        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
+        [class.font-bold]="isActiveModule(module.baseRoute)"
+        style="border-radius: var(--radius-sm); color: var(--color-abril-sidebar-text); font-size: 13px;"
+        [style.color]="isActiveModule(module.baseRoute) ? '#fff' : 'var(--color-abril-sidebar-text)'"
+        (click)="onModuleClick(module)"
+      >
+        <div *ngIf="isActiveModule(module.baseRoute)"
+             class="absolute left-0 top-1/2 -translate-y-1/2 rounded-r"
+             style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
+        </div>
+        <app-nav-icon [key]="module.iconKey" [size]="19" />
+        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style="font-family: inherit;">
+          {{ module.label }}
+        </span>
+      </div>
+    </nav>
+
+    <!-- Separator -->
+    <div class="flex-shrink-0 mx-1 my-2" style="height: 0; border-top: 0.5px solid rgba(255,255,255,0.08);"></div>
+
+    <!-- Bottom: configuración + logout -->
+    <div class="flex flex-col gap-0.5 flex-shrink-0">
+      <div
+        *ngIf="configModule"
+        class="relative flex items-center gap-3 px-3 py-2 rounded cursor-pointer flex-shrink-0 transition-colors"
+        [class.font-bold]="isActiveModule(configModule.baseRoute)"
+        style="border-radius: var(--radius-sm); color: var(--color-abril-sidebar-text); font-size: 13px;"
+        [style.color]="isActiveModule(configModule.baseRoute) ? '#fff' : 'var(--color-abril-sidebar-text)'"
+        (click)="onModuleClick(configModule)"
+      >
+        <div *ngIf="isActiveModule(configModule.baseRoute)"
+             class="absolute left-0 top-1/2 -translate-y-1/2 rounded-r"
+             style="width: 3px; height: 55%; background: var(--color-abril-primary); border-radius: 0 2px 2px 0;">
+        </div>
+        <app-nav-icon [key]="configModule.iconKey" [size]="19" />
+        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style="font-family: inherit;">
+          {{ configModule.label }}
+        </span>
+      </div>
+
+      <button
+        (click)="logout()"
+        class="flex items-center gap-3 px-3 py-2 rounded w-full border-0 cursor-pointer transition-colors flex-shrink-0"
+        style="border-radius: var(--radius-sm); background: transparent; color: var(--color-abril-danger);
+               font-size: 13px; font-family: inherit; text-align: left;"
+      >
+        <app-nav-icon key="logout" [size]="19" />
+        <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">Cerrar sesión</span>
+      </button>
+    </div>
+
   </div>
 </div>
