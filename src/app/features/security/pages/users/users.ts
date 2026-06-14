@@ -6,10 +6,11 @@ import { UserEditForm } from './components/user-edit-form/user-edit-form';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { UserListItemDto } from '../../../../core/dtos/user/userListItem.model';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-users',
-  imports: [CommonModule, UserList, UserCreate, UserEditForm, Paginator],
+  imports: [CommonModule, UserList, UserCreate, UserEditForm, Paginator, AbrilPageHeaderComponent],
   templateUrl: './users.html',
   styleUrl: './users.css',
 })

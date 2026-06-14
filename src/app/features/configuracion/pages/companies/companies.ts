@@ -9,11 +9,12 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { CompanyEditForm } from './components/company-edit-form/company-edit-form';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-config-companies',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm],
+  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm, AbrilPageHeaderComponent],
   templateUrl: './companies.html',
   styleUrl: './companies.css',
 })

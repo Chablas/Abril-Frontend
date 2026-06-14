@@ -10,6 +10,7 @@ import { AreaTypeCreate } from './area-type/area-type-create';
 import { AreaItemList } from './area-item/area-item-list';
 import { AreaItemCreate } from './area-item/area-item-create';
 import { AreaScopeList } from './area-scope/area-scope-list';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 type AreaSection = 'items' | 'scope' | 'types';
 
@@ -25,6 +26,7 @@ type AreaSection = 'items' | 'scope' | 'types';
     AreaItemList,
     AreaItemCreate,
     AreaScopeList,
+    AbrilPageHeaderComponent,
   ],
   templateUrl: './area.html',
   styleUrl: './area.css',

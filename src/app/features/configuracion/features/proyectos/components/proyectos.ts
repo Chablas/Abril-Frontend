@@ -12,10 +12,11 @@ import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
 import { ProyectoEmails } from './emails/proyecto-emails';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-proyectos-config',
-  imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails],
+  imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails, AbrilPageHeaderComponent],
   templateUrl: './proyectos.html',
   styleUrl: './proyectos.css',
 })

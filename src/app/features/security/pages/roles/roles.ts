@@ -6,10 +6,11 @@ import { RoleEdit } from './components/role-edit/role-edit';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { RoleDto } from './dtos/role.model';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-roles',
-  imports: [CommonModule, RoleList, RoleCreate, RoleEdit, Paginator],
+  imports: [CommonModule, RoleList, RoleCreate, RoleEdit, Paginator, AbrilPageHeaderComponent],
   templateUrl: './roles.html',
   styleUrl: './roles.css',
 })

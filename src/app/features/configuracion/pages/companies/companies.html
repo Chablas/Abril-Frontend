@@ -1,10 +1,16 @@
-<section class="p-6 space-y-4">
-  <header class="section-bar">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">Razones Sociales</h2>
-      <p class="text-sm text-gray-500">Empresas del grupo Abril.</p>
-    </div>
-  </header>
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Razones Sociales"
+  subtitulo="Empresas del grupo Abril."
+  [tabs]="[
+    { label: 'Proyectos', icono: 'ti-folder', route: '/configuracion/proyectos' },
+    { label: 'Áreas', icono: 'ti-layout', route: '/configuracion/area' },
+    { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
+    { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' }
+  ]">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
 
   <div class="filters-card">
     <div class="filters-grid">

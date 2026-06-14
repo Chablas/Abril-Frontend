@@ -17,11 +17,12 @@ import {
   SIN_EMO_COLOR,
   SIN_EMO_LABEL,
 } from '../../../ssoma/salud-ocupacional/shared/aptitud.utils';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-config-workers',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator],
+  imports: [CommonModule, FormsModule, Paginator, AbrilPageHeaderComponent],
   templateUrl: './workers.html',
   styleUrl: './workers.css',
 })

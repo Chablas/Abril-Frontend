@@ -1,12 +1,16 @@
-<section class="p-6 space-y-4">
-  <header class="section-bar">
-    <div>
-      <h2 class="text-xl font-semibold text-gray-800">Lista de Trabajadores</h2>
-      <p class="text-sm text-gray-500">
-        Trabajadores activos con su último EMO, estado de vigencia y aptitud.
-      </p>
-    </div>
-  </header>
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Trabajadores"
+  subtitulo="Trabajadores activos con su último EMO, estado de vigencia y aptitud."
+  [tabs]="[
+    { label: 'Proyectos', icono: 'ti-folder', route: '/configuracion/proyectos' },
+    { label: 'Áreas', icono: 'ti-layout', route: '/configuracion/area' },
+    { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
+    { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' }
+  ]">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
 
   <div class="filters-card">
     <div class="filters-grid">

@@ -1,4 +1,16 @@
-<div class="bg-white rounded-lg p-[20px] flex flex-col gap-5">
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Áreas"
+  subtitulo="Gestión de áreas, jerarquías y tipos de área."
+  [tabs]="[
+    { label: 'Proyectos', icono: 'ti-folder', route: '/configuracion/proyectos' },
+    { label: 'Áreas', icono: 'ti-layout', route: '/configuracion/area' },
+    { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
+    { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' }
+  ]">
+</app-abril-page-header>
+
+<div class="flex-1 min-h-0 bg-white rounded-lg p-[20px] flex flex-col gap-5">
 
   <!-- Tabs de sección -->
   <app-section-tabs
