@@ -13,13 +13,14 @@ import {
 } from '../../services/control-acceso.service';
 import { Tareo } from './components/tareo/tareo';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 type Tab = 'consulta' | 'induccion' | 'no-autorizados' | 'tareo';
 
 @Component({
   selector: 'app-control-acceso',
   standalone: true,
-  imports: [CommonModule, FormsModule, Tareo, SearchSelect],
+  imports: [CommonModule, FormsModule, Tareo, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './control-acceso.html',
   styleUrl: './control-acceso.css',
 })

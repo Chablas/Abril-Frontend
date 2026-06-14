@@ -2,10 +2,18 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 /* ── Root ────────────────────────────────────────────────────────── */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .ca-root {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   background: #f9fafb;
   font-size: 16px;
 }
