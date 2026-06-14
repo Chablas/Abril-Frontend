@@ -156,7 +156,6 @@ export class NavigationService {
       baseRoute: '/security',
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
-        { label: 'Roles',                route: '/security/roles', featureKey: 'security.roles' },
       ],
     },
     {
@@ -165,10 +164,7 @@ export class NavigationService {
       iconKey: 'adjustments-horizontal',
       baseRoute: '/configuracion',
       items: [
-        { label: 'Proyectos',        route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
-        { label: 'Áreas',            route: '/configuracion/area',      featureKey: 'configuracion.area' },
-        { label: 'Razones Sociales', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
-        { label: 'Lista de Trabajadores', route: '/configuracion/workers', featureKey: 'configuracion.workers' },
+        { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
       ],
     },
   ];

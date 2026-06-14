@@ -189,6 +189,16 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       this.activeMenu = null;
       return;
     }
+    if (module.key === 'seguridad') {
+      this.router.navigate(['/security/users']);
+      this.activeMenu = null;
+      return;
+    }
+    if (module.key === 'configuracion') {
+      this.router.navigate(['/configuracion/proyectos']);
+      this.activeMenu = null;
+      return;
+    }
     this.toggleMenu(module.key);
   }
 
@@ -226,6 +236,8 @@ export class Sidebar implements OnInit, AfterViewInit, OnDestroy {
       'proyectos': '/projects/projects-dashboard',
       'arquitectura-comercial': '/arquitectura-comercial/dashboard',
       'evaluaciones': '/evaluaciones/dashboard',
+      'seguridad': '/security/users',
+      'configuracion': '/configuracion/proyectos',
     };
     if (directNav[key]) {
       this.router.navigate([directNav[key]]);
