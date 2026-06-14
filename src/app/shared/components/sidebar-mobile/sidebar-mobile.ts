@@ -18,6 +18,8 @@ export class SidebarMobile implements OnInit {
   @Input() menuOpen: boolean = false;
   @Output() menuOpenChange = new EventEmitter<boolean>();
 
+  expandedModule: string | null = null;
+  expandedGroup: string | null = null;
   allModules: NavModule[] = [];
   userName: string | null = null;
   userEmail: string | null = null;
@@ -27,10 +29,10 @@ export class SidebarMobile implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
+    public router: Router,
     public navService: NavigationService,
     private authService: AuthService,
     private microsoftAuthService: MicrosoftAuthService,
-    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -68,6 +70,21 @@ export class SidebarMobile implements OnInit {
     return this.router.url.startsWith(baseRoute);
   }
 
+  isActiveRoute(route: string): boolean {
+    return this.router.url === route || this.router.url.startsWith(route + '/');
+  }
+
+  hasAccordion(module: NavModule): boolean {
+    const items = this.navService.filterItems(module.items);
+    const groups = this.navService.filterGroups(module.groups);
+    return items.length > 1 || groups.length > 0;
+  }
+
+  toggleGroup(label: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.expandedGroup = this.expandedGroup === label ? null : label;
+  }
+
   onModuleClick(module: NavModule): void {
     if (module.key === 'habilitacion') {
       this.router.navigate([
@@ -78,30 +95,22 @@ export class SidebarMobile implements OnInit {
       this.close();
       return;
     }
-    const directRoutes: Record<string, string> = {
-      'control-acceso': '/habilitacion/control-acceso',
-      clinica: '/clinica/dashboard',
-      'mejora-continua': '/mejora-continua/dashboard',
-      'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-      proyectos: '/projects/projects-dashboard',
-      ssoma: '/ssoma/salud-ocupacional/dashboard',
-      'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
-      'arquitectura-comercial': '/arquitectura-comercial/dashboard',
-      evaluaciones: '/evaluaciones/dashboard',
-      seguridad: '/security/users',
-      configuracion: '/configuracion/proyectos',
-      costos: '/costs/adjudicaciones',
-    };
-    if (directRoutes[module.key]) {
-      this.router.navigate([directRoutes[module.key]]);
-      this.close();
-      return;
-    }
+
     const items = this.navService.filterItems(module.items);
-    if (items.length > 0) {
+    const groups = this.navService.filterGroups(module.groups);
+
+    if (items.length > 1 || groups.length > 0) {
+      this.expandedModule = this.expandedModule === module.key ? null : module.key;
+      this.expandedGroup = null;
+    } else if (items.length === 1) {
       this.router.navigate([items[0].route]);
       this.close();
     }
+  }
+
+  navigateAndClose(route: string): void {
+    this.router.navigate([route]);
+    this.close();
   }
 
   async logout(): Promise<void> {

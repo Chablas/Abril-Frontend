@@ -29,6 +29,8 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
 export class Sidebar implements OnInit, OnDestroy {
   collapsed = false;
   accountMenuOpen = false;
+  expandedModule: string | null = null;
+  expandedGroup: string | null = null;
   allModules: NavModule[] = [];
   userName: string | null = null;
   userEmail: string | null = null;
@@ -38,7 +40,7 @@ export class Sidebar implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
-    private router: Router,
+    public router: Router,
     public navService: NavigationService,
     public alertaSvc: ProgramacionAlertasService,
     private authService: AuthService,
@@ -82,6 +84,8 @@ export class Sidebar implements OnInit, OnDestroy {
 
   toggleCollapsed(): void {
     this.collapsed = !this.collapsed;
+    this.expandedModule = null;
+    this.expandedGroup = null;
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(this.collapsed));
     }
@@ -90,6 +94,11 @@ export class Sidebar implements OnInit, OnDestroy {
   toggleAccountMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.accountMenuOpen = !this.accountMenuOpen;
+  }
+
+  toggleSidebarGroup(label: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.expandedGroup = this.expandedGroup === label ? null : label;
   }
 
   @HostListener('document:click', ['$event'])
@@ -106,37 +115,54 @@ export class Sidebar implements OnInit, OnDestroy {
     return this.router.url.startsWith(baseRoute);
   }
 
+  isActiveRoute(route: string): boolean {
+    return this.router.url === route || this.router.url.startsWith(route + '/');
+  }
+
+  hasAccordion(module: NavModule): boolean {
+    const items = this.navService.filterItems(module.items);
+    const groups = this.navService.filterGroups(module.groups);
+    return items.length > 1 || groups.length > 0;
+  }
+
   onModuleClick(module: NavModule): void {
     this.accountMenuOpen = false;
+
+    // Habilitación: lógica especial por rol de contratista
     if (module.key === 'habilitacion') {
       this.router.navigate([
         this.authService.isContratista()
           ? '/habilitacion/dashboard-contratista'
           : '/habilitacion/gestion',
       ]);
+      this.expandedModule = null;
       return;
     }
-    const directRoutes: Record<string, string> = {
-      'control-acceso': '/habilitacion/control-acceso',
-      clinica: '/clinica/dashboard',
-      'mejora-continua': '/mejora-continua/dashboard',
-      'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-      proyectos: '/projects/projects-dashboard',
-      ssoma: '/ssoma/salud-ocupacional/dashboard',
-      'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
-      'arquitectura-comercial': '/arquitectura-comercial/dashboard',
-      evaluaciones: '/evaluaciones/dashboard',
-      seguridad: '/security/users',
-      configuracion: '/configuracion/proyectos',
-      costos: '/costs/adjudicaciones',
-    };
-    if (directRoutes[module.key]) {
-      this.router.navigate([directRoutes[module.key]]);
+
+    // Sidebar colapsado: navega al primer ítem disponible directamente
+    if (this.collapsed) {
+      const items = this.navService.filterItems(module.items);
+      if (items.length > 0) {
+        this.router.navigate([items[0].route]);
+      } else {
+        const groups = this.navService.filterGroups(module.groups);
+        if (groups.length > 0 && groups[0].items.length > 0) {
+          this.router.navigate([groups[0].items[0].route]);
+        }
+      }
       return;
     }
+
+    // Sidebar expandido: accordion para módulos con varios ítems, directo para uno solo
     const items = this.navService.filterItems(module.items);
-    if (items.length > 0) {
+    const groups = this.navService.filterGroups(module.groups);
+
+    if (items.length > 1 || groups.length > 0) {
+      this.expandedModule = this.expandedModule === module.key ? null : module.key;
+      this.expandedGroup = null;
+    } else if (items.length === 1) {
       this.router.navigate([items[0].route]);
+      this.expandedModule = null;
     }
   }
 
