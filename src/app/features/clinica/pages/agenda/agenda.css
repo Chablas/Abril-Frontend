@@ -12,7 +12,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #f0f4f8;
+  background: var(--color-abril-page-bg);
   color: #1e293b;
 }
 

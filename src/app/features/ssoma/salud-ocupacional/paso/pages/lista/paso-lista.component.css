@@ -27,7 +27,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #f4f6f9;
+  background: var(--color-abril-page-bg);
 }
 
 /* ── Barra selector de proyecto ───────────────────────────────── */
