@@ -3,7 +3,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: var(--color-abril-sidebar-bg);
+  background: #1B3A2D;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   flex-wrap: wrap;
 }

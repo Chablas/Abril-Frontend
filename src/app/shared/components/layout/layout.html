@@ -7,8 +7,6 @@
           [class.p-0]="isFullPage()"
           [style.padding]="isFullPage() ? '0' : null">
       <ng-container *ngIf="isFullPage(); else normalLayout">
-        <app-header style="position:fixed; top:0; right:0; z-index:999;
-                           background:transparent; width:auto;"></app-header>
         <router-outlet></router-outlet>
       </ng-container>
       <ng-template #normalLayout>
