@@ -249,8 +249,10 @@
 }
 .module-item.active {
   font-weight: 700;
-  /* icon color = primary (inherits to app-nav-icon) */
   color: var(--color-abril-primary);
+  background: var(--color-abril-bg);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 .module-item.active .module-label {
   /* label overridden to ink so only icon stays green */

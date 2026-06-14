@@ -64,10 +64,16 @@ export class SidebarMobile implements OnInit {
   }
 
   isActiveModule(baseRoute: string): boolean {
-    if (baseRoute.startsWith('/habilitacion')) {
-      return this.router.url === '/' || this.router.url.startsWith('/habilitacion');
+    const url = this.router.url;
+    if (baseRoute === '/habilitacion/gestion') {
+      return url.startsWith('/habilitacion/gestion') ||
+             url.startsWith('/habilitacion/dashboard-contratista');
     }
-    return this.router.url.startsWith(baseRoute);
+    if (baseRoute === '/ssoma') {
+      return (url === '/ssoma' || url.startsWith('/ssoma/')) &&
+             !url.startsWith('/ssoma/gestion');
+    }
+    return url === baseRoute || url.startsWith(baseRoute + '/');
   }
 
   isActiveRoute(route: string): boolean {
