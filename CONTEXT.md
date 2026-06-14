@@ -4,7 +4,14 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-12 — **SSOMA RAC PASO 12-13**: módulo frontend `features/ssoma/gestion/rac/` creado completo. PASO 12: `rac.dtos.ts` (20 interfaces), `rac.service.ts` (12 métodos, helper `buildParams(q: object)`), `rac.routes.ts` (6 rutas lazy — `''→dashboard`, `dashboard`, `lista`, `nuevo`, `penalidades`, `:id/cerrar`, `:id`), 6 páginas stub, ruta `gestion/rac` registrada en `ssoma.routes.ts`. PASO 13: `RacDashboard` implementación completa — KPI grid (Abiertos/Cerrados/Críticos/Vencidos con countUp), tabla "RACs por Proyecto" (top 5), "Top Categorías" con barras horizontales y chips de ámbito, empty state, skeleton loader. CSS con variables en `:host`, clases `.rac-*`, `.ambito-chip--blue/green/teal`, responsive 1200/900/760px.
+> **Última actualización**: 2026-06-14 — **Migración masiva AbrilPageHeaderComponent + sidebar direct-nav**.
+> - `AbrilPageHeaderComponent` (`shared/components/abril-page-header/`) aplicado en: contractors/management, costs/adjudicaciones, costs/configuration (5 páginas), habilitacion/control-acceso, ssoma/salud-ocupacional (dashboard, emos, programaciones, interconsultas, convalidaciones, catalogos, reportes), ssoma/gestion/rac (dashboard, lista, nuevo, detalle, cerrar, penalidades), ssoma/gestion/paso (dashboard), security (users, roles), configuracion (proyectos, area, companies, workers). Inputs: `badge`, `titulo`, `subtitulo`, `pills`, `tabs: AbrilPageTab[]`, `botonPrimario?: SsomaHeaderBtn`, `botonSecundario?: SsomaHeaderBtn`. Outputs: `primaryClick`, `secondaryClick`. Tabs usan `RouterLink` activo por ruta.
+> - `layout.ts isFullPage()` extendido para todas las rutas migradas (retorna `true` → oculta header global).
+> - `:host { display:flex; flex-direction:column; flex:1; min-height:0 }` en CSS de todos los componentes migrados. Root div cambia `h-full` → `flex-1 min-h-0`.
+> - **Sidebar direct-nav sin dropdown**: `onModuleClick` y `toggleOverflowMenu` navegan directo (sin abrir desplegable) para: `ssoma` → `/ssoma/salud-ocupacional/dashboard`, `control-acceso` → `/habilitacion/control-acceso`, `clinica` → `/clinica/dashboard`, `habilitacion` → `/habilitacion/gestion` (admin) o `/habilitacion/dashboard-contratista` (contratista), `proyectos` → `/projects/projects-dashboard`, `mejora-continua` → `/mejora-continua/dashboard`, `gestion-administrativa` → `/gestion-administrativa/solicitud-salidas`, `arquitectura-comercial` → `/arquitectura-comercial/dashboard`, `evaluaciones` → `/evaluaciones/dashboard`, `seguridad` → `/security/users`, `configuracion` → `/configuracion/proyectos`. Cada módulo mantiene 1 item en `items[]` solo para pasar el filtro de visibilidad del sidebar.
+> - `angular.json` budget initial: `maximumWarning: 1MB`, `maximumError: 1.5MB` (bundle supera 1MB por libs incluidas).
+>
+> **2026-06-12 — SSOMA RAC PASO 12-13**: módulo frontend `features/ssoma/gestion/rac/` creado completo. PASO 12: `rac.dtos.ts` (20 interfaces), `rac.service.ts` (12 métodos, helper `buildParams(q: object)`), `rac.routes.ts` (6 rutas lazy — `''→dashboard`, `dashboard`, `lista`, `nuevo`, `penalidades`, `:id/cerrar`, `:id`), 6 páginas stub, ruta `gestion/rac` registrada en `ssoma.routes.ts`. PASO 13: `RacDashboard` implementación completa — KPI grid (Abiertos/Cerrados/Críticos/Vencidos con countUp), tabla "RACs por Proyecto" (top 5), "Top Categorías" con barras horizontales y chips de ámbito, empty state, skeleton loader. CSS con variables en `:host`, clases `.rac-*`, `.ambito-chip--blue/green/teal`, responsive 1200/900/760px.
 >
 > **2026-06-12 — habilitacion/trabajadores: modal de catálogos**. Nuevo `CatCatalogosService` (`features/habilitacion/services/cat-catalogos.service.ts`) con CRUD completo (GET admin, POST, PUT, PATCH toggle) para `CatCategoriaAdminDto` y `CatOcupacionAdminDto`. Nuevo componente standalone `CatalogosModal` (`components/catalogos-modal/`) con tabs Categorías / Ocupaciones, edición inline, toggle activo/inactivo y agregar nuevo ítem. Botón "Catálogos" visible solo para roles `ADMINISTRADOR SSOMA` y `ADMINISTRADOR DE UDP` (getter `puedeGestionarCatalogos`), ubicado antes del botón "Nuevo Trabajador" en la topbar. Todos los endpoints de escritura del backend son `[AllowAnonymous]` — no requieren token.
 >
@@ -422,6 +429,7 @@ Importables como standalone desde cualquier feature.
 | `Header`, `Sidebar`, `SidebarMobile`, `NavIcon`                              | —                     | `shared/components/header,sidebar*,nav-icon/`                                            | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
 | `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios                | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes.                                                                                                                                                                                                                                                                                                           |
 | `DocumentViewer`                                                             | `app-document-viewer` | `shared/components/document-viewer/`                                                     | Visor de documentos modal. Inputs: `archivoUrl` (ruta relativa o URL), `nombre`. Output: `closed`. Llama `getArchivoUrl(path)` para obtener URL firmada, luego fetch-as-blob para PDF/imagen. `archivoUrl = ''` cierra el visor. Reutilizable en cualquier feature de habilitación.                                                    |
+| `AbrilPageHeaderComponent`                                                   | `app-abril-page-header` | `shared/components/abril-page-header/abril-page-header.component`                      | Header estándar de página. Inputs: `badge` (chip superior), `titulo`, `subtitulo`, `pills: string[]`, `tabs: AbrilPageTab[]` (navegan por RouterLink activo), `botonPrimario?: SsomaHeaderBtn { label, icono }`, `botonSecundario?: SsomaHeaderBtn`. Outputs: `primaryClick`, `secondaryClick`. Requiere que el componente padre tenga `:host { display:flex; flex-direction:column; flex:1; min-height:0 }` y que `layout.ts isFullPage()` retorne `true` para su ruta. Usado en: contractors, costs, habilitacion/control-acceso, ssoma (salud-ocupacional, rac, paso), security, configuracion. |
 
 **Importación correcta** (standalone):
 
@@ -676,8 +684,9 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 ### `features/security/` — ✅ CRUD completo
 
-- `/security/users` (gestión de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
+- `/security/users` (gestión de usuarios) y `/security/roles`. Rol: `ADMINISTRADOR DEL SISTEMA`.
 - Lista paginada con búsqueda client-side. CRUD completo: crear, editar, toggle activo/inactivo.
+- **Sidebar**: módulo `seguridad` navega directo a `/security/users` — sin dropdown. `AbrilPageHeaderComponent` con badge `"SEGURIDAD"` y tabs Usuarios / Roles en ambas páginas. `isFullPage()` retorna `true` para `/security/**`.
 - Ver §13 para detalles de implementación.
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
@@ -824,10 +833,13 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
 
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
+- **Sidebar**: módulo `ssoma` navega directo a `/ssoma/salud-ocupacional/dashboard` — sin dropdown. Patrón igual que `clinica` y `control-acceso`: `onModuleClick` y `toggleOverflowMenu` interceptan la clave `'ssoma'` y usan `router.navigate`. El módulo mantiene 1 item en `items[]` para pasar el filtro de visibilidad del sidebar (`.filter(m => m.items.length > 0)`).
+- **Todos los pages** usan `AbrilPageHeaderComponent` con badge `"SALUD OCUPACIONAL"` y tabs de navegación entre secciones. `isFullPage()` retorna `true` para todas las rutas `/ssoma/salud-ocupacional/*`.
 
 ### `features/configuracion/` — ✅ Completo
 
 Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
+- **Sidebar**: módulo `configuracion` navega directo a `/configuracion/proyectos` — sin dropdown. `AbrilPageHeaderComponent` con badge `"CONFIGURACIÓN"` y tabs Proyectos / Áreas / Razones Sociales / Trabajadores en todas las páginas. `isFullPage()` retorna `true` para `/configuracion/**`.
 
 ### `features/gestion-administrativa/` — ✅ Implementado (detalle en §14)
 
