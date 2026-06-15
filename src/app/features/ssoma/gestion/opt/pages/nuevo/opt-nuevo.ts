@@ -27,7 +27,6 @@ import {
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
@@ -98,9 +97,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
   trabajadores: TrabajadorForm[] = [];
   verificaciones: VerificacionForm[] = [];
   pasos: PasoForm[] = [];
-  workerQuery = '';
-  workerResults: WorkerSearchItemDto[] = [];
-  workerLoading = false;
+  trabajadorObservadoId: number | null = null;
   pasoNextId = 1;
 
   // PASO 3
@@ -129,7 +126,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
   constructor(
     private optService: OptService,
     private projectService: ProjectService,
-    private workerSearchService: WorkerSearchService,
     private trabajadorHabService: TrabajadorHabService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -212,21 +208,21 @@ export class OptNuevo implements OnInit, AfterViewInit {
   }
 
   // ── TRABAJADORES ──────────────────────────────────────────────────────────
-  buscarWorker(): void {
-    if (this.workerQuery.length < 2) return;
-    this.workerLoading = true;
+  onTrabajadorObservadoChange(id: number | null): void {
+    if (!id) return;
+    const w = this.workersObservador.find((x) => x.workerId === id);
+    if (!w) return;
+    const dto: WorkerSearchItemDto = {
+      id: w.workerId,
+      apellidoNombre: w.apellidoNombre,
+      dni: w.dni,
+      ocupacion: w.ocupacion,
+      empresaActual: w.empresaNombre,
+      activo: w.estadoWorker !== 'RETIRADO',
+    };
+    this.agregarTrabajador(dto);
+    this.trabajadorObservadoId = null;
     this.cdr.markForCheck();
-    this.workerSearchService.search(this.workerQuery).subscribe({
-      next: (res) => {
-        this.workerResults = res;
-        this.workerLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.workerLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   agregarTrabajador(w: WorkerSearchItemDto): void {

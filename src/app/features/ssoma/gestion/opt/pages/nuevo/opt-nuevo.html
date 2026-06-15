@@ -143,31 +143,17 @@
         <!-- TRABAJADORES -->
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
-        <!-- FIX 4: mostrar ocupacion + empresa en resultados -->
         <div class="form-group">
-          <label class="form-label">Buscar trabajador (nombre o DNI)</label>
-          <div class="search-row">
-            <input type="text" class="form-input" [(ngModel)]="workerQuery"
-              placeholder="Mín. 2 caracteres..."
-              (keyup.enter)="buscarWorker()" />
-            <button type="button" class="btn-search" (click)="buscarWorker()">
-              @if (workerLoading) { <i class="ti ti-loader-2 spin"></i> }
-              @else { <i class="ti ti-search"></i> }
-            </button>
-          </div>
-          @if (workerResults.length > 0) {
-            <div class="worker-results">
-              @for (w of workerResults; track w.id) {
-                <div class="worker-result-row" (click)="agregarTrabajador(w)">
-                  <div class="worker-info">
-                    <span class="worker-name">{{ w.apellidoNombre }}</span>
-                    <span class="worker-meta">{{ w.dni }}{{ w.ocupacion ? ' · ' + w.ocupacion : '' }}{{ w.empresaActual ? ' · ' + w.empresaActual : '' }}</span>
-                  </div>
-                  <i class="ti ti-plus worker-add"></i>
-                </div>
-              }
-            </div>
-          }
+          <label class="form-label">Agregar trabajador observado</label>
+          <app-search-select
+            [options]="workersObservador"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            [value]="trabajadorObservadoId"
+            [allowClear]="true"
+            placeholder="Buscar por nombre o DNI..."
+            (valueChange)="onTrabajadorObservadoChange($event)">
+          </app-search-select>
         </div>
 
         @if (trabajadores.length > 0) {
