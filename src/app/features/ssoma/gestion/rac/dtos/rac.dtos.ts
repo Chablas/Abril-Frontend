@@ -31,12 +31,14 @@ export interface RacCreateRequest {
   empresaReportanteId?: number;
   esAnonimoObservado: boolean;
   observadoWorkerId?: number;
+  observadoWorkerIds?: number[];
   empresaReportadaId?: number;
   proyectoPiso?: string;
   lugarDescripcion?: string;
   latitud?: number;
   longitud?: number;
   descripcion: string;
+  accionRequerida?: string;
   planAccion?: string;
   fechaReporte: string;
   plazoLevantamiento?: string;
