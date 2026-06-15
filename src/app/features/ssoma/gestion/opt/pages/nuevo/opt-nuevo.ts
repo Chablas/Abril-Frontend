@@ -29,6 +29,8 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
+import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
+import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 
@@ -89,7 +91,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
   petVisorNombre = '';
 
   // Observador
-  workersObservador: WorkerSearchItemDto[] = [];
+  workersObservador: WorkerHabilitacionListDto[] = [];
   observadorId: number | null = null;
 
   // PASO 2
@@ -128,6 +130,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     private optService: OptService,
     private projectService: ProjectService,
     private workerSearchService: WorkerSearchService,
+    private trabajadorHabService: TrabajadorHabService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -139,13 +142,13 @@ export class OptNuevo implements OnInit, AfterViewInit {
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.workerSearchService.search('', 9999),
+      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999 }),
     }).subscribe({
       next: ({ catalogos, proyectos, workers }) => {
         this.pets = catalogos.pets;
         this.criterios = catalogos.criterios;
         this.proyectos = proyectos.data;
-        this.workersObservador = workers;
+        this.workersObservador = workers.data;
         this.verificaciones = catalogos.criterios.map((c) => ({
           criterioId: c.id,
           pregunta: c.pregunta,
@@ -199,7 +202,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
       this.observadorNombre = '';
       this.observadorCargo = '';
     } else {
-      const w = this.workersObservador.find((x) => x.id === id);
+      const w = this.workersObservador.find((x) => x.workerId === id);
       if (w) {
         this.observadorNombre = w.apellidoNombre;
         this.observadorCargo = w.ocupacion ?? '';
