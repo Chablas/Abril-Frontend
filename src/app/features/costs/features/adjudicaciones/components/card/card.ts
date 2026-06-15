@@ -46,4 +46,26 @@ export class Card {
   stepBadgeClass(): string {
     return this.stepStyles[this.item.projectSubContractorStatusId] ?? 'bg-gray-100 text-gray-500 border-gray-200';
   }
+
+  /**
+   * Oficina responsable de avanzar DESDE cada paso (para colorear el mini stepper):
+   * naranja = Oficina Técnica, verde = Oficina Central. El último paso es terminal.
+   */
+  private readonly stepOfficeMap: Record<number, 'central' | 'tecnica'> = {
+    1: 'tecnica', 2: 'tecnica', 3: 'central', 4: 'tecnica',
+    5: 'central', 6: 'central', 7: 'central', 8: 'central',
+  };
+
+  /** Color del paso según la oficina responsable: verde = Of. Central, naranja = Of. Técnica. */
+  stepColor(step: number): string {
+    const office = step >= this.stepDots.length ? 'done' : this.stepOfficeMap[step] ?? 'central';
+    switch (office) {
+      case 'tecnica':
+        return '#F59E0B';
+      case 'central':
+        return 'var(--color-abril-primary)';
+      default:
+        return '#9CA3AF';
+    }
+  }
 }

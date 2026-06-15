@@ -45,6 +45,38 @@ export class Detail implements OnInit {
 
   readonly totalSteps = this.steps.length;
 
+  /**
+   * Oficina responsable de avanzar DESDE cada paso (para colorear el stepper):
+   * naranja = Oficina Técnica, verde = Oficina Central. El último paso es terminal.
+   */
+  private readonly stepOfficeMap: Record<number, 'central' | 'tecnica'> = {
+    1: 'tecnica', // Por notificar — OT notifica al SC
+    2: 'tecnica', // Datos del contrato — OT
+    3: 'central', // Preparación de documentos — OC aprueba
+    4: 'tecnica', // Por enviar al SC — OT
+    5: 'central', // Llegada a Of. Central — OC
+    6: 'central', // Procesos de firma — OC
+    7: 'central', // Por escanear — OC
+    8: 'central', // Envío a obra — OC
+  };
+
+  /** Oficina responsable de avanzar desde ese paso ('done' para el paso final). */
+  stepOffice(step: number): 'central' | 'tecnica' | 'done' {
+    return step >= this.totalSteps ? 'done' : this.stepOfficeMap[step] ?? 'central';
+  }
+
+  /** Color del paso según la oficina responsable: verde = Of. Central, naranja = Of. Técnica. */
+  stepColor(step: number): string {
+    switch (this.stepOffice(step)) {
+      case 'tecnica':
+        return '#F59E0B';
+      case 'central':
+        return 'var(--color-abril-primary)';
+      default:
+        return '#9CA3AF';
+    }
+  }
+
   /** Paso que se está mostrando en pantalla (navegable). */
   viewStep = 1;
 

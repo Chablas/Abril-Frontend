@@ -6,25 +6,26 @@
     <div class="hidden sm:flex items-start justify-between gap-1">
       <ng-container *ngFor="let step of steps; let i = index">
         <div *ngIf="i > 0" class="flex-1 mt-[18px] h-[2px] transition-colors"
-          [ngClass]="i < viewStep ? 'bg-[var(--color-abril-primary)]' : 'bg-gray-200'">
+          [style.background]="i < actualStatus ? stepColor(i) : '#E5E7EB'">
         </div>
         <div class="flex flex-col items-center gap-[6px] min-w-[48px]">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all"
-            [ngClass]="{
-              'bg-[var(--color-abril-primary)] border-[var(--color-abril-primary)] text-white': i + 1 < viewStep,
-              'bg-white border-[var(--color-abril-primary)] text-[var(--color-abril-primary)]': i + 1 === viewStep,
-              'bg-white border-gray-200 text-gray-400': i + 1 > viewStep,
-              'cursor-pointer hover:opacity-80': i + 1 <= actualStatus,
-              'cursor-default': i + 1 > actualStatus
-            }"
+          <!-- Relleno = paso ya alcanzado · contorno = paso restante · anillo = paso que estás viendo -->
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all hover:opacity-80"
+            [class.cursor-pointer]="i + 1 <= actualStatus"
+            [class.cursor-default]="i + 1 > actualStatus"
+            [style.borderColor]="stepColor(i + 1)"
+            [style.background]="i + 1 <= actualStatus ? stepColor(i + 1) : '#ffffff'"
+            [style.color]="i + 1 <= actualStatus ? '#ffffff' : stepColor(i + 1)"
+            [style.boxShadow]="i + 1 === viewStep ? '0 0 0 2px #ffffff, 0 0 0 4px ' + stepColor(i + 1) : 'none'"
             (click)="goToStep(i + 1)">
-            <svg *ngIf="i + 1 < viewStep" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <svg *ngIf="i + 1 < actualStatus" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
-            <span *ngIf="i + 1 >= viewStep">{{ i + 1 }}</span>
+            <span *ngIf="i + 1 >= actualStatus">{{ i + 1 }}</span>
           </div>
           <span class="text-[9px] text-center leading-tight max-w-[52px]"
-            [ngClass]="i + 1 === viewStep ? 'text-[var(--color-abril-primary)] font-semibold' : 'text-gray-400'">
+            [style.color]="i + 1 === viewStep ? stepColor(i + 1) : '#9CA3AF'"
+            [class.font-semibold]="i + 1 === viewStep">
             {{ step }}
           </span>
         </div>
@@ -36,7 +37,7 @@
       <!-- barra de progreso -->
       <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
         <div class="h-full rounded-full transition-all duration-300"
-          [style.width.%]="(viewStep / totalSteps) * 100" style="background:var(--color-abril-primary)">
+          [style.width.%]="(viewStep / totalSteps) * 100" [style.background]="stepColor(viewStep)">
         </div>
       </div>
       <!-- dots + paso actual -->
@@ -44,19 +45,28 @@
         <div class="flex gap-1.5">
           <div *ngFor="let step of steps; let i = index"
             class="w-2 h-2 rounded-full transition-colors"
-            [ngClass]="{
-              'bg-[var(--color-abril-primary)]': i + 1 <= viewStep,
-              'bg-gray-200': i + 1 > viewStep,
-              'cursor-pointer': i + 1 <= actualStatus,
-              'cursor-default': i + 1 > actualStatus
-            }"
+            [class.cursor-pointer]="i + 1 <= actualStatus"
+            [class.cursor-default]="i + 1 > actualStatus"
+            [style.background]="i + 1 <= actualStatus ? stepColor(i + 1) : '#E5E7EB'"
             (click)="goToStep(i + 1)">
           </div>
         </div>
-        <span class="text-xs font-semibold" style="color:var(--color-abril-primary)">
+        <span class="text-xs font-semibold" [style.color]="stepColor(viewStep)">
           Paso {{ viewStep }}/{{ totalSteps }} · {{ steps[viewStep - 1] }}
         </span>
       </div>
+    </div>
+
+    <!-- ── LEYENDA DE OFICINA RESPONSABLE ──────────────────────────── -->
+    <div class="flex items-center justify-center gap-[16px] text-[10px] text-gray-500">
+      <span class="flex items-center gap-[5px]">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:#F59E0B"></span>
+        Avanza Oficina Técnica
+      </span>
+      <span class="flex items-center gap-[5px]">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:var(--color-abril-primary)"></span>
+        Avanza Oficina Central
+      </span>
     </div>
 
     <div class="border-t border-[#F0F0F0]"></div>
