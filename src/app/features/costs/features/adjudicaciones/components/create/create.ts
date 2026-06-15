@@ -30,7 +30,8 @@ export class Create implements OnInit {
     currencies: [],
     workItems: [],
     contributors: [],
-    workItemCategories: []
+    workItemCategories: [],
+    workSpecialties: []
   }
 
   createDto: ProjectSubContractorCreateDTO = {
@@ -46,6 +47,7 @@ export class Create implements OnInit {
     hasIgv: false,
     workItemId: 0,
     workItemCategoryId: 0,
+    workSpecialtyId: null,
     quotationFiles: [],
     comparativeFiles: [],
   };
@@ -193,6 +195,9 @@ export class Create implements OnInit {
     form.append('hasIgv', this.createDto.hasIgv.toString());
     form.append('workItemId', this.createDto.workItemId.toString());
     form.append('workItemCategoryId', this.createDto.workItemCategoryId.toString());
+    if (this.createDto.workSpecialtyId != null) {
+      form.append('workSpecialtyId', this.createDto.workSpecialtyId.toString());
+    }
     this.createDto.quotationFiles?.forEach(f => form.append('quotationFiles', f));
     this.createDto.comparativeFiles?.forEach(f => form.append('comparativeFiles', f));
 

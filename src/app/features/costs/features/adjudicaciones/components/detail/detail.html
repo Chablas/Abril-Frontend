@@ -105,6 +105,12 @@
         </div>
 
         <div>
+          <p class="text-xs text-gray-400 mb-[2px]">Especialidad</p>
+          <p class="text-sm text-gray-700" *ngIf="item.workSpecialtyDescription">{{ item.workSpecialtyDescription }}</p>
+          <p class="text-sm text-gray-400 italic" *ngIf="!item.workSpecialtyDescription">—</p>
+        </div>
+
+        <div>
           <p class="text-xs text-gray-400 mb-[2px]">Partida de control</p>
           <p class="text-sm text-gray-700">{{ item.workItemCategoryDescription }}</p>
         </div>
@@ -238,6 +244,12 @@
               <app-search-select [fullText]="true" label="Empresa / Subcontratista" [options]="formData.contributors"
                 valueField="contractorId" displayField="contributorName"
                 [value]="step1Form.contractorId" (valueChange)="onStep1CompanyChange($event)" />
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select [fullText]="true" label="Especialidad" [options]="formData.workSpecialties"
+                valueField="workSpecialtyId" displayField="workSpecialtyDescription"
+                [(value)]="step1Form.workSpecialtyId" />
             </div>
 
             <div class="flex flex-col gap-[4px]">

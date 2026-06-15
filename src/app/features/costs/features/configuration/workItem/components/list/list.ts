@@ -23,7 +23,7 @@ export class WorkItemList implements OnInit {
 
   items: WorkItemDto[] = [];
   showEditModal = false;
-  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', active: true };
+  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workSpecialtyId: null, active: true };
 
   constructor(
     private service: WorkItemService,
@@ -52,6 +52,8 @@ export class WorkItemList implements OnInit {
     this.editDto = {
       workItemId: item.workItemId,
       workItemDescription: item.workItemDescription,
+      // 0 = "sin especialidad" en el combo
+      workSpecialtyId: item.workSpecialtyId ?? 0,
       active: item.active,
     };
     this.showEditModal = true;

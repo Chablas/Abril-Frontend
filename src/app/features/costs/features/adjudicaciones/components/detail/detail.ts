@@ -61,6 +61,7 @@ export class Detail implements OnInit {
     paymentMethodId: 0, paymentFormId: null as number | null, includesCartaFianza: false,
     advancePercentage: null as number | null,
     amount: 0, currencyId: 0, hasIgv: false, workItemId: 0, workItemCategoryId: 0,
+    workSpecialtyId: null as number | null,
   };
   step1ContractorEmails: string[] = [];
   step1AdvanceAmount: number | undefined = undefined;
@@ -1362,6 +1363,7 @@ export class Detail implements OnInit {
         hasIgv:             this.item.amountHasIgv,
         workItemId:         this.item.workItemId,
         workItemCategoryId: this.item.workItemCategoryId,
+        workSpecialtyId:    this.item.workSpecialtyId ?? null,
       };
       // Correos del contratista seleccionado
       const contractor = this.formData!.contributors.find(c => c.contractorId === this.item.contractorId);
@@ -1476,6 +1478,7 @@ export class Detail implements OnInit {
       hasIgv:             f.hasIgv,
       workItemId:         f.workItemId,
       workItemCategoryId: f.workItemCategoryId,
+      workSpecialtyId:    f.workSpecialtyId,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();

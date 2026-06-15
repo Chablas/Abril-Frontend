@@ -34,6 +34,8 @@ export interface ProjectSubContractorDTO {
   workItemDescription: string;
   workItemCategoryId: number;
   workItemCategoryDescription: string;
+  workSpecialtyId?: number | null;
+  workSpecialtyDescription?: string | null;
   createdDateTime: string;
   createdUserFullName?: string;
   quotationFiles: ProjectSubContractorFileDTO[];
