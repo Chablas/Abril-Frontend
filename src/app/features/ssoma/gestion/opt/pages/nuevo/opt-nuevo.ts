@@ -1,0 +1,509 @@
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { OptService } from '../../services/opt.service';
+import {
+  OptPetDto,
+  OptCriterioVerificacionDto,
+  CrearOptRequest,
+  OptTrabajadorRequest,
+  OptVerificacionRequest,
+  OptPasoRequest,
+} from '../../dtos/opt.dtos';
+import { ProjectService } from '../../../../../../core/services/project.service';
+import { LoaderService } from '../../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../../core/services/error.service';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
+import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
+import Swal from 'sweetalert2';
+
+interface TrabajadorForm {
+  trabajador: WorkerSearchItemDto;
+  tipoTrabajador: string;
+  tiempoEnObra: string;
+  aniosExperiencia: string;
+  firmaBase64: string;
+}
+
+interface VerificacionForm {
+  criterioId: number;
+  pregunta: string;
+  orden: number;
+  resultado: boolean;
+}
+
+interface PasoForm {
+  id: number;
+  numeroDisplay: string;
+  descripcion: string;
+  nivel: number;
+  resultado: string;
+  desviacionObservada: string;
+}
+
+@Component({
+  selector: 'app-opt-nuevo',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './opt-nuevo.html',
+  styleUrl: './opt-nuevo.css',
+})
+export class OptNuevo implements OnInit, AfterViewInit {
+  paso = 1;
+  readonly totalPasos = 3;
+  readonly pasoLabels = ['Observación', 'Trabajadores', 'Retroalimentación'];
+  guardando = false;
+  loadingCatalogos = false;
+
+  // Catálogos
+  pets: OptPetDto[] = [];
+  criterios: OptCriterioVerificacionDto[] = [];
+  proyectos: any[] = [];
+  petSeleccionado: OptPetDto | null = null;
+
+  // PASO 1
+  proyectoId = 0;
+  petId: number | null = null;
+  fecha = new Date().toISOString().split('T')[0];
+  tipoObservacion = '';
+  cuentaConPet = false;
+  area = '';
+  seInformaTrabajador = false;
+  observadorNombre = '';
+  observadorCargo = '';
+  mostrarPdfPet = false;
+
+  // PASO 2
+  trabajadores: TrabajadorForm[] = [];
+  verificaciones: VerificacionForm[] = [];
+  pasos: PasoForm[] = [];
+  workerQuery = '';
+  workerResults: WorkerSearchItemDto[] = [];
+  workerLoading = false;
+  pasoNextId = 1;
+
+  // PASO 3
+  seFelicito = false;
+  seRecibieronComentarios = false;
+  seRetroalimento = false;
+  seObtuvoCCompromiso = false;
+  accionRequerida = '';
+  accionObservacion = '';
+
+  // Canvas observador
+  @ViewChild('canvasObs') canvasObs!: ElementRef<HTMLCanvasElement>;
+  private ctxObs?: CanvasRenderingContext2D;
+  private drawingObs = false;
+  firmaObsBase64 = '';
+
+  // Canvases trabajadores
+  @ViewChildren('canvasTrab') canvasTrabList!: QueryList<ElementRef<HTMLCanvasElement>>;
+  private ctxTrab: Map<number, CanvasRenderingContext2D> = new Map();
+  private drawingTrabId: number | null = null;
+  firmasTrabBase64: Map<number, string> = new Map();
+
+  readonly tiposTrabajador = ['Obrero', 'Operario', 'Capataz', 'Técnico', 'Ingeniero', 'Supervisor', 'Otro'];
+  readonly accionesRequeridas = ['Ninguna', 'Acción Correctiva', 'Capacitación', 'Inspección', 'Investigación', 'Otro'];
+
+  constructor(
+    private optService: OptService,
+    private projectService: ProjectService,
+    private workerSearchService: WorkerSearchService,
+    private loaderService: LoaderService,
+    private errorService: ErrorService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+  ) {}
+
+  ngOnInit(): void {
+    this.loadingCatalogos = true;
+    forkJoin({
+      catalogos: this.optService.getCatalogos(),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
+    }).subscribe({
+      next: ({ catalogos, proyectos }) => {
+        this.pets = catalogos.pets;
+        this.criterios = catalogos.criterios;
+        this.proyectos = proyectos.data;
+        this.verificaciones = catalogos.criterios.map((c) => ({
+          criterioId: c.id,
+          pregunta: c.pregunta,
+          orden: c.orden,
+          resultado: false,
+        }));
+        this.loadingCatalogos = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingCatalogos = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  ngAfterViewInit(): void {}
+
+  // ── PET ───────────────────────────────────────────────────────────────────
+  onPetChange(): void {
+    this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
+    this.mostrarPdfPet = false;
+    this.cdr.markForCheck();
+  }
+
+  togglePdf(): void {
+    this.mostrarPdfPet = !this.mostrarPdfPet;
+    this.cdr.markForCheck();
+  }
+
+  // ── TRABAJADORES ──────────────────────────────────────────────────────────
+  buscarWorker(): void {
+    if (this.workerQuery.length < 2) return;
+    this.workerLoading = true;
+    this.cdr.markForCheck();
+    this.workerSearchService.search(this.workerQuery).subscribe({
+      next: (res) => {
+        this.workerResults = res;
+        this.workerLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.workerLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  agregarTrabajador(w: WorkerSearchItemDto): void {
+    if (this.trabajadores.some((t) => t.trabajador.id === w.id)) return;
+    this.trabajadores.push({
+      trabajador: w,
+      tipoTrabajador: '',
+      tiempoEnObra: '',
+      aniosExperiencia: '',
+      firmaBase64: '',
+    });
+    this.workerQuery = '';
+    this.workerResults = [];
+    this.firmasTrabBase64.set(w.id, '');
+    this.cdr.markForCheck();
+  }
+
+  quitarTrabajador(id: number): void {
+    this.trabajadores = this.trabajadores.filter((t) => t.trabajador.id !== id);
+    this.firmasTrabBase64.delete(id);
+    this.cdr.markForCheck();
+  }
+
+  // ── PASOS ────────────────────────────────────────────────────────────────
+  agregarPaso(): void {
+    const orden = this.pasos.length + 1;
+    this.pasos.push({
+      id: this.pasoNextId++,
+      numeroDisplay: String(orden),
+      descripcion: '',
+      nivel: 1,
+      resultado: '',
+      desviacionObservada: '',
+    });
+    this.cdr.markForCheck();
+  }
+
+  quitarPaso(id: number): void {
+    this.pasos = this.pasos.filter((p) => p.id !== id);
+    this.renumerarPasos();
+    this.cdr.markForCheck();
+  }
+
+  renumerarPasos(): void {
+    let nivel1 = 0;
+    let nivel2 = 0;
+    for (const p of this.pasos) {
+      if (p.nivel === 1) {
+        nivel1++;
+        nivel2 = 0;
+        p.numeroDisplay = String(nivel1);
+      } else if (p.nivel === 2) {
+        nivel2++;
+        p.numeroDisplay = `${nivel1}.${nivel2}`;
+      } else {
+        p.numeroDisplay = `${nivel1}.${nivel2}.${p.id}`;
+      }
+    }
+  }
+
+  onNivelChange(paso: PasoForm): void {
+    this.renumerarPasos();
+    this.cdr.markForCheck();
+  }
+
+  // ── CANVAS OBSERVADOR ────────────────────────────────────────────────────
+  initCanvasObs(): void {
+    if (!this.canvasObs) return;
+    this.ctxObs = this.canvasObs.nativeElement.getContext('2d')!;
+    this.ctxObs.strokeStyle = '#1b3a2d';
+    this.ctxObs.lineWidth = 2;
+    this.ctxObs.lineCap = 'round';
+  }
+
+  startDrawObs(e: MouseEvent): void {
+    if (!this.ctxObs) this.initCanvasObs();
+    this.drawingObs = true;
+    this.ctxObs!.beginPath();
+    this.ctxObs!.moveTo(e.offsetX, e.offsetY);
+  }
+
+  drawObs(e: MouseEvent): void {
+    if (!this.drawingObs || !this.ctxObs) return;
+    this.ctxObs.lineTo(e.offsetX, e.offsetY);
+    this.ctxObs.stroke();
+  }
+
+  stopDrawObs(): void {
+    this.drawingObs = false;
+    if (this.canvasObs) {
+      this.firmaObsBase64 = this.canvasObs.nativeElement.toDataURL('image/png').split(',')[1];
+    }
+  }
+
+  startDrawObsTouch(e: TouchEvent): void {
+    e.preventDefault();
+    if (!this.ctxObs) this.initCanvasObs();
+    const rect = this.canvasObs.nativeElement.getBoundingClientRect();
+    const t = e.touches[0];
+    this.drawingObs = true;
+    this.ctxObs!.beginPath();
+    this.ctxObs!.moveTo(t.clientX - rect.left, t.clientY - rect.top);
+  }
+
+  drawObsTouch(e: TouchEvent): void {
+    e.preventDefault();
+    if (!this.drawingObs || !this.ctxObs) return;
+    const rect = this.canvasObs.nativeElement.getBoundingClientRect();
+    const t = e.touches[0];
+    this.ctxObs.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+    this.ctxObs.stroke();
+  }
+
+  clearCanvasObs(): void {
+    if (this.canvasObs) {
+      const canvas = this.canvasObs.nativeElement;
+      this.canvasObs.nativeElement.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height);
+      this.firmaObsBase64 = '';
+      this.cdr.markForCheck();
+    }
+  }
+
+  // ── CANVAS TRABAJADORES ──────────────────────────────────────────────────
+  getCanvasTrab(idx: number): HTMLCanvasElement | null {
+    const list = this.canvasTrabList?.toArray();
+    return list?.[idx]?.nativeElement ?? null;
+  }
+
+  initCtxTrab(id: number, idx: number): CanvasRenderingContext2D | null {
+    const canvas = this.getCanvasTrab(idx);
+    if (!canvas) return null;
+    if (!this.ctxTrab.has(id)) {
+      const ctx = canvas.getContext('2d')!;
+      ctx.strokeStyle = '#1b3a2d';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      this.ctxTrab.set(id, ctx);
+    }
+    return this.ctxTrab.get(id)!;
+  }
+
+  startDrawTrab(e: MouseEvent, id: number, idx: number): void {
+    const ctx = this.initCtxTrab(id, idx);
+    if (!ctx) return;
+    this.drawingTrabId = id;
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+  }
+
+  drawTrab(e: MouseEvent, id: number): void {
+    if (this.drawingTrabId !== id) return;
+    const ctx = this.ctxTrab.get(id);
+    if (!ctx) return;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  }
+
+  stopDrawTrab(id: number, idx: number): void {
+    this.drawingTrabId = null;
+    const canvas = this.getCanvasTrab(idx);
+    if (canvas) {
+      this.firmasTrabBase64.set(id, canvas.toDataURL('image/png').split(',')[1]);
+    }
+  }
+
+  startDrawTrabTouch(e: TouchEvent, id: number, idx: number): void {
+    e.preventDefault();
+    const ctx = this.initCtxTrab(id, idx);
+    if (!ctx) return;
+    const canvas = this.getCanvasTrab(idx)!;
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    this.drawingTrabId = id;
+    ctx.beginPath();
+    ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top);
+  }
+
+  drawTrabTouch(e: TouchEvent, id: number): void {
+    e.preventDefault();
+    if (this.drawingTrabId !== id) return;
+    const ctx = this.ctxTrab.get(id);
+    const canvas = this.canvasTrabList.toArray().find((_, i) => this.trabajadores[i]?.trabajador.id === id);
+    if (!ctx || !canvas) return;
+    const rect = canvas.nativeElement.getBoundingClientRect();
+    const t = e.touches[0];
+    ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+    ctx.stroke();
+  }
+
+  clearCanvasTrab(id: number, idx: number): void {
+    const canvas = this.getCanvasTrab(idx);
+    if (canvas) {
+      canvas.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height);
+      this.firmasTrabBase64.set(id, '');
+      this.ctxTrab.delete(id);
+      this.cdr.markForCheck();
+    }
+  }
+
+  // ── NAVEGACIÓN WIZARD ────────────────────────────────────────────────────
+  siguiente(): void {
+    if (!this.validarPaso()) return;
+    this.paso++;
+    if (this.paso === 3) {
+      setTimeout(() => this.initCanvasObs(), 100);
+    }
+    this.cdr.markForCheck();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  anterior(): void {
+    this.paso--;
+    this.cdr.markForCheck();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  validarPaso(): boolean {
+    if (this.paso === 1) {
+      if (!this.proyectoId) {
+        Swal.fire({ icon: 'warning', title: 'Selecciona un proyecto', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        return false;
+      }
+      if (!this.tipoObservacion) {
+        Swal.fire({ icon: 'warning', title: 'Selecciona el tipo de observación', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        return false;
+      }
+      if (!this.fecha) {
+        Swal.fire({ icon: 'warning', title: 'Ingresa la fecha', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        return false;
+      }
+    }
+    if (this.paso === 2) {
+      if (this.trabajadores.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Agrega al menos un trabajador', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+        return false;
+      }
+    }
+    return true;
+  }
+
+  guardar(): void {
+    if (this.guardando) return;
+    this.guardando = true;
+    this.loaderService.show();
+
+    const trabajadoresReq: OptTrabajadorRequest[] = this.trabajadores.map((t) => ({
+      trabajadorId: t.trabajador.id,
+      tipoTrabajador: t.tipoTrabajador || undefined,
+      tiempoEnObra: t.tiempoEnObra || undefined,
+      aniosExperiencia: t.aniosExperiencia || undefined,
+      firmaTrabajadorBase64: this.firmasTrabBase64.get(t.trabajador.id) || undefined,
+    }));
+
+    const verificacionesReq: OptVerificacionRequest[] = this.verificaciones.map((v) => ({
+      criterioId: v.criterioId,
+      resultado: v.resultado,
+    }));
+
+    const pasosReq: OptPasoRequest[] = this.pasos.map((p, i) => ({
+      numeroDisplay: p.numeroDisplay,
+      descripcion: p.descripcion,
+      nivel: p.nivel,
+      resultado: p.resultado || undefined,
+      desviacionObservada: p.desviacionObservada || undefined,
+      orden: i + 1,
+    }));
+
+    const request: CrearOptRequest = {
+      proyectoId: Number(this.proyectoId),
+      petId: this.petId ? Number(this.petId) : undefined,
+      fecha: this.fecha,
+      tipoObservacion: this.tipoObservacion,
+      cuentaConPet: this.cuentaConPet,
+      area: this.area || undefined,
+      seInformaTrabajador: this.seInformaTrabajador,
+      observadorNombre: this.observadorNombre || undefined,
+      observadorCargo: this.observadorCargo || undefined,
+      firmaObservadorBase64: this.firmaObsBase64 || undefined,
+      seFelicito: this.seFelicito,
+      seRecibieronComentarios: this.seRecibieronComentarios,
+      seRetroalimento: this.seRetroalimento,
+      seObtuvoCCompromiso: this.seObtuvoCCompromiso,
+      accionRequerida: this.accionRequerida || undefined,
+      accionObservacion: this.accionObservacion || undefined,
+      trabajadores: trabajadoresReq,
+      verificaciones: verificacionesReq,
+      pasos: pasosReq,
+    };
+
+    this.optService.crearOpt(request).subscribe({
+      next: ({ id }) => {
+        this.guardando = false;
+        this.loaderService.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'OPT registrada',
+          text: `OPT #${id} creada correctamente.`,
+          confirmButtonText: 'Ver detalle',
+          showCancelButton: true,
+          cancelButtonText: 'Nueva OPT',
+        }).then((res) => {
+          if (res.isConfirmed) {
+            this.router.navigate(['/ssoma/gestion/opt', id]);
+          } else {
+            this.router.navigate(['/ssoma/gestion/opt/nuevo']);
+          }
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardando = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cancelar(): void {
+    this.router.navigate(['/ssoma/gestion/opt/lista']);
+  }
+}

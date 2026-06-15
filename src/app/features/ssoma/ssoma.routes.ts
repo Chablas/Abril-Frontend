@@ -18,5 +18,10 @@ export const SSOMA_ROUTES: Routes = [
     loadChildren: () =>
       import('./gestion/rac/rac.routes').then((m) => m.RAC_ROUTES),
   },
+  {
+    path: 'gestion/opt',
+    loadChildren: () =>
+      import('./gestion/opt/opt.routes').then((m) => m.OPT_ROUTES),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];
