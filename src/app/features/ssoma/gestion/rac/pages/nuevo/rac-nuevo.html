@@ -1,58 +1,35 @@
 <div class="nuevo-root">
 
-  <!-- ── HEADER ─────────────────────────────────────────────────── -->
+  <!-- ── HEADER ────────────────────────────────────────────────────── -->
   <div class="nuevo-header">
-    <div class="nuevo-header__left">
-      <button class="btn-ghost" (click)="cancelar()">
-        <i class="ti ti-arrow-left" aria-hidden="true"></i> Volver
-      </button>
-      <div class="hero-vline"></div>
-      <div class="nuevo-header__title-wrap">
-        <h1 class="nuevo-titulo">Nuevo RAC</h1>
-        <p class="nuevo-subtitulo">Actos &amp; Condiciones Subestándar</p>
-      </div>
-    </div>
-    <div class="nuevo-header__actions">
-      <button class="btn-primary" [disabled]="!canSubmit || saving" (click)="submit()">
-        <i class="ti ti-device-floppy" aria-hidden="true"></i>
-        {{ saving ? 'Guardando…' : 'Guardar RAC' }}
-      </button>
+    <button type="button" class="back-btn" (click)="cancelar()">
+      <i class="ti ti-arrow-left"></i>
+    </button>
+    <div class="nuevo-header__title">
+      <span class="header-badge">SSOMA · RAC</span>
+      <h1>Nuevo RAC</h1>
     </div>
   </div>
 
-  <!-- ── SKELETON ───────────────────────────────────────────────── -->
-  <div *ngIf="loadingCatalogos" class="nuevo-body">
-    <div class="form-section">
-      <div class="skeleton sk-title"></div>
-      <div class="sk-grid">
-        <div class="skeleton sk-field col-span-2"></div>
-        <div class="skeleton sk-field"></div>
-        <div class="skeleton sk-field"></div>
-        <div class="skeleton sk-field"></div>
-        <div class="skeleton sk-field"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="skeleton sk-title"></div>
-      <div class="skeleton sk-field" style="max-width:360px;"></div>
-    </div>
+  <!-- ── LOADING ───────────────────────────────────────────────────── -->
+  <div *ngIf="loadingCatalogos" class="loading-catalogos">
+    <i class="ti ti-loader spin"></i> Cargando catálogos…
   </div>
 
-  <!-- ── FORM BODY ──────────────────────────────────────────────── -->
-  <div *ngIf="!loadingCatalogos" class="nuevo-body">
+  <!-- ── BODY (scrollable) ─────────────────────────────────────────── -->
+  <div *ngIf="!loadingCatalogos" class="paso-body">
 
-    <!-- ■ 1. DATOS DEL EVENTO ──────────────────────────────────── -->
+    <!-- ■ 1. DATOS DEL EVENTO ──────────────────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-clipboard-list" aria-hidden="true"></i>
-        <span>Datos del Evento</span>
-      </div>
+      <h2 class="section-title">
+        <i class="ti ti-clipboard-list"></i> Datos del Evento
+      </h2>
 
-      <div class="fields-grid">
+      <div class="form-grid">
 
         <!-- Proyecto -->
-        <div class="col-span-2">
-          <label class="field-label">Proyecto *</label>
+        <div class="col-2">
+          <label class="form-label">Proyecto *</label>
           <app-search-select
             [options]="proyectos"
             valueField="projectId"
@@ -66,14 +43,14 @@
 
         <!-- Fecha -->
         <div>
-          <label class="field-label">Fecha del Reporte *</label>
-          <input type="date" class="field-input" [(ngModel)]="fechaReporte" />
+          <label class="form-label">Fecha del Reporte *</label>
+          <input type="date" class="form-input" [(ngModel)]="fechaReporte" />
         </div>
 
         <!-- Tipo -->
         <div>
-          <label class="field-label">Tipo *</label>
-          <select class="field-input" [(ngModel)]="tipo">
+          <label class="form-label">Tipo *</label>
+          <select class="form-input" [(ngModel)]="tipo">
             <option value="">— Seleccionar —</option>
             <option *ngFor="let t of TIPO_OPCIONES" [value]="t.value">{{ t.label }}</option>
           </select>
@@ -81,7 +58,7 @@
 
         <!-- Categoría RAC -->
         <div>
-          <label class="field-label">Categoría RAC *</label>
+          <label class="form-label">Categoría RAC *</label>
           <app-search-select
             [options]="categorias"
             valueField="id"
@@ -95,8 +72,8 @@
 
         <!-- Severidad -->
         <div>
-          <label class="field-label">Severidad *</label>
-          <select class="field-input" [(ngModel)]="severidad">
+          <label class="form-label">Severidad *</label>
+          <select class="form-input" [(ngModel)]="severidad">
             <option value="">— Seleccionar —</option>
             <option *ngFor="let s of SEVERIDAD_OPCIONES" [value]="s.value">{{ s.label }}</option>
           </select>
@@ -104,47 +81,35 @@
 
         <!-- Piso/Nivel -->
         <div>
-          <label class="field-label">Piso / Nivel</label>
-          <input
-            type="text"
-            class="field-input"
-            placeholder="Ej: Piso 3, Sótano…"
-            [(ngModel)]="proyectoPiso"
-          />
+          <label class="form-label">Piso / Nivel</label>
+          <input type="text" class="form-input" placeholder="Ej: Piso 3, Sótano…" [(ngModel)]="proyectoPiso" />
         </div>
 
         <!-- Lugar -->
-        <div class="col-span-2">
-          <label class="field-label">Descripción del Lugar</label>
-          <input
-            type="text"
-            class="field-input"
-            placeholder="Ej: Área de excavación, frente 2…"
-            [(ngModel)]="lugarDescripcion"
-          />
+        <div class="col-2">
+          <label class="form-label">Descripción del Lugar</label>
+          <input type="text" class="form-input" placeholder="Ej: Área de excavación, frente 2…" [(ngModel)]="lugarDescripcion" />
         </div>
 
       </div>
     </section>
 
-    <!-- ■ 2. OBSERVADOR ────────────────────────────────────────── -->
+    <!-- ■ 2. OBSERVADOR ──────────────────────────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-user-circle" aria-hidden="true"></i>
-        <span>Observador (Reportante)</span>
-      </div>
+      <h2 class="section-title">
+        <i class="ti ti-user-circle"></i> Observador (Reportante)
+      </h2>
 
-      <label class="toggle-label">
+      <label class="check-label">
         <input type="checkbox" [(ngModel)]="esAnonimoReportante" (ngModelChange)="clearReportante()" />
         <span>Reportar de forma anónima</span>
       </label>
 
       <ng-container *ngIf="!esAnonimoReportante">
 
-        <!-- Búsqueda -->
-        <div class="worker-search-wrap mt-3">
-          <div *ngIf="!reportanteSelected">
-            <div class="search-input">
+        <div class="worker-search-wrap">
+          <ng-container *ngIf="!reportanteSelected">
+            <div class="search-bar">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
               </svg>
@@ -160,51 +125,46 @@
               <li *ngFor="let w of reportanteResults" (click)="selectReportante(w)">
                 <div>
                   <div class="wr-name">{{ w.apellidoNombre }}</div>
-                  <div class="wr-meta">
-                    DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span>
-                  </div>
+                  <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
                 </div>
-                <span class="wr-action">Seleccionar</span>
+                <span class="wr-action"><i class="ti ti-check"></i> Seleccionar</span>
               </li>
             </ul>
             <div
               *ngIf="reportanteQuery.length >= 2 && !reportanteSearching && reportanteResults.length === 0"
               class="search-hint"
-            >
-              Sin resultados para "{{ reportanteQuery }}".
-            </div>
-          </div>
+            >Sin resultados para "{{ reportanteQuery }}".</div>
+          </ng-container>
 
-          <!-- Worker seleccionado -->
-          <div *ngIf="reportanteSelected" class="worker-card">
-            <div class="worker-card__info">
-              <div class="wc-name">{{ reportanteSelected.apellidoNombre }}</div>
-              <div class="wc-meta">DNI {{ reportanteSelected.dni }}</div>
+          <div *ngIf="reportanteSelected" class="worker-chip">
+            <div class="worker-chip__info">
+              <div class="worker-chip__name">{{ reportanteSelected.apellidoNombre }}</div>
+              <div class="worker-chip__meta">DNI {{ reportanteSelected.dni }}</div>
             </div>
-            <button type="button" class="btn-ghost btn-sm" (click)="clearReportante()">Cambiar</button>
+            <button type="button" class="btn-change" (click)="clearReportante()">Cambiar</button>
           </div>
         </div>
 
         <!-- Cargo · Categoría · Ocupación -->
-        <div *ngIf="reportanteSelected" class="fields-grid fields-grid--3 mt-3">
+        <div *ngIf="reportanteSelected" class="form-grid form-grid--3">
           <div>
-            <label class="field-label">Cargo</label>
-            <div class="field-readonly">{{ reportanteSelected.cargo || '—' }}</div>
+            <label class="form-label">Cargo</label>
+            <div class="form-readonly">{{ reportanteSelected.cargo || '—' }}</div>
           </div>
           <div>
-            <label class="field-label">Categoría</label>
-            <div class="field-readonly">{{ reportanteSelected.categoria || '—' }}</div>
+            <label class="form-label">Categoría</label>
+            <div class="form-readonly">{{ reportanteSelected.categoria || '—' }}</div>
           </div>
           <div>
-            <label class="field-label">Ocupación</label>
-            <div class="field-readonly">{{ reportanteSelected.ocupacion || '—' }}</div>
+            <label class="form-label">Ocupación</label>
+            <div class="form-readonly">{{ reportanteSelected.ocupacion || '—' }}</div>
           </div>
         </div>
 
         <!-- Empresa -->
-        <div class="fields-grid mt-3">
-          <div class="col-span-2">
-            <label class="field-label">Empresa del Observador</label>
+        <div class="form-grid">
+          <div class="col-2">
+            <label class="form-label">Empresa del Observador</label>
             <app-search-select
               [options]="empresas"
               valueField="id"
@@ -220,23 +180,21 @@
       </ng-container>
     </section>
 
-    <!-- ■ 3. TRABAJADOR(ES) OBSERVADO(S) ─────────────────────── -->
+    <!-- ■ 3. TRABAJADOR(ES) OBSERVADO(S) ─────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-users" aria-hidden="true"></i>
-        <span>Trabajador(es) Observado(s)</span>
-      </div>
+      <h2 class="section-title">
+        <i class="ti ti-users"></i> Trabajador(es) Observado(s)
+      </h2>
 
-      <label class="toggle-label">
+      <label class="check-label">
         <input type="checkbox" [(ngModel)]="esAnonimoObservado" />
         <span>No identificar al trabajador observado</span>
       </label>
 
       <ng-container *ngIf="!esAnonimoObservado">
 
-        <!-- Búsqueda multi-select -->
-        <div class="worker-search-wrap mt-3">
-          <div class="search-input">
+        <div class="worker-search-wrap">
+          <div class="search-bar">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
             </svg>
@@ -252,40 +210,34 @@
             <li *ngFor="let w of observadoResults" (click)="addObservado(w)">
               <div>
                 <div class="wr-name">{{ w.apellidoNombre }}</div>
-                <div class="wr-meta">
-                  DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span>
-                </div>
+                <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
               </div>
-              <span class="wr-action wr-action--add">
-                <i class="ti ti-plus" aria-hidden="true"></i> Agregar
-              </span>
+              <span class="wr-action"><i class="ti ti-plus"></i> Agregar</span>
             </li>
           </ul>
           <div
             *ngIf="observadoQuery.length >= 2 && !observadoSearching && observadoResults.length === 0"
             class="search-hint"
-          >
-            Sin resultados.
-          </div>
+          >Sin resultados.</div>
         </div>
 
-        <!-- Lista de trabajadores seleccionados -->
-        <div *ngIf="observadosSeleccionados.length > 0" class="selected-workers mt-2">
-          <div *ngFor="let w of observadosSeleccionados" class="selected-worker-row">
-            <div class="swr-info">
-              <div class="swr-name">{{ w.apellidoNombre }}</div>
-              <div class="swr-meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
+        <!-- Trabajadores seleccionados -->
+        <div *ngIf="observadosSeleccionados.length > 0" class="trabajadores-seleccionados">
+          <div *ngFor="let w of observadosSeleccionados" class="trab-chip">
+            <div class="trab-chip__info">
+              <div class="trab-chip__name">{{ w.apellidoNombre }}</div>
+              <div class="trab-chip__meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
             </div>
-            <button type="button" class="swr-remove" (click)="removeObservado(w.id)" title="Quitar">
-              <i class="ti ti-x" aria-hidden="true"></i>
+            <button type="button" class="btn-chip-remove" (click)="removeObservado(w.id)" title="Quitar">
+              <i class="ti ti-x"></i>
             </button>
           </div>
         </div>
 
         <!-- Empresa reportada -->
-        <div class="fields-grid mt-3">
-          <div class="col-span-2">
-            <label class="field-label">Empresa Reportada</label>
+        <div class="form-grid">
+          <div class="col-2">
+            <label class="form-label">Empresa Reportada</label>
             <app-search-select
               [options]="empresas"
               valueField="id"
@@ -301,86 +253,65 @@
       </ng-container>
     </section>
 
-    <!-- ■ 4. DESCRIPCIÓN ──────────────────────────────────────── -->
+    <!-- ■ 4. DESCRIPCIÓN ─────────────────────────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-file-description" aria-hidden="true"></i>
-        <span>Descripción del Acto / Condición</span>
-      </div>
-      <div class="fields-grid">
-        <div class="col-span-2">
-          <label class="field-label">Descripción *</label>
-          <textarea
-            class="field-input"
-            rows="4"
-            placeholder="Describe el acto o condición subestándar observado…"
-            [(ngModel)]="descripcion"
-          ></textarea>
+      <h2 class="section-title">
+        <i class="ti ti-file-description"></i> Descripción del Acto / Condición
+      </h2>
+      <div class="form-grid">
+        <div class="col-2">
+          <label class="form-label">Descripción *</label>
+          <textarea class="form-input" rows="4" placeholder="Describe el acto o condición subestándar observado…" [(ngModel)]="descripcion"></textarea>
         </div>
-        <div class="col-span-2">
-          <label class="field-label">Descripción del Ocurrido</label>
-          <textarea
-            class="field-input"
-            rows="3"
-            placeholder="¿Qué ocurrió exactamente? (opcional)"
-            [(ngModel)]="descripcionOcurrido"
-          ></textarea>
+        <div class="col-2">
+          <label class="form-label">Descripción del Ocurrido</label>
+          <textarea class="form-input" rows="3" placeholder="¿Qué ocurrió exactamente? (opcional)" [(ngModel)]="descripcionOcurrido"></textarea>
         </div>
       </div>
     </section>
 
-    <!-- ■ 5. PLAN DE ACCIÓN ────────────────────────────────────── -->
+    <!-- ■ 5. PLAN DE ACCIÓN ──────────────────────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-checklist" aria-hidden="true"></i>
-        <span>Plan de Acción</span>
-      </div>
-      <div class="fields-grid">
+      <h2 class="section-title">
+        <i class="ti ti-checklist"></i> Plan de Acción
+      </h2>
+      <div class="form-grid">
 
-        <!-- Acción Requerida -->
         <div>
-          <label class="field-label">Acción Requerida</label>
-          <select class="field-input" [(ngModel)]="accionRequerida">
+          <label class="form-label">Acción Requerida</label>
+          <select class="form-input" [(ngModel)]="accionRequerida">
             <option value="">— Seleccionar —</option>
             <option *ngFor="let a of ACCION_REQUERIDA_OPCIONES" [value]="a">{{ a }}</option>
           </select>
         </div>
 
-        <!-- Plazo -->
         <div>
-          <label class="field-label">Plazo de Levantamiento</label>
-          <input type="date" class="field-input" [(ngModel)]="plazoLevantamiento" />
+          <label class="form-label">Plazo de Levantamiento</label>
+          <input type="date" class="form-input" [(ngModel)]="plazoLevantamiento" />
         </div>
 
-        <!-- Plan -->
-        <div class="col-span-2">
-          <label class="field-label">Plan de Acción</label>
-          <textarea
-            class="field-input"
-            rows="3"
-            placeholder="Describe las acciones correctivas a implementar…"
-            [(ngModel)]="planAccion"
-          ></textarea>
+        <div class="col-2">
+          <label class="form-label">Plan de Acción</label>
+          <textarea class="form-input" rows="3" placeholder="Describe las acciones correctivas a implementar…" [(ngModel)]="planAccion"></textarea>
         </div>
 
       </div>
     </section>
 
-    <!-- ■ 6. PENALIDAD ────────────────────────────────────────── -->
+    <!-- ■ 6. PENALIDAD ───────────────────────────────────────────────── -->
     <section class="form-section">
-      <div class="section-header">
-        <i class="ti ti-receipt-tax" aria-hidden="true"></i>
-        <span>Penalidad</span>
-      </div>
+      <h2 class="section-title">
+        <i class="ti ti-receipt-tax"></i> Penalidad
+      </h2>
 
-      <label class="toggle-label">
+      <label class="check-label">
         <input type="checkbox" [(ngModel)]="aplicaPenalidad" />
         <span>Aplica penalidad económica</span>
       </label>
 
-      <div *ngIf="aplicaPenalidad" class="fields-grid mt-3">
-        <div class="col-span-2">
-          <label class="field-label">Infracción</label>
+      <div *ngIf="aplicaPenalidad" class="form-grid">
+        <div class="col-2">
+          <label class="form-label">Infracción</label>
           <app-search-select
             [options]="infracciones"
             valueField="id"
@@ -394,21 +325,20 @@
       </div>
     </section>
 
-    <!-- ■ FOOTER ──────────────────────────────────────────────── -->
-    <div class="form-footer">
-      <button class="btn-ghost" (click)="cancelar()">Cancelar</button>
-      <div class="footer-right">
-        <button
-          class="btn-primary"
-          [disabled]="!canSubmit || saving"
-          (click)="submit()"
-        >
-          <i class="ti ti-device-floppy" aria-hidden="true"></i>
-          {{ saving ? 'Guardando…' : 'Guardar RAC' }}
-        </button>
-      </div>
-    </div>
+  </div><!-- /paso-body -->
 
-  </div><!-- /nuevo-body -->
+  <!-- ── FOOTER (fuera del scroll) ─────────────────────────────────── -->
+  <div *ngIf="!loadingCatalogos" class="wizard-footer">
+    <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
+    <button
+      type="button"
+      class="btn-primary"
+      [disabled]="!canSubmit || saving"
+      (click)="submit()"
+    >
+      <i class="ti ti-device-floppy"></i>
+      {{ saving ? 'Guardando…' : 'Guardar RAC' }}
+    </button>
+  </div>
 
 </div><!-- /nuevo-root -->
