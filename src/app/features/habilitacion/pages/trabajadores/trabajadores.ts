@@ -262,8 +262,28 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   actualizar(): void {
-    this.loadWorkers(this.currentPage);
-    if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
+    const workerId = this.selectedWorker?.workerId ?? null;
+    const entregableId = this.selectedEntregable?.id ?? null;
+
+    this.loadWorkers(this.currentPage, () => {
+      if (workerId !== null) {
+        const fresh = this.workers.find((w) => w.workerId === workerId);
+        if (fresh) {
+          this.selectedWorker = fresh;
+          this.cdr.markForCheck();
+        }
+      }
+    });
+
+    if (workerId !== null) {
+      this.loadEntregables(workerId, () => {
+        if (entregableId !== null) {
+          const freshE = this.entregables.find((e) => e.id === entregableId);
+          if (freshE) this.selectedEntregable = freshE;
+        }
+      });
+      this.cargarProyectos(workerId);
+    }
   }
 
   selectWorker(worker: WorkerHabilitacionListDto): void {
@@ -322,13 +342,14 @@ export class Trabajadores implements OnInit, OnDestroy {
     });
   }
 
-  loadEntregables(workerId: number): void {
+  loadEntregables(workerId: number, afterLoad?: () => void): void {
     this.loadingEntregables = true;
     this.entregables = [];
     this.trabajadorHabService.getEntregables(workerId).subscribe({
       next: (res) => {
         this.entregables = res ?? [];
         this.loadingEntregables = false;
+        afterLoad?.();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
