@@ -47,6 +47,7 @@ export class Layout {
       this.router.url.includes('/ssoma/gestion/paso') ||
       this.router.url.includes('/ssoma/gestion/rac') ||
       this.router.url.includes('/ssoma/gestion/opt') ||
+      this.router.url.includes('/ssoma/gestion/inspeccion') ||
       this.router.url.includes('/habilitacion/gestion') ||
       this.router.url.includes('/gestion-administrativa') ||
       this.router.url.includes('/projects') ||
