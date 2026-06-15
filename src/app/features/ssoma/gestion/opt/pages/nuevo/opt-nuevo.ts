@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { forkJoin } from 'rxjs';
 import { OptService } from '../../services/opt.service';
 import {
@@ -59,7 +59,7 @@ interface PasoForm {
   selector: 'app-opt-nuevo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer],
   templateUrl: './opt-nuevo.html',
   styleUrl: './opt-nuevo.css',
 })
@@ -75,8 +75,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
   criterios: OptCriterioVerificacionDto[] = [];
   proyectos: any[] = [];
   petSeleccionado: OptPetDto | null = null;
-  petUrlSafe: SafeResourceUrl | null = null;
-
   // PASO 1
   proyectoId: number | null = null;
   petId: number | null = null;
@@ -87,13 +85,12 @@ export class OptNuevo implements OnInit, AfterViewInit {
   seInformaTrabajador = false;
   observadorNombre = '';
   observadorCargo = '';
-  mostrarPdfPet = false;
+  petVisorUrl = '';
+  petVisorNombre = '';
 
-  // Observador search
-  observadorQuery = '';
-  observadorResults: WorkerSearchItemDto[] = [];
-  observadorLoading = false;
-  observadorSeleccionado: WorkerSearchItemDto | null = null;
+  // Observador
+  workersObservador: WorkerSearchItemDto[] = [];
+  observadorId: number | null = null;
 
   // PASO 2
   trabajadores: TrabajadorForm[] = [];
@@ -135,7 +132,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -143,11 +139,13 @@ export class OptNuevo implements OnInit, AfterViewInit {
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
+      workers: this.workerSearchService.search('', 200),
     }).subscribe({
-      next: ({ catalogos, proyectos }) => {
+      next: ({ catalogos, proyectos, workers }) => {
         this.pets = catalogos.pets;
         this.criterios = catalogos.criterios;
         this.proyectos = proyectos.data;
+        this.workersObservador = workers;
         this.verificaciones = catalogos.criterios.map((c) => ({
           criterioId: c.id,
           pregunta: c.pregunta,
@@ -170,54 +168,37 @@ export class OptNuevo implements OnInit, AfterViewInit {
   // ── PET ───────────────────────────────────────────────────────────────────
   onPetChange(): void {
     this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
-    this.mostrarPdfPet = false;
-    if (this.petSeleccionado?.sharepointUrl) {
-      const embedUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(this.petSeleccionado.sharepointUrl)}`;
-      this.petUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
-    } else {
-      this.petUrlSafe = null;
-    }
+    this.petVisorUrl = '';
+    this.petVisorNombre = '';
+    this.cdr.markForCheck();
+  }
+
+  abrirVisorPet(): void {
+    if (!this.petSeleccionado?.sharepointUrl) return;
+    this.petVisorNombre = this.petSeleccionado.nombre;
+    this.petVisorUrl = this.petSeleccionado.sharepointUrl;
+    this.cdr.markForCheck();
+  }
+
+  cerrarVisorPet(): void {
+    this.petVisorUrl = '';
+    this.petVisorNombre = '';
     this.cdr.markForCheck();
   }
 
   // ── OBSERVADOR ────────────────────────────────────────────────────────────
-  buscarObservador(): void {
-    if (this.observadorQuery.length < 2) return;
-    this.observadorLoading = true;
-    this.cdr.markForCheck();
-    this.workerSearchService.search(this.observadorQuery).subscribe({
-      next: (res) => {
-        this.observadorResults = res;
-        this.observadorLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.observadorLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  seleccionarObservador(w: WorkerSearchItemDto): void {
-    this.observadorNombre = w.apellidoNombre;
-    this.observadorCargo = w.ocupacion ?? '';
-    this.observadorSeleccionado = w;
-    this.observadorQuery = w.apellidoNombre;
-    this.observadorResults = [];
-    this.cdr.markForCheck();
-  }
-
-  limpiarObservador(): void {
-    this.observadorNombre = '';
-    this.observadorCargo = '';
-    this.observadorSeleccionado = null;
-    this.observadorQuery = '';
-    this.observadorResults = [];
-    this.cdr.markForCheck();
-  }
-
-  togglePdf(): void {
-    this.mostrarPdfPet = !this.mostrarPdfPet;
+  onObservadorChange(id: number | null): void {
+    this.observadorId = id;
+    if (!id) {
+      this.observadorNombre = '';
+      this.observadorCargo = '';
+    } else {
+      const w = this.workersObservador.find((x) => x.id === id);
+      if (w) {
+        this.observadorNombre = w.apellidoNombre;
+        this.observadorCargo = w.ocupacion ?? '';
+      }
+    }
     this.cdr.markForCheck();
   }
 

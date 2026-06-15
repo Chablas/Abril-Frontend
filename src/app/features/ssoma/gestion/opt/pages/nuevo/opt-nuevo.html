@@ -80,21 +80,14 @@
               <option [value]="p.id">{{ p.nombre }}</option>
             }
           </select>
-          <!-- FIX 5: botón ver PET -->
           @if (petSeleccionado?.sharepointUrl) {
-            <button type="button" class="btn-ver-pdf" (click)="togglePdf()">
-              <i class="ti ti-file-text"></i>
-              {{ mostrarPdfPet ? 'Ocultar PET' : 'Ver PET' }}
-            </button>
+            <div class="pet-actions">
+              <button type="button" class="btn-ver-pdf" (click)="abrirVisorPet()">
+                <i class="ti ti-file-text"></i> Ver PET
+              </button>
+            </div>
           }
         </div>
-
-        <!-- FIX 5: iframe con URL sanitizada via Office Online embed -->
-        @if (mostrarPdfPet && petUrlSafe) {
-          <div class="pdf-viewer">
-            <iframe [src]="petUrlSafe" class="pdf-frame" title="PET"></iframe>
-          </div>
-        }
 
         <div class="form-row">
           <div class="form-group">
@@ -120,46 +113,24 @@
           <input type="text" class="form-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
         </div>
 
-        <!-- FIX 3: Observador con buscador de workers -->
+        <!-- FIX 2+3: Observador via SearchSelect con auto-fill nombre+cargo -->
         <div class="form-group">
           <label class="form-label">Observador *</label>
-          @if (!observadorSeleccionado) {
-            <div class="search-row">
-              <input type="text" class="form-input" [(ngModel)]="observadorQuery"
-                placeholder="Buscar por nombre o DNI..."
-                (keyup.enter)="buscarObservador()" />
-              <button type="button" class="btn-search" (click)="buscarObservador()">
-                @if (observadorLoading) { <i class="ti ti-loader-2 spin"></i> }
-                @else { <i class="ti ti-search"></i> }
-              </button>
-            </div>
-            @if (observadorResults.length > 0) {
-              <div class="worker-results">
-                @for (w of observadorResults; track w.id) {
-                  <div class="worker-result-row" (click)="seleccionarObservador(w)">
-                    <div class="worker-info">
-                      <span class="worker-name">{{ w.apellidoNombre }}</span>
-                      <span class="worker-meta">{{ w.dni }}{{ w.ocupacion ? ' · ' + w.ocupacion : '' }}</span>
-                    </div>
-                    <i class="ti ti-user-check worker-add"></i>
-                  </div>
-                }
-              </div>
-            }
-          } @else {
-            <div class="observador-chip">
-              <i class="ti ti-user-check"></i>
-              <span class="observador-chip__name">{{ observadorNombre }}</span>
-              <button type="button" class="btn-chip-remove" (click)="limpiarObservador()" title="Cambiar observador">
-                <i class="ti ti-x"></i>
-              </button>
-            </div>
-          }
+          <app-search-select
+            [options]="workersObservador"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="observadorId"
+            placeholder="Buscar observador por nombre..."
+            [allowClear]="true"
+            (valueChange)="onObservadorChange($event)">
+          </app-search-select>
         </div>
         <div class="form-group">
           <label class="form-label">Cargo del observador</label>
           <input type="text" class="form-input" [(ngModel)]="observadorCargo"
-            placeholder="Se autocompleta al seleccionar trabajador" />
+            [disabled]="!!observadorId"
+            placeholder="Se autocompleta al seleccionar observador" />
         </div>
 
       </div>
@@ -430,5 +401,12 @@
       }
     </div>
   </div>
+
+  <!-- FIX 1: Visor de documentos PET (modal overlay) -->
+  <app-document-viewer
+    [archivoUrl]="petVisorUrl"
+    [nombre]="petVisorNombre"
+    (closed)="cerrarVisorPet()">
+  </app-document-viewer>
 
 </div>
