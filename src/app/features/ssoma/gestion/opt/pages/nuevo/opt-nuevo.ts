@@ -139,7 +139,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.workerSearchService.search('', 200),
+      workers: this.workerSearchService.search('', 9999),
     }).subscribe({
       next: ({ catalogos, proyectos, workers }) => {
         this.pets = catalogos.pets;
@@ -173,10 +173,16 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.cdr.markForCheck();
   }
 
+  private readonly SHAREPOINT_SITE = 'https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/';
+
   abrirVisorPet(): void {
     if (!this.petSeleccionado?.sharepointUrl) return;
+    let path = this.petSeleccionado.sharepointUrl;
+    if (path.startsWith(this.SHAREPOINT_SITE)) {
+      path = path.slice(this.SHAREPOINT_SITE.length);
+    }
     this.petVisorNombre = this.petSeleccionado.nombre;
-    this.petVisorUrl = this.petSeleccionado.sharepointUrl;
+    this.petVisorUrl = path;
     this.cdr.markForCheck();
   }
 
