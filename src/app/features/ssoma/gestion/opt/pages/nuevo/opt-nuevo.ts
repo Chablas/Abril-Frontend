@@ -234,8 +234,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
       aniosExperiencia: '',
       firmaBase64: '',
     });
-    this.workerQuery = '';
-    this.workerResults = [];
     this.firmasTrabBase64.set(w.id, '');
     this.cdr.markForCheck();
   }
