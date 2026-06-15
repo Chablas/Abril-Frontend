@@ -116,7 +116,7 @@
         <div class="det-card">
           <div class="det-card__header">
             <h2 class="det-card__title"><i class="ti ti-clipboard-check"></i> Checklist</h2>
-            <button type="button" class="btn-toggle-na" (click)="mostrarNA = !mostrarNA; cdr.markForCheck()">
+            <button type="button" class="btn-toggle-na" (click)="mostrarNA = !mostrarNA">
               {{ mostrarNA ? 'Ocultar N/A' : 'Mostrar N/A' }}
             </button>
           </div>
@@ -267,7 +267,7 @@
           } @else {
             <div class="cierre-foto-preview">
               <img [src]="cierreFotoPreview" />
-              <button type="button" (click)="cierreFotoPreview=''; cierreFotoBase64=''; cdr.markForCheck()">
+              <button type="button" (click)="cierreFotoPreview=''; cierreFotoBase64=''">
                 <i class="ti ti-x"></i>
               </button>
             </div>

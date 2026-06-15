@@ -44,14 +44,17 @@
       <div class="paso-body">
         <h2 class="paso-title"><i class="ti ti-clipboard-text"></i> Datos de la observación</h2>
 
+        <!-- FIX 2: SearchSelect para proyecto -->
         <div class="form-group">
           <label class="form-label">Proyecto *</label>
-          <select class="form-input" [(ngModel)]="proyectoId">
-            <option value="0">Seleccionar proyecto...</option>
-            @for (p of proyectos; track p.id) {
-              <option [value]="p.id">{{ p.projectDescription }}</option>
-            }
-          </select>
+          <app-search-select
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoId"
+            placeholder="Seleccionar proyecto..."
+            (valueChange)="proyectoId = $event">
+          </app-search-select>
         </div>
 
         <div class="form-row">
@@ -77,17 +80,19 @@
               <option [value]="p.id">{{ p.nombre }}</option>
             }
           </select>
+          <!-- FIX 5: botón ver PET -->
           @if (petSeleccionado?.sharepointUrl) {
             <button type="button" class="btn-ver-pdf" (click)="togglePdf()">
-              <i class="ti ti-file-type-pdf"></i>
-              {{ mostrarPdfPet ? 'Ocultar PET' : 'Ver PET (PDF)' }}
+              <i class="ti ti-file-text"></i>
+              {{ mostrarPdfPet ? 'Ocultar PET' : 'Ver PET' }}
             </button>
           }
         </div>
 
-        @if (mostrarPdfPet && petSeleccionado?.sharepointUrl) {
+        <!-- FIX 5: iframe con URL sanitizada via Office Online embed -->
+        @if (mostrarPdfPet && petUrlSafe) {
           <div class="pdf-viewer">
-            <iframe [src]="petSeleccionado!.sharepointUrl" class="pdf-frame" title="PET"></iframe>
+            <iframe [src]="petUrlSafe" class="pdf-frame" title="PET"></iframe>
           </div>
         }
 
@@ -111,20 +116,52 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Área</label>
+          <label class="form-label">Área *</label>
           <input type="text" class="form-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nombre del observador</label>
-            <input type="text" class="form-input" [(ngModel)]="observadorNombre" placeholder="Nombre completo" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Cargo del observador</label>
-            <input type="text" class="form-input" [(ngModel)]="observadorCargo" placeholder="Cargo" />
-          </div>
+        <!-- FIX 3: Observador con buscador de workers -->
+        <div class="form-group">
+          <label class="form-label">Observador *</label>
+          @if (!observadorSeleccionado) {
+            <div class="search-row">
+              <input type="text" class="form-input" [(ngModel)]="observadorQuery"
+                placeholder="Buscar por nombre o DNI..."
+                (keyup.enter)="buscarObservador()" />
+              <button type="button" class="btn-search" (click)="buscarObservador()">
+                @if (observadorLoading) { <i class="ti ti-loader-2 spin"></i> }
+                @else { <i class="ti ti-search"></i> }
+              </button>
+            </div>
+            @if (observadorResults.length > 0) {
+              <div class="worker-results">
+                @for (w of observadorResults; track w.id) {
+                  <div class="worker-result-row" (click)="seleccionarObservador(w)">
+                    <div class="worker-info">
+                      <span class="worker-name">{{ w.apellidoNombre }}</span>
+                      <span class="worker-meta">{{ w.dni }}{{ w.ocupacion ? ' · ' + w.ocupacion : '' }}</span>
+                    </div>
+                    <i class="ti ti-user-check worker-add"></i>
+                  </div>
+                }
+              </div>
+            }
+          } @else {
+            <div class="observador-chip">
+              <i class="ti ti-user-check"></i>
+              <span class="observador-chip__name">{{ observadorNombre }}</span>
+              <button type="button" class="btn-chip-remove" (click)="limpiarObservador()" title="Cambiar observador">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
         </div>
+        <div class="form-group">
+          <label class="form-label">Cargo del observador</label>
+          <input type="text" class="form-input" [(ngModel)]="observadorCargo"
+            placeholder="Se autocompleta al seleccionar trabajador" />
+        </div>
+
       </div>
     }
 
@@ -135,6 +172,7 @@
         <!-- TRABAJADORES -->
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
+        <!-- FIX 4: mostrar ocupacion + empresa en resultados -->
         <div class="form-group">
           <label class="form-label">Buscar trabajador (nombre o DNI)</label>
           <div class="search-row">
@@ -152,7 +190,7 @@
                 <div class="worker-result-row" (click)="agregarTrabajador(w)">
                   <div class="worker-info">
                     <span class="worker-name">{{ w.apellidoNombre }}</span>
-                    <span class="worker-meta">{{ w.dni }} · {{ w.empresaActual ?? '—' }}</span>
+                    <span class="worker-meta">{{ w.dni }}{{ w.ocupacion ? ' · ' + w.ocupacion : '' }}{{ w.empresaActual ? ' · ' + w.empresaActual : '' }}</span>
                   </div>
                   <i class="ti ti-plus worker-add"></i>
                 </div>
@@ -168,7 +206,7 @@
                 <div class="trab-card__header">
                   <div class="trab-info">
                     <span class="trab-name">{{ t.trabajador.apellidoNombre }}</span>
-                    <span class="trab-meta">{{ t.trabajador.dni }}</span>
+                    <span class="trab-meta">{{ t.trabajador.dni }}{{ t.trabajador.empresaActual ? ' · ' + t.trabajador.empresaActual : '' }}</span>
                   </div>
                   <button type="button" class="btn-remove" (click)="quitarTrabajador(t.trabajador.id)" title="Quitar">
                     <i class="ti ti-x"></i>
@@ -225,6 +263,7 @@
           <div class="pasos-empty">Sin pasos. Agrega el primero.</div>
         }
 
+        <!-- FIX 6+7: sin nivel, botones con texto completo -->
         @for (p of pasos; track p.id; let i = $index) {
           <div class="paso-row" [class.paso-row--inseguro]="p.resultado === 'Inseguro'">
             <div class="paso-num">{{ p.numeroDisplay }}</div>
@@ -232,26 +271,24 @@
               <div class="paso-top-row">
                 <input type="text" class="form-input paso-desc" [(ngModel)]="p.descripcion"
                   placeholder="Descripción del paso..." />
-                <select class="form-input paso-nivel" [(ngModel)]="p.nivel" (ngModelChange)="onNivelChange(p)">
-                  <option [value]="1">N1</option>
-                  <option [value]="2">N2</option>
-                  <option [value]="3">N3</option>
-                </select>
                 <div class="resultado-group">
                   <button type="button" class="resultado-btn"
                     [class.resultado-btn--seguro]="p.resultado === 'Seguro'"
                     (click)="p.resultado = p.resultado === 'Seguro' ? '' : 'Seguro'">
-                    S
+                    <span class="res-full">Seguro ✓</span>
+                    <span class="res-short">S ✓</span>
                   </button>
                   <button type="button" class="resultado-btn"
                     [class.resultado-btn--inseguro]="p.resultado === 'Inseguro'"
                     (click)="p.resultado = p.resultado === 'Inseguro' ? '' : 'Inseguro'">
-                    I
+                    <span class="res-full">Inseguro ✗</span>
+                    <span class="res-short">I ✗</span>
                   </button>
                   <button type="button" class="resultado-btn"
                     [class.resultado-btn--na]="p.resultado === 'NA'"
                     (click)="p.resultado = p.resultado === 'NA' ? '' : 'NA'">
-                    NA
+                    <span class="res-full">No aplica —</span>
+                    <span class="res-short">NA</span>
                   </button>
                 </div>
                 <button type="button" class="btn-remove-paso" (click)="quitarPaso(p.id)" title="Quitar">
@@ -379,8 +416,9 @@
           <i class="ti ti-chevron-left"></i> Anterior
         </button>
       }
+      <!-- FIX 8+9: disabled hasta que puedeAvanzar sea true -->
       @if (paso < totalPasos) {
-        <button type="button" class="btn-primary" (click)="siguiente()" [disabled]="loadingCatalogos">
+        <button type="button" class="btn-primary" (click)="siguiente()" [disabled]="loadingCatalogos || !puedeAvanzar">
           Siguiente <i class="ti ti-chevron-right"></i>
         </button>
       }

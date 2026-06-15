@@ -498,8 +498,9 @@ textarea.form-input { resize: vertical; }
 }
 
 .resultado-btn {
-  width: 30px;
+  min-width: 30px;
   height: 32px;
+  padding: 0 8px;
   border-radius: 7px;
   border: 0.5px solid #d4d0c8;
   background: #f5f3ef;
@@ -508,7 +509,11 @@ textarea.form-input { resize: vertical; }
   font-weight: 700;
   cursor: pointer;
   transition: all 0.12s;
+  white-space: nowrap;
 }
+
+.res-full  { display: inline; }
+.res-short { display: none; }
 
 .resultado-btn--seguro   { background: #eaf2ee; color: #1b3a2d; border-color: #c1dac8; }
 .resultado-btn--inseguro { background: #fdecea; color: #b83030; border-color: #f5bebe; }
@@ -528,6 +533,39 @@ textarea.form-input { resize: vertical; }
   font-size: 12px;
   flex-shrink: 0;
 }
+
+/* ── OBSERVADOR CHIP ─────────────────────────────────────── */
+.observador-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0.5px solid #c1dac8;
+  border-radius: 9px;
+  background: #eaf2ee;
+  color: #1b3a2d;
+  font-size: 13px;
+}
+
+.observador-chip i { font-size: 15px; flex-shrink: 0; }
+.observador-chip__name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.btn-chip-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 0.5px solid #a3c4aa;
+  background: transparent;
+  color: #1b3a2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.btn-chip-remove:hover { background: #d4ead9; }
 
 /* ── FIRMA CANVAS ────────────────────────────────────────── */
 .firma-wrap {
@@ -632,6 +670,13 @@ textarea.form-input { resize: vertical; }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-guardar { min-width: 120px; justify-content: center; }
+
+/* ── MOBILE <480px: resultado btn abreviado ───────────────── */
+@media (max-width: 479px) {
+  .res-full  { display: none; }
+  .res-short { display: inline; }
+  .resultado-btn { min-width: 30px; padding: 0; }
+}
 
 /* ── RESPONSIVE ≥768px ────────────────────────────────────── */
 @media (min-width: 768px) {

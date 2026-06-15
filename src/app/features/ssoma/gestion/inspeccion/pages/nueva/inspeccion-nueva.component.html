@@ -72,10 +72,10 @@
         <div class="form-group">
           <label class="form-label">Tipo de inspección</label>
           <div class="toggle-row">
-            <button type="button" class="toggle-opt" [class.toggle-opt--active]="esPlanificada" (click)="esPlanificada = true; cdr.markForCheck()">
+            <button type="button" class="toggle-opt" [class.toggle-opt--active]="esPlanificada" (click)="esPlanificada = true">
               Planeada
             </button>
-            <button type="button" class="toggle-opt" [class.toggle-opt--active]="!esPlanificada" (click)="esPlanificada = false; cdr.markForCheck()">
+            <button type="button" class="toggle-opt" [class.toggle-opt--active]="!esPlanificada" (click)="esPlanificada = false">
               No planeada
             </button>
           </div>
@@ -180,7 +180,7 @@
                 @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
                   <button type="button" class="btn-tipo" [ngClass]="tipoHallazgoClass(t)"
                     [class.btn-tipo--active]="nuevoHallazgo.tipo === t"
-                    (click)="setTipoHallazgo(nuevoHallazgo, t)">
+                    (click)="setTipoHallazgo(nuevoHallazgo, $any(t))">
                     {{ t }}
                   </button>
                 }

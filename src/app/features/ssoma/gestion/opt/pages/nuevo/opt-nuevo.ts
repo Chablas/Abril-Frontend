@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { OptService } from '../../services/opt.service';
 import {
@@ -28,6 +29,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 
 interface TrabajadorForm {
@@ -49,7 +51,6 @@ interface PasoForm {
   id: number;
   numeroDisplay: string;
   descripcion: string;
-  nivel: number;
   resultado: string;
   desviacionObservada: string;
 }
@@ -58,7 +59,7 @@ interface PasoForm {
   selector: 'app-opt-nuevo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './opt-nuevo.html',
   styleUrl: './opt-nuevo.css',
 })
@@ -74,9 +75,10 @@ export class OptNuevo implements OnInit, AfterViewInit {
   criterios: OptCriterioVerificacionDto[] = [];
   proyectos: any[] = [];
   petSeleccionado: OptPetDto | null = null;
+  petUrlSafe: SafeResourceUrl | null = null;
 
   // PASO 1
-  proyectoId = 0;
+  proyectoId: number | null = null;
   petId: number | null = null;
   fecha = new Date().toISOString().split('T')[0];
   tipoObservacion = '';
@@ -86,6 +88,12 @@ export class OptNuevo implements OnInit, AfterViewInit {
   observadorNombre = '';
   observadorCargo = '';
   mostrarPdfPet = false;
+
+  // Observador search
+  observadorQuery = '';
+  observadorResults: WorkerSearchItemDto[] = [];
+  observadorLoading = false;
+  observadorSeleccionado: WorkerSearchItemDto | null = null;
 
   // PASO 2
   trabajadores: TrabajadorForm[] = [];
@@ -127,6 +135,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -162,6 +171,48 @@ export class OptNuevo implements OnInit, AfterViewInit {
   onPetChange(): void {
     this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
     this.mostrarPdfPet = false;
+    if (this.petSeleccionado?.sharepointUrl) {
+      const embedUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(this.petSeleccionado.sharepointUrl)}`;
+      this.petUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+    } else {
+      this.petUrlSafe = null;
+    }
+    this.cdr.markForCheck();
+  }
+
+  // ── OBSERVADOR ────────────────────────────────────────────────────────────
+  buscarObservador(): void {
+    if (this.observadorQuery.length < 2) return;
+    this.observadorLoading = true;
+    this.cdr.markForCheck();
+    this.workerSearchService.search(this.observadorQuery).subscribe({
+      next: (res) => {
+        this.observadorResults = res;
+        this.observadorLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.observadorLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  seleccionarObservador(w: WorkerSearchItemDto): void {
+    this.observadorNombre = w.apellidoNombre;
+    this.observadorCargo = w.ocupacion ?? '';
+    this.observadorSeleccionado = w;
+    this.observadorQuery = w.apellidoNombre;
+    this.observadorResults = [];
+    this.cdr.markForCheck();
+  }
+
+  limpiarObservador(): void {
+    this.observadorNombre = '';
+    this.observadorCargo = '';
+    this.observadorSeleccionado = null;
+    this.observadorQuery = '';
+    this.observadorResults = [];
     this.cdr.markForCheck();
   }
 
@@ -216,7 +267,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
       id: this.pasoNextId++,
       numeroDisplay: String(orden),
       descripcion: '',
-      nivel: 1,
       resultado: '',
       desviacionObservada: '',
     });
@@ -230,25 +280,9 @@ export class OptNuevo implements OnInit, AfterViewInit {
   }
 
   renumerarPasos(): void {
-    let nivel1 = 0;
-    let nivel2 = 0;
-    for (const p of this.pasos) {
-      if (p.nivel === 1) {
-        nivel1++;
-        nivel2 = 0;
-        p.numeroDisplay = String(nivel1);
-      } else if (p.nivel === 2) {
-        nivel2++;
-        p.numeroDisplay = `${nivel1}.${nivel2}`;
-      } else {
-        p.numeroDisplay = `${nivel1}.${nivel2}.${p.id}`;
-      }
-    }
-  }
-
-  onNivelChange(paso: PasoForm): void {
-    this.renumerarPasos();
-    this.cdr.markForCheck();
+    this.pasos.forEach((p, i) => {
+      p.numeroDisplay = String(i + 1);
+    });
   }
 
   // ── CANVAS OBSERVADOR ────────────────────────────────────────────────────
@@ -386,6 +420,23 @@ export class OptNuevo implements OnInit, AfterViewInit {
   }
 
   // ── NAVEGACIÓN WIZARD ────────────────────────────────────────────────────
+  get puedeAvanzar(): boolean {
+    switch (this.paso) {
+      case 1:
+        return (
+          (this.proyectoId ?? 0) > 0 &&
+          !!this.fecha &&
+          !!this.tipoObservacion &&
+          !!this.area &&
+          !!this.observadorNombre
+        );
+      case 2:
+        return this.trabajadores.length >= 1;
+      default:
+        return true;
+    }
+  }
+
   siguiente(): void {
     if (!this.validarPaso()) return;
     this.paso++;
@@ -404,7 +455,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   validarPaso(): boolean {
     if (this.paso === 1) {
-      if (!this.proyectoId) {
+      if (!this.proyectoId || this.proyectoId <= 0) {
         Swal.fire({ icon: 'warning', title: 'Selecciona un proyecto', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
         return false;
       }
@@ -447,14 +498,14 @@ export class OptNuevo implements OnInit, AfterViewInit {
     const pasosReq: OptPasoRequest[] = this.pasos.map((p, i) => ({
       numeroDisplay: p.numeroDisplay,
       descripcion: p.descripcion,
-      nivel: p.nivel,
+      nivel: 1,
       resultado: p.resultado || undefined,
       desviacionObservada: p.desviacionObservada || undefined,
       orden: i + 1,
     }));
 
     const request: CrearOptRequest = {
-      proyectoId: Number(this.proyectoId),
+      proyectoId: Number(this.proyectoId ?? 0),
       petId: this.petId ? Number(this.petId) : undefined,
       fecha: this.fecha,
       tipoObservacion: this.tipoObservacion,
