@@ -1,17 +1,15 @@
-<app-base-modal [title]="'EDITAR PLANO DE PROYECTO'" width="w-[500px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'EDITAR ESPECIALIDAD'" width="w-[420px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-5">
 
-    <!-- URL -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">URL del link</label>
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Descripción</label>
       <input
-        type="url"
-        [(ngModel)]="dto.linkUrl"
-        placeholder="https://..."
+        type="text"
+        [(ngModel)]="dto.workSpecialtyDescription"
+        placeholder="Ingresa la descripción..."
         class="border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
     </div>
 
-    <!-- Estado -->
     <div class="flex flex-col gap-1.5">
       <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Estado</label>
       <select [(ngModel)]="dto.active"
@@ -21,7 +19,6 @@
       </select>
     </div>
 
-    <!-- Guardar -->
     <div class="flex justify-center pt-1">
       <button (click)="save()"
         class="w-[140px] py-2 rounded-lg cursor-pointer transition-colors" style="background:var(--color-abril-primary)">

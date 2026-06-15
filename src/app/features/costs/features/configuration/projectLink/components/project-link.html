@@ -1,14 +1,16 @@
 <app-abril-page-header
   badge="COSTOS · CONFIGURACIÓN"
-  titulo="Links de Proyecto"
-  subtitulo="Enlaces y recursos externos asociados a cada proyecto."
-  [botonPrimario]="{ label: 'Nuevo link', icono: 'ti-plus' }"
+  titulo="Planos por Proyecto"
+  subtitulo="Planos (detalles, especialidades) asociados a cada proyecto."
+  [botonPrimario]="{ label: 'Nuevo plano', icono: 'ti-plus' }"
   (primaryClick)="showCreateModal = true"
   [tabs]="[
     { label: 'Correos Proyecto',  icono: 'ti-mail',     route: '/costs/configuration/staff-project-email' },
     { label: 'Partidas Control',  icono: 'ti-category', route: '/costs/configuration/work-item-category' },
     { label: 'Partidas',          icono: 'ti-list',     route: '/costs/configuration/work-item' },
-    { label: 'Links Proyecto',    icono: 'ti-link',     route: '/costs/configuration/project-link' },
+    { label: 'Especialidades',    icono: 'ti-stack-2',  route: '/costs/configuration/work-specialty' },
+    { label: 'Planos Proyecto',   icono: 'ti-link',     route: '/costs/configuration/project-link' },
+    { label: 'Carpeta Adj.',      icono: 'ti-folder',   route: '/costs/configuration/adjudicacion-folder' },
     { label: 'Correos C. Ppto.',  icono: 'ti-mail-cog', route: '/costs/configuration/costos-presupuestos-email' }
   ]">
 </app-abril-page-header>

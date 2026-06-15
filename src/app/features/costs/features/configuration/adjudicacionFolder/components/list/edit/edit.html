@@ -1,15 +1,21 @@
-<app-base-modal [title]="'EDITAR PLANO DE PROYECTO'" width="w-[500px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'EDITAR CARPETA DE ADJUDICACIONES'" width="w-[560px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-5">
 
-    <!-- URL -->
-    <div class="flex flex-col gap-1.5">
-      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">URL del link</label>
-      <input
-        type="url"
-        [(ngModel)]="dto.linkUrl"
-        placeholder="https://..."
-        class="border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+    <!-- Carpeta actual -->
+    <div *ngIf="folderName" class="flex items-center gap-2 text-sm bg-gray-50 border rounded-lg px-3 py-2" style="border-color:var(--color-abril-border)">
+      <span class="text-gray-500">Carpeta actual:</span>
+      <b class="text-gray-700">{{ folderName }}</b>
     </div>
+
+    <!-- Navegador de carpetas (preseleccionado con la carpeta actual) -->
+    <app-folder-picker
+      [linkUrl]="dto.linkUrl"
+      [initialDriveId]="dto.driveId"
+      [initialFolderId]="dto.folderId"
+      [initialFolderName]="folderName"
+      (linkUrlChange)="dto.linkUrl = $event"
+      (selected)="onFolderSelected($event)">
+    </app-folder-picker>
 
     <!-- Estado -->
     <div class="flex flex-col gap-1.5">

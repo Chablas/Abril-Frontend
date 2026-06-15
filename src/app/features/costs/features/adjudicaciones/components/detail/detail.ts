@@ -579,6 +579,16 @@ export class Detail implements OnInit {
     return this.hasOfTecnica;
   }
 
+  /** True si al menos un documento está en estado "Con observaciones" (3). */
+  get hasAnyObservation(): boolean {
+    return this.documents.some(doc => this.docForms[doc.key]?.statusId === 3);
+  }
+
+  /** True si al menos un documento está en estado "Levantamiento de observación" (5). */
+  get hasAnyLevantamiento(): boolean {
+    return this.documents.some(doc => this.docForms[doc.key]?.statusId === 5);
+  }
+
   onObservationBlur(docKey: string): void {
     if (this.isOfTecnica) return;
     this.saveDocStatus(docKey);

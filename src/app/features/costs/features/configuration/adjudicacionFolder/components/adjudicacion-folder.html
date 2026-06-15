@@ -1,14 +1,13 @@
 <app-abril-page-header
   badge="COSTOS · CONFIGURACIÓN"
-  titulo="Correos C. y Presupuestos"
-  subtitulo="Destinatarios de notificaciones de costos y presupuestos."
-  [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
+  titulo="Carpetas de Adjudicaciones"
+  subtitulo="Carpeta de OneDrive donde se guardarán los documentos de adjudicaciones de cada proyecto."
+  [botonPrimario]="{ label: 'Nueva carpeta', icono: 'ti-plus' }"
   (primaryClick)="showCreateModal = true"
   [tabs]="[
     { label: 'Correos Proyecto',  icono: 'ti-mail',     route: '/costs/configuration/staff-project-email' },
     { label: 'Partidas Control',  icono: 'ti-category', route: '/costs/configuration/work-item-category' },
     { label: 'Partidas',          icono: 'ti-list',     route: '/costs/configuration/work-item' },
-    { label: 'Especialidades',    icono: 'ti-stack-2',  route: '/costs/configuration/work-specialty' },
     { label: 'Planos Proyecto',   icono: 'ti-link',     route: '/costs/configuration/project-link' },
     { label: 'Carpeta Adj.',      icono: 'ti-folder',   route: '/costs/configuration/adjudicacion-folder' },
     { label: 'Correos C. Ppto.',  icono: 'ti-mail-cog', route: '/costs/configuration/costos-presupuestos-email' }
@@ -21,13 +20,16 @@
   <div class="flex flex-wrap gap-3 items-end">
 
     <div class="flex flex-col gap-[6px]">
-      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Correo electrónico</label>
-      <input
-        type="text"
-        [(ngModel)]="filters.email"
-        (keydown.enter)="onSearch()"
-        placeholder="Buscar por correo..."
-        class="w-[260px] border rounded-lg px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Proyecto</label>
+      <app-search-select
+        [options]="projectOptions"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Todos los proyectos"
+        [showLabel]="false"
+        [(value)]="filters.projectId"
+        style="width: 280px">
+      </app-search-select>
     </div>
 
     <button type="button" (click)="onSearch()"
@@ -41,11 +43,11 @@
   </div>
 
   <!-- Lista -->
-  <app-costos-presupuestos-email-list
+  <app-adjudicacion-folder-list
     [filters]="filters"
     (pagedData)="onPagedData($event)"
     class="flex-1 min-h-0 overflow-auto">
-  </app-costos-presupuestos-email-list>
+  </app-adjudicacion-folder-list>
 
   <!-- Paginador -->
   <app-paginator
@@ -58,8 +60,9 @@
 </div>
 
 <!-- Modal crear -->
-<app-costos-presupuestos-email-create
+<app-adjudicacion-folder-create
   *ngIf="showCreateModal"
+  [formData]="formData"
   (closeModal)="showCreateModal = false"
   (saved)="list.load(1)">
-</app-costos-presupuestos-email-create>
+</app-adjudicacion-folder-create>

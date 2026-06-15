@@ -760,7 +760,7 @@
         <!-- Levantamiento de observación (solo OF Técnica) -->
         <button *ngIf="canSendLevantamiento"
           (click)="sendAllLevantamientoEmailGlobal()"
-          [disabled]="sendingAllLevantamientoEmail"
+          [disabled]="sendingAllLevantamientoEmail || !hasAnyLevantamiento"
           class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-blue-400 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
           <svg *ngIf="sendingAllLevantamientoEmail"
             class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -778,7 +778,7 @@
         <!-- Observaciones (oculto solo para OF Técnica pura; visible si tiene Central también) -->
         <button *ngIf="!isOfTecnica"
           (click)="sendAllObservationsEmailGlobal()"
-          [disabled]="sendingAllObservationsEmail"
+          [disabled]="sendingAllObservationsEmail || !hasAnyObservation"
           class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border border-orange-400 text-orange-500 hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
           <!-- spinner mientras envía -->
           <svg *ngIf="sendingAllObservationsEmail"
