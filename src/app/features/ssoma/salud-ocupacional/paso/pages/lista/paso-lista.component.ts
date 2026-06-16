@@ -226,10 +226,13 @@ export class PasoListaComponent implements OnInit {
     this.actividadService.create(this.agregarForm as CreateActividadDto).subscribe({
       next: (a) => {
         this.saving = false;
-        this.agregarOpen = false;
         if (this.paso) this.paso.actividades = [...(this.paso.actividades ?? []), a];
         this.actividadParaPropagar = a;
         this.propagarOpen = true;
+        this.agregarOpen = false;
+        console.log('propagarOpen:', this.propagarOpen);
+        console.log('actividadParaPropagar:', this.actividadParaPropagar);
+        console.log('paso:', this.paso);
         this.cdr.detectChanges();
       },
       error: (err) => { this.saving = false; this.errorService.handleError(err); },

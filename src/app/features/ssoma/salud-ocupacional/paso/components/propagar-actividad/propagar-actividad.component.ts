@@ -30,7 +30,9 @@ export class PropagArActividadComponent {
   constructor(
     private actividadService: PasoActividadService,
     private errorService: ErrorService,
-  ) {}
+  ) {
+    console.log('PropagArActividadComponent CREADO');
+  }
 
   get plantilla(): PasoListItemDto | undefined {
     return this.programas.find(p => p.esPlantilla);
@@ -47,12 +49,17 @@ export class PropagArActividadComponent {
   get destinosSeleccionados(): PasoListItemDto[] {
     switch (this.opcionSeleccionada) {
       case 'solo_este':        return [];
-      case 'solo_plantilla':   return this.plantilla ? [this.plantilla] : [];
-      case 'este_y_plantilla': return this.plantilla ? [this.plantilla] : [];
-      case 'todos':            return [
-        ...this.programasActivos,
-        ...(this.plantilla ? [this.plantilla] : []),
-      ];
+      case 'solo_plantilla':
+        return (this.plantilla ? [this.plantilla] : [])
+          .filter(p => p.id !== this.pasoActual.id);
+      case 'este_y_plantilla':
+        return (this.plantilla ? [this.plantilla] : [])
+          .filter(p => p.id !== this.pasoActual.id);
+      case 'todos':
+        return [
+          ...this.programasActivos,
+          ...(this.plantilla ? [this.plantilla] : []),
+        ].filter(p => p.id !== this.pasoActual.id);
       default: return [];
     }
   }

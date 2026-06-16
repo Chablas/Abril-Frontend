@@ -593,14 +593,14 @@
 
   </div>
 
-  <!-- Propagar actividad -->
-  <app-propagar-actividad
-    *ngIf="propagarOpen && actividadParaPropagar && paso"
-    [actividad]="actividadParaPropagar"
-    [pasoActual]="paso"
-    [programas]="programas"
-    (propagado)="onPropagado()"
-    (cerrado)="propagarOpen = false; actividadParaPropagar = null">
-  </app-propagar-actividad>
-
 </div>
+
+<!-- Propagar actividad -->
+<app-propagar-actividad
+  *ngIf="propagarOpen && actividadParaPropagar && paso"
+  [actividad]="actividadParaPropagar"
+  [pasoActual]="paso"
+  [programas]="programas"
+  (propagado)="onPropagado()"
+  (cerrado)="propagarOpen = false; actividadParaPropagar = null">
+</app-propagar-actividad>
