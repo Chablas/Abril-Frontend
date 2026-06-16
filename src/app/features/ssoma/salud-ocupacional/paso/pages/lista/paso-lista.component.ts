@@ -8,7 +8,7 @@ import { forkJoin } from 'rxjs';
 import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
-import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto, PasoHistoricoAnioDto } from '../../dtos/paso.dtos';
+import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto, PasoHistoricoAnioDto, PasoEjecucionArchivoDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
@@ -69,6 +69,8 @@ export class PasoListaComponent implements OnInit {
 
   visorUrl = '';
   visorNombre = '';
+  visorArchivos: PasoEjecucionArchivoDto[] = [];
+  visorIdx = 0;
 
   readonly anioActual = new Date().getFullYear();
 
@@ -467,13 +469,33 @@ export class PasoListaComponent implements OnInit {
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
   abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
 
-  abrirVisor(url: string, nombre?: string): void {
-    this.visorNombre = nombre ?? url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
-    this.visorUrl = url;
+  abrirVisorArchivos(archivos: PasoEjecucionArchivoDto[], idx = 0): void {
+    this.visorArchivos = archivos;
+    this.visorIdx = idx;
+    this.visorUrl = archivos[idx]?.archivoUrl ?? '';
+    this.visorNombre = archivos[idx]?.archivoNombre ?? '';
+  }
+
+  visorSiguiente(): void {
+    if (this.visorIdx < this.visorArchivos.length - 1) {
+      this.visorIdx++;
+      this.visorUrl = this.visorArchivos[this.visorIdx].archivoUrl;
+      this.visorNombre = this.visorArchivos[this.visorIdx].archivoNombre;
+    }
+  }
+
+  visorAnterior(): void {
+    if (this.visorIdx > 0) {
+      this.visorIdx--;
+      this.visorUrl = this.visorArchivos[this.visorIdx].archivoUrl;
+      this.visorNombre = this.visorArchivos[this.visorIdx].archivoNombre;
+    }
   }
 
   onVisorClosed(): void {
     this.visorUrl = '';
+    this.visorArchivos = [];
+    this.visorIdx = 0;
   }
 
   verEvidencia(url: string): void {

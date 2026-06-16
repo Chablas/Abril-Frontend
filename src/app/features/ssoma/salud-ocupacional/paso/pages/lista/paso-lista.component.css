@@ -1129,3 +1129,30 @@
   background: #dbeafe;
   border-color: #93c5fd;
 }
+
+/* ── Navegación multi-archivo del visor ──────────────────────── */
+.visor-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15,23,42,0.85);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 999px;
+  z-index: 1101;
+  font-size: 0.9rem;
+}
+.visor-nav button {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.visor-nav button:disabled { opacity: 0.3; cursor: not-allowed; }

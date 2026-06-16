@@ -191,16 +191,7 @@
           <div class="mes-act__fecha">
             {{ a.fechaEjecutada ? (a.fechaEjecutada | date:'dd/MM') : (a.fechaProgramada | date:'dd/MM') }}
           </div>
-          <div class="mes-act__evidencia">
-            <button *ngIf="a.evidenciaUrl" type="button"
-               class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''"
-               (click)="abrirVisor(a.evidenciaUrl!, a.evidenciaNombre ?? undefined)">
-              <i class="ti ti-external-link"></i> Ver evidencia
-            </button>
-            <span *ngIf="!a.evidenciaUrl && a.evidenciaNombre" class="evidencia-chip">
-              <i class="ti ti-paperclip"></i> {{ a.evidenciaNombre }}
-            </span>
-          </div>
+          <div class="mes-act__evidencia"></div>
           <div class="mes-act__actions">
             <button type="button" class="row-btn row-btn--reg" title="Registrar ejecución"
               (click)="registrarDesdeResumen(a)">
@@ -212,7 +203,7 @@
               <i class="ti ti-calendar-event"></i> Reprogramar
             </button>
             <button type="button" class="row-btn row-btn--ver" title="Ver historial"
-              (click)="verDetalleActividad(a.actividadId)">
+              (click)="abrirVisorArchivos(a.archivos ?? [], 0)">
               <i class="ti ti-eye"></i>
             </button>
             <button type="button" class="row-btn row-btn--del" title="Eliminar"
@@ -476,6 +467,11 @@
   [nombre]="visorNombre"
   (closed)="onVisorClosed()"
 />
+<div *ngIf="visorArchivos.length > 1" class="visor-nav">
+  <button (click)="visorAnterior()" [disabled]="visorIdx === 0">‹</button>
+  <span>{{ visorIdx + 1 }} / {{ visorArchivos.length }}</span>
+  <button (click)="visorSiguiente()" [disabled]="visorIdx === visorArchivos.length - 1">›</button>
+</div>
 
 <!-- Offcanvas historial de ejecuciones -->
 <div *ngIf="actividadDetalle" class="det-overlay">
@@ -544,7 +540,7 @@
                 <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
                 <span>{{ arch.archivoNombre }}</span>
                 <button type="button" class="btn-ver-evidencia"
-                  (click)="abrirVisor(arch.archivoUrl, arch.archivoNombre)">
+                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
                   <i class="ti ti-eye"></i> Ver
                 </button>
               </div>
@@ -554,7 +550,7 @@
                 <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
                 <span>{{ e.evidenciaNombre ?? 'Evidencia' }}</span>
                 <button type="button" class="btn-ver-evidencia"
-                  (click)="abrirVisor(e.evidenciaUrl!, e.evidenciaNombre ?? '')">
+                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
                   <i class="ti ti-eye"></i> Ver
                 </button>
               </div>

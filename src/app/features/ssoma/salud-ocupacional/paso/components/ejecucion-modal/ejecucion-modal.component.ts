@@ -15,7 +15,7 @@ import { DocumentViewer } from '../../../../../../shared/components/document-vie
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
 import { SharepointUploadService } from '../../../../../habilitacion/services/sharepoint-upload.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto } from '../../dtos/paso.dtos';
+import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto, PasoEjecucionArchivoDto } from '../../dtos/paso.dtos';
 
 @Component({
   selector: 'app-ejecucion-modal',
@@ -96,9 +96,12 @@ export class EjecucionModalComponent implements OnInit {
     return !!this.form.fechaEjecutada;
   }
 
-  get ultimaEjecucionConEvidencia(): PasoEjecucionDto | null {
-    return this.ejecucionGuardada ??
-      (this.actividad?.ejecuciones?.slice().reverse().find(e => !!e.evidenciaUrl) ?? null);
+  get archivosExistentes(): PasoEjecucionArchivoDto[] {
+    if (this.ejecucionGuardada?.archivos?.length) return this.ejecucionGuardada.archivos;
+    const ejecuciones = this.actividad?.ejecuciones ?? [];
+    return ejecuciones
+      .flatMap(e => e.archivos ?? [])
+      .sort((a, b) => a.orden - b.orden);
   }
 
   nombreArchivo(url: string): string {

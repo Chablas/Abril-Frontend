@@ -25,18 +25,16 @@
     </div>
     <div class="ej-field span2">
       <label class="ej-label">Evidencia</label>
-      <div *ngIf="ultimaEjecucionConEvidencia" class="evidencia-existente">
-        <i class="ti ti-paperclip"></i>
-        <span>{{ ultimaEjecucionConEvidencia.evidenciaNombre ?? 'Evidencia adjunta' }}</span>
-        <button type="button" class="btn-ver-evidencia"
-          (click)="abrirVisor(ultimaEjecucionConEvidencia!.evidenciaUrl!, ultimaEjecucionConEvidencia!.evidenciaNombre ?? '')">
-          <i class="ti ti-eye"></i> Ver
-        </button>
-        <button type="button" class="btn-ver-evidencia"
-          (click)="descargarDocumento(ultimaEjecucionConEvidencia!.evidenciaUrl!)">
-          <i class="ti ti-download"></i>
-        </button>
-      </div>
+      <ng-container *ngIf="archivosExistentes.length">
+        <div *ngFor="let arch of archivosExistentes" class="evidencia-existente">
+          <i class="ti ti-paperclip"></i>
+          <span>{{ arch.archivoNombre }}</span>
+          <button type="button" class="btn-ver-evidencia"
+            (click)="abrirVisor(arch.archivoUrl, arch.archivoNombre)">
+            <i class="ti ti-eye"></i> Ver
+          </button>
+        </div>
+      </ng-container>
       <ng-container *ngIf="!evidenciaFile">
         <div class="dropzone" [class.over]="isDragOver"
           (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
@@ -44,7 +42,7 @@
           <input #fileInput type="file" class="hidden" (change)="onFileSelect($event)" />
           <i class="ti ti-cloud-upload dropzone-icon"></i>
           <span class="dropzone-text">
-            {{ ultimaEjecucionConEvidencia ? 'Subir nueva evidencia (reemplaza la actual)' : 'Arrastra un archivo aquí o haz clic para seleccionar' }}
+            {{ archivosExistentes.length ? 'Agregar otra evidencia' : 'Arrastra un archivo aquí o haz clic para seleccionar' }}
           </span>
           <span class="dropzone-hint">PDF, imagen, Excel — máx. 20 MB</span>
         </div>
