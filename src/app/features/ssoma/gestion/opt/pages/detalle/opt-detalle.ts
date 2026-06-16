@@ -6,12 +6,13 @@ import { OptService } from '../../services/opt.service';
 import { OptDetalleDto } from '../../dtos/opt.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 
 @Component({
   selector: 'app-opt-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, DocumentViewer],
   templateUrl: './opt-detalle.html',
   styleUrl: './opt-detalle.css',
 })
