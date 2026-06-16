@@ -386,6 +386,15 @@ textarea.form-input { resize: vertical; }
 .trab-name { font-size: 13px; font-weight: 600; color: #1a1a18; }
 .trab-meta { font-size: 11px; color: #8a8880; }
 
+.trab-datos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.trab-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--color-surface-alt, #f0f4f1);
+  color: var(--color-text-secondary, #555);
+  border-radius: 20px; padding: 3px 10px; font-size: 12px;
+}
+.trab-chip i { font-size: 13px; }
+
 .btn-remove {
   width: 28px;
   height: 28px;
