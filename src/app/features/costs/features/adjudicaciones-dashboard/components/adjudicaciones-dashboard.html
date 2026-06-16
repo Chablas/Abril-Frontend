@@ -1,0 +1,93 @@
+<app-abril-page-header
+  badge="COSTOS"
+  titulo="Dashboard de Adjudicaciones"
+  subtitulo="Estado del pipeline de adjudicaciones de subcontratistas, montos y distribución por proyecto.">
+</app-abril-page-header>
+
+<div *ngIf="data" class="flex flex-col gap-4 pb-2">
+
+  <!-- ── KPIs ──────────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">Total</span>
+      <span class="text-2xl font-bold text-gray-800">{{ data.summary.total }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">En proceso</span>
+      <span class="text-2xl font-bold text-[#0086A5]">{{ data.summary.enProceso }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">Completadas</span>
+      <span class="text-2xl font-bold text-[#64BC04]">{{ data.summary.completadas }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">Proyectos</span>
+      <span class="text-2xl font-bold text-gray-800">{{ data.summary.totalProyectos }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">Monto S/.</span>
+      <span class="text-xl font-bold text-[#509603]">{{ data.summary.montoPenTotal | number:'1.0-0' }}</span>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">Monto $</span>
+      <span class="text-xl font-bold text-[#509603]">{{ data.summary.montoUsdTotal | number:'1.0-0' }}</span>
+    </div>
+  </div>
+
+  <!-- ── Estado + tendencia + por proyecto ─────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por estado</h3>
+      <div class="relative h-[240px]"><canvas id="chart-estado"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Tendencia mensual de adjudicaciones</h3>
+      <div class="relative h-[240px]"><canvas id="chart-mes"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por proyecto</h3>
+      <div class="relative h-[240px]"><canvas id="chart-proyecto"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Distribuciones ────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Por modalidad de contrato</h3>
+      <div class="relative h-[230px]"><canvas id="chart-modalidad"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Por categoría de partida</h3>
+      <div class="relative h-[230px]"><canvas id="chart-categoria"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Por tipo de contrato</h3>
+      <div class="relative h-[230px]"><canvas id="chart-tipo"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Por modalidad de pago</h3>
+      <div class="relative h-[230px]"><canvas id="chart-modalidad-pago"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Llegada a Of. Central (paso 5)</h3>
+      <div class="relative h-[230px]"><canvas id="chart-observaciones"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Rankings de subcontratistas ───────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas por monto (S/.)</h3>
+      <div class="relative h-[300px]"><canvas id="chart-top-pen"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1">
+      <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas por monto ($)</h3>
+      <div class="relative h-[300px]"><canvas id="chart-top-usd"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-3 flex flex-col gap-1 lg:col-span-2">
+      <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas más adjudicados</h3>
+      <div class="relative h-[300px]"><canvas id="chart-top-contratistas"></canvas></div>
+    </div>
+  </div>
+
+</div>

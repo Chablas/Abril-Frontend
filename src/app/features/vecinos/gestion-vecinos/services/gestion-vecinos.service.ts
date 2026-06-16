@@ -1,0 +1,132 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
+import {
+  VecinosPageDTO,
+  VecinoListItemDTO,
+  VecinoCreateDTO,
+  VecinoSolicitudesResponseDTO,
+  VecinoSolicitudCreateDTO,
+  VecinoCompromisoItemDTO,
+  VecinoCompromisoCreateDTO,
+} from '../dtos/gestion-vecinos.dto';
+
+/** Persona devuelta por la consulta RENIEC. */
+export interface ReniecPersonDTO {
+  document_number: string;
+  full_name: string;
+  first_name: string;
+  first_last_name: string;
+  second_last_name: string;
+}
+
+export interface VecinoFilter {
+  page: number;
+  projectId?: number | null;
+  vecinoColindanciaId?: number | null;
+  search?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class GestionVecinosService {
+  private readonly apiUrl = `${environment.apiUrl}api/v1/GestionVecinos`;
+
+  constructor(private http: HttpClient) {}
+
+  private authHeaders(): { [header: string]: string } {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  private buildParams(filter: VecinoFilter): HttpParams {
+    let params = new HttpParams().set('page', filter.page.toString());
+    if (filter.projectId)           params = params.set('projectId', filter.projectId.toString());
+    if (filter.vecinoColindanciaId) params = params.set('vecinoColindanciaId', filter.vecinoColindanciaId.toString());
+    if (filter.search)              params = params.set('search', filter.search);
+    return params;
+  }
+
+  /** Carga inicial: opciones (filtros + formulario) + primera página. */
+  getPageData(filter: VecinoFilter): Observable<VecinosPageDTO> {
+    return this.http.get<VecinosPageDTO>(this.apiUrl, {
+      params: this.buildParams(filter),
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Listado filtrado/paginado (sin reconsultar opciones). */
+  getList(filter: VecinoFilter): Observable<PagedResponseDTO<VecinoListItemDTO>> {
+    return this.http.get<PagedResponseDTO<VecinoListItemDTO>>(`${this.apiUrl}/list`, {
+      params: this.buildParams(filter),
+      headers: this.authHeaders(),
+    });
+  }
+
+  getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
+    return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/dni/${dni}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  create(dto: VecinoCreateDTO): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(this.apiUrl, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // ── Solicitudes ─────────────────────────────────────────────────────
+  getSolicitudes(vecinoId: number): Observable<VecinoSolicitudesResponseDTO> {
+    return this.http.get<VecinoSolicitudesResponseDTO>(`${this.apiUrl}/${vecinoId}/solicitudes`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  createSolicitud(vecinoId: number, dto: VecinoSolicitudCreateDTO): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${vecinoId}/solicitudes`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  updateSolicitudEstado(solicitudId: number, vecinoSolicitudEstadoId: number): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/solicitudes/${solicitudId}/estado`,
+      { vecinoSolicitudEstadoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Compromisos ─────────────────────────────────────────────────────
+  getCompromisos(solicitudId: number): Observable<VecinoCompromisoItemDTO[]> {
+    return this.http.get<VecinoCompromisoItemDTO[]>(
+      `${this.apiUrl}/solicitudes/${solicitudId}/compromisos`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  createCompromiso(solicitudId: number, dto: VecinoCompromisoCreateDTO): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/solicitudes/${solicitudId}/compromisos`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  updateCompromisoEstado(compromisoId: number, vecinoCompromisoEstadoId: number): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/compromisos/${compromisoId}/estado`,
+      { vecinoCompromisoEstadoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  updateEntregableEstado(entregableId: number, vecinoEntregableEstadoId: number): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/compromisos/entregables/${entregableId}/estado`,
+      { vecinoEntregableEstadoId },
+      { headers: this.authHeaders() },
+    );
+  }
+}

@@ -1,0 +1,152 @@
+<app-base-modal [title]="'Detalle del vecino'" width="w-[720px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-4 mt-2">
+
+    <!-- Cabecera -->
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <p class="text-lg font-semibold text-gray-800 leading-tight">{{ item.direccion }}</p>
+        <p *ngIf="item.interiorDepartamento" class="text-sm text-gray-400">
+          Int./Dpto.: {{ item.interiorDepartamento }}
+        </p>
+      </div>
+      <span
+        class="inline-block rounded-full px-3 py-1 text-xs font-semibold border shrink-0"
+        [ngClass]="item.colindanciaDescripcion === 'Colindante'
+          ? 'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/30'
+          : 'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30'">
+        {{ item.colindanciaDescripcion }}
+      </span>
+    </div>
+
+    <!-- Tabs -->
+    <app-section-tabs [tabs]="tabs" [(value)]="activeTab"></app-section-tabs>
+
+    <!-- ── DETALLE ─────────────────────────────────────────────────── -->
+    <div *ngIf="activeTab === 'detalle'" class="grid grid-cols-2 gap-x-6 gap-y-3 pt-1">
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
+        <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Predio</p>
+        <p class="text-sm text-gray-700">{{ item.predio || '—' }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Propietario / Representante</p>
+        <p class="text-sm text-gray-700">{{ item.nombrePropietario }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">DNI</p>
+        <p class="text-sm text-gray-700">{{ item.dni }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
+        <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Celular</p>
+        <p class="text-sm text-gray-700">{{ item.celular || '—' }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
+        <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+
+    <!-- ── SOLICITUDES ─────────────────────────────────────────────── -->
+    <div *ngIf="activeTab === 'solicitudes'" class="flex flex-col gap-4 pt-1">
+
+      <!-- Formulario nueva solicitud -->
+      <div class="border border-[#D6DEE5] rounded-lg p-4 flex flex-col gap-3 bg-[#FAFCF7]">
+        <label class="text-sm text-[#64BC04] font-medium">Nueva solicitud</label>
+        <textarea
+          [(ngModel)]="nuevaDescripcion"
+          rows="3"
+          placeholder="Describe la solicitud del vecino…"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+
+        <div class="flex items-center justify-between gap-3">
+          <!-- Toggle crítica -->
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <button type="button" (click)="nuevaCritica = !nuevaCritica"
+              class="relative w-10 h-5 rounded-full transition-colors"
+              [ngClass]="nuevaCritica ? 'bg-[#D30000]' : 'bg-gray-300'">
+              <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                [class.translate-x-5]="nuevaCritica"></span>
+            </button>
+            <span class="text-sm text-gray-600">Solicitud crítica</span>
+          </label>
+
+          <button type="button" (click)="addSolicitud()"
+            class="px-5 py-[9px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+            Añadir solicitud
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de solicitudes (acordeón) -->
+      <div class="flex flex-col gap-3">
+        <div
+          *ngFor="let s of solicitudes"
+          class="border rounded-lg overflow-hidden"
+          [ngClass]="s.esCritica ? 'border-[#D30000]/30' : 'border-gray-200'">
+
+          <!-- Cuerpo de la solicitud -->
+          <div class="p-3 flex flex-col gap-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <span class="text-[11px] text-gray-400">{{ s.createdDateTime | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="s.esCritica"
+                class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FAD5D4] text-[#D30000] border border-[#D30000]/30 shrink-0">
+                CRÍTICA
+              </span>
+            </div>
+
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ s.descripcion }}</p>
+
+            <div class="flex items-end justify-between gap-3 flex-wrap border-t border-gray-100 pt-2.5">
+              <div class="flex flex-col gap-1.5">
+                <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Estado de la solicitud</span>
+                <app-status-pills
+                  [options]="estados"
+                  [value]="s.vecinoSolicitudEstadoId"
+                  (valueChange)="onEstadoChange(s, $event)">
+                </app-status-pills>
+              </div>
+
+              <button type="button" (click)="toggleCompromisos(s)"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E5F7D1] text-[#64BC04] text-xs font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                {{ expandedSolicitudId === s.vecinoSolicitudId ? 'Ocultar compromisos' : 'Ver compromisos' }}
+                <svg width="14" height="14" viewBox="0 0 16 9" fill="none" class="transition-transform"
+                  [class.rotate-180]="expandedSolicitudId === s.vecinoSolicitudId">
+                  <path d="M14.692 0L16 1.339L8.873 8.629a1.997 1.997 0 0 1-2.746 0L0 1.339 1.308.001 8 6.844 14.692 0Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel de compromisos inline -->
+          <div *ngIf="expandedSolicitudId === s.vecinoSolicitudId"
+            class="border-t border-gray-100 bg-[#FAFBF8] p-3">
+            <app-gestion-vecinos-compromisos
+              [solicitud]="s"
+              [compromisoEstados]="compromisoEstados"
+              [entregableEstados]="entregableEstados">
+            </app-gestion-vecinos-compromisos>
+          </div>
+        </div>
+
+        <p *ngIf="solicitudesLoaded && solicitudes.length === 0"
+          class="text-center text-sm text-gray-400 italic py-6">
+          Este vecino aún no tiene solicitudes registradas.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</app-base-modal>

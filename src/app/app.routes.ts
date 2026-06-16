@@ -100,6 +100,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/evaluaciones/evaluaciones.routes')
           .then(m => m.EVALUACIONES_ROUTES)
+      },
+
+      {
+        path: 'vecinos',
+        loadChildren: () =>
+          import('./features/vecinos/vecinos.routes')
+          .then(m => m.VECINOS_ROUTES)
       }
     ]
   },

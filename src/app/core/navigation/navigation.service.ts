@@ -59,6 +59,7 @@ export class NavigationService {
       iconKey: 'coins',
       baseRoute: '/costs',
       items: [
+        { label: 'Dashboard', route: '/costs/dashboard', featureKey: 'costs.dashboard' },
         { label: 'Adjudicaciones', route: '/costs/adjudicaciones', featureKey: 'costs.adjudicaciones' },
       ],
       groups: [
@@ -152,6 +153,15 @@ export class NavigationService {
         { label: 'Asignaciones',       route: '/evaluaciones/asignaciones',  featureKey: 'evaluaciones.asignaciones' },
       ],
       groups: [],
+    },
+    {
+      key: 'vecinos',
+      label: 'Vecinos',
+      iconKey: 'users-group',
+      baseRoute: '/vecinos',
+      items: [
+        { label: 'Vecinos', route: '/vecinos/dashboard', featureKey: 'vecinos.dashboard' },
+      ],
     },
     {
       key: 'seguridad',
