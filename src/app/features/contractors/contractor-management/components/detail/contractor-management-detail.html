@@ -85,23 +85,23 @@
       </div>
 
       <!-- Representante legal -->
-      <div *ngIf="item.legalRepresentativeDni || item.legalRepresentativeFullName || item.legalEntityRegistryNumber">
+      <div>
         <p class="text-xs text-gray-400 mb-3">Representante legal</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
 
-          <div *ngIf="item.legalRepresentativeDni">
+          <div>
             <p class="text-xs text-gray-400 mb-1">DNI</p>
-            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeDni }}</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeDni || '—' }}</p>
           </div>
 
-          <div *ngIf="item.legalRepresentativeFullName">
+          <div>
             <p class="text-xs text-gray-400 mb-1">Nombre completo</p>
-            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeFullName }}</p>
+            <p class="text-sm font-semibold text-gray-800">{{ item.legalRepresentativeFullName || '—' }}</p>
           </div>
 
-          <div *ngIf="item.legalEntityRegistryNumber" class="sm:col-span-2">
+          <div class="sm:col-span-2">
             <p class="text-xs text-gray-400 mb-1">N° de partida registral</p>
-            <p class="text-sm text-gray-700">{{ item.legalEntityRegistryNumber }}</p>
+            <p class="text-sm text-gray-700">{{ item.legalEntityRegistryNumber || '—' }}</p>
           </div>
 
         </div>
@@ -140,15 +140,21 @@
         <p class="text-xs text-gray-400 mb-2">Correos de contacto</p>
         <div class="flex flex-col gap-1.5">
           <div
-            *ngFor="let email of item.emails"
-            class="flex items-center gap-2 text-sm text-gray-700">
-            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            *ngFor="let email of item.emailDetails"
+            class="flex items-center gap-2 text-sm"
+            [ngClass]="email.active ? 'text-gray-700' : 'text-gray-400'">
+            <svg class="w-4 h-4 shrink-0" [ngClass]="email.active ? 'text-gray-400' : 'text-gray-300'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
-            {{ email }}
+            <span [ngClass]="{ 'line-through': !email.active }">{{ email.email }}</span>
+            <span
+              class="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
+              [ngClass]="email.active ? 'bg-[#E5F7D1] text-[#3a7a00]' : 'bg-gray-100 text-gray-500'">
+              {{ email.active ? 'Activo' : 'Inactivo' }}
+            </span>
           </div>
-          <p *ngIf="!item.emails || item.emails.length === 0"
+          <p *ngIf="!item.emailDetails || item.emailDetails.length === 0"
             class="text-sm text-gray-400 italic">
             Sin correos registrados
           </p>

@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { ContractorManagementDTO } from '../../dtos/contractor-management.dto';
+import { ContractorEmailItemDTO, ContractorManagementDTO } from '../../dtos/contractor-management.dto';
+import { isValidContractorEmail } from '../../../shared/email-validation';
+import { SunatContributorDTO } from '../../../shared/sunatCompany.model';
+import { ReniecPersonDTO } from '../../../shared/reniecPerson.model';
 import { ContractorManagementService } from '../../services/contractor-management.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -26,6 +29,7 @@ export class ContractorManagementEdit implements OnInit {
   @ViewChild('referencesInput')  referencesInput!:  ElementRef<HTMLInputElement>;
 
   // Campos de texto
+  contributorRuc = '';
   contributorName = '';
   contributorAddress = '';
   contributorEconomicActivityDescription = '';
@@ -36,8 +40,13 @@ export class ContractorManagementEdit implements OnInit {
   legalRepresentativeDni = '';
   legalRepresentativeFullName = '';
 
-  // Correos
-  emails: string[] = [];
+  // Consulta RUC (SUNAT) / DNI (RENIEC)
+  rucInput = '';
+  rucLookupLoading = false;
+  dniLookupLoading = false;
+
+  // Correos (con id y estado active; id null = correo nuevo)
+  emails: ContractorEmailItemDTO[] = [];
   newEmail = '';
 
   // Archivos nuevos (null = no cambiar)
@@ -55,6 +64,8 @@ export class ContractorManagementEdit implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.contributorRuc                         = this.item.contributorRuc ?? '';
+    this.rucInput                               = this.item.contributorRuc ?? '';
     this.contributorName                        = this.item.contributorName ?? '';
     this.contributorAddress                     = this.item.contributorAddress ?? '';
     this.contributorEconomicActivityDescription = this.item.contributorEconomicActivityDescription ?? '';
@@ -64,7 +75,84 @@ export class ContractorManagementEdit implements OnInit {
     this.legalEntityRegistryNumber              = this.item.legalEntityRegistryNumber ?? '';
     this.legalRepresentativeDni                 = this.item.legalRepresentativeDni ?? '';
     this.legalRepresentativeFullName            = this.item.legalRepresentativeFullName ?? '';
-    this.emails                                 = [...(this.item.emails ?? [])];
+    // Se clona cada correo para no mutar el item original mientras se edita.
+    this.emails = (this.item.emailDetails ?? []).map(e => ({ ...e }));
+  }
+
+  // ── Consulta RUC (SUNAT) ─────────────────────────────────────────────────────
+
+  searchSunat(): void {
+    const ruc = this.rucInput.trim();
+    if (ruc.length !== 11) return;
+    this.rucLookupLoading = true;
+    this.loaderService.show();
+    this.service.getCompanyBySunat(ruc).subscribe({
+      next: (data: SunatContributorDTO) => {
+        this.contributorRuc                         = data.contributorRuc;
+        this.contributorName                        = data.contributorName;
+        this.contributorAddress                     = data.contributorAddress;
+        this.contributorEconomicActivityDescription = data.contributorEconomicActivityDescription;
+        this.contributorDistrict                    = data.contributorDistrict   ?? '';
+        this.contributorProvince                    = data.contributorProvince   ?? '';
+        this.contributorDepartment                  = data.contributorDepartment ?? '';
+        this.rucLookupLoading = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.rucLookupLoading = false;
+        this.loaderService.hide();
+        if (err.status === 404) {
+          Swal.fire({ icon: 'error', title: 'RUC no encontrado', text: 'No se encontró información para el RUC ingresado.', confirmButtonColor: '#64BC04' });
+          return;
+        }
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  onRucKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') { this.searchSunat(); return; }
+    this.blockNonDigits(event);
+  }
+
+  // ── Consulta DNI (RENIEC) ────────────────────────────────────────────────────
+
+  searchReniec(): void {
+    const dni = this.legalRepresentativeDni.trim();
+    if (dni.length !== 8) return;
+    this.dniLookupLoading = true;
+    this.loaderService.show();
+    this.service.getPersonByDni(dni).subscribe({
+      next: (data: ReniecPersonDTO) => {
+        this.legalRepresentativeDni      = data.document_number;
+        this.legalRepresentativeFullName = `${data.first_name} ${data.first_last_name} ${data.second_last_name}`.trim();
+        this.dniLookupLoading = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.dniLookupLoading = false;
+        this.loaderService.hide();
+        if (err.status === 404) {
+          Swal.fire({ icon: 'error', title: 'DNI no encontrado', text: 'No se encontró información para el DNI ingresado.', confirmButtonColor: '#64BC04' });
+          return;
+        }
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  onDniKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') { this.searchReniec(); return; }
+    this.blockNonDigits(event);
+  }
+
+  private blockNonDigits(event: KeyboardEvent): void {
+    const isControl = event.ctrlKey || event.metaKey || event.altKey;
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (isControl || allowed.includes(event.key)) return;
+    if (!/^\d$/.test(event.key)) event.preventDefault();
   }
 
   // ── Correos ────────────────────────────────────────────────────────────────
@@ -76,16 +164,24 @@ export class ContractorManagementEdit implements OnInit {
     // altere lo tecleado.
     const email = this.newEmail.trim();
     if (!email) return;
-    if (this.emails.includes(email)) {   // duplicado exacto (case-sensitive)
+    if (!isValidContractorEmail(email)) {
+      Swal.fire({ icon: 'error', title: 'Correo inválido', text: 'El correo solo puede contener letras, números, "@" y ".", y no puede empezar con un símbolo.', confirmButtonColor: '#64BC04' });
+      return;
+    }
+    if (this.emails.some(e => e.email === email)) {   // duplicado exacto (case-sensitive)
       this.newEmail = '';
       return;
     }
-    this.emails.push(email);
+    this.emails.push({ contractorEmailId: null, email, active: true });
     this.newEmail = '';
   }
 
   removeEmail(index: number): void {
     this.emails.splice(index, 1);
+  }
+
+  toggleActive(index: number): void {
+    this.emails[index].active = !this.emails[index].active;
   }
 
   // ── Archivos ────────────────────────────────────────────────────────────────
@@ -146,7 +242,15 @@ export class ContractorManagementEdit implements OnInit {
       return;
     }
 
+    // Validar formato de todos los correos (pueden editarse en línea)
+    const invalidEmail = this.emails.find(e => e.email.trim() && !isValidContractorEmail(e.email));
+    if (invalidEmail) {
+      Swal.fire({ icon: 'error', title: 'Correo inválido', text: `El correo "${invalidEmail.email.trim()}" no es válido. Solo puede contener letras, números, "@" y ".", y no puede empezar con un símbolo.`, confirmButtonColor: '#64BC04' });
+      return;
+    }
+
     const form = new FormData();
+    form.append('contributorRuc',                         this.contributorRuc.trim());
     form.append('contributorName',                        this.contributorName.trim());
     form.append('contributorAddress',                     this.contributorAddress.trim());
     form.append('contributorEconomicActivityDescription', this.contributorEconomicActivityDescription.trim());
@@ -157,7 +261,12 @@ export class ContractorManagementEdit implements OnInit {
     form.append('legalRepresentativeDni',                 this.legalRepresentativeDni.trim());
     form.append('legalRepresentativeFullName',            this.legalRepresentativeFullName.trim());
 
-    this.emails.forEach(e => form.append('emails', e));
+    // Se envían los correos como JSON: cada uno con su id (null = nuevo) y su flag active.
+    // Los correos existentes que ya no se envíen serán eliminados (soft-delete) en el backend.
+    const emailsPayload = this.emails
+      .map(e => ({ contractorEmailId: e.contractorEmailId, email: e.email.trim(), active: e.active }))
+      .filter(e => e.email.length > 0);
+    form.append('emailsJson', JSON.stringify(emailsPayload));
 
     if (this.logoFile)       form.append('logoFile',           this.logoFile);
     if (this.brochureFile)   form.append('brochureFile',       this.brochureFile);

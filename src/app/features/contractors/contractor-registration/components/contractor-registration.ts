@@ -7,9 +7,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ContractorService } from '../services/contractor.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
-import { SunatContributorDTO } from '../dtos/sunatCompany.model';
-import { ReniecPersonDTO } from '../dtos/reniecPerson.model';
+import { SunatContributorDTO } from '../../shared/sunatCompany.model';
+import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
 import { ContributorRegisterDTO, ContractorPersonTypeDTO, EmailContactItem } from '../dtos/companyRegister.model';
+import { isValidContractorEmail } from '../../shared/email-validation';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -229,6 +230,8 @@ export class ContractorRegistration implements OnInit {
     this.emailItems.forEach((item, i) => {
       if (!item.email?.trim())
         errors.push(`Correo ${i + 1}`);
+      else if (!isValidContractorEmail(item.email))
+        errors.push(`Correo ${i + 1} (solo letras, números, "@" y ".", sin empezar con símbolos)`);
       else if (item.personTypeId == null)
         errors.push(`Clasificación del correo ${i + 1}`);
     });

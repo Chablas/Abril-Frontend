@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SunatContributorDTO } from '../dtos/sunatCompany.model';
-import { ReniecPersonDTO } from '../dtos/reniecPerson.model';
+import { SunatContributorDTO } from '../../shared/sunatCompany.model';
+import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
 import { ContractorPersonTypeDTO } from '../dtos/companyRegister.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../environments/environment';

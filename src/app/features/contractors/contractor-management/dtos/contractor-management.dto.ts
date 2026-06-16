@@ -4,6 +4,12 @@ export interface ContractorUserItemDTO {
   createdDateTime: string;
 }
 
+export interface ContractorEmailItemDTO {
+  contractorEmailId: number | null;
+  email: string;
+  active: boolean;
+}
+
 export interface ContractorManagementDTO {
   contractorId: number;
   contributorId: number;
@@ -21,6 +27,7 @@ export interface ContractorManagementDTO {
   contractorStateDescription: string;
   createdDateTime: string;
   emails: string[];
+  emailDetails: ContractorEmailItemDTO[];
   hasUser?: boolean;
   users: ContractorUserItemDTO[];
   logoFileUrl?: string | null;

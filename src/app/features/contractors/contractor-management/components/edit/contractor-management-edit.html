@@ -7,11 +7,41 @@
     <input #fichaRucInput   type="file" class="hidden" (change)="onFichaRucSelected($event)" />
     <input #referencesInput type="file" class="hidden" (change)="onReferencesSelected($event)" />
 
+    <!-- ── Consulta RUC (SUNAT) ─────────────────────────────────────────────── -->
+    <div class="bg-[#F7FBF3] border border-[#E5F0D8] rounded-lg p-3 flex flex-col gap-2">
+      <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest">Búsqueda en SUNAT</p>
+      <div class="flex gap-2">
+        <div class="flex flex-1 items-center border border-[#D6DEE5] rounded-lg overflow-hidden bg-white">
+          <span class="px-3 text-xs text-gray-400 font-medium border-r border-[#D6DEE5] py-2.5 whitespace-nowrap">RUC</span>
+          <input type="text" [(ngModel)]="rucInput" (keydown)="onRucKeydown($event)" maxlength="11"
+            inputmode="numeric" placeholder="Ingresa el RUC (11 dígitos)"
+            class="flex-1 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none" />
+        </div>
+        <button type="button" (click)="searchSunat()" [disabled]="rucInput.length !== 11 || rucLookupLoading"
+          class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          [ngClass]="rucInput.length === 11 && !rucLookupLoading
+            ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+          Consultar
+        </button>
+      </div>
+    </div>
+
     <!-- ── Datos principales ───────────────────────────────────────────────── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-      <!-- Razón social (full-width) -->
-      <div class="sm:col-span-2 flex flex-col gap-1">
+      <!-- RUC -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-[#64BC04] font-medium">RUC</label>
+        <input type="text" [(ngModel)]="contributorRuc" maxlength="11"
+          class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Razón social -->
+      <div class="flex flex-col gap-1">
         <label class="text-xs text-[#64BC04] font-medium">Razón social <span class="text-red-500">*</span></label>
         <input type="text" [(ngModel)]="contributorName"
           class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
@@ -68,8 +98,22 @@
 
         <div class="flex flex-col gap-1">
           <label class="text-xs text-[#64BC04] font-medium">DNI</label>
-          <input type="text" [(ngModel)]="legalRepresentativeDni" maxlength="8"
-            class="border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="legalRepresentativeDni" (keydown)="onDniKeydown($event)"
+              maxlength="8" inputmode="numeric"
+              class="flex-1 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+            <button type="button" (click)="searchReniec()" [disabled]="legalRepresentativeDni.length !== 8 || dniLookupLoading"
+              title="Consultar DNI en RENIEC"
+              class="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors"
+              [ngClass]="legalRepresentativeDni.length === 8 && !dniLookupLoading
+                ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+              </svg>
+              Consultar
+            </button>
+          </div>
         </div>
 
         <div class="flex flex-col gap-1">
@@ -85,18 +129,41 @@
     <div class="flex flex-col gap-3">
       <p class="text-xs text-[#64BC04] font-semibold uppercase tracking-widest">Correos de contacto</p>
 
-      <!-- Chips de correos actuales -->
-      <div *ngIf="emails.length > 0" class="flex flex-wrap gap-2">
-        <span *ngFor="let email of emails; let i = index"
-          class="inline-flex items-center gap-1.5 bg-[#E5F7D1] text-[#3a7a00] text-xs font-medium px-3 py-1.5 rounded-full">
-          {{ email }}
+      <!-- Lista editable de correos -->
+      <div *ngIf="emails.length > 0" class="flex flex-col gap-2">
+        <div *ngFor="let email of emails; let i = index"
+          class="flex items-center gap-2 rounded-lg border border-[#D6DEE5] px-2.5 py-1.5"
+          [ngClass]="{ 'bg-gray-50': !email.active }">
+
+          <!-- Texto editable del correo -->
+          <input type="email" [(ngModel)]="email.email"
+            autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
+            [ngClass]="{ 'text-gray-400 line-through': !email.active }"
+            class="flex-1 bg-transparent text-sm focus:outline-none" />
+
+          <!-- Toggle activar/desactivar -->
+          <button type="button" (click)="toggleActive(i)"
+            [title]="email.active ? 'Desactivar correo' : 'Activar correo'"
+            class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer"
+            [ngClass]="email.active ? 'bg-[#64BC04]' : 'bg-gray-300'">
+            <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
+              [ngClass]="email.active ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
+          </button>
+
+          <span class="text-[10px] font-medium w-14 text-center"
+            [ngClass]="email.active ? 'text-[#3a7a00]' : 'text-gray-400'">
+            {{ email.active ? 'Activo' : 'Inactivo' }}
+          </span>
+
+          <!-- Eliminar -->
           <button type="button" (click)="removeEmail(i)"
-            class="text-[#3a7a00] hover:text-red-500 transition-colors leading-none cursor-pointer">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            title="Eliminar correo"
+            class="text-gray-400 hover:text-red-500 transition-colors leading-none cursor-pointer shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
-        </span>
+        </div>
       </div>
       <p *ngIf="emails.length === 0" class="text-xs text-gray-400 italic">Sin correos. Agrega al menos uno.</p>
 
