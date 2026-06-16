@@ -444,7 +444,7 @@ export class PasoListaComponent implements OnInit {
       });
     } else {
       // SinProgramar → crear ejecución programada directamente
-      this.pasoEjecucionService.create({
+      this.pasoEjecucionService.programar({
         actividadId: this.actividadAReprogramar.actividadId,
         fechaProgramada: this.nuevaFechaReprogramacion,
       }).subscribe({
