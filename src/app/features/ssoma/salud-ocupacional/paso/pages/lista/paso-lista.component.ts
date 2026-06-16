@@ -18,6 +18,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
+import { PropagArActividadComponent } from '../../components/propagar-actividad/propagar-actividad.component';
 import { environment } from '../../../../../../../environments/environment';
 
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
@@ -27,7 +28,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
             InstanciarModalComponent, AbrilPageHeaderComponent,
-            EjecucionModalComponent, DocumentViewer],
+            EjecucionModalComponent, DocumentViewer, PropagArActividadComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })
@@ -71,6 +72,8 @@ export class PasoListaComponent implements OnInit {
   visorNombre = '';
   visorArchivos: PasoEjecucionArchivoDto[] = [];
   visorIdx = 0;
+  propagarOpen = false;
+  actividadParaPropagar: PasoActividadDto | null = null;
 
   readonly anioActual = new Date().getFullYear();
 
@@ -225,10 +228,18 @@ export class PasoListaComponent implements OnInit {
         this.saving = false;
         this.agregarOpen = false;
         if (this.paso) this.paso.actividades = [...(this.paso.actividades ?? []), a];
+        this.actividadParaPropagar = a;
+        this.propagarOpen = true;
         this.cdr.detectChanges();
       },
       error: (err) => { this.saving = false; this.errorService.handleError(err); },
     });
+  }
+
+  onPropagado(): void {
+    this.propagarOpen = false;
+    this.actividadParaPropagar = null;
+    if (this.selectedPasoId) this.loadDetalle(this.selectedPasoId);
   }
 
   onEliminada(id: number): void {
