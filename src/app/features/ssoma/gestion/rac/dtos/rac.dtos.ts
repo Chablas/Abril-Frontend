@@ -83,6 +83,7 @@ export interface RacListItemDto {
   aplicaPenalidad: boolean;
   empresaReportadaNombre?: string;
   reportanteNombre?: string;
+  descripcion?: string;
 }
 
 export interface RacDetalleDto {

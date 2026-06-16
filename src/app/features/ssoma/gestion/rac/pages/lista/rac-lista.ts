@@ -131,10 +131,6 @@ export class RacLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/rac', id, 'cerrar']);
   }
 
-  irARegularizar(id: number): void {
-    this.router.navigate(['/ssoma/gestion/rac', id, 'regularizar']);
-  }
-
   descargarPdf(id: number): void {
     this.loaderService.show();
     this.racService.getReportePdf(id).subscribe({
