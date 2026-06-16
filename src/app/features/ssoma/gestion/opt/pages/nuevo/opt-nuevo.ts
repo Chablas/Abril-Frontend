@@ -222,10 +222,13 @@ export class OptNuevo implements OnInit, AfterViewInit {
       fechaIngreso: w.fechaIngreso,
       empresaActual: w.empresaNombre,
       activo: w.estadoWorker !== 'RETIRADO',
+      aniosExperiencia: w.aniosExperiencia,
     };
     this.agregarTrabajador(dto);
-    this.trabajadorObservadoId = null;
-    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.trabajadorObservadoId = null;
+      this.cdr.markForCheck();
+    }, 50);
   }
 
   agregarTrabajador(w: WorkerSearchItemDto): void {
