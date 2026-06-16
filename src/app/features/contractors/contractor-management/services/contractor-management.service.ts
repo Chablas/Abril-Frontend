@@ -5,14 +5,34 @@ import { environment } from '../../../../../environments/environment';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { ContractorManagementDTO } from '../dtos/contractor-management.dto';
+import { SunatContributorDTO } from '../../shared/sunatCompany.model';
+import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ContractorManagementService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/ContractorManagement`;
+  private readonly registrationApiUrl = `${environment.apiUrl}api/v1/contractorRegistration`;
 
   constructor(private http: HttpClient) {}
+
+  // Consultas RUC (SUNAT) y DNI (RENIEC) reutilizando los endpoints de registro.
+  getCompanyBySunat(ruc: string): Observable<SunatContributorDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<SunatContributorDTO>(
+      `${this.registrationApiUrl}/ruc/${ruc}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ReniecPersonDTO>(
+      `${this.registrationApiUrl}/dni/${dni}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 
   getPaged(
     page: number,

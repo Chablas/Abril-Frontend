@@ -1,0 +1,124 @@
+<app-abril-page-header
+  badge="VECINOS"
+  titulo="Gestión de Vecinos"
+  subtitulo="Registro de vecinos colindantes y no colindantes a los proyectos."
+  [tabs]="[
+    { label: 'Dashboard',          icono: 'ti-layout-dashboard', route: '/vecinos/dashboard' },
+    { label: 'Gestión de Vecinos', icono: 'ti-users',            route: '/vecinos/gestion' }
+  ]">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
+
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap gap-4 py-1 items-end">
+
+    <!-- Proyecto -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Proyecto"
+        placeholder="Todos"
+        [options]="options.projects"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="searchProjectId"
+        (valueChange)="searchProjectId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Colindancia -->
+    <div class="w-[180px]">
+      <app-search-select
+        label="Colindancia"
+        placeholder="Todas"
+        [options]="options.colindancias"
+        valueField="id"
+        displayField="descripcion"
+        [value]="searchColindanciaId"
+        (valueChange)="searchColindanciaId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Búsqueda libre -->
+    <div class="w-[240px] flex flex-col gap-[6px]">
+      <label class="text-sm text-[#64BC04] font-medium">Buscar</label>
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        (keyup.enter)="search()"
+        placeholder="Dirección, propietario o DNI…"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+    </div>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="search()"
+      class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
+      Buscar
+    </button>
+
+    <!-- Añadir + contador + toggle -->
+    <div class="ml-auto flex items-center gap-3 self-end pb-[2px]">
+      <button type="button" (click)="openAdd()"
+        class="h-[42px] px-4 bg-[#E5F7D1] rounded-lg text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Añadir vecino
+      </button>
+      <span class="text-xs text-gray-400">{{ totalRecords }} registros</span>
+      <app-view-toggle [modes]="viewModes" [(value)]="viewMode"></app-view-toggle>
+    </div>
+
+  </div>
+
+  <!-- ── TABLA ─────────────────────────────────────────────────────── -->
+  <app-gestion-vecinos-list
+    *ngIf="viewMode === 'table'"
+    [vecinos]="vecinos"
+    (rowClick)="openDetail($event)"
+    class="flex flex-1 min-h-0 flex-col">
+  </app-gestion-vecinos-list>
+
+  <!-- ── CARDS ─────────────────────────────────────────────────────── -->
+  <div *ngIf="viewMode === 'card'" class="flex-1 min-h-0 overflow-y-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-1">
+      <app-gestion-vecinos-card
+        *ngFor="let item of vecinos"
+        [item]="item"
+        (cardClick)="openDetail($event)">
+      </app-gestion-vecinos-card>
+
+      <p *ngIf="vecinos.length === 0"
+        class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+        No hay vecinos registrados.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── PAGINADOR ─────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="load($event)">
+  </app-paginator>
+
+</div>
+
+<!-- ── MODAL DETALLE ─────────────────────────────────────────────────── -->
+<app-gestion-vecinos-detail
+  *ngIf="selectedVecino"
+  [item]="selectedVecino"
+  (closeModal)="closeDetail()">
+</app-gestion-vecinos-detail>
+
+<!-- ── MODAL AÑADIR ──────────────────────────────────────────────────── -->
+<app-gestion-vecinos-add
+  *ngIf="showAddModal"
+  [options]="options"
+  (closeModal)="closeAdd()"
+  (created)="onCreated()">
+</app-gestion-vecinos-add>

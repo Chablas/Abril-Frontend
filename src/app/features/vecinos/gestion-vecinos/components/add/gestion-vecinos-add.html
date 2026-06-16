@@ -1,0 +1,141 @@
+<app-base-modal [title]="'Añadir vecino'" width="w-[680px]" (closeModal)="closeModal.emit()">
+
+  <form (ngSubmit)="submit()" class="flex flex-col gap-4 mt-2">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <!-- Proyecto -->
+      <div class="sm:col-span-2">
+        <app-search-select
+          label="Proyecto"
+          placeholder="Selecciona el proyecto"
+          [options]="options.projects"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="form.projectId"
+          (valueChange)="form.projectId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- DNI -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">DNI <span class="text-red-500">*</span></label>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            maxlength="8"
+            inputmode="numeric"
+            [(ngModel)]="form.dni"
+            name="dni"
+            (keydown)="onDniKeydown($event)"
+            placeholder="N° de DNI"
+            class="flex-1 border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+          <button type="button" (click)="searchReniec()"
+            [disabled]="form.dni.length !== 8 || dniLookupLoading"
+            class="px-3 rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ dniLookupLoading ? '...' : 'Consultar' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Nombre propietario/representante -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Propietario o representante <span class="text-red-500">*</span></label>
+        <input
+          type="text"
+          [(ngModel)]="form.nombrePropietario"
+          name="nombrePropietario"
+          placeholder="Nombre completo"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Dirección -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-500">*</span></label>
+        <input
+          type="text"
+          [(ngModel)]="form.direccion"
+          name="direccion"
+          placeholder="Dirección"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Predio -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Predio</label>
+        <input
+          type="text"
+          [(ngModel)]="form.predio"
+          name="predio"
+          placeholder="Predio"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Interior / Departamento -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento</label>
+        <input
+          type="text"
+          [(ngModel)]="form.interiorDepartamento"
+          name="interiorDepartamento"
+          placeholder="Interior o departamento"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Celular -->
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[#64BC04] font-medium">Celular</label>
+        <input
+          type="text"
+          maxlength="20"
+          inputmode="numeric"
+          [(ngModel)]="form.celular"
+          name="celular"
+          (keydown)="onNumericKeydown($event)"
+          placeholder="N° de celular"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+      </div>
+
+      <!-- Colindante / No colindante -->
+      <div>
+        <app-search-select
+          label="Colindante / No colindante"
+          placeholder="Selecciona"
+          [options]="options.colindancias"
+          valueField="id"
+          displayField="descripcion"
+          [value]="form.vecinoColindanciaId"
+          (valueChange)="form.vecinoColindanciaId = $event">
+        </app-search-select>
+      </div>
+
+      <!-- Tipo de construcción -->
+      <div>
+        <app-search-select
+          label="Tipo de construcción"
+          placeholder="Selecciona"
+          [options]="options.tiposConstruccion"
+          valueField="id"
+          displayField="descripcion"
+          [value]="form.vecinoTipoConstruccionId"
+          (valueChange)="form.vecinoTipoConstruccionId = $event">
+        </app-search-select>
+      </div>
+
+    </div>
+
+    <!-- Acciones -->
+    <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+      <button type="button" (click)="closeModal.emit()"
+        class="px-5 py-[10px] rounded-lg border border-[#D6DEE5] text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="submit"
+        class="px-6 py-[10px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+        Guardar vecino
+      </button>
+    </div>
+
+  </form>
+
+</app-base-modal>

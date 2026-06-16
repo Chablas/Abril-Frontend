@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Adjudicaciones } from './features/adjudicaciones/components/adjudicaciones';
+import { AdjudicacionesDashboard } from './features/adjudicaciones-dashboard/components/adjudicaciones-dashboard';
 import { StaffProjectEmail } from './features/configuration/staffProjectEmail/components/staff-project-email';
 import { WorkItemCategory } from './features/configuration/workItemCategory/components/work-item-category';
 import { WorkItem } from './features/configuration/workItem/components/work-item';
@@ -16,6 +17,12 @@ const routes: Routes = [
     path: '',
     children: [
       { path: '', redirectTo: 'adjudicaciones', pathMatch: 'full' },
+      {
+        path: 'dashboard',
+        component: AdjudicacionesDashboard,
+        canActivate: [roleGuard],
+        data: { titulo: 'DASHBOARD DE ADJUDICACIONES', featureKey: 'costs.dashboard' },
+      },
       {
         path: 'adjudicaciones',
         children: [
