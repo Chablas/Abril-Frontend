@@ -8,4 +8,6 @@ export interface WorkerSearchItemDto {
   empresaActual?: string;
   empresaActualId?: number;
   activo: boolean;
+  aniosExperiencia?: number;
+  fechaIngreso?: string;
 }

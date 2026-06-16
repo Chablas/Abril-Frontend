@@ -181,11 +181,11 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label">Tiempo en obra</label>
-                    <input type="text" class="form-input" [(ngModel)]="t.tiempoEnObra" placeholder="Ej: 6 meses" />
+                    <input type="text" class="form-input" [(ngModel)]="t.tiempoEnObra" placeholder="Auto-calculado" />
                   </div>
                   <div class="form-group">
                     <label class="form-label">Años experiencia</label>
-                    <input type="text" class="form-input" [(ngModel)]="t.aniosExperiencia" placeholder="Ej: 3" />
+                    <input type="text" class="form-input" [(ngModel)]="t.aniosExperiencia" placeholder="De la ficha del trabajador" />
                   </div>
                 </div>
               </div>
@@ -299,6 +299,7 @@
           <div class="form-group">
             <label class="form-label">Acción requerida</label>
             <select class="form-input" [(ngModel)]="accionRequerida">
+              <option value="">Sin acción requerida</option>
               @for (a of accionesRequeridas; track a) {
                 <option [value]="a">{{ a }}</option>
               }
@@ -306,7 +307,7 @@
           </div>
         </div>
 
-        @if (accionRequerida && accionRequerida !== 'Ninguna') {
+        @if (accionRequerida) {
           <div class="form-group">
             <label class="form-label">Observación sobre la acción</label>
             <textarea class="form-input" [(ngModel)]="accionObservacion" rows="3"
