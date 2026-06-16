@@ -113,18 +113,37 @@ export class ActividadTreeComponent {
   }
 
   ejecucionMesActual(a: PasoActividadDto): { estado: string; label: string } {
-    const ejeMes = (a.ejecuciones ?? []).filter(e => {
+    const ejecuciones = a.ejecuciones ?? [];
+    const ahora = new Date();
+
+    // Buscar ejecución del mes actual
+    const ejeMes = ejecuciones.filter(e => {
       const d = new Date(e.fechaProgramada);
-      return d.getMonth() + 1 === this.mesActual;
+      return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
     });
-    if (!ejeMes.length) return { estado: 'sin', label: 'Sin ejecución' };
-    const ej = ejeMes[ejeMes.length - 1];
-    switch (ej.estado) {
-      case 'Ejecutado':  return { estado: 'ejecutado',  label: 'Ejecutada' };
-      case 'Vencido':    return { estado: 'vencido',    label: 'Vencida' };
-      case 'Programado': return { estado: 'programado', label: 'Programada' };
-      default:           return { estado: 'sin',        label: 'Sin ejecución' };
+
+    if (ejeMes.length) {
+      const ej = ejeMes[ejeMes.length - 1];
+      switch (ej.estado) {
+        case 'Ejecutado':  return { estado: 'ejecutado',  label: 'Ejecutada' };
+        case 'Vencido':    return { estado: 'vencido',    label: 'Vencida' };
+        case 'Programado': return { estado: 'programado', label: 'Programada' };
+        default:           return { estado: 'sin',        label: 'Sin ejecución' };
+      }
     }
+
+    // Si no hay en el mes actual, buscar la próxima ejecución vigente (reprogramada)
+    const proxima = ejecuciones
+      .filter(e => e.estado === 'Programado')
+      .sort((a, b) => new Date(a.fechaProgramada).getTime() - new Date(b.fechaProgramada).getTime())[0];
+
+    if (proxima) {
+      const d = new Date(proxima.fechaProgramada);
+      const mesNombre = d.toLocaleDateString('es-PE', { month: 'long' });
+      return { estado: 'programado', label: `Reprog. ${mesNombre}` };
+    }
+
+    return { estado: 'sin', label: 'Sin ejecución' };
   }
 
   frecuenciaClass(f: string): string {
