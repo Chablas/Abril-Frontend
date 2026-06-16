@@ -53,6 +53,7 @@ interface WorkerFormModel {
   fechaIngreso: string;
   condicionMedica: string;
   fechaNacimiento: string;
+  aniosExperiencia: number | null;
 }
 
 @Component({
@@ -140,7 +141,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
         !!this.model.categoria.trim() &&
         !!this.model.ocupacion.trim() &&
         !!this.model.condicionMedica.trim() &&
-        !!this.model.fechaIngreso.trim()
+        !!this.model.fechaIngreso.trim() &&
+        this.model.aniosExperiencia !== null &&
+        this.model.aniosExperiencia !== undefined
       );
     }
 
@@ -149,7 +152,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       !!this.model.obraOficina &&
       !!this.model.fechaNacimiento.trim() &&
       !!this.model.condicionMedica.trim() &&
-      !!this.model.empresaId;
+      !!this.model.empresaId &&
+      this.model.aniosExperiencia !== null &&
+      this.model.aniosExperiencia !== undefined;
 
     if (this.esStaffOOficina) {
       return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim() && !!this.model.subarea.trim();
@@ -205,6 +210,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       fechaIngreso: '',
       condicionMedica: '',
       fechaNacimiento: '',
+      aniosExperiencia: null,
     };
   }
 
@@ -244,6 +250,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
+          this.model.aniosExperiencia = det.aniosExperiencia ?? null;
           this.loadingDetalle = false;
           if (this.model.area) {
             this.catalogosHabService.getSubareas(this.model.area).subscribe({
@@ -588,6 +595,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
       fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
+      aniosExperiencia: this.model.aniosExperiencia ?? undefined,
     };
 
     this.saving = true;

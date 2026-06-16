@@ -86,6 +86,7 @@ export interface WorkerDetalleDto {
   subarea?: string;
   jefatura?: string;
   obraOficina?: string;
+  aniosExperiencia?: number;
 }
 
 export interface WorkerEditDto {
