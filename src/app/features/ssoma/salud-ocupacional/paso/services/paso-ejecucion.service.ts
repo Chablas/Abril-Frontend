@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { buildAuthHeaders } from '../../services/http-base';
 import { PasoEjecucionDto, CreateEjecucionDto } from '../dtos/paso.dtos';
+import { PasoEjecucionArchivoDto } from '../dtos/paso.dtos';
 
 const EJECUCION_BASE = `${environment.apiUrl}api/v1/ssoma-paso/ejecucion`;
 
@@ -25,5 +26,21 @@ export class PasoEjecucionService {
     return this.http.patch<PasoEjecucionDto>(`${EJECUCION_BASE}/${id}/evidencia`, fd, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  agregarArchivo(ejecucionId: number, file: File): Observable<PasoEjecucionDto> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post<PasoEjecucionDto>(
+      `${EJECUCION_BASE}/${ejecucionId}/archivos`, fd,
+      { headers: buildAuthHeaders() }
+    );
+  }
+
+  eliminarArchivo(archivoId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${EJECUCION_BASE}/archivos/${archivoId}`,
+      { headers: buildAuthHeaders() }
+    );
   }
 }

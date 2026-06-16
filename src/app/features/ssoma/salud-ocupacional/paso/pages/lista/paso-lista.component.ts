@@ -17,6 +17,7 @@ import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecuc
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { environment } from '../../../../../../../environments/environment';
 
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
@@ -26,7 +27,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
             InstanciarModalComponent, AbrilPageHeaderComponent,
-            EjecucionModalComponent],
+            EjecucionModalComponent, DocumentViewer],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })
@@ -65,6 +66,9 @@ export class PasoListaComponent implements OnInit {
   actividadAReprogramar: PasoResumenMesActividadDto | null = null;
   nuevaFechaReprogramacion = '';
   motivoReprogramacion = '';
+
+  visorUrl = '';
+  visorNombre = '';
 
   readonly anioActual = new Date().getFullYear();
 
@@ -462,6 +466,15 @@ export class PasoListaComponent implements OnInit {
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
   abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
+
+  abrirVisor(url: string, nombre?: string): void {
+    this.visorNombre = nombre ?? url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
+    this.visorUrl = url;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+  }
 
   verEvidencia(url: string): void {
     const token = localStorage.getItem('access_token');

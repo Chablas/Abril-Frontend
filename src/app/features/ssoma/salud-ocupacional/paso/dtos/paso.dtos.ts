@@ -128,6 +128,17 @@ export interface PasoActividadDto {
   ejecuciones: PasoEjecucionDto[];
 }
 
+// Archivo de ejecución
+export interface PasoEjecucionArchivoDto {
+  id: number;
+  ejecucionId: number;
+  archivoUrl: string;
+  archivoNombre: string;
+  archivoSpId: string | null;
+  orden: number;
+  createdAt: string;
+}
+
 // Ejecución
 export interface PasoEjecucionDto {
   id: number;
@@ -145,6 +156,7 @@ export interface PasoEjecucionDto {
   evidenciaSpId: string | null;
   registradoPorNombre: string | null;
   createdAt: string;
+  archivos: PasoEjecucionArchivoDto[];
 }
 
 // Gantt
@@ -276,4 +288,5 @@ export interface PasoResumenMesActividadDto {
   observaciones: string | null;
   evidenciaNombre: string | null;
   evidenciaUrl: string | null;
+  archivos: PasoEjecucionArchivoDto[];
 }

@@ -1104,3 +1104,28 @@
 .hist-avance__fill--green { background: #16a34a; }
 .hist-avance__fill--amber { background: #d97706; }
 .hist-avance__fill--red   { background: #dc2626; }
+
+/* ── Evidencia inline en historial de ejecuciones ────────────── */
+.ejec-evidencia {
+  margin-top: 0.35rem;
+}
+
+.btn-ver-evidencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.btn-ver-evidencia:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}

@@ -105,8 +105,8 @@ export class EjecucionModalComponent implements OnInit {
     return url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
   }
 
-  abrirVisor(archivoUrl: string): void {
-    this.visorNombre = this.nombreArchivo(archivoUrl);
+  abrirVisor(archivoUrl: string, nombre?: string): void {
+    this.visorNombre = nombre || this.nombreArchivo(archivoUrl);
     this.visorUrl = archivoUrl;
   }
 
@@ -133,7 +133,7 @@ export class EjecucionModalComponent implements OnInit {
       next: (ejecucion) => {
         if (this.evidenciaFile) {
           this.uploadProgress = true;
-          this.ejecucionService.subirEvidencia(ejecucion.id, this.evidenciaFile).subscribe({
+          this.ejecucionService.agregarArchivo(ejecucion.id, this.evidenciaFile).subscribe({
             next: (updated) => {
               this.saving = false;
               this.uploadProgress = false;

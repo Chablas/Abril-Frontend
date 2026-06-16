@@ -194,7 +194,7 @@
           <div class="mes-act__evidencia">
             <button *ngIf="a.evidenciaUrl" type="button"
                class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''"
-               (click)="verEvidencia(a.evidenciaUrl)">
+               (click)="abrirVisor(a.evidenciaUrl!, a.evidenciaNombre ?? undefined)">
               <i class="ti ti-external-link"></i> Ver evidencia
             </button>
             <span *ngIf="!a.evidenciaUrl && a.evidenciaNombre" class="evidencia-chip">
@@ -471,6 +471,12 @@
   </div>
 </div>
 
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()"
+/>
+
 <!-- Offcanvas historial de ejecuciones -->
 <div *ngIf="actividadDetalle" class="det-overlay">
   <div class="det-backdrop" (click)="actividadDetalle = null"></div>
@@ -533,6 +539,26 @@
             </div>
             <p *ngIf="e.observaciones" class="ejec-obs">{{ e.observaciones }}</p>
             <p *ngIf="e.participantesCount" class="ejec-obs">{{ e.participantesCount }} participantes</p>
+            <ng-container *ngIf="e.archivos?.length">
+              <div *ngFor="let arch of e.archivos" class="ejec-evidencia">
+                <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
+                <span>{{ arch.archivoNombre }}</span>
+                <button type="button" class="btn-ver-evidencia"
+                  (click)="abrirVisor(arch.archivoUrl, arch.archivoNombre)">
+                  <i class="ti ti-eye"></i> Ver
+                </button>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="!e.archivos?.length && e.evidenciaUrl">
+              <div class="ejec-evidencia">
+                <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
+                <span>{{ e.evidenciaNombre ?? 'Evidencia' }}</span>
+                <button type="button" class="btn-ver-evidencia"
+                  (click)="abrirVisor(e.evidenciaUrl!, e.evidenciaNombre ?? '')">
+                  <i class="ti ti-eye"></i> Ver
+                </button>
+              </div>
+            </ng-container>
           </div>
         </div>
       </ng-container>
