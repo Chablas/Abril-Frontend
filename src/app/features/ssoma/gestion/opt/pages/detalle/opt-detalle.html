@@ -110,13 +110,6 @@
                 @if (t.tipoTrabajador) { <div class="trab-badge-tipo">{{ t.tipoTrabajador }}</div> }
                 @if (t.tiempoEnObra)   { <div class="trab-extra">Tiempo en obra: {{ t.tiempoEnObra }}</div> }
                 @if (t.aniosExperiencia) { <div class="trab-extra">Exp: {{ t.aniosExperiencia }} años</div> }
-                @if (t.firmaTrabajadorUrl) {
-                  <app-document-viewer
-                    [archivoUrl]="t.firmaTrabajadorUrl ?? ''"
-                    [nombre]="'Firma ' + t.nombreTrabajador"
-                    (closed)="t.firmaTrabajadorUrl = ''">
-                  </app-document-viewer>
-                }
               </div>
             }
           </div>
@@ -205,18 +198,6 @@
           </div>
         }
       </div>
-
-      <!-- ── FIRMA OBSERVADOR ── -->
-      @if (data.firmaObservadorUrl) {
-        <div class="det-card">
-          <h2 class="det-card__title"><i class="ti ti-signature"></i> Firma del observador</h2>
-          <app-document-viewer
-            [archivoUrl]="data.firmaObservadorUrl ?? ''"
-            nombre="Firma observador"
-            (closed)="data.firmaObservadorUrl = ''">
-          </app-document-viewer>
-        </div>
-      }
 
     }<!-- /data -->
 

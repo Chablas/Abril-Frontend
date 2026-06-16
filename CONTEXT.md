@@ -3937,3 +3937,34 @@ En `empresa.css` además: `.mes-estado-aprobado/enviado/rechazado/falta`.
 - `HabEmpresaRepository.GetEntregablesEmpresaAsync`: archivos de cada `EntregableMesDto` con fallback al registro base (datos legacy).
 
 **Commit frontend**: pendiente (esta sesión).
+
+## Sesión 2026-06-16 — OPT: chips trabajador, fix canvas firma, fix scroll paso 2 (no resuelto del todo)
+
+### Trabajador — datos de solo lectura + aniosExperiencia
+- `WorkerHabilitacionListDto` (`habilitacion/dtos/trabajador.model.ts`): agregado `aniosExperiencia?: number`.
+- `opt-nuevo.html` paso 2: el `form-row` con 3 selects/inputs editables (tipo / tiempo en obra / años exp.) dentro de cada `trab-card` se reemplazó por `.trab-datos` con chips de solo lectura (`.trab-chip`): tipo, tiempo en obra, años exp., ocupación. CSS nuevo en `opt-nuevo.css`.
+- `onTrabajadorObservadoChange()`: el `dto` que se pasa a `agregarTrabajador()` ahora copia `w.aniosExperiencia` (antes se perdía).
+
+### Fix — canvas de firma del observador no renderizaba (OnPush)
+- `initCanvasObs()` no llamaba `cdr.markForCheck()` al final; bajo `OnPush`, el `setTimeout(100)` de `siguiente()` que monta el paso 3 nunca refrescaba la vista y el `<canvas>` quedaba como imagen rota. Fix: `markForCheck()` al final de `initCanvasObs()`.
+- Verificado con spec temporal (TestBed + mock de `getContext('2d')`): renderiza `<canvas>` real, `initCanvasObs()` dispara CD, y dibujar con mouse traza líneas y guarda la firma en base64 vía `toDataURL`.
+
+### opt-detalle — firmas vía `app-document-viewer` (intentado y revertido)
+- Se reemplazaron los `<img [src]="...">` de firma (observador y trabajadores, que apuntan a paths de SharePoint que requieren auth) por `app-document-viewer`, igual patrón que el visor de PET en `opt-nuevo`. Commit `6910fc6`.
+- El bloque en `opt-detalle.html` fue revertido manualmente después (ya no se muestra ningún visor de firma ahí); `opt-detalle.ts` quedó con el import de `DocumentViewer` sin usar en el template. Pendiente decidir si se reintenta o se limpia el import.
+
+### SearchSelect — dropdown flotante
+- `search-select.html`: `z-5` → `z-50` en el dropdown; contenedor `.relative` → `.relative.overflow-visible`. Para que el dropdown flote sobre el contenido de abajo en vez de empujarlo.
+- Se verificó (spec temporal) que `select()` ya cierra el dropdown e limpia `searchText` de forma síncrona e incondicional, independiente de qué haga el padre con `value` después — no requirió cambios en `SearchSelect` para el flujo de "seleccionar → agregar → cerrar → limpiar".
+
+### Bug — scroll manual roto en paso 2 (parcialmente resuelto, sigue reportado en navegador real)
+Reporte: en paso 2, al seleccionar un trabajador, "Verificación de entrenamiento" queda inalcanzable — no se puede scrollear ni interactuar con ella. Sí se activa scroll al agregar varios "pasos observados".
+
+Diagnóstico por capas (cada uno confirmado con Playwright headless contra un repro aislado, sin necesidad de login):
+1. `.paso-body` tenía `overflow-y:auto` pero sin `min-height:0` → como flex-item de `.nuevo-root`, nunca se encogía para activar el overflow. **Fix**: `min-height:0` en `.paso-body`.
+2. Más profundo: `.page-content` (shell `Layout`) usa `flex-1 min-h-0 overflow-y-auto` pero **no es `display:flex`** — son solo utilidades de tamaño como flex-item. El host `<app-opt-nuevo>` nunca recibía una altura real, crecía a su contenido completo, y quien terminaba scrolleando era `.page-content` (arrastrando header/stepper/footer). **Fix**: `height:100%` en `:host` de `opt-nuevo.css`. Confirmado con métricas reales (`scrollHeight`/`clientHeight`) antes/después en un repro standalone con Tailwind CDN.
+3. Se descartó por evidencia (no por intuición) la hipótesis de que `.paso-body{display:flex;flex-direction:column}` causara "shrink" de sus hijos al desbordar — comparación lado a lado (flex vs block) con contenido realista mostró comportamiento idéntico. Se dejó igual `display:block` por simplicidad, no como fix confirmado.
+
+**Estado real**: ambos fixes (1 y 2) están aplicados y verificados de forma aislada (Playwright sin login), pero el usuario reportó que en su `ng serve` real, después de reiniciar el dev server y hard-refresh, el síntoma persiste igual. No se pudo verificar en vivo por falta de credenciales de prueba contra el backend (`localhost:5236`) — la sesión quedó en este punto, pendiente de credenciales de prueba o inspección manual de DevTools por el usuario para diagnosticar la diferencia entre el repro aislado y la app real.
+
+**Commits de esta sesión** (sin push hasta confirmación): `c751444`, `0a4b5a9`, `6910fc6`, `992ff27`, `0e171ba`, y el pendiente de este fix de scroll (`height:100%` + `min-height:0` + `display:block` en `.paso-body`, revert del `scrollIntoView` automático, revert manual de firmas en `opt-detalle.html`).

@@ -229,10 +229,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
       this.trabajadorObservadoId = null;
       this.cdr.markForCheck();
     }, 50);
-    setTimeout(() => {
-      document.querySelector('.verificaciones-list, .paso-title')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   }
 
   agregarTrabajador(w: WorkerSearchItemDto): void {

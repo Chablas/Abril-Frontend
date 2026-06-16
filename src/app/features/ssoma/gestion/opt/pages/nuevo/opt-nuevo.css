@@ -1,6 +1,10 @@
 :host {
   display: flex;
   flex: 1;
+  height: 100%; /* .page-content (el padre real) no es display:flex, así que flex:1
+                    solo no alcanza para darle un alto real al host — sin esto, el
+                    host crece a su contenido y .paso-body nunca llega a scrollear
+                    internamente; quien scrollea es .page-content completo. */
   min-height: 0;
   flex-direction: column;
 }
@@ -155,11 +159,18 @@
 /* ── PASO BODY ───────────────────────────────────────────── */
 .paso-body {
   flex: 1;
+  min-height: 0; /* sin esto, el flex item crece con su contenido y overflow-y:auto no scrollea */
   overflow-y: auto;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  /* Antes era display:flex; flex-direction:column. Se cambió a block para
+     que los hijos directos (trabajadores-list, verificaciones-list,
+     pasos-header, etc.) no sean flex-items y así descartar cualquier
+     ambigüedad de flex-shrink al desbordar. Probado lado a lado contra la
+     versión flex (ambas overflowean igual, sin diferencia de comportamiento)
+     — se deja así por ser más simple, no porque se haya confirmado como la
+     causa del bug de scroll reportado, que sigue sin reproducirse fuera del
+     navegador real. Ver CONTEXT.md, sesión 2026-06-16. */
+  display: block;
 }
 
 .paso-title {
