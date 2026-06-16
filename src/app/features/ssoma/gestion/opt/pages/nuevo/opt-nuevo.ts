@@ -294,6 +294,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.ctxObs.strokeStyle = '#1b3a2d';
     this.ctxObs.lineWidth = 2;
     this.ctxObs.lineCap = 'round';
+    this.cdr.markForCheck();
   }
 
   startDrawObs(e: MouseEvent): void {
