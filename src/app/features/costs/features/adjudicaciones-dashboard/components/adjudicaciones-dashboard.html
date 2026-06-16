@@ -1,7 +1,13 @@
 <app-abril-page-header
   badge="COSTOS"
   titulo="Dashboard de Adjudicaciones"
-  subtitulo="Estado del pipeline de adjudicaciones de subcontratistas, montos y distribución por proyecto.">
+  subtitulo="Estado del pipeline de adjudicaciones de subcontratistas, montos y distribución por proyecto."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/costs/dashboard' },
+    { label: 'Adjudicaciones', icono: 'ti-list',            route: '/costs/adjudicaciones' }
+  ]"
+  [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
+  (secondaryClick)="downloadPDF()">
 </app-abril-page-header>
 
 <div *ngIf="data" class="flex flex-col gap-4 pb-2">
