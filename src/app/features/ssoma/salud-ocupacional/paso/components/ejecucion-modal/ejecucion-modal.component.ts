@@ -15,7 +15,7 @@ import { DocumentViewer } from '../../../../../../shared/components/document-vie
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
 import { SharepointUploadService } from '../../../../../habilitacion/services/sharepoint-upload.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto } from '../../dtos/paso.dtos';
+import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto, PasoEjecucionArchivoDto } from '../../dtos/paso.dtos';
 
 @Component({
   selector: 'app-ejecucion-modal',
@@ -96,17 +96,20 @@ export class EjecucionModalComponent implements OnInit {
     return !!this.form.fechaEjecutada;
   }
 
-  get ultimaEjecucionConEvidencia(): PasoEjecucionDto | null {
-    return this.ejecucionGuardada ??
-      (this.actividad?.ejecuciones?.slice().reverse().find(e => !!e.evidenciaUrl) ?? null);
+  get archivosExistentes(): PasoEjecucionArchivoDto[] {
+    if (this.ejecucionGuardada?.archivos?.length) return this.ejecucionGuardada.archivos;
+    const ejecuciones = this.actividad?.ejecuciones ?? [];
+    return ejecuciones
+      .flatMap(e => e.archivos ?? [])
+      .sort((a, b) => a.orden - b.orden);
   }
 
   nombreArchivo(url: string): string {
     return url.split('/').pop()?.replace(/^\d{8}_/, '') ?? 'documento';
   }
 
-  abrirVisor(archivoUrl: string): void {
-    this.visorNombre = this.nombreArchivo(archivoUrl);
+  abrirVisor(archivoUrl: string, nombre?: string): void {
+    this.visorNombre = nombre || this.nombreArchivo(archivoUrl);
     this.visorUrl = archivoUrl;
   }
 
@@ -133,7 +136,7 @@ export class EjecucionModalComponent implements OnInit {
       next: (ejecucion) => {
         if (this.evidenciaFile) {
           this.uploadProgress = true;
-          this.ejecucionService.subirEvidencia(ejecucion.id, this.evidenciaFile).subscribe({
+          this.ejecucionService.agregarArchivo(ejecucion.id, this.evidenciaFile).subscribe({
             next: (updated) => {
               this.saving = false;
               this.uploadProgress = false;

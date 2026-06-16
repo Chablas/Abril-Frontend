@@ -8,7 +8,7 @@ import { forkJoin } from 'rxjs';
 import { PasoService } from '../../services/paso.service';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
-import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto, PasoHistoricoAnioDto } from '../../dtos/paso.dtos';
+import { PasoListItemDto, PasoDetalleDto, PasoActividadDto, PasoAuditoriaDto, PasoEjecucionDto, PasoSpiDto, PasoCategoriaDto, CreateActividadDto, PasoResumenMesDto, PasoResumenMesActividadDto, PasoHistoricoAnioDto, PasoEjecucionArchivoDto } from '../../dtos/paso.dtos';
 import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.component';
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
@@ -17,6 +17,8 @@ import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecuc
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
+import { PropagArActividadComponent } from '../../components/propagar-actividad/propagar-actividad.component';
 import { environment } from '../../../../../../../environments/environment';
 
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
@@ -26,7 +28,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
             InstanciarModalComponent, AbrilPageHeaderComponent,
-            EjecucionModalComponent],
+            EjecucionModalComponent, DocumentViewer, PropagArActividadComponent],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })
@@ -65,6 +67,13 @@ export class PasoListaComponent implements OnInit {
   actividadAReprogramar: PasoResumenMesActividadDto | null = null;
   nuevaFechaReprogramacion = '';
   motivoReprogramacion = '';
+
+  visorUrl = '';
+  visorNombre = '';
+  visorArchivos: PasoEjecucionArchivoDto[] = [];
+  visorIdx = 0;
+  propagarOpen = false;
+  actividadParaPropagar: PasoActividadDto | null = null;
 
   readonly anioActual = new Date().getFullYear();
 
@@ -217,12 +226,23 @@ export class PasoListaComponent implements OnInit {
     this.actividadService.create(this.agregarForm as CreateActividadDto).subscribe({
       next: (a) => {
         this.saving = false;
-        this.agregarOpen = false;
         if (this.paso) this.paso.actividades = [...(this.paso.actividades ?? []), a];
+        this.actividadParaPropagar = a;
+        this.propagarOpen = true;
+        this.agregarOpen = false;
+        console.log('propagarOpen:', this.propagarOpen);
+        console.log('actividadParaPropagar:', this.actividadParaPropagar);
+        console.log('paso:', this.paso);
         this.cdr.detectChanges();
       },
       error: (err) => { this.saving = false; this.errorService.handleError(err); },
     });
+  }
+
+  onPropagado(): void {
+    this.propagarOpen = false;
+    this.actividadParaPropagar = null;
+    if (this.selectedPasoId) this.loadDetalle(this.selectedPasoId);
   }
 
   onEliminada(id: number): void {
@@ -462,6 +482,35 @@ export class PasoListaComponent implements OnInit {
 
   abrirEjecucion(a: PasoActividadDto): void { this.actividadEjecutando = a; }
   abrirDetalle(a: PasoActividadDto): void { this.actividadDetalle = a; }
+
+  abrirVisorArchivos(archivos: PasoEjecucionArchivoDto[], idx = 0): void {
+    this.visorArchivos = archivos;
+    this.visorIdx = idx;
+    this.visorUrl = archivos[idx]?.archivoUrl ?? '';
+    this.visorNombre = archivos[idx]?.archivoNombre ?? '';
+  }
+
+  visorSiguiente(): void {
+    if (this.visorIdx < this.visorArchivos.length - 1) {
+      this.visorIdx++;
+      this.visorUrl = this.visorArchivos[this.visorIdx].archivoUrl;
+      this.visorNombre = this.visorArchivos[this.visorIdx].archivoNombre;
+    }
+  }
+
+  visorAnterior(): void {
+    if (this.visorIdx > 0) {
+      this.visorIdx--;
+      this.visorUrl = this.visorArchivos[this.visorIdx].archivoUrl;
+      this.visorNombre = this.visorArchivos[this.visorIdx].archivoNombre;
+    }
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorArchivos = [];
+    this.visorIdx = 0;
+  }
 
   verEvidencia(url: string): void {
     const token = localStorage.getItem('access_token');

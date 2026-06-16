@@ -45,6 +45,20 @@
         <option value="CONDICION">Condición</option>
       </select>
 
+      <select class="filtro-select"
+        [ngModel]="filtroProyectoId ?? ''"
+        (ngModelChange)="filtroProyectoId = $event ? +$event : null">
+        <option value="">Todos los proyectos</option>
+        <option *ngFor="let p of proyectos" [value]="p.id">{{ p.nombre }}</option>
+      </select>
+
+      <select class="filtro-select"
+        [ngModel]="filtroEmpresaId ?? ''"
+        (ngModelChange)="filtroEmpresaId = $event ? +$event : null">
+        <option value="">Todas las empresas</option>
+        <option *ngFor="let e of empresas" [value]="e.id">{{ e.razonSocial }}</option>
+      </select>
+
       <label class="filtro-check">
         <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" />
         Solo con penalidad
@@ -72,8 +86,10 @@
             <th class="th-dot"></th>
             <th>Código</th>
             <th>Proyecto</th>
+            <th>Empresa</th>
             <th>Tipo</th>
             <th>Categoría</th>
+            <th>Descripción</th>
             <th>Severidad</th>
             <th>Estado</th>
             <th>Fecha</th>
@@ -90,6 +106,7 @@
               <span class="proyecto-abrev" *ngIf="item.proyectoAbreviacion">{{ item.proyectoAbreviacion }}</span>
               <span *ngIf="!item.proyectoAbreviacion">{{ item.proyectoNombre ?? '—' }}</span>
             </td>
+            <td class="col-empresa">{{ item.empresaReportadaNombre ?? '—' }}</td>
             <td>
               <span class="chip-tipo"
                     [class.chip-tipo--acto]="item.tipo === 'ACTO'"
@@ -98,6 +115,7 @@
               </span>
             </td>
             <td class="col-categoria">{{ item.categoriaNombre }}</td>
+            <td class="col-desc">{{ (item.descripcion && item.descripcion.length > 60 ? (item.descripcion | slice:0:60) + '…' : item.descripcion) ?? '—' }}</td>
             <td>
               <span class="badge-sev" [ngClass]="severidadClass(item.severidad)">
                 {{ item.severidad }}
@@ -112,9 +130,6 @@
             <td class="col-acciones" (click)="$event.stopPropagation()">
               <button type="button" class="btn-inline" title="PDF" (click)="descargarPdf(item.id)">
                 <i class="ti ti-file-type-pdf"></i> PDF
-              </button>
-              <button type="button" class="btn-inline" title="Regularizar" (click)="irARegularizar(item.id)">
-                <i class="ti ti-tool"></i> Regular.
               </button>
               <button *ngIf="puedeVerBotonCerrar(item)"
                       type="button" class="btn-inline btn-inline--danger" title="Cerrar"
@@ -151,6 +166,7 @@
           {{ item.categoriaNombre }} · {{ item.proyectoAbreviacion ?? item.proyectoNombre ?? '—' }} ·
           {{ item.tipo === 'ACTO' ? 'Acto' : 'Condición' }}
         </div>
+        <div class="card-subdesc">{{ (item.descripcion && item.descripcion.length > 80 ? (item.descripcion | slice:0:80) + '…' : item.descripcion) ?? '—' }}</div>
         <div class="card-meta">
           <span class="card-fecha"><i class="ti ti-calendar"></i> {{ item.fechaReporte | date:'dd/MM/yyyy' }}</span>
           <span class="chip-estado chip-estado--sm" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
@@ -159,9 +175,6 @@
         <div class="card-actions">
           <button type="button" class="btn-card" (click)="descargarPdf(item.id)">
             <i class="ti ti-file-type-pdf"></i> PDF
-          </button>
-          <button type="button" class="btn-card" (click)="irARegularizar(item.id)">
-            <i class="ti ti-tool"></i> Regular.
           </button>
           <button *ngIf="puedeVerBotonCerrar(item)"
                   type="button" class="btn-card btn-card--danger"

@@ -121,7 +121,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
   firmasTrabBase64: Map<number, string> = new Map();
 
   readonly tiposTrabajador = ['Obrero', 'Operario', 'Capataz', 'Técnico', 'Ingeniero', 'Supervisor', 'Otro'];
-  readonly accionesRequeridas = ['Ninguna', 'Acción Correctiva', 'Capacitación', 'Inspección', 'Investigación', 'Otro'];
+  readonly accionesRequeridas = ['Elaborar el PETS', 'Mantener el PETS', 'Modificar el PETS', 'Entrenamiento'];
 
   constructor(
     private optService: OptService,
@@ -201,7 +201,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
       const w = this.workersObservador.find((x) => x.workerId === id);
       if (w) {
         this.observadorNombre = w.apellidoNombre;
-        this.observadorCargo = w.ocupacion ?? '';
+        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        this.observadorCargo = partes.join(' · ') || '';
       }
     }
     this.cdr.markForCheck();
@@ -217,25 +218,45 @@ export class OptNuevo implements OnInit, AfterViewInit {
       apellidoNombre: w.apellidoNombre,
       dni: w.dni,
       ocupacion: w.ocupacion,
+      categoria: w.categoria,
+      fechaIngreso: w.fechaIngreso,
       empresaActual: w.empresaNombre,
       activo: w.estadoWorker !== 'RETIRADO',
+      aniosExperiencia: w.aniosExperiencia,
     };
     this.agregarTrabajador(dto);
-    this.trabajadorObservadoId = null;
-    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.trabajadorObservadoId = null;
+      this.cdr.markForCheck();
+    }, 50);
   }
 
   agregarTrabajador(w: WorkerSearchItemDto): void {
     if (this.trabajadores.some((t) => t.trabajador.id === w.id)) return;
     this.trabajadores.push({
       trabajador: w,
-      tipoTrabajador: '',
-      tiempoEnObra: '',
-      aniosExperiencia: '',
+      tipoTrabajador: w.categoria ?? '',
+      tiempoEnObra: this.calcularTiempoEnObra(w.fechaIngreso),
+      aniosExperiencia: w.aniosExperiencia?.toString() ?? '',
       firmaBase64: '',
     });
     this.firmasTrabBase64.set(w.id, '');
     this.cdr.markForCheck();
+  }
+
+  private calcularTiempoEnObra(fechaIngreso?: string): string {
+    if (!fechaIngreso) return '';
+    const inicio = new Date(fechaIngreso);
+    const hoy = new Date();
+    const meses = (hoy.getFullYear() - inicio.getFullYear()) * 12
+      + (hoy.getMonth() - inicio.getMonth());
+    if (meses < 1) return 'Menos de 1 mes';
+    if (meses < 12) return `${meses} mes${meses > 1 ? 'es' : ''}`;
+    const anios = Math.floor(meses / 12);
+    const resto = meses % 12;
+    return resto > 0
+      ? `${anios} año${anios > 1 ? 's' : ''} ${resto} mes${resto > 1 ? 'es' : ''}`
+      : `${anios} año${anios > 1 ? 's' : ''}`;
   }
 
   quitarTrabajador(id: number): void {
@@ -276,6 +297,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.ctxObs.strokeStyle = '#1b3a2d';
     this.ctxObs.lineWidth = 2;
     this.ctxObs.lineCap = 'round';
+    this.cdr.markForCheck();
   }
 
   startDrawObs(e: MouseEvent): void {

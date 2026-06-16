@@ -141,6 +141,10 @@
             <label class="field-label">Fecha de ingreso *</label>
             <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
           </div>
+          <div>
+            <label class="field-label">Años de experiencia *</label>
+            <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
+          </div>
         </ng-container>
 
         <!-- ══ PERSONAL CASA ══ -->
@@ -208,6 +212,10 @@
             <div>
               <label class="field-label">Fecha de ingreso</label>
               <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
+            </div>
+            <div>
+              <label class="field-label">Años de experiencia *</label>
+              <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
             </div>
           </ng-container>
 
@@ -282,6 +290,10 @@
             <div>
               <label class="field-label">Fecha de ingreso</label>
               <input type="date" class="field-input" [(ngModel)]="model.fechaIngreso" />
+            </div>
+            <div>
+              <label class="field-label">Años de experiencia *</label>
+              <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
             </div>
             <div *ngIf="esOficinaCentral">
               <label class="check-row">

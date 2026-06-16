@@ -169,24 +169,19 @@
                     <i class="ti ti-x"></i>
                   </button>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Tipo</label>
-                    <select class="form-input" [(ngModel)]="t.tipoTrabajador">
-                      <option value="">Seleccionar...</option>
-                      @for (tipo of tiposTrabajador; track tipo) {
-                        <option [value]="tipo">{{ tipo }}</option>
-                      }
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Tiempo en obra</label>
-                    <input type="text" class="form-input" [(ngModel)]="t.tiempoEnObra" placeholder="Ej: 6 meses" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Años experiencia</label>
-                    <input type="text" class="form-input" [(ngModel)]="t.aniosExperiencia" placeholder="Ej: 3" />
-                  </div>
+                <div class="trab-datos">
+                  @if (t.tipoTrabajador) {
+                    <span class="trab-chip"><i class="ti ti-id-badge"></i> {{ t.tipoTrabajador }}</span>
+                  }
+                  @if (t.tiempoEnObra) {
+                    <span class="trab-chip"><i class="ti ti-clock"></i> {{ t.tiempoEnObra }} en obra</span>
+                  }
+                  @if (t.aniosExperiencia) {
+                    <span class="trab-chip"><i class="ti ti-award"></i> {{ t.aniosExperiencia }} años exp.</span>
+                  }
+                  @if (t.trabajador.ocupacion) {
+                    <span class="trab-chip"><i class="ti ti-briefcase"></i> {{ t.trabajador.ocupacion }}</span>
+                  }
                 </div>
               </div>
             }
@@ -299,6 +294,7 @@
           <div class="form-group">
             <label class="form-label">Acción requerida</label>
             <select class="form-input" [(ngModel)]="accionRequerida">
+              <option value="">Sin acción requerida</option>
               @for (a of accionesRequeridas; track a) {
                 <option [value]="a">{{ a }}</option>
               }
@@ -306,7 +302,7 @@
           </div>
         </div>
 
-        @if (accionRequerida && accionRequerida !== 'Ninguna') {
+        @if (accionRequerida) {
           <div class="form-group">
             <label class="form-label">Observación sobre la acción</label>
             <textarea class="form-input" [(ngModel)]="accionObservacion" rows="3"

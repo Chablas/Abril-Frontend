@@ -62,8 +62,11 @@ export class RacNuevo implements OnInit, OnDestroy {
   observadoSearching = false;
   empresaReportadaId: number | null = null;
 
+  // Fotos de evidencia
+  fotosSeleccionadas: File[] = [];
+  fotosSubiendo = false;
+
   // Plan de acción
-  accionRequerida = '';
   planAccion = '';
   plazoLevantamiento = '';
 
@@ -87,13 +90,6 @@ export class RacNuevo implements OnInit, OnDestroy {
     { value: 'ALTO', label: 'Alto' },
     { value: 'MEDIO', label: 'Medio' },
     { value: 'BAJO', label: 'Bajo' },
-  ];
-
-  readonly ACCION_REQUERIDA_OPCIONES = [
-    'Elaborar PETS',
-    'Modificar PETS',
-    'Entrenamiento a la partida',
-    'Mantener el PETS',
   ];
 
   private reportanteQuery$ = new Subject<string>();
@@ -253,6 +249,12 @@ export class RacNuevo implements OnInit, OnDestroy {
     );
   }
 
+  onFotosChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.fotosSeleccionadas = Array.from(input.files ?? []);
+    this.cdr.markForCheck();
+  }
+
   submit(): void {
     if (!this.canSubmit) return;
 
@@ -272,7 +274,6 @@ export class RacNuevo implements OnInit, OnDestroy {
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,
       descripcionOcurrido: this.descripcionOcurrido || undefined,
-      accionRequerida: this.accionRequerida || undefined,
       planAccion: this.planAccion || undefined,
       fechaReporte: this.fechaReporte,
       plazoLevantamiento: this.plazoLevantamiento || undefined,
@@ -284,15 +285,30 @@ export class RacNuevo implements OnInit, OnDestroy {
     this.loaderService.show();
     this.racService.crear(req).subscribe({
       next: (res) => {
-        this.saving = false;
-        this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'RAC registrado',
-          html: `Código: <b>${res.codigo}</b>`,
-          timer: 2500,
-          showConfirmButton: false,
-        }).then(() => this.router.navigate(['/ssoma/gestion/rac/lista']));
+        const mostrarSwalYNavegar = () => {
+          this.saving = false;
+          this.fotosSubiendo = false;
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'RAC registrado',
+            html: `Código: <b>${res.codigo}</b>`,
+            timer: 2500,
+            showConfirmButton: false,
+          }).then(() => this.router.navigate(['/ssoma/gestion/rac/lista']));
+        };
+
+        if (this.fotosSeleccionadas.length > 0) {
+          this.fotosSubiendo = true;
+          forkJoin(
+            this.fotosSeleccionadas.map(f => this.racService.subirFoto(res.id, f, 'Observacion'))
+          ).subscribe({
+            next: () => mostrarSwalYNavegar(),
+            error: () => mostrarSwalYNavegar(),
+          });
+        } else {
+          mostrarSwalYNavegar();
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.saving = false;

@@ -191,16 +191,7 @@
           <div class="mes-act__fecha">
             {{ a.fechaEjecutada ? (a.fechaEjecutada | date:'dd/MM') : (a.fechaProgramada | date:'dd/MM') }}
           </div>
-          <div class="mes-act__evidencia">
-            <button *ngIf="a.evidenciaUrl" type="button"
-               class="evidencia-chip evidencia-chip--link" [title]="a.evidenciaNombre ?? ''"
-               (click)="verEvidencia(a.evidenciaUrl)">
-              <i class="ti ti-external-link"></i> Ver evidencia
-            </button>
-            <span *ngIf="!a.evidenciaUrl && a.evidenciaNombre" class="evidencia-chip">
-              <i class="ti ti-paperclip"></i> {{ a.evidenciaNombre }}
-            </span>
-          </div>
+          <div class="mes-act__evidencia"></div>
           <div class="mes-act__actions">
             <button type="button" class="row-btn row-btn--reg" title="Registrar ejecución"
               (click)="registrarDesdeResumen(a)">
@@ -212,7 +203,7 @@
               <i class="ti ti-calendar-event"></i> Reprogramar
             </button>
             <button type="button" class="row-btn row-btn--ver" title="Ver historial"
-              (click)="verDetalleActividad(a.actividadId)">
+              (click)="abrirVisorArchivos(a.archivos ?? [], 0)">
               <i class="ti ti-eye"></i>
             </button>
             <button type="button" class="row-btn row-btn--del" title="Eliminar"
@@ -471,6 +462,17 @@
   </div>
 </div>
 
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()"
+/>
+<div *ngIf="visorArchivos.length > 1" class="visor-nav">
+  <button (click)="visorAnterior()" [disabled]="visorIdx === 0">‹</button>
+  <span>{{ visorIdx + 1 }} / {{ visorArchivos.length }}</span>
+  <button (click)="visorSiguiente()" [disabled]="visorIdx === visorArchivos.length - 1">›</button>
+</div>
+
 <!-- Offcanvas historial de ejecuciones -->
 <div *ngIf="actividadDetalle" class="det-overlay">
   <div class="det-backdrop" (click)="actividadDetalle = null"></div>
@@ -533,6 +535,26 @@
             </div>
             <p *ngIf="e.observaciones" class="ejec-obs">{{ e.observaciones }}</p>
             <p *ngIf="e.participantesCount" class="ejec-obs">{{ e.participantesCount }} participantes</p>
+            <ng-container *ngIf="e.archivos?.length">
+              <div *ngFor="let arch of e.archivos" class="ejec-evidencia">
+                <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
+                <span>{{ arch.archivoNombre }}</span>
+                <button type="button" class="btn-ver-evidencia"
+                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
+                  <i class="ti ti-eye"></i> Ver
+                </button>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="!e.archivos?.length && e.evidenciaUrl">
+              <div class="ejec-evidencia">
+                <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
+                <span>{{ e.evidenciaNombre ?? 'Evidencia' }}</span>
+                <button type="button" class="btn-ver-evidencia"
+                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
+                  <i class="ti ti-eye"></i> Ver
+                </button>
+              </div>
+            </ng-container>
           </div>
         </div>
       </ng-container>
@@ -570,4 +592,15 @@
     </div>
 
   </div>
+
 </div>
+
+<!-- Propagar actividad -->
+<app-propagar-actividad
+  *ngIf="propagarOpen && actividadParaPropagar && paso"
+  [actividad]="actividadParaPropagar"
+  [pasoActual]="paso"
+  [programas]="programas"
+  (propagado)="onPropagado()"
+  (cerrado)="propagarOpen = false; actividadParaPropagar = null">
+</app-propagar-actividad>

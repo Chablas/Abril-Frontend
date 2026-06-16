@@ -15,6 +15,8 @@ export interface WorkerHabilitacionListDto {
   tieneEmo?: boolean;
   diasRestantesEmo?: number | null;
   estadoProgramacionEmo?: string | null;
+  fechaIngreso?: string;
+  aniosExperiencia?: number;
 }
 
 export interface WorkerEntregableDto {
@@ -85,6 +87,7 @@ export interface WorkerDetalleDto {
   subarea?: string;
   jefatura?: string;
   obraOficina?: string;
+  aniosExperiencia?: number;
 }
 
 export interface WorkerEditDto {

@@ -1,6 +1,5 @@
 <app-base-modal title="Registrar Ejecución" width="w-[700px]" (closeModal)="close()">
 
-  <!-- Actividad info -->
   <div class="ej-header-info">
     <div class="ej-header-icon">
       <i class="ti ti-clipboard-check"></i>
@@ -11,53 +10,43 @@
     </div>
   </div>
 
-  <!-- 2-column form grid -->
   <div class="ej-grid">
-
-    <!-- Columna izquierda -->
     <div class="ej-field">
       <label class="ej-label">Fecha ejecutada <span style="color:#ef4444">*</span></label>
       <input type="date" class="ej-input" [(ngModel)]="form.fechaEjecutada" />
     </div>
-
     <div class="ej-field">
       <label class="ej-label">N° de participantes</label>
       <input type="number" min="0" class="ej-input" placeholder="0" [(ngModel)]="form.participantesCount" />
     </div>
-
     <div class="ej-field span2">
       <label class="ej-label">Observaciones</label>
       <textarea class="ej-textarea" rows="3" placeholder="Detalles de la ejecución…" [(ngModel)]="form.observaciones"></textarea>
     </div>
-
-    <!-- Evidencia drag & drop -->
     <div class="ej-field span2">
       <label class="ej-label">Evidencia</label>
-
-      <div *ngIf="ultimaEjecucionConEvidencia" class="evidencia-existente">
-        <i class="ti ti-paperclip"></i>
-        <span>{{ ultimaEjecucionConEvidencia.evidenciaNombre ?? 'Evidencia adjunta' }}</span>
-        <button type="button" class="btn-ver-evidencia"
-          (click)="abrirVisor(ultimaEjecucionConEvidencia!.evidenciaUrl!)">
-          <i class="ti ti-eye"></i> Ver
-        </button>
-        <button type="button" class="btn-ver-evidencia"
-          (click)="descargarDocumento(ultimaEjecucionConEvidencia!.evidenciaUrl!)">
-          <i class="ti ti-download"></i> Descargar
-        </button>
-      </div>
-
+      <ng-container *ngIf="archivosExistentes.length">
+        <div *ngFor="let arch of archivosExistentes" class="evidencia-existente">
+          <i class="ti ti-paperclip"></i>
+          <span>{{ arch.archivoNombre }}</span>
+          <button type="button" class="btn-ver-evidencia"
+            (click)="abrirVisor(arch.archivoUrl, arch.archivoNombre)">
+            <i class="ti ti-eye"></i> Ver
+          </button>
+        </div>
+      </ng-container>
       <ng-container *ngIf="!evidenciaFile">
         <div class="dropzone" [class.over]="isDragOver"
           (dragover)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onDrop($event)"
           (click)="fileInput.click()">
           <input #fileInput type="file" class="hidden" (change)="onFileSelect($event)" />
           <i class="ti ti-cloud-upload dropzone-icon"></i>
-          <span class="dropzone-text">Arrastra un archivo aquí o haz clic para seleccionar</span>
+          <span class="dropzone-text">
+            {{ archivosExistentes.length ? 'Agregar otra evidencia' : 'Arrastra un archivo aquí o haz clic para seleccionar' }}
+          </span>
           <span class="dropzone-hint">PDF, imagen, Excel — máx. 20 MB</span>
         </div>
       </ng-container>
-
       <ng-container *ngIf="evidenciaFile">
         <div class="file-preview">
           <i class="ti ti-file"></i>
@@ -68,16 +57,13 @@
         </div>
       </ng-container>
     </div>
-
   </div>
 
-  <!-- Upload progress -->
   <div *ngIf="uploadProgress" class="upload-status">
     <i class="ti ti-loader-2 animate-spin"></i>
     <span>Subiendo evidencia…</span>
   </div>
 
-  <!-- Footer -->
   <div class="ej-footer">
     <button type="button" class="btn-cancel" (click)="close()">Cancelar</button>
     <button type="button" class="btn-save" [disabled]="!canSave || saving" (click)="guardar()">
