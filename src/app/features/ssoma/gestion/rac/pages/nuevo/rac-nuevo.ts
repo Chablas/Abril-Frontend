@@ -62,6 +62,10 @@ export class RacNuevo implements OnInit, OnDestroy {
   observadoSearching = false;
   empresaReportadaId: number | null = null;
 
+  // Fotos de evidencia
+  fotosSeleccionadas: File[] = [];
+  fotosSubiendo = false;
+
   // Plan de acción
   planAccion = '';
   plazoLevantamiento = '';
@@ -245,6 +249,12 @@ export class RacNuevo implements OnInit, OnDestroy {
     );
   }
 
+  onFotosChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.fotosSeleccionadas = Array.from(input.files ?? []);
+    this.cdr.markForCheck();
+  }
+
   submit(): void {
     if (!this.canSubmit) return;
 
@@ -275,15 +285,30 @@ export class RacNuevo implements OnInit, OnDestroy {
     this.loaderService.show();
     this.racService.crear(req).subscribe({
       next: (res) => {
-        this.saving = false;
-        this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: 'RAC registrado',
-          html: `Código: <b>${res.codigo}</b>`,
-          timer: 2500,
-          showConfirmButton: false,
-        }).then(() => this.router.navigate(['/ssoma/gestion/rac/lista']));
+        const mostrarSwalYNavegar = () => {
+          this.saving = false;
+          this.fotosSubiendo = false;
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'RAC registrado',
+            html: `Código: <b>${res.codigo}</b>`,
+            timer: 2500,
+            showConfirmButton: false,
+          }).then(() => this.router.navigate(['/ssoma/gestion/rac/lista']));
+        };
+
+        if (this.fotosSeleccionadas.length > 0) {
+          this.fotosSubiendo = true;
+          forkJoin(
+            this.fotosSeleccionadas.map(f => this.racService.subirFoto(res.id, f, 'Observacion'))
+          ).subscribe({
+            next: () => mostrarSwalYNavegar(),
+            error: () => mostrarSwalYNavegar(),
+          });
+        } else {
+          mostrarSwalYNavegar();
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.saving = false;

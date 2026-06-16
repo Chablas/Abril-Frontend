@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { buildAuthHeaders } from '../../../salud-ocupacional/services/http-base';
 import {
   RacCategoriaDto,
   RacInfraccionDto,
@@ -31,68 +32,68 @@ export class RacService {
   // ── Catálogos ────────────────────────────────────────────────────
 
   getCategorias(): Observable<RacCategoriaDto[]> {
-    return this.http.get<RacCategoriaDto[]>(`${this.base}/categorias`);
+    return this.http.get<RacCategoriaDto[]>(`${this.base}/categorias`, { headers: buildAuthHeaders() });
   }
 
   getInfracciones(): Observable<RacInfraccionDto[]> {
-    return this.http.get<RacInfraccionDto[]>(`${this.base}/infracciones`);
+    return this.http.get<RacInfraccionDto[]>(`${this.base}/infracciones`, { headers: buildAuthHeaders() });
   }
 
   getNiveles(projectId: number): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/proyecto/${projectId}/niveles`);
+    return this.http.get<string[]>(`${this.base}/proyecto/${projectId}/niveles`, { headers: buildAuthHeaders() });
   }
 
   // ── RAC ──────────────────────────────────────────────────────────
 
   getList(q: RacListQuery): Observable<RacPagedResult<RacListItemDto>> {
     const params = this.buildParams(q);
-    return this.http.get<RacPagedResult<RacListItemDto>>(`${this.base}`, { params });
+    return this.http.get<RacPagedResult<RacListItemDto>>(`${this.base}`, { params, headers: buildAuthHeaders() });
   }
 
   getDetalle(id: number): Observable<RacDetalleDto> {
-    return this.http.get<RacDetalleDto>(`${this.base}/${id}`);
+    return this.http.get<RacDetalleDto>(`${this.base}/${id}`, { headers: buildAuthHeaders() });
   }
 
   getDashboard(): Observable<RacDashboardDto> {
-    return this.http.get<RacDashboardDto>(`${this.base}/dashboard`);
+    return this.http.get<RacDashboardDto>(`${this.base}/dashboard`, { headers: buildAuthHeaders() });
   }
 
   crear(req: RacCreateRequest): Observable<RacCreadoDto> {
-    return this.http.post<RacCreadoDto>(`${this.base}`, req);
+    return this.http.post<RacCreadoDto>(`${this.base}`, req, { headers: buildAuthHeaders() });
   }
 
   cerrar(id: number, req: RacCerrarRequest): Observable<RacDetalleDto> {
-    return this.http.patch<RacDetalleDto>(`${this.base}/${id}/cerrar`, req);
+    return this.http.patch<RacDetalleDto>(`${this.base}/${id}/cerrar`, req, { headers: buildAuthHeaders() });
   }
 
   subirFoto(id: number, file: File, tipo: string): Observable<RacFotoUploadResult> {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('tipo', tipo);
-    return this.http.post<RacFotoUploadResult>(`${this.base}/${id}/fotos`, fd);
+    return this.http.post<RacFotoUploadResult>(`${this.base}/${id}/fotos`, fd, { headers: buildAuthHeaders() });
   }
 
   getReportePdf(id: number): Observable<Blob> {
-    return this.http.get(`${this.base}/${id}/pdf`, { responseType: 'blob' });
+    return this.http.get(`${this.base}/${id}/pdf`, { responseType: 'blob', headers: buildAuthHeaders() });
   }
 
   // ── Penalidades ──────────────────────────────────────────────────
 
   getPenalidadList(q: PenalidadListQuery): Observable<RacPagedResult<PenalidadListItemDto>> {
     const params = this.buildParams(q);
-    return this.http.get<RacPagedResult<PenalidadListItemDto>>(`${this.basePen}`, { params });
+    return this.http.get<RacPagedResult<PenalidadListItemDto>>(`${this.basePen}`, { params, headers: buildAuthHeaders() });
   }
 
   getPenalidadDetalle(id: number): Observable<PenalidadDetalleDto> {
-    return this.http.get<PenalidadDetalleDto>(`${this.basePen}/${id}`);
+    return this.http.get<PenalidadDetalleDto>(`${this.basePen}/${id}`, { headers: buildAuthHeaders() });
   }
 
   presentarDescargo(id: number, req: PenalidadDescargaRequest): Observable<void> {
-    return this.http.post<void>(`${this.basePen}/${id}/descargo`, req);
+    return this.http.post<void>(`${this.basePen}/${id}/descargo`, req, { headers: buildAuthHeaders() });
   }
 
   resolverPenalidad(id: number, req: PenalidadResolverRequest): Observable<PenalidadDetalleDto> {
-    return this.http.patch<PenalidadDetalleDto>(`${this.basePen}/${id}/resolver`, req);
+    return this.http.patch<PenalidadDetalleDto>(`${this.basePen}/${id}/resolver`, req, { headers: buildAuthHeaders() });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────

@@ -270,7 +270,28 @@
       </div>
     </section>
 
-    <!-- ■ 5. PLAN DE ACCIÓN ──────────────────────────────────────────── -->
+    <!-- ■ 5. FOTOS DE EVIDENCIA ─────────────────────────────────────── -->
+    <section class="form-section">
+      <h2 class="section-title">
+        <i class="ti ti-camera"></i> Fotos de evidencia
+      </h2>
+      <input type="file" class="form-input" accept="image/*" multiple
+             (change)="onFotosChange($event)" />
+      <div *ngIf="fotosSubiendo" class="search-hint">
+        <i class="ti ti-loader spin"></i> Subiendo fotos...
+      </div>
+      <div class="fotos-preview-grid" *ngIf="fotosSeleccionadas.length > 0 && !fotosSubiendo">
+        <span class="foto-ok">
+          <i class="ti ti-circle-check"></i>
+          {{ fotosSeleccionadas.length }} foto(s) lista(s) para subir
+        </span>
+      </div>
+      <span class="form-hint" *ngIf="fotosSeleccionadas.length === 0">
+        Puedes adjuntar fotos de evidencia (opcional)
+      </span>
+    </section>
+
+    <!-- ■ 6. PLAN DE ACCIÓN ──────────────────────────────────────────── -->
     <section class="form-section">
       <h2 class="section-title">
         <i class="ti ti-checklist"></i> Plan de Acción
