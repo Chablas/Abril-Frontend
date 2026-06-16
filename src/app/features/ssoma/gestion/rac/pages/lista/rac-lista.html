@@ -45,6 +45,20 @@
         <option value="CONDICION">Condición</option>
       </select>
 
+      <select class="filtro-select"
+        [ngModel]="filtroProyectoId ?? ''"
+        (ngModelChange)="filtroProyectoId = $event ? +$event : null">
+        <option value="">Todos los proyectos</option>
+        <option *ngFor="let p of proyectos" [value]="p.id">{{ p.nombre }}</option>
+      </select>
+
+      <select class="filtro-select"
+        [ngModel]="filtroEmpresaId ?? ''"
+        (ngModelChange)="filtroEmpresaId = $event ? +$event : null">
+        <option value="">Todas las empresas</option>
+        <option *ngFor="let e of empresas" [value]="e.id">{{ e.razonSocial }}</option>
+      </select>
+
       <label class="filtro-check">
         <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" />
         Solo con penalidad

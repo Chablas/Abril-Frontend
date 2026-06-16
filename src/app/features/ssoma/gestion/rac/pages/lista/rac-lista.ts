@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { RacService } from '../../services/rac.service';
 import { RacListItemDto, RacListQuery, RacPagedResult } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { ProjectService } from '../../../../../../core/services/project.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
@@ -27,14 +29,20 @@ export class RacLista implements OnInit {
   filtroSeveridad = '';
   filtroTipo = '';
   filtroSoloConPenalidad = false;
+  filtroProyectoId: number | null = null;
+  filtroEmpresaId: number | null = null;
   filtrosAbiertos = false;
   readonly anioActual = new Date().getFullYear();
+
+  proyectos: { id: number; nombre: string }[] = [];
+  empresas: { id: number; razonSocial: string }[] = [];
 
   constructor(
     private racService: RacService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private projectService: ProjectService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -44,6 +52,19 @@ export class RacLista implements OnInit {
   }
 
   ngOnInit(): void {
+    forkJoin({
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200 }),
+      empresas: this.authService.getEmpresasContratistas(),
+    }).subscribe({
+      next: ({ proyectos, empresas }) => {
+        this.proyectos = proyectos.data
+          .filter(p => p.estado === 'ACTIVO')
+          .map(p => ({ id: p.projectId, nombre: p.projectDescription }));
+        this.empresas = empresas.map(e => ({ id: e.id, razonSocial: e.razonSocial }));
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
     this.load();
   }
 
@@ -56,6 +77,8 @@ export class RacLista implements OnInit {
       severidad: this.filtroSeveridad || undefined,
       tipo: this.filtroTipo || undefined,
       soloConPenalidad: this.filtroSoloConPenalidad || undefined,
+      proyectoId: this.filtroProyectoId ?? undefined,
+      empresaReportadaId: this.filtroEmpresaId ?? undefined,
       page: 1,
     };
     this.query = q;
@@ -86,6 +109,8 @@ export class RacLista implements OnInit {
     this.filtroSeveridad = '';
     this.filtroTipo = '';
     this.filtroSoloConPenalidad = false;
+    this.filtroProyectoId = null;
+    this.filtroEmpresaId = null;
     this.load();
   }
 
@@ -133,7 +158,8 @@ export class RacLista implements OnInit {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!(this.filtroEstado || this.filtroSeveridad || this.filtroTipo || this.filtroSoloConPenalidad);
+    return !!(this.filtroEstado || this.filtroSeveridad || this.filtroTipo || this.filtroSoloConPenalidad
+      || this.filtroProyectoId || this.filtroEmpresaId);
   }
 
   severidadClass(sev: string): string {

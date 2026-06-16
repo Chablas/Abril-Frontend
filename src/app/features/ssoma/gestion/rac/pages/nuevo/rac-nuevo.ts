@@ -63,7 +63,6 @@ export class RacNuevo implements OnInit, OnDestroy {
   empresaReportadaId: number | null = null;
 
   // Plan de acción
-  accionRequerida = '';
   planAccion = '';
   plazoLevantamiento = '';
 
@@ -87,13 +86,6 @@ export class RacNuevo implements OnInit, OnDestroy {
     { value: 'ALTO', label: 'Alto' },
     { value: 'MEDIO', label: 'Medio' },
     { value: 'BAJO', label: 'Bajo' },
-  ];
-
-  readonly ACCION_REQUERIDA_OPCIONES = [
-    'Elaborar PETS',
-    'Modificar PETS',
-    'Entrenamiento a la partida',
-    'Mantener el PETS',
   ];
 
   private reportanteQuery$ = new Subject<string>();
@@ -272,7 +264,6 @@ export class RacNuevo implements OnInit, OnDestroy {
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,
       descripcionOcurrido: this.descripcionOcurrido || undefined,
-      accionRequerida: this.accionRequerida || undefined,
       planAccion: this.planAccion || undefined,
       fechaReporte: this.fechaReporte,
       plazoLevantamiento: this.plazoLevantamiento || undefined,

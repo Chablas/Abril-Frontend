@@ -278,14 +278,6 @@
       <div class="form-grid">
 
         <div>
-          <label class="form-label">Acción Requerida</label>
-          <select class="form-input" [(ngModel)]="accionRequerida">
-            <option value="">— Seleccionar —</option>
-            <option *ngFor="let a of ACCION_REQUERIDA_OPCIONES" [value]="a">{{ a }}</option>
-          </select>
-        </div>
-
-        <div>
           <label class="form-label">Plazo de Levantamiento</label>
           <input type="date" class="form-input" [(ngModel)]="plazoLevantamiento" />
         </div>
