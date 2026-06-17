@@ -32,6 +32,9 @@ export interface ProjectSubContractorDTO {
   contractorEmails: string[];
   workItemId: number;
   workItemDescription: string;
+  isSubcontract?: boolean;
+  isLabor?: boolean;
+  contractWorkItemName?: string | null;
   workItemCategoryId: number;
   workItemCategoryDescription: string;
   workSpecialtyId?: number | null;

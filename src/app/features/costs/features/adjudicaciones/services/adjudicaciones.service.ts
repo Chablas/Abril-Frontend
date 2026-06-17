@@ -100,6 +100,7 @@ export class AdjudicacionesService {
     advancePercentage: number; advanceAmount: number | null;
     amount: number; currencyId: number; hasIgv: boolean; workItemId: number; workItemCategoryId: number;
     workSpecialtyId: number | null;
+    isSubcontract: boolean; isLabor: boolean; contractWorkItemName: string;
   }): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectSubContractorId}/info`, dto, {

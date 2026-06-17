@@ -8,6 +8,15 @@ export interface WorkItemDto {
   updatedDateTime?: string;
   updatedUserId?: number;
   active: boolean;
+  valorizationForms: WorkItemValorizationFormDto[];
+}
+
+/** Una línea de la forma de valorización (cláusula 5.1): porcentaje + concepto. */
+export interface WorkItemValorizationFormDto {
+  workItemValorizationFormId: number;
+  concept: string;
+  percentage: number;
+  sortOrder: number;
 }
 
 export interface WorkSpecialtyOptionDto {

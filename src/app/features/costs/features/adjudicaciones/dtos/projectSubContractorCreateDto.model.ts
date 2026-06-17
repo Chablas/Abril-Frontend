@@ -14,6 +14,9 @@ export interface ProjectSubContractorCreateDTO {
   workItemId: number;
   workItemCategoryId: number;
   workSpecialtyId?: number | null;
+  isSubcontract: boolean;
+  isLabor: boolean;
+  contractWorkItemName: string;
   quotationFiles?: File[];
   comparativeFiles?: File[];
 }

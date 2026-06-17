@@ -13,6 +13,7 @@ import { MicrosoftAuthService } from '../../../../../auth/pages/login/services/m
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { Roles } from '../../../../../../core/constants/roles';
 import { HttpErrorResponse } from '@angular/common/http';
+import { buildContractPartidaName } from '../../utils/contract-partida-name';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -94,7 +95,10 @@ export class Detail implements OnInit {
     advancePercentage: null as number | null,
     amount: 0, currencyId: 0, hasIgv: false, workItemId: 0, workItemCategoryId: 0,
     workSpecialtyId: null as number | null,
+    isSubcontract: false, isLabor: false, contractWorkItemName: '',
   };
+  /** Se activa cuando el usuario edita manualmente el nombre final; corta la regeneración automática. */
+  step1NameManuallyEdited = false;
   step1ContractorEmails: string[] = [];
   step1AdvanceAmount: number | undefined = undefined;
 
@@ -1396,7 +1400,12 @@ export class Detail implements OnInit {
         workItemId:         this.item.workItemId,
         workItemCategoryId: this.item.workItemCategoryId,
         workSpecialtyId:    this.item.workSpecialtyId ?? null,
+        isSubcontract:      this.item.isSubcontract ?? false,
+        isLabor:            this.item.isLabor ?? false,
+        contractWorkItemName: this.item.contractWorkItemName ?? '',
       };
+      // El nombre guardado se considera "editado a mano" para no pisarlo al abrir la edición.
+      this.step1NameManuallyEdited = !!this.item.contractWorkItemName?.trim();
       // Correos del contratista seleccionado
       const contractor = this.formData!.contributors.find(c => c.contractorId === this.item.contractorId);
       this.step1ContractorEmails = contractor?.emails ?? this.item.contractorEmails ?? [];
@@ -1420,6 +1429,49 @@ export class Detail implements OnInit {
     this.step1Form.contractorId = contractorId;
     const contractor = this.formData?.contributors.find(c => c.contractorId === contractorId);
     this.step1ContractorEmails = contractor?.emails ?? [];
+  }
+
+  /** Recompone el nombre final de la partida salvo que el usuario lo haya editado a mano. */
+  recomputeStep1ContractName(): void {
+    if (this.step1NameManuallyEdited) return;
+    this.step1Form.contractWorkItemName = buildContractPartidaName({
+      workItemDescription: this.formData?.workItems
+        .find(w => w.workItemId === this.step1Form.workItemId)?.workItemDescription,
+      contractModalityDescription: this.formData?.contractModalities
+        .find(m => m.contractModalityId === this.step1Form.contractModalityId)?.contractModalityDescription,
+      isSubcontract: this.step1Form.isSubcontract,
+      isLabor: this.step1Form.isLabor,
+    });
+  }
+
+  onStep1WorkItemChange(workItemId: number): void {
+    this.step1Form.workItemId = workItemId;
+    this.recomputeStep1ContractName();
+  }
+
+  onStep1ContractModalityChange(contractModalityId: number | null): void {
+    this.step1Form.contractModalityId = contractModalityId;
+    this.recomputeStep1ContractName();
+  }
+
+  toggleStep1Subcontract(): void {
+    this.step1Form.isSubcontract = !this.step1Form.isSubcontract;
+    this.recomputeStep1ContractName();
+  }
+
+  toggleStep1Labor(): void {
+    this.step1Form.isLabor = !this.step1Form.isLabor;
+    this.recomputeStep1ContractName();
+  }
+
+  onStep1ContractNameInput(value: string): void {
+    this.step1Form.contractWorkItemName = value;
+    this.step1NameManuallyEdited = true;
+  }
+
+  regenerateStep1ContractName(): void {
+    this.step1NameManuallyEdited = false;
+    this.recomputeStep1ContractName();
   }
 
   onStep1AmountChange(): void {
@@ -1474,6 +1526,7 @@ export class Detail implements OnInit {
       missing.push('La empresa seleccionada no tiene correos registrados');
     if (!f.workItemCategoryId) missing.push('Partida de control');
     if (!f.workItemId)         missing.push('Partida');
+    if (!f.contractWorkItemName?.trim()) missing.push('Nombre de la partida en el contrato');
     if (!f.contractTypeId)     missing.push('Tipo de contrato');
     if (!f.amount)             missing.push('Monto');
     if (!f.currencyId)         missing.push('Moneda');
@@ -1511,6 +1564,9 @@ export class Detail implements OnInit {
       workItemId:         f.workItemId,
       workItemCategoryId: f.workItemCategoryId,
       workSpecialtyId:    f.workSpecialtyId,
+      isSubcontract:      f.isSubcontract,
+      isLabor:            f.isLabor,
+      contractWorkItemName: (f.contractWorkItemName ?? '').trim(),
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();

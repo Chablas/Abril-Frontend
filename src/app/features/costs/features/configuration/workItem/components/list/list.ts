@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WorkItemService } from '../../services/work-item.service';
-import { WorkItemDto } from '../../dtos/work-item.dto';
+import { WorkItemDto, WorkItemValorizationFormDto } from '../../dtos/work-item.dto';
 import { WorkItemEditDto } from '../../dtos/work-item-edit.dto';
 import { WorkItemFilterDto } from '../../dtos/work-item-filter.dto';
 import { WorkItemEdit } from './edit/edit';
@@ -23,7 +23,8 @@ export class WorkItemList implements OnInit {
 
   items: WorkItemDto[] = [];
   showEditModal = false;
-  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workSpecialtyId: null, active: true };
+  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workSpecialtyId: null, active: true, valorizationForms: [] };
+  editingForms: WorkItemValorizationFormDto[] = [];
 
   constructor(
     private service: WorkItemService,
@@ -55,7 +56,9 @@ export class WorkItemList implements OnInit {
       // 0 = "sin especialidad" en el combo
       workSpecialtyId: item.workSpecialtyId ?? 0,
       active: item.active,
+      valorizationForms: [],
     };
+    this.editingForms = item.valorizationForms ?? [];
     this.showEditModal = true;
   }
 

@@ -11,6 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { FilePreview, FilePreviewItem } from '../../../../../../shared/components/file-preview/file-preview';
+import { buildContractPartidaName } from '../../utils/contract-partida-name';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -48,9 +49,15 @@ export class Create implements OnInit {
     workItemId: 0,
     workItemCategoryId: 0,
     workSpecialtyId: null,
+    isSubcontract: false,
+    isLabor: false,
+    contractWorkItemName: '',
     quotationFiles: [],
     comparativeFiles: [],
   };
+
+  /** Se activa cuando el usuario edita manualmente el nombre final; corta la regeneración automática. */
+  nameManuallyEdited = false;
 
   /** Opciones No/Sí para el search-select de carta de fianza. */
   readonly cartaFianzaOptions = [
@@ -126,6 +133,50 @@ export class Create implements OnInit {
     this.contractorEmails = contractor?.emails ?? [];
   }
 
+  /** Recompone el nombre final de la partida salvo que el usuario lo haya editado a mano. */
+  recomputeContractName(): void {
+    if (this.nameManuallyEdited) return;
+    this.createDto.contractWorkItemName = buildContractPartidaName({
+      workItemDescription: this.createFormData.workItems
+        .find(w => w.workItemId === this.createDto.workItemId)?.workItemDescription,
+      contractModalityDescription: this.createFormData.contractModalities
+        .find(m => m.contractModalityId === this.createDto.contractModalityId)?.contractModalityDescription,
+      isSubcontract: this.createDto.isSubcontract,
+      isLabor: this.createDto.isLabor,
+    });
+  }
+
+  onWorkItemChange(workItemId: number): void {
+    this.createDto.workItemId = workItemId;
+    this.recomputeContractName();
+  }
+
+  onContractModalityChange(contractModalityId: number | null): void {
+    this.createDto.contractModalityId = contractModalityId;
+    this.recomputeContractName();
+  }
+
+  toggleSubcontract(): void {
+    this.createDto.isSubcontract = !this.createDto.isSubcontract;
+    this.recomputeContractName();
+  }
+
+  toggleLabor(): void {
+    this.createDto.isLabor = !this.createDto.isLabor;
+    this.recomputeContractName();
+  }
+
+  onContractNameInput(value: string): void {
+    this.createDto.contractWorkItemName = value;
+    this.nameManuallyEdited = true;
+  }
+
+  /** Vuelve al nombre autogenerado descartando la edición manual. */
+  regenerateContractName(): void {
+    this.nameManuallyEdited = false;
+    this.recomputeContractName();
+  }
+
   getFormData() {
     this.loaderService.show();
     this.adjudicacionesService.getFormData().subscribe({
@@ -147,6 +198,7 @@ export class Create implements OnInit {
       missing.push('La empresa seleccionada no tiene correos registrados — agrégalos antes de continuar');
     if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
     if (!this.createDto.workItemId)        missing.push('Partida');
+    if (!this.createDto.contractWorkItemName?.trim()) missing.push('Nombre de la partida en el contrato');
     if (!this.createDto.contractTypeId)    missing.push('Tipo de contrato');
     if (!this.createDto.amount)            missing.push('Monto');
     if (!this.createDto.currencyId)        missing.push('Moneda');
@@ -198,6 +250,9 @@ export class Create implements OnInit {
     if (this.createDto.workSpecialtyId != null) {
       form.append('workSpecialtyId', this.createDto.workSpecialtyId.toString());
     }
+    form.append('isSubcontract', this.createDto.isSubcontract.toString());
+    form.append('isLabor', this.createDto.isLabor.toString());
+    form.append('contractWorkItemName', (this.createDto.contractWorkItemName ?? '').trim());
     this.createDto.quotationFiles?.forEach(f => form.append('quotationFiles', f));
     this.createDto.comparativeFiles?.forEach(f => form.append('comparativeFiles', f));
 

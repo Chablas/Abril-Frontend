@@ -5,8 +5,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../../../shared/components/search-select/search-select';
 import { WorkItemService } from '../../../services/work-item.service';
-import { WorkItemEditDto } from '../../../dtos/work-item-edit.dto';
-import { WorkSpecialtyOptionDto } from '../../../dtos/work-item.dto';
+import { WorkItemEditDto, WorkItemValorizationFormUpsertDto } from '../../../dtos/work-item-edit.dto';
+import { WorkSpecialtyOptionDto, WorkItemValorizationFormDto } from '../../../dtos/work-item.dto';
 import { LoaderService } from '../../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
@@ -18,12 +18,18 @@ import Swal from 'sweetalert2';
   templateUrl: './edit.html',
 })
 export class WorkItemEdit implements OnInit {
-  @Input() dto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workSpecialtyId: null, active: true };
+  @Input() dto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workSpecialtyId: null, active: true, valorizationForms: [] };
+  /** Formas de valorización ya guardadas para esta partida. */
+  @Input() existingForms: WorkItemValorizationFormDto[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   /** Opción "sin especialidad" + especialidades activas. */
   specialtyOptions: WorkSpecialtyOptionDto[] = [];
+
+  /** Copia de trabajo de las formas de valorización (cláusula 5.1). */
+  forms: WorkItemValorizationFormUpsertDto[] = [];
+  newForm: { percentage: number | null; concept: string } = { percentage: null, concept: '' };
 
   constructor(
     private service: WorkItemService,
@@ -32,6 +38,13 @@ export class WorkItemEdit implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.forms = this.existingForms.map((f) => ({
+      workItemValorizationFormId: f.workItemValorizationFormId,
+      concept: f.concept,
+      percentage: f.percentage,
+      sortOrder: f.sortOrder,
+    }));
+
     this.service.getFormData().subscribe({
       next: (data) => {
         this.specialtyOptions = [
@@ -43,16 +56,65 @@ export class WorkItemEdit implements OnInit {
     });
   }
 
+  // ── Formas de valorización (cláusula 5.1) ────────────────────────────
+  /** Vista previa de la oración tal como aparecerá en el contrato. */
+  get formsPreview(): string {
+    const partes = this.forms
+      .filter((f) => f.concept.trim())
+      .map((f) => `${f.percentage}% ${f.concept.trim()}`);
+    if (partes.length === 0) return '';
+    const listado =
+      partes.length === 1 ? partes[0] : partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1];
+    return `Las valorizaciones serán de acuerdo con los siguientes porcentajes de valorización: ${listado}.`;
+  }
+
+  get formsTotal(): number {
+    return this.forms.reduce((acc, f) => acc + (Number(f.percentage) || 0), 0);
+  }
+
+  addForm(): void {
+    const concept = this.newForm.concept.trim();
+    const percentage = Number(this.newForm.percentage);
+    if (!concept || !percentage || percentage <= 0) return;
+    this.forms.push({ concept, percentage, sortOrder: this.forms.length });
+    this.newForm = { percentage: null, concept: '' };
+  }
+
+  removeForm(index: number): void {
+    this.forms.splice(index, 1);
+    this.recalcSortOrder();
+  }
+
+  moveFormUp(index: number): void {
+    if (index === 0) return;
+    [this.forms[index - 1], this.forms[index]] = [this.forms[index], this.forms[index - 1]];
+    this.recalcSortOrder();
+  }
+
+  moveFormDown(index: number): void {
+    if (index === this.forms.length - 1) return;
+    [this.forms[index], this.forms[index + 1]] = [this.forms[index + 1], this.forms[index]];
+    this.recalcSortOrder();
+  }
+
+  private recalcSortOrder(): void {
+    this.forms.forEach((f, i) => (f.sortOrder = i));
+  }
+
   save(): void {
     if (!this.dto.workItemDescription.trim()) {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingresa una descripción.' });
       return;
     }
 
+    // Agregar la fila pendiente si el usuario olvidó pulsar "Agregar".
+    if (this.newForm.concept.trim() && Number(this.newForm.percentage) > 0) this.addForm();
+
     // El valor 0 del combo representa "sin especialidad" → null en el backend.
     const payload: WorkItemEditDto = {
       ...this.dto,
       workSpecialtyId: this.dto.workSpecialtyId ? this.dto.workSpecialtyId : null,
+      valorizationForms: this.forms,
     };
 
     this.loaderService.show();

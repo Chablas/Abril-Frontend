@@ -270,7 +270,8 @@
 
             <div class="flex flex-col gap-[4px]">
               <app-search-select [fullText]="true" label="Partida" [options]="formData.workItems"
-                valueField="workItemId" displayField="workItemDescription" [(value)]="step1Form.workItemId" />
+                valueField="workItemId" displayField="workItemDescription"
+                [value]="step1Form.workItemId" (valueChange)="onStep1WorkItemChange($event)" />
             </div>
 
           </div>
@@ -313,7 +314,7 @@
             <div class="flex flex-col gap-[4px]">
               <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="formData.contractModalities"
                 valueField="contractModalityId" displayField="contractModalityDescription"
-                [(value)]="step1Form.contractModalityId" />
+                [value]="step1Form.contractModalityId" (valueChange)="onStep1ContractModalityChange($event)" />
             </div>
 
             <div class="flex flex-col gap-[4px]">
@@ -321,6 +322,40 @@
                 valueField="contractTypeId" displayField="contractTypeDescription" [(value)]="step1Form.contractTypeId" />
             </div>
 
+          </div>
+
+          <!-- Normalización del nombre de la partida para el contrato -->
+          <div class="mt-[16px] flex flex-col gap-[12px]">
+            <div class="flex flex-wrap items-center gap-[20px]">
+              <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+                <input type="checkbox" [checked]="step1Form.isSubcontract" (change)="toggleStep1Subcontract()"
+                  class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+                <span class="text-sm text-gray-600">Subcontrato (SC)</span>
+              </label>
+              <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+                <input type="checkbox" [checked]="step1Form.isLabor" (change)="toggleStep1Labor()"
+                  class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+                <span class="text-sm text-gray-600">Mano de obra (M.O.)</span>
+              </label>
+            </div>
+
+            <div class="flex flex-col gap-[6px]">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre de la partida en el contrato</label>
+                <button *ngIf="step1NameManuallyEdited" type="button" (click)="regenerateStep1ContractName()"
+                  class="text-[11px] text-[var(--color-abril-primary)] underline cursor-pointer">
+                  Regenerar automáticamente
+                </button>
+              </div>
+              <input
+                type="text"
+                [ngModel]="step1Form.contractWorkItemName"
+                (ngModelChange)="onStep1ContractNameInput($event)"
+                placeholder="Se genera automáticamente al elegir la partida"
+                class="border border-[#E2E2E2] rounded-lg p-[10px] text-sm focus:outline-none uppercase"
+              />
+              <p class="text-[11px] text-gray-400">Es lo que aparecerá como {{ '{{PARTIDA}}' }} en los contratos.</p>
+            </div>
           </div>
         </div>
 

@@ -59,7 +59,7 @@
 
         <div class="flex flex-col gap-[4px]">
           <app-search-select [fullText]="true" label="Partida" [options]="createFormData.workItems" valueField="workItemId"
-            displayField="workItemDescription" [(value)]="createDto.workItemId" />
+            displayField="workItemDescription" [value]="createDto.workItemId" (valueChange)="onWorkItemChange($event)" />
           <p *ngIf="submitted && !createDto.workItemId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
@@ -106,7 +106,7 @@
         <div class="flex flex-col gap-[4px]">
           <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="createFormData.contractModalities"
             valueField="contractModalityId" displayField="contractModalityDescription"
-            [(value)]="createDto.contractModalityId" />
+            [value]="createDto.contractModalityId" (valueChange)="onContractModalityChange($event)" />
         </div>
 
         <div class="flex flex-col gap-[4px]">
@@ -116,6 +116,41 @@
         </div>
 
 
+      </div>
+
+      <!-- Normalización del nombre de la partida para el contrato -->
+      <div class="mt-[16px] flex flex-col gap-[12px]">
+        <div class="flex flex-wrap items-center gap-[20px]">
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+            <input type="checkbox" [checked]="createDto.isSubcontract" (change)="toggleSubcontract()"
+              class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-sm text-gray-600">Subcontrato (SC)</span>
+          </label>
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+            <input type="checkbox" [checked]="createDto.isLabor" (change)="toggleLabor()"
+              class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-sm text-gray-600">Mano de obra (M.O.)</span>
+          </label>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre de la partida en el contrato</label>
+            <button *ngIf="nameManuallyEdited" type="button" (click)="regenerateContractName()"
+              class="text-[11px] text-[var(--color-abril-primary)] underline cursor-pointer">
+              Regenerar automáticamente
+            </button>
+          </div>
+          <input
+            type="text"
+            [ngModel]="createDto.contractWorkItemName"
+            (ngModelChange)="onContractNameInput($event)"
+            placeholder="Se genera automáticamente al elegir la partida"
+            class="border border-[#E2E2E2] rounded-lg p-[10px] text-sm focus:outline-none uppercase"
+          />
+          <p *ngIf="submitted && !createDto.contractWorkItemName?.trim()" class="text-xs text-red-500">Campo requerido</p>
+          <p class="text-[11px] text-gray-400">Es lo que aparecerá como {{ '{{PARTIDA}}' }} en los contratos.</p>
+        </div>
       </div>
     </div>
 
