@@ -59,7 +59,8 @@
             [ngClass]="{
               'bg-[#FEF3C7] text-[#92400E]': item.contractorStateDescription === 'EN ESPERA',
               'bg-[#D7FAF4] text-[#009C87]':  item.contractorStateDescription === 'APROBADO',
-              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO'
+              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO',
+              'bg-[#FFE6CC] text-[#B45309]':  item.contractorStateDescription === 'APROBADO - ACTUALIZACIÓN PENDIENTE'
             }">
             {{ item.contractorStateDescription }}
           </span>

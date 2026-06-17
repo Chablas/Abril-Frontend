@@ -23,6 +23,15 @@ export class ContractorService {
     return this.http.get<SunatContributorDTO>(`${this.apiUrl}/ruc/${ruc}`);
   }
 
+  /** Verifica si el RUC ya está registrado como contratista (para ofrecer solicitud de actualización). */
+  checkRucExists(
+    ruc: string,
+  ): Observable<{ exists: boolean; contributorName: string | null; activeContractorStateId: number | null }> {
+    return this.http.get<{ exists: boolean; contributorName: string | null; activeContractorStateId: number | null }>(
+      `${this.apiUrl}/ruc-exists/${ruc}`,
+    );
+  }
+
   getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
     return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/dni/${dni}`);
   }

@@ -71,7 +71,8 @@
             [ngClass]="{
               'bg-[#FEF3C7] text-[#92400E]': item.contractorStateDescription === 'EN ESPERA',
               'bg-[#D7FAF4] text-[#009C87]':  item.contractorStateDescription === 'APROBADO',
-              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO'
+              'bg-[#FAD5D4] text-[#D30000]':  item.contractorStateDescription === 'NO APROBADO',
+              'bg-[#FFE6CC] text-[#B45309]':  item.contractorStateDescription === 'APROBADO - ACTUALIZACIÓN PENDIENTE'
             }">
             {{ item.contractorStateDescription }}
           </span>
@@ -158,6 +159,70 @@
             class="text-sm text-gray-400 italic">
             Sin correos registrados
           </p>
+        </div>
+      </div>
+
+      <!-- Solicitud de actualización pendiente (estado 4): comparación lado a lado -->
+      <div *ngIf="item.pendingUpdate" class="rounded-xl border border-[#FFD9B3] bg-[#FFF8F1] p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-5 h-5 text-[#B45309]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+          </svg>
+          <p class="text-sm font-semibold text-[#B45309]">Solicitud de actualización de datos pendiente</p>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">
+          El contratista sigue operando con los datos actuales. Revisa los datos propuestos y apruébalos o recházalos.
+        </p>
+
+        <div class="grid grid-cols-[1fr_1fr] gap-px bg-[#F0E2D2] rounded-lg overflow-hidden text-sm">
+          <div class="bg-[#FBF1E6] px-3 py-2 text-xs font-semibold text-gray-500">Dato actual</div>
+          <div class="bg-[#FBF1E6] px-3 py-2 text-xs font-semibold text-[#B45309]">Dato propuesto</div>
+
+          <ng-container *ngFor="let row of comparisonRows()">
+            <ng-container *ngIf="row.current !== row.proposed">
+              <div class="bg-white px-3 py-2">
+                <p class="text-[10px] uppercase tracking-wide text-gray-400">{{ row.label }}</p>
+                <p class="text-gray-700">{{ row.current || '—' }}</p>
+              </div>
+              <div class="bg-[#FFF4E8] px-3 py-2">
+                <p class="text-[10px] uppercase tracking-wide text-[#B45309]">{{ row.label }}</p>
+                <p class="font-medium text-gray-800">{{ row.proposed || '—' }}</p>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+
+        <p *ngIf="!hasComparisonChanges()" class="text-xs text-gray-400 italic mt-2">
+          Los datos propuestos coinciden con los actuales (puede haber cambios solo en los archivos adjuntos).
+        </p>
+
+        <!-- Archivos propuestos -->
+        <div *ngIf="item.pendingUpdate.brochureFileUrl || item.pendingUpdate.fichaRucFileUrl || item.pendingUpdate.referencesListFileUrl || item.pendingUpdate.logoFileUrl"
+             class="mt-3">
+          <p class="text-xs text-[#B45309] mb-1">Archivos propuestos</p>
+          <div class="flex flex-wrap gap-3">
+            <a *ngIf="item.pendingUpdate.logoFileUrl"          [href]="item.pendingUpdate.logoFileUrl"          target="_blank" class="text-xs text-[#64BC04] hover:underline">Logo</a>
+            <a *ngIf="item.pendingUpdate.brochureFileUrl"      [href]="item.pendingUpdate.brochureFileUrl"      target="_blank" class="text-xs text-[#64BC04] hover:underline">Brochure</a>
+            <a *ngIf="item.pendingUpdate.fichaRucFileUrl"      [href]="item.pendingUpdate.fichaRucFileUrl"      target="_blank" class="text-xs text-[#64BC04] hover:underline">Ficha RUC</a>
+            <a *ngIf="item.pendingUpdate.referencesListFileUrl" [href]="item.pendingUpdate.referencesListFileUrl" target="_blank" class="text-xs text-[#64BC04] hover:underline">Lista de referencias</a>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end gap-3 mt-4">
+          <button type="button" (click)="rejectUpdate()"
+            class="flex items-center justify-center gap-2 px-6 py-2.5 border border-[#D30000] text-[#D30000] text-sm font-semibold rounded-lg hover:bg-[#FAD5D4] transition-colors cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Rechazar actualización
+          </button>
+          <button type="button" (click)="approveUpdate()"
+            class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#64BC04] text-white text-sm font-semibold rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Aprobar actualización
+          </button>
         </div>
       </div>
 

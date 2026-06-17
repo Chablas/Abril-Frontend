@@ -75,6 +75,24 @@ export class ContractorManagementService {
     );
   }
 
+  approveUpdate(contractorId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${contractorId}/update-request/approve`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  rejectUpdate(contractorId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${contractorId}/update-request/reject`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   sendCredentials(contractorId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(

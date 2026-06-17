@@ -259,14 +259,47 @@ export class ContractorRegistration implements OnInit {
       return;
     }
 
-    this.loaderService.show();
-
     // Si el usuario escribió el DNI sin consultar RENIEC, sincronizarlo al form
     if (!this.form.legalRepresentativeDni?.trim() && this.dniInput?.trim()) {
       this.form.legalRepresentativeDni = this.dniInput.trim();
     }
 
+    // Antes de enviar, verificar si el RUC ya existe. Si existe, se ofrece (en naranja)
+    // mandar una solicitud de actualización de datos en vez de bloquear el registro.
+    this.loaderService.show();
+    this.contractorService.checkRucExists(this.form.contributorRuc).subscribe({
+      next: (status) => {
+        this.loaderService.hide();
+        if (status.exists) {
+          const nombre = status.contributorName ? ` (${status.contributorName})` : '';
+          Swal.fire({
+            icon: 'warning',
+            title: 'Contratista ya registrado',
+            html: `Ya existe un contratista registrado con el RUC <b>${this.form.contributorRuc}</b>${nombre}.<br><br>
+                   ¿Deseas enviar de todas maneras una <b>solicitud de actualización de datos</b>?
+                   El área de costos deberá revisarla antes de que los nuevos datos entren en vigencia.`,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, enviar solicitud',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#64BC04',
+          }).then((result) => {
+            if (result.isConfirmed) this.sendRegistration(true);
+          });
+        } else {
+          this.sendRegistration(false);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private sendRegistration(isUpdateRequest: boolean): void {
+    this.loaderService.show();
+
     const formData = new FormData();
+    formData.append('IsUpdateRequest', isUpdateRequest ? 'true' : 'false');
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
     formData.append('ContributorRuc', this.form.contributorRuc);
     formData.append('ContributorName', this.form.contributorName);
@@ -295,8 +328,12 @@ export class ContractorRegistration implements OnInit {
         this.loaderService.hide();
         Swal.fire({
           icon: 'success',
-          title: '¡Solicitud enviada!',
-          text: response.message ?? 'Tu solicitud fue recibida. Te contactaremos pronto.',
+          title: isUpdateRequest ? '¡Solicitud de actualización enviada!' : '¡Solicitud enviada!',
+          text:
+            response.message ??
+            (isUpdateRequest
+              ? 'Tu solicitud de actualización fue recibida. El área de costos la revisará.'
+              : 'Tu solicitud fue recibida. Te contactaremos pronto.'),
         });
       },
       error: (err: HttpErrorResponse) => {

@@ -43,6 +43,7 @@ export class ContractorManagement implements OnInit {
     { id: 1, label: 'En espera'   },
     { id: 2, label: 'Aprobado'    },
     { id: 3, label: 'No aprobado' },
+    { id: 4, label: 'Aprobado - actualización pendiente' },
   ];
 
   // Filtros básicos

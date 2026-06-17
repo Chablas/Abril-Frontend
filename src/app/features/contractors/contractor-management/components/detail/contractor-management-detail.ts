@@ -70,6 +70,82 @@ export class ContractorManagementDetail {
     });
   }
 
+  /** Filas de comparación datos actuales vs propuestos (estado 4). */
+  comparisonRows(): { label: string; current: string; proposed: string }[] {
+    const p = this.item.pendingUpdate;
+    if (!p) return [];
+    const norm = (v: string | null | undefined) => (v ?? '').trim();
+    const emails = (list: string[] | null | undefined) => (list ?? []).slice().sort().join(', ');
+    return [
+      { label: 'Razón social',         current: norm(this.item.contributorName),                         proposed: norm(p.contributorName) },
+      { label: 'Dirección',            current: norm(this.item.contributorAddress),                      proposed: norm(p.contributorAddress) },
+      { label: 'Distrito',             current: norm(this.item.contributorDistrict),                     proposed: norm(p.contributorDistrict) },
+      { label: 'Provincia',            current: norm(this.item.contributorProvince),                     proposed: norm(p.contributorProvince) },
+      { label: 'Departamento',         current: norm(this.item.contributorDepartment),                   proposed: norm(p.contributorDepartment) },
+      { label: 'Actividad económica',  current: norm(this.item.contributorEconomicActivityDescription),  proposed: norm(p.contributorEconomicActivityDescription) },
+      { label: 'DNI representante',    current: norm(this.item.legalRepresentativeDni),                  proposed: norm(p.legalRepresentativeDni) },
+      { label: 'Representante legal',  current: norm(this.item.legalRepresentativeFullName),             proposed: norm(p.legalRepresentativeFullName) },
+      { label: 'N° partida registral', current: norm(this.item.legalEntityRegistryNumber),               proposed: norm(p.legalEntityRegistryNumber) },
+      { label: 'Correos',              current: emails(this.item.emails),                                proposed: emails(p.emails) },
+    ];
+  }
+
+  hasComparisonChanges(): boolean {
+    return this.comparisonRows().some((r) => r.current !== r.proposed);
+  }
+
+  approveUpdate(): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar actualización de datos?',
+      text: 'Se aplicarán los datos nuevos y el contratista volverá al estado "Aprobado".',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.approveUpdate(this.item.contractorId).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Actualización aplicada', text: res.message ?? 'Los nuevos datos están vigentes.' });
+          this.actionCompleted.emit();
+          this.closeModal.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  rejectUpdate(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Rechazar actualización de datos?',
+      text: 'Se descartarán los datos nuevos y se conservarán los datos anteriores.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.rejectUpdate(this.item.contractorId).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Actualización rechazada', text: res.message ?? 'Se conservan los datos anteriores.' });
+          this.actionCompleted.emit();
+          this.closeModal.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
   openEdit(): void {
     this.showEditModal = true;
   }

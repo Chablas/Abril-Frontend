@@ -10,6 +10,26 @@ export interface ContractorEmailItemDTO {
   active: boolean;
 }
 
+export interface ContractorPendingUpdateDTO {
+  contractorUpdateRequestId: number;
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress?: string | null;
+  contributorEconomicActivityDescription?: string | null;
+  contributorDistrict?: string | null;
+  contributorProvince?: string | null;
+  contributorDepartment?: string | null;
+  legalRepresentativeDni?: string | null;
+  legalRepresentativeFullName?: string | null;
+  legalEntityRegistryNumber?: string | null;
+  logoFileUrl?: string | null;
+  brochureFileUrl?: string | null;
+  fichaRucFileUrl?: string | null;
+  referencesListFileUrl?: string | null;
+  createdDateTime: string;
+  emails: string[];
+}
+
 export interface ContractorManagementDTO {
   contractorId: number;
   contributorId: number;
@@ -34,4 +54,5 @@ export interface ContractorManagementDTO {
   brochureFileUrl?: string | null;
   fichaRucFileUrl?: string | null;
   referencesListFileUrl?: string | null;
+  pendingUpdate?: ContractorPendingUpdateDTO | null;
 }
