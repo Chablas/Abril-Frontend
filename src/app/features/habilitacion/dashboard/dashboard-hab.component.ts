@@ -7,6 +7,7 @@ import { DashboardHabService } from '../../../core/services/dashboard-hab.servic
 import { HabEmpresaService } from '../services/hab-empresa.service';
 import { TrabajadorHabService } from '../services/trabajador-hab.service';
 import { EquipoHabService } from '../services/equipo-hab.service';
+import { HabUiService } from '../services/hab-ui.service';
 import { ContratistaUsuarios } from '../pages/dashboard-contratista/components/contratista-usuarios/contratista-usuarios';
 import {
   DashboardAdminDto,
@@ -35,7 +36,7 @@ export class DashboardHabComponent implements OnInit {
   data: DashboardAdminDto | null = null;
 
   // ── Contratista ──
-  activeSection: 'resumen' | 'usuarios' = 'resumen';
+  get activeSection(): 'resumen' | 'usuarios' { return this.habUiService.current; }
   empresaId: number | null = null;
   currentUserId: number | null = null;
   proyectos: EmpresaProyectoDto[] = [];
@@ -101,6 +102,7 @@ export class DashboardHabComponent implements OnInit {
     private habEmpresaService: HabEmpresaService,
     private trabajadorService: TrabajadorHabService,
     private equipoService: EquipoHabService,
+    private habUiService: HabUiService,
   ) {}
 
   ngOnInit(): void {

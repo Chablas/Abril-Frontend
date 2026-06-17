@@ -7,10 +7,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import {
+  AbrilPageHeaderComponent,
+  AbrilPageTab,
+} from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
 import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { HabUiService } from '../services/hab-ui.service';
 
 @Component({
   selector: 'app-gestion-hab',
@@ -42,21 +46,38 @@ export class GestionHabComponent implements OnInit, OnDestroy {
     return this.resumen?.kpis?.entregablesVencidos ?? 0;
   }
 
+  get usuariosActivo(): boolean {
+    return this.habUiService.current === 'usuarios';
+  }
+
+  get contratistaTabsConActivo(): AbrilPageTab[] {
+    return [
+      { label: 'Panel',        icono: 'ti-layout-dashboard', route: '/habilitacion/gestion/dashboard' },
+      { label: 'Trabajadores', icono: 'ti-users',            route: '/habilitacion/gestion/trabajadores' },
+      { label: 'Empresa',      icono: 'ti-building',         route: '/habilitacion/gestion/empresa' },
+      { label: 'Equipos',      icono: 'ti-truck',            route: '/habilitacion/gestion/equipos' },
+      { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
+      { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
+      { label: 'Usuarios',     icono: 'ti-users-group',      active: this.usuariosActivo },
+    ];
+  }
+
   readonly tabs = [
-    { label: 'Dashboard',      path: 'dashboard',    icon: 'tab-icon-dashboard' },
-    { label: 'Trabajadores',   path: 'trabajadores', icon: 'tab-icon-workers'   },
-    { label: 'Empresa',        path: 'empresa',      icon: 'tab-icon-empresa'   },
-    { label: 'Equipos',        path: 'equipos',      icon: 'tab-icon-equipos'   },
-    { label: 'Bandeja',        path: 'bandeja',      icon: 'tab-icon-bandeja'   },
-    { label: 'SCTR / Vida Ley', path: 'sctr-vidaley', icon: 'tab-icon-sctr'    },
-    { label: 'Inducciones',    path: 'inducciones',  icon: 'tab-icon-induccion' },
-    { label: 'Dossier',        path: 'dossier',      icon: 'tab-icon-dossier'   },
+    { label: 'Dashboard',       path: 'dashboard',    icon: 'tab-icon-dashboard' },
+    { label: 'Trabajadores',    path: 'trabajadores', icon: 'tab-icon-workers'   },
+    { label: 'Empresa',         path: 'empresa',      icon: 'tab-icon-empresa'   },
+    { label: 'Equipos',         path: 'equipos',      icon: 'tab-icon-equipos'   },
+    { label: 'Bandeja',         path: 'bandeja',      icon: 'tab-icon-bandeja'   },
+    { label: 'SCTR / Vida Ley', path: 'sctr-vidaley', icon: 'tab-icon-sctr'      },
+    { label: 'Inducciones',     path: 'inducciones',  icon: 'tab-icon-induccion' },
+    { label: 'Dossier',         path: 'dossier',      icon: 'tab-icon-dossier'   },
   ];
 
   constructor(
     private dashboardService: DashboardHabService,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
+    private habUiService: HabUiService,
   ) {}
 
   ngOnInit(): void {
@@ -85,5 +106,13 @@ export class GestionHabComponent implements OnInit, OnDestroy {
   onRefresh(): void {
     if (this.refreshing) return;
     this.loadResumen();
+  }
+
+  onTabClick(tab: AbrilPageTab): void {
+    if (tab.label === 'Usuarios') {
+      const next = this.habUiService.current === 'usuarios' ? 'resumen' : 'usuarios';
+      this.habUiService.setSection(next);
+      this.cdr.detectChanges();
+    }
   }
 }
