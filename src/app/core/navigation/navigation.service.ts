@@ -204,9 +204,11 @@ export class NavigationService {
 
   getModules(): NavModule[] {
     const isContratista = this.authService.isContratista();
+    const modulos = this.authService.getContratistaModulos();
     return this.config
-      .map((m) => {
+      .map((m): NavModule | null => {
         if (m.key === 'habilitacion') {
+          if (isContratista && modulos === 'SSOMA') return null;
           const route = isContratista
             ? '/habilitacion/dashboard-contratista'
             : '/habilitacion/gestion';
@@ -216,12 +218,15 @@ export class NavigationService {
             groups: this.filterGroups(m.groups),
           };
         }
-        if (m.key === 'gestion-ssoma' && isContratista) {
-          return {
-            ...m,
-            items: [{ label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' }],
-            groups: [],
-          };
+        if (m.key === 'gestion-ssoma') {
+          if (isContratista && modulos === 'INGRESOS') return null;
+          if (isContratista) {
+            return {
+              ...m,
+              items: [{ label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' }],
+              groups: [],
+            };
+          }
         }
         return {
           ...m,
@@ -229,7 +234,7 @@ export class NavigationService {
           groups: this.filterGroups(m.groups),
         };
       })
-      .filter((m) => m.items.length > 0 || (m.groups && m.groups.length > 0));
+      .filter((m): m is NavModule => m !== null && (m.items.length > 0 || (m.groups !== undefined && m.groups.length > 0)));
   }
 
   filterItems(items: NavItem[]): NavItem[] {

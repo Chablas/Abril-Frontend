@@ -21,6 +21,7 @@ export interface InvitarUsuarioDto {
   scope: string;
   proyectoIds?: number[];
   systemRoleId: number;
+  modulos?: string;
 }
 
 export interface ActualizarUsuarioDto {
@@ -28,6 +29,7 @@ export interface ActualizarUsuarioDto {
   scope?: string;
   activo?: boolean;
   proyectoIds?: number[];
+  modulos?: string;
 }
 
 @Injectable({ providedIn: 'root' })

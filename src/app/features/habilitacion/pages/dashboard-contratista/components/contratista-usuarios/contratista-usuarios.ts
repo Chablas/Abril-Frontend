@@ -65,9 +65,21 @@ export class ContratistaUsuarios implements OnInit {
       if (token) {
         try {
           const decoded: any = jwtDecode(token);
-          const sub = decoded.sub ?? decoded.userId ?? decoded.nameid ??
-            decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-          this.currentUserId = sub != null ? parseInt(String(sub), 10) : null;
+          const candidates = [
+            decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            decoded.userId,
+            decoded.nameid,
+            decoded.sub,
+          ];
+          for (const c of candidates) {
+            if (c != null) {
+              const parsed = parseInt(String(c), 10);
+              if (!isNaN(parsed)) {
+                this.currentUserId = parsed;
+                break;
+              }
+            }
+          }
         } catch { }
       }
     }
@@ -285,6 +297,14 @@ export class ContratistaUsuarios implements OnInit {
           </div>
         </div>
         ${tipoAccesoField}
+        <div style="margin-bottom:14px;">
+          <label style="${this.labelCss}">Módulos</label>
+          <select id="swal-modulos" style="${this.inputCss}">
+            <option value="AMBOS">Gestión de Ingresos + SSOMA</option>
+            <option value="INGRESOS">Solo Gestión de Ingresos</option>
+            <option value="SSOMA">Solo Gestión SSOMA</option>
+          </select>
+        </div>
       </div>`;
   }
 
@@ -323,13 +343,15 @@ export class ContratistaUsuarios implements OnInit {
     const proyectoIds = scope === 'POR_PROYECTO' ? this.getSelectedProyectoIds() : undefined;
     const systemRoleEl = document.getElementById('swal-system-role') as HTMLSelectElement | null;
     const systemRoleId = systemRoleEl ? parseInt(systemRoleEl.value, 10) : 11;
-    return { email, rolNombre, scope, proyectoIds, systemRoleId };
+    const modulos = (document.getElementById('swal-modulos') as HTMLSelectElement).value;
+    return { email, rolNombre, scope, proyectoIds, systemRoleId, modulos };
   }
 
   private preConfirmEditar(): ActualizarUsuarioDto {
     const rolNombre = (document.getElementById('swal-rol') as HTMLSelectElement).value;
     const scope = (document.getElementById('swal-scope') as HTMLSelectElement).value;
     const proyectoIds = scope === 'POR_PROYECTO' ? this.getSelectedProyectoIds() : [];
-    return { rolNombre, scope, proyectoIds };
+    const modulos = (document.getElementById('swal-modulos') as HTMLSelectElement).value;
+    return { rolNombre, scope, proyectoIds, modulos };
   }
 }

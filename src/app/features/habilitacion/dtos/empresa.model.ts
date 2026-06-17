@@ -60,6 +60,7 @@ export interface ContratistaTokenDto {
   allowedFeatures: string[];
   scope?: string;
   proyectoIds?: number[];
+  modulos?: string;
 }
 
 export interface EntregableMesArchivoDto {
