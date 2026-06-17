@@ -18,8 +18,8 @@ export interface SsomaHeaderBtn {
 export interface AbrilPageTab {
   label: string;
   icono: string;
-  route: string;
-  /** Si se indica, la pestaña solo se muestra si el usuario tiene acceso a esa feature. */
+  route?: string;
+  active?: boolean;
   featureKey?: string;
 }
 
@@ -41,11 +41,11 @@ export class AbrilPageHeaderComponent {
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();
   @Output() menuClick = new EventEmitter<void>();
+  @Output() tabClick = new EventEmitter<AbrilPageTab>();
 
   private layoutService = inject(LayoutService);
   private navigationService = inject(NavigationService);
 
-  /** Pestañas visibles: oculta las que tienen featureKey sin acceso del usuario. */
   get visibleTabs(): AbrilPageTab[] {
     return this.tabs.filter(
       (t) => !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey),

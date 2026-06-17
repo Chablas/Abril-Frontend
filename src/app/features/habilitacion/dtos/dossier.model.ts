@@ -1,5 +1,5 @@
-export type DossierEstadoSemana = 'Pendiente' | 'Enviado' | 'Observado' | 'Aprobado' | 'NoAplica';
-export type DossierEstadoDocumento = 'Pendiente' | 'Subido' | 'NoAplica';
+export type DossierEstadoSemana = 'Borrador' | 'Enviado' | 'Aprobado' | 'Rechazado' | 'NoAplica';
+export type DossierEstadoDocumento = 'Pendiente' | 'Subido' | 'NA';
 export type DossierTipoDocumento =
   | 'Accidente'
   | 'EPP'
@@ -21,25 +21,43 @@ export const DOSSIER_TIPOS: DossierTipoDocumento[] = [
 
 export interface DossierSemanaDto {
   id: number;
-  semanaNumero: number;
+  contributorId: number;
+  proyectoId: number;
+  anio: number;
+  numeroSemana: number;
   fechaInicio: string;
   fechaFin: string;
   estado: DossierEstadoSemana;
-  comentarioSsoma: string | null;
-  enviadoEn: string | null;
-  revisadoEn: string | null;
+  obsRevisor: string | null;
+  createdAt: string;
+  totalDocs: number;
+  subidos: number;
+  na: number;
 }
 
 export interface DossierDocumentoDto {
   id: number;
-  tipoDocumento: DossierTipoDocumento;
+  dossierId: number;
+  tipoDoc: DossierTipoDocumento;
+  nombreArchivo: string | null;
+  archivoPath: string | null;
   estado: DossierEstadoDocumento;
-  archivoUrl: string | null;
-  archivoNombre: string | null;
-  justificacionNa: string | null;
-  subidoEn: string | null;
+  createdAt: string;
+  updatedAt: string | null;
 }
 
 export interface DossierSemanaDetalleDto extends DossierSemanaDto {
   documentos: DossierDocumentoDto[];
+}
+
+export interface EnsureSemanaRequest {
+  contributorId: number;
+  proyectoId: number;
+  numeroSemana: number;
+  anio: number;
+}
+
+export interface RevisarDossierRequest {
+  estado: string;
+  obsRevisor?: string | null;
 }

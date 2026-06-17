@@ -69,6 +69,15 @@ export const HABILITACION_ROUTES: Routes = [
         canActivate: [authGuard],
         data: { titulo: 'HABILITACIÓN - DOSSIER SEMANAL' },
       },
+      {
+        path: 'usuarios',
+        loadComponent: () =>
+          import('./pages/dashboard-contratista/components/contratista-usuarios/contratista-usuarios').then(
+            (m) => m.ContratistaUsuarios,
+          ),
+        canActivate: [authGuard],
+        data: { titulo: 'HABILITACIÓN - USUARIOS' },
+      },
     ],
   },
 

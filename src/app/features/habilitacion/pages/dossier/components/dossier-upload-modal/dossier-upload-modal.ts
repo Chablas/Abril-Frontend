@@ -38,8 +38,6 @@ export class DossierUploadModal implements OnInit {
 
   readonly tipos = DOSSIER_TIPOS;
 
-  justificacionesNa: Record<string, string> = {};
-  mostrarJustificacion: Record<string, boolean> = {};
   subiendoPor: Record<string, boolean> = {};
 
   constructor(
@@ -55,7 +53,7 @@ export class DossierUploadModal implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.dossierService.getSemanaDetalle(this.semanaId).subscribe({
+    this.dossierService.getDetalle(this.semanaId).subscribe({
       next: (d) => {
         this.detalle = d;
         this.loading = false;
@@ -70,32 +68,26 @@ export class DossierUploadModal implements OnInit {
   }
 
   getDoc(tipo: DossierTipoDocumento): DossierDocumentoDto | undefined {
-    return this.detalle?.documentos.find((d) => d.tipoDocumento === tipo);
+    return this.detalle?.documentos.find((d) => d.tipoDoc === tipo);
   }
 
   chipSemana(estado: string): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Observado') return 'chip-orange';
-    if (estado === 'Enviado') return 'chip-orange';
+    if (estado === 'Rechazado' || estado === 'Enviado') return 'chip-orange';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }
 
   chipDoc(estado: DossierEstadoDocumento): string {
     if (estado === 'Subido') return 'chip-green';
-    if (estado === 'NoAplica') return 'chip-gray';
+    if (estado === 'NA') return 'chip-gray';
     return 'chip-blue';
   }
 
   labelDoc(estado: DossierEstadoDocumento): string {
     if (estado === 'Subido') return 'Subido';
-    if (estado === 'NoAplica') return 'N/A';
+    if (estado === 'NA') return 'N/A';
     return 'Pendiente';
-  }
-
-  triggerUpload(tipo: DossierTipoDocumento): void {
-    const input = document.getElementById(`file-${tipo}`) as HTMLInputElement;
-    input?.click();
   }
 
   onFileSelected(event: Event, tipo: DossierTipoDocumento): void {
@@ -118,21 +110,22 @@ export class DossierUploadModal implements OnInit {
     });
   }
 
-  toggleNa(tipo: DossierTipoDocumento): void {
-    this.mostrarJustificacion[tipo] = !this.mostrarJustificacion[tipo];
-    this.cdr.detectChanges();
-  }
-
-  confirmarNa(tipo: DossierTipoDocumento): void {
+  marcarNa(tipo: DossierTipoDocumento): void {
     const doc = this.getDoc(tipo);
-    if (!doc) return;
-    this.dossierService.marcarDocumentoNa(doc.id, this.justificacionesNa[tipo] || undefined).subscribe({
-      next: () => {
-        this.mostrarJustificacion[tipo] = false;
-        this.justificacionesNa[tipo] = '';
-        this.load();
-      },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    if (!doc || doc.estado === 'NA') return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Marcar como No Aplica?',
+      text: `Documento: ${tipo}`,
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.dossierService.marcarDocumentoNa(doc.id).subscribe({
+        next: () => this.load(),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
     });
   }
 
@@ -140,7 +133,7 @@ export class DossierUploadModal implements OnInit {
     if (!this.detalle) return false;
     return this.tipos.every((t) => {
       const doc = this.getDoc(t);
-      return doc?.estado === 'Subido' || doc?.estado === 'NoAplica';
+      return doc?.estado === 'Subido' || doc?.estado === 'NA';
     });
   }
 
@@ -149,7 +142,8 @@ export class DossierUploadModal implements OnInit {
       this.todoResuelto &&
       !!this.detalle &&
       this.detalle.estado !== 'Enviado' &&
-      this.detalle.estado !== 'Aprobado'
+      this.detalle.estado !== 'Aprobado' &&
+      this.detalle.estado !== 'NoAplica'
     );
   }
 
@@ -167,7 +161,7 @@ export class DossierUploadModal implements OnInit {
       if (!res.isConfirmed) return;
       this.enviando = true;
       this.loaderService.show();
-      this.dossierService.enviarDossier(this.semanaId).subscribe({
+      this.dossierService.enviar(this.semanaId).subscribe({
         next: () => {
           this.enviando = false;
           this.loaderService.hide();

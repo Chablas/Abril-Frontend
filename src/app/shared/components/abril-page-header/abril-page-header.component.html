@@ -41,12 +41,20 @@
 
 <div class="abril-tabs" *ngIf="visibleTabs.length">
   <nav class="abril-tabs__nav">
-    <a *ngFor="let tab of visibleTabs"
-       class="abril-tabs__tab"
-       [routerLink]="tab.route"
-       routerLinkActive="abril-tabs__tab--active">
-      <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
-    </a>
+    <ng-container *ngFor="let tab of visibleTabs">
+      <a *ngIf="tab.route"
+         class="abril-tabs__tab"
+         [routerLink]="tab.route"
+         routerLinkActive="abril-tabs__tab--active">
+        <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
+      </a>
+      <a *ngIf="!tab.route"
+         class="abril-tabs__tab"
+         [class.abril-tabs__tab--active]="tab.active"
+         (click)="tabClick.emit(tab); $event.stopPropagation()">
+        <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
+      </a>
+    </ng-container>
   </nav>
   <div style="height:1px; background:#e5e7eb; width:100%;"></div>
 </div>

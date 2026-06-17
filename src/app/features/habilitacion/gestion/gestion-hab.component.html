@@ -1,32 +1,24 @@
 <app-abril-page-header
   badge="HABILITACIÓN"
-  titulo="Gestión de Ingresos"
-  subtitulo="Habilitación · Seguridad · Salud Ocupacional"
-  [pills]="[
+  [titulo]="esContratista ? 'Panel Contratista' : 'Gestión de Ingresos'"
+  [subtitulo]="esContratista ? '' : 'Habilitación · Seguridad · Salud Ocupacional'"
+  [pills]="esContratista ? [] : [
     { icono: 'ti-building', texto: empresasTotal + ' empresas activas' },
     { icono: 'ti-users',    texto: workersTotal + ' workers' },
     { icono: 'ti-clock',    texto: entregablesVencidos + ' vencidos', warn: entregablesVencidos > 0 }
   ]"
-  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  [botonSecundario]="esContratista ? undefined : { label: 'Actualizar', icono: 'ti-refresh' }"
+  [tabs]="esContratista ? contratistaTabsConActivo : []"
   (secondaryClick)="onRefresh()">
 </app-abril-page-header>
 
 <div class="gestion-shell">
-
-  <!-- ══ TABS ══════════════════════════════════════════════════ -->
-  <nav class="gestion-tabs">
+  <nav class="gestion-tabs" *ngIf="!esContratista">
     @for (tab of tabs; track tab.path) {
-      <a
-        class="gestion-tab"
-        [routerLink]="tab.path"
-        routerLinkActive="gestion-tab--active"
-      >{{ tab.label }}</a>
+      <a class="gestion-tab" [routerLink]="tab.path" routerLinkActive="gestion-tab--active">{{ tab.label }}</a>
     }
   </nav>
-
-  <!-- ══ CONTENIDO ═════════════════════════════════════════════ -->
   <div class="gestion-content">
     <router-outlet />
   </div>
-
 </div>

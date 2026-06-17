@@ -8,6 +8,7 @@ import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { EquipoHabService } from '../../services/equipo-hab.service';
 import { EmpresaEntregableDto, EmpresaProyectoDto } from '../../dtos/empresa.model';
 import { ContratistaUsuarios } from './components/contratista-usuarios/contratista-usuarios';
+import { AbrilPageHeaderComponent, AbrilPageTab } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 interface ProgresoProyecto {
   total: number;
@@ -28,7 +29,7 @@ interface VencerItem {
 @Component({
   selector: 'app-dashboard-contratista',
   standalone: true,
-  imports: [CommonModule, RouterModule, ContratistaUsuarios],
+  imports: [CommonModule, RouterModule, ContratistaUsuarios, AbrilPageHeaderComponent],
   templateUrl: './dashboard-contratista.html',
   styleUrl: './dashboard-contratista.css',
 })
@@ -61,6 +62,26 @@ export class DashboardContratista implements OnInit {
 
   // Próximos a vencer (datos mock hasta que haya endpoint)
   proximosVencer: VencerItem[] = [];
+
+  headerTabs: AbrilPageTab[] = [
+    { label: 'Panel',        icono: 'ti-layout-dashboard', route: '/habilitacion/dashboard-contratista' },
+    { label: 'Trabajadores', icono: 'ti-users',            route: '/habilitacion/gestion/trabajadores' },
+    { label: 'Empresa',      icono: 'ti-building',         route: '/habilitacion/gestion/empresa' },
+    { label: 'Equipos',      icono: 'ti-truck',            route: '/habilitacion/gestion/equipos' },
+    { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
+    { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
+    { label: 'Usuarios',     icono: 'ti-users-group',      active: false },
+  ];
+
+  onTabClick(tab: AbrilPageTab): void {
+    if (tab.label === 'Usuarios') {
+      const isActive = this.activeSection === 'usuarios';
+      this.activeSection = isActive ? 'resumen' : 'usuarios';
+      tab.active = !isActive;
+      this.headerTabs.forEach(t => { if (t !== tab) t.active = false; });
+      this.cdr.detectChanges();
+    }
+  }
 
   get esContratista(): boolean { return this.authService.isContratista(); }
   get empresaNombre(): string {
