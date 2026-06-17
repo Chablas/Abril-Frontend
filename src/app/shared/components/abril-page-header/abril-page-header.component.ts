@@ -17,7 +17,8 @@ export interface SsomaHeaderBtn {
 export interface AbrilPageTab {
   label: string;
   icono: string;
-  route: string;
+  route?: string;
+  active?: boolean;
 }
 
 @Component({
@@ -38,6 +39,7 @@ export class AbrilPageHeaderComponent {
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();
   @Output() menuClick = new EventEmitter<void>();
+  @Output() tabClick = new EventEmitter<AbrilPageTab>();
 
   private layoutService = inject(LayoutService);
 

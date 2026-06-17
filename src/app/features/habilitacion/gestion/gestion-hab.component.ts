@@ -10,6 +10,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
 import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-gestion-hab',
@@ -25,6 +26,10 @@ export class GestionHabComponent implements OnInit, OnDestroy {
 
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
+  get esContratista(): boolean {
+    return this.authService.isContratista();
+  }
+
   get empresasTotal(): number {
     return this.resumen?.kpis?.empresasTotal ?? 0;
   }
@@ -38,19 +43,20 @@ export class GestionHabComponent implements OnInit, OnDestroy {
   }
 
   readonly tabs = [
-    { label: 'Dashboard',     path: 'dashboard',    icon: 'tab-icon-dashboard' },
-    { label: 'Trabajadores',  path: 'trabajadores',  icon: 'tab-icon-workers'  },
-    { label: 'Empresa',       path: 'empresa',       icon: 'tab-icon-empresa'  },
-    { label: 'Equipos',       path: 'equipos',       icon: 'tab-icon-equipos'  },
-    { label: 'Bandeja',       path: 'bandeja',       icon: 'tab-icon-bandeja'  },
-    { label: 'SCTR / Vida Ley', path: 'sctr-vidaley', icon: 'tab-icon-sctr'   },
-    { label: 'Inducciones',   path: 'inducciones',   icon: 'tab-icon-induccion'},
-    { label: 'Dossier',       path: 'dossier',       icon: 'tab-icon-dossier'  },
+    { label: 'Dashboard',      path: 'dashboard',    icon: 'tab-icon-dashboard' },
+    { label: 'Trabajadores',   path: 'trabajadores', icon: 'tab-icon-workers'   },
+    { label: 'Empresa',        path: 'empresa',      icon: 'tab-icon-empresa'   },
+    { label: 'Equipos',        path: 'equipos',      icon: 'tab-icon-equipos'   },
+    { label: 'Bandeja',        path: 'bandeja',      icon: 'tab-icon-bandeja'   },
+    { label: 'SCTR / Vida Ley', path: 'sctr-vidaley', icon: 'tab-icon-sctr'    },
+    { label: 'Inducciones',    path: 'inducciones',  icon: 'tab-icon-induccion' },
+    { label: 'Dossier',        path: 'dossier',      icon: 'tab-icon-dossier'   },
   ];
 
   constructor(
     private dashboardService: DashboardHabService,
     private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {

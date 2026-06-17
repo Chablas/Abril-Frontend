@@ -1,29 +1,12 @@
 <div class="db-root" *ngIf="esContratista">
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="logo-area">
-      <div class="logo-mark">A</div>
-      <span class="logo-name">Abril</span>
-      <div class="logo-sep"></div>
-    </div>
-    <nav class="top-nav" *ngIf="activeSection === 'resumen'">
-      <span class="nt active"><i class="ti ti-layout-dashboard"></i> Panel</span>
-      <span class="nt" (click)="navegarA('/habilitacion/trabajadores')"><i class="ti ti-users"></i> Trabajadores</span>
-      <span class="nt" (click)="navegarA('/habilitacion/empresa')"><i class="ti ti-building"></i> Empresa</span>
-      <span class="nt" (click)="navegarA('/habilitacion/equipos')"><i class="ti ti-truck"></i> Equipos</span>
-      <span class="nt" (click)="navegarA('/habilitacion/sctr-vidaley')"><i class="ti ti-shield-check"></i> SCTR</span>
-      <span class="nt" (click)="navegarA('/habilitacion/inducciones')"><i class="ti ti-school"></i> Inducciones</span>
-    </nav>
-    <div class="topbar-spacer"></div>
-    <div class="topbar-right">
-      <span class="company-chip" *ngIf="empresaNombre">{{ empresaNombre }}</span>
-      <button class="nt usuarios-btn" (click)="activeSection = activeSection === 'usuarios' ? 'resumen' : 'usuarios'">
-        <i class="ti ti-users-group"></i> Usuarios
-      </button>
-      <div class="avatar"><i class="ti ti-user"></i></div>
-    </div>
-  </div>
+  <app-abril-page-header
+    badge="HABILITACIÓN"
+    titulo="Panel Contratista"
+    [subtitulo]="empresaNombre"
+    [tabs]="headerTabs"
+    (tabClick)="onTabClick($event)">
+  </app-abril-page-header>
 
   <!-- ALERT BAR -->
   <div class="alert-bar" *ngIf="alertasCount > 0">
@@ -171,7 +154,7 @@
             </span>
           </div>
         </div>
-        <div class="card-link" (click)="navegarA('/habilitacion/empresa')">
+        <div class="card-link" (click)="navegarA('/habilitacion/gestion/empresa')">
           <i class="ti ti-arrow-right"></i> Ver todos los entregables
         </div>
       </div>
@@ -219,7 +202,7 @@
         <div class="empty-sm" *ngIf="topNoHabilitados.length === 0 && !loadingTrabajadores">
           <i class="ti ti-circle-check" style="color:#22c55e"></i> Todos habilitados
         </div>
-        <div class="card-link" (click)="navegarA('/habilitacion/trabajadores')">
+        <div class="card-link" (click)="navegarA('/habilitacion/gestion/trabajadores')">
           <i class="ti ti-arrow-right"></i> Ver {{ totalTrabajadores }} trabajadores
         </div>
       </div>
