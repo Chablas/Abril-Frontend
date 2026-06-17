@@ -218,15 +218,17 @@ export class NavigationService {
             groups: this.filterGroups(m.groups),
           };
         }
-        if (m.key === 'gestion-ssoma') {
-          if (isContratista && modulos === 'INGRESOS') return null;
-          if (isContratista) {
-            return {
-              ...m,
-              items: [{ label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' }],
-              groups: [],
-            };
-          }
+        if (m.key === 'gestion-ssoma' && isContratista) {
+          if (modulos === 'INGRESOS') return null;
+          return {
+            ...m,
+            items: [
+              { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
+              { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
+              { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
+            ],
+            groups: [],
+          };
         }
         return {
           ...m,
@@ -234,7 +236,13 @@ export class NavigationService {
           groups: this.filterGroups(m.groups),
         };
       })
-      .filter((m): m is NavModule => m !== null && (m.items.length > 0 || (m.groups !== undefined && m.groups.length > 0)));
+      .filter((m): m is NavModule => {
+        if (m === null) return false;
+        if (!isContratista) return true;
+        if (m.key === 'habilitacion' && modulos === 'SSOMA') return false;
+        if (m.key === 'gestion-ssoma' && modulos === 'INGRESOS') return false;
+        return true;
+      });
   }
 
   filterItems(items: NavItem[]): NavItem[] {

@@ -7,6 +7,7 @@ import {
   ContratistaUsuarioService,
   InvitarUsuarioDto,
   ActualizarUsuarioDto,
+  WorkerBusquedaDto,
 } from '../../../../services/contratista-usuario.service';
 import { HabEmpresaService } from '../../../../services/hab-empresa.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -32,6 +33,8 @@ export class ContratistaUsuarios implements OnInit {
   usuarios: ContratistaUsuarioDto[] = [];
   proyectos: ProyectoDisponibleDto[] = [];
   loading = true;
+  workerSeleccionado: WorkerBusquedaDto | null = null;
+  tipoInvitacion: 'externo' | 'worker' = 'externo';
 
   get esOwner(): boolean {
     if (this.forceAdminMode) return true;
@@ -114,42 +117,162 @@ export class ContratistaUsuarios implements OnInit {
     });
   }
 
-  abrirModalInvitar(): void {
-    const proyectosHtml = this.buildProyectosHtml([]);
-    Swal.fire({
-      title: 'Invitar usuario',
-      html: this.buildFormHtml({
-        email: true,
-        rolNombre: '',
-        scope: 'TODOS',
-        proyectosHtml,
-        showTipoAcceso: this.contractorId === this.CASEVIP_ID || this.contractorId === this.CLINICA_CONTRACTOR_ID,
-        isClinica: this.contractorId === this.CLINICA_CONTRACTOR_ID,
-      }),
+  async abrirModalInvitar(): Promise<void> {
+    let tipoElegido: 'externo' | 'worker' | null = null;
+
+    await Swal.fire({
+      title: 'Tipo de usuario',
+      html: `
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+          <button id="btn-externo" style="padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;text-align:left;background:#fff;">
+            <strong style="color:#0f172a;">Usuario externo</strong>
+            <p style="margin:4px 0 0;font-size:0.82rem;color:#64748b;">Persona de oficina o supervisor remoto. Ingresa su email.</p>
+          </button>
+          <button id="btn-worker" style="padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;text-align:left;background:#fff;">
+            <strong style="color:#0f172a;">Trabajador en obra</strong>
+            <p style="margin:4px 0 0;font-size:0.82rem;color:#64748b;">Está registrado en la empresa. Búscalo por DNI o apellido.</p>
+          </button>
+        </div>`,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      didOpen: () => {
+        document.getElementById('btn-externo')?.addEventListener('click', () => {
+          tipoElegido = 'externo';
+          Swal.close();
+        });
+        document.getElementById('btn-worker')?.addEventListener('click', () => {
+          tipoElegido = 'worker';
+          Swal.close();
+        });
+      },
+    });
+
+    if (tipoElegido === null) return;
+
+    if (tipoElegido === 'externo') {
+      const proyectosHtml = this.buildProyectosHtml([]);
+      Swal.fire({
+        title: 'Invitar usuario',
+        html: this.buildFormHtml({
+          email: true,
+          rolNombre: '',
+          scope: 'TODOS',
+          proyectosHtml,
+          showTipoAcceso: this.contractorId === this.CASEVIP_ID || this.contractorId === this.CLINICA_CONTRACTOR_ID,
+          isClinica: this.contractorId === this.CLINICA_CONTRACTOR_ID,
+        }),
+        showCancelButton: true,
+        confirmButtonText: 'Invitar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#64bc04',
+        focusConfirm: false,
+        width: '420px',
+        didOpen: () => this.hookScopeToggle(),
+        preConfirm: () => this.preConfirmInvitar(),
+      }).then((result) => {
+        if (!result.isConfirmed || !result.value) return;
+        this.usuarioService
+          .invitar(this.contractorId, result.value as InvitarUsuarioDto)
+          .subscribe({
+            next: () => {
+              Swal.fire({ icon: 'success', title: 'Invitación enviada', timer: 1800, showConfirmButton: false });
+              this.loadUsuarios();
+            },
+            error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+          });
+      });
+    } else {
+      await this.abrirModalWorker();
+    }
+  }
+
+  private async abrirModalWorker(): Promise<void> {
+    const { value } = await Swal.fire({
+      title: 'Buscar trabajador',
+      html: `
+        <input id="swal-search" type="text" placeholder="DNI o apellido..."
+          style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:0.88rem;box-sizing:border-box;">
+        <div id="swal-results" style="margin-top:10px;max-height:200px;overflow-y:auto;"></div>
+        <div id="swal-worker-seleccionado" style="display:none;margin-top:10px;padding:8px;background:#f0fdf4;border-radius:8px;font-size:0.85rem;color:#166534;"></div>
+        <div id="swal-email-worker" style="display:none;margin-top:10px;">
+          <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;">Email *</label>
+          <input id="swal-email" type="email" placeholder="email@empresa.com"
+            style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:0.88rem;box-sizing:border-box;margin-top:4px;">
+        </div>
+        <div id="swal-modulos-worker" style="display:none;margin-top:10px;">
+          <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;">Módulos</label>
+          <select id="swal-modulos" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:0.88rem;margin-top:4px;">
+            <option value="AMBOS">Gestión de Ingresos + SSOMA</option>
+            <option value="INGRESOS">Solo Gestión de Ingresos</option>
+            <option value="SSOMA">Solo Gestión SSOMA</option>
+          </select>
+        </div>`,
       showCancelButton: true,
       confirmButtonText: 'Invitar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#64bc04',
-      focusConfirm: false,
-      width: '420px',
-      didOpen: () => this.hookScopeToggle(),
-      preConfirm: () => this.preConfirmInvitar(),
-    }).then((result) => {
-      if (!result.isConfirmed || !result.value) return;
-      this.usuarioService
-        .invitar(this.contractorId, result.value as InvitarUsuarioDto)
-        .subscribe({
-          next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Invitación enviada',
-              timer: 1800,
-              showConfirmButton: false,
+      width: '440px',
+      didOpen: () => {
+        const searchEl = document.getElementById('swal-search') as HTMLInputElement;
+        const resultsEl = document.getElementById('swal-results')!;
+
+        searchEl.addEventListener('input', async () => {
+          const q = searchEl.value.trim();
+          if (q.length < 2) { resultsEl.innerHTML = ''; return; }
+          const workers = await this.usuarioService
+            .buscarWorkers(this.contractorId, q)
+            .toPromise();
+          resultsEl.innerHTML = (workers ?? []).map((w) => `
+            <div data-id="${w.id}" data-nombre="${w.nombreCompleto ?? ''}" data-email="${w.emailPersonal ?? ''}"
+              style="padding:8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:0.83rem;">
+              <strong>${w.nombreCompleto ?? '—'}</strong> · ${w.dni ?? ''}
+              ${w.emailPersonal ? `<span style="color:#64748b"> · ${w.emailPersonal}</span>` : '<span style="color:#f59e0b"> · Sin email</span>'}
+            </div>`).join('');
+
+          resultsEl.querySelectorAll('[data-id]').forEach((el) => {
+            el.addEventListener('click', () => {
+              const elem = el as HTMLElement;
+              const w = { id: parseInt(elem.dataset['id']!), nombre: elem.dataset['nombre'], email: elem.dataset['email'] };
+              (window as any)._workerSeleccionado = w;
+              document.getElementById('swal-worker-seleccionado')!.style.display = 'block';
+              document.getElementById('swal-worker-seleccionado')!.textContent = `✓ ${w.nombre}`;
+              document.getElementById('swal-email-worker')!.style.display = w.email ? 'none' : 'block';
+              document.getElementById('swal-modulos-worker')!.style.display = 'block';
+              resultsEl.innerHTML = '';
+              searchEl.value = '';
             });
-            this.loadUsuarios();
-          },
-          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+          });
         });
+      },
+      preConfirm: () => {
+        const w = (window as any)._workerSeleccionado;
+        if (!w) { Swal.showValidationMessage('Selecciona un trabajador'); return false; }
+        const emailEl = document.getElementById('swal-email') as HTMLInputElement | null;
+        const email = w.email || emailEl?.value?.trim();
+        if (!email) { Swal.showValidationMessage('Ingresa un email para este trabajador'); return false; }
+        const modulos = (document.getElementById('swal-modulos') as HTMLSelectElement)?.value ?? 'AMBOS';
+        return { workerId: w.id, email, modulos };
+      },
+    });
+
+    if (!value) return;
+
+    (window as any)._workerSeleccionado = null;
+    this.usuarioService.invitar(this.contractorId, {
+      email: value.email,
+      rolNombre: 'ADMIN',
+      scope: 'TODOS',
+      systemRoleId: 11,
+      modulos: value.modulos,
+      workerId: value.workerId,
+      esWorker: true,
+    }).subscribe({
+      next: () => {
+        Swal.fire({ icon: 'success', title: 'Trabajador invitado', timer: 1800, showConfirmButton: false });
+        this.loadUsuarios();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 

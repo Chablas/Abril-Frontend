@@ -15,6 +15,13 @@ export interface ContratistaUsuarioDto {
   proyectoIds: number[];
 }
 
+export interface WorkerBusquedaDto {
+  id: number;
+  dni: string | null;
+  nombreCompleto: string | null;
+  emailPersonal: string | null;
+}
+
 export interface InvitarUsuarioDto {
   email: string;
   rolNombre: string;
@@ -22,6 +29,8 @@ export interface InvitarUsuarioDto {
   proyectoIds?: number[];
   systemRoleId: number;
   modulos?: string;
+  workerId?: number;
+  esWorker?: boolean;
 }
 
 export interface ActualizarUsuarioDto {
@@ -61,6 +70,13 @@ export class ContratistaUsuarioService {
       headers: buildHabHeaders(),
       params: buildHabParams({ contractorId }),
     });
+  }
+
+  buscarWorkers(contractorId: number, search: string): Observable<WorkerBusquedaDto[]> {
+    return this.http.get<WorkerBusquedaDto[]>(
+      `${this.base}/${contractorId}/buscar-workers`,
+      { headers: buildHabHeaders(), params: { search } },
+    );
   }
 
   desactivar(id: number, contractorId: number): Observable<void> {
