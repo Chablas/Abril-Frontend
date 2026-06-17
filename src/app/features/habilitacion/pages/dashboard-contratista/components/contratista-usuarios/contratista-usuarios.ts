@@ -53,6 +53,14 @@ export class ContratistaUsuarios implements OnInit {
       this.contractorId = this.authService.getEmpresaId() ?? 0;
     }
     if (this.currentUserId == null) {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+        if (user?.userId != null) {
+          this.currentUserId = parseInt(String(user.userId), 10);
+        }
+      } catch { }
+    }
+    if (this.currentUserId == null) {
       const token = this.authService.getToken();
       if (token) {
         try {
@@ -63,6 +71,7 @@ export class ContratistaUsuarios implements OnInit {
         } catch { }
       }
     }
+    console.log('currentUserId resuelto:', this.currentUserId);
     this.loadUsuarios();
     this.loadProyectos();
   }
