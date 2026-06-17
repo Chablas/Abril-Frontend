@@ -11,6 +11,7 @@ import {
 import { HabEmpresaService } from '../../../../services/hab-empresa.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { jwtDecode } from 'jwt-decode';
 import { ProyectoDisponibleDto } from '../../../../dtos/empresa.model';
 
 @Component({
@@ -50,6 +51,17 @@ export class ContratistaUsuarios implements OnInit {
   ngOnInit(): void {
     if (!this.contractorId) {
       this.contractorId = this.authService.getEmpresaId() ?? 0;
+    }
+    if (this.currentUserId == null) {
+      const token = this.authService.getToken();
+      if (token) {
+        try {
+          const decoded: any = jwtDecode(token);
+          const sub = decoded.sub ?? decoded.userId ?? decoded.nameid ??
+            decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+          this.currentUserId = sub != null ? parseInt(String(sub), 10) : null;
+        } catch { }
+      }
     }
     this.loadUsuarios();
     this.loadProyectos();
