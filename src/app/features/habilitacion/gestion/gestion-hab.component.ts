@@ -15,6 +15,7 @@ import { DashboardHabService } from '../../../core/services/dashboard-hab.servic
 import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { HabUiService } from '../services/hab-ui.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-gestion-hab',
@@ -27,8 +28,10 @@ import { HabUiService } from '../services/hab-ui.service';
 export class GestionHabComponent implements OnInit, OnDestroy {
   resumen: DashboardAdminDto | null = null;
   refreshing = false;
+  contratistaTabsConActivo: AbrilPageTab[] = [];
 
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private sectionSub?: Subscription;
 
   get esContratista(): boolean {
     return this.authService.isContratista();
@@ -44,22 +47,6 @@ export class GestionHabComponent implements OnInit, OnDestroy {
 
   get entregablesVencidos(): number {
     return this.resumen?.kpis?.entregablesVencidos ?? 0;
-  }
-
-  get usuariosActivo(): boolean {
-    return this.habUiService.current === 'usuarios';
-  }
-
-  get contratistaTabsConActivo(): AbrilPageTab[] {
-    return [
-      { label: 'Panel',        icono: 'ti-layout-dashboard', route: '/habilitacion/gestion/dashboard' },
-      { label: 'Trabajadores', icono: 'ti-users',            route: '/habilitacion/gestion/trabajadores' },
-      { label: 'Empresa',      icono: 'ti-building',         route: '/habilitacion/gestion/empresa' },
-      { label: 'Equipos',      icono: 'ti-truck',            route: '/habilitacion/gestion/equipos' },
-      { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
-      { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
-      { label: 'Usuarios',     icono: 'ti-users-group',      active: this.usuariosActivo },
-    ];
   }
 
   readonly tabs = [
@@ -81,11 +68,29 @@ export class GestionHabComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.contratistaTabsConActivo = this.buildContratistaTabs();
+    this.sectionSub = this.habUiService.section$.subscribe(() => {
+      this.contratistaTabsConActivo = this.buildContratistaTabs();
+      this.cdr.markForCheck();
+    });
     this.loadResumen();
   }
 
   ngOnDestroy(): void {
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    this.sectionSub?.unsubscribe();
+  }
+
+  private buildContratistaTabs(): AbrilPageTab[] {
+    return [
+      { label: 'Panel',        icono: 'ti-layout-dashboard', route: '/habilitacion/gestion/dashboard' },
+      { label: 'Trabajadores', icono: 'ti-users',            route: '/habilitacion/gestion/trabajadores' },
+      { label: 'Empresa',      icono: 'ti-building',         route: '/habilitacion/gestion/empresa' },
+      { label: 'Equipos',      icono: 'ti-truck',            route: '/habilitacion/gestion/equipos' },
+      { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
+      { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
+      { label: 'Usuarios',     icono: 'ti-users-group',      active: this.habUiService.current === 'usuarios' },
+    ];
   }
 
   loadResumen(): void {
@@ -112,7 +117,6 @@ export class GestionHabComponent implements OnInit, OnDestroy {
     if (tab.label === 'Usuarios') {
       const next = this.habUiService.current === 'usuarios' ? 'resumen' : 'usuarios';
       this.habUiService.setSection(next);
-      this.cdr.detectChanges();
     }
   }
 }
