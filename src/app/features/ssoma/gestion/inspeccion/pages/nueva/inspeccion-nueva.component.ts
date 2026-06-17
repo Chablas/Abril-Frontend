@@ -174,6 +174,9 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     if (this.paso === 1) {
       return (this.proyectoId ?? 0) > 0 && !!this.tipoId && !!this.fecha;
     }
+    if (this.paso === 2) {
+      return this.respuestas.length > 0 && this.cntRespondidos === this.respuestas.length;
+    }
     return true;
   }
 
@@ -278,6 +281,10 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   confirmarHallazgo(): void {
     if (!this.nuevoHallazgo.descripcion.trim()) {
       Swal.fire({ icon: 'warning', title: 'Ingresa la descripción del hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+      return;
+    }
+    if (this.nuevoHallazgo.fotosBase64.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'Agrega al menos una foto al hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
       return;
     }
     this.hallazgos.push({ ...this.nuevoHallazgo });

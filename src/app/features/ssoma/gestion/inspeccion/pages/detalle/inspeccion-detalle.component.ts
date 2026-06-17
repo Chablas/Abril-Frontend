@@ -44,6 +44,7 @@ export class InspeccionDetalleComponent implements OnInit {
 
   lightboxUrl = '';
   lightboxOpen = false;
+  descargandoPdf = false;
 
   readonly circumference = 2 * Math.PI * 44;
 
@@ -215,5 +216,28 @@ export class InspeccionDetalleComponent implements OnInit {
   closeLightbox(): void {
     this.lightboxOpen = false;
     this.cdr.markForCheck();
+  }
+
+  descargarPdf(): void {
+    if (this.descargandoPdf) return;
+    this.descargandoPdf = true;
+    this.cdr.markForCheck();
+    this.inspeccionService.descargarPdf(this.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Inspeccion_${this.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.descargandoPdf = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.descargandoPdf = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

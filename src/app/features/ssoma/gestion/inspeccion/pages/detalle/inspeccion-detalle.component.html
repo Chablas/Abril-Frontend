@@ -14,8 +14,8 @@
         <h1>Detalle inspección</h1>
       }
     </div>
-    <button type="button" class="btn-pdf" disabled title="Próximamente">
-      <i class="ti ti-download"></i>
+    <button type="button" class="btn-pdf" (click)="descargarPdf()" [disabled]="descargandoPdf" title="Descargar PDF RM 050">
+      <i class="ti" [class.ti-download]="!descargandoPdf" [class.ti-loader-2]="descargandoPdf"></i>
     </button>
   </div>
 

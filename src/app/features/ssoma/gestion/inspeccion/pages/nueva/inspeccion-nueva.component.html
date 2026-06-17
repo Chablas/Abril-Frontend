@@ -248,7 +248,8 @@
 
             <div class="hallazgo-form__actions">
               <button type="button" class="btn-cancelar-hallazgo" (click)="cancelarHallazgo()">Cancelar</button>
-              <button type="button" class="btn-confirmar-hallazgo" (click)="confirmarHallazgo()">Agregar</button>
+              <button type="button" class="btn-confirmar-hallazgo" (click)="confirmarHallazgo()"
+                [disabled]="!nuevoHallazgo.descripcion.trim() || nuevoHallazgo.fotosBase64.length === 0">Agregar</button>
             </div>
           </div>
         }
