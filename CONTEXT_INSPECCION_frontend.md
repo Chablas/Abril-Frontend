@@ -1,6 +1,6 @@
 # CONTEXT_INSPECCION_frontend.md — Módulo Inspecciones Frontend
 # Angular 21 standalone, feature slice en features/ssoma/gestion/inspeccion/
-# Última actualización: 2026-06-16
+# Última actualización: 2026-06-17
 
 ---
 
@@ -650,6 +650,30 @@ Responsable área | Estado | Tasa cumplimiento gauge
   }
 }
 ```
+
+---
+
+## FIXES APLICADOS (2026-06-17)
+
+### inspeccion.service.ts — descargarPdf()
+```typescript
+descargarPdf(id: number): Observable<Blob>
+// GET {base}/{id}/pdf con auth header, responseType: 'blob'
+```
+
+### inspeccion-detalle — botón PDF funcional
+- `descargandoPdf = false` property
+- `descargarPdf()`: llama al servicio, crea blob URL, dispara descarga, revoca URL
+- Botón HTML: `(click)="descargarPdf()"` + `[disabled]="descargandoPdf"` + spinner icon
+- Pendiente: endpoint backend `GET /api/v1/ssoma-inspeccion/{id}/pdf` (QuestPDF)
+
+### inspeccion-nueva — checklist Siguiente bloqueado
+`puedeAvanzar` paso 2: `respuestas.length > 0 && cntRespondidos === respuestas.length`
+El botón "Siguiente" queda disabled hasta responder todos los items del checklist.
+
+### inspeccion-nueva — foto obligatoria en hallazgo
+- `confirmarHallazgo()` rechaza si `fotosBase64.length === 0` (toast warning)
+- Botón "Agregar" `[disabled]` hasta que haya descripción + al menos 1 foto
 
 ---
 
