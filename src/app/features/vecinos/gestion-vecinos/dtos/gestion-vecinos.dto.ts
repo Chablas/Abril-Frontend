@@ -31,6 +31,14 @@ export interface VecinoListItemDTO {
   vecinoTipoConstruccionId: number;
   tipoConstruccionDescripcion: string;
   createdDateTime: string;
+  solicitudesCount: number;
+  compromisosCount: number;
+  solicitudesAprobadas: number;
+  solicitudesEvaluables: number;
+  entregablesAprobados: number;
+  entregablesEvaluables: number;
+  requisitosSubidos: number;
+  requisitosEvaluables: number;
 }
 
 export interface VecinosPageDTO {
@@ -88,6 +96,56 @@ export interface VecinoCompromisoCreateDTO {
 export interface VecinoSolicitudCreateDTO {
   descripcion: string;
   esCritica: boolean;
+}
+
+// ── Vista por croquis ────────────────────────────────────────────────────
+export interface CroquisGestionLoteDTO {
+  projectCroquisLoteId: number;
+  numeroLote: string;
+  puntos: number[][];
+  vecinoId?: number | null;
+  vecinoNombre?: string | null;
+}
+
+export interface CroquisGestionDTO {
+  projectId: number;
+  projectDescription: string;
+  projectCroquisId: number;
+  imageUrl: string;
+  solicitudesCount: number;
+  compromisosCount: number;
+  solicitudesAprobadas: number;
+  solicitudesEvaluables: number;
+  entregablesAprobados: number;
+  entregablesEvaluables: number;
+  requisitosSubidos: number;
+  requisitosEvaluables: number;
+  lotes: CroquisGestionLoteDTO[];
+  vecinos: VecinoListItemDTO[];
+}
+
+export interface CroquisGestionResponseDTO {
+  croquis: CroquisGestionDTO[];
+  projects: ProjectOptionDTO[];
+  colindancias: CatalogOptionDTO[];
+  tiposConstruccion: CatalogOptionDTO[];
+}
+
+// ── Requisitos (Gestión de requisitos) ────────────────────────────────────
+export interface VecinoRequisitoItemDTO {
+  vecinoRequisitoId: number | null;
+  vecinoRequisitoTipoId: number;
+  tipoDescripcion: string;
+  orden: number;
+  vecinoRequisitoEstadoId: number;
+  estadoDescripcion: string;
+  archivoUrl?: string | null;
+  originalFileName?: string | null;
+}
+
+export interface VecinoRequisitosResponseDTO {
+  requisitos: VecinoRequisitoItemDTO[];
+  estados: CatalogOptionDTO[];
 }
 
 export interface VecinoCreateDTO {

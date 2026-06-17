@@ -12,6 +12,8 @@ import {
   VecinoSolicitudCreateDTO,
   VecinoCompromisoItemDTO,
   VecinoCompromisoCreateDTO,
+  CroquisGestionResponseDTO,
+  VecinoRequisitosResponseDTO,
 } from '../dtos/gestion-vecinos.dto';
 
 /** Persona devuelta por la consulta RENIEC. */
@@ -65,14 +67,33 @@ export class GestionVecinosService {
     });
   }
 
+  // ── Vista por croquis ───────────────────────────────────────────────
+  private readonly croquisApiUrl = `${environment.apiUrl}api/v1/ProjectCroquis`;
+
+  /** Todos los croquis registrados con sus lotes y vecinos, más catálogos para el alta. */
+  getCroquisGestion(): Observable<CroquisGestionResponseDTO> {
+    return this.http.get<CroquisGestionResponseDTO>(`${this.croquisApiUrl}/gestion`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Asigna (o quita con vecinoId = null) el vecino de un lote. */
+  assignVecinoToLote(loteId: number, vecinoId: number | null): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.croquisApiUrl}/lotes/${loteId}/vecino`,
+      { vecinoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
   getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
     return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/dni/${dni}`, {
       headers: this.authHeaders(),
     });
   }
 
-  create(dto: VecinoCreateDTO): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(this.apiUrl, dto, {
+  create(dto: VecinoCreateDTO): Observable<{ vecinoId: number; message: string }> {
+    return this.http.post<{ vecinoId: number; message: string }>(this.apiUrl, dto, {
       headers: this.authHeaders(),
     });
   }
@@ -126,6 +147,31 @@ export class GestionVecinosService {
     return this.http.patch<ApiMessageDTO>(
       `${this.apiUrl}/compromisos/entregables/${entregableId}/estado`,
       { vecinoEntregableEstadoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Requisitos ──────────────────────────────────────────────────────
+  getRequisitos(vecinoId: number): Observable<VecinoRequisitosResponseDTO> {
+    return this.http.get<VecinoRequisitosResponseDTO>(`${this.apiUrl}/${vecinoId}/requisitos`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  uploadRequisito(vecinoId: number, tipoId: number, file: File): Observable<{ archivoUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ archivoUrl: string; message: string }>(
+      `${this.apiUrl}/${vecinoId}/requisitos/${tipoId}/upload`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  setRequisitoNoAplica(vecinoId: number, tipoId: number, noAplica: boolean): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${vecinoId}/requisitos/${tipoId}/no-aplica`,
+      { noAplica },
       { headers: this.authHeaders() },
     );
   }

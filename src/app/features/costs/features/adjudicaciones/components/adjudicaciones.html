@@ -1,7 +1,11 @@
 <app-abril-page-header
-  badge="COSTOS Y PRESUPUESTO"
+  badge="COSTOS"
   titulo="Adjudicaciones"
-  subtitulo="Gestión de subcontratos y adjudicaciones por proyecto.">
+  subtitulo="Gestión de subcontratos y adjudicaciones por proyecto."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/costs/dashboard' },
+    { label: 'Adjudicaciones', icono: 'ti-list',            route: '/costs/adjudicaciones' }
+  ]">
 </app-abril-page-header>
 
 <div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">

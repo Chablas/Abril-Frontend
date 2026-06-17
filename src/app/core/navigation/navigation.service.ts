@@ -191,6 +191,11 @@ export class NavigationService {
     return raw ? JSON.parse(raw) : [];
   }
 
+  /** Indica si el usuario tiene acceso a la feature indicada. */
+  isFeatureAllowed(featureKey: string): boolean {
+    return this.getAllowedFeatures().includes(featureKey);
+  }
+
   private isItemAllowed(item: NavItem): boolean {
     if (item.featureKey) return this.getAllowedFeatures().includes(item.featureKey);
     if (item.roles?.length) return item.roles.some((r) => this.authService.hasRole(r));

@@ -3,11 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GestionVecinosService, VecinoFilter } from '../services/gestion-vecinos.service';
-import { VecinoFormOptionsDTO, VecinoListItemDTO } from '../dtos/gestion-vecinos.dto';
+import {
+  VecinoFormOptionsDTO,
+  VecinoListItemDTO,
+  CroquisGestionDTO,
+  CatalogOptionDTO,
+  ProjectOptionDTO,
+} from '../dtos/gestion-vecinos.dto';
+import { GestionCroquisView } from './croquis-view/gestion-croquis-view';
+import { GestionCroquisAdd } from './croquis-add/gestion-croquis-add';
 import { GestionVecinosList } from './list/gestion-vecinos-list';
 import { GestionVecinosCard } from './card/gestion-vecinos-card';
 import { GestionVecinosDetail } from './detail/gestion-vecinos-detail';
-import { GestionVecinosAdd } from './add/gestion-vecinos-add';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { ViewToggle } from '../../../../shared/components/view-toggle/view-toggle';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
@@ -25,7 +32,8 @@ import { ErrorService } from '../../../../core/services/error.service';
     GestionVecinosList,
     GestionVecinosCard,
     GestionVecinosDetail,
-    GestionVecinosAdd,
+    GestionCroquisView,
+    GestionCroquisAdd,
     Paginator,
     ViewToggle,
     SearchSelect,
@@ -46,11 +54,29 @@ export class GestionVecinos implements OnInit {
   searchColindanciaId: number | null = null;
   searchText = '';
 
-  viewMode = 'table';
+  // Filtro de la vista croquis (cliente): seleccionado vs. aplicado (al buscar).
+  croquisProjectId: number | null = null;
+  croquisAppliedProjectId: number | null = null;
+
+  // 'croquis' es la vista por defecto.
+  viewMode = 'croquis';
   selectedVecino: VecinoListItemDTO | null = null;
-  showAddModal = false;
+
+  // Vista por croquis (carga perezosa según vista).
+  croquis: CroquisGestionDTO[] = [];
+  croquisProjects: ProjectOptionDTO[] = [];
+  croquisColindancias: CatalogOptionDTO[] = [];
+  croquisTipos: CatalogOptionDTO[] = [];
+  showCroquisAdd = false;
+  private croquisLoaded = false;
+  private vecinosLoaded = false;
 
   viewModes: ViewToggleMode[] = [
+    {
+      value: 'croquis',
+      label: 'Croquis',
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/></svg>`,
+    },
     {
       value: 'table',
       label: 'Tabla',
@@ -70,11 +96,35 @@ export class GestionVecinos implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // La vista por defecto es croquis: cargamos esos datos primero.
+    this.loadCroquis();
+  }
+
+  /** Proyectos con croquis (opciones del filtro de la vista croquis). */
+  get croquisProjectOptions(): ProjectOptionDTO[] {
+    return this.croquis.map((c) => ({
+      projectId: c.projectId,
+      projectDescription: c.projectDescription,
+    }));
+  }
+
+  /** Cambio de vista: carga perezosa de los datos que cada vista necesita. */
+  onViewChange(mode: string): void {
+    this.viewMode = mode;
+    if (mode === 'croquis') this.loadCroquis();
+    else this.loadVecinosPage();
+  }
+
+  private loadCroquis(): void {
+    if (this.croquisLoaded) return;
     this.loaderService.show();
-    this.service.getPageData({ page: 1 }).subscribe({
+    this.service.getCroquisGestion().subscribe({
       next: (res) => {
-        this.options = res.options;
-        this.applyPaged(res.vecinos);
+        this.croquis = res.croquis;
+        this.croquisProjects = res.projects;
+        this.croquisColindancias = res.colindancias;
+        this.croquisTipos = res.tiposConstruccion;
+        this.croquisLoaded = true;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -82,6 +132,48 @@ export class GestionVecinos implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  private loadVecinosPage(): void {
+    if (this.vecinosLoaded) return;
+    this.loaderService.show();
+    this.service.getPageData({ page: 1 }).subscribe({
+      next: (res) => {
+        this.options = res.options;
+        this.applyPaged(res.vecinos);
+        this.vecinosLoaded = true;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Recarga los croquis tras un cambio (alta de vecino, asignación de lote, etc.). */
+  reloadCroquis(): void {
+    this.croquisLoaded = false;
+    this.loadCroquis();
+  }
+
+  openCroquisAdd(): void {
+    // El form de alta usa los datos de croquis (proyectos, catálogos, lotes).
+    this.loadCroquis();
+    this.showCroquisAdd = true;
+  }
+
+  closeCroquisAdd(): void {
+    this.showCroquisAdd = false;
+  }
+
+  onCroquisCreated(): void {
+    this.showCroquisAdd = false;
+    // Ambas fuentes quedan desactualizadas; recarga la vista activa.
+    this.croquisLoaded = false;
+    this.vecinosLoaded = false;
+    if (this.viewMode === 'croquis') this.loadCroquis();
+    else this.loadVecinosPage();
   }
 
   private currentFilter(page: number): VecinoFilter {
@@ -118,6 +210,11 @@ export class GestionVecinos implements OnInit {
     this.load(1);
   }
 
+  /** Aplica el filtro de proyecto en la vista croquis. */
+  searchCroquis(): void {
+    this.croquisAppliedProjectId = this.croquisProjectId;
+  }
+
   openDetail(item: VecinoListItemDTO): void {
     this.selectedVecino = item;
   }
@@ -126,16 +223,4 @@ export class GestionVecinos implements OnInit {
     this.selectedVecino = null;
   }
 
-  openAdd(): void {
-    this.showAddModal = true;
-  }
-
-  closeAdd(): void {
-    this.showAddModal = false;
-  }
-
-  onCreated(): void {
-    this.showAddModal = false;
-    this.load(1);
-  }
 }

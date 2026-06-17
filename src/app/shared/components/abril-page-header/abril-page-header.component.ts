@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
+import { NavigationService } from '../../../core/navigation/navigation.service';
 
 export interface SsomaHeaderPill {
   icono: string;
@@ -19,6 +20,7 @@ export interface AbrilPageTab {
   icono: string;
   route?: string;
   active?: boolean;
+  featureKey?: string;
 }
 
 @Component({
@@ -29,9 +31,6 @@ export interface AbrilPageTab {
   styleUrl: './abril-page-header.component.css',
 })
 export class AbrilPageHeaderComponent {
-  ngOnInit() {
-    console.log('TABS:', this.tabs);
-  }
   @Input() badge = '';
   @Input() titulo = '';
   @Input() subtitulo = '';
@@ -45,6 +44,13 @@ export class AbrilPageHeaderComponent {
   @Output() tabClick = new EventEmitter<AbrilPageTab>();
 
   private layoutService = inject(LayoutService);
+  private navigationService = inject(NavigationService);
+
+  get visibleTabs(): AbrilPageTab[] {
+    return this.tabs.filter(
+      (t) => !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey),
+    );
+  }
 
   onHamburgerClick(): void {
     this.menuClick.emit();

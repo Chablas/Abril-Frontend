@@ -10,10 +10,12 @@ import { GestionVecinosCompromisos } from '../compromisos/gestion-vecinos-compro
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { GestionVecinosService } from '../../services/gestion-vecinos.service';
+import { environment } from '../../../../../../environments/environment';
 import {
   VecinoListItemDTO,
   VecinoSolicitudItemDTO,
   CatalogOptionDTO,
+  VecinoRequisitoItemDTO,
 } from '../../dtos/gestion-vecinos.dto';
 
 @Component({
@@ -26,7 +28,14 @@ export class GestionVecinosDetail implements OnInit {
   @Input() item!: VecinoListItemDTO;
   @Output() closeModal = new EventEmitter<void>();
 
-  activeTab = 'detalle';
+  private _activeTab = 'detalle';
+  get activeTab(): string {
+    return this._activeTab;
+  }
+  set activeTab(value: string) {
+    this._activeTab = value;
+    if (value === 'requisitos' && !this.requisitosLoaded) this.loadRequisitos();
+  }
 
   solicitudes: VecinoSolicitudItemDTO[] = [];
   estados: CatalogOptionDTO[] = [];
@@ -40,6 +49,10 @@ export class GestionVecinosDetail implements OnInit {
   nuevaDescripcion = '';
   nuevaCritica = false;
 
+  // Requisitos (Gestión de requisitos)
+  requisitos: VecinoRequisitoItemDTO[] = [];
+  requisitosLoaded = false;
+
   constructor(
     private service: GestionVecinosService,
     private loaderService: LoaderService,
@@ -50,7 +63,12 @@ export class GestionVecinosDetail implements OnInit {
   get tabs(): SectionTab[] {
     return [
       { id: 'detalle', label: 'Detalle' },
-      { id: 'solicitudes', label: 'Solicitudes', badge: this.solicitudesLoaded ? this.solicitudes.length : null },
+      {
+        id: 'requerimientos',
+        label: 'Gestión de requerimientos',
+        badge: this.solicitudesLoaded ? this.solicitudes.length : null,
+      },
+      { id: 'requisitos', label: 'Gestión de requisitos' },
     ];
   }
 
@@ -145,6 +163,64 @@ export class GestionVecinosDetail implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         solicitud.vecinoSolicitudEstadoId = previo; // revertir
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Requisitos ─────────────────────────────────────────────────────────
+  private loadRequisitos(): void {
+    this.loaderService.show();
+    this.service.getRequisitos(this.item.vecinoId).subscribe({
+      next: (res) => {
+        this.requisitos = res.requisitos;
+        this.requisitosLoaded = true;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** URL absoluta del archivo del requisito. */
+  requisitoFileUrl(url?: string | null): string {
+    if (!url) return '';
+    return url.startsWith('http') ? url : environment.apiUrl.replace(/\/$/, '') + url;
+  }
+
+  esNoAplica(r: VecinoRequisitoItemDTO): boolean {
+    return r.estadoDescripcion === 'No aplica';
+  }
+
+  onRequisitoFileSelected(r: VecinoRequisitoItemDTO, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.loaderService.show();
+    this.service.uploadRequisito(this.item.vecinoId, r.vecinoRequisitoTipoId, file).subscribe({
+      next: () => {
+        input.value = '';
+        this.loadRequisitos();
+      },
+      error: (err: HttpErrorResponse) => {
+        input.value = '';
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  toggleNoAplica(r: VecinoRequisitoItemDTO): void {
+    const noAplica = !this.esNoAplica(r);
+    this.loaderService.show();
+    this.service.setRequisitoNoAplica(this.item.vecinoId, r.vecinoRequisitoTipoId, noAplica).subscribe({
+      next: () => this.loadRequisitos(),
+      error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
       },
