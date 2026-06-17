@@ -20,6 +20,6 @@ export const VECINOS_ROUTES: Routes = [
     path: 'croquis',
     loadComponent: () => import('./croquis/components/croquis').then((m) => m.Croquis),
     canActivate: [roleGuard],
-    data: { titulo: 'CROQUIS', featureKey: 'vecinos.gestion' },
+    data: { titulo: 'CROQUIS', featureKey: 'vecinos.croquis' },
   },
 ];
