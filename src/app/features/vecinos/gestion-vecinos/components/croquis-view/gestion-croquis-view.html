@@ -1,0 +1,102 @@
+<!-- ── Grilla de croquis ──────────────────────────────────────────────── -->
+<div class="flex-1 min-h-0 overflow-y-auto">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-1">
+    <div *ngFor="let c of filteredCroquis"
+      (click)="open(c)"
+      class="group bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md hover:border-[#64BC04] transition">
+      <div class="relative h-44 bg-gray-50 flex items-center justify-center overflow-hidden">
+        <img [src]="imageSrc(c.imageUrl)" class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          [alt]="'Croquis de ' + c.projectDescription" />
+        <span class="absolute bottom-2 right-2 text-[11px] font-medium bg-black/55 text-white px-2 py-0.5 rounded-full">
+          {{ c.lotes.length }} lote(s)
+        </span>
+      </div>
+      <div class="px-4 py-3">
+        <h3 class="text-sm font-semibold text-gray-800 truncate">{{ c.projectDescription }}</h3>
+        <p class="text-xs text-gray-400 mt-0.5">
+          {{ countAssigned(c) }} con vecino · {{ c.vecinos.length }} vecinos
+        </p>
+      </div>
+    </div>
+
+    <p *ngIf="filteredCroquis.length === 0"
+      class="sm:col-span-2 lg:col-span-3 text-center text-sm text-gray-400 italic py-10">
+      No hay croquis registrados. Súbelos en la pestaña “Croquis”.
+    </p>
+  </div>
+</div>
+
+<!-- ── Modal agrandado (solo lectura) ─────────────────────────────────── -->
+<app-base-modal
+  *ngIf="selected"
+  [title]="'Croquis · ' + selected.projectDescription"
+  width="w-[1150px]"
+  (closeModal)="close()">
+
+  <div class="flex flex-col lg:flex-row gap-4 p-1">
+
+    <!-- Lienzo -->
+    <div class="flex-1 min-w-0">
+      <div class="relative w-full border border-gray-200 rounded overflow-hidden">
+        <img [src]="imageSrc(selected.imageUrl)" class="block w-full" [alt]="'Croquis de ' + selected.projectDescription" />
+
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polygon *ngFor="let lote of selected.lotes"
+            [attr.points]="pointsToSvg(lote.puntos)"
+            [attr.fill]="loteFill(lote)"
+            [attr.stroke]="loteStroke(lote)"
+            stroke-width="2"
+            vector-effect="non-scaling-stroke"
+            class="cursor-pointer"
+            (click)="selectLote(lote)" />
+        </svg>
+
+        <!-- Etiquetas -->
+        <div *ngFor="let lote of selected.lotes"
+          (click)="selectLote(lote)"
+          class="absolute -translate-x-1/2 -translate-y-1/2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-white/85 border cursor-pointer"
+          [style.left.%]="centroid(lote.puntos).x"
+          [style.top.%]="centroid(lote.puntos).y"
+          [style.borderColor]="loteStroke(lote)"
+          [style.color]="loteStroke(lote)">
+          {{ lote.numeroLote }}
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-2">Haz clic en un lote para ver el vecino asignado.</p>
+    </div>
+
+    <!-- Panel lateral (solo consulta) -->
+    <div class="w-full lg:w-[320px] flex flex-col gap-3">
+      <ng-container *ngIf="selectedLote; else sinSeleccion">
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-700">Lote {{ selectedLote.numeroLote }}</span>
+            <span *ngIf="selectedLote.vecinoId"
+              class="text-[11px] bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">Asignado</span>
+          </div>
+
+          <!-- Vecino asignado -->
+          <div *ngIf="assignedVecino() as v; else sinVecino" class="flex flex-col gap-1">
+            <span class="text-xs text-gray-400">Vecino asignado</span>
+            <span class="text-sm font-medium text-gray-800">{{ v.nombrePropietario }}</span>
+            <span class="text-xs text-gray-500">DNI {{ v.dni }} · {{ v.colindanciaDescripcion }}</span>
+            <button type="button" (click)="verVecino()"
+              class="mt-1 self-start text-sm text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+              <i class="ti ti-eye"></i> Ver detalle y solicitudes
+            </button>
+          </div>
+
+          <ng-template #sinVecino>
+            <p class="text-sm text-gray-400 italic">Este lote no tiene vecino asignado.</p>
+          </ng-template>
+        </div>
+      </ng-container>
+
+      <ng-template #sinSeleccion>
+        <div class="bg-gray-50 rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+          Selecciona un lote del croquis para ver su vecino.
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</app-base-modal>

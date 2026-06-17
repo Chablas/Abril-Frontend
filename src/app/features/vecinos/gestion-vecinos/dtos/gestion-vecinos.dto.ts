@@ -90,6 +90,31 @@ export interface VecinoSolicitudCreateDTO {
   esCritica: boolean;
 }
 
+// ── Vista por croquis ────────────────────────────────────────────────────
+export interface CroquisGestionLoteDTO {
+  projectCroquisLoteId: number;
+  numeroLote: string;
+  puntos: number[][];
+  vecinoId?: number | null;
+  vecinoNombre?: string | null;
+}
+
+export interface CroquisGestionDTO {
+  projectId: number;
+  projectDescription: string;
+  projectCroquisId: number;
+  imageUrl: string;
+  lotes: CroquisGestionLoteDTO[];
+  vecinos: VecinoListItemDTO[];
+}
+
+export interface CroquisGestionResponseDTO {
+  croquis: CroquisGestionDTO[];
+  projects: ProjectOptionDTO[];
+  colindancias: CatalogOptionDTO[];
+  tiposConstruccion: CatalogOptionDTO[];
+}
+
 export interface VecinoCreateDTO {
   projectId: number | null;
   predio?: string | null;

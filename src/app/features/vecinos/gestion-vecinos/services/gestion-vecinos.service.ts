@@ -12,6 +12,7 @@ import {
   VecinoSolicitudCreateDTO,
   VecinoCompromisoItemDTO,
   VecinoCompromisoCreateDTO,
+  CroquisGestionResponseDTO,
 } from '../dtos/gestion-vecinos.dto';
 
 /** Persona devuelta por la consulta RENIEC. */
@@ -65,14 +66,33 @@ export class GestionVecinosService {
     });
   }
 
+  // ── Vista por croquis ───────────────────────────────────────────────
+  private readonly croquisApiUrl = `${environment.apiUrl}api/v1/ProjectCroquis`;
+
+  /** Todos los croquis registrados con sus lotes y vecinos, más catálogos para el alta. */
+  getCroquisGestion(): Observable<CroquisGestionResponseDTO> {
+    return this.http.get<CroquisGestionResponseDTO>(`${this.croquisApiUrl}/gestion`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Asigna (o quita con vecinoId = null) el vecino de un lote. */
+  assignVecinoToLote(loteId: number, vecinoId: number | null): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.croquisApiUrl}/lotes/${loteId}/vecino`,
+      { vecinoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
   getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
     return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/dni/${dni}`, {
       headers: this.authHeaders(),
     });
   }
 
-  create(dto: VecinoCreateDTO): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(this.apiUrl, dto, {
+  create(dto: VecinoCreateDTO): Observable<{ vecinoId: number; message: string }> {
+    return this.http.post<{ vecinoId: number; message: string }>(this.apiUrl, dto, {
       headers: this.authHeaders(),
     });
   }
