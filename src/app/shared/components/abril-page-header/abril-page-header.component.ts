@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
+import { NavigationService } from '../../../core/navigation/navigation.service';
 
 export interface SsomaHeaderPill {
   icono: string;
@@ -18,6 +19,8 @@ export interface AbrilPageTab {
   label: string;
   icono: string;
   route: string;
+  /** Si se indica, la pestaña solo se muestra si el usuario tiene acceso a esa feature. */
+  featureKey?: string;
 }
 
 @Component({
@@ -40,6 +43,14 @@ export class AbrilPageHeaderComponent {
   @Output() menuClick = new EventEmitter<void>();
 
   private layoutService = inject(LayoutService);
+  private navigationService = inject(NavigationService);
+
+  /** Pestañas visibles: oculta las que tienen featureKey sin acceso del usuario. */
+  get visibleTabs(): AbrilPageTab[] {
+    return this.tabs.filter(
+      (t) => !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey),
+    );
+  }
 
   onHamburgerClick(): void {
     this.menuClick.emit();

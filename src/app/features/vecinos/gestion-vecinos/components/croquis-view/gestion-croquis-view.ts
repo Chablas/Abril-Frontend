@@ -40,6 +40,24 @@ export class GestionCroquisView {
     return c.lotes.filter((l) => l.vecinoId).length;
   }
 
+  /** % de entregables aprobados sobre los evaluables (Falta + Enviado + Aprobado). */
+  aprobadosPct(item: { entregablesAprobados: number; entregablesEvaluables: number }): number {
+    if (!item.entregablesEvaluables) return 0;
+    return Math.round((item.entregablesAprobados / item.entregablesEvaluables) * 100);
+  }
+
+  /** % de solicitudes aprobadas (Aceptada) sobre las evaluables (Aceptada + Por responder). */
+  solicitudesAprobadasPct(item: { solicitudesAprobadas: number; solicitudesEvaluables: number }): number {
+    if (!item.solicitudesEvaluables) return 0;
+    return Math.round((item.solicitudesAprobadas / item.solicitudesEvaluables) * 100);
+  }
+
+  /** % de requisitos subidos sobre los evaluables (Subido + No subido, sin "No aplica"). */
+  requisitosSubidosPct(item: { requisitosSubidos: number; requisitosEvaluables: number }): number {
+    if (!item.requisitosEvaluables) return 0;
+    return Math.round((item.requisitosSubidos / item.requisitosEvaluables) * 100);
+  }
+
   // ── Apertura del croquis agrandado (solo lectura) ──────────────────────
   open(c: CroquisGestionDTO): void {
     this.selected = c;
@@ -54,6 +72,11 @@ export class GestionCroquisView {
   // ── Lotes ──────────────────────────────────────────────────────────────
   selectLote(lote: CroquisGestionLoteDTO): void {
     this.selectedLote = lote;
+  }
+
+  /** Clic fuera de un lote: deselecciona y vuelve al resumen del proyecto. */
+  clearLote(): void {
+    this.selectedLote = null;
   }
 
   pointsToSvg(puntos: number[][]): string {

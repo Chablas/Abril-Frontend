@@ -31,6 +31,14 @@ export interface VecinoListItemDTO {
   vecinoTipoConstruccionId: number;
   tipoConstruccionDescripcion: string;
   createdDateTime: string;
+  solicitudesCount: number;
+  compromisosCount: number;
+  solicitudesAprobadas: number;
+  solicitudesEvaluables: number;
+  entregablesAprobados: number;
+  entregablesEvaluables: number;
+  requisitosSubidos: number;
+  requisitosEvaluables: number;
 }
 
 export interface VecinosPageDTO {
@@ -104,6 +112,14 @@ export interface CroquisGestionDTO {
   projectDescription: string;
   projectCroquisId: number;
   imageUrl: string;
+  solicitudesCount: number;
+  compromisosCount: number;
+  solicitudesAprobadas: number;
+  solicitudesEvaluables: number;
+  entregablesAprobados: number;
+  entregablesEvaluables: number;
+  requisitosSubidos: number;
+  requisitosEvaluables: number;
   lotes: CroquisGestionLoteDTO[];
   vecinos: VecinoListItemDTO[];
 }
@@ -113,6 +129,23 @@ export interface CroquisGestionResponseDTO {
   projects: ProjectOptionDTO[];
   colindancias: CatalogOptionDTO[];
   tiposConstruccion: CatalogOptionDTO[];
+}
+
+// ── Requisitos (Gestión de requisitos) ────────────────────────────────────
+export interface VecinoRequisitoItemDTO {
+  vecinoRequisitoId: number | null;
+  vecinoRequisitoTipoId: number;
+  tipoDescripcion: string;
+  orden: number;
+  vecinoRequisitoEstadoId: number;
+  estadoDescripcion: string;
+  archivoUrl?: string | null;
+  originalFileName?: string | null;
+}
+
+export interface VecinoRequisitosResponseDTO {
+  requisitos: VecinoRequisitoItemDTO[];
+  estados: CatalogOptionDTO[];
 }
 
 export interface VecinoCreateDTO {

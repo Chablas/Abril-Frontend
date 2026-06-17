@@ -3,9 +3,9 @@
   titulo="Dashboard de Vecinos"
   subtitulo="Resumen general y métricas por proyecto: vecinos, solicitudes y compromisos."
   [tabs]="[
-    { label: 'Dashboard',          icono: 'ti-layout-dashboard', route: '/vecinos/dashboard' },
-    { label: 'Gestión de Vecinos', icono: 'ti-users',            route: '/vecinos/gestion' },
-    { label: 'Croquis',            icono: 'ti-map-2',            route: '/vecinos/croquis' }
+    { label: 'Dashboard',          icono: 'ti-layout-dashboard', route: '/vecinos/dashboard', featureKey: 'vecinos.dashboard' },
+    { label: 'Gestión de Vecinos', icono: 'ti-users',            route: '/vecinos/gestion',   featureKey: 'vecinos.gestion' },
+    { label: 'Croquis',            icono: 'ti-map-2',            route: '/vecinos/croquis',   featureKey: 'vecinos.croquis' }
   ]"
   [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
   (secondaryClick)="downloadPDF()">

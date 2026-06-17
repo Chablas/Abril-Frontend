@@ -13,6 +13,7 @@ import {
   VecinoCompromisoItemDTO,
   VecinoCompromisoCreateDTO,
   CroquisGestionResponseDTO,
+  VecinoRequisitosResponseDTO,
 } from '../dtos/gestion-vecinos.dto';
 
 /** Persona devuelta por la consulta RENIEC. */
@@ -146,6 +147,31 @@ export class GestionVecinosService {
     return this.http.patch<ApiMessageDTO>(
       `${this.apiUrl}/compromisos/entregables/${entregableId}/estado`,
       { vecinoEntregableEstadoId },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Requisitos ──────────────────────────────────────────────────────
+  getRequisitos(vecinoId: number): Observable<VecinoRequisitosResponseDTO> {
+    return this.http.get<VecinoRequisitosResponseDTO>(`${this.apiUrl}/${vecinoId}/requisitos`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  uploadRequisito(vecinoId: number, tipoId: number, file: File): Observable<{ archivoUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ archivoUrl: string; message: string }>(
+      `${this.apiUrl}/${vecinoId}/requisitos/${tipoId}/upload`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  setRequisitoNoAplica(vecinoId: number, tipoId: number, noAplica: boolean): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/${vecinoId}/requisitos/${tipoId}/no-aplica`,
+      { noAplica },
       { headers: this.authHeaders() },
     );
   }

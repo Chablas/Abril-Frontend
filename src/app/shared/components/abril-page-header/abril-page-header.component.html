@@ -39,9 +39,9 @@
   </div>
 </div>
 
-<div class="abril-tabs" *ngIf="tabs.length">
+<div class="abril-tabs" *ngIf="visibleTabs.length">
   <nav class="abril-tabs__nav">
-    <a *ngFor="let tab of tabs"
+    <a *ngFor="let tab of visibleTabs"
        class="abril-tabs__tab"
        [routerLink]="tab.route"
        routerLinkActive="abril-tabs__tab--active">
