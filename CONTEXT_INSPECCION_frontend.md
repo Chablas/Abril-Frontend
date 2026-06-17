@@ -1,6 +1,6 @@
 # CONTEXT_INSPECCION_frontend.md — Módulo Inspecciones Frontend
 # Angular 21 standalone, feature slice en features/ssoma/gestion/inspeccion/
-# Última actualización: 2026-06-15
+# Última actualización: 2026-06-17
 
 ---
 
@@ -650,6 +650,53 @@ Responsable área | Estado | Tasa cumplimiento gauge
   }
 }
 ```
+
+---
+
+## FIXES APLICADOS (2026-06-17)
+
+### inspeccion.service.ts — descargarPdf()
+```typescript
+descargarPdf(id: number): Observable<Blob>
+// GET {base}/{id}/pdf con auth header, responseType: 'blob'
+```
+
+### inspeccion-detalle — botón PDF funcional
+- `descargandoPdf = false` property
+- `descargarPdf()`: llama al servicio, crea blob URL, dispara descarga, revoca URL
+- Botón HTML: `(click)="descargarPdf()"` + `[disabled]="descargandoPdf"` + spinner icon
+- Pendiente: endpoint backend `GET /api/v1/ssoma-inspeccion/{id}/pdf` (QuestPDF)
+
+### inspeccion-nueva — checklist Siguiente bloqueado
+`puedeAvanzar` paso 2: `respuestas.length > 0 && cntRespondidos === respuestas.length`
+El botón "Siguiente" queda disabled hasta responder todos los items del checklist.
+
+### inspeccion-nueva — foto obligatoria en hallazgo
+- `confirmarHallazgo()` rechaza si `fotosBase64.length === 0` (toast warning)
+- Botón "Agregar" `[disabled]` hasta que haya descripción + al menos 1 foto
+
+---
+
+## FIXES APLICADOS (2026-06-16)
+
+### inspeccion-nueva.component.html — SearchSelect props incorrectos
+El componente `SearchSelect` usa `valueField`/`displayField`, NO `labelKey`/`valueKey`.
+Se corrigieron ambos SearchSelect:
+- Proyecto: `valueField="projectId"` `displayField="projectDescription"`
+- Responsable área: `valueField="workerId"` `displayField="apellidoNombre"`
+
+### inspeccion-nueva.component.ts — workers en forkJoin
+Workers se carga en el `forkJoin` inicial del `ngOnInit`, igual que opt-nuevo.
+
+### inspeccion-detalle.component.ts — spUrl() para imágenes SharePoint
+Método `spUrl(url)` resuelve URLs relativas a la base de SharePoint:
+```
+https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/InspeccionesAbril2026/
+```
+Si la URL ya es absoluta (http/https) la devuelve tal cual (compatibilidad con nuevas
+inspecciones que guardan `downloadUrl` directa via `SubirArchivoYObtenerUrlAsync`).
+
+Aplicado en el HTML a: firmaInspectorUrl, firmaRepresentanteUrl, fotos de hallazgos, evidenciaCierreUrl.
 
 ---
 

@@ -1,0 +1,100 @@
+<div class="modal-backdrop" (click)="cerrar()"></div>
+<div class="modal-panel">
+
+  <div class="modal-header">
+    <div class="modal-title">
+      <span class="modal-badge">DOSSIER</span>
+      @if (detalle) {
+        <h2>Semana {{ detalle.semanaNumero }} — {{ detalle.fechaInicio | date:'dd/MM' }} al {{ detalle.fechaFin | date:'dd/MM/yyyy' }}</h2>
+        <span class="chip" [ngClass]="chipSemana(detalle.estado)">{{ detalle.estado }}</span>
+      }
+    </div>
+    <button type="button" class="modal-close" (click)="cerrar()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="modal-loading"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
+  } @else if (detalle) {
+
+    @if (detalle.comentarioSsoma) {
+      <div class="obs-ssoma">
+        <i class="ti ti-message-circle"></i> <strong>Observación SSOMA:</strong> {{ detalle.comentarioSsoma }}
+      </div>
+    }
+
+    <div class="docs-list">
+      @for (tipo of tipos; track tipo) {
+        @let doc = getDoc(tipo);
+        <div class="doc-row" [class.doc-row--ok]="doc?.estado === 'Subido'" [class.doc-row--na]="doc?.estado === 'NoAplica'">
+          <div class="doc-info">
+            <span class="doc-tipo">{{ tipo }}</span>
+            @if (doc) {
+              <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">{{ labelDoc(doc.estado) }}</span>
+            } @else {
+              <span class="chip chip-sm chip-blue">Pendiente</span>
+            }
+            @if (doc?.archivoNombre) {
+              <span class="doc-archivo"><i class="ti ti-paperclip"></i> {{ doc!.archivoNombre }}</span>
+            }
+          </div>
+
+          <div class="doc-actions">
+            @if (subiendoPor[tipo]) {
+              <span class="uploading-label"><i class="ti ti-loader-2 spin"></i> Subiendo…</span>
+            } @else {
+              <label class="btn-upload" [class.btn-disabled]="doc?.estado === 'NoAplica'">
+                <i class="ti ti-upload"></i> Subir
+                <input
+                  [id]="'file-' + tipo"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
+                  style="display:none"
+                  (change)="onFileSelected($event, tipo)"
+                  [disabled]="doc?.estado === 'NoAplica'"
+                />
+              </label>
+              <button
+                type="button"
+                class="btn-na"
+                [class.btn-na--active]="doc?.estado === 'NoAplica'"
+                (click)="toggleNa(tipo)">
+                N/A
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (mostrarJustificacion[tipo]) {
+          <div class="na-slide">
+            <input
+              type="text"
+              class="field-input"
+              [(ngModel)]="justificacionesNa[tipo]"
+              placeholder="Justificación (opcional)"
+            />
+            <button type="button" class="btn-primary btn-sm" (click)="confirmarNa(tipo)">Confirmar N/A</button>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="modal-footer">
+      <div class="progreso-label">
+        {{ tipos.filter(t => getDoc(t)?.estado === 'Subido' || getDoc(t)?.estado === 'NoAplica').length }}/{{ tipos.length }} documentos resueltos
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost-sm" (click)="cerrar()">Cerrar</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="!puedeEnviar || enviando"
+          (click)="enviarDossier()">
+          @if (enviando) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-send"></i> }
+          Enviar dossier
+        </button>
+      </div>
+    </div>
+  }
+</div>

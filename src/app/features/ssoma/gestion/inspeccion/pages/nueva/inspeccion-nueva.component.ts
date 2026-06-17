@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { InspeccionService } from '../../inspeccion.service';
 import {
   InspeccionTipoDto,
@@ -24,6 +25,9 @@ import {
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
+import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 
 interface RespuestaForm {
@@ -59,7 +63,7 @@ interface HallazgoForm {
   selector: 'app-inspeccion-nueva',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './inspeccion-nueva.component.html',
   styleUrl: './inspeccion-nueva.component.css',
 })
@@ -74,6 +78,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   // Catálogos
   tipos: InspeccionTipoDto[] = [];
   proyectos: any[] = [];
+  workers: WorkerHabilitacionListDto[] = [];
 
   // Paso 1
   proyectoId = 0;
@@ -84,6 +89,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   horaFin = '';
   area = '';
   responsableArea = '';
+  responsableAreaId: number | null = null;
 
   // Paso 2 — checklist
   grupos: ChecklistGrupoForm[] = [];
@@ -123,6 +129,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   constructor(
     private inspeccionService: InspeccionService,
     private projectService: ProjectService,
+    private trabajadorHabService: TrabajadorHabService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -131,17 +138,17 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadingCatalogos = true;
-    this.projectService.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
-      next: (res) => {
-        this.proyectos = res.data;
+    forkJoin({
+      catalogos: this.inspeccionService.getCatalogos(),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
+      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999 }),
+    }).subscribe({
+      next: ({ catalogos, proyectos, workers }) => {
+        this.tipos = catalogos.tipos;
+        this.proyectos = proyectos.data;
+        this.workers = workers.data;
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
-        this.inspeccionService.getCatalogos().subscribe({
-          next: (cat) => {
-            this.tipos = cat.tipos;
-            this.cdr.markForCheck();
-          },
-        });
       },
       error: () => {
         this.loadingCatalogos = false;
@@ -151,6 +158,27 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {}
+
+  onResponsableChange(id: number | null): void {
+    this.responsableAreaId = id;
+    if (!id) {
+      this.responsableArea = '';
+    } else {
+      const w = this.workers.find(x => x.workerId === id);
+      if (w) this.responsableArea = w.apellidoNombre;
+    }
+    this.cdr.markForCheck();
+  }
+
+  get puedeAvanzar(): boolean {
+    if (this.paso === 1) {
+      return (this.proyectoId ?? 0) > 0 && !!this.tipoId && !!this.fecha;
+    }
+    if (this.paso === 2) {
+      return this.respuestas.length > 0 && this.cntRespondidos === this.respuestas.length;
+    }
+    return true;
+  }
 
   // ── CHECKLIST ──────────────────────────────────────────────────────────────
 
@@ -253,6 +281,10 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   confirmarHallazgo(): void {
     if (!this.nuevoHallazgo.descripcion.trim()) {
       Swal.fire({ icon: 'warning', title: 'Ingresa la descripción del hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+      return;
+    }
+    if (this.nuevoHallazgo.fotosBase64.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'Agrega al menos una foto al hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
       return;
     }
     this.hallazgos.push({ ...this.nuevoHallazgo });

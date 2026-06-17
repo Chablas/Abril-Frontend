@@ -611,7 +611,8 @@ canvas {
   cursor: pointer;
 }
 
-.btn-guardar:disabled { opacity: 0.6; cursor: default; }
+.btn-guardar:disabled  { opacity: 0.6; cursor: default; }
+.btn-siguiente:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── SPIN ──────────────────────────────────────────────── */
 .spin {

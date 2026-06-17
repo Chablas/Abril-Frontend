@@ -26,12 +26,14 @@
 
         <div class="form-group">
           <label class="form-label">Proyecto <span class="required">*</span></label>
-          <select class="form-input" [(ngModel)]="proyectoId">
-            <option [ngValue]="0">Seleccionar proyecto...</option>
-            @for (p of proyectos; track p.id) {
-              <option [ngValue]="p.id">{{ p.name }}</option>
-            }
-          </select>
+          <app-search-select
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId"
+            (valueChange)="proyectoId = $event">
+          </app-search-select>
         </div>
 
         <div class="form-group">
@@ -66,7 +68,14 @@
 
         <div class="form-group">
           <label class="form-label">Responsable del área</label>
-          <input type="text" class="form-input" [(ngModel)]="responsableArea" placeholder="Nombre del responsable" />
+          <app-search-select
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            placeholder="Buscar trabajador..."
+            [value]="responsableAreaId"
+            (valueChange)="onResponsableChange($event)">
+          </app-search-select>
         </div>
 
         <div class="form-group">
@@ -239,7 +248,8 @@
 
             <div class="hallazgo-form__actions">
               <button type="button" class="btn-cancelar-hallazgo" (click)="cancelarHallazgo()">Cancelar</button>
-              <button type="button" class="btn-confirmar-hallazgo" (click)="confirmarHallazgo()">Agregar</button>
+              <button type="button" class="btn-confirmar-hallazgo" (click)="confirmarHallazgo()"
+                [disabled]="!nuevoHallazgo.descripcion.trim() || nuevoHallazgo.fotosBase64.length === 0">Agregar</button>
             </div>
           </div>
         }
@@ -375,7 +385,7 @@
         </button>
       }
       @if (paso < totalPasos) {
-        <button type="button" class="btn-siguiente" (click)="siguiente()">
+        <button type="button" class="btn-siguiente" [disabled]="!puedeAvanzar" (click)="siguiente()">
           Siguiente <i class="ti ti-arrow-right"></i>
         </button>
       }

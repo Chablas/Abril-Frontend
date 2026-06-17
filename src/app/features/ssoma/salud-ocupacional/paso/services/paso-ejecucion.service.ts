@@ -16,6 +16,10 @@ export class PasoEjecucionService {
     return this.http.post<PasoEjecucionDto>(EJECUCION_BASE, dto, { headers: buildAuthHeaders() });
   }
 
+  programar(dto: { actividadId: number; fechaProgramada: string }): Observable<PasoEjecucionDto> {
+    return this.http.post<PasoEjecucionDto>(`${EJECUCION_BASE}/programar`, dto, { headers: buildAuthHeaders() });
+  }
+
   reprogramar(id: number, dto: { nuevaFecha: string; motivo: string }): Observable<PasoEjecucionDto> {
     return this.http.patch<PasoEjecucionDto>(`${EJECUCION_BASE}/${id}/reprogramar`, dto, { headers: buildAuthHeaders() });
   }

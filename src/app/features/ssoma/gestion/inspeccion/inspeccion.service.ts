@@ -69,4 +69,13 @@ export class InspeccionService {
       request,
     );
   }
+
+  descargarPdf(id: number): Observable<Blob> {
+    const token =
+      typeof localStorage !== 'undefined' ? (localStorage.getItem('access_token') ?? '') : '';
+    return this.http.get(`${this.base}/${id}/pdf`, {
+      responseType: 'blob',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

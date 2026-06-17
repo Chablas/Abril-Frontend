@@ -1,0 +1,81 @@
+<div class="modal-backdrop" (click)="cerrar()"></div>
+<div class="modal-panel">
+
+  <div class="modal-header">
+    <div class="modal-title">
+      <span class="modal-badge">DOSSIER SSOMA</span>
+      @if (detalle) {
+        <h2>Semana {{ detalle.semanaNumero }} — {{ detalle.fechaInicio | date:'dd/MM' }} al {{ detalle.fechaFin | date:'dd/MM/yyyy' }}</h2>
+        <span class="chip" [ngClass]="chipSemana(detalle.estado)">{{ detalle.estado }}</span>
+      }
+    </div>
+    <button type="button" class="modal-close" (click)="cerrar()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="modal-loading"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
+  } @else if (detalle) {
+
+    <div class="docs-list">
+      @for (tipo of tipos; track tipo) {
+        @let doc = getDoc(tipo);
+        <div class="doc-row">
+          <div class="doc-info">
+            <span class="doc-tipo">{{ tipo }}</span>
+            @if (doc) {
+              <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">
+                {{ doc.estado === 'NoAplica' ? 'N/A' : doc.estado }}
+              </span>
+              @if (doc.justificacionNa) {
+                <span class="doc-obs">{{ doc.justificacionNa }}</span>
+              }
+            } @else {
+              <span class="chip chip-sm chip-blue">Pendiente</span>
+            }
+          </div>
+          <div class="doc-actions">
+            @if (doc?.archivoUrl) {
+              <button type="button" class="btn-ghost-sm" (click)="verArchivo(doc!)">
+                <i class="ti ti-eye"></i> Ver
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (modoObservar) {
+      <div class="observar-panel">
+        <label class="form-label">Observación para el contratista</label>
+        <textarea
+          class="field-input"
+          rows="3"
+          [(ngModel)]="comentario"
+          placeholder="Detalla qué debe corregir el contratista…">
+        </textarea>
+        <div class="observar-actions">
+          <button type="button" class="btn-ghost-sm" (click)="modoObservar = false">Cancelar</button>
+          <button type="button" class="btn-primary" [disabled]="guardando" (click)="confirmarObservacion()">
+            <i class="ti ti-message-circle"></i> Enviar observación
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost-sm" (click)="cerrar()">Cerrar</button>
+      @if (!modoObservar && detalle.estado === 'Enviado') {
+        <div class="modal-actions">
+          <button type="button" class="btn-outline-warning" (click)="observar()">
+            <i class="ti ti-message-circle"></i> Observar
+          </button>
+          <button type="button" class="btn-primary" [disabled]="guardando" (click)="aprobar()">
+            <i class="ti ti-circle-check"></i> Aprobar
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
