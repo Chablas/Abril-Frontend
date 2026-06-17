@@ -111,8 +111,7 @@ export class Sidebar implements OnInit, OnDestroy {
   isActiveModule(baseRoute: string): boolean {
     const url = this.router.url;
     if (baseRoute === '/habilitacion/gestion') {
-      return url.startsWith('/habilitacion/gestion') ||
-             url.startsWith('/habilitacion/dashboard-contratista');
+      return url.startsWith('/habilitacion/gestion');
     }
     if (baseRoute === '/ssoma') {
       return (url === '/ssoma' || url.startsWith('/ssoma/')) &&
@@ -145,7 +144,7 @@ export class Sidebar implements OnInit, OnDestroy {
     if (module.key === 'habilitacion') {
       this.router.navigate([
         this.authService.isContratista()
-          ? '/habilitacion/dashboard-contratista'
+          ? '/habilitacion/gestion/dashboard'
           : '/habilitacion/gestion',
       ]);
     } else {
