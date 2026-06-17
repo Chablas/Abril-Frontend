@@ -10,6 +10,7 @@ import {
 } from '../../../../services/contratista-usuario.service';
 import { HabEmpresaService } from '../../../../services/hab-empresa.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProyectoDisponibleDto } from '../../../../dtos/empresa.model';
 
 @Component({
@@ -42,10 +43,14 @@ export class ContratistaUsuarios implements OnInit {
     private usuarioService: ContratistaUsuarioService,
     private habEmpresaService: HabEmpresaService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    if (!this.contractorId) {
+      this.contractorId = this.authService.getEmpresaId() ?? 0;
+    }
     this.loadUsuarios();
     this.loadProyectos();
   }

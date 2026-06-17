@@ -20,13 +20,6 @@
     }
   </nav>
   <div class="gestion-content">
-    <ng-container *ngIf="(section$ | async) !== 'usuarios'">
-      <router-outlet />
-    </ng-container>
-    <ng-container *ngIf="(section$ | async) === 'usuarios' && esContratista && empresaId">
-      <app-contratista-usuarios
-        [contractorId]="empresaId!"
-        [currentUserId]="currentUserId" />
-    </ng-container>
+    <router-outlet />
   </div>
 </div>

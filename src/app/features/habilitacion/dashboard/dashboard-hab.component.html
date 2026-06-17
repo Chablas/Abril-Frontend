@@ -10,13 +10,8 @@
     </div>
   </div>
 
-  <!-- USUARIOS SECTION -->
-  <div class="usuarios-section" *ngIf="activeSection === 'usuarios'">
-    <app-contratista-usuarios [contractorId]="empresaId!" [currentUserId]="currentUserId" />
-  </div>
-
   <!-- DASHBOARD BODY -->
-  <div class="db-body" *ngIf="activeSection === 'resumen'">
+  <div class="db-body">
 
     <!-- KPI STRIP -->
     <div class="kpi-strip">

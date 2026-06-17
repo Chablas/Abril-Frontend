@@ -29,6 +29,9 @@ export interface AbrilPageTab {
   styleUrl: './abril-page-header.component.css',
 })
 export class AbrilPageHeaderComponent {
+  ngOnInit() {
+    console.log('TABS:', this.tabs);
+  }
   @Input() badge = '';
   @Input() titulo = '';
   @Input() subtitulo = '';
