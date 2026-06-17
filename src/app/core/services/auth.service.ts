@@ -67,7 +67,7 @@ export class AuthService {
     localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures ?? []));
     localStorage.setItem('contratista_scope', res.scope ?? 'TODOS');
     localStorage.setItem('contratista_proyectos', JSON.stringify(res.proyectoIds ?? []));
-    localStorage.setItem('contratista_modulos', res.modulos ?? 'AMBOS');
+    localStorage.setItem('contratista_modulos', (res.modulos ?? 'AMBOS').toUpperCase());
   }
 
   getContratistaScope(): string {
