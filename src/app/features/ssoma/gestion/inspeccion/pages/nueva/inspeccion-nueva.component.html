@@ -28,8 +28,8 @@
           <label class="form-label">Proyecto <span class="required">*</span></label>
           <app-search-select
             [options]="proyectos"
-            labelKey="name"
-            valueKey="id"
+            valueField="projectId"
+            displayField="projectDescription"
             placeholder="Buscar proyecto..."
             [value]="proyectoId"
             (valueChange)="proyectoId = $event">
@@ -70,8 +70,8 @@
           <label class="form-label">Responsable del área</label>
           <app-search-select
             [options]="workers"
-            labelKey="apellidoNombre"
-            valueKey="workerId"
+            valueField="workerId"
+            displayField="apellidoNombre"
             placeholder="Buscar trabajador..."
             [value]="responsableAreaId"
             (valueChange)="onResponsableChange($event)">

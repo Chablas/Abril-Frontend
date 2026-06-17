@@ -1,6 +1,6 @@
 # CONTEXT_INSPECCION_frontend.md — Módulo Inspecciones Frontend
 # Angular 21 standalone, feature slice en features/ssoma/gestion/inspeccion/
-# Última actualización: 2026-06-15
+# Última actualización: 2026-06-16
 
 ---
 
@@ -650,6 +650,29 @@ Responsable área | Estado | Tasa cumplimiento gauge
   }
 }
 ```
+
+---
+
+## FIXES APLICADOS (2026-06-16)
+
+### inspeccion-nueva.component.html — SearchSelect props incorrectos
+El componente `SearchSelect` usa `valueField`/`displayField`, NO `labelKey`/`valueKey`.
+Se corrigieron ambos SearchSelect:
+- Proyecto: `valueField="projectId"` `displayField="projectDescription"`
+- Responsable área: `valueField="workerId"` `displayField="apellidoNombre"`
+
+### inspeccion-nueva.component.ts — workers en forkJoin
+Workers se carga en el `forkJoin` inicial del `ngOnInit`, igual que opt-nuevo.
+
+### inspeccion-detalle.component.ts — spUrl() para imágenes SharePoint
+Método `spUrl(url)` resuelve URLs relativas a la base de SharePoint:
+```
+https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/InspeccionesAbril2026/
+```
+Si la URL ya es absoluta (http/https) la devuelve tal cual (compatibilidad con nuevas
+inspecciones que guardan `downloadUrl` directa via `SubirArchivoYObtenerUrlAsync`).
+
+Aplicado en el HTML a: firmaInspectorUrl, firmaRepresentanteUrl, fotos de hallazgos, evidenciaCierreUrl.
 
 ---
 

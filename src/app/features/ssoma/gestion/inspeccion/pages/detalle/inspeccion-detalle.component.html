@@ -180,14 +180,14 @@
                 @if (h.fotos.length) {
                   <div class="fotos-grid">
                     @for (f of h.fotos; track f.id) {
-                      <img [src]="f.url" class="foto-thumb" (click)="openLightbox(f.url)" />
+                      <img [src]="spUrl(f.url)" class="foto-thumb" (click)="openLightbox(spUrl(f.url))" />
                     }
                   </div>
                 }
                 @if (h.evidenciaCierreUrl) {
                   <div class="hallazgo-evidencia">
                     <span class="hallazgo-accion__lbl">Evidencia de cierre</span>
-                    <img [src]="h.evidenciaCierreUrl" class="evidencia-img" (click)="openLightbox(h.evidenciaCierreUrl)" />
+                    <img [src]="spUrl(h.evidenciaCierreUrl)" class="evidencia-img" (click)="openLightbox(spUrl(h.evidenciaCierreUrl))" />
                   </div>
                 }
               </div>
@@ -222,14 +222,14 @@
           <div class="firmas-row">
             @if (data.firmaInspectorUrl) {
               <div class="firma-block">
-                <img [src]="data.firmaInspectorUrl" class="firma-img" />
+                <img [src]="spUrl(data.firmaInspectorUrl)" class="firma-img" />
                 <div class="firma-nombre">{{ data.inspectorNombre ?? 'Inspector' }}</div>
                 @if (data.inspectorCargo) { <div class="firma-cargo">{{ data.inspectorCargo }}</div> }
               </div>
             }
             @if (data.firmaRepresentanteUrl) {
               <div class="firma-block">
-                <img [src]="data.firmaRepresentanteUrl" class="firma-img" />
+                <img [src]="spUrl(data.firmaRepresentanteUrl)" class="firma-img" />
                 <div class="firma-nombre">{{ data.representanteNombre ?? 'Representante' }}</div>
                 @if (data.representanteCargo) { <div class="firma-cargo">{{ data.representanteCargo }}</div> }
               </div>

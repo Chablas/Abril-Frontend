@@ -47,6 +47,12 @@ export class InspeccionDetalleComponent implements OnInit {
 
   readonly circumference = 2 * Math.PI * 44;
 
+  spUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/InspeccionesAbril2026/${url.startsWith('/') ? url.slice(1) : url}`;
+  }
+
   constructor(
     private inspeccionService: InspeccionService,
     private loaderService: LoaderService,
