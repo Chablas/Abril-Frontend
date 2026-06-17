@@ -5,6 +5,8 @@ import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base'
 import {
   DossierSemanaDto,
   DossierSemanaDetalleDto,
+  EnsureSemanaRequest,
+  RevisarDossierRequest,
   DossierTipoDocumento,
 } from '../dtos/dossier.model';
 
@@ -14,57 +16,79 @@ export class DossierService {
 
   constructor(private http: HttpClient) {}
 
-  getSemanas(proyectoId: number, empresaId?: number | null): Observable<DossierSemanaDto[]> {
-    return this.http.get<DossierSemanaDto[]>(`${this.base}/semanas`, {
+  // GET /dossier?proyectoId=&contributorId=&anio=
+  getSemanas(
+    proyectoId: number,
+    contributorId?: number | null,
+    anio?: number | null,
+  ): Observable<DossierSemanaDto[]> {
+    return this.http.get<DossierSemanaDto[]>(this.base, {
       headers: buildHabHeaders(),
-      params: buildHabParams({ proyectoId, ...(empresaId ? { empresaId } : {}) }),
+      params: buildHabParams({
+        proyectoId,
+        ...(contributorId ? { contributorId } : {}),
+        ...(anio ? { anio } : {}),
+      }),
     });
   }
 
-  getSemanaDetalle(id: number): Observable<DossierSemanaDetalleDto> {
-    return this.http.get<DossierSemanaDetalleDto>(`${this.base}/semanas/${id}`, {
-      headers: buildHabHeaders(),
-    });
-  }
-
-  enviarDossier(id: number): Observable<void> {
-    return this.http.post<void>(`${this.base}/semanas/${id}/enviar`, {}, {
-      headers: buildHabHeaders(),
-    });
-  }
-
-  revisarDossier(id: number, body: { estado: string; comentario?: string }): Observable<void> {
-    return this.http.patch<void>(`${this.base}/semanas/${id}/revisar`, body, {
+  // GET /dossier/{id}
+  getDetalle(id: number): Observable<DossierSemanaDetalleDto> {
+    return this.http.get<DossierSemanaDetalleDto>(`${this.base}/${id}`, {
       headers: buildHabHeaders(),
     });
   }
 
-  marcarSemanaNoAplica(id: number): Observable<void> {
-    return this.http.patch<void>(`${this.base}/semanas/${id}/no-aplica`, {}, {
-      headers: buildHabHeaders(),
-    });
+  // POST /dossier/semana
+  ensureSemana(req: EnsureSemanaRequest): Observable<{ id: number; fechaInicio: string; fechaFin: string }> {
+    return this.http.post<{ id: number; fechaInicio: string; fechaFin: string }>(
+      `${this.base}/semana`,
+      req,
+      { headers: buildHabHeaders() },
+    );
   }
 
+  // POST /dossier/{dossierId}/documento  [multipart]
   subirDocumento(
-    dossierSemanaId: number,
-    tipoDocumento: DossierTipoDocumento,
+    dossierId: number,
+    tipoDoc: DossierTipoDocumento,
     file: File,
-  ): Observable<{ path: string }> {
+  ): Observable<{ message: string }> {
     const form = new FormData();
-    form.append('file', file);
-    form.append('tipoDocumento', tipoDocumento);
-    return this.http.post<{ path: string }>(
-      `${this.base}/documentos/${dossierSemanaId}/subir`,
-      form,
+    form.append('TipoDoc', tipoDoc);
+    form.append('File', file);
+    return this.http.post<{ message: string }>(`${this.base}/${dossierId}/documento`, form, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  // PATCH /dossier/documento/{docId}/marcar-na
+  marcarDocumentoNa(docId: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.base}/documento/${docId}/marcar-na`,
+      {},
       { headers: buildHabHeaders() },
     );
   }
 
-  marcarDocumentoNa(id: number, justificacion?: string): Observable<void> {
-    return this.http.patch<void>(
-      `${this.base}/documentos/${id}/no-aplica`,
-      { justificacion: justificacion ?? null },
-      { headers: buildHabHeaders() },
-    );
+  // POST /dossier/{dossierId}/enviar
+  enviar(dossierId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${dossierId}/enviar`, {}, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  // POST /dossier/{dossierId}/revisar
+  revisar(dossierId: number, req: RevisarDossierRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${dossierId}/revisar`, req, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  // GET /dossier/documento/{docId}/url
+  getDocumentoUrl(docId: number): Observable<{ url: string }> {
+    return this.http.get<{ url: string }>(`${this.base}/documento/${docId}/url`, {
+      headers: buildHabHeaders(),
+    });
   }
 }

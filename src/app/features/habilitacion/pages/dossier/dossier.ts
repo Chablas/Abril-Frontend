@@ -14,7 +14,6 @@ import { DossierRevisarModal } from './components/dossier-revisar-modal/dossier-
 import {
   DossierEstadoSemana,
   DossierSemanaDto,
-  DOSSIER_TIPOS,
 } from '../../dtos/dossier.model';
 import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 
@@ -40,8 +39,6 @@ export class Dossier implements OnInit {
 
   uploadModalSemanaId: number | null = null;
   revisarModalSemanaId: number | null = null;
-
-  readonly totalDocs = DOSSIER_TIPOS.length;
 
   constructor(
     private dossierService: DossierService,
@@ -90,7 +87,10 @@ export class Dossier implements OnInit {
     this.loadingProyectos = true;
     this.empresaContratistaService.getProyectos(empresaId).subscribe({
       next: (res: any[]) => {
-        this.proyectos = (res ?? []).map((p) => ({ id: p.id ?? p.proyectoId, nombre: p.nombre ?? p.projectDescription ?? '' }));
+        this.proyectos = (res ?? []).map((p) => ({
+          id: p.proyectoId,
+          nombre: p.proyectoNombre,
+        }));
         this.loadingProyectos = false;
         this.cdr.detectChanges();
       },
@@ -108,7 +108,10 @@ export class Dossier implements OnInit {
     this.loadingProyectos = true;
     this.empresaContratistaService.getProyectos(this.empresaId).subscribe({
       next: (res: any[]) => {
-        this.proyectos = (res ?? []).map((p) => ({ id: p.id ?? p.proyectoId, nombre: p.nombre ?? p.projectDescription ?? '' }));
+        this.proyectos = (res ?? []).map((p) => ({
+          id: p.proyectoId,
+          nombre: p.proyectoNombre,
+        }));
         this.loadingProyectos = false;
         if (this.proyectos.length === 1) {
           this.proyectoId = this.proyectos[0].id;
@@ -152,7 +155,7 @@ export class Dossier implements OnInit {
 
   chipSemana(estado: DossierEstadoSemana): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Enviado' || estado === 'Observado') return 'chip-orange';
+    if (estado === 'Enviado' || estado === 'Rechazado') return 'chip-orange';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }
@@ -175,30 +178,60 @@ export class Dossier implements OnInit {
     this.cdr.detectChanges();
   }
 
-  marcarNoAplicaAdmin(semana: DossierSemanaDto): void {
+  // ── ACCIONES CONTRATISTA ──────────────────────────────────────────────────
+
+  abrirNuevaSemana(): void {
+    console.log('proyectoId:', this.proyectoId, 'empresaId:', this.empresaId);
+    const anioActual = new Date().getFullYear();
     Swal.fire({
-      icon: 'question',
-      title: '¿Marcar semana como No Aplica?',
+      title: 'Nueva semana',
+      html: `
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:8px">
+          <div>
+            <label style="font-size:13px;color:#666">Semana</label>
+            <input id="swal-semana" type="number" min="1" max="53" value="${this.getISOWeek(new Date())}"
+              class="swal2-input" style="width:90px;margin:4px 0 0">
+          </div>
+          <div>
+            <label style="font-size:13px;color:#666">Año</label>
+            <input id="swal-anio" type="number" min="2024" max="2030" value="${anioActual}"
+              class="swal2-input" style="width:100px;margin:4px 0 0">
+          </div>
+        </div>`,
       showCancelButton: true,
-      confirmButtonText: 'Confirmar',
+      confirmButtonText: 'Crear',
       cancelButtonText: 'Cancelar',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
+      preConfirm: () => {
+        const semana = parseInt((document.getElementById('swal-semana') as HTMLInputElement).value);
+        const anio = parseInt((document.getElementById('swal-anio') as HTMLInputElement).value);
+        if (!semana || semana < 1 || semana > 53) {
+          Swal.showValidationMessage('Semana inválida (1-53)');
+          return false;
+        }
+        return { semana, anio };
+      },
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value || !this.empresaId || !this.proyectoId) return;
       this.loaderService.show();
-      this.dossierService.marcarSemanaNoAplica(semana.id).subscribe({
-        next: () => {
-          this.loaderService.hide();
-          this.loadSemanas();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-        },
+      this.dossierService.ensureSemana({
+        contributorId: this.empresaId,
+        proyectoId: this.proyectoId,
+        numeroSemana: result.value.semana,
+        anio: result.value.anio,
+      }).subscribe({
+        next: () => { this.loaderService.hide(); this.loadSemanas(); },
+        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
       });
     });
   }
 
-  // ── ACCIONES CONTRATISTA ──────────────────────────────────────────────────
+  private getISOWeek(date: Date): number {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
 
   abrirUpload(semana: DossierSemanaDto): void {
     this.uploadModalSemanaId = semana.id;

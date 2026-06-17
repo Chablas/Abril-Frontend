@@ -30,6 +30,12 @@
     @if (loadingProyectos) {
       <span class="loading-label"><i class="ti ti-loader-2 spin"></i> Cargando proyectos…</span>
     }
+
+    @if (isContratista() && proyectoId) {
+      <button type="button" class="btn-primary" (click)="abrirNuevaSemana()">
+        <i class="ti ti-plus"></i> Nueva semana
+      </button>
+    }
   </div>
 
   <!-- EMPTY STATES -->
@@ -55,15 +61,15 @@
   @if (isContratista() && !loadingSemanas && semanas.length > 0) {
     <div class="semanas-grid">
       @for (s of semanas; track s.id) {
-        <div class="semana-card" [class.semana-card--aprobado]="s.estado === 'Aprobado'" [class.semana-card--observado]="s.estado === 'Observado'">
+        <div class="semana-card" [class.semana-card--aprobado]="s.estado === 'Aprobado'" [class.semana-card--rechazado]="s.estado === 'Rechazado'">
           <div class="semana-card__header">
-            <span class="semana-num">Sem {{ s.semanaNumero }}</span>
+            <span class="semana-num">Sem {{ s.numeroSemana }}</span>
             <span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span>
           </div>
           <div class="semana-fechas">{{ s.fechaInicio | date:'dd/MM' }} — {{ s.fechaFin | date:'dd/MM/yyyy' }}</div>
 
-          @if (s.comentarioSsoma) {
-            <div class="semana-obs"><i class="ti ti-message-circle"></i> {{ s.comentarioSsoma }}</div>
+          @if (s.obsRevisor) {
+            <div class="semana-obs"><i class="ti ti-message-circle"></i> {{ s.obsRevisor }}</div>
           }
 
           <div class="semana-card__footer">
@@ -85,26 +91,21 @@
             <th>Semana</th>
             <th>Período</th>
             <th>Estado</th>
-            <th>Enviado</th>
+            <th>Docs</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (s of semanas; track s.id) {
-            <tr [class.row-observado]="s.estado === 'Observado'" [class.row-aprobado]="s.estado === 'Aprobado'">
-              <td><strong>Semana {{ s.semanaNumero }}</strong></td>
+            <tr [class.row-rechazado]="s.estado === 'Rechazado'" [class.row-aprobado]="s.estado === 'Aprobado'">
+              <td><strong>Semana {{ s.numeroSemana }}</strong></td>
               <td>{{ s.fechaInicio | date:'dd/MM/yy' }} — {{ s.fechaFin | date:'dd/MM/yy' }}</td>
               <td><span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span></td>
-              <td>{{ s.enviadoEn ? (s.enviadoEn | date:'dd/MM/yy HH:mm') : '—' }}</td>
+              <td>{{ s.subidos }}/{{ s.totalDocs }}</td>
               <td class="td-actions">
                 <button type="button" class="btn-ghost-sm" title="Ver / Revisar" (click)="abrirRevisar(s)">
                   <i class="ti ti-eye"></i>
                 </button>
-                @if (s.estado !== 'NoAplica' && s.estado !== 'Aprobado') {
-                  <button type="button" class="btn-ghost-sm" title="Marcar No Aplica" (click)="marcarNoAplicaAdmin(s)">
-                    <i class="ti ti-ban"></i>
-                  </button>
-                }
               </td>
             </tr>
           }

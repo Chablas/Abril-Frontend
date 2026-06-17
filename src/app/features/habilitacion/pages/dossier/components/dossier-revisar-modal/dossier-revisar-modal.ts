@@ -10,10 +10,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { DossierService } from '../../../../services/dossier.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
-import { SharepointUploadService } from '../../../../services/sharepoint-upload.service';
 import {
   DOSSIER_TIPOS,
   DossierDocumentoDto,
@@ -25,7 +25,7 @@ import {
 @Component({
   selector: 'app-dossier-revisar-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DocumentViewer],
   templateUrl: './dossier-revisar-modal.html',
   styleUrl: './dossier-revisar-modal.css',
 })
@@ -38,19 +38,20 @@ export class DossierRevisarModal implements OnInit {
   guardando = false;
   comentario = '';
   modoObservar = false;
+  visorUrl = '';
+  visorNombre = '';
 
   readonly tipos = DOSSIER_TIPOS;
 
   constructor(
     private dossierService: DossierService,
-    private sharepointService: SharepointUploadService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.dossierService.getSemanaDetalle(this.semanaId).subscribe({
+    this.dossierService.getDetalle(this.semanaId).subscribe({
       next: (d) => {
         this.detalle = d;
         this.loading = false;
@@ -65,28 +66,27 @@ export class DossierRevisarModal implements OnInit {
   }
 
   getDoc(tipo: DossierTipoDocumento): DossierDocumentoDto | undefined {
-    return this.detalle?.documentos.find((d) => d.tipoDocumento === tipo);
+    return this.detalle?.documentos.find((d) => d.tipoDoc === tipo);
   }
 
   chipDoc(estado: DossierEstadoDocumento): string {
     if (estado === 'Subido') return 'chip-green';
-    if (estado === 'NoAplica') return 'chip-gray';
+    if (estado === 'NA') return 'chip-gray';
     return 'chip-blue';
   }
 
   chipSemana(estado: string): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Observado' || estado === 'Enviado') return 'chip-orange';
+    if (estado === 'Rechazado' || estado === 'Enviado') return 'chip-orange';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }
 
   verArchivo(doc: DossierDocumentoDto): void {
-    if (!doc.archivoUrl) return;
-    this.sharepointService.getArchivoUrl(doc.archivoUrl).subscribe({
-      next: (res) => window.open(res.url, '_blank', 'noopener'),
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
+    if (!doc.archivoPath) return;
+    this.visorNombre = doc.nombreArchivo ?? doc.tipoDoc;
+    this.visorUrl = doc.archivoPath;
+    this.cdr.detectChanges();
   }
 
   aprobar(): void {
@@ -113,17 +113,22 @@ export class DossierRevisarModal implements OnInit {
       Swal.fire({ icon: 'warning', title: 'Ingresa la observación', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
       return;
     }
-    this.guardar('Observado', this.comentario.trim());
+    this.guardar('Rechazado', this.comentario.trim());
   }
 
-  private guardar(estado: string, comentario?: string): void {
+  private guardar(estado: string, obsRevisor?: string): void {
     this.guardando = true;
     this.loaderService.show();
-    this.dossierService.revisarDossier(this.semanaId, { estado, comentario }).subscribe({
+    this.dossierService.revisar(this.semanaId, { estado, obsRevisor: obsRevisor ?? null }).subscribe({
       next: () => {
         this.guardando = false;
         this.loaderService.hide();
-        Swal.fire({ icon: 'success', title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada', timer: 1500, showConfirmButton: false });
+        Swal.fire({
+          icon: 'success',
+          title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada',
+          timer: 1500,
+          showConfirmButton: false,
+        });
         this.closed.emit(true);
       },
       error: (err: HttpErrorResponse) => {
