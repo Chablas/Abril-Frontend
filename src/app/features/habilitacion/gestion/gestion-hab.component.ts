@@ -45,6 +45,7 @@ export class GestionHabComponent implements OnInit, OnDestroy {
     { label: 'Bandeja',       path: 'bandeja',       icon: 'tab-icon-bandeja'  },
     { label: 'SCTR / Vida Ley', path: 'sctr-vidaley', icon: 'tab-icon-sctr'   },
     { label: 'Inducciones',   path: 'inducciones',   icon: 'tab-icon-induccion'},
+    { label: 'Dossier',       path: 'dossier',       icon: 'tab-icon-dossier'  },
   ];
 
   constructor(

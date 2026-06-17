@@ -1,0 +1,74 @@
+:host { display: block; }
+
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  background: var(--color-background-primary, #fff);
+  border-radius: 12px;
+  width: min(640px, 96vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+}
+.modal-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.modal-title h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.modal-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  background: #1b3a6b; color: #fff; padding: 2px 7px; border-radius: 4px;
+}
+.modal-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--color-text-secondary, #6b7280); font-size: 18px; padding: 2px;
+}
+
+.modal-loading { padding: 40px; text-align: center; color: var(--color-text-secondary, #6b7280); }
+
+.docs-list { flex: 1; overflow-y: auto; padding: 8px 20px; }
+
+.doc-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; border-radius: 8px; margin-bottom: 6px;
+  border: 1px solid var(--color-border-tertiary, #e5e7eb);
+  background: var(--color-background-secondary, #f9fafb);
+}
+.doc-info { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+.doc-tipo { font-size: 13px; font-weight: 600; }
+.chip-sm { font-size: 11px; padding: 2px 8px; }
+.doc-obs { font-size: 11px; color: var(--color-text-secondary, #6b7280); font-style: italic; }
+.doc-actions { flex-shrink: 0; }
+
+.observar-panel {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border-secondary, #e5e7eb);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.observar-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border-secondary, #e5e7eb);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-actions { display: flex; gap: 8px; }
+
+.btn-outline-warning {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: 1px solid #d97706; color: #d97706; background: #fff;
+}
+.btn-outline-warning:hover { background: #fffbeb; }

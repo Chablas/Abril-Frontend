@@ -62,6 +62,13 @@ export const HABILITACION_ROUTES: Routes = [
         canActivate: [roleGuard],
         data: { titulo: 'HABILITACIÓN - INDUCCIONES', featureKey: 'habilitacion.inducciones', roles: ['CONTRATISTA'] },
       },
+      {
+        path: 'dossier',
+        loadComponent: () =>
+          import('./pages/dossier/dossier').then((m) => m.Dossier),
+        canActivate: [authGuard],
+        data: { titulo: 'HABILITACIÓN - DOSSIER SEMANAL' },
+      },
     ],
   },
 
@@ -120,6 +127,13 @@ export const HABILITACION_ROUTES: Routes = [
       import('./pages/inducciones/inducciones').then((m) => m.Inducciones),
     canActivate: [authGuard, roleGuard],
     data: { titulo: 'HABILITACIÓN - INDUCCIONES', featureKey: 'habilitacion.inducciones', roles: ['CONTRATISTA'] },
+  },
+  {
+    path: 'dossier',
+    loadComponent: () =>
+      import('./pages/dossier/dossier').then((m) => m.Dossier),
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - DOSSIER SEMANAL' },
   },
   {
     path: 'registros-modelo',
