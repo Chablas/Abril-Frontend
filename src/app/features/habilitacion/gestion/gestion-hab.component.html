@@ -9,8 +9,7 @@
   ]"
   [botonSecundario]="esContratista ? undefined : { label: 'Actualizar', icono: 'ti-refresh' }"
   [tabs]="esContratista ? contratistaTabsConActivo : []"
-  (secondaryClick)="onRefresh()"
-  (tabClick)="onTabClick($event)">
+  (secondaryClick)="onRefresh()">
 </app-abril-page-header>
 
 <div class="gestion-shell">
