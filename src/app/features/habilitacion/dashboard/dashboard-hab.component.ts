@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
+import { Subscription } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
 import { HabEmpresaService } from '../services/hab-empresa.service';
@@ -30,7 +32,8 @@ interface ProgresoProyecto {
   styleUrl: './dashboard-hab.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardHabComponent implements OnInit {
+export class DashboardHabComponent implements OnInit, OnDestroy {
+  private _sectionSub?: Subscription;
   // ── Admin ──
   loading = true;
   data: DashboardAdminDto | null = null;
@@ -106,6 +109,12 @@ export class DashboardHabComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this._sectionSub = this.habUiService.section$.pipe(
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.cdr.markForCheck();
+    });
+
     if (this.esContratista) {
       this.empresaId = this.authService.getEmpresaId() ?? null;
       const token = this.authService.getToken();
@@ -124,6 +133,10 @@ export class DashboardHabComponent implements OnInit {
     } else {
       this.load();
     }
+  }
+
+  ngOnDestroy(): void {
+    this._sectionSub?.unsubscribe();
   }
 
   // ── Admin ──
