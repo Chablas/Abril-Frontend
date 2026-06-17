@@ -108,9 +108,21 @@ export class DashboardHabComponent implements OnInit {
       if (token) {
         try {
           const decoded: any = jwtDecode(token);
-          const sub = decoded.sub ?? decoded.userId ?? decoded.nameid ??
-            decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-          this.currentUserId = sub != null ? parseInt(String(sub), 10) : null;
+          const candidates = [
+            decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            decoded.userId,
+            decoded.nameid,
+            decoded.sub,
+          ];
+          for (const c of candidates) {
+            if (c != null) {
+              const parsed = parseInt(String(c), 10);
+              if (!isNaN(parsed)) {
+                this.currentUserId = parsed;
+                break;
+              }
+            }
+          }
         } catch { }
       }
       if (this.empresaId) {

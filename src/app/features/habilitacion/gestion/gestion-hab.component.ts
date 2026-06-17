@@ -81,6 +81,7 @@ export class GestionHabComponent implements OnInit, OnDestroy {
       { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
       { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
       { label: 'Usuarios',     icono: 'ti-users-group',      route: '/habilitacion/gestion/usuarios' },
+      { label: 'Dossier',      icono: 'ti-folder',           route: '/habilitacion/gestion/dossier' },
     ];
   }
 
