@@ -43,7 +43,7 @@ import { ErrorService } from '../../../../core/services/error.service';
 })
 export class GestionVecinos implements OnInit {
   vecinos: VecinoListItemDTO[] = [];
-  options: VecinoFormOptionsDTO = { projects: [], colindancias: [], tiposConstruccion: [] };
+  options: VecinoFormOptionsDTO = { projects: [], colindancias: [], tiposConstruccion: [], usos: [], relacionTipos: [] };
 
   currentPage = 1;
   totalPages = 1;
@@ -67,6 +67,8 @@ export class GestionVecinos implements OnInit {
   croquisProjects: ProjectOptionDTO[] = [];
   croquisColindancias: CatalogOptionDTO[] = [];
   croquisTipos: CatalogOptionDTO[] = [];
+  croquisUsos: CatalogOptionDTO[] = [];
+  croquisRelacionTipos: CatalogOptionDTO[] = [];
   showCroquisAdd = false;
   private croquisLoaded = false;
   private vecinosLoaded = false;
@@ -124,6 +126,8 @@ export class GestionVecinos implements OnInit {
         this.croquisProjects = res.projects;
         this.croquisColindancias = res.colindancias;
         this.croquisTipos = res.tiposConstruccion;
+        this.croquisUsos = res.usos;
+        this.croquisRelacionTipos = res.relacionTipos;
         this.croquisLoaded = true;
         this.loaderService.hide();
       },

@@ -22,6 +22,12 @@ export class SearchSelect {
   @Input() compact: boolean = false;
   /** Si es true, muestra el texto completo (sin truncar con "…") tanto en el trigger como en las opciones. */
   @Input() fullText: boolean = false;
+  /**
+   * Color de acento del componente (label, borde/anillo al enfocar y opción seleccionada).
+   * Acepta cualquier valor CSS de color o variable de la paleta (ej. 'var(--color-abril-lime)').
+   * Por defecto usa el verde primario de la marca.
+   */
+  @Input() color: string = 'var(--color-abril-primary)';
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 

@@ -1,5 +1,5 @@
 <app-base-modal
-  [title]="'Editar lotes · ' + croquis.projectDescription"
+  [title]="'Editar vecinos · ' + croquis.projectDescription"
   width="w-[1100px]"
   (closeModal)="close()">
 
@@ -53,8 +53,8 @@
 
       <p class="text-xs text-gray-400 mt-2">
         {{ drawing
-          ? 'Haz clic sobre el croquis para colocar los vértices del lote. Mínimo 3 puntos.'
-          : 'Pulsa “Nuevo lote” y dibuja el contorno de cada casa/lote haciendo clic.' }}
+          ? 'Haz clic sobre el croquis para colocar los vértices del vecino. Mínimo 3 puntos.'
+          : 'Pulsa “Nuevo vecino” y dibuja el contorno de cada casa/vecino haciendo clic.' }}
       </p>
     </div>
 
@@ -65,12 +65,12 @@
       <div *ngIf="!drawing" class="flex flex-col gap-2">
         <button type="button" (click)="startDrawing()"
           class="w-full px-4 py-2 rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center justify-center gap-1.5">
-          <i class="ti ti-pencil-plus"></i> Nuevo lote
+          <i class="ti ti-pencil-plus"></i> Nuevo vecino
         </button>
       </div>
 
       <div *ngIf="drawing" class="flex flex-col gap-2 bg-[#F4FBEC] border border-[#cfe8b0] rounded-lg p-3">
-        <span class="text-xs font-medium text-[#509603]">Dibujando lote · {{ currentPoints.length }} punto(s)</span>
+        <span class="text-xs font-medium text-[#509603]">Dibujando vecino · {{ currentPoints.length }} punto(s)</span>
         <div class="flex flex-wrap gap-2">
           <button type="button" (click)="undoPoint()" [disabled]="!currentPoints.length"
             class="px-3 py-1.5 rounded border border-gray-300 text-gray-600 text-xs cursor-pointer hover:bg-gray-50 disabled:opacity-40">
@@ -82,7 +82,7 @@
           </button>
           <button type="button" (click)="finishLote()" [disabled]="currentPoints.length < 3"
             class="px-3 py-1.5 rounded bg-[#64BC04] text-white text-xs cursor-pointer hover:bg-[#57a803] disabled:opacity-40">
-            Finalizar lote
+            Finalizar vecino
           </button>
         </div>
       </div>
@@ -95,7 +95,7 @@
           [class.bg-gray-50]="selectedIndex === i">
           <span class="flex items-center gap-2 text-sm text-gray-700">
             <span class="w-3 h-3 rounded-sm" [style.background]="colorFor(i)"></span>
-            Lote {{ lote.numeroLote }}
+            Vecino {{ lote.numeroLote }}
             <span class="text-xs text-gray-400">({{ lote.puntos.length }} pts)</span>
           </span>
           <button type="button" (click)="removeLote(i); $event.stopPropagation()"
@@ -104,7 +104,7 @@
           </button>
         </div>
         <p *ngIf="lotes.length === 0" class="text-center text-xs text-gray-400 italic py-6">
-          Aún no hay lotes dibujados.
+          Aún no hay vecinos dibujados.
         </p>
       </div>
 

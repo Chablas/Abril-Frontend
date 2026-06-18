@@ -1,7 +1,7 @@
-<div class="flex flex-col gap-[6px]">
+<div class="flex flex-col gap-[6px]" [style.--ss-accent]="color">
 
   <!-- Label opcional -->
-  <label *ngIf="showLabel && label" class="text-sm text-[#64BC04] font-medium">
+  <label *ngIf="showLabel && label" class="text-sm text-[var(--ss-accent)] font-medium">
     {{ label }}
   </label>
 
@@ -15,10 +15,10 @@
       class="w-full flex items-center justify-between border cursor-pointer focus:outline-none transition-colors"
       [ngClass]="[
         compact
-          ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[#64BC04]/20'
-          : 'rounded-lg bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[#64BC04]/30',
+          ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[var(--ss-accent)]/20'
+          : 'rounded-lg bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[var(--ss-accent)]/30',
         isOpen
-          ? 'border-[#64BC04] ring-2 ring-[#64BC04]/30'
+          ? 'border-[var(--ss-accent)] ring-2 ring-[var(--ss-accent)]/30'
           : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
       ]"
     >
@@ -93,7 +93,7 @@
           class="ss-option px-[12px] py-[9px] text-sm cursor-pointer transition-colors"
           [class.ss-full]="fullText"
           [ngClass]="option[valueField] === value
-            ? 'bg-[#E5F7D1] text-[#64BC04] font-medium hover:bg-[#d4f0b8]'
+            ? 'ss-option-selected font-medium'
             : 'text-gray-700 hover:bg-[#F0F0F0]'"
         >
           {{ option[displayField] }}

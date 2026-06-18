@@ -14,6 +14,16 @@
   text-overflow: ellipsis;
 }
 
+/* Opción seleccionada: texto en el color de acento y fondo claro derivado del mismo.
+   --ss-accent lo inyecta el componente (Input color), con fallback al verde primario. */
+.ss-option-selected {
+  color: var(--ss-accent, var(--color-abril-primary));
+  background: color-mix(in srgb, var(--ss-accent, var(--color-abril-primary)) 16%, white);
+}
+.ss-option-selected:hover {
+  background: color-mix(in srgb, var(--ss-accent, var(--color-abril-primary)) 26%, white);
+}
+
 /* fullText=true → muestra el texto completo (sin "…"), permitiendo que se ajuste en varias líneas. */
 .ss-trigger-label.ss-full,
 .ss-option.ss-full {

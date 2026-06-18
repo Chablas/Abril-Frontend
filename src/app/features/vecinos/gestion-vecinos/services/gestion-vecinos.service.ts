@@ -98,6 +98,15 @@ export class GestionVecinosService {
     });
   }
 
+  /** Sube una o varias imágenes del estado de la propiedad de una casa/lote. */
+  uploadImagenes(vecinoId: number, files: File[]): Observable<ApiMessageDTO> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${vecinoId}/imagenes`, formData, {
+      headers: this.authHeaders(),
+    });
+  }
+
   // ── Solicitudes ─────────────────────────────────────────────────────
   getSolicitudes(vecinoId: number): Observable<VecinoSolicitudesResponseDTO> {
     return this.http.get<VecinoSolicitudesResponseDTO>(`${this.apiUrl}/${vecinoId}/solicitudes`, {

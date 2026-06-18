@@ -10,6 +10,13 @@
   --color-abril-primary-light:  #E8F5E9;
   --color-abril-primary-dark:   #2E7D32;
 
+  /* Verde lima histórico (#64BC04). Se conserva como token con nombre para que
+     siga disponible (loader, gantt, etc.) en vez de quedar como hex suelto.
+     Para labels/acentos preferir --color-abril-primary (verde más oscuro). */
+  --color-abril-lime:           #64BC04;
+  --color-abril-lime-hover:     #59A803;
+  --color-abril-lime-light:     #E5F7D1;
+
   --color-abril-accent:         #00897B;
   --color-abril-accent-hover:   #00796B;
   --color-abril-accent-light:   #E0F2F1;

@@ -14,6 +14,25 @@ export interface VecinoFormOptionsDTO {
   projects: ProjectOptionDTO[];
   colindancias: CatalogOptionDTO[];
   tiposConstruccion: CatalogOptionDTO[];
+  usos: CatalogOptionDTO[];
+  relacionTipos: CatalogOptionDTO[];
+}
+
+/** Una imagen del estado de la propiedad. */
+export interface VecinoImagenDTO {
+  vecinoImagenId: number;
+  archivoUrl: string;
+  originalFileName?: string | null;
+}
+
+/** Una persona asociada a una casa/lote. */
+export interface VecinoPersonaDTO {
+  vecinoPersonaId: number;
+  nombre: string;
+  dni?: string | null;
+  celular?: string | null;
+  vecinoRelacionTipoId: number;
+  relacionDescripcion: string;
 }
 
 export interface VecinoListItemDTO {
@@ -21,15 +40,23 @@ export interface VecinoListItemDTO {
   projectId: number;
   projectDescription: string;
   predio?: string | null;
+  vecinoUsoId?: number | null;
+  usoDescripcion?: string | null;
   direccion: string;
   interiorDepartamento?: string | null;
-  nombrePropietario: string;
-  dni: string;
+  /** Nombre de la persona principal (propietario), para mostrar en tabla/tarjeta. */
+  nombrePropietario?: string | null;
+  /** DNI de la persona principal, si tiene. */
+  dni?: string | null;
   celular?: string | null;
+  /** Todas las personas asociadas a la casa. */
+  personas: VecinoPersonaDTO[];
   vecinoColindanciaId: number;
   colindanciaDescripcion: string;
   vecinoTipoConstruccionId: number;
   tipoConstruccionDescripcion: string;
+  observaciones?: string | null;
+  imagenes: VecinoImagenDTO[];
   createdDateTime: string;
   solicitudesCount: number;
   compromisosCount: number;
@@ -129,6 +156,8 @@ export interface CroquisGestionResponseDTO {
   projects: ProjectOptionDTO[];
   colindancias: CatalogOptionDTO[];
   tiposConstruccion: CatalogOptionDTO[];
+  usos: CatalogOptionDTO[];
+  relacionTipos: CatalogOptionDTO[];
 }
 
 // ── Requisitos (Gestión de requisitos) ────────────────────────────────────
@@ -148,14 +177,21 @@ export interface VecinoRequisitosResponseDTO {
   estados: CatalogOptionDTO[];
 }
 
+/** Una persona del formulario de alta (DNI opcional). */
+export interface VecinoPersonaCreateDTO {
+  nombre: string;
+  dni: string;
+  celular: string;
+  vecinoRelacionTipoId: number | null;
+}
+
 export interface VecinoCreateDTO {
   projectId: number | null;
-  predio?: string | null;
+  vecinoUsoId: number | null;
   direccion: string;
-  interiorDepartamento?: string | null;
-  nombrePropietario: string;
-  dni: string;
-  celular?: string | null;
+  interiorDepartamento: string;
   vecinoColindanciaId: number | null;
   vecinoTipoConstruccionId: number | null;
+  observaciones: string;
+  personas: VecinoPersonaCreateDTO[];
 }

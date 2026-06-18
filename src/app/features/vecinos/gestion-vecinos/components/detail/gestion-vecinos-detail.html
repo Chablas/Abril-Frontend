@@ -23,34 +23,65 @@
     <app-section-tabs [tabs]="tabs" [(value)]="activeTab"></app-section-tabs>
 
     <!-- ── DETALLE ─────────────────────────────────────────────────── -->
-    <div *ngIf="activeTab === 'detalle'" class="grid grid-cols-2 gap-x-6 gap-y-3 pt-1">
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
-        <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
+    <div *ngIf="activeTab === 'detalle'" class="flex flex-col gap-4 pt-1">
+
+      <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+        <div>
+          <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
+          <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-[#64BC04] font-medium">Uso</p>
+          <p class="text-sm text-gray-700">{{ item.usoDescripcion || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
+          <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
+          <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
+        </div>
       </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Predio</p>
-        <p class="text-sm text-gray-700">{{ item.predio || '—' }}</p>
+
+      <!-- Personas -->
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-[#64BC04] font-medium">Personas ({{ item.personas.length }})</p>
+        <div class="flex flex-col gap-2">
+          <div *ngFor="let p of item.personas"
+            class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
+            <div class="min-w-0">
+              <p class="text-sm text-gray-800 truncate">{{ p.nombre }}</p>
+              <p class="text-xs text-gray-400">
+                DNI {{ p.dni || '—' }} · Cel. {{ p.celular || '—' }}
+              </p>
+            </div>
+            <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full shrink-0">
+              {{ p.relacionDescripcion }}
+            </span>
+          </div>
+          <p *ngIf="item.personas.length === 0" class="text-sm text-gray-400 italic">
+            No hay personas registradas.
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Propietario / Representante</p>
-        <p class="text-sm text-gray-700">{{ item.nombrePropietario }}</p>
+
+      <!-- Observaciones -->
+      <div *ngIf="item.observaciones" class="flex flex-col gap-1">
+        <p class="text-xs text-[#64BC04] font-medium">Observaciones</p>
+        <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.observaciones }}</p>
       </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">DNI</p>
-        <p class="text-sm text-gray-700">{{ item.dni }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
-        <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Celular</p>
-        <p class="text-sm text-gray-700">{{ item.celular || '—' }}</p>
-      </div>
-      <div>
-        <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
-        <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
+
+      <!-- Estado de la propiedad (imágenes) -->
+      <div *ngIf="item.imagenes.length > 0" class="flex flex-col gap-2">
+        <p class="text-xs text-[#64BC04] font-medium">Estado de la propiedad</p>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <a *ngFor="let img of item.imagenes" [href]="requisitoFileUrl(img.archivoUrl)" target="_blank"
+            class="block rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition">
+            <img [src]="requisitoFileUrl(img.archivoUrl)" class="h-24 w-full object-cover"
+              [alt]="img.originalFileName || 'Imagen de la propiedad'" />
+          </a>
+        </div>
       </div>
     </div>
 

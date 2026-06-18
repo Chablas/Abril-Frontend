@@ -31,17 +31,19 @@
         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
     </svg>
     <span class="text-xs text-gray-600 line-clamp-2">
-      {{ item.nombrePropietario }} <span class="text-gray-400">· DNI {{ item.dni }}</span>
+      {{ item.nombrePropietario || '—' }}
+      <span *ngIf="item.dni" class="text-gray-400">· DNI {{ item.dni }}</span>
+      <span *ngIf="item.personas.length > 1" class="text-gray-400">· +{{ item.personas.length - 1 }} más</span>
     </span>
   </div>
 
-  <!-- Proyecto + predio + tipo construcción -->
+  <!-- Proyecto + uso + tipo construcción -->
   <div class="border-t border-gray-100 pt-2 flex flex-col gap-1">
     <span class="text-xs text-gray-500">
       <span class="text-gray-400">Proyecto:</span> {{ item.projectDescription }}
     </span>
-    <span *ngIf="item.predio" class="text-xs text-gray-500">
-      <span class="text-gray-400">Predio:</span> {{ item.predio }}
+    <span *ngIf="item.usoDescripcion" class="text-xs text-gray-500">
+      <span class="text-gray-400">Uso:</span> {{ item.usoDescripcion }}
     </span>
     <span class="text-xs text-gray-500">
       <span class="text-gray-400">Construcción:</span> {{ item.tipoConstruccionDescripcion }}

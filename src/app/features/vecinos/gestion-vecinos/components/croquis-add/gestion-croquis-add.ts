@@ -2,10 +2,12 @@ import { Component, EventEmitter, Input, Output, ChangeDetectorRef } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
 import { environment } from '../../../../../../environments/environment';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -21,7 +23,7 @@ import {
 @Component({
   selector: 'app-gestion-croquis-add',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, SectionTabs],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, SectionTabs, FileSelector],
   templateUrl: './gestion-croquis-add.html',
 })
 export class GestionCroquisAdd {
@@ -31,6 +33,8 @@ export class GestionCroquisAdd {
   @Input() croquis: CroquisGestionDTO[] = [];
   @Input() colindancias: CatalogOptionDTO[] = [];
   @Input() tiposConstruccion: CatalogOptionDTO[] = [];
+  @Input() usos: CatalogOptionDTO[] = [];
+  @Input() relacionTipos: CatalogOptionDTO[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() created = new EventEmitter<void>();
 
@@ -42,20 +46,47 @@ export class GestionCroquisAdd {
 
   form: VecinoCreateDTO = {
     projectId: null,
-    predio: '',
+    vecinoUsoId: null,
     direccion: '',
     interiorDepartamento: '',
-    nombrePropietario: '',
-    dni: '',
-    celular: '',
     vecinoColindanciaId: null,
     vecinoTipoConstruccionId: null,
+    observaciones: '',
+    personas: [{ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null }],
   };
 
   selectedCroquis: CroquisGestionDTO | null = null;
   selectedLote: CroquisGestionLoteDTO | null = null;
 
-  dniLookupLoading = false;
+  /** Índice de la persona cuya consulta RENIEC está en curso (-1 = ninguna). */
+  dniLookupIndex = -1;
+
+  /** Imágenes del estado de la propiedad seleccionadas (aún no subidas). */
+  selectedImages: SelectedFile[] = [];
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  // ── Imágenes (estado de la propiedad) ──────────────────────────────────
+  onImageSelected(file: SelectedFile): void {
+    if (!file.file.type.startsWith('image/')) return;
+    this.selectedImages.push(file);
+  }
+
+  removeImage(index: number): void {
+    this.selectedImages.splice(index, 1);
+  }
+
+  // ── Personas ───────────────────────────────────────────────────────────
+  addPersona(): void {
+    this.form.personas.push({ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null });
+  }
+
+  removePersona(index: number): void {
+    if (this.form.personas.length <= 1) return;
+    this.form.personas.splice(index, 1);
+  }
 
   constructor(
     private service: GestionVecinosService,
@@ -74,33 +105,34 @@ export class GestionCroquisAdd {
     this.selectedLote = null;
   }
 
-  // ── DNI / RENIEC ───────────────────────────────────────────────────────
-  searchReniec(): void {
-    if (this.form.dni.length !== 8) return;
-    this.dniLookupLoading = true;
+  // ── DNI / RENIEC (por persona) ─────────────────────────────────────────
+  searchReniec(index: number): void {
+    const persona = this.form.personas[index];
+    if (!persona || persona.dni.length !== 8) return;
+    this.dniLookupIndex = index;
     this.loaderService.show();
-    this.service.getPersonByDni(this.form.dni).subscribe({
+    this.service.getPersonByDni(persona.dni).subscribe({
       next: (data) => {
-        this.form.nombrePropietario = data.full_name?.trim()
+        persona.nombre = data.full_name?.trim()
           || `${data.first_name} ${data.first_last_name} ${data.second_last_name}`.trim();
-        this.dniLookupLoading = false;
+        this.dniLookupIndex = -1;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.dniLookupLoading = false;
+        this.dniLookupIndex = -1;
         this.loaderService.hide();
         Swal.fire({
           icon: err.status === 404 ? 'warning' : 'info',
           title: err.status === 404 ? 'DNI no encontrado' : 'No se pudo consultar RENIEC',
-          text: 'Ingresa el nombre del propietario o representante manualmente.',
+          text: 'Ingresa el nombre de la persona manualmente.',
         });
       },
     });
   }
 
-  onDniKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') { event.preventDefault(); this.searchReniec(); return; }
+  onDniKeydown(event: KeyboardEvent, index: number): void {
+    if (event.key === 'Enter') { event.preventDefault(); this.searchReniec(index); return; }
     this.blockNonDigits(event);
   }
 
@@ -145,12 +177,22 @@ export class GestionCroquisAdd {
   // ── Validación + submit ────────────────────────────────────────────────
   private getValidationErrors(): { tab: string; campo: string }[] {
     const errors: { tab: string; campo: string }[] = [];
-    if (!this.form.dni?.trim() || !/^\d{8}$/.test(this.form.dni.trim()))
-      errors.push({ tab: 'generales', campo: 'DNI (8 dígitos)' });
-    if (!this.form.nombrePropietario?.trim()) errors.push({ tab: 'generales', campo: 'Propietario o representante' });
     if (!this.form.direccion?.trim()) errors.push({ tab: 'generales', campo: 'Dirección' });
+    if (!this.form.interiorDepartamento?.trim()) errors.push({ tab: 'generales', campo: 'Interior / Departamento' });
+    if (!this.form.vecinoUsoId) errors.push({ tab: 'generales', campo: 'Uso' });
     if (!this.form.vecinoColindanciaId) errors.push({ tab: 'generales', campo: 'Colindante / No colindante' });
     if (!this.form.vecinoTipoConstruccionId) errors.push({ tab: 'generales', campo: 'Tipo de construcción' });
+
+    // Personas: al menos una; cada una con nombre, celular y relación. DNI opcional (8 díg. si se ingresa).
+    this.form.personas.forEach((p, i) => {
+      const n = i + 1;
+      if (!p.nombre?.trim()) errors.push({ tab: 'generales', campo: `Persona ${n}: nombre` });
+      if (!p.celular?.trim()) errors.push({ tab: 'generales', campo: `Persona ${n}: celular` });
+      if (!p.vecinoRelacionTipoId) errors.push({ tab: 'generales', campo: `Persona ${n}: relación` });
+      if (p.dni?.trim() && !/^\d{8}$/.test(p.dni.trim()))
+        errors.push({ tab: 'generales', campo: `Persona ${n}: DNI (8 dígitos)` });
+    });
+
     if (!this.form.projectId) errors.push({ tab: 'ubicacion', campo: 'Proyecto' });
     return errors;
   }
@@ -175,24 +217,32 @@ export class GestionCroquisAdd {
     this.service.create(this.form).subscribe({
       next: (res) => {
         const vecinoId = res.vecinoId;
-        // Si se eligió un lote, vincular el vecino recién creado a ese lote.
-        if (this.selectedLote && vecinoId) {
-          this.service.assignVecinoToLote(this.selectedLote.projectCroquisLoteId, vecinoId).subscribe({
-            next: () => {
-              this.loaderService.hide();
-              this.successAndClose();
-            },
-            error: (err: HttpErrorResponse) => {
-              this.loaderService.hide();
-              // El vecino sí se creó; avisamos que la vinculación al lote falló.
-              this.errorService.handleError(err);
-              this.created.emit();
-            },
-          });
-        } else {
+
+        // Pasos posteriores (independientes): vincular lote y subir imágenes.
+        const tasks: Observable<unknown>[] = [];
+        if (this.selectedLote && vecinoId)
+          tasks.push(this.service.assignVecinoToLote(this.selectedLote.projectCroquisLoteId, vecinoId));
+        if (this.selectedImages.length > 0)
+          tasks.push(this.service.uploadImagenes(vecinoId, this.selectedImages.map((i) => i.file)));
+
+        if (tasks.length === 0) {
           this.loaderService.hide();
           this.successAndClose();
+          return;
         }
+
+        forkJoin(tasks).subscribe({
+          next: () => {
+            this.loaderService.hide();
+            this.successAndClose();
+          },
+          error: (err: HttpErrorResponse) => {
+            this.loaderService.hide();
+            // La propiedad sí se creó; avisamos que algún paso posterior falló.
+            this.errorService.handleError(err);
+            this.created.emit();
+          },
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -204,8 +254,8 @@ export class GestionCroquisAdd {
   private successAndClose(): void {
     Swal.fire({
       icon: 'success',
-      title: '¡Vecino registrado!',
-      text: 'El vecino fue registrado correctamente.',
+      title: '¡Propiedad registrada!',
+      text: 'La propiedad y sus vecinos fueron registrados correctamente.',
       confirmButtonColor: '#64BC04',
     });
     this.created.emit();

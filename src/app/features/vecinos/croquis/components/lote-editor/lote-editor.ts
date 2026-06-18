@@ -93,11 +93,11 @@ export class LoteEditor implements OnInit {
   async finishLote(): Promise<void> {
     if (this.currentPoints.length < 3) return;
     const { value: numero } = await Swal.fire({
-      title: 'Número / etiqueta del lote',
+      title: 'Número / etiqueta del vecino',
       input: 'text',
       inputPlaceholder: 'Ej. 14',
       showCancelButton: true,
-      confirmButtonText: 'Guardar lote',
+      confirmButtonText: 'Guardar vecino',
       confirmButtonColor: '#64BC04',
       inputValidator: (v) => (!v?.trim() ? 'Ingresa un número o etiqueta' : null),
     });
@@ -141,7 +141,7 @@ export class LoteEditor implements OnInit {
     this.service.saveLotes(this.croquis.projectCroquisId, payload).subscribe({
       next: () => {
         this.loaderService.hide();
-        Swal.fire({ title: 'Lotes guardados exitosamente', icon: 'success', draggable: true });
+        Swal.fire({ title: 'Vecinos guardados exitosamente', icon: 'success', draggable: true });
         this.closeModal.emit();
       },
       error: (err: HttpErrorResponse) => {

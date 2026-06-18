@@ -8,7 +8,7 @@
         <img [src]="imageSrc(c.imageUrl)" class="w-full h-full object-cover group-hover:scale-105 transition-transform"
           [alt]="'Croquis de ' + c.projectDescription" />
         <span class="absolute bottom-2 right-2 text-[11px] font-medium bg-black/55 text-white px-2 py-0.5 rounded-full">
-          {{ c.lotes.length }} lote(s)
+          {{ c.lotes.length }} vecino(s)
         </span>
       </div>
       <div class="px-4 py-3">
@@ -72,7 +72,7 @@
           {{ lote.numeroLote }}
         </div>
       </div>
-      <p class="text-xs text-gray-400 mt-2">Haz clic en un lote para ver el vecino asignado.</p>
+      <p class="text-xs text-gray-400 mt-2">Haz clic en un vecino para ver su detalle.</p>
     </div>
 
     <!-- Panel lateral (solo consulta) -->
@@ -80,7 +80,7 @@
       <ng-container *ngIf="selectedLote; else sinSeleccion">
         <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-700">Lote {{ selectedLote.numeroLote }}</span>
+            <span class="text-sm font-semibold text-gray-700">Vecino {{ selectedLote.numeroLote }}</span>
             <span *ngIf="selectedLote.vecinoId"
               class="text-[11px] bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">Asignado</span>
           </div>
@@ -149,7 +149,7 @@
           </div>
 
           <ng-template #sinVecino>
-            <p class="text-sm text-gray-400 italic">Este lote no tiene vecino asignado.</p>
+            <p class="text-sm text-gray-400 italic">Aún no hay vecino asignado.</p>
           </ng-template>
         </div>
       </ng-container>
@@ -211,7 +211,7 @@
           </div>
 
           <p class="text-xs text-gray-400 italic border-t border-gray-200 pt-2">
-            Selecciona un lote del croquis para ver su vecino.
+            Selecciona un vecino del croquis para ver su detalle.
           </p>
         </div>
       </ng-template>
