@@ -59,7 +59,7 @@ export class WorkItem implements OnInit {
         Swal.fire({
           icon: 'success',
           title: 'Sincronización completada',
-          html: `${res.projectsScanned} proyecto(s) · ${res.created} nuevas · ${res.existing} ya registradas · ${res.specialtyFilled} con especialidad completada${createdLine}${noFolderLine}`,
+          html: `${res.projectsScanned} proyecto(s) · ${res.created} nuevas · ${res.existing} ya registradas${createdLine}${noFolderLine}`,
           confirmButtonColor: '#64BC04',
         });
         this.list.load(1);

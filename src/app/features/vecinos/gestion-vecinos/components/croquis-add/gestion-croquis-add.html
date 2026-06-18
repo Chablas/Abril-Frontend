@@ -12,16 +12,16 @@
 
         <!-- Dirección -->
         <div class="flex flex-col gap-[6px]">
-          <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-500">*</span></label>
+          <label class="text-sm text-[var(--color-abril-primary)] font-medium">Dirección <span class="text-red-500">*</span></label>
           <input type="text" [(ngModel)]="form.direccion" name="direccion" placeholder="Dirección"
-            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
         </div>
 
         <!-- Interior / Departamento -->
         <div class="flex flex-col gap-[6px]">
-          <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento <span class="text-red-500">*</span></label>
+          <label class="text-sm text-[var(--color-abril-primary)] font-medium">Interior / Departamento <span class="text-red-500">*</span></label>
           <input type="text" [(ngModel)]="form.interiorDepartamento" name="interiorDepartamento" placeholder="Interior o departamento"
-            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
         </div>
 
         <!-- Uso -->
@@ -72,7 +72,7 @@
             Personas <span class="text-red-400 normal-case font-normal text-[11px]">* mín. 1</span>
           </p>
           <button type="button" (click)="addPersona()"
-            class="flex items-center gap-1.5 text-xs text-[#64BC04] font-medium hover:text-[#57a803] cursor-pointer transition-colors">
+            class="flex items-center gap-1.5 text-xs text-[var(--color-abril-primary)] font-medium hover:text-[var(--color-abril-primary-hover)] cursor-pointer transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
             </svg>
@@ -97,14 +97,14 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <!-- DNI (opcional) + consulta RENIEC -->
               <div class="flex flex-col gap-[6px]">
-                <label class="text-sm text-[#64BC04] font-medium">DNI</label>
+                <label class="text-sm text-[var(--color-abril-primary)] font-medium">DNI</label>
                 <div class="flex gap-2">
                   <input type="text" maxlength="8" inputmode="numeric"
                     [(ngModel)]="p.dni" [name]="'dni_' + i" (keydown)="onDniKeydown($event, i)"
                     placeholder="N° de DNI"
-                    class="flex-1 min-w-0 border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="flex-1 min-w-0 border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
                   <button type="button" (click)="searchReniec(i)" [disabled]="p.dni.length !== 8 || dniLookupIndex === i"
-                    class="px-3 rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
+                    class="px-3 rounded-lg bg-[var(--color-abril-primary)] text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0">
                     {{ dniLookupIndex === i ? '...' : 'Consultar' }}
                   </button>
                 </div>
@@ -112,17 +112,17 @@
 
               <!-- Nombre -->
               <div class="flex flex-col gap-[6px]">
-                <label class="text-sm text-[#64BC04] font-medium">Nombre completo <span class="text-red-500">*</span></label>
+                <label class="text-sm text-[var(--color-abril-primary)] font-medium">Nombre completo <span class="text-red-500">*</span></label>
                 <input type="text" [(ngModel)]="p.nombre" [name]="'nombre_' + i" placeholder="Nombre completo"
-                  class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                  class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
               </div>
 
               <!-- Celular -->
               <div class="flex flex-col gap-[6px]">
-                <label class="text-sm text-[#64BC04] font-medium">Celular <span class="text-red-500">*</span></label>
+                <label class="text-sm text-[var(--color-abril-primary)] font-medium">Celular <span class="text-red-500">*</span></label>
                 <input type="text" maxlength="20" inputmode="numeric"
                   [(ngModel)]="p.celular" [name]="'celular_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de celular"
-                  class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                  class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
               </div>
 
               <!-- Relación -->
@@ -144,15 +144,15 @@
 
       <!-- Observaciones -->
       <div class="flex flex-col gap-[6px]">
-        <label class="text-sm text-[#64BC04] font-medium">Observaciones</label>
+        <label class="text-sm text-[var(--color-abril-primary)] font-medium">Observaciones</label>
         <textarea [(ngModel)]="form.observaciones" name="observaciones" rows="3"
           placeholder="Notas adicionales sobre la propiedad (opcional)"
-          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30 resize-none"></textarea>
       </div>
 
       <!-- Estado de la propiedad (imágenes) -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm text-[#64BC04] font-medium">Estado de la propiedad (imágenes)</label>
+        <label class="text-sm text-[var(--color-abril-primary)] font-medium">Estado de la propiedad (imágenes)</label>
         <app-file-selector
           accept=".png,.jpg,.jpeg,.webp"
           label="Arrastra las imágenes aquí o"
@@ -241,7 +241,7 @@
         Cancelar
       </button>
       <button type="submit"
-        class="px-6 py-[10px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+        class="px-6 py-[10px] rounded-lg bg-[var(--color-abril-primary)] text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors">
         Guardar propiedad y vecinos
       </button>
     </div>

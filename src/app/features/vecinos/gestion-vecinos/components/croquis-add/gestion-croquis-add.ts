@@ -208,7 +208,7 @@ export class GestionCroquisAdd {
         title: 'Campos incompletos',
         html: `<p style="font-size:0.85rem;color:#666;margin-bottom:8px">Completa los siguientes campos:</p>
                <ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
@@ -256,7 +256,7 @@ export class GestionCroquisAdd {
       icon: 'success',
       title: '¡Propiedad registrada!',
       text: 'La propiedad y sus vecinos fueron registrados correctamente.',
-      confirmButtonColor: '#64BC04',
+      confirmButtonColor: 'var(--color-abril-primary)',
     });
     this.created.emit();
   }

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
-import { WorkItemDto, WorkItemFormDataDto, WorkItemSyncResultDto } from '../dtos/work-item.dto';
+import { WorkItemDto, WorkItemSyncResultDto } from '../dtos/work-item.dto';
 import { WorkItemCreateDto } from '../dtos/work-item-create.dto';
 import { WorkItemEditDto } from '../dtos/work-item-edit.dto';
 import { WorkItemFilterDto } from '../dtos/work-item-filter.dto';
@@ -28,10 +28,6 @@ export class WorkItemService {
       headers: this.headers,
       params,
     });
-  }
-
-  getFormData(): Observable<WorkItemFormDataDto> {
-    return this.http.get<WorkItemFormDataDto>(`${this.apiUrl}/form-data`, { headers: this.headers });
   }
 
   sync(): Observable<WorkItemSyncResultDto> {
