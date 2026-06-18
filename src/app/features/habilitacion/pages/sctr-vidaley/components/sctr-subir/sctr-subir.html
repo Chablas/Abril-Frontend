@@ -105,19 +105,19 @@
               type="button"
               class="filter-btn"
               [class.filter-btn--active]="filtroObra === ''"
-              (click)="filtroObra = ''"
+              (click)="setFiltroObra('')"
             >Todos ({{ trabajadores.length }})</button>
             <button
               type="button"
               class="filter-btn"
               [class.filter-btn--active]="filtroObra === 'obra'"
-              (click)="filtroObra = 'obra'"
+              (click)="setFiltroObra('obra')"
             >Obra</button>
             <button
               type="button"
               class="filter-btn"
               [class.filter-btn--active]="filtroObra === 'staff'"
-              (click)="filtroObra = 'staff'"
+              (click)="setFiltroObra('staff')"
             >Staff / Oficina Central</button>
           </div>
 

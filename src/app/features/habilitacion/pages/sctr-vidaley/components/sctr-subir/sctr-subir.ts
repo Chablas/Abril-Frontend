@@ -387,6 +387,11 @@ export class SctrSubir implements OnChanges, OnDestroy {
     }
   }
 
+  setFiltroObra(valor: 'obra' | 'staff' | ''): void {
+    this.filtroObra = valor;
+    this.workersSeleccionados = new Set();
+  }
+
   toggleAll(checked: boolean): void {
     if (checked) {
       this.trabajadoresFiltrados.forEach((w) => this.workersSeleccionados.add(w.workerId));
