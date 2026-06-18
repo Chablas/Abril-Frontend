@@ -8,6 +8,8 @@ import {
   VecinosPageDTO,
   VecinoListItemDTO,
   VecinoCreateDTO,
+  VecinoUpdateDTO,
+  VecinoImagenDTO,
   VecinoSolicitudesResponseDTO,
   VecinoSolicitudCreateDTO,
   VecinoCompromisoItemDTO,
@@ -98,11 +100,34 @@ export class GestionVecinosService {
     });
   }
 
+  /** Una casa/propiedad con personas e imágenes frescas (para refrescar el detalle). */
+  getById(vecinoId: number): Observable<VecinoListItemDTO> {
+    return this.http.get<VecinoListItemDTO>(`${this.apiUrl}/${vecinoId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Edita los datos de la casa/propiedad (sección Detalle) y sus personas. */
+  update(vecinoId: number, dto: VecinoUpdateDTO): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${vecinoId}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
   /** Sube una o varias imágenes del estado de la propiedad de una casa/lote. */
-  uploadImagenes(vecinoId: number, files: File[]): Observable<ApiMessageDTO> {
+  uploadImagenes(vecinoId: number, files: File[]): Observable<{ imagenes: VecinoImagenDTO[]; message: string }> {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${vecinoId}/imagenes`, formData, {
+    return this.http.post<{ imagenes: VecinoImagenDTO[]; message: string }>(
+      `${this.apiUrl}/${vecinoId}/imagenes`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Elimina (soft delete) una imagen del estado de la propiedad. */
+  deleteImagen(imagenId: number): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/imagenes/${imagenId}`, {
       headers: this.authHeaders(),
     });
   }

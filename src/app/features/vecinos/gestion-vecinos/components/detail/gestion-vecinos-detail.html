@@ -1,4 +1,4 @@
-<app-base-modal [title]="'Detalle del vecino'" width="w-[720px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'Detalle del vecino'" width="w-[920px]" (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-4 mt-2">
 
@@ -25,64 +25,224 @@
     <!-- ── DETALLE ─────────────────────────────────────────────────── -->
     <div *ngIf="activeTab === 'detalle'" class="flex flex-col gap-4 pt-1">
 
-      <div class="grid grid-cols-2 gap-x-6 gap-y-3">
-        <div>
-          <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
-          <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-[#64BC04] font-medium">Uso</p>
-          <p class="text-sm text-gray-700">{{ item.usoDescripcion || '—' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
-          <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
-          <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
-        </div>
+      <!-- Barra de acciones -->
+      <div class="flex justify-end">
+        <button *ngIf="!editing" type="button" (click)="startEdit()"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#64BC04] text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#E5F7D1] transition-colors">
+          <i class="ti ti-edit"></i> Editar
+        </button>
       </div>
 
-      <!-- Personas -->
-      <div class="flex flex-col gap-2">
-        <p class="text-xs text-[#64BC04] font-medium">Personas ({{ item.personas.length }})</p>
-        <div class="flex flex-col gap-2">
-          <div *ngFor="let p of item.personas"
-            class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
-            <div class="min-w-0">
-              <p class="text-sm text-gray-800 truncate">{{ p.nombre }}</p>
-              <p class="text-xs text-gray-400">
-                DNI {{ p.dni || '—' }} · Cel. {{ p.celular || '—' }}
-              </p>
-            </div>
-            <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full shrink-0">
-              {{ p.relacionDescripcion }}
-            </span>
+      <!-- ══════════ VISTA (solo lectura) ══════════ -->
+      <ng-container *ngIf="!editing">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div>
+            <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
+            <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
           </div>
-          <p *ngIf="item.personas.length === 0" class="text-sm text-gray-400 italic">
-            No hay personas registradas.
-          </p>
+          <div>
+            <p class="text-xs text-[#64BC04] font-medium">Uso</p>
+            <p class="text-sm text-gray-700">{{ item.usoDescripcion || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
+            <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
+            <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
+          </div>
         </div>
-      </div>
 
-      <!-- Observaciones -->
-      <div *ngIf="item.observaciones" class="flex flex-col gap-1">
-        <p class="text-xs text-[#64BC04] font-medium">Observaciones</p>
-        <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.observaciones }}</p>
-      </div>
-
-      <!-- Estado de la propiedad (imágenes) -->
-      <div *ngIf="item.imagenes.length > 0" class="flex flex-col gap-2">
-        <p class="text-xs text-[#64BC04] font-medium">Estado de la propiedad</p>
-        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          <a *ngFor="let img of item.imagenes" [href]="requisitoFileUrl(img.archivoUrl)" target="_blank"
-            class="block rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition">
-            <img [src]="requisitoFileUrl(img.archivoUrl)" class="h-24 w-full object-cover"
-              [alt]="img.originalFileName || 'Imagen de la propiedad'" />
-          </a>
+        <!-- Personas -->
+        <div class="flex flex-col gap-2">
+          <p class="text-xs text-[#64BC04] font-medium">Personas ({{ item.personas.length }})</p>
+          <div class="flex flex-col gap-2">
+            <div *ngFor="let p of item.personas"
+              class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
+              <div class="min-w-0">
+                <p class="text-sm text-gray-800 truncate">{{ p.nombre }}</p>
+                <p class="text-xs text-gray-400">
+                  DNI {{ p.dni || '—' }} · Cel. {{ p.celular || '—' }}
+                </p>
+              </div>
+              <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full shrink-0">
+                {{ p.relacionDescripcion }}
+              </span>
+            </div>
+            <p *ngIf="item.personas.length === 0" class="text-sm text-gray-400 italic">
+              No hay personas registradas.
+            </p>
+          </div>
         </div>
-      </div>
+
+        <!-- Observaciones -->
+        <div *ngIf="item.observaciones" class="flex flex-col gap-1">
+          <p class="text-xs text-[#64BC04] font-medium">Observaciones</p>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.observaciones }}</p>
+        </div>
+
+        <!-- Estado de la propiedad (imágenes) -->
+        <div *ngIf="item.imagenes.length > 0" class="flex flex-col gap-2">
+          <p class="text-xs text-[#64BC04] font-medium">Estado de la propiedad</p>
+          <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div *ngFor="let img of item.imagenes"
+              class="h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
+              <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ══════════ EDICIÓN ══════════ -->
+      <ng-container *ngIf="editing">
+        <!-- Campos de la propiedad -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-[6px]">
+            <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="editForm.direccion" name="ed_direccion" placeholder="Dirección"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+          </div>
+          <div class="flex flex-col gap-[6px]">
+            <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="editForm.interiorDepartamento" name="ed_interior" placeholder="Interior o departamento"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+          </div>
+          <div>
+            <app-search-select label="Uso *" placeholder="Selecciona" [options]="usos"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoUsoId" (valueChange)="editForm.vecinoUsoId = $event">
+            </app-search-select>
+          </div>
+          <div>
+            <app-search-select label="Colindante / No colindante *" placeholder="Selecciona" [options]="colindancias"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoColindanciaId" (valueChange)="editForm.vecinoColindanciaId = $event">
+            </app-search-select>
+          </div>
+          <div>
+            <app-search-select label="Tipo de construcción *" placeholder="Selecciona" [options]="tiposConstruccion"
+              valueField="id" displayField="descripcion"
+              [value]="editForm.vecinoTipoConstruccionId" (valueChange)="editForm.vecinoTipoConstruccionId = $event">
+            </app-search-select>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="flex flex-col gap-[6px]">
+          <label class="text-sm text-[#64BC04] font-medium">Observaciones</label>
+          <textarea [(ngModel)]="editForm.observaciones" name="ed_observaciones" rows="3"
+            placeholder="Notas adicionales sobre la propiedad (opcional)"
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+        </div>
+
+        <!-- Personas (editar/añadir/quitar) -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              Personas <span class="text-red-400 normal-case font-normal text-[11px]">* mín. 1</span>
+            </p>
+            <button type="button" (click)="addPersonaEdit()"
+              class="flex items-center gap-1.5 text-xs text-[#64BC04] font-medium hover:text-[#57a803] cursor-pointer transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+              </svg>
+              Agregar persona
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <div *ngFor="let p of editForm.personas; let i = index; trackBy: trackByIndex"
+              class="border border-[#D6DEE5] rounded-lg p-3 flex flex-col gap-3 bg-[#FAFCF7]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-500">Persona {{ i + 1 }}</span>
+                <button *ngIf="editForm.personas.length > 1" type="button" (click)="removePersonaEdit(i)"
+                  class="p-1 text-gray-300 hover:text-red-400 transition-colors cursor-pointer rounded hover:bg-red-50">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#64BC04] font-medium">DNI</label>
+                  <input type="text" maxlength="8" inputmode="numeric"
+                    [(ngModel)]="p.dni" [name]="'ed_dni_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de DNI"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                </div>
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#64BC04] font-medium">Nombre completo <span class="text-red-500">*</span></label>
+                  <input type="text" [(ngModel)]="p.nombre" [name]="'ed_nombre_' + i" placeholder="Nombre completo"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                </div>
+                <div class="flex flex-col gap-[6px]">
+                  <label class="text-sm text-[#64BC04] font-medium">Celular <span class="text-red-500">*</span></label>
+                  <input type="text" maxlength="20" inputmode="numeric"
+                    [(ngModel)]="p.celular" [name]="'ed_celular_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de celular"
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                </div>
+                <div>
+                  <app-search-select label="Relación *" placeholder="Propietario, inquilino u otro"
+                    [options]="relacionTipos" valueField="id" displayField="descripcion"
+                    [value]="p.vecinoRelacionTipoId" (valueChange)="p.vecinoRelacionTipoId = $event">
+                  </app-search-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado de la propiedad (imágenes existentes + nuevas) -->
+        <div class="flex flex-col gap-2">
+          <label class="text-sm text-[#64BC04] font-medium">Estado de la propiedad (imágenes)</label>
+
+          <div *ngIf="item.imagenes.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div *ngFor="let img of item.imagenes"
+              class="relative group h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
+              <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
+              <button type="button" (click)="removeExistingImage(img.vecinoImagenId)"
+                class="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 cursor-pointer hover:bg-black/75 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <app-file-selector
+            accept=".png,.jpg,.jpeg,.webp"
+            label="Arrastra nuevas imágenes aquí o"
+            hint="Puedes subir varias · PNG, JPG o WEBP (máx. 15 MB c/u)"
+            (fileSelected)="onImageSelected($event)">
+          </app-file-selector>
+
+          <div *ngIf="newImages.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
+            <div *ngFor="let img of newImages; let i = index; trackBy: trackByIndex"
+              class="relative rounded-lg overflow-hidden border border-[#64BC04]/40">
+              <img [src]="img.preview" class="h-24 w-full object-cover" [alt]="'Nueva imagen ' + (i + 1)" />
+              <span class="absolute bottom-1 left-1 text-[10px] bg-[#64BC04] text-white px-1.5 rounded">nueva</span>
+              <button type="button" (click)="removeNewImage(i)"
+                class="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 cursor-pointer hover:bg-black/75 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones de edición -->
+        <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+          <button type="button" (click)="cancelEdit()"
+            class="px-5 py-[10px] rounded-lg border border-[#D6DEE5] text-gray-600 text-sm font-medium cursor-pointer hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="button" (click)="saveEdit()"
+            class="px-6 py-[10px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+            Guardar cambios
+          </button>
+        </div>
+      </ng-container>
     </div>
 
     <!-- ── GESTIÓN DE REQUERIMIENTOS (solicitudes) ─────────────────── -->

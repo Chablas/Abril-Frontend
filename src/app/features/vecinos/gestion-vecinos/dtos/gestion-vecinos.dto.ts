@@ -185,6 +185,26 @@ export interface VecinoPersonaCreateDTO {
   vecinoRelacionTipoId: number | null;
 }
 
+/** Persona dentro del formulario de edición (id presente = existente; null = nueva). */
+export interface VecinoPersonaUpsertDTO {
+  vecinoPersonaId: number | null;
+  nombre: string;
+  dni: string;
+  celular: string;
+  vecinoRelacionTipoId: number | null;
+}
+
+/** Edición de los datos de la casa/propiedad (sección Detalle) + sus personas. */
+export interface VecinoUpdateDTO {
+  vecinoUsoId: number | null;
+  direccion: string;
+  interiorDepartamento: string;
+  vecinoColindanciaId: number | null;
+  vecinoTipoConstruccionId: number | null;
+  observaciones: string;
+  personas: VecinoPersonaUpsertDTO[];
+}
+
 export interface VecinoCreateDTO {
   projectId: number | null;
   vecinoUsoId: number | null;

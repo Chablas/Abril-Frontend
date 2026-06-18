@@ -51,8 +51,8 @@ export class Detail implements OnInit {
    * naranja = Oficina Técnica, verde = Oficina Central. El último paso es terminal.
    */
   private readonly stepOfficeMap: Record<number, 'central' | 'tecnica'> = {
-    1: 'tecnica', // Por notificar — OT notifica al SC
-    2: 'tecnica', // Datos del contrato — OT
+    1: 'central', // Por notificar — OC notifica al SC
+    2: 'central', // Datos del contrato — OC
     3: 'central', // Preparación de documentos — OC aprueba
     4: 'tecnica', // Por enviar al SC — OT
     5: 'central', // Llegada a Of. Central — OC
@@ -110,10 +110,10 @@ export class Detail implements OnInit {
 
   /**
    * Solo se puede editar la info de paso 1/2 mientras la adjudicación esté en pasos 1–4.
-   * Solo Oficina Técnica (o el Administrador) puede llenar los campos de los pasos 1 y 2.
+   * Solo Oficina Central (o el Administrador) puede llenar los campos de los pasos 1 y 2.
    */
   get canEditInfo(): boolean {
-    return this.actualStatus <= 4 && this.hasOfTecnica;
+    return this.actualStatus <= 4 && this.hasOfCentral;
   }
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
@@ -351,10 +351,10 @@ export class Detail implements OnInit {
   }
 
   canGoForward(): boolean {
-    // Solo Oficina Técnica (o Administrador) puede llenar y avanzar los pasos 1 y 2.
-    if (this.actualStatus === 1) return this.hasOfTecnica;
+    // Solo Oficina Central (o Administrador) puede llenar y avanzar los pasos 1 y 2.
+    if (this.actualStatus === 1) return this.hasOfCentral;
     if (this.actualStatus === 2 && this.viewStep === 2) {
-      if (!this.hasOfTecnica) return false;
+      if (!this.hasOfCentral) return false;
       const baseOk = !!(
         this.step2Form.signingDate &&
         this.step2Form.startDate &&

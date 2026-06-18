@@ -44,6 +44,20 @@
 
   <div class="flex flex-col lg:flex-row gap-4 p-1 flex-1 min-h-0 overflow-y-auto">
 
+    <!-- Imágenes del estado de la propiedad (a la izquierda del croquis) -->
+    <ng-container *ngIf="assignedVecino() as v">
+      <div *ngIf="v.imagenes.length > 0"
+        class="w-full lg:w-[210px] shrink-0 flex flex-col gap-2 lg:max-h-full lg:overflow-y-auto">
+        <p class="text-[11px] font-bold uppercase tracking-wide text-[#509603]">Estado de la propiedad</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div *ngFor="let img of v.imagenes"
+            class="h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
+            <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <!-- Lienzo -->
     <div class="flex-1 min-w-0">
       <!-- Clic fuera de un lote válido → vuelve al resumen del proyecto. -->

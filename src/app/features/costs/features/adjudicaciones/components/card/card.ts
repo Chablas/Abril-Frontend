@@ -52,7 +52,7 @@ export class Card {
    * naranja = Oficina Técnica, verde = Oficina Central. El último paso es terminal.
    */
   private readonly stepOfficeMap: Record<number, 'central' | 'tecnica'> = {
-    1: 'tecnica', 2: 'tecnica', 3: 'central', 4: 'tecnica',
+    1: 'central', 2: 'central', 3: 'central', 4: 'tecnica',
     5: 'central', 6: 'central', 7: 'central', 8: 'central',
   };
 

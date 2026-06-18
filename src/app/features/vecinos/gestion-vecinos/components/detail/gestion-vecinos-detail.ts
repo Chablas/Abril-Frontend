@@ -2,9 +2,13 @@ import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin, Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
+import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { StatusPills } from '../status-pills/status-pills';
 import { GestionVecinosCompromisos } from '../compromisos/gestion-vecinos-compromisos';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -16,17 +20,48 @@ import {
   VecinoSolicitudItemDTO,
   CatalogOptionDTO,
   VecinoRequisitoItemDTO,
+  VecinoUpdateDTO,
 } from '../../dtos/gestion-vecinos.dto';
 
 @Component({
   selector: 'app-gestion-vecinos-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SectionTabs, StatusPills, GestionVecinosCompromisos],
+  imports: [CommonModule, FormsModule, BaseModal, SectionTabs, StatusPills, GestionVecinosCompromisos, SearchSelect, FileSelector, DraggableImage],
   templateUrl: './gestion-vecinos-detail.html',
 })
 export class GestionVecinosDetail implements OnInit {
   @Input() item!: VecinoListItemDTO;
+  /** Catálogos para el modo edición. */
+  @Input() colindancias: CatalogOptionDTO[] = [];
+  @Input() tiposConstruccion: CatalogOptionDTO[] = [];
+  @Input() usos: CatalogOptionDTO[] = [];
+  @Input() relacionTipos: CatalogOptionDTO[] = [];
   @Output() closeModal = new EventEmitter<void>();
+  /** Avisa al padre que la propiedad cambió (para refrescar listados/croquis en segundo plano). */
+  @Output() updated = new EventEmitter<void>();
+
+  // ── Edición de la sección Detalle ───────────────────────────────────────
+  editing = false;
+  editForm: VecinoUpdateDTO = {
+    vecinoUsoId: null,
+    direccion: '',
+    interiorDepartamento: '',
+    vecinoColindanciaId: null,
+    vecinoTipoConstruccionId: null,
+    observaciones: '',
+    personas: [],
+  };
+  /** Imágenes nuevas a subir al guardar. */
+  newImages: SelectedFile[] = [];
+
+  /** Base del backend (sin slash final) para componer URLs de imágenes. */
+  get apiBase(): string {
+    return environment.apiUrl.replace(/\/$/, '');
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
 
   private _activeTab = 'detalle';
   get activeTab(): string {
@@ -220,6 +255,158 @@ export class GestionVecinosDetail implements OnInit {
     this.loaderService.show();
     this.service.setRequisitoNoAplica(this.item.vecinoId, r.vecinoRequisitoTipoId, noAplica).subscribe({
       next: () => this.loadRequisitos(),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Edición de la sección Detalle ───────────────────────────────────────
+  startEdit(): void {
+    this.editForm = {
+      vecinoUsoId: this.item.vecinoUsoId ?? null,
+      direccion: this.item.direccion ?? '',
+      interiorDepartamento: this.item.interiorDepartamento ?? '',
+      vecinoColindanciaId: this.item.vecinoColindanciaId ?? null,
+      vecinoTipoConstruccionId: this.item.vecinoTipoConstruccionId ?? null,
+      observaciones: this.item.observaciones ?? '',
+      personas: this.item.personas.map((p) => ({
+        vecinoPersonaId: p.vecinoPersonaId,
+        nombre: p.nombre,
+        dni: p.dni ?? '',
+        celular: p.celular ?? '',
+        vecinoRelacionTipoId: p.vecinoRelacionTipoId,
+      })),
+    };
+    this.newImages = [];
+    this.editing = true;
+  }
+
+  cancelEdit(): void {
+    this.editing = false;
+    this.newImages = [];
+  }
+
+  addPersonaEdit(): void {
+    this.editForm.personas.push({ vecinoPersonaId: null, nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null });
+  }
+
+  removePersonaEdit(index: number): void {
+    if (this.editForm.personas.length <= 1) return;
+    this.editForm.personas.splice(index, 1);
+  }
+
+  onNumericKeydown(event: KeyboardEvent): void {
+    const isControl = event.ctrlKey || event.metaKey || event.altKey;
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (isControl || allowed.includes(event.key)) return;
+    if (!/^\d$/.test(event.key)) event.preventDefault();
+  }
+
+  onImageSelected(file: SelectedFile): void {
+    if (!file.file.type.startsWith('image/')) return;
+    this.newImages.push(file);
+  }
+
+  removeNewImage(index: number): void {
+    this.newImages.splice(index, 1);
+  }
+
+  removeExistingImage(imagenId: number): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Eliminar imagen?',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      confirmButtonColor: '#D30000',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      this.service.deleteImagen(imagenId).subscribe({
+        next: () => {
+          this.item.imagenes = this.item.imagenes.filter((i) => i.vecinoImagenId !== imagenId);
+          this.loaderService.hide();
+          this.updated.emit();
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  private editErrors(): string[] {
+    const e: string[] = [];
+    if (!this.editForm.direccion?.trim()) e.push('Dirección');
+    if (!this.editForm.interiorDepartamento?.trim()) e.push('Interior / Departamento');
+    if (!this.editForm.vecinoUsoId) e.push('Uso');
+    if (!this.editForm.vecinoColindanciaId) e.push('Colindancia');
+    if (!this.editForm.vecinoTipoConstruccionId) e.push('Tipo de construcción');
+    this.editForm.personas.forEach((p, i) => {
+      const n = i + 1;
+      if (!p.nombre?.trim()) e.push(`Persona ${n}: nombre`);
+      if (!p.celular?.trim()) e.push(`Persona ${n}: celular`);
+      if (!p.vecinoRelacionTipoId) e.push(`Persona ${n}: relación`);
+      if (p.dni?.trim() && !/^\d{8}$/.test(p.dni.trim())) e.push(`Persona ${n}: DNI (8 dígitos)`);
+    });
+    return e;
+  }
+
+  saveEdit(): void {
+    const errors = this.editErrors();
+    if (errors.length > 0) {
+      const listHtml = errors.map((c) => `<li>${c}</li>`).join('');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos incompletos',
+        html: `<ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
+    this.loaderService.show();
+    this.service.update(this.item.vecinoId, this.editForm).subscribe({
+      next: () => {
+        const tasks: Observable<unknown>[] = [];
+        if (this.newImages.length > 0)
+          tasks.push(this.service.uploadImagenes(this.item.vecinoId, this.newImages.map((i) => i.file)));
+
+        const finalize = () => {
+          // Refrescar el item con datos frescos (ids de personas/imágenes incluidos).
+          this.service.getById(this.item.vecinoId).subscribe({
+            next: (fresh) => {
+              Object.assign(this.item, fresh);
+              this.editing = false;
+              this.newImages = [];
+              this.loaderService.hide();
+              this.updated.emit();
+              this.cdr.detectChanges();
+              Swal.fire({ icon: 'success', title: 'Propiedad actualizada', confirmButtonColor: '#64BC04' });
+            },
+            error: (err: HttpErrorResponse) => {
+              this.loaderService.hide();
+              this.errorService.handleError(err);
+            },
+          });
+        };
+
+        if (tasks.length === 0) {
+          finalize();
+          return;
+        }
+        forkJoin(tasks).subscribe({
+          next: () => finalize(),
+          error: (err: HttpErrorResponse) => {
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+      },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);

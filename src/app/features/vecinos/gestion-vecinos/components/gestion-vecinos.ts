@@ -102,6 +102,28 @@ export class GestionVecinos implements OnInit {
     this.loadCroquis();
   }
 
+  /** Catálogos para el modo edición del detalle (de croquis si están, si no del listado). */
+  get detailColindancias(): CatalogOptionDTO[] {
+    return this.croquisColindancias.length ? this.croquisColindancias : this.options.colindancias;
+  }
+  get detailTipos(): CatalogOptionDTO[] {
+    return this.croquisTipos.length ? this.croquisTipos : this.options.tiposConstruccion;
+  }
+  get detailUsos(): CatalogOptionDTO[] {
+    return this.croquisUsos.length ? this.croquisUsos : this.options.usos;
+  }
+  get detailRelacionTipos(): CatalogOptionDTO[] {
+    return this.croquisRelacionTipos.length ? this.croquisRelacionTipos : this.options.relacionTipos;
+  }
+
+  /** Una propiedad cambió en el detalle: invalida las fuentes para refrescar al volver. */
+  onVecinoUpdated(): void {
+    this.croquisLoaded = false;
+    this.vecinosLoaded = false;
+    if (this.viewMode === 'croquis') this.loadCroquis();
+    else this.load(this.currentPage);
+  }
+
   /** Proyectos con croquis (opciones del filtro de la vista croquis). */
   get croquisProjectOptions(): ProjectOptionDTO[] {
     return this.croquis.map((c) => ({

@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../../../../environments/environment';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import {
   CroquisGestionDTO,
   CroquisGestionLoteDTO,
@@ -11,11 +12,16 @@ import {
 @Component({
   selector: 'app-gestion-croquis-view',
   standalone: true,
-  imports: [CommonModule, BaseModal],
+  imports: [CommonModule, BaseModal, DraggableImage],
   templateUrl: './gestion-croquis-view.html',
 })
 export class GestionCroquisView {
   @Input() croquis: CroquisGestionDTO[] = [];
+
+  /** Base del backend (sin slash final) para componer URLs de imágenes. */
+  get apiBase(): string {
+    return environment.apiUrl.replace(/\/$/, '');
+  }
 
   /** Filtro de proyecto (cliente), controlado por el padre. */
   @Input() filterProjectId: number | null = null;

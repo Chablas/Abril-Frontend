@@ -160,6 +160,11 @@
 <app-gestion-vecinos-detail
   *ngIf="selectedVecino"
   [item]="selectedVecino"
+  [colindancias]="detailColindancias"
+  [tiposConstruccion]="detailTipos"
+  [usos]="detailUsos"
+  [relacionTipos]="detailRelacionTipos"
+  (updated)="onVecinoUpdated()"
   (closeModal)="closeDetail()">
 </app-gestion-vecinos-detail>
 
