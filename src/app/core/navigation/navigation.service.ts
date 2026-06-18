@@ -238,10 +238,16 @@ export class NavigationService {
       })
       .filter((m): m is NavModule => {
         if (m === null) return false;
-        if (!isContratista) return true;
-        if (m.key === 'habilitacion' && modulos === 'SSOMA') return false;
-        if (m.key === 'gestion-ssoma' && modulos === 'INGRESOS') return false;
-        return true;
+        if (isContratista) {
+          if (m.key === 'habilitacion' && modulos === 'SSOMA') return false;
+          if (m.key === 'gestion-ssoma' && modulos === 'INGRESOS') return false;
+        }
+        // Ocultar módulos sin ninguna funcionalidad accesible: si tras filtrar
+        // por allowed_features no queda ningún item ni grupo, el usuario no
+        // tiene acceso a nada dentro del módulo y no debe verlo en el sidebar.
+        const hasItems = m.items.length > 0;
+        const hasGroupItems = (m.groups ?? []).some((g) => g.items.length > 0);
+        return hasItems || hasGroupItems;
       });
   }
 
