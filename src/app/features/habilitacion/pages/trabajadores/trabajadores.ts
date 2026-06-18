@@ -474,7 +474,19 @@ export class Trabajadores implements OnInit, OnDestroy {
     }
   }
 
-  getChipEstado(estado: string): string {
+  estaVencido(estado: string, vigencia?: string | null): boolean {
+    if (estado !== 'Aprobado' || !vigencia) return false;
+    const vigenciaDate = new Date(vigencia);
+    if (isNaN(vigenciaDate.getTime())) return false;
+    return vigenciaDate.getTime() <= Date.now();
+  }
+
+  getEstadoLabel(estado: string, vigencia?: string | null): string {
+    return this.estaVencido(estado, vigencia) ? 'Vencido' : estado;
+  }
+
+  getChipEstado(estado: string, vigencia?: string | null): string {
+    if (this.estaVencido(estado, vigencia)) return 'chip-red';
     switch (estado) {
       case 'Aprobado':
         return 'chip-green';
@@ -490,7 +502,8 @@ export class Trabajadores implements OnInit, OnDestroy {
     }
   }
 
-  getDotClass(estado: string): string {
+  getDotClass(estado: string, vigencia?: string | null): string {
+    if (this.estaVencido(estado, vigencia)) return 'dot-falta';
     const norm = (estado ?? '').toLowerCase();
     if (norm === 'aprobado') return 'dot-aprobado';
     if (norm === 'falta' || norm === 'rechazado') return 'dot-falta';
