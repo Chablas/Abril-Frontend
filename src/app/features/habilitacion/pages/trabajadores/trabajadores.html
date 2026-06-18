@@ -354,11 +354,11 @@
                 (click)="selectEntregable(e)"
               >
                 <td class="td-doc">
-                  <span class="estado-dot" [class]="getDotClass(e.estado)"></span>
+                  <span class="estado-dot" [class]="getDotClass(e.estado, e.vigencia)"></span>
                   <span class="doc-nombre">{{ e.nombreItem }}</span>
                 </td>
                 <td class="td-estado">
-                  <span [class]="'btn-chip ' + getChipEstado(e.estado)">{{ e.estado }}</span>
+                  <span [class]="'btn-chip ' + getChipEstado(e.estado, e.vigencia)">{{ getEstadoLabel(e.estado, e.vigencia) }}</span>
                 </td>
                 <td class="td-vig">
                   <span class="vig-date" *ngIf="e.vigencia">{{ e.vigencia | date: 'dd/MM/yyyy' }}</span>
@@ -463,8 +463,8 @@
     <div class="modal-hdr">
       <div class="modal-hdr-info">
         <h3 class="modal-title">{{ selectedEntregable.nombreItem }}</h3>
-        <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
-          {{ selectedEntregable.estado }}
+        <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado, selectedEntregable.vigencia)">
+          {{ getEstadoLabel(selectedEntregable.estado, selectedEntregable.vigencia) }}
         </span>
       </div>
       <button class="modal-close" title="Cerrar" (click)="closeDrawer()">
@@ -493,8 +493,8 @@
 
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
-          <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
-            {{ selectedEntregable.estado }}
+          <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado, selectedEntregable.vigencia)">
+            {{ getEstadoLabel(selectedEntregable.estado, selectedEntregable.vigencia) }}
           </span>
         </div>
 
@@ -588,8 +588,8 @@
             </select>
           </ng-container>
           <ng-template #estadoReadonlyTrab>
-            <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado)">
-              {{ selectedEntregable.estado }}
+            <span [class]="'btn-chip ' + getChipEstado(selectedEntregable.estado, selectedEntregable.vigencia)">
+              {{ getEstadoLabel(selectedEntregable.estado, selectedEntregable.vigencia) }}
             </span>
           </ng-template>
         </div>
