@@ -1425,6 +1425,27 @@ export class Detail implements OnInit {
     return this.formData?.currencies.find(c => c.currencyId === this.step1Form.currencyId)?.currencyCode ?? '';
   }
 
+  /** Nombre del instructivo asociado a la partida de control seleccionada (edición paso 1). */
+  get step1SelectedWorkItemCategoryInstructivoName(): string | null {
+    if (!this.step1Form.workItemCategoryId) return null;
+    return this.formData?.workItemCategories
+      .find(c => c.workItemCategoryId === this.step1Form.workItemCategoryId)
+      ?.instructivosFolderName ?? null;
+  }
+
+  /** True solo cuando hay una partida seleccionada en la edición del paso 1. */
+  get step1IsWorkItemSelected(): boolean {
+    return !!this.step1Form.workItemId;
+  }
+
+  /** Formas de valorización (cláusula 5.1) de la partida seleccionada (edición paso 1). */
+  get step1SelectedWorkItemForms() {
+    if (!this.step1Form.workItemId) return [];
+    return this.formData?.workItems
+      .find(w => w.workItemId === this.step1Form.workItemId)
+      ?.valorizationForms ?? [];
+  }
+
   onStep1CompanyChange(contractorId: number): void {
     this.step1Form.contractorId = contractorId;
     const contractor = this.formData?.contributors.find(c => c.contractorId === contractorId);

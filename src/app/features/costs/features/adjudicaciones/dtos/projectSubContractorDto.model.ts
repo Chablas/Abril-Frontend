@@ -1,3 +1,5 @@
+import { WorkItemValorizationFormSimpleDTO } from "./workItemSimple.model";
+
 export interface ProjectSubContractorFileDTO {
   fileUrl: string;
   originalFileName?: string;
@@ -37,6 +39,9 @@ export interface ProjectSubContractorDTO {
   contractWorkItemName?: string | null;
   workItemCategoryId: number;
   workItemCategoryDescription: string;
+  workItemCategoryInstructivosSyncStatus?: number | null; // 1=automático, 2=manual, 3=sin instructivo
+  workItemCategoryInstructivosFolderName?: string | null;
+  workItemValorizationForms?: WorkItemValorizationFormSimpleDTO[];
   workSpecialtyId?: number | null;
   workSpecialtyDescription?: string | null;
   createdDateTime: string;

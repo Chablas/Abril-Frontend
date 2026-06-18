@@ -127,6 +127,27 @@ export class Create implements OnInit {
       ?.instructivosSyncStatus ?? null;
   }
 
+  /** Nombre del instructivo asociado a la partida de control seleccionada. */
+  get selectedWorkItemCategoryInstructivoName(): string | null {
+    if (!this.createDto.workItemCategoryId) return null;
+    return this.createFormData.workItemCategories
+      .find(c => c.workItemCategoryId === this.createDto.workItemCategoryId)
+      ?.instructivosFolderName ?? null;
+  }
+
+  /** True solo cuando hay una partida seleccionada (para mostrar el indicador de formas de valorización). */
+  get isWorkItemSelected(): boolean {
+    return !!this.createDto.workItemId;
+  }
+
+  /** Formas de valorización (cláusula 5.1) de la partida seleccionada, ordenadas. */
+  get selectedWorkItemForms() {
+    if (!this.createDto.workItemId) return [];
+    return this.createFormData.workItems
+      .find(w => w.workItemId === this.createDto.workItemId)
+      ?.valorizationForms ?? [];
+  }
+
   onCompanyChange(contractorId: number): void {
     this.createDto.contractorId = contractorId;
     const contractor = this.createFormData.contributors.find(c => c.contractorId === contractorId);

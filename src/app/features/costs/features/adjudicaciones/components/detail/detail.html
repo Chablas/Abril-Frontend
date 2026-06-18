@@ -123,11 +123,35 @@
         <div>
           <p class="text-xs text-gray-400 mb-[2px]">Partida de control</p>
           <p class="text-sm text-gray-700">{{ item.workItemCategoryDescription }}</p>
+          <span *ngIf="item.workItemCategoryInstructivosFolderName"
+            class="text-[11px] text-gray-500 italic break-words">
+            Instructivo: {{ item.workItemCategoryInstructivosFolderName }}
+          </span>
+          <span *ngIf="!item.workItemCategoryInstructivosFolderName"
+            class="text-[11px] text-gray-400">
+            Sin instructivo
+          </span>
         </div>
 
         <div>
           <p class="text-xs text-gray-400 mb-[2px]">Partida</p>
           <p class="text-sm text-gray-700">{{ item.workItemDescription }}</p>
+          <ng-container *ngIf="item.workItemValorizationForms?.length; else sinFormas">
+            <span class="flex items-center gap-1 text-[11px] text-[#009C87]">
+              <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+              </svg>
+              Tiene formas de valorización
+            </span>
+            <ul class="mt-[2px] flex flex-col gap-[1px] pl-[16px] list-disc">
+              <li *ngFor="let form of item.workItemValorizationForms" class="text-[11px] text-gray-500">
+                {{ form.percentage }}% {{ form.concept }}
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #sinFormas>
+            <span class="text-[11px] text-gray-400">Sin formas de valorización</span>
+          </ng-template>
         </div>
 
 
@@ -266,12 +290,35 @@
               <app-search-select [fullText]="true" label="Partida de control" [options]="formData.workItemCategories"
                 valueField="workItemCategoryId" displayField="workItemCategoryDescription"
                 [(value)]="step1Form.workItemCategoryId" />
+              <span *ngIf="step1SelectedWorkItemCategoryInstructivoName"
+                class="text-[11px] text-gray-500 italic break-words">
+                Instructivo: {{ step1SelectedWorkItemCategoryInstructivoName }}
+              </span>
             </div>
 
             <div class="flex flex-col gap-[4px]">
               <app-search-select [fullText]="true" label="Partida" [options]="formData.workItems"
                 valueField="workItemId" displayField="workItemDescription"
                 [value]="step1Form.workItemId" (valueChange)="onStep1WorkItemChange($event)" />
+              <ng-container *ngIf="step1IsWorkItemSelected">
+                <span *ngIf="step1SelectedWorkItemForms.length > 0" class="flex items-center gap-1 text-[11px] text-[#009C87]">
+                  <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  Tiene formas de valorización
+                </span>
+                <span *ngIf="step1SelectedWorkItemForms.length === 0" class="flex items-center gap-1 text-[11px] text-gray-400">
+                  <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                  </svg>
+                  Sin formas de valorización
+                </span>
+                <ul *ngIf="step1SelectedWorkItemForms.length > 0" class="mt-[2px] flex flex-col gap-[1px] pl-[16px] list-disc">
+                  <li *ngFor="let form of step1SelectedWorkItemForms" class="text-[11px] text-gray-500">
+                    {{ form.percentage }}% {{ form.concept }}
+                  </li>
+                </ul>
+              </ng-container>
             </div>
 
           </div>
