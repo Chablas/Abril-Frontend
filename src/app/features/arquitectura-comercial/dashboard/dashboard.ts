@@ -10,6 +10,7 @@ import ChartDataLabels    from 'chartjs-plugin-datalabels';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of }   from 'rxjs';
 import { catchError }     from 'rxjs/operators';
+import { Router }        from '@angular/router';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import { ErrorService }   from '../../../core/services/error.service';
 import {
@@ -22,6 +23,7 @@ import {
   AvanceSemanalDTO,
   EficienciaSpiDTO,
   CategoriaItemDTO,
+  CategoriaDashboardItemDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
   ActividadAlertaDTO,
@@ -72,12 +74,13 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     vencidasSinCerrar: 0, vencenEstaSemana: 0,
     arrancanEstaSemana: 0, hitosProximos14Dias: 0,
   };
-  supervisores       : SupervisorProgresoDTO[]     = [];
-  hitosCriticos      : HitoCriticoDTO[]            = [];
-  tareasPorArquitecto: TareasPorArquitectoDTO[]    = [];
-  avanceSemanal      : AvanceSemanalDTO[]          = [];
-  eficienciaSpi      : EficienciaSpiDTO[]          = [];
-  categorias         : CategoriaItemDTO[]          = [];
+  supervisores            : SupervisorProgresoDTO[]     = [];
+  hitosCriticos           : HitoCriticoDTO[]            = [];
+  tareasPorArquitecto     : TareasPorArquitectoDTO[]    = [];
+  avanceSemanal           : AvanceSemanalDTO[]          = [];
+  eficienciaSpi           : EficienciaSpiDTO[]          = [];
+  categorias              : CategoriaItemDTO[]          = [];
+  distribucionPorCategoria: CategoriaDashboardItemDTO[] = [];
 
   // ─── catálogos para filtros ────────────────────────────────────
   proyectos  : { id: number; nombre: string }[]     = [];
@@ -100,18 +103,15 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── charts ───────────────────────────────────────────────────
   private avanceChart    ?: Chart;
   private eficienciaChart?: Chart;
-  private distribucionChart?: Chart;
-  private tareasChart    ?: Chart;
 
   @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
   @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('distribucionCanvas') distribucionRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('tareasCanvas')     tareasRef    !: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private service     : ArquitecturaComercialService,
     private errorService: ErrorService,
     private cdr         : ChangeDetectorRef,
+    private router      : Router,
   ) {}
 
   // ─── lifecycle ────────────────────────────────────────────────
@@ -159,13 +159,14 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   private aplicarDashboard(d: ArqComercialDashboardDTO) {
-    this.kpis               = d.kpis;
-    this.alertas            = d.alertas;
-    this.supervisores       = d.supervisores       ?? [];
-    this.hitosCriticos      = d.hitosCriticos      ?? [];
-    this.tareasPorArquitecto= d.tareasPorArquitectoDetalle ?? [];
-    this.avanceSemanal      = d.avanceSemanal       ?? [];
-    this.eficienciaSpi      = d.eficienciaSpi       ?? [];
+    this.kpis                    = d.kpis;
+    this.alertas                 = d.alertas;
+    this.supervisores            = d.supervisores            ?? [];
+    this.hitosCriticos           = d.hitosCriticos           ?? [];
+    this.tareasPorArquitecto     = d.tareasPorArquitectoDetalle ?? [];
+    this.avanceSemanal           = d.avanceSemanal            ?? [];
+    this.eficienciaSpi           = d.eficienciaSpi            ?? [];
+    this.distribucionPorCategoria= d.distribucionPorCategoria ?? [];
     this.cdr.detectChanges();
     this.destruirCharts();
     setTimeout(() => { this.renderCharts(); this.cdr.detectChanges(); }, 50);
@@ -175,15 +176,11 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   private destruirCharts() {
     this.avanceChart?.destroy();
     this.eficienciaChart?.destroy();
-    this.distribucionChart?.destroy();
-    this.tareasChart?.destroy();
   }
 
   private renderCharts() {
     this.renderAvanceChart();
     this.renderEficienciaChart();
-    this.renderDistribucionChart();
-    this.renderTareasChart();
   }
 
   private renderAvanceChart() {
@@ -272,68 +269,88 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     });
   }
 
-  private renderDistribucionChart() {
-    if (!this.distribucionRef?.nativeElement) return;
-    this.distribucionChart = new Chart(this.distribucionRef.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels: ['Culminadas', 'En Proceso', 'Vencidas', 'Pendientes'],
-        datasets: [{
-          data: [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes],
-          backgroundColor: ['#2D9E5F', '#4A7FD4', '#C94040', '#C4860A'],
-          borderWidth: 3,
-          borderColor: '#F7F8FC',
-          hoverOffset: 6,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '70%',
-        plugins: {
-          legend: { display: false },
-          datalabels: { display: false },
-          tooltip: {
-            backgroundColor: '#1E293B',
-            callbacks: {
-              label: (ctx: any) => {
-                const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
-                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
-              },
-            },
-          },
-        },
-      },
-    });
+  // ─── supervisor / carga helpers ──────────────────────────────
+  get tareasPorArquitectoOrdenado(): TareasPorArquitectoDTO[] {
+    return [...this.tareasPorArquitecto].sort((a, b) => b.total - a.total);
   }
 
-  private renderTareasChart() {
-    if (!this.tareasRef?.nativeElement) return;
-    const data = this.tareasPorArquitecto.slice(0, 8);
-    const labels = data.map(d => this.primerApellido(d.nombre));
-    this.tareasChart = new Chart(this.tareasRef.nativeElement, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Hitos', data: data.map(d => d.hitos), backgroundColor: '#4A7FD4', borderRadius: 4, stack: 'stack' },
-          { label: 'Entregables', data: data.map(d => d.entregables), backgroundColor: '#2D9E5F', borderRadius: 4, stack: 'stack' },
-          { label: 'Consultas', data: data.map(d => d.consultas), backgroundColor: '#C4860A', borderRadius: 4, stack: 'stack' },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index' as const, intersect: false },
-        plugins: {
-          datalabels: { display: false },
-          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
-          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
-        },
-        scales: {
-          x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
-          y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { precision: 0, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
-        },
-      },
-    });
+  filtrarPorSupervisor(userId: number) {
+    this.filtro.userId = this.filtro.userId === userId ? null : userId;
+    this.buscar();
+  }
+
+  get cargaStats() {
+    const d = this.tareasPorArquitectoOrdenado;
+    if (!d.length) return null;
+    const totales = d.map(s => s.total);
+    const max  = Math.max(...totales);
+    const sum  = totales.reduce((a, b) => a + b, 0);
+    const avg  = Math.round(sum / d.length);
+    const avgPct = max > 0 ? avg / max * 100 : 0;
+    return { max, avg, avgPct };
+  }
+
+  cargaBarPct(total: number): number {
+    const s = this.cargaStats;
+    return s && s.max > 0 ? Math.round(total / s.max * 100) : 0;
+  }
+
+  cargaTag(total: number): string {
+    const s = this.cargaStats;
+    if (!s) return '';
+    if (total > s.avg * 1.3) return 'Sobrecargado';
+    if (total < s.avg * 0.7) return 'Disponible';
+    return 'Normal';
+  }
+
+  cargaTagStyle(total: number): { bg: string; color: string } {
+    const s = this.cargaStats;
+    if (!s) return { bg: '#F1F5F9', color: '#64748B' };
+    if (total > s.avg * 1.3) return { bg: '#FEE2E2', color: '#DC2626' };
+    if (total < s.avg * 0.7) return { bg: '#D1FAE5', color: '#059669' };
+    return { bg: '#DBEAFE', color: '#2563EB' };
+  }
+
+  cargaBarGradient(total: number): string {
+    const s = this.cargaStats;
+    if (!s) return '#CBD5E1';
+    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#F87171,#DC2626)';
+    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#4ADE80,#16A34A)';
+    return 'linear-gradient(90deg,#60A5FA,#2563EB)';
+  }
+
+  get cargaInsights(): string[] {
+    const d   = this.tareasPorArquitectoOrdenado;
+    const s   = this.cargaStats;
+    if (!s || !d.length) return [];
+    const out: string[] = [];
+
+    const masCargado  = d[0];
+    const menosCargado = d[d.length - 1];
+    const sobrecargados = d.filter(x => x.total > s.avg * 1.3);
+    const disponibles   = d.filter(x => x.total < s.avg * 0.7);
+
+    if (sobrecargados.length) {
+      const nombres = sobrecargados.map(x => this.primerApellido(x.nombre)).join(', ');
+      out.push(`⚠ ${nombres} ${sobrecargados.length > 1 ? 'tienen' : 'tiene'} más de 1.3x la carga media (${s.avg} act.) — redistribuir`);
+    }
+    if (disponibles.length) {
+      const nombres = disponibles.map(x => this.primerApellido(x.nombre)).join(', ');
+      out.push(`✓ ${nombres} ${disponibles.length > 1 ? 'tienen' : 'tiene'} capacidad — asignarles actividades de los sobrecargados`);
+    }
+    const brecha = masCargado.total - menosCargado.total;
+    if (brecha > s.avg * 0.5) {
+      out.push(`↕ Brecha de ${brecha} actividades entre ${this.primerApellido(masCargado.nombre)} y ${this.primerApellido(menosCargado.nombre)} — equipo desbalanceado`);
+    } else if (!out.length) {
+      out.push(`✓ Carga distribuida de forma equilibrada (media ${s.avg} act. por supervisor)`);
+    }
+    return out;
+  }
+
+  getAvancePctColor(pct: number): string {
+    if (pct >= 70) return '#059669';
+    if (pct >= 50) return '#3b82f6';
+    return '#ef4444';
   }
 
   // ─── modal alertas ────────────────────────────────────────────
@@ -483,6 +500,53 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     const anio = n.getFullYear();
     const w = Math.ceil(((n.getTime() - new Date(anio, 0, 1).getTime()) / 86400000 + new Date(anio, 0, 1).getDay() + 1) / 7);
     return `Semana ${w} · ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
+  }
+
+  get totalesPartidas() {
+    const t = this.distribucionPorCategoria.reduce(
+      (acc, c) => ({
+        total: acc.total + c.total,
+        culminadas: acc.culminadas + c.culminadas,
+        enProceso: acc.enProceso + c.enProceso,
+        vencidas: acc.vencidas + c.vencidas,
+        pendientes: acc.pendientes + c.pendientes,
+      }),
+      { total: 0, culminadas: 0, enProceso: 0, vencidas: 0, pendientes: 0 },
+    );
+    return { ...t, progreso: t.total > 0 ? Math.round((t.culminadas / t.total) * 1000) / 10 : 0 };
+  }
+
+  filtrarPorCategoria(categoria: string) {
+    this.router.navigate(['/arquitectura-comercial/actividades'], {
+      queryParams: { categoria },
+    });
+  }
+
+  filtrarPorEstado(estado: string) {
+    this.router.navigate(['/arquitectura-comercial/actividades'], {
+      queryParams: { estado },
+    });
+  }
+
+  filtrarPorCategoriaYEstado(categoria: string, estado: string) {
+    this.router.navigate(['/arquitectura-comercial/actividades'], {
+      queryParams: { categoria, estado },
+    });
+  }
+
+  getCategoriaAccent(id: number): string {
+    const map: Record<number, string> = { 1: '#2E6DB4', 2: '#1B6B3A', 3: '#D97706', 4: '#7C3AED' };
+    return map[id] ?? '#64748B';
+  }
+
+  getCategoriaGradient(id: number): string {
+    const map: Record<number, string> = {
+      1: 'linear-gradient(135deg,#EAF0FB,#D3E3F9)',
+      2: 'linear-gradient(135deg,#EAF5EF,#D0EED9)',
+      3: 'linear-gradient(135deg,#FBF3E4,#F5E4C0)',
+      4: 'linear-gradient(135deg,#F3EEFF,#E6D8FF)',
+    };
+    return map[id] ?? 'linear-gradient(135deg,#F1F5F9,#E2E8F0)';
   }
 
   getSpiKpiColor(spi: number): string {

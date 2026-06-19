@@ -47,6 +47,17 @@ export interface HitoCriticoDTO {
   estado: string;
 }
 
+export interface CategoriaDashboardItemDTO {
+  id: number;
+  nombre: string;
+  total: number;
+  culminadas: number;
+  enProceso: number;
+  vencidas: number;
+  pendientes: number;
+  progreso: number;
+}
+
 export interface ArqComercialDashboardDTO {
   kpis: ArqComercialKpiDTO;
   alertas: ArqComercialAlertDTO;
@@ -56,10 +67,11 @@ export interface ArqComercialDashboardDTO {
   tendenciaEficiencia: EficienciaSemanalDTO[];
   supervisores: SupervisorProgresoDTO[];
   hitosCriticos: HitoCriticoDTO[];
-  tareasPorArquitectoDetalle: TareasPorArquitectoDTO[];
-  avanceSemanal             : AvanceSemanalDTO[];
-  eficienciaSpi             : EficienciaSpiDTO[];
-  categorias                : CategoriaItemDTO[];
+  tareasPorArquitectoDetalle  : TareasPorArquitectoDTO[];
+  avanceSemanal               : AvanceSemanalDTO[];
+  eficienciaSpi               : EficienciaSpiDTO[];
+  categorias                  : CategoriaItemDTO[];
+  distribucionPorCategoria    : CategoriaDashboardItemDTO[];
 }
 
 export interface TareasPorArquitectoDTO {
