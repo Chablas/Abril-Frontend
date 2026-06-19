@@ -527,6 +527,346 @@
 }
 .btn-ver-todos:hover { background:#F1F5F9; border-color:#C8CEDC; color:#1E3A5F; }
 
+/* ═══════════════════════════════════════════════
+   DISTRIBUCIÓN POR ESTADO — Tarjetas Premium
+   ═══════════════════════════════════════════════ */
+
+.estado-dist-card { display: flex; flex-direction: column; gap: 10px; }
+
+/* Barra de progreso global */
+.progreso-global-wrap { padding: 0 2px; }
+.progreso-global-track {
+  height: 6px;
+  background: #EEF0F6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progreso-global-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4A7FD4, #2D9E5F);
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+/* Grid 2×2 */
+.estado-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+/* Tarjeta individual */
+.estado-card {
+  background: var(--ec-bg);
+  border: 1px solid var(--ec-border);
+  border-radius: 10px;
+  padding: 9px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.estado-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+.estado-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--ec-accent);
+  border-radius: 10px 10px 0 0;
+}
+
+/* Animación fade-in-up */
+@keyframes ecFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.estado-card-anim {
+  animation: ecFadeUp 0.35s ease both;
+}
+.estado-card-anim:nth-child(1) { animation-delay: 0.05s; }
+.estado-card-anim:nth-child(2) { animation-delay: 0.10s; }
+.estado-card-anim:nth-child(3) { animation-delay: 0.15s; }
+.estado-card-anim:nth-child(4) { animation-delay: 0.20s; }
+
+/* Cabecera: icono + porcentaje */
+.ec-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.ec-icon-wrap {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ec-pct {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Número grande */
+.ec-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -1px;
+}
+
+/* Etiqueta */
+.ec-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 5px;
+}
+
+/* Mini barra dentro de la tarjeta */
+.ec-bar-track {
+  height: 4px;
+  background: rgba(255,255,255,0.55);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ec-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  min-width: 2px;
+}
+
+/* ═══════════════════════════════════════════════
+   PARTIDAS DE CONTROL — Barras horizontales apiladas
+   ═══════════════════════════════════════════════ */
+
+.partidas-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.partidas-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.partidas-header-left { display: flex; flex-direction: column; gap: 1px; }
+.partidas-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1E3A5F;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.partidas-sub {
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+/* Leyenda */
+.hbar-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.hbar-leg-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: #94A3B8; font-weight: 500;
+}
+.hbar-leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Contenedor — transparente, filas son las tarjetas */
+.hbar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Cada fila = tarjeta compacta */
+.hbar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #F1F5F9;
+  border-radius: 10px;
+  padding: 8px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  transition: box-shadow 0.13s;
+}
+.hbar-row:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+
+/* Fila total */
+.hbar-total-row {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+.hbar-total-row .hbar-label { color: #1E3A5F; font-weight: 700; letter-spacing: 0.3px; }
+
+/* Label */
+.hbar-label {
+  font-size: 11px; font-weight: 600; color: #374151;
+  width: 88px; flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Barra delgada */
+.hbar-bar {
+  flex: 1; height: 6px; border-radius: 3px;
+  overflow: hidden; display: flex;
+  background: #F1F5F9; min-width: 0;
+}
+.hbar-bar-total { height: 7px; }
+.hbar-seg {
+  height: 100%; min-width: 0;
+  transition: flex 0.7s cubic-bezier(.4,0,.2,1);
+}
+.hbar-empty-seg { flex: 1; background: #E8ECEF; }
+
+/* Porcentaje */
+.hbar-pct {
+  font-size: 11px; font-weight: 700; color: #374151;
+  min-width: 36px; text-align: right; flex-shrink: 0;
+}
+.hbar-pct-total { color: #1E3A5F; }
+
+/* Conteo total */
+.hbar-cnt { font-size: 10px; color: #CBD5E1; flex-shrink: 0; min-width: 32px; }
+
+/* Conteos por estado */
+.hbar-counts { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.hbar-c { font-size: 10px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hbar-c-cul { color: #059669; }
+.hbar-c-ep  { color: #3b82f6; }
+.hbar-c-ven { color: #ef4444; }
+.hbar-c-pen { color: #9ca3af; }
+
+/* Separador entre categorías y TOTAL */
+.hbar-sep { height: 4px; }
+
+/* Elementos navegables */
+.hbar-label-nav { cursor: pointer; transition: color 0.12s; }
+.hbar-label-nav:hover { color: #1E3A5F; text-decoration: underline; text-underline-offset: 2px; }
+
+.hbar-c-nav { cursor: pointer; border-radius: 4px; padding: 1px 5px; transition: background 0.12s; }
+.hbar-c-cul.hbar-c-nav:hover { background: #d1fae5; }
+.hbar-c-ep.hbar-c-nav:hover  { background: #dbeafe; }
+.hbar-c-ven.hbar-c-nav:hover { background: #fee2e2; }
+.hbar-c-pen.hbar-c-nav:hover { background: #f3f4f6; }
+
+
+/* ═══════════════════════════════════════════════
+   DISTRIBUCIÓN DE CARGA
+   ═══════════════════════════════════════════════ */
+
+.carga-item {
+  cursor: pointer;
+  padding: 6px 12px 6px 12px;
+}
+.carga-item:hover { border-color: #A0AABC !important; }
+
+/* Info column layout */
+.carga-info { gap: 4px; }
+
+.carga-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* Total pill */
+.carga-total {
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  background: #ECEEF4;
+  border: 1px solid #C8CEDC;
+  border-radius: 10px;
+  padding: 1px 7px;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+/* Bar + reference line */
+.carga-bar-wrap {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #EEF0F6;
+  position: relative;
+  overflow: visible;
+}
+
+.carga-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  position: absolute;
+  left: 0; top: 0;
+  transition: width 0.7s cubic-bezier(.4,0,.2,1);
+}
+
+/* Línea vertical de media del equipo */
+.carga-avg-line {
+  position: absolute;
+  top: -3px;
+  height: calc(100% + 6px);
+  width: 2px;
+  background: #94A3B8;
+  border-radius: 1px;
+  z-index: 2;
+}
+.carga-avg-line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748B;
+}
+
+/* H/E/C mini label */
+.carga-hec {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94A3B8;
+  flex-shrink: 0;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  min-width: 90px;
+  text-align: right;
+}
+
+/* Conclusiones */
+.carga-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.carga-insight-item {
+  font-size: 10px;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+  padding: 4px 8px;
+  background: #F8FAFC;
+  border-radius: 6px;
+  border-left: 2px solid #CBD5E1;
+}
+
 /* ─── Utilitarios ─── */
 .empty-msg { font-size:12px; color:#9CA3AF; text-align:center; padding:16px 0; }
 .stacked-bar { display:flex; height:4px; border-radius:4px; overflow:hidden; margin-top:8px; gap:1px; }

@@ -320,72 +320,6 @@
     <!-- ── COL CENTRO: Charts ── -->
     <div class="center-col">
 
-      <!-- Distribución por Estado -->
-      <div class="dash-card chart-card-sm">
-        <div class="card-header">
-          <span class="card-title">DISTRIBUCIÓN POR ESTADO</span>
-          <span class="dist-total-badge">{{ kpis.totalActividades }} actividades</span>
-        </div>
-        <div class="donut-wrapper">
-          <div class="donut-canvas-wrap">
-            <canvas #distribucionCanvas></canvas>
-            <div class="donut-center-overlay">
-              <span class="donut-center-num">{{ kpis.progresoGlobal }}%</span>
-              <span class="donut-center-lbl">avance</span>
-            </div>
-          </div>
-          <div class="donut-legend-v">
-            <div class="dist-leg-row">
-              <div class="dist-leg-left">
-                <span class="leg-dot" style="background:#2D9E5F"></span>
-                <span class="dist-leg-label">Culminadas</span>
-                <span class="dist-leg-num">{{ kpis.culminadas }}</span>
-              </div>
-              <div class="dist-leg-bar-wrap">
-                <div class="dist-leg-bar" style="background:#2D9E5F"
-                     [style.width.%]="kpis.totalActividades ? (kpis.culminadas / kpis.totalActividades * 100) : 0"></div>
-              </div>
-              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.culminadas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
-            </div>
-            <div class="dist-leg-row">
-              <div class="dist-leg-left">
-                <span class="leg-dot" style="background:#4A7FD4"></span>
-                <span class="dist-leg-label">En proceso</span>
-                <span class="dist-leg-num">{{ kpis.enProceso }}</span>
-              </div>
-              <div class="dist-leg-bar-wrap">
-                <div class="dist-leg-bar" style="background:#4A7FD4"
-                     [style.width.%]="kpis.totalActividades ? (kpis.enProceso / kpis.totalActividades * 100) : 0"></div>
-              </div>
-              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.enProceso / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
-            </div>
-            <div class="dist-leg-row">
-              <div class="dist-leg-left">
-                <span class="leg-dot" style="background:#C94040"></span>
-                <span class="dist-leg-label">Vencidas</span>
-                <span class="dist-leg-num">{{ kpis.vencidas }}</span>
-              </div>
-              <div class="dist-leg-bar-wrap">
-                <div class="dist-leg-bar" style="background:#C94040"
-                     [style.width.%]="kpis.totalActividades ? (kpis.vencidas / kpis.totalActividades * 100) : 0"></div>
-              </div>
-              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.vencidas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
-            </div>
-            <div class="dist-leg-row">
-              <div class="dist-leg-left">
-                <span class="leg-dot" style="background:#C4860A"></span>
-                <span class="dist-leg-label">Pendientes</span>
-                <span class="dist-leg-num">{{ kpis.pendientes }}</span>
-              </div>
-              <div class="dist-leg-bar-wrap">
-                <div class="dist-leg-bar" style="background:#C4860A"
-                     [style.width.%]="kpis.totalActividades ? (kpis.pendientes / kpis.totalActividades * 100) : 0"></div>
-              </div>
-              <span class="dist-leg-pct">{{ kpis.totalActividades ? (kpis.pendientes / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Curva S — Avance Programado vs Real -->
       <div class="dash-card chart-card-md">
@@ -470,23 +404,185 @@
         </div>
       </div>
 
-      <!-- Tareas por Arquitecto -->
-      <div class="dash-card chart-card-lg">
-        <div class="card-header">
-          <span class="card-title">CARGA POR SUPERVISOR</span>
-          <div class="chart-legend-inline">
-            <span class="cli-item"><span class="cli-dot" style="background:#4A7FD4"></span>Hitos</span>
-            <span class="cli-item"><span class="cli-dot" style="background:#2D9E5F"></span>Entregables</span>
-            <span class="cli-item"><span class="cli-dot" style="background:#C4860A"></span>Consultas</span>
+      <!-- Distribución de Carga -->
+      <div class="dash-card rank-card">
+
+        <div class="rank-header">
+          <div class="rank-header-left">
+            <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
+            <span class="rank-subtitle">Actividades asignadas · línea = media del equipo</span>
+          </div>
+          <div class="rank-prom-pill" *ngIf="cargaStats">
+            <span class="rank-prom-value">{{ cargaStats.avg }}</span>
+            <span class="rank-prom-label">MEDIA</span>
           </div>
         </div>
-        <div class="chart-wrap-lg">
-          <canvas #tareasCanvas></canvas>
+
+        <!-- Filas de carga -->
+        <div class="rank-list" *ngIf="cargaStats">
+          <div *ngFor="let sup of tareasPorArquitectoOrdenado"
+               class="rank-item carga-item"
+               [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
+               [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
+               (click)="filtrarPorSupervisor(sup.userId)"
+               [title]="sup.nombre + ' — click para filtrar'">
+
+            <div class="rank-accent"
+                 [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')">
+            </div>
+
+            <div class="sup-avatar"
+                 [style.background]="cargaTagStyle(sup.total).bg"
+                 [style.color]="cargaTagStyle(sup.total).color">
+              {{ getInitials(sup.nombre) }}
+            </div>
+
+            <div class="rank-info carga-info">
+              <!-- Nombre + tag + total -->
+              <div class="carga-top">
+                <span class="rank-nombre">{{ sup.nombre }}</span>
+                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                  <span class="rank-badge"
+                        [style.background]="cargaTagStyle(sup.total).bg"
+                        [style.color]="cargaTagStyle(sup.total).color">
+                    {{ cargaTag(sup.total) }}
+                  </span>
+                  <span class="carga-total">{{ sup.total }}</span>
+                </div>
+              </div>
+
+              <!-- Barra proporcional al total + línea media -->
+              <div class="rank-bar-row">
+                <div class="carga-bar-wrap">
+                  <!-- Línea de media del equipo -->
+                  <div class="carga-avg-line" [style.left.%]="cargaStats.avgPct"></div>
+                  <!-- Barra de carga -->
+                  <div class="carga-bar-fill"
+                       [style.width.%]="cargaBarPct(sup.total)"
+                       [style.background]="cargaBarGradient(sup.total)">
+                  </div>
+                </div>
+                <span class="carga-hec">
+                  H{{ sup.hitos }}·E{{ sup.entregables }}·C{{ sup.consultas }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+          <p *ngIf="tareasPorArquitecto.length === 0" class="empty-msg">Sin datos</p>
         </div>
+
+        <!-- Conclusiones -->
+        <div class="rank-legend" *ngIf="cargaInsights.length">
+          <div class="rank-legend-header">
+            <span class="rank-legend-title">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Conclusiones para equilibrar el equipo
+            </span>
+          </div>
+          <div class="carga-insights">
+            <p *ngFor="let ins of cargaInsights" class="carga-insight-item">{{ ins }}</p>
+          </div>
+        </div>
+
       </div>
 
     </div>
   </div><!-- /main-grid -->
+
+  <!-- ══ PARTIDAS DE CONTROL ══ -->
+  <div class="partidas-section">
+
+    <!-- Cabecera + leyenda -->
+    <div class="partidas-header-row">
+      <div class="partidas-header-left">
+        <span class="partidas-title">PARTIDAS DE CONTROL</span>
+        <span class="partidas-sub">Distribución por categoría y estado · click para filtrar</span>
+      </div>
+      <div class="hbar-legend">
+        <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#10b981"></span>Culminadas</span>
+        <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#3b82f6"></span>En Proceso</span>
+        <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#ef4444"></span>Vencidas</span>
+        <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#6b7280"></span>Pendientes</span>
+      </div>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="hbar-chart" *ngIf="distribucionPorCategoria.length; else sinPartidas">
+
+      <!-- Fila por categoría -->
+      <div *ngFor="let cat of distribucionPorCategoria" class="hbar-row">
+
+        <span class="hbar-label hbar-label-nav"
+              (click)="filtrarPorCategoria(cat.nombre)"
+              title="Ver actividades de {{ cat.nombre }}">
+          {{ cat.nombre }}
+        </span>
+
+        <div class="hbar-bar" (click)="filtrarPorCategoria(cat.nombre)"
+             style="cursor:pointer" title="Ver actividades de {{ cat.nombre }}">
+          <ng-container *ngIf="cat.total > 0; else emptyBar">
+            <div class="hbar-seg" style="background:#10b981" [style.flex]="cat.culminadas"></div>
+            <div class="hbar-seg" style="background:#3b82f6" [style.flex]="cat.enProceso"></div>
+            <div class="hbar-seg" style="background:#ef4444" [style.flex]="cat.vencidas"></div>
+            <div class="hbar-seg" style="background:#6b7280" [style.flex]="cat.pendientes"></div>
+          </ng-container>
+          <ng-template #emptyBar><div class="hbar-empty-seg"></div></ng-template>
+        </div>
+
+        <span class="hbar-pct">{{ cat.progreso | number:'1.0-1' }}%</span>
+        <span class="hbar-cnt">({{ cat.total }})</span>
+
+        <div class="hbar-counts">
+          <span class="hbar-c hbar-c-cul hbar-c-nav"
+                (click)="filtrarPorCategoriaYEstado(cat.nombre, 'CULMINADO')"
+                title="Ver culminadas de {{ cat.nombre }}">✓ {{ cat.culminadas }}</span>
+          <span class="hbar-c hbar-c-ep hbar-c-nav"
+                (click)="filtrarPorCategoriaYEstado(cat.nombre, 'EN PROCESO')"
+                title="Ver en proceso de {{ cat.nombre }}"> ◑ {{ cat.enProceso }}</span>
+          <span class="hbar-c hbar-c-ven hbar-c-nav"
+                (click)="filtrarPorCategoriaYEstado(cat.nombre, 'VENCIDO')"
+                title="Ver vencidas de {{ cat.nombre }}">⚠ {{ cat.vencidas }}</span>
+          <span class="hbar-c hbar-c-pen hbar-c-nav"
+                (click)="filtrarPorCategoriaYEstado(cat.nombre, 'PENDIENTE')"
+                title="Ver pendientes de {{ cat.nombre }}">◯ {{ cat.pendientes }}</span>
+        </div>
+      </div>
+
+      <!-- Separador -->
+      <div class="hbar-sep"></div>
+
+      <!-- Fila TOTAL — usa kpis directamente (fuente de verdad) -->
+      <div class="hbar-row hbar-total-row" *ngIf="kpis.totalActividades > 0">
+        <span class="hbar-label hbar-label-total">TOTAL</span>
+
+        <div class="hbar-bar hbar-bar-total">
+          <div class="hbar-seg" style="background:#10b981" [style.flex]="kpis.culminadas"></div>
+          <div class="hbar-seg" style="background:#3b82f6" [style.flex]="kpis.enProceso"></div>
+          <div class="hbar-seg" style="background:#ef4444" [style.flex]="kpis.vencidas"></div>
+          <div class="hbar-seg" style="background:#6b7280" [style.flex]="kpis.pendientes"></div>
+        </div>
+
+        <span class="hbar-pct hbar-pct-total">{{ kpis.progresoGlobal | number:'1.0-1' }}%</span>
+        <span class="hbar-cnt">({{ kpis.totalActividades }})</span>
+
+        <div class="hbar-counts">
+          <span class="hbar-c hbar-c-cul">✓ {{ kpis.culminadas }}</span>
+          <span class="hbar-c hbar-c-ep"> ◑ {{ kpis.enProceso }}</span>
+          <span class="hbar-c hbar-c-ven">⚠ {{ kpis.vencidas }}</span>
+          <span class="hbar-c hbar-c-pen">◯ {{ kpis.pendientes }}</span>
+        </div>
+      </div>
+
+    </div>
+    <ng-template #sinPartidas>
+      <p class="empty-msg">Sin datos de partidas de control</p>
+    </ng-template>
+
+  </div>
 
 </div><!-- /dash-root -->
 
