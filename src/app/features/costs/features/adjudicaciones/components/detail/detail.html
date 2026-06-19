@@ -443,8 +443,8 @@
                 valueField="value" displayField="label" [allowClear]="false" [(value)]="step1Form.includesCartaFianza" />
             </div>
 
-            <!-- Adelanto (solo contrato con adelanto) -->
-            <div *ngIf="step1Form.paymentMethodId === 2" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
+            <!-- Adelanto (contrato con adelanto, obligatorio) / Pagaré (pago a cuenta, opcional) -->
+            <div *ngIf="step1Form.paymentMethodId === 2 || step1Form.paymentMethodId === 4" class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
               <div class="flex flex-col gap-[6px]">
                 <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Porcentaje de adelanto</label>
                 <div class="relative">
@@ -457,7 +457,7 @@
               <div class="flex flex-col gap-[6px]">
                 <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Monto de adelanto</label>
                 <div class="relative">
-                  <input type="text" inputmode="decimal" [value]="step1AdvanceAmount" placeholder="0.00"
+                  <input type="text" inputmode="decimal" [value]="step1AdvanceAmount ?? ''" placeholder="0.00"
                     (input)="onStep1AdvanceAmountInput($event)"
                     class="w-full border border-[#E2E2E2] rounded-lg p-[10px] pr-[44px] text-sm focus:outline-none" />
                   <span class="absolute right-[12px] top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
@@ -562,7 +562,7 @@
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
-          <div *ngIf="item.paymentMethodId === 2" class="flex flex-col sm:col-span-2 sm:w-1/2">
+          <div *ngIf="requiresPromissoryNote" class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de pagaré <span class="text-red-400">*</span></label>
             <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditInfo"
               min="0" max="2147483647" step="1"
@@ -667,7 +667,7 @@
             <p class="text-sm font-semibold text-gray-800">{{ item.contractNumber }}</p>
           </div>
 
-          <div *ngIf="item.paymentMethodId === 2 && item.promissoryNoteNumber != null">
+          <div *ngIf="requiresPromissoryNote && item.promissoryNoteNumber != null">
             <p class="text-xs text-gray-400 mb-[2px]">Número de pagaré</p>
             <p class="text-sm font-semibold text-gray-800">{{ item.promissoryNoteNumber }}</p>
           </div>

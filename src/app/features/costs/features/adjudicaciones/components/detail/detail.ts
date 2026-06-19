@@ -128,6 +128,14 @@ export class Detail implements OnInit {
     return doc.key;
   }
 
+  /**
+   * Modalidades de pago que generan pagaré: "Contrato con adelanto" (2) y "Pago a cuenta" (4).
+   * El adelanto y la carta de fianza siguen siendo exclusivos de la modalidad 2.
+   */
+  get requiresPromissoryNote(): boolean {
+    return this.item.paymentMethodId === 2 || this.item.paymentMethodId === 4;
+  }
+
   private buildDocuments(): { key: string; label: string }[] {
     const base = [
       { key: 'Contract',          label: 'Contrato' },
@@ -142,7 +150,7 @@ export class Detail implements OnInit {
       { key: 'FichaTecnica',         label: 'Ficha Técnica' },
       { key: 'Anexo',                label: 'Anexos' },
     ];
-    if (this.item.paymentMethodId === 2) {
+    if (this.requiresPromissoryNote) {
       return [...base, { key: 'PromissoryNote', label: 'Pagaré' }];
     }
     return base;
@@ -364,7 +372,7 @@ export class Detail implements OnInit {
         this.step2Form.guaranteeFundDays != null && (this.step2Form.guaranteeFundDays as any) !== ''
       );
       if (!baseOk) return false;
-      if (this.item.paymentMethodId === 2) {
+      if (this.requiresPromissoryNote) {
         return this.step2Form.promissoryNoteNumber != null && (this.step2Form.promissoryNoteNumber as any) !== '';
       }
       return true;
@@ -1252,7 +1260,7 @@ export class Detail implements OnInit {
       return;
     }
 
-    if (this.item.paymentMethodId === 2 && promissoryNoteNumber === null) {
+    if (this.requiresPromissoryNote && promissoryNoteNumber === null) {
       Swal.fire({ icon: 'warning', title: 'El número de pagaré es obligatorio.', draggable: true });
       return;
     }
@@ -1566,6 +1574,8 @@ export class Detail implements OnInit {
     }
 
     const isAdvance = f.paymentMethodId === 2;
+    // El % / monto del pagaré se captura en contrato con adelanto (2, obligatorio) y pago a cuenta (4, opcional).
+    const usesPagareAmount = f.paymentMethodId === 2 || f.paymentMethodId === 4;
     // Carta de fianza solo aplica en Suministro (modalidad 2) + contrato con adelanto (pago 2)
     const includesCartaFianza = f.contractModalityId === 2 && f.paymentMethodId === 2 && !!f.includesCartaFianza;
     this.loaderService.show();
@@ -1577,8 +1587,8 @@ export class Detail implements OnInit {
       paymentMethodId:    f.paymentMethodId,
       paymentFormId:      f.paymentFormId,
       includesCartaFianza,
-      advancePercentage:  isAdvance ? (f.advancePercentage ?? 0) : 0,
-      advanceAmount:      isAdvance ? (this.step1AdvanceAmount ?? null) : null,
+      advancePercentage:  usesPagareAmount ? (f.advancePercentage ?? 0) : 0,
+      advanceAmount:      usesPagareAmount ? (this.step1AdvanceAmount ?? null) : null,
       amount:             f.amount,
       currencyId:         f.currencyId,
       hasIgv:             f.hasIgv,
@@ -1592,6 +1602,18 @@ export class Detail implements OnInit {
       next: (res) => {
         this.loaderService.hide();
         this.step1EditMode = false;
+
+        // Reflejar localmente los cambios que afectan al modal abierto: el pagaré aparece/desaparece
+        // según la modalidad de pago, así que hay que reconstruir la lista de documentos sin esperar
+        // a que el padre recargue (que no refresca el item ya abierto).
+        this.item.paymentMethodId    = f.paymentMethodId;
+        this.item.contractModalityId = f.contractModalityId;
+        this.item.includesCartaFianza = includesCartaFianza;
+        this.item.advancePercentage  = usesPagareAmount ? (f.advancePercentage ?? 0) : 0;
+        this.item.advanceAmount      = usesPagareAmount ? (this.step1AdvanceAmount ?? null) : null;
+        this.documents = this.buildDocuments();
+        this.initDocForms();
+
         this.statusChanged.emit(); // el padre recarga y refresca el item con los datos nuevos
         Swal.fire({ icon: 'success', title: res.message ?? 'Información actualizada exitosamente', draggable: true });
       },
