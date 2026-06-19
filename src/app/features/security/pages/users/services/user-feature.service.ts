@@ -6,6 +6,8 @@ import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.mod
 import { UserListItemDto } from '../../../../../core/dtos/user/userListItem.model';
 import { UserFeatureCreateDto } from '../../../../../core/dtos/user/userFeatureCreate.model';
 import { UserFeatureUpdateDto } from '../../../../../core/dtos/user/userFeatureUpdate.model';
+import { AbrilWorkerOptionDto } from '../../../../../core/dtos/user/abrilWorkerOption.model';
+import { AbrilWorkerUserCreateDto } from '../../../../../core/dtos/user/abrilWorkerUserCreate.model';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -33,6 +35,18 @@ export class UserFeatureService {
 
   createUser(dto: UserFeatureCreateDto): Observable<any> {
     return this.http.post(this.apiUrl, dto, { headers: buildAuthHeaders() });
+  }
+
+  /** Trabajadores de Abril (@abril.pe) que aún no tienen usuario en app_user. */
+  getAbrilWorkersWithoutUser(): Observable<AbrilWorkerOptionDto[]> {
+    return this.http.get<AbrilWorkerOptionDto[]>(
+      `${this.apiUrl}/abril-workers/without-user`,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  createAbrilWorkerUser(dto: AbrilWorkerUserCreateDto): Observable<any> {
+    return this.http.post(`${this.apiUrl}/abril-worker`, dto, { headers: buildAuthHeaders() });
   }
 
   updateUser(id: number, dto: UserFeatureUpdateDto): Observable<any> {

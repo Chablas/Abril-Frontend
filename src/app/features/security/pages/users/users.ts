@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserList } from './list/list';
 import { UserCreate } from './create/create';
+import { AbrilWorkerCreate } from './abril-worker-create/abril-worker-create';
 import { UserEditForm } from './components/user-edit-form/user-edit-form';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
@@ -10,12 +11,13 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 
 @Component({
   selector: 'app-users',
-  imports: [CommonModule, UserList, UserCreate, UserEditForm, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, UserList, UserCreate, AbrilWorkerCreate, UserEditForm, Paginator, AbrilPageHeaderComponent],
   templateUrl: './users.html',
   styleUrl: './users.css',
 })
 export class Users {
   showCreateModal = false;
+  showAbrilWorkerModal = false;
   formOpen = false;
   formUser: UserListItemDto | null = null;
   currentPage = 1;

@@ -6,7 +6,9 @@
     { label: 'Usuarios', icono: 'ti-users', route: '/security/users' },
     { label: 'Roles', icono: 'ti-shield', route: '/security/roles' }
   ]"
-  [botonPrimario]="{ label: 'Nuevo Usuario', icono: 'ti-plus' }"
+  [botonSecundario]="{ label: 'Crear usuario para trabajador de Abril', icono: 'ti-id-badge-2' }"
+  [botonPrimario]="{ label: 'Crear usuario para persona externa', icono: 'ti-plus' }"
+  (secondaryClick)="showAbrilWorkerModal = true"
   (primaryClick)="showCreateModal = true">
 </app-abril-page-header>
 
@@ -34,6 +36,12 @@
   (closeModal)="showCreateModal = false"
   (userCreated)="reloadUsers()"
 ></app-user-create>
+
+<app-abril-worker-create
+  *ngIf="showAbrilWorkerModal"
+  (closeModal)="showAbrilWorkerModal = false"
+  (userCreated)="reloadUsers()"
+></app-abril-worker-create>
 
 <app-user-edit-form
   *ngIf="formOpen"
