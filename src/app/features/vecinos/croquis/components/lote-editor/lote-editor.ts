@@ -11,6 +11,8 @@ import { CroquisLoteDTO, ProjectCroquisItemDTO } from '../../dtos/croquis.dto';
 
 /** Lote en edición (con su polígono en coordenadas relativas 0–1). */
 interface EditableLote {
+  /** Id del lote existente (null si es nuevo). Se conserva para preservar el vecino asignado al guardar. */
+  projectCroquisLoteId: number | null;
   numeroLote: string;
   puntos: number[][];
 }
@@ -46,7 +48,11 @@ export class LoteEditor implements OnInit {
     this.loaderService.show();
     this.service.getLotes(this.croquis.projectCroquisId).subscribe({
       next: (res) => {
-        this.lotes = res.map((l) => ({ numeroLote: l.numeroLote, puntos: l.puntos }));
+        this.lotes = res.map((l) => ({
+          projectCroquisLoteId: l.projectCroquisLoteId ?? null,
+          numeroLote: l.numeroLote,
+          puntos: l.puntos,
+        }));
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -103,7 +109,10 @@ export class LoteEditor implements OnInit {
     });
     if (!numero) return;
 
-    this.lotes = [...this.lotes, { numeroLote: numero.trim(), puntos: this.currentPoints }];
+    this.lotes = [
+      ...this.lotes,
+      { projectCroquisLoteId: null, numeroLote: numero.trim(), puntos: this.currentPoints },
+    ];
     this.drawing = false;
     this.currentPoints = [];
   }
@@ -133,6 +142,7 @@ export class LoteEditor implements OnInit {
   save(): void {
     if (!this.croquis.projectCroquisId) return;
     const payload: CroquisLoteDTO[] = this.lotes.map((l) => ({
+      projectCroquisLoteId: l.projectCroquisLoteId,
       numeroLote: l.numeroLote,
       puntos: l.puntos,
     }));

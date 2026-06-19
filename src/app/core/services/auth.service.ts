@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequestDTO } from '../dtos/auth/login-request.model';
-import { LoginResponseDTO } from '../dtos/auth/login-response.model';
+import { LoginResponseDTO, RefreshResponseDTO } from '../dtos/auth/login-response.model';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
@@ -96,7 +96,9 @@ export class AuthService {
     return this.http.post<LoginResponseDTO>(`${this.apiUrl}/login`, data).pipe(
       tap((res) => {
         localStorage.setItem('access_token', res.accessToken);
-        localStorage.setItem('user', JSON.stringify(res.user));
+        if (res.sessionToken) localStorage.setItem('session_token', res.sessionToken);
+        if (res.expiresAt) localStorage.setItem('token_expires_at', res.expiresAt);
+        if (res.user) localStorage.setItem('user', JSON.stringify(res.user));
         if (res.allowedFeatures) {
           localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures));
         }
@@ -104,8 +106,35 @@ export class AuthService {
     );
   }
 
+  /**
+   * Refresca el access token (JWT de vida corta) usando el session token de larga
+   * vida. El backend regenera el JWT y las features con los datos ACTUALES de BD,
+   * por lo que cambios de rol se reflejan sin re-loguear.
+   */
+  refresh(): Observable<RefreshResponseDTO> {
+    const sessionToken =
+      typeof localStorage !== 'undefined' ? localStorage.getItem('session_token') : null;
+    return this.http
+      .post<RefreshResponseDTO>(`${this.apiUrl}/refresh`, { sessionToken })
+      .pipe(
+        tap((res) => {
+          localStorage.setItem('access_token', res.accessToken);
+          if (res.allowedFeatures) {
+            localStorage.setItem('allowed_features', JSON.stringify(res.allowedFeatures));
+          }
+        }),
+      );
+  }
+
+  getSessionToken(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem('session_token');
+  }
+
   logout() {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('session_token');
+    localStorage.removeItem('token_expires_at');
     localStorage.removeItem('user');
     localStorage.removeItem('allowed_features');
   }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { environment } from '../../../../../../environments/environment';
 import { StatusPills } from '../status-pills/status-pills';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -120,6 +121,47 @@ export class GestionVecinosCompromisos implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         c.vecinoCompromisoEstadoId = previo;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Tipo de entregable obligatorio: no admite el estado "No aplica". */
+  private static readonly ENTREGABLE_OBLIGATORIO = 'Acta de Compromiso';
+
+  esObligatorio(ent: VecinoEntregableItemDTO): boolean {
+    return ent.tipoDescripcion === GestionVecinosCompromisos.ENTREGABLE_OBLIGATORIO;
+  }
+
+  /** Estados disponibles para un entregable (oculta "No aplica" en los obligatorios). */
+  estadosPara(ent: VecinoEntregableItemDTO): CatalogOptionDTO[] {
+    if (!this.esObligatorio(ent)) return this.entregableEstados;
+    return this.entregableEstados.filter((e) => e.descripcion !== 'No aplica');
+  }
+
+  /** URL absoluta del archivo del entregable (la ruta guardada es relativa al backend). */
+  entregableFileUrl(url?: string | null): string {
+    if (!url) return '';
+    return url.startsWith('http') ? url : environment.apiUrl.replace(/\/$/, '') + url;
+  }
+
+  onEntregableFileSelected(ent: VecinoEntregableItemDTO, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.loaderService.show();
+    this.service.uploadEntregable(ent.vecinoCompromisoEntregableId, file).subscribe({
+      next: (res) => {
+        ent.archivoUrl = res.archivoUrl;
+        ent.originalFileName = file.name;
+        input.value = '';
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        input.value = '';
         this.loaderService.hide();
         this.errorService.handleError(err);
       },

@@ -31,7 +31,6 @@ export class Sidebar implements OnInit, OnDestroy {
   accountMenuOpen = false;
   expandedModule: string | null = null;
   expandedGroup: string | null = null;
-  allModules: NavModule[] = [];
   userName: string | null = null;
   userEmail: string | null = null;
   userInitials = '';
@@ -51,7 +50,6 @@ export class Sidebar implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.alertaSvc.checkRechazados();
     setInterval(() => this.alertaSvc.checkRechazados(), 5 * 60 * 1000);
-    this.allModules = this.navService.getModules();
     if (isPlatformBrowser(this.platformId)) {
       this.collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
@@ -69,12 +67,17 @@ export class Sidebar implements OnInit, OnDestroy {
     return this.collapsed;
   }
 
+  /**
+   * Lista de módulos visibles, recalculada en cada ciclo de detección de cambios.
+   * Así, cuando un refresh actualiza `allowed_features`, los módulos que se quedan
+   * sin ninguna funcionalidad accesible desaparecen al instante (no solo sus items).
+   */
   get mainModules(): NavModule[] {
-    return this.allModules.filter((m) => m.key !== 'configuracion');
+    return this.navService.getModules().filter((m) => m.key !== 'configuracion');
   }
 
   get configModule(): NavModule | undefined {
-    return this.allModules.find((m) => m.key === 'configuracion');
+    return this.navService.getModules().find((m) => m.key === 'configuracion');
   }
 
   private computeInitials(name: string | null): string {

@@ -97,6 +97,8 @@ export interface VecinoEntregableItemDTO {
   orden: number;
   vecinoEntregableEstadoId: number;
   estadoDescripcion: string;
+  archivoUrl?: string | null;
+  originalFileName?: string | null;
 }
 
 export interface VecinoCompromisoItemDTO {

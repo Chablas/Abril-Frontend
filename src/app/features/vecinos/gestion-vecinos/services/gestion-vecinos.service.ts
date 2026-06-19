@@ -185,6 +185,16 @@ export class GestionVecinosService {
     );
   }
 
+  uploadEntregable(entregableId: number, file: File): Observable<{ archivoUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ archivoUrl: string; message: string }>(
+      `${this.apiUrl}/compromisos/entregables/${entregableId}/upload`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Requisitos ──────────────────────────────────────────────────────
   getRequisitos(vecinoId: number): Observable<VecinoRequisitosResponseDTO> {
     return this.http.get<VecinoRequisitosResponseDTO>(`${this.apiUrl}/${vecinoId}/requisitos`, {

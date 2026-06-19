@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Sidebar } from '../sidebar/sidebar';
 import { Header } from '../header/header';
@@ -6,6 +6,8 @@ import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
+import { SessionRefreshService } from '../../../core/services/session-refresh.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -15,15 +17,28 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
-export class Layout {
+export class Layout implements OnDestroy {
   mobileMenuOpen = false;
 
   private layoutService = inject(LayoutService);
+  private sessionRefresh = inject(SessionRefreshService);
+  private realtime = inject(RealtimeService);
 
   constructor(private router: Router) {
     this.layoutService.openMobileMenu$
       .pipe(takeUntilDestroyed())
       .subscribe(() => (this.mobileMenuOpen = true));
+
+    // Mientras el usuario está en la zona autenticada:
+    // - refresco periódico del token (red de seguridad),
+    // - conexión SignalR para refrescar al instante ante cambios de rol/permisos.
+    this.sessionRefresh.start();
+    this.realtime.start();
+  }
+
+  ngOnDestroy(): void {
+    this.sessionRefresh.stop();
+    this.realtime.stop();
   }
 
   isFullPage(): boolean {
