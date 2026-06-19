@@ -267,7 +267,7 @@
    RANKING EFICIENCIA — Premium v3 (neumorphism light)
    ═══════════════════════════════════════════════ */
 
-.rank-card { display:flex; flex-direction:column; }
+.rank-card { display:flex; flex-direction:column;}
 
 /* ── Header ── */
 .rank-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
