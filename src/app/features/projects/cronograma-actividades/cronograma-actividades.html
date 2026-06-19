@@ -42,6 +42,7 @@
               <th class="col-actividad">Actividad</th>
               <th class="col-fecha">Inicio Prog.</th>
               <th class="col-fecha">Fin Prog.</th>
+              <th class="col-dur">Duración</th>
               <th class="col-fecha">Fin Real</th>
               <th class="col-avance">Avance</th>
               <th class="col-estado">Estado</th>
@@ -51,6 +52,7 @@
             <tr *ngFor="let i of [1,2,3,4,5,6,7]" class="skeleton-data-row">
               <td><div class="skel skel-order"></div></td>
               <td><div class="skel skel-act"></div></td>
+              <td><div class="skel skel-date"></div></td>
               <td><div class="skel skel-date"></div></td>
               <td><div class="skel skel-date"></div></td>
               <td><div class="skel skel-date"></div></td>
@@ -377,7 +379,7 @@
          [value]="inlineEditValue"
          (change)="inlineEditValue = $any($event.target).value"
          (input)="inlineEditValue = $any($event.target).value"
-         (keydown.enter)="commitInlineEdit()"
+         (keydown.enter)="$event.stopPropagation(); commitInlineEdit()"
          (keydown.escape)="cancelInlineEdit()" />
   <div class="inline-popover-footer">
     <button class="inline-btn-cancel" type="button" (click)="cancelInlineEdit()">✗ Cancelar</button>

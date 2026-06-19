@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-02 — Regla R1 1-HTTP-1-acción aplicada a CronogramaActividades y ProjectsDashboard. Nuevos DTOs (ActividadesProyectoResponseDto, EditarActividadResultDto, ProjectsDashboardResponseDto). Badge predecesoras muestra orden con getDisplayIndex. Rediseño plantilla hitos (milestone-schedule): tabla compacta con chip PLANTILLA, subheader stats, filtros Todos/Sin fecha/Con fecha.
+> **Última actualización**: 2026-06-07 — Bug fix commitInlineEdit (change+input en date picker), columna DURACIÓN en tabla, export PDF client-side (jsPDF), campo Duración complementario en modal Nueva Actividad, patch local padresActualizados en crear/editar.
 
 ---
 
@@ -3683,3 +3683,143 @@ Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). 
 ### Reestructura carpetas (confirmado en esta sesión)
 - `cronograma-actividades/dtos/` y `cronograma-actividades/services/` separados de `core/`
 - `projects-dashboard/dtos/` y `projects-dashboard/services/` separados de `core/`
+
+---
+
+## Sesión 2026-06-07 — Cronograma de Actividades: bug fix date picker, duración, PDF, padresActualizados
+
+### 1. Bug fix — `commitInlineEdit()`: date picker nativo no disparaba `input`
+
+**Problema**: el popover de edición inline usaba `[(ngModel)]="inlineEditValue"` en `<input type="date">`. El date picker nativo del browser dispara `change` (no `input`) al seleccionar una fecha sin hacer blur primero. Angular's `DefaultValueAccessor` solo escucha `input`, por lo que `inlineEditValue` nunca se actualizaba → payload enviaba `plannedEndDate: null`.
+
+**Fix aplicado** (`cronograma-actividades.html`):
+```html
+<!-- antes -->
+[(ngModel)]="inlineEditValue"
+
+<!-- después -->
+[value]="inlineEditValue"
+(change)="inlineEditValue = $any($event.target).value"
+(input)="inlineEditValue = $any($event.target).value"
+```
+
+**Regla derivada**: en cualquier `<input type="date">` donde el valor se necesite capturar en tiempo real (sin esperar blur), usar siempre `(change)` + `(input)` en lugar de solo `[(ngModel)]`.
+
+**Fix secundario en el mismo commit**: guard `inlineEditInFlight` para evitar múltiples PUT por Enter + click simultáneo. La propiedad `private inlineEditInFlight = false` se setea antes del HTTP call y se resetea en `next`/`error`.
+
+---
+
+### 2. Columna DURACIÓN en la tabla
+
+**Posición**: entre "FIN PROG." y las columnas de Línea Base.
+
+**Método** (`cronograma-actividades.ts`):
+```ts
+getDuracion(act: ActividadDto): number | null {
+  if (!act.plannedStartDate || !act.plannedEndDate) return null;
+  const diff = new Date(act.plannedEndDate.slice(0,10)).getTime()
+             - new Date(act.plannedStartDate.slice(0,10)).getTime();
+  return Math.abs(Math.round(diff / 86400000)) + 1;
+}
+```
+
+- Aplica a todos los nodos (padres e hijos).
+- Sin fechas → muestra `"—"`.
+- Formato: `"Nd"` (ej. `"45d"`).
+- CSS: `.col-dur { width: 80px }`, `.td-dur { text-align: center }`.
+- Columna también incluida en el skeleton de carga (mantiene alineación de columnas).
+
+---
+
+### 3. Export PDF client-side (`exportarPDF()`)
+
+**Botón**: toolbar entre "Importar desde MS Project" y "Nueva Actividad". Siempre visible (no depende de `esAdmin`).
+
+**Implementación** (`cronograma-actividades.ts`, al final del componente):
+- `jsPDF('l', 'mm', 'a4')` — landscape A4.
+- Header: rect `#1B263B` + texto `#E0E1DD`, nombre del proyecto (izq) y fecha de exportación `dd/mm/yyyy` (der).
+- Columnas base siempre: `#, Actividad, Inicio Prog., Fin Prog., Duración, Avance%, Estado`.
+- Columnas LB solo si `this.lineaBaseVisible === true`: `LB Inicio, LB Fin, Desfase Ini., Desfase Fin., Semáforo`.
+- Itera `this.actividades` completo (sin filtrar por `collapsedIds`).
+- Jerarquía visual: indenta `act.activityDescription` con `'  '.repeat(act.hierarchyLevel)` (2 espacios por nivel).
+- Semáforo: texto `'Verde'`/`'Amarillo'`/`'Rojo'` (no se puede renderizar el dot CSS en jsPDF).
+- Colores en `didParseCell`: estado y semáforo con `textColor` RGB.
+- Nombre de archivo: `{projectDescription}_cronograma_{yyyy-mm-dd}.pdf` (caracteres especiales sanitizados).
+- **0 llamadas HTTP** (R1 cumplido).
+- No toca `buildColorMap()`, `buildAvanceMap()`, `buildParentIds()`.
+
+---
+
+### 4. Modal Nueva Actividad — campo Duración complementario
+
+**Solo visible** cuando `modalMode === 'crear'`. Posición: alineado bajo "Fin Programado" (segunda columna del `field-row`).
+
+**Variable de estado** (propiedad del componente):
+```ts
+nuevaDuracionDias: number | null = null;
+```
+Reseteada en `abrirModalCrear()` y `cerrarModal()`.
+
+**Flujo bidireccional**:
+- Usuario cambia "Fin Programado" → `onFormPlannedEndChange(val)` actualiza `formPlannedEnd` y recalcula `nuevaDuracionDias`.
+- Usuario escribe en "Duración" → `onNuevaDuracionChange(val)` actualiza `nuevaDuracionDias` y recalcula `formPlannedEnd`.
+
+**Cálculo timezone-safe** (usa `new Date(y, m-1, d)` en hora local, no UTC):
+```ts
+onFormPlannedEndChange(val: string): void {
+  this.formPlannedEnd = val;
+  if (!this.formPlannedStart || !val || val.length < 10) { this.nuevaDuracionDias = null; return; }
+  const [sy,sm,sd] = this.formPlannedStart.split('-').map(Number);
+  const [ey,em,ed] = val.split('-').map(Number);
+  const diff = Math.round((new Date(ey,em-1,ed).getTime() - new Date(sy,sm-1,sd).getTime()) / 86400000) + 1;
+  this.nuevaDuracionDias = diff >= 1 ? diff : null;
+}
+
+onNuevaDuracionChange(val: string): void {
+  const n = parseInt(val, 10);
+  this.nuevaDuracionDias = isNaN(n) || n < 1 ? null : n;
+  if (!this.formPlannedStart || this.nuevaDuracionDias === null) return;
+  const [y,m,d] = this.formPlannedStart.split('-').map(Number);
+  const end = new Date(y, m-1, d);
+  end.setDate(end.getDate() + this.nuevaDuracionDias - 1);
+  this.formPlannedEnd = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+}
+```
+
+**Input "Fin Programado"**: reemplazado `[(ngModel)]` por `[ngModel]` + `(change)` + `(input)` (mismo patrón que el fix del popover inline).
+
+**No toca** `guardar()`, la lógica de submit, ni métodos fuera del modal.
+
+---
+
+### 5. Patch local `padresActualizados` en crear/editar
+
+**Motivación**: el backend puede actualizar el campo `esPadre`, `progressPercentage` u otros campos de los nodos padre cuando se crea/edita un hijo. El frontend aplica un patch quirúrgico sobre cada padre devuelto para mantener la tabla consistente sin recargar.
+
+**DTOs actualizados** (`cronograma-actividades.dtos.ts`):
+```ts
+export interface CrearActividadResultDto {
+  actividad: ActividadDto;
+  padresActualizados?: ActividadDto[];
+}
+
+export interface EditarActividadResultDto {
+  actividad: ActividadDto;
+  cascada: CascadaResultDto | null;
+  padresActualizados?: ActividadDto[];   // ← nuevo
+}
+```
+
+**Servicio**: `crearActividad()` cambia de `Observable<ActividadDto>` a `Observable<CrearActividadResultDto>`.
+
+**Patrón de patch** (aplicado en `guardar()` rama crear y rama editar):
+```ts
+(res.padresActualizados ?? []).forEach((padre) => {
+  const idx = this.actividades.findIndex(a => a.projectActivityId === padre.projectActivityId);
+  if (idx !== -1) this.actividades[idx] = { ...this.actividades[idx], ...padre };
+});
+```
+
+- En **editar**: se aplica después de `patchActividadLocal(res.actividad)`, antes de `buildAvanceMap()`.
+- En **crear**: se aplica antes de `cerrarModal(); this.recargar()` (el `recargar()` posterior reconcilia cualquier estado).
+- **0 llamadas HTTP adicionales** (R1 cumplido). No toca funciones protegidas.

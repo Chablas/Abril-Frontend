@@ -111,6 +111,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   nuevaDuracionDias: number | null = null;
 
   // Edición inline — popover flotante
+  private inlineEditInFlight = false;
   inlineEditCell: { id: number; field: 'start' | 'end' | 'lbStart' | 'lbEnd' } | null = null;
   inlineEditValue = '';
   inlinePopoverPos = { top: 0, left: 0 };
@@ -725,6 +726,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.formPadreId = null;
     this.nuevaDuracionDias = null;
     this.guardando = false;
+    this.nuevaDuracionDias = null;
     this.modalOpen = true;
   }
 
@@ -753,6 +755,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.formPredecesoras = [];
     this.predSearch = '';
     this.predDropdownIdx = -1;
+    this.nuevaDuracionDias = null;
   }
 
   onOverlayClick(e: MouseEvent): void {
@@ -1217,20 +1220,22 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   }
 
   commitInlineEdit(): void {
-    if (!this.inlineEditCell) return;
+    const nativeVal = this.popoverDateInputRef?.nativeElement?.value;
+    if (!this.inlineEditCell || this.inlineEditInFlight) return;
+    this.inlineEditInFlight = true;
 
-    const value = this.inlineEditValue;
+    const value = nativeVal ?? this.inlineEditValue;
     const cell  = this.inlineEditCell;
     this.inlineEditCell = null;
     this.cdr.detectChanges();
 
     const act = this.actividades.find((a) => a.projectActivityId === cell.id);
-    if (!act) return;
+    if (!act) { this.inlineEditInFlight = false; return; }
 
     if (cell.field === 'start' || cell.field === 'end') {
       const cur = (cell.field === 'start'
         ? act.plannedStartDate : act.plannedEndDate)?.slice(0, 10) ?? '';
-      if ((value || '') === cur) return;
+      if ((value || '') === cur) { this.inlineEditInFlight = false; return; }
 
       const body: EditarActividadRequest = {
         activityDescription: act.activityDescription,
@@ -1249,9 +1254,13 @@ export class CronogramaActividades implements OnInit, OnDestroy {
             this.buildAvanceMap();
             this.buildColorMap();
           }
+          this.inlineEditInFlight = false;
           this.cdr.detectChanges();
         },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        error: (err: HttpErrorResponse) => {
+          this.inlineEditInFlight = false;
+          this.errorService.handleError(err);
+        },
       });
     } else {
       // Edición de línea base
@@ -1270,9 +1279,13 @@ export class CronogramaActividades implements OnInit, OnDestroy {
               if (cell.field === 'lbStart') this.actividades[idx].baselineStartDate = value || null;
               else                          this.actividades[idx].baselineEndDate   = value || null;
             }
+            this.inlineEditInFlight = false;
             this.cdr.detectChanges();
           },
-          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+          error: (err: HttpErrorResponse) => {
+            this.inlineEditInFlight = false;
+            this.errorService.handleError(err);
+          },
         });
       };
 
@@ -1286,7 +1299,10 @@ export class CronogramaActividades implements OnInit, OnDestroy {
           cancelButtonText:  'Cancelar',
           confirmButtonColor: '#2596be',
           cancelButtonColor:  '#9ca3af',
-        }).then((result) => { if (result.isConfirmed) doSave(); });
+        }).then((result) => {
+          if (result.isConfirmed) doSave();
+          else this.inlineEditInFlight = false;
+        });
       } else {
         doSave();
       }
@@ -1377,66 +1393,6 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     if (cls === 'semaforo-amarillo') return 'Amarillo';
     if (cls === 'semaforo-rojo')     return 'Rojo';
     return '—';
-  }
-
-  exportarPdf(): void {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const proyecto = this.proyectoHeader?.projectDescription ?? 'Proyecto';
-    const hoy = new Date().toISOString().slice(0, 10);
-
-    doc.setFontSize(18);
-    doc.setTextColor(27, 38, 59);
-    doc.text('ABRIL', 14, 14);
-    doc.setFontSize(10);
-    doc.setTextColor(27, 38, 59);
-    doc.text(proyecto, 14, 21);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Exportado: ${hoy}`, 14, 27);
-
-    const cols: string[] = ['#', 'Actividad', 'Inicio Prog.', 'Fin Prog.', 'Duración'];
-    if (this.lineaBaseVisible) {
-      cols.push('LB Inicio', 'LB Fin', 'Desfase Ini.', 'Desfase Fin', 'Semáforo');
-    }
-    cols.push('Fin Real', 'Avance %', 'Estado');
-
-    const rows = this.actividades.map((act) => {
-      const indent = '  '.repeat(act.hierarchyLevel);
-      const row: string[] = [
-        String(this.getDisplayIndex(act)),
-        indent + act.activityDescription,
-        this.formatDate(act.plannedStartDate),
-        this.formatDate(act.plannedEndDate),
-        this.getDuracion(act),
-      ];
-      if (this.lineaBaseVisible) {
-        row.push(
-          this.formatDate(act.baselineStartDate),
-          this.formatDate(act.baselineEndDate),
-          this.formatDesfase(this.getDesfaseDias(act, 'start')),
-          this.formatDesfase(this.getDesfaseDias(act, 'end')),
-          this.getSemaforoTexto(act),
-        );
-      }
-      row.push(
-        this.formatDate(act.actualEndDate),
-        `${this.getAvance(act)}%`,
-        this.getEstado(act),
-      );
-      return row;
-    });
-
-    autoTable(doc, {
-      head: [cols],
-      body: rows,
-      startY: 32,
-      styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
-      headStyles: { fillColor: [27, 38, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 'auto' } },
-      margin: { left: 10, right: 10 },
-    });
-
-    doc.save(`${proyecto}_cronograma_${hoy}.pdf`);
   }
 
   // ── Vista Gantt dhtmlx ─────────────────────────────────────────────────────
@@ -1669,5 +1625,108 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     } else {
       doImport();
     }
+  }
+
+  exportarPdf(): void {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const today = new Date();
+    const dd    = String(today.getDate()).padStart(2, '0');
+    const mm    = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy  = today.getFullYear();
+    const fechaLabel = `${dd}/${mm}/${yyyy}`;
+    const fechaFile  = `${yyyy}-${mm}-${dd}`;
+
+    doc.setFillColor(27, 38, 59);
+    doc.rect(0, 0, pageW, 18, 'F');
+    doc.setTextColor(224, 225, 221);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    const titulo = this.proyectoHeader?.projectDescription ?? 'Cronograma de Actividades';
+    doc.text(titulo, 10, 11);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exportado: ${fechaLabel}`, pageW - 10, 11, { align: 'right' });
+
+    const colsBase = [
+      { header: '#',            dataKey: 'num'     },
+      { header: 'Actividad',    dataKey: 'act'     },
+      { header: 'Inicio Prog.', dataKey: 'ini'     },
+      { header: 'Fin Prog.',    dataKey: 'fin'     },
+      { header: 'Duración',     dataKey: 'dur'     },
+      { header: 'Avance%',      dataKey: 'avance'  },
+      { header: 'Estado',       dataKey: 'estado'  },
+    ];
+    const colsLb = [
+      { header: 'LB Inicio',    dataKey: 'lbIni'   },
+      { header: 'LB Fin',       dataKey: 'lbFin'   },
+      { header: 'Desfase Ini.', dataKey: 'dsfIni'  },
+      { header: 'Desfase Fin.', dataKey: 'dsfFin'  },
+      { header: 'Semáforo',     dataKey: 'semaforo'},
+    ];
+    const columns = this.lineaBaseVisible ? [...colsBase, ...colsLb] : colsBase;
+
+    const rows = this.actividades.map((act, i) => {
+      const indent = '  '.repeat(act.hierarchyLevel ?? 0);
+      const row: Record<string, string> = {
+        num:    String(i + 1),
+        act:    indent + act.activityDescription,
+        ini:    this.formatDate(act.plannedStartDate),
+        fin:    this.formatDate(act.plannedEndDate),
+        dur:    this.getDuracion(act),
+        avance: `${this.getAvance(act)}%`,
+        estado: this.getEstado(act),
+      };
+      if (this.lineaBaseVisible) {
+        row['lbIni']    = this.formatDate(act.baselineStartDate);
+        row['lbFin']    = this.formatDate(act.baselineEndDate);
+        row['dsfIni']   = this.formatDesfase(this.getDesfaseDias(act, 'start'));
+        row['dsfFin']   = this.formatDesfase(this.getDesfaseDias(act, 'end'));
+        row['semaforo'] = this.getSemaforoTexto(act);
+      }
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 22,
+      columns,
+      body: rows,
+      theme: 'grid',
+      styles:             { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+      headStyles:         { fillColor: [27, 38, 59], textColor: [224, 225, 221], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        num:      { cellWidth: 8,    halign: 'center' },
+        act:      { cellWidth: 'auto' },
+        ini:      { cellWidth: 22,   halign: 'center' },
+        fin:      { cellWidth: 22,   halign: 'center' },
+        dur:      { cellWidth: 18,   halign: 'center' },
+        avance:   { cellWidth: 18,   halign: 'center' },
+        estado:   { cellWidth: 22,   halign: 'center' },
+        lbIni:    { cellWidth: 22,   halign: 'center' },
+        lbFin:    { cellWidth: 22,   halign: 'center' },
+        dsfIni:   { cellWidth: 20,   halign: 'center' },
+        dsfFin:   { cellWidth: 20,   halign: 'center' },
+        semaforo: { cellWidth: 20,   halign: 'center' },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.dataKey === 'estado') {
+          const v = data.cell.raw as string;
+          if (v === 'CULMINADA')   { data.cell.styles.textColor = [20, 83, 45];   data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'VENCIDO')     { data.cell.styles.textColor = [127, 29, 29];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'EN PROGRESO') { data.cell.styles.textColor = [30, 58, 95]; }
+        }
+        if (data.section === 'body' && data.column.dataKey === 'semaforo') {
+          const v = data.cell.raw as string;
+          if (v === 'Verde')    { data.cell.styles.textColor = [20, 83, 45];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Amarillo') { data.cell.styles.textColor = [120, 80, 0];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Rojo')     { data.cell.styles.textColor = [127, 29, 29]; data.cell.styles.fontStyle = 'bold'; }
+        }
+      },
+    });
+
+    const nombre = this.proyectoHeader?.projectDescription ?? 'cronograma';
+    const safe   = nombre.replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑ ]/g, '').trim().replace(/\s+/g, '_');
+    doc.save(`${safe}_cronograma_${fechaFile}.pdf`);
   }
 }
