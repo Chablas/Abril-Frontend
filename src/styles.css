@@ -161,6 +161,25 @@
 /* Ensure dhtmlx shows its native horizontal scrollbar */
 .gantt_layout_root { overflow-x: auto !important; }
 
+/* cronograma-actividades — colores de fila por jerarquía (dhtmlx inyecta fuera del scope del componente) */
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0,
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-0 {
+  background: #1B263B !important;
+}
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0 .gantt_cell,
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-0 .gantt_tree_content {
+  color: #E0E1DD !important;
+  font-weight: 700;
+}
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-1 { background: #ffffff; font-weight: 600; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-1 { background: #ffffff; }
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-2 { background: #f0f4f8; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-2 { background: #f0f4f8; }
+app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
+app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
+/* Barra de avance interna de cada task */
+app-cronograma-actividades .gantt_task_line .gantt_task_progress { opacity: 0.35; }
+
 /* milestone-schedule — compact density */
 app-milestone-schedule .gantt_grid_scale .gantt_grid_head_cell,
 app-milestone-schedule .gantt_grid_data .gantt_cell { font-size: 11px; padding: 0 4px; }

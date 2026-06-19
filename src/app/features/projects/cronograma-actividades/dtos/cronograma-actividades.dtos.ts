@@ -82,4 +82,5 @@ export interface EditarActividadRequest {
 export interface EditarActividadResultDto {
   actividad: ActividadDto;
   cascada: CascadaResultDto | null;
+  padresActualizados?: ActividadDto[];
 }

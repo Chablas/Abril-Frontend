@@ -5,7 +5,6 @@ import { environment } from '../../../../../environments/environment';
 import {
   ProyectoSimpleDto,
   ActividadesProyectoResponseDto,
-  ActividadDto,
   CascadaResultDto,
   ActualizarPredecesorasResultDto,
   CrearActividadRequest,
@@ -37,8 +36,8 @@ export class CronogramaActividadesService {
     });
   }
 
-  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<ActividadDto> {
-    return this.http.post<ActividadDto>(`${this.base}/${proyectoId}/actividades`, body, {
+  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<EditarActividadResultDto> {
+    return this.http.post<EditarActividadResultDto>(`${this.base}/${proyectoId}/actividades`, body, {
       headers: buildAuthHeaders(),
     });
   }
