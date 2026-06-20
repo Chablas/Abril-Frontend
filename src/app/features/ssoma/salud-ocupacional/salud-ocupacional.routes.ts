@@ -8,6 +8,11 @@ import { Interconsultas } from './interconsultas/interconsultas';
 import { Convalidaciones } from './convalidaciones/convalidaciones';
 import { Catalogos } from './catalogos/catalogos';
 import { Reportes } from './reportes/reportes';
+import { TopicoComponent } from './topico/topico.component';
+import { AccidentesComponent } from './accidentes/accidentes.component';
+import { DescansosComponent } from './descansos/descansos.component';
+import { AsistenteSocialComponent } from './asistente-social/asistente-social.component';
+import { MiSaludComponent } from './mi-salud/mi-salud.component';
 
 export const SALUD_OCUPACIONAL_ROUTES: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -57,5 +62,35 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
     path: 'reportes',
     component: Reportes,
     data: { titulo: 'SALUD OCUPACIONAL - REPORTES' },
+  },
+  {
+    path: 'topico',
+    component: TopicoComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - TÓPICO MÉDICO', featureKey: 'ssoma.salud-ocupacional.topico' },
+  },
+  {
+    path: 'accidentes',
+    component: AccidentesComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - ACCIDENTES DE TRABAJO', featureKey: 'ssoma.salud-ocupacional.accidentes' },
+  },
+  {
+    path: 'descansos',
+    component: DescansosComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - DESCANSOS MÉDICOS', featureKey: 'ssoma.salud-ocupacional.descansos' },
+  },
+  {
+    path: 'asistente-social',
+    component: AsistenteSocialComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - ASISTENTE SOCIAL', featureKey: 'ssoma.salud-ocupacional.asistente-social' },
+  },
+  {
+    path: 'mi-salud',
+    component: MiSaludComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - MI SALUD', featureKey: 'ssoma.salud-ocupacional.mi-salud' },
   },
 ];

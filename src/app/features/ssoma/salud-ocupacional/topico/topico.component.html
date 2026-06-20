@@ -1,0 +1,116 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Tópico Médico"
+  subtitulo="Atenciones médicas ocupacionales."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva Atención', icono: 'ti-plus' }"
+  (primaryClick)="abrirModal()">
+</app-abril-page-header>
+
+<section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div>
+        <label class="filter-label">Fecha desde</label>
+        <input type="date" class="field-input" [(ngModel)]="filtros.fechaDesde" (ngModelChange)="onFilterChange()" />
+      </div>
+      <div>
+        <label class="filter-label">Fecha hasta</label>
+        <input type="date" class="field-input" [(ngModel)]="filtros.fechaHasta" (ngModelChange)="onFilterChange()" />
+      </div>
+      <div>
+        <label class="filter-label">Tipo atención</label>
+        <app-search-select
+          [options]="tipoOpts" valueField="id" displayField="nombre"
+          [value]="filtros.tipoAtencionId" [showLabel]="false" [compact]="true" placeholder="Todos"
+          (valueChange)="filtros.tipoAtencionId = $event; onFilterChange()">
+        </app-search-select>
+      </div>
+      <div>
+        <label class="filter-label">ID Trabajador</label>
+        <input type="number" class="field-input" [(ngModel)]="filtros.workerId"
+          placeholder="Número" (ngModelChange)="onWorkerChange()" />
+      </div>
+    </div>
+    <div *ngIf="hasFilters" class="pt-2">
+      <button class="btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <colgroup>
+          <col style="width:50px"/>
+          <col/>
+          <col style="width:100px"/>
+          <col style="width:70px"/>
+          <col style="width:130px"/>
+          <col style="width:200px"/>
+          <col style="width:80px"/>
+          <col style="width:36px"/>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Trabajador</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Tipo</th>
+            <th>Diagnóstico</th>
+            <th>Flags</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of atenciones" class="row-clickable" (click)="abrirModal(a)">
+            <td class="col-mono">{{ a.id }}</td>
+            <td class="col-worker">
+              <div class="worker-cell">
+                <span class="worker-name">{{ a.workerNombre ?? '—' }}</span>
+                <span class="worker-dni">{{ a.workerDni }}</span>
+              </div>
+            </td>
+            <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
+            <td>{{ a.hora ? a.hora.substring(0,5) : '—' }}</td>
+            <td><span class="badge badge-blue">{{ a.tipoAtencionNombre ?? '—' }}</span></td>
+            <td class="col-truncate">{{ a.diagnostico ?? '—' }}</td>
+            <td>
+              <div class="flags-row">
+                <span *ngIf="a.generaDescanso"  class="flag flag-amber" title="Genera descanso">D</span>
+                <span *ngIf="a.generaAccidente" class="flag flag-red"   title="Genera accidente">A</span>
+                <span *ngIf="a.derivadoClinica" class="flag flag-teal"  title="Derivado clínica">C</span>
+              </div>
+            </td>
+            <td class="text-right">
+              <button class="row-action" (click)="eliminar(a, $event)" title="Eliminar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && atenciones.length === 0">
+            <td colspan="8" class="empty-row">Sin atenciones registradas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+        [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+</section>
+
+<app-topico-modal
+  *ngIf="modalVisible"
+  [atencion]="atencionSeleccionada"
+  (closed)="cerrarModal()"
+  (saved)="onGuardado()">
+</app-topico-modal>

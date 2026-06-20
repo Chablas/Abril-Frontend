@@ -1,0 +1,172 @@
+<app-base-modal [title]="isEdicion ? 'Editar Atención' : 'Nueva Atención'" width="w-[820px]" (closeModal)="close()">
+  <div class="modal-body">
+
+    <!-- === Trabajador === -->
+    <div class="section">
+      <h4 class="section-title">Trabajador</h4>
+
+      <div *ngIf="!workerSelected" class="worker-search">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+          </svg>
+          <input type="text" [ngModel]="workerQuery" (ngModelChange)="onWorkerQueryChange($event)"
+            placeholder="Buscar por nombre o DNI (mín. 2 caracteres)" />
+        </div>
+        <div *ngIf="workerSearching" class="hint">Buscando…</div>
+        <ul *ngIf="workerResults.length > 0" class="worker-results">
+          <li *ngFor="let w of workerResults" (click)="selectWorker(w)">
+            <div>
+              <div class="wr-name">{{ w.apellidoNombre }}</div>
+              <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
+            </div>
+            <span class="wr-btn">Seleccionar</span>
+          </li>
+        </ul>
+        <p *ngIf="workerQuery.length >= 2 && !workerSearching && workerResults.length === 0" class="hint">
+          Sin resultados.
+        </p>
+      </div>
+
+      <div *ngIf="workerSelected" class="worker-card">
+        <div>
+          <div class="wc-name">{{ workerSelected.apellidoNombre }}</div>
+          <div class="wc-meta">DNI {{ workerSelected.dni }}</div>
+        </div>
+        <button class="btn-ghost-sm" (click)="clearWorker()">Cambiar</button>
+      </div>
+    </div>
+
+    <!-- === Datos principales === -->
+    <div class="section">
+      <h4 class="section-title">Datos de la atención</h4>
+      <div class="grid-3">
+        <div>
+          <label class="field-label">Fecha *</label>
+          <input type="date" class="field-input" [(ngModel)]="fecha" />
+        </div>
+        <div>
+          <label class="field-label">Hora</label>
+          <input type="time" class="field-input" [(ngModel)]="hora" />
+        </div>
+        <div>
+          <label class="field-label">Tipo de atención *</label>
+          <app-search-select [options]="tiposAtencion" valueField="id" displayField="nombre"
+            [value]="tipoAtencionId" [showLabel]="false" placeholder="Seleccionar"
+            (valueChange)="tipoAtencionId = $event">
+          </app-search-select>
+        </div>
+      </div>
+      <div class="mt-2">
+        <label class="field-label">Motivo de consulta</label>
+        <textarea class="field-input" rows="2" [(ngModel)]="motivo"></textarea>
+      </div>
+    </div>
+
+    <!-- === Signos vitales === -->
+    <div class="section">
+      <h4 class="section-title">Signos vitales</h4>
+      <div class="grid-5">
+        <div>
+          <label class="field-label">Presión arterial</label>
+          <input type="text" class="field-input" [(ngModel)]="presionArterial" placeholder="120/80" />
+        </div>
+        <div>
+          <label class="field-label">Temp. (°C)</label>
+          <input type="number" step="0.1" class="field-input" [(ngModel)]="temperatura" placeholder="36.5" />
+        </div>
+        <div>
+          <label class="field-label">F. Cardíaca</label>
+          <input type="number" class="field-input" [(ngModel)]="frecuenciaCardiaca" placeholder="72" />
+        </div>
+        <div>
+          <label class="field-label">Saturación O₂</label>
+          <input type="number" step="0.1" class="field-input" [(ngModel)]="saturacionOxigeno" placeholder="98" />
+        </div>
+        <div>
+          <label class="field-label">Peso (kg)</label>
+          <input type="number" step="0.1" class="field-input" [(ngModel)]="peso" placeholder="70" />
+        </div>
+      </div>
+    </div>
+
+    <!-- === Diagnóstico === -->
+    <div class="section">
+      <h4 class="section-title">Diagnóstico y tratamiento</h4>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Diagnóstico</label>
+          <input type="text" class="field-input" [(ngModel)]="diagnostico" />
+        </div>
+        <div>
+          <label class="field-label">CIE-10</label>
+          <input type="text" class="field-input" [(ngModel)]="diagnosticoCie10" placeholder="J06.9" />
+        </div>
+      </div>
+      <div class="grid-2 mt-2">
+        <div>
+          <label class="field-label">Tratamiento</label>
+          <textarea class="field-input" rows="2" [(ngModel)]="tratamiento"></textarea>
+        </div>
+        <div>
+          <label class="field-label">Medicamentos</label>
+          <textarea class="field-input" rows="2" [(ngModel)]="medicamentos"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- === Flags === -->
+    <div class="section">
+      <h4 class="section-title">Seguimiento</h4>
+      <div class="flags-grid">
+        <!-- Derivación -->
+        <label class="check-card" [class.check-card--active]="derivadoClinica">
+          <input type="checkbox" [(ngModel)]="derivadoClinica" />
+          <span>Derivado a clínica</span>
+        </label>
+        <!-- Descanso -->
+        <label class="check-card check-card--amber" [class.check-card--active]="generaDescanso">
+          <input type="checkbox" [(ngModel)]="generaDescanso" />
+          <span>Genera descanso médico</span>
+        </label>
+        <!-- Accidente -->
+        <label class="check-card check-card--red" [class.check-card--active]="generaAccidente">
+          <input type="checkbox" [(ngModel)]="generaAccidente" />
+          <span>Genera accidente de trabajo</span>
+        </label>
+      </div>
+
+      <div *ngIf="derivadoClinica" class="mt-2">
+        <label class="field-label">Clínica de derivación</label>
+        <input type="text" class="field-input" [(ngModel)]="clinicaDerivacion" placeholder="Nombre de la clínica" />
+      </div>
+      <div *ngIf="generaDescanso" class="mt-2" style="max-width:220px">
+        <label class="field-label">Días de descanso *</label>
+        <input type="number" min="1" class="field-input" [(ngModel)]="descansoDias" />
+      </div>
+    </div>
+
+    <!-- === Extras === -->
+    <div class="section no-border">
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Observaciones</label>
+          <textarea class="field-input" rows="2" [(ngModel)]="observaciones"></textarea>
+        </div>
+        <div>
+          <label class="field-label">Adjunto (informe / receta)</label>
+          <input type="file" accept=".pdf,.jpg,.png" class="file-input" (change)="onFile($event)" />
+          <p *ngIf="archivoInforme" class="hint">{{ archivoInforme.name }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="modal-footer">
+      <button class="btn-ghost" (click)="close()">Cancelar</button>
+      <button class="btn-primary" [disabled]="!canSubmit" (click)="guardar()">
+        {{ saving ? 'Guardando…' : (isEdicion ? 'Actualizar' : 'Registrar Atención') }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>
