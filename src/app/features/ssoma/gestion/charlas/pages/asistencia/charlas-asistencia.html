@@ -1,0 +1,109 @@
+<div class="page-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Registro de Asistencia"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="[
+      { label: 'Dashboard',       icono: 'ti-layout-dashboard', route: '/ssoma/gestion/charlas/dashboard' },
+      { label: 'Programa Mensual', icono: 'ti-calendar-month',   route: '/ssoma/gestion/charlas/programa' },
+      { label: 'Lista',            icono: 'ti-list',             route: '/ssoma/gestion/charlas/lista' }
+    ]"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="skeleton-card"></div>
+      <div class="skeleton-body"></div>
+    }
+
+    @if (!loading && charla) {
+
+      <!-- INFO CHARLA -->
+      <div class="info-card">
+        <div class="info-row">
+          <div class="info-item">
+            <span class="info-label">Charla #{{ charla.id }}</span>
+            <span class="info-value">{{ charla.tema }}</span>
+          </div>
+          <span class="estado-badge" [ngClass]="estadoClass(charla.estado)">{{ charla.estado }}</span>
+        </div>
+        <div class="info-meta">
+          @if (charla.supervisorNombre) {
+            <span><i class="ti ti-user"></i> {{ charla.supervisorNombre }}</span>
+          }
+          @if (charla.fechaProgramada) {
+            <span><i class="ti ti-calendar"></i> {{ charla.fechaProgramada | date:'dd/MM/yyyy' }}</span>
+          }
+          @if (charla.lugar) {
+            <span><i class="ti ti-map-pin"></i> {{ charla.lugar }}</span>
+          }
+          @if (charla.duracionMinutos) {
+            <span><i class="ti ti-clock"></i> {{ charla.duracionMinutos }} min</span>
+          }
+        </div>
+      </div>
+
+      <!-- LISTA SUPERVISORES -->
+      <div class="dash-card">
+        <div class="card-header">
+          <h2 class="dash-card__title">
+            <i class="ti ti-users"></i>
+            Supervisores
+            <span class="conteo">{{ totalMarcados }} / {{ filas.length }} marcados</span>
+          </h2>
+          <div class="select-all-wrap">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="todosSeleccionados"
+                (change)="toggleTodos($event)" />
+              <span>Seleccionar todos</span>
+            </label>
+          </div>
+        </div>
+
+        @if (filas.length) {
+          <div class="supervisores-list">
+            @for (fila of filas; track fila.supervisor.id) {
+              <label class="supervisor-row" [class.supervisor-row--marcado]="fila.marcado">
+                <input
+                  type="checkbox"
+                  class="sup-checkbox"
+                  [(ngModel)]="fila.marcado" />
+                <div class="sup-avatar">{{ fila.supervisor.nombreCompleto.charAt(0) }}</div>
+                <span class="sup-nombre">{{ fila.supervisor.nombreCompleto }}</span>
+                @if (fila.marcado) {
+                  <i class="ti ti-check marcado-icon"></i>
+                }
+              </label>
+            }
+          </div>
+        } @else {
+          <div class="empty-inline">
+            <i class="ti ti-users-off"></i>
+            <span>No hay supervisores disponibles.</span>
+          </div>
+        }
+
+        <div class="card-footer">
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="guardando"
+            (click)="guardar()">
+            <i class="ti ti-device-floppy"></i>
+            {{ guardando ? 'Guardando...' : 'Guardar Asistencia' }}
+          </button>
+        </div>
+      </div>
+
+    }
+
+  </div><!-- /page-body -->
+
+</div>

@@ -1,0 +1,341 @@
+<div class="dashboard-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Charlas y Capacitaciones"
+    subtitulo="Control mensual de asistencia y capacitaciones del staff"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="reload()">
+  </app-abril-page-header>
+
+  <!-- FILTROS -->
+  <div class="filtros-panel">
+    <div class="filtros-grid">
+
+      <!-- Selector de proyecto: siempre visible, pre-seleccionado si tiene proyecto propio -->
+      <select class="filtro-input" [(ngModel)]="proyectoId" (change)="onProyectoChange()">
+        <option [ngValue]="undefined">-- Seleccionar proyecto --</option>
+        @for (p of proyectos; track p.id) {
+          <option [value]="p.id">{{ p.nombre }}</option>
+        }
+      </select>
+
+      <select class="filtro-input" [(ngModel)]="mes" (change)="reload()">
+        @for (m of meses; track m.val) {
+          <option [value]="m.val">{{ m.label }}</option>
+        }
+      </select>
+
+      <select class="filtro-input" [(ngModel)]="anio" (change)="reload()">
+        @for (a of anios; track a) {
+          <option [value]="a">{{ a }}</option>
+        }
+      </select>
+
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="skeleton-grid">
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+  }
+
+  @if (!loading && proyectoId) {
+
+    <!-- KPI CARDS -->
+    @if (resumen) {
+      <div class="stats-grid">
+        <div class="stat-card stat-card--charlas">
+          <div class="stat-card__icon"><i class="ti ti-speakerphone"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.totalCharlas }}</span>
+            <span class="stat-card__lbl">Charlas registradas</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--asistencia">
+          <div class="stat-card__icon"><i class="ti ti-users"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.totalAsistencias }}</span>
+            <span class="stat-card__lbl">Asistencias totales</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--falta">
+          <div class="stat-card__icon"><i class="ti ti-clock"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.capsFalta }}</span>
+            <span class="stat-card__lbl">Capacitaciones falta</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--enviado">
+          <div class="stat-card__icon"><i class="ti ti-send"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.capsEnviado }}</span>
+            <span class="stat-card__lbl">Enviadas</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--aprobado">
+          <div class="stat-card__icon"><i class="ti ti-circle-check"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.capsAprobado }}</span>
+            <span class="stat-card__lbl">Aprobadas</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card--rechazado">
+          <div class="stat-card__icon"><i class="ti ti-circle-x"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ resumen.capsRechazado }}</span>
+            <span class="stat-card__lbl">Rechazadas</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TABS -->
+    <div class="tabs-bar">
+      <button class="tab-btn" [class.tab-btn--active]="tab === 'asistencia'" (click)="setTab('asistencia')">
+        <i class="ti ti-speakerphone"></i> Asistencia
+      </button>
+      <button class="tab-btn" [class.tab-btn--active]="tab === 'capacitaciones'" (click)="setTab('capacitaciones')">
+        <i class="ti ti-certificate"></i> Capacitaciones Staff
+      </button>
+    </div>
+
+    <!-- ── TAB 1: ASISTENCIA ───────────────────────────────────────────── -->
+    @if (tab === 'asistencia') {
+      <div class="tab-body">
+        <div class="tab-actions">
+          <span class="tab-title">{{ mesLabel() }} {{ anio }} — {{ proyectoNombre }}</span>
+          <button class="btn-primary" (click)="showFormCharla = !showFormCharla">
+            <i class="ti ti-plus"></i> Nueva charla
+          </button>
+        </div>
+
+        @if (showFormCharla) {
+          <div class="form-card">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" class="form-input" [(ngModel)]="nuevaFecha" />
+              </div>
+              <div class="form-group">
+                <label>Duración (hrs)</label>
+                <input type="number" class="form-input" [(ngModel)]="nuevaDuracion" min="0.5" step="0.5" />
+              </div>
+              <div class="form-group form-group--wide">
+                <label>Título</label>
+                <input type="text" class="form-input" [(ngModel)]="nuevaTitulo" placeholder="Título de la charla" />
+              </div>
+              <div class="form-group form-group--wide">
+                <label>Tema</label>
+                <input type="text" class="form-input" [(ngModel)]="nuevaTema" placeholder="Tema" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary" (click)="showFormCharla = false">Cancelar</button>
+              <button class="btn-primary" (click)="submitCharla()"
+                [disabled]="!nuevaFecha || !nuevaTitulo || !nuevaTema">Guardar</button>
+            </div>
+          </div>
+        }
+
+        @if (loadingCharlas) {
+          <div class="skeleton-list"></div>
+        } @else if (charlas.length === 0) {
+          <div class="empty-state">
+            <i class="ti ti-speakerphone"></i>
+            <p>No hay charlas registradas este período.</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Título</th>
+                  <th>Tema</th>
+                  <th class="ta-c">Duración</th>
+                  <th class="ta-c">Asistentes</th>
+                  <th class="ta-c">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of charlas; track c.id) {
+                  <tr>
+                    <td>{{ formatFecha(c.fecha) }}</td>
+                    <td>{{ c.titulo }}</td>
+                    <td>{{ c.tema }}</td>
+                    <td class="ta-c">{{ c.duracionHoras }}h</td>
+                    <td class="ta-c">
+                      <button class="btn-link" (click)="abrirAsistencia(c)">
+                        {{ c.totalAsistentes }} / {{ staff.length }}
+                      </button>
+                    </td>
+                    <td class="ta-c">
+                      <div class="row-actions">
+                        <button class="btn-row btn-row--secondary" (click)="abrirAsistencia(c)">
+                          <i class="ti ti-users"></i> Asistencia
+                        </button>
+                        <button class="btn-row btn-row--danger" (click)="eliminarCharla(c)">
+                          <i class="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB 2: CAPACITACIONES ──────────────────────────────────────── -->
+    @if (tab === 'capacitaciones') {
+      <div class="tab-body">
+        <div class="tab-actions">
+          <span class="tab-title">{{ mesLabel() }} {{ anio }} — {{ proyectoNombre }}</span>
+        </div>
+
+        @if (loadingCaps) {
+          <div class="skeleton-list"></div>
+        } @else if (capacitaciones.length === 0) {
+          <div class="empty-state">
+            <i class="ti ti-certificate"></i>
+            <p>No hay staff asignado al proyecto.</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th class="ta-c">Fecha</th>
+                  <th>Tema</th>
+                  <th>Evidencia</th>
+                  <th class="ta-c">Estado</th>
+                  <th class="ta-c">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cap of capacitaciones; track cap.workerId) {
+                  <tr>
+                    <td class="fw-600">{{ cap.nombreCompleto }}</td>
+                    <td class="ta-c">{{ formatFecha(cap.fecha) }}</td>
+                    <td>{{ cap.tema ?? '-' }}</td>
+                    <td>
+                      @if (cap.evidenciaUrl) {
+                        <a [href]="cap.evidenciaUrl" target="_blank" class="link-evidencia">
+                          <i class="ti ti-paperclip"></i> {{ cap.evidenciaNombre ?? 'Ver' }}
+                        </a>
+                      } @else {
+                        <span class="text-muted">Sin evidencia</span>
+                      }
+                    </td>
+                    <td class="ta-c">
+                      <span class="badge" [ngClass]="estadoClass(cap.estado)">{{ cap.estado }}</span>
+                    </td>
+                    <td class="ta-c">
+                      <div class="row-actions">
+                        <button class="btn-row btn-row--secondary" (click)="abrirUpload(cap)">
+                          <i class="ti ti-upload"></i> {{ cap.id ? 'Actualizar' : 'Subir' }}
+                        </button>
+                        @if (cap.estado === 'Enviado') {
+                          <button class="btn-row btn-row--success" (click)="aprobar(cap)">
+                            <i class="ti ti-check"></i> Aprobar
+                          </button>
+                          <button class="btn-row btn-row--danger" (click)="rechazar(cap)">
+                            <i class="ti ti-x"></i> Rechazar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+  }
+
+  @if (!loading && !proyectoId) {
+    <div class="empty-state empty-state--big">
+      <i class="ti ti-building"></i>
+      <p>Selecciona un proyecto para ver los datos.</p>
+    </div>
+  }
+
+</div>
+
+<!-- DRAWER: Asistencia -->
+@if (charlaSeleccionada) {
+  <div class="drawer-backdrop" (click)="cerrarAsistencia()"></div>
+  <div class="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Asistencia — {{ charlaSeleccionada.titulo }}</span>
+      <button class="drawer-close" (click)="cerrarAsistencia()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body">
+      @if (staff.length === 0) {
+        <p class="text-muted">No hay staff asignado al proyecto.</p>
+      } @else {
+        <ul class="staff-list">
+          @for (s of staff; track s.workerId) {
+            <li class="staff-item">
+              <label class="check-label">
+                <input type="checkbox" [(ngModel)]="asistenciaChecks[s.workerId]" />
+                <div class="staff-info">
+                  <span class="staff-name">{{ s.nombreCompleto }}</span>
+                  <span class="staff-cargo">{{ s.cargo }}</span>
+                </div>
+              </label>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-secondary" (click)="cerrarAsistencia()">Cancelar</button>
+      <button class="btn-primary" (click)="guardarAsistencia()" [disabled]="savingAsistencia">
+        @if (savingAsistencia) { <i class="ti ti-loader-2"></i> } @else { Guardar }
+      </button>
+    </div>
+  </div>
+}
+
+<!-- DRAWER: Subir capacitación -->
+@if (capSeleccionada) {
+  <div class="drawer-backdrop" (click)="cerrarUpload()"></div>
+  <div class="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Capacitación — {{ capSeleccionada.nombreCompleto }}</span>
+      <button class="drawer-close" (click)="cerrarUpload()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" class="form-input" [(ngModel)]="capFecha" />
+      </div>
+      <div class="form-group">
+        <label>Tema</label>
+        <input type="text" class="form-input" [(ngModel)]="capTema" placeholder="Tema de la capacitación" />
+      </div>
+      <div class="form-group">
+        <label>Evidencia (PDF / imagen)</label>
+        <input type="file" class="form-input" (change)="onFileChange($event)" accept=".pdf,.jpg,.jpeg,.png" />
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn-secondary" (click)="cerrarUpload()">Cancelar</button>
+      <button class="btn-primary" (click)="subirCapacitacion()"
+        [disabled]="uploadingCap || !capFile || !capFecha || !capTema">
+        @if (uploadingCap) { <i class="ti ti-loader-2"></i> } @else { Subir }
+      </button>
+    </div>
+  </div>
+}

@@ -1,0 +1,239 @@
+<div class="page-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Programa Mensual de Charlas"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="[
+      { label: 'Dashboard',       icono: 'ti-layout-dashboard', route: '/ssoma/gestion/charlas/dashboard' },
+      { label: 'Programa Mensual', icono: 'ti-calendar-month',   route: '/ssoma/gestion/charlas/programa' },
+      { label: 'Lista',            icono: 'ti-list',             route: '/ssoma/gestion/charlas/lista' }
+    ]"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="cargarPrograma()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+
+    <!-- FILTROS -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label class="filter-label">Proyecto ID</label>
+        <input type="number" class="filter-input" [(ngModel)]="proyectoId" (change)="cargarPrograma()" min="1" />
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Mes</label>
+        <select class="filter-input" [(ngModel)]="mes" (change)="cargarPrograma()">
+          @for (m of meses; track m.val) {
+            <option [value]="m.val">{{ m.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Año</label>
+        <select class="filter-input" [(ngModel)]="anio" (change)="cargarPrograma()">
+          @for (a of anios; track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- SKELETON -->
+    @if (loading) {
+      <div class="skeleton-body"></div>
+    }
+
+    <!-- SIN PROGRAMA -->
+    @if (!loading && noPrograma) {
+      <div class="empty-state">
+        <i class="ti ti-calendar-off empty-state__icon"></i>
+        <p>No existe programa para <strong>{{ mesLabel() }} {{ anio }}</strong> — Proyecto {{ proyectoId }}</p>
+        <button type="button" class="btn-primary" (click)="crearPrograma()">
+          <i class="ti ti-plus"></i> Crear Programa
+        </button>
+      </div>
+    }
+
+    <!-- PROGRAMA CARGADO -->
+    @if (!loading && programa) {
+
+      <div class="programa-header">
+        <div class="programa-info">
+          <span class="programa-badge">Programa #{{ programa.id }}</span>
+          <h2 class="programa-titulo">{{ mesLabel() }} {{ anio }} — Proyecto {{ programa.proyectoId }}</h2>
+        </div>
+        <button type="button" class="btn-primary" (click)="abrirFormCharla()">
+          <i class="ti ti-plus"></i> Agregar Charla
+        </button>
+      </div>
+
+      <!-- FORM NUEVA CHARLA -->
+      @if (mostrarFormCharla) {
+        <div class="form-card">
+          <h3 class="form-title"><i class="ti ti-plus"></i> Nueva Charla</h3>
+          <div class="form-grid">
+            <div class="form-group form-group--full">
+              <label class="form-label">Tema *</label>
+              <input type="text" class="form-input" [(ngModel)]="nuevaCharla.tema" placeholder="Tema de la charla" />
+            </div>
+            <div class="form-group form-group--full">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-input" [(ngModel)]="nuevaCharla.descripcion" placeholder="Descripción opcional" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Supervisor *</label>
+              <select class="form-input" [(ngModel)]="nuevaCharla.supervisorId">
+                <option [value]="undefined" disabled>Seleccionar...</option>
+                @for (s of supervisores; track s.id) {
+                  <option [value]="s.id">{{ s.nombreCompleto }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha Programada *</label>
+              <input type="date" class="form-input" [(ngModel)]="nuevaCharla.fechaProgramada" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duración (min)</label>
+              <input type="number" class="form-input" [(ngModel)]="nuevaCharla.duracionMinutos" placeholder="60" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lugar</label>
+              <input type="text" class="form-input" [(ngModel)]="nuevaCharla.lugar" placeholder="Lugar" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="cancelarFormCharla()">Cancelar</button>
+            <button type="button" class="btn-primary" (click)="guardarCharla()">
+              <i class="ti ti-check"></i> Guardar
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- FORM EDITAR CHARLA -->
+      @if (charlaEditando) {
+        <div class="form-card form-card--edit">
+          <h3 class="form-title"><i class="ti ti-edit"></i> Editar Charla</h3>
+          <div class="form-grid">
+            <div class="form-group form-group--full">
+              <label class="form-label">Tema *</label>
+              <input type="text" class="form-input" [(ngModel)]="charlaEditForm.tema" />
+            </div>
+            <div class="form-group form-group--full">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-input" [(ngModel)]="charlaEditForm.descripcion" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Supervisor</label>
+              <select class="form-input" [(ngModel)]="charlaEditForm.supervisorId">
+                @for (s of supervisores; track s.id) {
+                  <option [value]="s.id">{{ s.nombreCompleto }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado</label>
+              <select class="form-input" [(ngModel)]="charlaEditForm.estado">
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="REALIZADA">Realizada</option>
+                <option value="CANCELADA">Cancelada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha Programada</label>
+              <input type="date" class="form-input" [(ngModel)]="charlaEditForm.fechaProgramada" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha Realizada</label>
+              <input type="date" class="form-input" [(ngModel)]="charlaEditForm.fechaRealizada" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duración (min)</label>
+              <input type="number" class="form-input" [(ngModel)]="charlaEditForm.duracionMinutos" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lugar</label>
+              <input type="text" class="form-input" [(ngModel)]="charlaEditForm.lugar" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="cancelarEditar()">Cancelar</button>
+            <button type="button" class="btn-primary" (click)="guardarEdicion()">
+              <i class="ti ti-check"></i> Guardar Cambios
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- TABLA CHARLAS -->
+      @if (programa.charlas && programa.charlas.length) {
+        <div class="dash-card">
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Tema</th>
+                  <th>Supervisor</th>
+                  <th class="ta-c">Fecha</th>
+                  <th class="ta-c">Estado</th>
+                  <th class="ta-c">Asistentes</th>
+                  <th class="ta-c">Evidencia</th>
+                  <th class="ta-c">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of programa.charlas; track c.id) {
+                  <tr>
+                    <td>
+                      <span class="tema-text">{{ c.tema }}</span>
+                      @if (c.lugar) { <span class="td-muted"> · {{ c.lugar }}</span> }
+                    </td>
+                    <td class="td-muted">{{ c.supervisorNombre }}</td>
+                    <td class="ta-c td-muted">{{ c.fechaProgramada | date:'dd/MM/yyyy' }}</td>
+                    <td class="ta-c">
+                      <span class="estado-badge" [ngClass]="estadoClass(c.estado)">{{ c.estado }}</span>
+                    </td>
+                    <td class="ta-c fw-600">{{ c.totalAsistentes }}</td>
+                    <td class="ta-c">
+                      @if (c.evidenciaUrl) {
+                        <i class="ti ti-circle-check evidencia--ok"></i>
+                      } @else {
+                        <i class="ti ti-circle-x evidencia--no"></i>
+                      }
+                    </td>
+                    <td class="ta-c">
+                      <div class="action-btns">
+                        <button class="icon-btn icon-btn--blue" title="Asistencia" (click)="irAAsistencia(c.id)">
+                          <i class="ti ti-users"></i>
+                        </button>
+                        <button class="icon-btn icon-btn--teal" title="Evidencia" (click)="irAEvidencia(c.id)">
+                          <i class="ti ti-paperclip"></i>
+                        </button>
+                        <button class="icon-btn icon-btn--amber" title="Editar" (click)="abrirEditar(c)">
+                          <i class="ti ti-edit"></i>
+                        </button>
+                        <button class="icon-btn icon-btn--red" title="Eliminar" (click)="eliminarCharla(c)">
+                          <i class="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-inline">
+          <i class="ti ti-presentation"></i>
+          <span>Sin charlas en este programa. <button class="link-btn" (click)="abrirFormCharla()">Agregar una</button></span>
+        </div>
+      }
+
+    }
+
+  </div><!-- /page-body -->
+
+</div>
