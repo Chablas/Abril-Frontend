@@ -23,8 +23,8 @@
     <div class="filtros-grid">
       <select class="filtro-input" [(ngModel)]="filtroProyectoId">
         <option [ngValue]="undefined">Todos los proyectos</option>
-        @for (p of proyectos; track p.id) {
-          <option [ngValue]="p.id">{{ p.name }}</option>
+        @for (p of proyectos; track p.projectId) {
+          <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
         }
       </select>
       <select class="filtro-input" [(ngModel)]="filtroTipo">

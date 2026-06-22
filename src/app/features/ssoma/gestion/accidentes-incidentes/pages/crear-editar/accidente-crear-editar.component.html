@@ -20,8 +20,8 @@
           <label class="form-label">Proyecto <span class="req">*</span></label>
           <select class="form-input" [(ngModel)]="form.proyectoId" [class.input-error]="errores['proyectoId']">
             <option [ngValue]="0">Seleccionar proyecto...</option>
-            @for (p of proyectos; track p.id) {
-              <option [ngValue]="p.id">{{ p.name }}</option>
+            @for (p of proyectos; track p.projectId) {
+              <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
             }
           </select>
           @if (errores['proyectoId']) { <span class="error-msg">{{ errores['proyectoId'] }}</span> }
