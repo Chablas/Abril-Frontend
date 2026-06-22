@@ -158,7 +158,7 @@ export class NavigationService {
     },
     {
       key: 'vecinos',
-      label: 'Vecinos',
+      label: 'Administración de Obra',
       iconKey: 'users-group',
       baseRoute: '/vecinos',
       items: [

@@ -101,6 +101,13 @@ export interface VecinoEntregableItemDTO {
   originalFileName?: string | null;
 }
 
+/** Un archivo de "normativas" de un compromiso (sección multi-archivo). */
+export interface VecinoNormativaDTO {
+  vecinoCompromisoNormativaId: number;
+  archivoUrl: string;
+  originalFileName?: string | null;
+}
+
 export interface VecinoCompromisoItemDTO {
   vecinoCompromisoId: number;
   vecinoSolicitudId: number;
@@ -110,8 +117,10 @@ export interface VecinoCompromisoItemDTO {
   estadoDescripcion: string;
   fechaInicio?: string | null;
   fechaFin?: string | null;
+  observaciones?: string | null;
   createdDateTime: string;
   entregables: VecinoEntregableItemDTO[];
+  normativas: VecinoNormativaDTO[];
 }
 
 export interface VecinoCompromisoCreateDTO {
@@ -120,6 +129,7 @@ export interface VecinoCompromisoCreateDTO {
   vecinoCompromisoEstadoId?: number | null;
   fechaInicio?: string | null;
   fechaFin?: string | null;
+  observaciones?: string | null;
 }
 
 export interface VecinoSolicitudCreateDTO {
@@ -177,6 +187,41 @@ export interface VecinoRequisitoItemDTO {
 export interface VecinoRequisitosResponseDTO {
   requisitos: VecinoRequisitoItemDTO[];
   estados: CatalogOptionDTO[];
+}
+
+// ── Calendario de limpiezas ────────────────────────────────────────────────
+export interface VecinoLimpiezaDTO {
+  vecinoLimpiezaId: number;
+  /** Fecha ISO (yyyy-MM-dd). */
+  fecha: string;
+  vecinoLimpiezaTipoId: number;
+  tipoDescripcion: string;
+  vecinoId?: number | null;
+  vecinoNombre?: string | null;
+  vecinoDireccion?: string | null;
+  descripcion?: string | null;
+  atencionArchivoUrl?: string | null;
+  atencionOriginalFileName?: string | null;
+  atencionVecinoCompromisoId?: number | null;
+  atencionCompromisoLabel?: string | null;
+}
+
+/** Opción de compromiso de un vecino para relacionar la atención. */
+export interface VecinoCompromisoSelectDTO {
+  vecinoCompromisoId: number;
+  label: string;
+}
+
+export interface VecinoLimpiezasResponseDTO {
+  limpiezas: VecinoLimpiezaDTO[];
+  tipos: CatalogOptionDTO[];
+}
+
+export interface VecinoLimpiezaCreateDTO {
+  fecha: string;
+  vecinoLimpiezaTipoId: number | null;
+  vecinoId?: number | null;
+  descripcion?: string | null;
 }
 
 /** Una persona del formulario de alta (DNI opcional). */

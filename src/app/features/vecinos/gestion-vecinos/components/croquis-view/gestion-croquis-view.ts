@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { environment } from '../../../../../../environments/environment';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
+import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { LimpiezasCalendar } from '../limpiezas-calendar/limpiezas-calendar';
 import {
   CroquisGestionDTO,
   CroquisGestionLoteDTO,
@@ -12,11 +14,18 @@ import {
 @Component({
   selector: 'app-gestion-croquis-view',
   standalone: true,
-  imports: [CommonModule, BaseModal, DraggableImage],
+  imports: [CommonModule, BaseModal, DraggableImage, SectionTabs, LimpiezasCalendar],
   templateUrl: './gestion-croquis-view.html',
 })
 export class GestionCroquisView {
   @Input() croquis: CroquisGestionDTO[] = [];
+
+  // ── Secciones del modal del croquis ──────────────────────────────────────
+  readonly sectionTabs: SectionTab[] = [
+    { id: 'resumen', label: 'Resumen del proyecto' },
+    { id: 'limpiezas', label: 'Calendario de limpiezas' },
+  ];
+  activeSection: 'resumen' | 'limpiezas' = 'resumen';
 
   /** Base del backend (sin slash final) para componer URLs de imágenes. */
   get apiBase(): string {
@@ -68,11 +77,13 @@ export class GestionCroquisView {
   open(c: CroquisGestionDTO): void {
     this.selected = c;
     this.selectedLote = null;
+    this.activeSection = 'resumen';
   }
 
   close(): void {
     this.selected = null;
     this.selectedLote = null;
+    this.activeSection = 'resumen';
   }
 
   // ── Lotes ──────────────────────────────────────────────────────────────

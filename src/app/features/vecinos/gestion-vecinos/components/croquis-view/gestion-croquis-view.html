@@ -42,7 +42,21 @@
   height="h-[90vh]"
   (closeModal)="close()">
 
-  <div class="flex flex-col lg:flex-row gap-4 p-1 flex-1 min-h-0 overflow-y-auto">
+  <!-- Secciones -->
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="activeSection = $any($event)"
+    class="block mb-3">
+  </app-section-tabs>
+
+  <!-- ── Sección: Calendario de limpiezas ─────────────────────────────── -->
+  <div *ngIf="activeSection === 'limpiezas'" class="flex-1 min-h-0 overflow-y-auto p-1">
+    <app-limpiezas-calendar [projectId]="selected.projectId" [vecinos]="selected.vecinos"></app-limpiezas-calendar>
+  </div>
+
+  <!-- ── Sección: Resumen del proyecto ────────────────────────────────── -->
+  <div *ngIf="activeSection === 'resumen'" class="flex flex-col lg:flex-row gap-4 p-1 flex-1 min-h-0 overflow-y-auto">
 
     <!-- Imágenes del estado de la propiedad (a la izquierda del croquis) -->
     <ng-container *ngIf="assignedVecino() as v">
