@@ -117,6 +117,8 @@ export interface VecinoCompromisoItemDTO {
   estadoDescripcion: string;
   fechaInicio?: string | null;
   fechaFin?: string | null;
+  /** Fecha límite por municipalidad/fiscalización (si la tiene, el compromiso está priorizado). */
+  fechaFinMunicipalidad?: string | null;
   observaciones?: string | null;
   createdDateTime: string;
   entregables: VecinoEntregableItemDTO[];
@@ -129,6 +131,7 @@ export interface VecinoCompromisoCreateDTO {
   vecinoCompromisoEstadoId?: number | null;
   fechaInicio?: string | null;
   fechaFin?: string | null;
+  fechaFinMunicipalidad?: string | null;
   observaciones?: string | null;
 }
 
@@ -153,6 +156,12 @@ export interface CroquisGestionDTO {
   imageUrl: string;
   solicitudesCount: number;
   compromisosCount: number;
+  compromisosPendientes: number;
+  compromisosEnProceso: number;
+  compromisosCulminados: number;
+  compromisosLimitePendientes: number;
+  compromisosLimiteEnProceso: number;
+  compromisosLimiteCulminados: number;
   solicitudesAprobadas: number;
   solicitudesEvaluables: number;
   entregablesAprobados: number;
@@ -222,6 +231,16 @@ export interface VecinoLimpiezaCreateDTO {
   vecinoLimpiezaTipoId: number | null;
   vecinoId?: number | null;
   descripcion?: string | null;
+}
+
+/** Cumplimiento de atenciones de limpieza (programadas hasta hoy vs. hechas). */
+export interface VecinoLimpiezaCumplimientoDTO {
+  departamentoProgramadas: number;
+  departamentoHechas: number;
+  comunProgramadas: number;
+  comunHechas: number;
+  totalProgramadas: number;
+  totalHechas: number;
 }
 
 /** Una persona del formulario de alta (DNI opcional). */

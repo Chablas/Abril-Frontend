@@ -203,6 +203,80 @@ export class GestionVecinosCompromisos implements OnInit {
     });
   }
 
+  // ── Fecha límite por municipalidad/fiscalización (edición inline) ──────
+  editFechaMuniId: number | null = null;
+  fechaMuniDraft = '';
+
+  /** Un compromiso está catalogado "con fecha límite por municipalidad/fiscalización" si tiene esa fecha. */
+  tieneFechaMunicipalidad(c: VecinoCompromisoItemDTO): boolean {
+    return !!c.fechaFinMunicipalidad;
+  }
+
+  startEditFechaMuni(c: VecinoCompromisoItemDTO): void {
+    this.editFechaMuniId = c.vecinoCompromisoId;
+    this.fechaMuniDraft = c.fechaFinMunicipalidad ? c.fechaFinMunicipalidad.substring(0, 10) : '';
+  }
+
+  cancelEditFechaMuni(): void {
+    this.editFechaMuniId = null;
+    this.fechaMuniDraft = '';
+  }
+
+  saveFechaMuni(c: VecinoCompromisoItemDTO): void {
+    if (!this.fechaMuniDraft) {
+      Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Ingresa la fecha límite por municipalidad/fiscalización.', confirmButtonColor: '#64BC04' });
+      return;
+    }
+    if (c.fechaFin && this.fechaMuniDraft > c.fechaFin.substring(0, 10)) {
+      Swal.fire({ icon: 'warning', title: 'Fecha inválida', text: 'La fecha límite por municipalidad/fiscalización no puede ser posterior a la fecha fin del compromiso.', confirmButtonColor: '#64BC04' });
+      return;
+    }
+    this.loaderService.show();
+    this.service.updateCompromisoFechaMunicipalidad(c.vecinoCompromisoId, this.fechaMuniDraft).subscribe({
+      next: () => {
+        c.fechaFinMunicipalidad = this.fechaMuniDraft;
+        this.editFechaMuniId = null;
+        this.fechaMuniDraft = '';
+        this.loaderService.hide();
+        this.changed.emit();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  async quitarFechaMuni(c: VecinoCompromisoItemDTO): Promise<void> {
+    const { isConfirmed } = await Swal.fire({
+      icon: 'question',
+      title: '¿Quitar fecha límite?',
+      text: 'El compromiso dejará de estar catalogado como "con fecha límite por municipalidad/fiscalización".',
+      showCancelButton: true,
+      confirmButtonText: 'Quitar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.updateCompromisoFechaMunicipalidad(c.vecinoCompromisoId, null).subscribe({
+      next: () => {
+        c.fechaFinMunicipalidad = null;
+        this.editFechaMuniId = null;
+        this.fechaMuniDraft = '';
+        this.loaderService.hide();
+        this.changed.emit();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ── Normativas (multi-archivo por compromiso) ──────────────────────────
   onNormativasSelected(c: VecinoCompromisoItemDTO, event: Event): void {
     const input = event.target as HTMLInputElement;

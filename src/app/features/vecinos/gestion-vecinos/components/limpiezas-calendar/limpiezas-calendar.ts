@@ -13,6 +13,7 @@ import {
   VecinoLimpiezaDTO,
   VecinoListItemDTO,
   VecinoCompromisoSelectDTO,
+  VecinoLimpiezaCumplimientoDTO,
   CatalogOptionDTO,
 } from '../../dtos/gestion-vecinos.dto';
 
@@ -45,6 +46,7 @@ export class LimpiezasCalendar implements OnChanges {
   weeks: DayCell[][] = [];
   limpiezas: VecinoLimpiezaDTO[] = [];
   tipos: CatalogOptionDTO[] = [];
+  cumplimiento: VecinoLimpiezaCumplimientoDTO | null = null;
 
   // Modal de día.
   selectedIso: string | null = null;
@@ -70,7 +72,20 @@ export class LimpiezasCalendar implements OnChanges {
       }
       this.buildGrid();
       this.load();
+      this.loadCumplimiento();
     }
+  }
+
+  private loadCumplimiento(): void {
+    this.service.getLimpiezasCumplimiento(this.projectId).subscribe({
+      next: (res) => (this.cumplimiento = res),
+      error: () => {},
+    });
+  }
+
+  pct(hechas: number, programadas: number): number {
+    if (!programadas) return 0;
+    return Math.round((hechas / programadas) * 100);
   }
 
   get monthLabel(): string {
@@ -222,6 +237,7 @@ export class LimpiezasCalendar implements OnChanges {
           l.atencionCompromisoLabel = this.compromisosDe(l).find((c) => c.vecinoCompromisoId === compromisoId)?.label ?? null;
         }
         input.value = '';
+        this.loadCumplimiento();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -284,6 +300,7 @@ export class LimpiezasCalendar implements OnChanges {
         next: (res) => {
           this.limpiezas = [...this.limpiezas, res.limpieza];
           this.resetForm();
+          this.loadCumplimiento();
           this.loaderService.hide();
         },
         error: (err: HttpErrorResponse) => {
@@ -308,6 +325,7 @@ export class LimpiezasCalendar implements OnChanges {
     this.service.deleteLimpieza(l.vecinoLimpiezaId).subscribe({
       next: () => {
         this.limpiezas = this.limpiezas.filter((x) => x.vecinoLimpiezaId !== l.vecinoLimpiezaId);
+        this.loadCumplimiento();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

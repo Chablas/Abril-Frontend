@@ -4,6 +4,15 @@ export interface DashboardEstadoDTO {
   count: number;
 }
 
+export interface DashboardLimpiezaCumplimientoDTO {
+  departamentoProgramadas: number;
+  departamentoHechas: number;
+  comunProgramadas: number;
+  comunHechas: number;
+  totalProgramadas: number;
+  totalHechas: number;
+}
+
 export interface DashboardProjectDTO {
   /** 0 cuando representa el resumen general (agregado global). */
   projectId: number;
@@ -11,6 +20,7 @@ export interface DashboardProjectDTO {
   vecinosCount: number;
   solicitudes: DashboardEstadoDTO[];
   compromisos: DashboardEstadoDTO[];
+  limpiezas: DashboardLimpiezaCumplimientoDTO;
 }
 
 export interface VecinosDashboardDTO {
