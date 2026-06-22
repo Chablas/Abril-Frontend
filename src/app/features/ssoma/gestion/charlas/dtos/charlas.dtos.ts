@@ -1,3 +1,4 @@
+// ── Existing DTOs ─────────────────────────────────────────────────────────────
 export interface ProyectoInfo {
   proyectoId: number;
   nombre: string;
@@ -56,4 +57,83 @@ export interface CrearCharlaDto {
 
 export interface GuardarAsistenciaDto {
   workerIds: number[];
+}
+
+// ── NEW: Tab 1 — Dashboard Asistencia Supervisores ───────────────────────────
+export interface DashSupervisoresRow {
+  charlaId: number;
+  titulo: string;
+  fecha: string;
+  supervisorId: number | null;
+  supervisorNombre: string;
+  totalAsistentes: number;
+  totalAsistio: number;
+}
+
+// ── NEW: Tab 2 — Comparativo ──────────────────────────────────────────────────
+export interface ComparativoMes {
+  mes: number;
+  mesNombre: string;
+  programadas: number;
+  realizadas: number;
+}
+
+// ── NEW: Tab 3 — Crear nueva charla ──────────────────────────────────────────
+export interface NuevaCharlaCreateDto {
+  programaId?: number;
+  proyectoId: number;
+  titulo: string;
+  tema?: string;
+  descripcion?: string;
+  fecha: string;
+  duracionHoras: number;
+  supervisorId?: number;
+  workerIds: number[];
+}
+
+// ── NEW: Tab 4 — Lista paginada ───────────────────────────────────────────────
+export interface CharlaListItem {
+  id: number;
+  titulo: string;
+  tema: string | null;
+  fecha: string;
+  supervisorId: number | null;
+  supervisorNombre: string;
+  estado: string;
+  evidenciaNombre: string | null;
+  totalAsistentes: number;
+}
+
+export interface CharlaListResult {
+  items: CharlaListItem[];
+  total: number;
+}
+
+// ── NEW: Tab 4 — Detalle modal ────────────────────────────────────────────────
+export interface CharlaDetalle {
+  id: number;
+  titulo: string;
+  tema: string | null;
+  descripcion: string | null;
+  fecha: string;
+  duracionHoras: number;
+  supervisorId: number | null;
+  supervisorNombre: string;
+  estado: string;
+  evidenciaUrl: string | null;
+  evidenciaNombre: string | null;
+  totalAsistentes: number;
+  asistencias: AsistenciaDetail[];
+  aprobadoPorId: number | null;
+  aprobadoPorNombre: string | null;
+  aprobadoEn: string | null;
+  motivoRechazo: string | null;
+  evidenciaSubidaEn: string | null;
+}
+
+// ── NEW: Supervisor (app_user) ────────────────────────────────────────────────
+export interface UsuarioDto {
+  id: number;
+  nombreCompleto: string;
+  email: string | null;
 }
