@@ -110,6 +110,7 @@ export class NavigationService {
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
         { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard', featureKey: 'ssoma.gestion.opt' },
         { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard', featureKey: 'ssoma.gestion.inspeccion' },
+        { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas', featureKey: 'ssoma.gestion.charlas' },
       ],
     },
     {

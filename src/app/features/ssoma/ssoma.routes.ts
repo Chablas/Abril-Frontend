@@ -28,5 +28,10 @@ export const SSOMA_ROUTES: Routes = [
     loadChildren: () =>
       import('./gestion/inspeccion/inspeccion.routes').then((m) => m.INSPECCION_ROUTES),
   },
+  {
+    path: 'gestion/charlas',
+    loadChildren: () =>
+      import('./gestion/charlas/charlas.routes').then((m) => m.CHARLAS_ROUTES),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];
