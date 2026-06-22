@@ -46,6 +46,15 @@
       </app-status-pills>
     </div>
 
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-xs text-[#64BC04] font-medium">Observaciones</label>
+      <textarea
+        [(ngModel)]="nuevo.observaciones"
+        rows="2"
+        placeholder="Observaciones del compromiso (opcional)…"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+    </div>
+
     <div class="flex items-center justify-between">
       <label class="flex items-center gap-2 cursor-pointer select-none">
         <button type="button" (click)="nuevo.esCritico = !nuevo.esCritico"
@@ -96,6 +105,38 @@
         </app-status-pills>
       </div>
 
+      <!-- Observaciones (editable inline) -->
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Observaciones</span>
+          <button *ngIf="editObsId !== c.vecinoCompromisoId" type="button" (click)="startEditObs(c)"
+            class="text-[11px] text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+            <i class="ti ti-pencil"></i> {{ c.observaciones ? 'Editar' : 'Agregar' }}
+          </button>
+        </div>
+
+        <ng-container *ngIf="editObsId === c.vecinoCompromisoId; else verObs">
+          <textarea
+            [(ngModel)]="obsDraft"
+            rows="2"
+            placeholder="Observaciones del compromiso…"
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+          <div class="flex items-center gap-2 mt-1">
+            <button type="button" (click)="saveObs(c)"
+              class="px-3 py-[6px] rounded-lg bg-[#64BC04] text-white text-xs font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+              Guardar
+            </button>
+            <button type="button" (click)="cancelEditObs()"
+              class="px-3 py-[6px] rounded-lg bg-gray-100 text-gray-600 text-xs font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #verObs>
+          <p class="text-sm text-gray-700 whitespace-pre-line">{{ c.observaciones || '—' }}</p>
+        </ng-template>
+      </div>
+
       <!-- Entregables -->
       <div class="border-t border-gray-100 pt-3">
         <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold mb-2">Entregables</p>
@@ -129,6 +170,37 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Normativas (varios archivos, sección aparte) -->
+      <div class="border-t border-dashed border-gray-200 pt-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Normativas</p>
+          <label
+            class="text-[10px] font-medium px-2 py-[3px] rounded-lg bg-[#E0F2F7] text-[#0086A5] cursor-pointer hover:bg-[#cdeaf1] transition-colors inline-flex items-center gap-1">
+            <i class="ti ti-upload"></i> Subir archivo(s)
+            <input type="file" class="hidden" multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+              (change)="onNormativasSelected(c, $event)" />
+          </label>
+        </div>
+
+        <div *ngIf="c.normativas?.length; else sinNormativas" class="flex flex-col gap-1.5">
+          <div *ngFor="let n of c.normativas"
+            class="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+            <a [href]="entregableFileUrl(n.archivoUrl)" target="_blank" rel="noopener" download
+              class="text-[11px] text-[#0086A5] hover:underline inline-flex items-center gap-1 truncate">
+              <i class="ti ti-file"></i> {{ n.originalFileName || 'Ver archivo' }}
+            </a>
+            <button type="button" (click)="eliminarNormativa(c, n)"
+              class="text-gray-400 hover:text-[#D30000] cursor-pointer shrink-0" title="Eliminar">
+              <i class="ti ti-trash text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <ng-template #sinNormativas>
+          <p class="text-[11px] text-gray-400 italic">Aún no hay archivos de normativas.</p>
+        </ng-template>
       </div>
 
     </div>

@@ -14,6 +14,11 @@ import {
   VecinoSolicitudCreateDTO,
   VecinoCompromisoItemDTO,
   VecinoCompromisoCreateDTO,
+  VecinoNormativaDTO,
+  VecinoLimpiezaDTO,
+  VecinoLimpiezasResponseDTO,
+  VecinoLimpiezaCreateDTO,
+  VecinoCompromisoSelectDTO,
   CroquisGestionResponseDTO,
   VecinoRequisitosResponseDTO,
 } from '../dtos/gestion-vecinos.dto';
@@ -177,6 +182,14 @@ export class GestionVecinosService {
     );
   }
 
+  updateCompromisoObservaciones(compromisoId: number, observaciones: string | null): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/compromisos/${compromisoId}/observaciones`,
+      { observaciones },
+      { headers: this.authHeaders() },
+    );
+  }
+
   updateEntregableEstado(entregableId: number, vecinoEntregableEstadoId: number): Observable<ApiMessageDTO> {
     return this.http.patch<ApiMessageDTO>(
       `${this.apiUrl}/compromisos/entregables/${entregableId}/estado`,
@@ -190,6 +203,65 @@ export class GestionVecinosService {
     formData.append('file', file);
     return this.http.post<{ archivoUrl: string; message: string }>(
       `${this.apiUrl}/compromisos/entregables/${entregableId}/upload`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Sube uno o varios archivos de "normativas" a un compromiso. */
+  uploadNormativas(compromisoId: number, files: File[]): Observable<{ normativas: VecinoNormativaDTO[]; message: string }> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+    return this.http.post<{ normativas: VecinoNormativaDTO[]; message: string }>(
+      `${this.apiUrl}/compromisos/${compromisoId}/normativas`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  deleteNormativa(normativaId: number): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(
+      `${this.apiUrl}/compromisos/normativas/${normativaId}`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Calendario de limpiezas ─────────────────────────────────────────
+  getLimpiezas(projectId: number, year: number, month: number): Observable<VecinoLimpiezasResponseDTO> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get<VecinoLimpiezasResponseDTO>(`${this.apiUrl}/proyectos/${projectId}/limpiezas`, {
+      params,
+      headers: this.authHeaders(),
+    });
+  }
+
+  createLimpieza(projectId: number, dto: VecinoLimpiezaCreateDTO): Observable<{ limpieza: VecinoLimpiezaDTO; message: string }> {
+    return this.http.post<{ limpieza: VecinoLimpiezaDTO; message: string }>(
+      `${this.apiUrl}/proyectos/${projectId}/limpiezas`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  deleteLimpieza(limpiezaId: number): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/limpiezas/${limpiezaId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Compromisos de las solicitudes de un vecino, para relacionar la atención de limpieza. */
+  getCompromisosSelect(vecinoId: number): Observable<VecinoCompromisoSelectDTO[]> {
+    return this.http.get<VecinoCompromisoSelectDTO[]>(`${this.apiUrl}/${vecinoId}/compromisos-select`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  uploadAtencion(limpiezaId: number, file: File, vecinoCompromisoId: number | null): Observable<{ archivoUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (vecinoCompromisoId != null) formData.append('vecinoCompromisoId', vecinoCompromisoId.toString());
+    return this.http.post<{ archivoUrl: string; message: string }>(
+      `${this.apiUrl}/limpiezas/${limpiezaId}/atencion`,
       formData,
       { headers: this.authHeaders() },
     );

@@ -12,6 +12,7 @@ import {
   VecinoSolicitudItemDTO,
   VecinoCompromisoItemDTO,
   VecinoEntregableItemDTO,
+  VecinoNormativaDTO,
   CatalogOptionDTO,
 } from '../../dtos/gestion-vecinos.dto';
 
@@ -38,6 +39,7 @@ export class GestionVecinosCompromisos implements OnInit {
     vecinoCompromisoEstadoId: null as number | null,
     fechaInicio: '' as string,
     fechaFin: '' as string,
+    observaciones: '' as string,
   };
 
   constructor(
@@ -92,10 +94,11 @@ export class GestionVecinosCompromisos implements OnInit {
         vecinoCompromisoEstadoId: this.nuevo.vecinoCompromisoEstadoId,
         fechaInicio: this.nuevo.fechaInicio || null,
         fechaFin: this.nuevo.fechaFin || null,
+        observaciones: this.nuevo.observaciones.trim() || null,
       })
       .subscribe({
         next: () => {
-          this.nuevo = { descripcion: '', esCritico: false, vecinoCompromisoEstadoId: null, fechaInicio: '', fechaFin: '' };
+          this.nuevo = { descripcion: '', esCritico: false, vecinoCompromisoEstadoId: null, fechaInicio: '', fechaFin: '', observaciones: '' };
           this.showForm = false;
           this.changed.emit();
           this.load();
@@ -162,6 +165,86 @@ export class GestionVecinosCompromisos implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         input.value = '';
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Observaciones (edición inline) ─────────────────────────────────────
+  editObsId: number | null = null;
+  obsDraft = '';
+
+  startEditObs(c: VecinoCompromisoItemDTO): void {
+    this.editObsId = c.vecinoCompromisoId;
+    this.obsDraft = c.observaciones ?? '';
+  }
+
+  cancelEditObs(): void {
+    this.editObsId = null;
+    this.obsDraft = '';
+  }
+
+  saveObs(c: VecinoCompromisoItemDTO): void {
+    const valor = this.obsDraft.trim() || null;
+    this.loaderService.show();
+    this.service.updateCompromisoObservaciones(c.vecinoCompromisoId, valor).subscribe({
+      next: () => {
+        c.observaciones = valor;
+        this.editObsId = null;
+        this.obsDraft = '';
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Normativas (multi-archivo por compromiso) ──────────────────────────
+  onNormativasSelected(c: VecinoCompromisoItemDTO, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0) return;
+
+    this.loaderService.show();
+    this.service.uploadNormativas(c.vecinoCompromisoId, files).subscribe({
+      next: (res) => {
+        c.normativas = [...(c.normativas ?? []), ...res.normativas];
+        input.value = '';
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        input.value = '';
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  async eliminarNormativa(c: VecinoCompromisoItemDTO, n: VecinoNormativaDTO): Promise<void> {
+    const { isConfirmed } = await Swal.fire({
+      icon: 'question',
+      title: '¿Eliminar archivo?',
+      text: n.originalFileName || 'Este archivo se eliminará.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.deleteNormativa(n.vecinoCompromisoNormativaId).subscribe({
+      next: () => {
+        c.normativas = (c.normativas ?? []).filter((x) => x.vecinoCompromisoNormativaId !== n.vecinoCompromisoNormativaId);
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
       },
