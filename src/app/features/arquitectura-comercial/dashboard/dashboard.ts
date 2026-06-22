@@ -320,29 +320,29 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   get cargaInsights(): string[] {
-    const d   = this.tareasPorArquitectoOrdenado;
-    const s   = this.cargaStats;
+    const d = this.tareasPorArquitectoOrdenado;
+    const s = this.cargaStats;
     if (!s || !d.length) return [];
     const out: string[] = [];
 
-    const masCargado  = d[0];
+    const masCargado   = d[0];
     const menosCargado = d[d.length - 1];
     const sobrecargados = d.filter(x => x.total > s.avg * 1.3);
     const disponibles   = d.filter(x => x.total < s.avg * 0.7);
 
-    if (sobrecargados.length) {
-      const nombres = sobrecargados.map(x => this.primerApellido(x.nombre)).join(', ');
-      out.push(`⚠ ${nombres} ${sobrecargados.length > 1 ? 'tienen' : 'tiene'} más de 1.3x la carga media (${s.avg} act.) — redistribuir`);
-    }
-    if (disponibles.length) {
-      const nombres = disponibles.map(x => this.primerApellido(x.nombre)).join(', ');
-      out.push(`✓ ${nombres} ${disponibles.length > 1 ? 'tienen' : 'tiene'} capacidad — asignarles actividades de los sobrecargados`);
-    }
+    sobrecargados.forEach(x => {
+      out.push(`🔴 ${this.primerApellido(x.nombre)} tiene ${x.total} act. (media ${s.avg}) — redistribuir urgente`);
+    });
+    disponibles.forEach(x => {
+      out.push(`🟢 ${this.primerApellido(x.nombre)} tiene capacidad — asignar actividades`);
+    });
+
     const brecha = masCargado.total - menosCargado.total;
     if (brecha > s.avg * 0.5) {
-      out.push(`↕ Brecha de ${brecha} actividades entre ${this.primerApellido(masCargado.nombre)} y ${this.primerApellido(menosCargado.nombre)} — equipo desbalanceado`);
-    } else if (!out.length) {
-      out.push(`✓ Carga distribuida de forma equilibrada (media ${s.avg} act. por supervisor)`);
+      out.push(`⚖️ Brecha de ${brecha} act. entre ${this.primerApellido(masCargado.nombre)} y ${this.primerApellido(menosCargado.nombre)}`);
+    }
+    if (!out.length) {
+      out.push(`✅ Carga equilibrada (media ${s.avg} act. por supervisor)`);
     }
     return out;
   }
@@ -430,6 +430,23 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   get promedioEficiencia(): number {
     if (!this.supervisores.length) return 0;
     return Math.round(this.supervisores.reduce((s, x) => s + x.progreso, 0) / this.supervisores.length);
+  }
+
+  get rankingInsights(): string[] {
+    if (!this.supervisores.length) return [];
+    const sorted = [...this.supervisores].sort((a, b) => b.progreso - a.progreso);
+    const mejor = sorted[0];
+    const peor  = sorted[sorted.length - 1];
+    const out: string[] = [];
+    out.push(`🏆 ${this.primerApellido(mejor.nombre)} lidera con ${Math.round(mejor.progreso)}% IES`);
+    const criticos = sorted.filter(s => s.progreso < 50);
+    if (criticos.length) {
+      const masC = criticos[criticos.length - 1];
+      out.push(`⚠️ ${this.primerApellido(masC.nombre)} está en nivel crítico (${Math.round(masC.progreso)}%)`);
+    }
+    out.push(`📊 Brecha de ${(mejor.progreso - peor.progreso).toFixed(0)}pp entre mejor y peor`);
+    out.push(`📈 Promedio equipo en ${this.promedioEficiencia}%`);
+    return out;
   }
 
   get equipoEquilibrado(): boolean {

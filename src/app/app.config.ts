@@ -3,7 +3,7 @@ import { provideRouter, withRouterConfig, withPreloading, PreloadAllModules } fr
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 
@@ -25,6 +25,7 @@ export const appConfig: ApplicationConfig = {
     //descomentar si se requiere ssr
     //provideClientHydration(withEventReplay()),
 
+    provideAnimationsAsync(),
     { provide: LOCALE_ID, useValue: 'es-PE' }
   ],
 };

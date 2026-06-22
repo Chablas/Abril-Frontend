@@ -121,7 +121,146 @@
   <!-- ══ BODY GRID A3 ══ -->
   <div class="dash-body">
 
-    <!-- ── R1-A: Partidas de control ── -->
+    <!-- ══ FILA 1: 3 columnas ══ -->
+    <div class="dash-row-1">
+
+      <!-- ── Col 1: Ranking Eficiencia ── -->
+      <div class="dash-card rank-card dash-row1-card">
+        <div class="rank-header">
+          <div class="rank-header-left">
+            <span class="rank-title-text">RANKING EFICIENCIA</span>
+            <span class="rank-subtitle">Índice IES · eficiencia del supervisor</span>
+          </div>
+          <div class="rank-prom-pill">
+            <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
+            <span class="rank-prom-label">PROM.</span>
+          </div>
+        </div>
+        <div class="rank-list">
+          <div *ngFor="let sup of supervisores"
+               class="rank-item"
+               [class.rank-item-crit]="sup.progreso < 50"
+               [style.borderColor]="getAvatarColor(sup.progreso) + '55'"
+               [title]="sup.nombre">
+            <div class="rank-accent"
+                 [style.background]="sup.progreso >= 75 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
+                   : sup.progreso >= 60 ? 'linear-gradient(180deg,#60A5FA,#2563EB)'
+                   : sup.progreso >= 45 ? 'linear-gradient(180deg,#FCD34D,#B45309)'
+                   : 'linear-gradient(180deg,#F87171,#DC2626)'">
+            </div>
+            <div class="sup-avatar" [style.background]="getAvatarBg(sup.progreso)" [style.color]="getAvatarColor(sup.progreso)">
+              {{ getInitials(sup.nombre) }}
+            </div>
+            <div class="rank-info">
+              <div class="rank-nombre-row">
+                <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
+                <span class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
+              </div>
+              <div class="rank-stats-row">
+                <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
+                  {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
+                </span>
+                <span class="rank-stat-sep">/</span>
+                <span class="rank-stat-tot">{{ sup.total }}</span>
+                <span class="rank-stat-sep">·</span>
+                <span class="rank-stat-ies-lbl">IES</span>
+                <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}</span>
+              </div>
+              <div class="rank-bar-row">
+                <div class="rank-bar-track">
+                  <div class="rank-bar-fill"
+                       [style.width.%]="sup.progreso"
+                       [style.background]="sup.progreso >= 75 ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
+                         : sup.progreso >= 60 ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
+                         : sup.progreso >= 45 ? 'linear-gradient(90deg,#FCD34D,#B45309)'
+                         : 'linear-gradient(90deg,#F87171,#DC2626)'">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
+        </div>
+        <div class="rank-insights" *ngIf="rankingInsights.length">
+          <p *ngFor="let insight of rankingInsights" class="rank-insight-item">{{ insight }}</p>
+        </div>
+      </div>
+
+      <!-- ── Col 2: Curva de Avance + Tendencia SPI ── -->
+      <div class="dash-col-charts">
+        <div class="dash-card dash-chart-card">
+          <div class="card-header">
+            <span class="card-title">CURVA DE AVANCE</span>
+            <div class="chart-legend-inline">
+              <span class="cli-item"><span class="cli-line cli-line-dash"></span>Programado</span>
+              <span class="cli-item"><span class="cli-line cli-line-solid"></span>Real</span>
+            </div>
+          </div>
+          <div class="db-chart-wrap"><canvas #avanceCanvas></canvas></div>
+        </div>
+        <div class="dash-card dash-chart-card">
+          <div class="card-header">
+            <span class="card-title">TENDENCIA SPI</span>
+            <div class="spi-ref-badges">
+              <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F">≥0.95 OK</span>
+              <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A">≥0.80</span>
+              <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040">&lt;0.80</span>
+            </div>
+          </div>
+          <div class="db-chart-wrap"><canvas #eficienciaCanvas></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── Col 3: Distribución de Carga ── -->
+      <div class="dash-card rank-card dash-row1-card">
+        <div class="rank-header">
+          <div class="rank-header-left">
+            <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
+            <span class="rank-subtitle">Actividades asignadas · línea = media del equipo</span>
+          </div>
+          <div class="rank-prom-pill" *ngIf="cargaStats">
+            <span class="rank-prom-value">{{ cargaStats.avg }}</span>
+            <span class="rank-prom-label">MEDIA</span>
+          </div>
+        </div>
+        <div class="rank-list" *ngIf="cargaStats">
+          <div *ngFor="let sup of tareasPorArquitectoOrdenado"
+               class="rank-item carga-item"
+               [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
+               [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
+               (click)="filtrarPorSupervisor(sup.userId)"
+               [title]="sup.nombre + ' — click para filtrar'">
+            <div class="rank-accent" [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')"></div>
+            <div class="sup-avatar" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">
+              {{ getInitials(sup.nombre) }}
+            </div>
+            <div class="rank-info carga-info">
+              <div class="carga-top">
+                <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
+                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+                  <span class="rank-badge" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">{{ cargaTag(sup.total) }}</span>
+                  <span class="carga-total">{{ sup.total }}</span>
+                </div>
+              </div>
+              <div class="rank-bar-row">
+                <div class="carga-bar-wrap">
+                  <div class="carga-avg-line" [style.left.%]="cargaStats.avgPct"></div>
+                  <div class="carga-bar-fill" [style.width.%]="cargaBarPct(sup.total)" [style.background]="cargaBarGradient(sup.total)"></div>
+                </div>
+                <span class="carga-hec">H{{ sup.hitos }}·E{{ sup.entregables }}·C{{ sup.consultas }}</span>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="tareasPorArquitecto.length === 0" class="empty-msg">Sin datos</p>
+        </div>
+        <div class="rank-insights" *ngIf="cargaInsights.length">
+          <p *ngFor="let insight of cargaInsights" class="rank-insight-item">{{ insight }}</p>
+        </div>
+      </div>
+
+    </div><!-- /dash-row-1 -->
+
+    <!-- ══ FILA 2: Partidas de Control (ancho completo) ══ -->
     <div class="dash-card db-partidas-card">
       <div class="card-header">
         <span class="card-title">PARTIDAS DE CONTROL</span>
@@ -132,9 +271,9 @@
           <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#6b7280"></span>Pend.</span>
         </div>
       </div>
-      <div *ngIf="distribucionPorCategoria.length; else sinPartidas">
+      <div class="partidas-scroll-body" *ngIf="distribucionPorCategoria.length; else sinPartidas">
         <div *ngFor="let cat of distribucionPorCategoria" class="hbar-row">
-          <span class="hbar-label hbar-label-nav" (click)="filtrarPorCategoria(cat.nombre)" [title]="'Ver ' + cat.nombre">{{ cat.nombre }}</span>
+          <span class="hbar-label hbar-label-nav" (click)="filtrarPorCategoria(cat.nombre)" [title]="cat.nombre">{{ cat.nombre }}</span>
           <div class="hbar-bar" style="cursor:pointer" (click)="filtrarPorCategoria(cat.nombre)">
             <ng-container *ngIf="cat.total > 0; else emptyBarP">
               <div class="hbar-seg" style="background:#10b981" [style.flex]="cat.culminadas"></div>
@@ -175,199 +314,88 @@
       <ng-template #sinPartidas><p class="empty-msg">Sin datos</p></ng-template>
     </div>
 
-    <!-- ── R1-B: Carga ── -->
-    <div class="dash-card rank-card">
-
-      <!-- R2: Distribución de carga (body) -->
-      <div class="rank-header">
-        <div class="rank-header-left">
-          <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
-          <span class="rank-subtitle">Actividades asignadas · línea = media del equipo</span>
-        </div>
-        <div class="rank-prom-pill" *ngIf="cargaStats">
-          <span class="rank-prom-value">{{ cargaStats.avg }}</span>
-          <span class="rank-prom-label">MEDIA</span>
-        </div>
-      </div>
-
-      <div class="rank-list" *ngIf="cargaStats">
-        <div *ngFor="let sup of tareasPorArquitectoOrdenado"
-             class="rank-item carga-item"
-             [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
-             [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
-             (click)="filtrarPorSupervisor(sup.userId)"
-             [title]="sup.nombre + ' — click para filtrar'">
-          <div class="rank-accent" [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')"></div>
-          <div class="sup-avatar" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">
-            {{ getInitials(sup.nombre) }}
+    <!-- ══ FILA 3: Distribución por Estado ══ -->
+    <div class="dash-row-3">
+      <!-- Culminadas -->
+      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('CULMINADO')">
+        <div class="ec-top">
+          <div class="ec-icon-wrap" style="background:#D1FAE5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17L4 12" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <div class="rank-info carga-info">
-            <div class="carga-top">
-              <span class="rank-nombre">{{ sup.nombre }}</span>
-              <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-                <span class="rank-badge" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">{{ cargaTag(sup.total) }}</span>
-                <span class="carga-total">{{ sup.total }}</span>
-              </div>
-            </div>
-            <div class="rank-bar-row">
-              <div class="carga-bar-wrap">
-                <div class="carga-avg-line" [style.left.%]="cargaStats.avgPct"></div>
-                <div class="carga-bar-fill" [style.width.%]="cargaBarPct(sup.total)" [style.background]="cargaBarGradient(sup.total)"></div>
-              </div>
-              <span class="carga-hec">H{{ sup.hitos }}·E{{ sup.entregables }}·C{{ sup.consultas }}</span>
-            </div>
+          <span class="ec-pct" style="color:#059669">
+            {{ kpis.totalActividades > 0 ? (kpis.culminadas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
+          </span>
+        </div>
+        <div class="ec-num" style="color:#059669">{{ kpis.culminadas }}</div>
+        <div class="ec-label">Culminadas</div>
+        <div class="ec-bar-track">
+          <div class="ec-bar-fill" style="background:#10b981"
+               [style.width.%]="kpis.totalActividades > 0 ? kpis.culminadas / kpis.totalActividades * 100 : 0"></div>
+        </div>
+      </div>
+      <!-- En Proceso -->
+      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('EN PROCESO')">
+        <div class="ec-top">
+          <div class="ec-icon-wrap" style="background:#DBEAFE">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#2563EB" stroke-width="2"/>
+              <path d="M12 6V12L16 14" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+            </svg>
           </div>
+          <span class="ec-pct" style="color:#2563EB">
+            {{ kpis.totalActividades > 0 ? (kpis.enProceso / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
+          </span>
         </div>
-        <p *ngIf="tareasPorArquitecto.length === 0" class="empty-msg">Sin datos</p>
-      </div>
-
-    </div><!-- /R2 db-full -->
-
-    <!-- ── R3-A: Curva de avance ── -->
-    <div class="dash-card">
-      <div class="card-header">
-        <span class="card-title">CURVA DE AVANCE</span>
-        <div class="chart-legend-inline">
-          <span class="cli-item"><span class="cli-line cli-line-dash"></span>Programado</span>
-          <span class="cli-item"><span class="cli-line cli-line-solid"></span>Real</span>
+        <div class="ec-num" style="color:#2563EB">{{ kpis.enProceso }}</div>
+        <div class="ec-label">En Proceso</div>
+        <div class="ec-bar-track">
+          <div class="ec-bar-fill" style="background:#3b82f6"
+               [style.width.%]="kpis.totalActividades > 0 ? kpis.enProceso / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>
-      <div class="db-chart-wrap"><canvas #avanceCanvas></canvas></div>
-    </div>
-
-    <!-- ── R3-B: Tendencia SPI ── -->
-    <div class="dash-card">
-      <div class="card-header">
-        <span class="card-title">TENDENCIA SPI</span>
-        <div class="spi-ref-badges">
-          <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F">≥0.95 OK</span>
-          <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A">≥0.80</span>
-          <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040">&lt;0.80</span>
-        </div>
-      </div>
-      <div class="db-chart-wrap"><canvas #eficienciaCanvas></canvas></div>
-    </div>
-
-    <!-- ── R4-A: Hitos críticos ── -->
-    <div class="dash-card hitos-card">
-      <div class="card-header">
-        <span class="card-title">HITOS CRÍTICOS</span>
-        <button class="btn-ver-todos" (click)="abrirModalHitos()">
-          Ver todos ({{ hitosCriticos.length }})
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="hitos-preview">
-        <div *ngFor="let h of hitosCriticos.slice(0,6)" class="hito-item" [style.borderLeftColor]="getHitoColor(h.diasRestantes)">
-          <div class="hito-body">
-            <span class="hito-nombre">{{ h.nombre }}</span>
-            <span class="hito-meta">{{ h.proyecto }}</span>
+      <!-- Vencidas -->
+      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('VENCIDO')">
+        <div class="ec-top">
+          <div class="ec-icon-wrap" style="background:#FEE2E2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="#DC2626" stroke-width="2" stroke-linecap="round"/>
+            </svg>
           </div>
-          <div class="hito-right">
-            <span class="hito-dias-badge" [style.background]="getHitoColor(h.diasRestantes) + '18'" [style.color]="getHitoColor(h.diasRestantes)">
-              {{ diasLabel(h.diasRestantes) }}
-            </span>
+          <span class="ec-pct" style="color:#DC2626">
+            {{ kpis.totalActividades > 0 ? (kpis.vencidas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
+          </span>
+        </div>
+        <div class="ec-num" style="color:#DC2626">{{ kpis.vencidas }}</div>
+        <div class="ec-label">Vencidas</div>
+        <div class="ec-bar-track">
+          <div class="ec-bar-fill" style="background:#ef4444"
+               [style.width.%]="kpis.totalActividades > 0 ? kpis.vencidas / kpis.totalActividades * 100 : 0"></div>
+        </div>
+      </div>
+      <!-- Pendientes -->
+      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('PENDIENTE')">
+        <div class="ec-top">
+          <div class="ec-icon-wrap" style="background:#F1F5F9">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#64748B" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+            </svg>
           </div>
+          <span class="ec-pct" style="color:#64748B">
+            {{ kpis.totalActividades > 0 ? (kpis.pendientes / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
+          </span>
         </div>
-        <p *ngIf="hitosCriticos.length === 0" class="empty-msg">Sin hitos críticos</p>
-      </div>
-      <div class="hitos-footer">
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#C94040">{{ hitosUrgentesCnt }}</span>
-          <span class="mini-label">Urgente</span>
-        </div>
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#C4860A">{{ hitosEstaSemanaCnt }}</span>
-          <span class="mini-label">Esta sem.</span>
-        </div>
-        <div class="mini-counter">
-          <span class="mini-num" style="color:#4A7FD4">{{ hitosProximosCnt }}</span>
-          <span class="mini-label">Próximos</span>
+        <div class="ec-num" style="color:#64748B">{{ kpis.pendientes }}</div>
+        <div class="ec-label">Pendientes</div>
+        <div class="ec-bar-track">
+          <div class="ec-bar-fill" style="background:#6b7280"
+               [style.width.%]="kpis.totalActividades > 0 ? kpis.pendientes / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>
-    </div>
-
-    <!-- ── R4-B: Ranking eficiencia ── -->
-    <div class="dash-card rank-card">
-      <div class="rank-header">
-        <div class="rank-header-left">
-          <span class="rank-title-text">RANKING EFICIENCIA</span>
-          <span class="rank-subtitle">Índice IES · eficiencia del supervisor</span>
-        </div>
-        <div class="rank-prom-pill">
-          <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
-          <span class="rank-prom-label">PROM.</span>
-        </div>
-      </div>
-      <div class="rank-list">
-        <div *ngFor="let sup of supervisores"
-             class="rank-item"
-             [class.rank-item-crit]="sup.progreso < 50"
-             [style.borderColor]="getAvatarColor(sup.progreso) + '55'">
-          <div class="rank-accent"
-               [style.background]="sup.progreso >= 75 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
-                 : sup.progreso >= 60 ? 'linear-gradient(180deg,#60A5FA,#2563EB)'
-                 : sup.progreso >= 45 ? 'linear-gradient(180deg,#FCD34D,#B45309)'
-                 : 'linear-gradient(180deg,#F87171,#DC2626)'">
-          </div>
-          <div class="sup-avatar" [style.background]="getAvatarBg(sup.progreso)" [style.color]="getAvatarColor(sup.progreso)">
-            {{ getInitials(sup.nombre) }}
-          </div>
-          <div class="rank-info">
-            <div class="rank-nombre-row">
-              <span class="rank-nombre">{{ sup.nombre }}</span>
-              <span class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
-            </div>
-            <div class="rank-stats-row">
-              <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
-                {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
-              </span>
-              <span class="rank-stat-sep">/</span>
-              <span class="rank-stat-tot">{{ sup.total }}</span>
-              <span class="rank-stat-sep">·</span>
-              <span class="rank-stat-ies-lbl">IES</span>
-              <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}</span>
-            </div>
-            <div class="rank-bar-row">
-              <div class="rank-bar-track">
-                <div class="rank-bar-fill"
-                     [style.width.%]="sup.progreso"
-                     [style.background]="sup.progreso >= 75 ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
-                       : sup.progreso >= 60 ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
-                       : sup.progreso >= 45 ? 'linear-gradient(90deg,#FCD34D,#B45309)'
-                       : 'linear-gradient(90deg,#F87171,#DC2626)'">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
-      </div>
-      <div class="rank-legend">
-        <div class="rank-legend-thresholds">
-          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#22A85A"></span>≥75 óptimo</span>
-          <span class="rank-threshold-sep">·</span>
-          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#6095E8"></span>50–74 normal</span>
-          <span class="rank-threshold-sep">·</span>
-          <span class="rank-threshold-item"><span class="rank-threshold-dot" style="background:#E05252"></span>&lt;50 crítico</span>
-        </div>
-      </div>
-      <div class="rank-footer">
-        <div class="rank-eq-tag" [class.rank-eq-verde]="equipoEquilibrado" [class.rank-eq-rojo]="!equipoEquilibrado">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-            <path *ngIf="equipoEquilibrado" d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-            <ng-container *ngIf="!equipoEquilibrado">
-              <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            </ng-container>
-          </svg>
-          {{ equipoEquilibrado ? 'Equipo equilibrado' : 'Desbalance detectado' }}
-        </div>
-        <span class="rank-footer-meta">
-          Brecha: <b>{{ supervisores.length >= 2 ? ((supervisores[0].progreso - supervisores[supervisores.length-1].progreso) | number:'1.1-1') : 0 }}pp</b>
-        </span>
-      </div>
-    </div>
+    </div><!-- /dash-row-3 -->
 
   </div><!-- /dash-body -->
 

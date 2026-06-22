@@ -3,14 +3,96 @@
    ═══════════════════════════════════════════════ */
 
 .dash-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 300px 160px 300px;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+/* ── Fila 1: 3 columnas de igual altura ── */
+.dash-row-1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Cards de las columnas laterales: ocupan 100% de la celda del grid */
+.dash-row1-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Columna central: dos gráficas apiladas */
+.dash-col-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.dash-chart-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 130px;
+}
+
+/* ── Fila 3: 4 tarjetas de estado ── */
+.dash-row-3 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* ── Partidas: scroll interno ── */
+.partidas-scroll-body {
+  overflow-y: auto;
+  max-height: 260px;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+.partidas-scroll-body::-webkit-scrollbar { width: 4px; }
+.partidas-scroll-body::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+
+/* ── Insights (ranking y carga) ── */
+.rank-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #F1F5F9;
   flex-shrink: 0;
 }
 
-/* Ocupa las 2 columnas */
+.rank-insight-item {
+  font-size: 10px;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+  padding: 3px 8px;
+  background: #F8FAFC;
+  border-radius: 5px;
+  border-left: 2px solid #CBD5E1;
+}
+
+/* ── Tarjetas distribución por estado (Fila 3) ── */
+.estado-dist-item {
+  cursor: pointer;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.estado-dist-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+
+/* Ocupa las 2 columnas (compatibilidad) */
 .db-full { grid-column: 1 / -1; }
 
 /* ── R1-A: Estado ── */
