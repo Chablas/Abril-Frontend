@@ -1,0 +1,122 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.form-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--color-abril-page-bg, #f5f3ef);
+}
+
+.form-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.card {
+  background: #fff;
+  border: 0.5px solid #e8e5df;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── FORM GRID ────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group--full { grid-column: 1 / -1; }
+
+.form-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5a5850;
+}
+
+.req { color: #991b1b; }
+
+.form-input {
+  padding: 9px 12px;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  font-size: 13px;
+  color: #1a1a18;
+  background: #fff;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus { border-color: #1b3a2d; }
+
+.input-error { border-color: #f87171 !important; }
+
+.form-textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+
+.error-msg { font-size: 11px; color: #991b1b; }
+
+/* ── FOOTER ───────────────────────────────────────────── */
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 0.5px solid #f0ede8;
+}
+
+.btn-cancelar {
+  padding: 9px 16px;
+  background: none;
+  color: #5a5850;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: #1b3a2d;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-guardar:disabled { opacity: 0.6; cursor: default; }
+
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (min-width: 768px) {
+  .form-body { padding: 16px 24px; }
+  .form-grid { grid-template-columns: repeat(3, 1fr); }
+}

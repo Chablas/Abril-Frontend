@@ -1,0 +1,82 @@
+<div class="form-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    [titulo]="titulo"
+    subtitulo="Accidentes e Incidentes"
+    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
+    [botonPrimario]="{ label: guardando ? 'Guardando...' : 'Guardar', icono: guardando ? 'ti-loader-2' : 'ti-check' }"
+    (secondaryClick)="cancelar()"
+    (primaryClick)="guardar()">
+  </app-abril-page-header>
+
+  <div class="form-body">
+    <div class="card">
+
+      <div class="form-grid">
+
+        <!-- Proyecto -->
+        <div class="form-group form-group--full">
+          <label class="form-label">Proyecto <span class="req">*</span></label>
+          <select class="form-input" [(ngModel)]="form.proyectoId" [class.input-error]="errores['proyectoId']">
+            <option [ngValue]="0">Seleccionar proyecto...</option>
+            @for (p of proyectos; track p.id) {
+              <option [ngValue]="p.id">{{ p.name }}</option>
+            }
+          </select>
+          @if (errores['proyectoId']) { <span class="error-msg">{{ errores['proyectoId'] }}</span> }
+        </div>
+
+        <!-- Fecha -->
+        <div class="form-group">
+          <label class="form-label">Fecha <span class="req">*</span></label>
+          <input type="date" class="form-input" [(ngModel)]="form.fecha" [class.input-error]="errores['fecha']" />
+          @if (errores['fecha']) { <span class="error-msg">{{ errores['fecha'] }}</span> }
+        </div>
+
+        <!-- Tipo -->
+        <div class="form-group">
+          <label class="form-label">Tipo <span class="req">*</span></label>
+          <select class="form-input" [(ngModel)]="form.tipo" [class.input-error]="errores['tipo']">
+            <option value="Incidente">Incidente</option>
+            <option value="Accidente">Accidente</option>
+          </select>
+          @if (errores['tipo']) { <span class="error-msg">{{ errores['tipo'] }}</span> }
+        </div>
+
+        <!-- Estado -->
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-input" [(ngModel)]="form.estado">
+            <option value="Abierto">Abierto</option>
+            <option value="En Investigación">En Investigación</option>
+            <option value="Cerrado">Cerrado</option>
+          </select>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-group form-group--full">
+          <label class="form-label">Descripción <span class="req">*</span></label>
+          <textarea
+            class="form-input form-textarea"
+            [(ngModel)]="form.descripcion"
+            [class.input-error]="errores['descripcion']"
+            rows="4"
+            placeholder="Describa el accidente o incidente ocurrido..."></textarea>
+          @if (errores['descripcion']) { <span class="error-msg">{{ errores['descripcion'] }}</span> }
+        </div>
+
+      </div>
+
+      <div class="form-footer">
+        <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="btn-guardar" [disabled]="guardando" (click)="guardar()">
+          @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+          @else { <i class="ti ti-check"></i> Guardar }
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

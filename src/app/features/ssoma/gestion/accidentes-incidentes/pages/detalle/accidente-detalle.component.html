@@ -1,0 +1,117 @@
+<div class="detalle-root">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Detalle"
+    subtitulo="Accidente / Incidente"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    [botonPrimario]="{ label: 'Editar', icono: 'ti-edit' }"
+    (secondaryClick)="volver()"
+    (primaryClick)="irAEditar()">
+  </app-abril-page-header>
+
+  <div class="detalle-body">
+
+    @if (loading) {
+      <div class="skeleton-block"></div>
+      <div class="skeleton-block skeleton-block--sm"></div>
+    }
+
+    @if (!loading && detalle) {
+
+      <!-- INFO PRINCIPAL -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__titulo">Información general</h2>
+          <span class="tipo-chip" [ngClass]="tipoClass(detalle.tipo)">{{ detalle.tipo }}</span>
+          <span class="estado-chip" [ngClass]="estadoClass(detalle.estado)">{{ detalle.estado }}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Proyecto</span>
+            <span class="info-value">{{ detalle.proyectoNombre }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Fecha</span>
+            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item info-item--full">
+            <span class="info-label">Descripción</span>
+            <span class="info-value">{{ detalle.descripcion }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Registrado</span>
+            <span class="info-value">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Última actualización</span>
+            <span class="info-value">{{ detalle.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__titulo">Documentos adjuntos</h2>
+          <label class="btn-adjuntar" [class.btn-adjuntar--loading]="subiendoDoc">
+            @if (!subiendoDoc) { <i class="ti ti-upload"></i> Adjuntar }
+            @else { <i class="ti ti-loader-2 spin"></i> Subiendo... }
+            <input type="file" hidden (change)="onFileSelect($event)" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" />
+          </label>
+        </div>
+
+        @if (!detalle.documentos.length) {
+          <div class="empty-docs">No hay documentos adjuntos</div>
+        }
+
+        <div class="docs-list">
+          @for (doc of detalle.documentos; track doc.id) {
+            <div class="doc-item" (click)="abrirVisor(doc)">
+              <div class="doc-icon">
+                @if (esImagen(doc.tipoArchivo)) { <i class="ti ti-photo"></i> }
+                @else if (esPdf(doc.tipoArchivo, doc.nombreArchivo)) { <i class="ti ti-file-type-pdf"></i> }
+                @else { <i class="ti ti-file"></i> }
+              </div>
+              <div class="doc-info">
+                <span class="doc-nombre">{{ doc.nombreArchivo }}</span>
+                <span class="doc-meta">{{ formatBytes(doc.tamanioBytes) }} · {{ doc.createdAt | date:'dd/MM/yy' }}</span>
+              </div>
+              <i class="ti ti-eye doc-eye"></i>
+            </div>
+          }
+        </div>
+      </div>
+
+    }
+
+  </div>
+
+  <!-- VISOR DOCUMENTOS -->
+  @if (docVisorAbierto) {
+    <div class="visor-overlay" (click)="cerrarVisor()">
+      <div class="visor-modal" (click)="$event.stopPropagation()">
+        <div class="visor-header">
+          <span class="visor-nombre">{{ docVisorNombre }}</span>
+          <button type="button" class="visor-close" (click)="cerrarVisor()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="visor-content">
+          @if (esImagen(docVisorTipo)) {
+            <img [src]="docVisorUrl" class="visor-img" alt="{{ docVisorNombre }}" />
+          } @else if (esPdf(docVisorTipo, docVisorNombre)) {
+            <iframe [src]="docVisorUrl" class="visor-iframe" title="{{ docVisorNombre }}"></iframe>
+          } @else {
+            <div class="visor-no-preview">
+              <i class="ti ti-file"></i>
+              <p>Vista previa no disponible para este tipo de archivo.</p>
+              <a [href]="docVisorUrl" target="_blank" class="btn-descargar">Descargar archivo</a>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
