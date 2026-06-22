@@ -498,19 +498,14 @@
           </span>
         </div>
 
-        <div class="field-grp">
-          <label class="field-lbl">VIGENCIA</label>
-          <input
-            *ngIf="selectedEntregable.requiereVigencia"
-            type="date"
-            class="field-input"
+        <div class="field-grp" *ngIf="requiereVigenciaAnteUpload">
+          <label class="field-lbl">VIGENCIA
+            <span *ngIf="selectedEntregable.itemId !== 11 && selectedEntregable.itemId !== 13"> *</span>
+          </label>
+          <input type="date" class="field-input"
             [(ngModel)]="panelVigencia"
-          />
-          <span
-            *ngIf="!selectedEntregable.requiereVigencia"
-            class="field-input field-readonly"
-            style="display:block;padding:8px 12px;color:#64748b"
-          >{{ panelVigencia ? (panelVigencia | date:'dd/MM/yyyy') : '—' }}</span>
+            [readonly]="selectedEntregable.itemId === 11 || selectedEntregable.itemId === 13"
+            [class.field-readonly]="selectedEntregable.itemId === 11 || selectedEntregable.itemId === 13" />
         </div>
 
         <div class="panel-note" *ngIf="selectedEntregable.itemId === 12">
