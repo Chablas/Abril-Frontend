@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { AuthService } from '../../../../../core/services/auth.service';
 import {
   ProyectoInfo, Staff, CharlaResumen, AsistenciaDetail, Capacitacion, Resumen,
   CrearCharlaDto, GuardarAsistenciaDto,
@@ -13,15 +14,10 @@ import {
 export class CharlasService {
   private readonly base = `${environment.apiUrl}api/v1/ssoma-charlas`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
   private getUserId(): number {
-    try {
-      const user = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null;
-      return user ? (JSON.parse(user)?.id ?? 0) : 0;
-    } catch {
-      return 0;
-    }
+    return this.auth.getCurrentUserId();
   }
 
   // ── Proyectos / Staff ────────────────────────────────────────────────────────
@@ -70,12 +66,13 @@ export class CharlasService {
     return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones`, { params });
   }
 
-  subirCapacitacion(workerId: number, fecha: string, tema: string, file: File): Observable<Capacitacion> {
+  subirCapacitacion(fecha: string, tema: string, file: File): Observable<Capacitacion> {
+    const userId = this.getUserId();
     const formData = new FormData();
     formData.append('fecha', fecha);
     formData.append('tema', tema);
     formData.append('file', file);
-    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/${workerId}?userId=${this.getUserId()}`, formData);
+    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia?userId=${userId}`, formData);
   }
 
   cambiarEstado(id: number, estado: string): Observable<Capacitacion> {

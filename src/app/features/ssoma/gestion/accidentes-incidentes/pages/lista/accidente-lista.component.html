@@ -21,12 +21,15 @@
   <!-- FILTROS PANEL -->
   <div class="filtros-panel" [class.filtros-panel--open]="filtrosAbiertos">
     <div class="filtros-grid">
-      <select class="filtro-input" [(ngModel)]="filtroProyectoId">
-        <option [ngValue]="undefined">Todos los proyectos</option>
-        @for (p of proyectos; track p.projectId) {
-          <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-        }
-      </select>
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Todos los proyectos"
+        [allowClear]="true"
+        [value]="filtroProyectoId"
+        (valueChange)="filtroProyectoId = $event"
+      />
       <select class="filtro-input" [(ngModel)]="filtroTipo">
         <option value="">Todos los tipos</option>
         <option value="Accidente">Accidente</option>

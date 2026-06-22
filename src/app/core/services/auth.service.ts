@@ -158,6 +158,21 @@ export class AuthService {
     return localStorage.getItem('access_token');
   }
 
+  getCurrentUserId(): number {
+    const token = this.getToken();
+    if (!token) return 0;
+    try {
+      const decoded: any = jwtDecode(token);
+      const raw =
+        decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ??
+        decoded.nameid ??
+        decoded.sub;
+      return raw ? Number(raw) : 0;
+    } catch {
+      return 0;
+    }
+  }
+
   getRoles(): string[] {
     const token = this.getToken();
     if (!token) return [];
