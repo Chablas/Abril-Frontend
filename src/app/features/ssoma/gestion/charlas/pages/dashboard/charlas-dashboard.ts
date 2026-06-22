@@ -1,44 +1,46 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
+  Component, ElementRef, OnDestroy, OnInit, ViewChild,
+} from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
+import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
 import { CharlasService } from '../../services/charlas.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import {
-  ProyectoInfo,
-  Staff,
-  CharlaResumen,
-  Capacitacion,
-  Resumen,
+  DashSupervisoresRow, ComparativoMes, Staff, NuevaCharlaCreateDto,
+  CharlaListItem, CharlaDetalle, UsuarioDto,
 } from '../../dtos/charlas.dtos';
 
-type Tab = 'asistencia' | 'capacitaciones';
+Chart.register(...registerables);
+
+type Tab = 'asistencia' | 'comparativo' | 'crear' | 'evidencia';
 
 @Component({
   selector: 'app-charlas-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './charlas-dashboard.html',
   styleUrl: './charlas-dashboard.css',
 })
-export class CharlasDashboard implements OnInit {
+export class CharlasDashboard implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('chartCanvas') chartCanvas?: ElementRef<HTMLCanvasElement>;
+
   tab: Tab = 'asistencia';
   loading = true;
-  error = '';
 
-  // proyecto
+  // Proyecto / Período
   proyectos: { id: number; nombre: string }[] = [];
   proyectoId: number | undefined;
-  proyectoNombre = '';
-  miProyectoId: number | undefined; // auto-detectado, puede ser undefined (admin)
-
-  // período
   mes = new Date().getMonth() + 1;
   anio = new Date().getFullYear();
   readonly anioActual = new Date().getFullYear();
@@ -50,30 +52,41 @@ export class CharlasDashboard implements OnInit {
   ];
   readonly anios = Array.from({ length: 4 }, (_, i) => this.anioActual - 1 + i);
 
-  // KPIs
-  resumen: Resumen | null = null;
+  // ── Tab 1 ─────────────────────────────────────────────────────────────────
+  tab1Rows: DashSupervisoresRow[] = [];
+  loadingTab1 = false;
 
-  // Tab 1 — Asistencia
-  charlas: CharlaResumen[] = [];
+  // ── Tab 2 ─────────────────────────────────────────────────────────────────
+  comparativo: ComparativoMes[] = [];
+  loadingTab2 = false;
+  private chartInstance: Chart | null = null;
+
+  // ── Tab 3 ─────────────────────────────────────────────────────────────────
   staff: Staff[] = [];
-  loadingCharlas = false;
-  showFormCharla = false;
-  nuevaFecha = '';
-  nuevaTitulo = '';
-  nuevaTema = '';
-  nuevaDuracion = 1;
-  charlaSeleccionada: CharlaResumen | null = null;
-  asistenciaChecks: Record<number, boolean> = {};
-  savingAsistencia = false;
+  supervisores: UsuarioDto[] = [];
+  form = {
+    titulo: '',
+    tema: '',
+    descripcion: '',
+    fecha: new Date().toISOString().split('T')[0],
+    duracionHoras: 1,
+    supervisorId: null as number | null,
+    workerIds: [] as number[],
+  };
+  staffChecks: Record<number, boolean> = {};
+  savingForm = false;
 
-  // Tab 2 — Capacitaciones
-  capacitaciones: Capacitacion[] = [];
-  loadingCaps = false;
-  capSeleccionada: Capacitacion | null = null;
-  capFecha = '';
-  capTema = '';
-  capFile: File | null = null;
-  uploadingCap = false;
+  // ── Tab 4 ─────────────────────────────────────────────────────────────────
+  tab4Items: CharlaListItem[] = [];
+  tab4Total = 0;
+  tab4Page = 1;
+  tab4PageSize = 20;
+  tab4Estado = '';
+  loadingTab4 = false;
+  charlaDetalle: CharlaDetalle | null = null;
+  loadingDetalle = false;
+  motivoRechazo = '';
+  showRechazarForm = false;
 
   constructor(
     private svc: CharlasService,
@@ -81,243 +94,266 @@ export class CharlasDashboard implements OnInit {
     private loader: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
-    this.loading = true;
-    this.loader.show();
     forkJoin({
       miProyecto: this.svc.getMiProyecto(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
+      supervisores: this.svc.getSupervisores(),
     }).subscribe({
-      next: ({ miProyecto, proyectos }) => {
+      next: ({ miProyecto, proyectos, supervisores }) => {
         this.proyectos = proyectos.data.map((p: any) => ({
           id: p.projectId,
           nombre: p.projectDescription ?? p.name ?? '',
         }));
         if (miProyecto) {
-          this.miProyectoId = miProyecto.proyectoId;
           this.proyectoId = miProyecto.proyectoId;
-          this.proyectoNombre = miProyecto.nombre;
         }
+        this.supervisores = supervisores;
         this.loading = false;
-        this.loader.hide();
-        if (this.proyectoId) this.cargarTodo();
+        if (this.proyectoId) this.loadTab1();
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
-        this.loader.hide();
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
     });
   }
 
-  onProyectoChange(): void {
-    const p = this.proyectos.find((x) => x.id === Number(this.proyectoId));
-    this.proyectoNombre = p?.nombre ?? '';
-    if (this.proyectoId) this.cargarTodo();
+  ngAfterViewInit(): void {
+    if (this.tab === 'comparativo' && this.comparativo.length > 0) {
+      this.renderChart();
+    }
   }
+
+  ngOnDestroy(): void {
+    this.chartInstance?.destroy();
+  }
+
+  // ── Navegación ────────────────────────────────────────────────────────────
 
   setTab(t: Tab): void {
     this.tab = t;
     this.cdr.markForCheck();
+    if (t === 'comparativo' && this.proyectoId) {
+      this.loadTab2();
+    } else if (t === 'crear' && this.proyectoId) {
+      this.loadStaff();
+    } else if (t === 'evidencia') {
+      this.loadTab4();
+    }
+  }
+
+  onProyectoChange(): void {
+    if (this.tab === 'asistencia') this.loadTab1();
+    else if (this.tab === 'comparativo') this.loadTab2();
+    else if (this.tab === 'crear') this.loadStaff();
+    else if (this.tab === 'evidencia') { this.tab4Page = 1; this.loadTab4(); }
   }
 
   reload(): void {
-    if (this.proyectoId) this.cargarTodo();
+    if (this.tab === 'asistencia') this.loadTab1();
+    else if (this.tab === 'comparativo') this.loadTab2();
+    else if (this.tab === 'evidencia') this.loadTab4();
   }
 
-  private cargarTodo(): void {
-    this.loadResumen();
-    this.loadTab1();
-    this.loadTab2();
-  }
-
-  // ── KPIs ──────────────────────────────────────────────────────────────────
-
-  loadResumen(): void {
-    if (!this.proyectoId) return;
-    this.svc.getResumen(this.proyectoId, this.mes, this.anio).subscribe({
-      next: (r) => { this.resumen = r; this.cdr.markForCheck(); },
-    });
-  }
-
-  // ── Tab 1 ─────────────────────────────────────────────────────────────────
+  // ── Tab 1: Dashboard Asistencia Supervisores ──────────────────────────────
 
   loadTab1(): void {
     if (!this.proyectoId) return;
-    this.loadingCharlas = true;
-    forkJoin({
-      charlas: this.svc.getCharlas(this.proyectoId, this.mes, this.anio),
-      staff: this.svc.getStaff(this.proyectoId),
-    }).subscribe({
-      next: ({ charlas, staff }) => {
-        this.charlas = charlas;
-        this.staff = staff;
-        this.loadingCharlas = false;
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loadingCharlas = false;
-        this.errorService.handleError(err);
-        this.cdr.markForCheck();
-      },
+    this.loadingTab1 = true;
+    this.svc.getDashboardSupervisores(this.proyectoId, this.mes, this.anio).subscribe({
+      next: (rows) => { this.tab1Rows = rows; this.loadingTab1 = false; this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loadingTab1 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }
 
-  submitCharla(): void {
-    if (!this.proyectoId || !this.nuevaFecha || !this.nuevaTitulo || !this.nuevaTema) return;
-    this.loader.show();
-    this.svc.crearCharla({
-      fecha: this.nuevaFecha, titulo: this.nuevaTitulo,
-      tema: this.nuevaTema, duracionHoras: this.nuevaDuracion, proyectoId: this.proyectoId,
-    }).subscribe({
-      next: (c) => {
-        this.charlas = [...this.charlas, c].sort((a, b) => a.fecha.localeCompare(b.fecha));
-        this.showFormCharla = false;
-        this.nuevaFecha = ''; this.nuevaTitulo = ''; this.nuevaTema = ''; this.nuevaDuracion = 1;
-        this.loader.hide(); this.loadResumen(); this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck();
-      },
-    });
-  }
-
-  eliminarCharla(charla: CharlaResumen): void {
-    Swal.fire({ title: '¿Eliminar charla?', text: charla.titulo, icon: 'question',
-      showCancelButton: true, confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-    }).then((r) => {
-      if (!r.isConfirmed) return;
-      this.loader.show();
-      this.svc.eliminarCharla(charla.id).subscribe({
-        next: () => {
-          this.charlas = this.charlas.filter((c) => c.id !== charla.id);
-          this.loader.hide(); this.loadResumen(); this.cdr.markForCheck();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck();
-        },
-      });
-    });
-  }
-
-  abrirAsistencia(charla: CharlaResumen): void {
-    this.charlaSeleccionada = charla;
-    this.asistenciaChecks = {};
-    for (const w of this.staff) {
-      this.asistenciaChecks[w.workerId] = charla.asistentesIds.includes(w.workerId);
-    }
-    this.cdr.markForCheck();
-  }
-
-  cerrarAsistencia(): void { this.charlaSeleccionada = null; this.cdr.markForCheck(); }
-
-  guardarAsistencia(): void {
-    if (!this.charlaSeleccionada) return;
-    const workerIds = Object.entries(this.asistenciaChecks)
-      .filter(([, v]) => v).map(([k]) => Number(k));
-    this.savingAsistencia = true;
-    this.svc.guardarAsistencia(this.charlaSeleccionada.id, { workerIds }).subscribe({
-      next: () => {
-        const c = this.charlas.find((x) => x.id === this.charlaSeleccionada!.id);
-        if (c) { c.asistentesIds = workerIds; c.totalAsistentes = workerIds.length; }
-        this.savingAsistencia = false; this.charlaSeleccionada = null;
-        this.loadResumen(); this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.savingAsistencia = false; this.errorService.handleError(err); this.cdr.markForCheck();
-      },
-    });
-  }
-
-  // ── Tab 2 ─────────────────────────────────────────────────────────────────
+  // ── Tab 2: Comparativo Chart ───────────────────────────────────────────────
 
   loadTab2(): void {
     if (!this.proyectoId) return;
-    this.loadingCaps = true;
-    this.svc.getCapacitaciones(this.proyectoId, this.mes, this.anio).subscribe({
-      next: (data) => { this.capacitaciones = data; this.loadingCaps = false; this.cdr.markForCheck(); },
-      error: (err: HttpErrorResponse) => {
-        this.loadingCaps = false; this.errorService.handleError(err); this.cdr.markForCheck();
+    this.loadingTab2 = true;
+    this.chartInstance?.destroy();
+    this.chartInstance = null;
+    this.svc.getComparativo(this.proyectoId, this.anio).subscribe({
+      next: (data) => {
+        this.comparativo = data;
+        this.loadingTab2 = false;
+        this.cdr.markForCheck();
+        setTimeout(() => this.renderChart(), 50);
+      },
+      error: (err: HttpErrorResponse) => { this.loadingTab2 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  private renderChart(): void {
+    if (!this.chartCanvas) return;
+    this.chartInstance?.destroy();
+    const labels = this.comparativo.map((m) => m.mesNombre);
+    this.chartInstance = new Chart(this.chartCanvas.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Programadas',
+            data: this.comparativo.map((m) => m.programadas),
+            backgroundColor: 'rgba(37, 99, 235, 0.7)',
+            borderColor: '#2563eb',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Realizadas (Aprobado)',
+            data: this.comparativo.map((m) => m.realizadas),
+            backgroundColor: 'rgba(22, 163, 74, 0.7)',
+            borderColor: '#16a34a',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+        },
       },
     });
   }
 
-  abrirUpload(cap: Capacitacion): void {
-    this.capSeleccionada = cap;
-    this.capFecha = cap.fecha ? cap.fecha.split('T')[0] : new Date().toISOString().split('T')[0];
-    this.capTema = cap.tema ?? '';
-    this.capFile = null;
+  // ── Tab 3: Crear Charla ───────────────────────────────────────────────────
+
+  private loadStaff(): void {
+    if (!this.proyectoId) return;
+    this.svc.getStaff(this.proyectoId).subscribe({
+      next: (s) => {
+        this.staff = s;
+        this.staffChecks = {};
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  toggleStaff(workerId: number): void {
+    this.staffChecks[workerId] = !this.staffChecks[workerId];
+    this.form.workerIds = Object.entries(this.staffChecks).filter(([, v]) => v).map(([k]) => Number(k));
+  }
+
+  submitCrear(): void {
+    if (!this.proyectoId || !this.form.titulo || !this.form.fecha) return;
+    const dto: NuevaCharlaCreateDto = {
+      proyectoId: this.proyectoId,
+      titulo: this.form.titulo,
+      tema: this.form.tema || undefined,
+      descripcion: this.form.descripcion || undefined,
+      fecha: this.form.fecha,
+      duracionHoras: this.form.duracionHoras,
+      supervisorId: this.form.supervisorId ?? undefined,
+      workerIds: this.form.workerIds,
+    };
+    this.savingForm = true;
+    this.svc.crearNuevaCharla(dto).subscribe({
+      next: () => {
+        Swal.fire({ icon: 'success', title: 'Charla creada', text: 'La charla fue registrada correctamente.', timer: 2000, showConfirmButton: false });
+        this.resetForm();
+        this.savingForm = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => { this.savingForm = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  resetForm(): void {
+    this.form = {
+      titulo: '', tema: '', descripcion: '',
+      fecha: new Date().toISOString().split('T')[0],
+      duracionHoras: 1,
+      supervisorId: null,
+      workerIds: [],
+    };
+    this.staffChecks = {};
+  }
+
+  // ── Tab 4: Evidencia / Aprobación ────────────────────────────────────────
+
+  loadTab4(): void {
+    this.loadingTab4 = true;
+    this.svc.getLista(this.proyectoId, this.tab4Estado || undefined, this.tab4Page, this.tab4PageSize).subscribe({
+      next: (r) => { this.tab4Items = r.items; this.tab4Total = r.total; this.loadingTab4 = false; this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loadingTab4 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get tab4TotalPages(): number {
+    return Math.ceil(this.tab4Total / this.tab4PageSize);
+  }
+
+  tab4GoPage(p: number): void {
+    if (p < 1 || p > this.tab4TotalPages) return;
+    this.tab4Page = p;
+    this.loadTab4();
+  }
+
+  abrirDetalle(item: CharlaListItem): void {
+    this.charlaDetalle = null;
+    this.showRechazarForm = false;
+    this.motivoRechazo = '';
+    this.loadingDetalle = true;
+    this.cdr.markForCheck();
+    this.svc.getDetalle(item.id).subscribe({
+      next: (d) => { this.charlaDetalle = d; this.loadingDetalle = false; this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loadingDetalle = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.charlaDetalle = null;
+    this.showRechazarForm = false;
+    this.motivoRechazo = '';
     this.cdr.markForCheck();
   }
 
-  cerrarUpload(): void { this.capSeleccionada = null; this.cdr.markForCheck(); }
-
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.capFile = input.files?.[0] ?? null;
-  }
-
-  subirCapacitacion(): void {
-    if (!this.capSeleccionada || !this.capFile || !this.capFecha || !this.capTema) return;
-    this.uploadingCap = true;
-    this.svc.subirCapacitacion(this.capSeleccionada.workerId, this.capFecha, this.capTema, this.capFile).subscribe({
-      next: (updated) => {
-        this.capacitaciones = this.capacitaciones.map((c) =>
-          c.workerId === updated.workerId ? updated : c,
-        );
-        this.uploadingCap = false; this.capSeleccionada = null;
-        this.loadResumen(); this.cdr.markForCheck();
+  aprobar(): void {
+    if (!this.charlaDetalle) return;
+    this.loader.show();
+    this.svc.aprobar(this.charlaDetalle.id).subscribe({
+      next: () => {
+        this.loader.hide();
+        this.cerrarDetalle();
+        this.loadTab4();
+        Swal.fire({ icon: 'success', title: 'Aprobado', timer: 1500, showConfirmButton: false });
       },
-      error: (err: HttpErrorResponse) => {
-        this.uploadingCap = false; this.errorService.handleError(err); this.cdr.markForCheck();
-      },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }
 
-  aprobar(cap: Capacitacion): void {
-    if (!cap.id) return;
+  rechazar(): void {
+    if (!this.charlaDetalle || !this.motivoRechazo.trim()) return;
     this.loader.show();
-    this.svc.cambiarEstado(cap.id, 'Aprobado').subscribe({
-      next: (updated) => {
-        this.capacitaciones = this.capacitaciones.map((c) =>
-          c.workerId === updated.workerId ? updated : c,
-        );
-        this.loader.hide(); this.loadResumen(); this.cdr.markForCheck();
+    this.svc.rechazar(this.charlaDetalle.id, this.motivoRechazo.trim()).subscribe({
+      next: () => {
+        this.loader.hide();
+        this.cerrarDetalle();
+        this.loadTab4();
+        Swal.fire({ icon: 'info', title: 'Rechazado', timer: 1500, showConfirmButton: false });
       },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck();
-      },
-    });
-  }
-
-  rechazar(cap: Capacitacion): void {
-    if (!cap.id) return;
-    this.loader.show();
-    this.svc.cambiarEstado(cap.id, 'Rechazado').subscribe({
-      next: (updated) => {
-        this.capacitaciones = this.capacitaciones.map((c) =>
-          c.workerId === updated.workerId ? updated : c,
-        );
-        this.loader.hide(); this.loadResumen(); this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck();
-      },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  formatFecha(fecha: string | null): string {
+  formatFecha(fecha: string | null | undefined): string {
     if (!fecha) return '-';
-    return new Date(fecha).toLocaleDateString('es-PE', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
+    return new Date(fecha).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   estadoClass(estado: string): string {
@@ -325,6 +361,7 @@ export class CharlasDashboard implements OnInit {
       case 'Aprobado': return 'badge--verde';
       case 'Rechazado': return 'badge--rojo';
       case 'Enviado': return 'badge--azul';
+      case 'Abierto': return 'badge--naranja';
       default: return 'badge--gris';
     }
   }
@@ -333,7 +370,11 @@ export class CharlasDashboard implements OnInit {
     return this.meses.find((m) => m.val === this.mes)?.label ?? '';
   }
 
-  get esAdmin(): boolean {
-    return !this.miProyectoId;
+  isPdf(url: string | null | undefined): boolean {
+    return !!url && url.toLowerCase().includes('.pdf');
+  }
+
+  safeUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 }
