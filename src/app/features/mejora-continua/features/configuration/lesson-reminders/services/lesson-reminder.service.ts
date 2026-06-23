@@ -32,11 +32,15 @@ export class LessonReminderService {
     page: number,
     pageSize: number = 10,
     subarea?: string | null,
+    workerId?: number | null,
+    includeWorkers: boolean = false,
   ): Observable<LessonReminderPagedDTO> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
     if (subarea) params = params.set('subarea', subarea);
+    if (workerId) params = params.set('workerId', workerId.toString());
+    if (includeWorkers) params = params.set('includeWorkers', 'true');
     return this.http.get<LessonReminderPagedDTO>(`${this.apiUrl}/paged`, {
       params,
       headers: this.authHeaders(),
@@ -51,6 +55,14 @@ export class LessonReminderService {
 
   create(dto: LessonReminderCreateDTO): Observable<ApiMessageDTO> {
     return this.http.post<ApiMessageDTO>(this.apiUrl, dto, { headers: this.authHeaders() });
+  }
+
+  updateProject(userProjectId: number, projectId: number): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(
+      `${this.apiUrl}/${userProjectId}/project`,
+      { projectId },
+      { headers: this.authHeaders() },
+    );
   }
 
   delete(userProjectId: number): Observable<ApiMessageDTO> {

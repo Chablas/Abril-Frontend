@@ -52,7 +52,7 @@ export class Detail implements OnInit {
    */
   private readonly stepOfficeMap: Record<number, 'central' | 'tecnica'> = {
     1: 'central', // Por notificar — OC notifica al SC
-    2: 'central', // Datos del contrato — OC
+    2: 'tecnica', // Datos del contrato — OT
     3: 'central', // Preparación de documentos — OC aprueba
     4: 'tecnica', // Por enviar al SC — OT
     5: 'central', // Llegada a Of. Central — OC
@@ -109,11 +109,19 @@ export class Detail implements OnInit {
   ];
 
   /**
-   * Solo se puede editar la info de paso 1/2 mientras la adjudicación esté en pasos 1–4.
-   * Solo Oficina Central (o el Administrador) puede llenar los campos de los pasos 1 y 2.
+   * Solo se puede editar la info de paso 1 mientras la adjudicación esté en pasos 1–4.
+   * Solo Oficina Central (o el Administrador) puede llenar los campos del paso 1.
    */
   get canEditInfo(): boolean {
     return this.actualStatus <= 4 && this.hasOfCentral;
+  }
+
+  /**
+   * Datos del contrato (paso 2): los llena y edita Oficina Técnica (o el Administrador)
+   * mientras la adjudicación esté en pasos 1–4. Es quien avanza del paso 2 al 3.
+   */
+  get canEditStep2(): boolean {
+    return this.actualStatus <= 4 && this.hasOfTecnica;
   }
 
   /** Documentos del paso 3. Se inicializa una sola vez en ngOnInit para evitar re-renders. */
@@ -187,6 +195,7 @@ export class Detail implements OnInit {
   sendingObservationEmail: string | null = null;
   sendingAllObservationsEmail = false;
   sendingAllLevantamientoEmail = false;
+  sendingContractReview = false;
 
   /** Opciones de estado para los documentos (varía según rol). */
   isOfTecnica = false;
@@ -362,7 +371,7 @@ export class Detail implements OnInit {
     // Solo Oficina Central (o Administrador) puede llenar y avanzar los pasos 1 y 2.
     if (this.actualStatus === 1) return this.hasOfCentral;
     if (this.actualStatus === 2 && this.viewStep === 2) {
-      if (!this.hasOfCentral) return false;
+      if (!this.hasOfTecnica) return false;
       const baseOk = !!(
         this.step2Form.signingDate &&
         this.step2Form.startDate &&
@@ -789,6 +798,50 @@ export class Detail implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
           this.sendingAllLevantamientoEmail = false;
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  /**
+   * Paso 3 — Oficina Técnica solicita a Costos el V°B° / comentarios de todos los
+   * documentos preparados. Envía un correo (vía Graph, como el usuario autenticado)
+   * dirigido únicamente a los miembros de Costos, adjuntando todos los documentos.
+   */
+  async sendContractReviewEmailGlobal(): Promise<void> {
+    this.sendingContractReview = true;
+    this.loaderService.show();
+
+    let graphToken: string;
+    try {
+      graphToken = await this.microsoftAuthService.getGraphToken();
+    } catch (err: any) {
+      this.loaderService.hide();
+      this.sendingContractReview = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de autenticación',
+        text: err?.message ?? 'No se pudo obtener el token de Microsoft.',
+        draggable: true,
+      });
+      return;
+    }
+
+    this.adjudicacionesService
+      .sendContractReviewEmail(this.item.projectSubContractorId, { graphAccessToken: graphToken })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.sendingContractReview = false;
+          Swal.fire({
+            icon: 'success',
+            title: res.message ?? 'Correo enviado exitosamente',
+            draggable: true,
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.sendingContractReview = false;
           this.errorService.handleError(err);
         },
       });

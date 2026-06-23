@@ -2,18 +2,18 @@
   <div class="flex flex-col gap-4 mt-4" *ngIf="lesson">
 
     <!-- Tabs -->
-    <div class="flex border-b border-[#64BC04]">
+    <div class="flex border-b border-[var(--color-abril-lime)]">
       <button (click)="activeTab = 'general'" type="button"
         class="cursor-pointer px-4 py-2.5 text-sm font-medium rounded-t-lg border transition-colors"
         [ngClass]="activeTab === 'general'
-          ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04] -mb-px bg-white'
+          ? 'border-t-[var(--color-abril-lime)] border-x-[var(--color-abril-lime)] border-b-white text-[var(--color-abril-lime)] -mb-px bg-white'
           : 'border-transparent text-gray-500 hover:text-gray-700'">
         Datos generales
       </button>
       <button (click)="activeTab = 'images'" type="button"
         class="cursor-pointer px-4 py-2.5 text-sm font-medium rounded-t-lg border transition-colors"
         [ngClass]="activeTab === 'images'
-          ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04] -mb-px bg-white'
+          ? 'border-t-[var(--color-abril-lime)] border-x-[var(--color-abril-lime)] border-b-white text-[var(--color-abril-lime)] -mb-px bg-white'
           : 'border-transparent text-gray-500 hover:text-gray-700'">
         Imagenes adjuntas
       </button>
@@ -25,12 +25,12 @@
       <!-- Metadata: 2 columnas explícitas. Datos básicos a la izquierda, segmentos
            de clasificación SIEMPRE en la 2da columna (independientemente de cuántos
            datos básicos haya en la izquierda). -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 bg-[#E5F7D1] rounded-lg p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 bg-[var(--color-abril-lime-light)] rounded-lg p-5">
         <div class="flex flex-col gap-2">
-          <p class="text-sm"><span class="text-[#64BC04] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period | periodLabel }}</span></p>
-          <p class="text-sm"><span class="text-[#64BC04] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
-          <p class="text-sm"><span class="text-[#64BC04] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
-          <p class="text-sm"><span class="text-[#64BC04] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>
+          <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period | periodLabel }}</span></p>
+          <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
+          <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
+          <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>
           <p class="text-sm"><span class="text-[#64BC04] font-medium">Creado por: </span> <span class="text-gray-800">{{ lesson.createdUserFullName }}</span></p>
           <p class="text-sm flex items-center gap-2">
             <span class="text-[#64BC04] font-medium">Estado:</span>

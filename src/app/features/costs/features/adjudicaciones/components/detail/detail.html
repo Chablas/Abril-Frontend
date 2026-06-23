@@ -511,15 +511,15 @@
       <!-- Modo edición: en estado 2 (progresión) o al editar en pasos 3/4 -->
       <ng-container *ngIf="actualStatus === 2 || step2EditMode">
 
-        <!-- Aviso: solo Oficina Central puede llenar los datos del contrato -->
-        <div *ngIf="actualStatus === 2 && !canEditInfo"
+        <!-- Aviso: solo Oficina Técnica puede llenar los datos del contrato -->
+        <div *ngIf="actualStatus === 2 && !canEditStep2"
           class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <p class="text-xs text-amber-700 font-medium leading-relaxed">
-            Solo un usuario de <span class="font-semibold">Oficina Central</span> puede llenar los datos del contrato y avanzar al paso 3.
+            Solo un usuario de <span class="font-semibold">Oficina Técnica</span> puede llenar los datos del contrato y avanzar al paso 3.
           </p>
         </div>
 
@@ -527,13 +527,13 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de firma</label>
-            <input type="date" [(ngModel)]="step2Form.signingDate" [disabled]="!canEditInfo"
+            <input type="date" [(ngModel)]="step2Form.signingDate" [disabled]="!canEditStep2"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de inicio</label>
-            <input type="date" [(ngModel)]="step2Form.startDate" [disabled]="!canEditInfo"
+            <input type="date" [(ngModel)]="step2Form.startDate" [disabled]="!canEditStep2"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
 
             <!-- Plazo calculado automáticamente -->
@@ -551,27 +551,27 @@
 
           <div class="flex flex-col">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de fin</label>
-            <input type="date" [(ngModel)]="step2Form.endDate" [disabled]="!canEditInfo"
+            <input type="date" [(ngModel)]="step2Form.endDate" [disabled]="!canEditStep2"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de contrato <span class="text-red-400">*</span></label>
-            <input type="number" [(ngModel)]="step2Form.contractNumber" [disabled]="!canEditInfo"
+            <input type="number" [(ngModel)]="step2Form.contractNumber" [disabled]="!canEditStep2"
               min="0" max="2147483647" step="1"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div *ngIf="requiresPromissoryNote" class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Número de pagaré <span class="text-red-400">*</span></label>
-            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditInfo"
+            <input type="number" [(ngModel)]="step2Form.promissoryNoteNumber" [disabled]="!canEditStep2"
               min="0" max="2147483647" step="1"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">% fondo de garantía</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage" [disabled]="!canEditInfo"
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundPercentage" [disabled]="!canEditStep2"
               min="0" max="100" step="1"
               placeholder="Ej: 5"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
@@ -579,7 +579,7 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Días del fondo de garantía</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays" [disabled]="!canEditInfo"
+            <input type="number" [(ngModel)]="step2Form.guaranteeFundDays" [disabled]="!canEditStep2"
               min="0" step="1"
               placeholder="Ej: 365"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
@@ -587,7 +587,7 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Periodo de validez de garantía (días)</label>
-            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays" [disabled]="!canEditInfo"
+            <input type="number" [(ngModel)]="step2Form.guaranteeValidityDays" [disabled]="!canEditStep2"
               min="0" step="1"
               placeholder="Ej: 365"
               class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
@@ -597,7 +597,7 @@
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Forma de pago</label>
             <div class="flex items-center gap-[8px]">
-              <input type="number" [(ngModel)]="step2Form.paymentDays" [disabled]="!canEditInfo"
+              <input type="number" [(ngModel)]="step2Form.paymentDays" [disabled]="!canEditStep2"
                 min="0" step="1"
                 placeholder="Ej: 7"
                 class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none w-full" />
@@ -623,7 +623,7 @@
       <!-- Modo lectura: cuando el estado real ya pasó el paso 2 y no se está editando -->
       <ng-container *ngIf="actualStatus > 2 && !step2EditMode">
         <!-- Botón editar (solo en pasos 3 y 4) -->
-        <div *ngIf="canEditInfo" class="flex justify-end mb-[12px]">
+        <div *ngIf="canEditStep2" class="flex justify-end mb-[12px]">
           <button type="button" (click)="enterStep2Edit()"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer transition-colors" style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -860,6 +860,25 @@
 
       <!-- Botones globales de correo -->
       <div class="flex flex-wrap justify-end gap-3 mt-[16px]">
+
+        <!-- Enviar correo de revisión a Costos (solo OF Técnica) -->
+        <button *ngIf="hasOfTecnica"
+          (click)="sendContractReviewEmailGlobal()"
+          [disabled]="sendingContractReview"
+          class="flex items-center gap-2 px-[16px] py-[9px] text-sm font-medium rounded-lg border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          style="border-color:var(--color-abril-primary); color:var(--color-abril-primary)">
+          <svg *ngIf="sendingContractReview"
+            class="w-4 h-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <svg *ngIf="!sendingContractReview"
+            class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          {{ sendingContractReview ? 'Enviando…' : 'Enviar correo de revisión' }}
+        </button>
 
         <!-- Levantamiento de observación (solo OF Técnica) -->
         <button *ngIf="canSendLevantamiento"
