@@ -2,9 +2,9 @@
 
   <app-abril-page-header
     badge="SSOMA"
-    titulo="Accidentes e Incidentes"
-    subtitulo="Registro y seguimiento de accidentes e incidentes"
-    [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
+    titulo="Flash Reports — Accidentes e Incidentes"
+    subtitulo="Registro, seguimiento y envío de Flash Reports"
+    [botonPrimario]="{ label: 'Nuevo Flash Report', icono: 'ti-plus' }"
     (primaryClick)="irANuevo()">
   </app-abril-page-header>
 
@@ -30,19 +30,19 @@
         [value]="filtroProyectoId"
         (valueChange)="filtroProyectoId = $event"
       />
-      <select class="filtro-input" [(ngModel)]="filtroTipo">
-        <option value="">Todos los tipos</option>
-        <option value="Accidente">Accidente</option>
-        <option value="Incidente">Incidente</option>
+      <select class="filtro-input" [(ngModel)]="filtroTipoId">
+        <option [ngValue]="undefined">Todos los tipos</option>
+        @for (t of tipos; track t.id) {
+          <option [ngValue]="t.id">{{ t.nombre }}</option>
+        }
       </select>
       <select class="filtro-input" [(ngModel)]="filtroEstado">
         <option value="">Todos los estados</option>
-        <option value="Abierto">Abierto</option>
-        <option value="En Investigación">En Investigación</option>
-        <option value="Cerrado">Cerrado</option>
+        <option value="Borrador">Borrador</option>
+        <option value="Enviado">Enviado</option>
       </select>
-      <input type="date" class="filtro-input" [(ngModel)]="filtroFechaDesde" placeholder="Desde" />
-      <input type="date" class="filtro-input" [(ngModel)]="filtroFechaHasta" placeholder="Hasta" />
+      <input type="date" class="filtro-input" [(ngModel)]="filtroFechaDesde" />
+      <input type="date" class="filtro-input" [(ngModel)]="filtroFechaHasta" />
       <div class="filtros-actions">
         <button type="button" class="btn-buscar" (click)="load()">Buscar</button>
         @if (hayFiltros) {
@@ -69,47 +69,58 @@
         <table class="tabla">
           <thead>
             <tr>
+              <th>Código</th>
               <th>Fecha</th>
               <th>Proyecto</th>
-              <th>Descripción</th>
+              <th>Trabajador</th>
               <th class="ta-c">Tipo</th>
+              <th class="ta-c">Severidad</th>
               <th class="ta-c">Estado</th>
-              <th class="ta-c">Docs</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @if (!items.length) {
               <tr>
-                <td colspan="7" class="empty-row">No se encontraron registros</td>
+                <td colspan="8" class="empty-row">No se encontraron registros</td>
               </tr>
             }
             @for (item of items; track item.id) {
               <tr class="tabla-row" (click)="irADetalle(item.id)">
+                <td class="td-codigo">
+                  <span class="codigo-badge">{{ item.codigo }}</span>
+                </td>
                 <td class="td-fecha">{{ item.fecha | date:'dd/MM/yy' }}</td>
                 <td class="td-proyecto">{{ item.proyectoNombre }}</td>
-                <td class="td-descripcion">{{ item.descripcion }}</td>
+                <td class="td-trabajador">{{ item.trabajadorNombre ?? '—' }}</td>
                 <td class="ta-c">
-                  <span class="tipo-chip" [ngClass]="tipoClass(item.tipo)">{{ item.tipo }}</span>
+                  <span class="tipo-chip" [ngClass]="tipoClass(item.tipoCodigo)">{{ item.tipoNombre }}</span>
                 </td>
                 <td class="ta-c">
-                  <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
-                </td>
-                <td class="ta-c">
-                  @if (item.totalDocumentos > 0) {
-                    <span class="doc-count"><i class="ti ti-paperclip"></i> {{ item.totalDocumentos }}</span>
+                  @if (item.consecuenciaRealPersonal) {
+                    <span class="nivel-chip" [ngClass]="nivelClass(item.consecuenciaRealPersonal)">
+                      N{{ item.consecuenciaRealPersonal }}
+                    </span>
                   } @else {
                     <span class="no-docs">—</span>
                   }
+                </td>
+                <td class="ta-c">
+                  <span class="estado-chip" [ngClass]="estadoClass(item.estado)">
+                    @if (item.enviado) { <i class="ti ti-circle-check"></i> }
+                    {{ item.estado }}
+                  </span>
                 </td>
                 <td>
                   <div class="acciones">
                     <button type="button" class="btn-ver" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
                       <i class="ti ti-eye"></i>
                     </button>
-                    <button type="button" class="btn-del" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
-                      <i class="ti ti-trash"></i>
-                    </button>
+                    @if (!item.enviado) {
+                      <button type="button" class="btn-del" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    }
                   </div>
                 </td>
               </tr>
@@ -126,16 +137,14 @@
         @for (item of items; track item.id) {
           <div class="acc-card" (click)="irADetalle(item.id)">
             <div class="acc-card__top">
-              <span class="acc-date">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
+              <span class="codigo-badge">{{ item.codigo }}</span>
               <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
             </div>
             <div class="acc-card__proyecto">{{ item.proyectoNombre }}</div>
-            <div class="acc-card__desc">{{ item.descripcion }}</div>
+            <div class="acc-card__desc">{{ item.trabajadorNombre ?? '—' }}</div>
             <div class="acc-card__bottom">
-              <span class="tipo-chip" [ngClass]="tipoClass(item.tipo)">{{ item.tipo }}</span>
-              @if (item.totalDocumentos > 0) {
-                <span class="doc-count"><i class="ti ti-paperclip"></i> {{ item.totalDocumentos }}</span>
-              }
+              <span class="tipo-chip" [ngClass]="tipoClass(item.tipoCodigo)">{{ item.tipoNombre }}</span>
+              <span class="acc-date">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
             </div>
           </div>
         }
@@ -148,9 +157,7 @@
             <i class="ti ti-chevron-left"></i>
           </button>
           @for (p of pagesArray; track p) {
-            <button type="button" class="pag-btn" [class.pag-btn--active]="p === page" (click)="cambiarPagina(p)">
-              {{ p }}
-            </button>
+            <button type="button" class="pag-btn" [class.pag-btn--active]="p === page" (click)="cambiarPagina(p)">{{ p }}</button>
           }
           <button type="button" class="pag-btn" [disabled]="page === totalPages" (click)="cambiarPagina(page + 1)">
             <i class="ti ti-chevron-right"></i>
@@ -162,7 +169,6 @@
 
   </div>
 
-  <!-- FAB mobile -->
   <button type="button" class="fab" (click)="irANuevo()">
     <i class="ti ti-plus"></i>
   </button>
