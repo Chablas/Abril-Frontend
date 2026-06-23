@@ -2,10 +2,10 @@
 
   <app-abril-page-header
     badge="SSOMA"
-    titulo="Detalle"
-    subtitulo="Accidente / Incidente"
+    [titulo]="detalle?.codigo ?? 'Flash Report'"
+    subtitulo="Detalle del evento"
     [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
-    [botonPrimario]="{ label: 'Editar', icono: 'ti-edit' }"
+    [botonPrimario]="detalle && !detalle.enviado ? { label: 'Editar', icono: 'ti-edit' } : undefined"
     (secondaryClick)="volver()"
     (primaryClick)="irAEditar()">
   </app-abril-page-header>
@@ -19,99 +19,214 @@
 
     @if (!loading && detalle) {
 
-      <!-- INFO PRINCIPAL -->
+      <!-- BOTÓN ENVIAR -->
+      @if (!detalle.enviado) {
+        <div class="enviar-banner">
+          <div class="enviar-banner__text">
+            <i class="ti ti-send"></i>
+            <span>Este Flash Report está en borrador. Al enviar se generará el PDF y se notificará por correo.</span>
+          </div>
+          <button type="button" class="btn-enviar" [disabled]="enviando" (click)="confirmarEnviar()">
+            @if (enviando) { <i class="ti ti-loader-2 spin"></i> Enviando... }
+            @else { <i class="ti ti-send"></i> Enviar Flash Report }
+          </button>
+        </div>
+      } @else {
+        <div class="enviado-banner">
+          <i class="ti ti-circle-check"></i>
+          Flash Report enviado el {{ detalle.fechaEnvio | date:'dd/MM/yyyy HH:mm' }}
+          @if (detalle.urlPdfSharepoint) {
+            · <a [href]="detalle.urlPdfSharepoint" target="_blank" class="link-pdf">Ver PDF en SharePoint</a>
+          }
+        </div>
+      }
+
+      <!-- ENCABEZADO -->
       <div class="card">
         <div class="card__header">
-          <h2 class="card__titulo">Información general</h2>
-          <span class="tipo-chip" [ngClass]="tipoClass(detalle.tipo)">{{ detalle.tipo }}</span>
+          <div class="codigo-grande">{{ detalle.codigo }}</div>
+          <span class="tipo-chip" [ngClass]="tipoClass(detalle.tipoCodigo)">{{ detalle.tipoNombre }}</span>
           <span class="estado-chip" [ngClass]="estadoClass(detalle.estado)">{{ detalle.estado }}</span>
         </div>
+
         <div class="info-grid">
           <div class="info-item">
             <span class="info-label">Proyecto</span>
             <span class="info-value">{{ detalle.proyectoNombre }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Fecha</span>
-            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy' }}</span>
+            <span class="info-label">Fecha / Hora</span>
+            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy' }} {{ detalle.hora ?? '' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Etapa</span>
+            <span class="info-value">{{ detalle.etapaProyectoNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Partida</span>
+            <span class="info-value">{{ detalle.partidaNombre ?? '—' }}</span>
           </div>
           <div class="info-item info-item--full">
-            <span class="info-label">Descripción</span>
-            <span class="info-value">{{ detalle.descripcion }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Registrado</span>
-            <span class="info-value">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Última actualización</span>
-            <span class="info-value">{{ detalle.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            <span class="info-label">Lugar exacto</span>
+            <span class="info-value">{{ detalle.lugarExacto }}</span>
           </div>
         </div>
       </div>
 
-      <!-- DOCUMENTOS -->
+      <!-- EMPRESA INVOLUCRADA -->
       <div class="card">
-        <div class="card__header">
-          <h2 class="card__titulo">Documentos adjuntos</h2>
-          <label class="btn-adjuntar" [class.btn-adjuntar--loading]="subiendoDoc">
-            @if (!subiendoDoc) { <i class="ti ti-upload"></i> Adjuntar }
-            @else { <i class="ti ti-loader-2 spin"></i> Subiendo... }
-            <input type="file" hidden (change)="onFileSelect($event)" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" />
-          </label>
+        <h3 class="card__subtitulo">Empresa involucrada</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Razón social</span>
+            <span class="info-value">{{ detalle.empresaAbrilNombre ?? detalle.contributorNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Jefe inmediato</span>
+            <span class="info-value">{{ detalle.jefeInmediatoNombre ?? '—' }}</span>
+          </div>
         </div>
+      </div>
 
-        @if (!detalle.documentos.length) {
-          <div class="empty-docs">No hay documentos adjuntos</div>
-        }
+      <!-- TRABAJADOR -->
+      <div class="card">
+        <h3 class="card__subtitulo">Trabajador afectado</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Nombre</span>
+            <span class="info-value">{{ detalle.trabajadorNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Puesto</span>
+            <span class="info-value">{{ detalle.puestoTrabajo ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Edad</span>
+            <span class="info-value">{{ detalle.edad ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Años experiencia</span>
+            <span class="info-value">{{ detalle.aniosExperiencia ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Celular</span>
+            <span class="info-value">{{ detalle.celularTrabajador ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Parte afectada</span>
+            <span class="info-value">{{ detalle.parteAfectadaNombre ?? '—' }}</span>
+          </div>
+        </div>
+      </div>
 
-        <div class="docs-list">
-          @for (doc of detalle.documentos; track doc.id) {
-            <div class="doc-item" (click)="abrirVisor(doc)">
-              <div class="doc-icon">
-                @if (esImagen(doc.tipoArchivo)) { <i class="ti ti-photo"></i> }
-                @else if (esPdf(doc.tipoArchivo, doc.nombreArchivo)) { <i class="ti ti-file-type-pdf"></i> }
-                @else { <i class="ti ti-file"></i> }
-              </div>
-              <div class="doc-info">
-                <span class="doc-nombre">{{ doc.nombreArchivo }}</span>
-                <span class="doc-meta">{{ formatBytes(doc.tamanioBytes) }} · {{ doc.createdAt | date:'dd/MM/yy' }}</span>
-              </div>
-              <i class="ti ti-eye doc-eye"></i>
-            </div>
-          }
+      <!-- DAÑOS Y CONSECUENCIAS -->
+      <div class="card">
+        <h3 class="card__subtitulo">Daños y consecuencias</h3>
+        <div class="info-grid">
+          <div class="info-item info-item--full">
+            <span class="info-label">Daño al proceso / equipo</span>
+            <span class="info-value">{{ detalle.danoProceso ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Consecuencia real (personal)</span>
+            <span class="info-value nivel-badge" [ngClass]="nivelClass(detalle.consecuenciaRealPersonal)">
+              {{ nivelLabel(detalle.consecuenciaRealPersonal) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Consecuencia potencial (personal)</span>
+            <span class="info-value nivel-badge" [ngClass]="nivelClass(detalle.consecuenciaPotencialPersonal)">
+              {{ nivelLabel(detalle.consecuenciaPotencialPersonal) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESCRIPCIÓN -->
+      <div class="card">
+        <h3 class="card__subtitulo">Descripción del evento</h3>
+        <p class="desc-text">{{ detalle.descripcion }}</p>
+      </div>
+
+      <!-- ACCIONES INMEDIATAS -->
+      @if (detalle.accionesInmediatas) {
+        <div class="card">
+          <h3 class="card__subtitulo">Acciones inmediatas</h3>
+          <p class="desc-text">{{ detalle.accionesInmediatas }}</p>
+        </div>
+      }
+
+      <!-- DESCANSOS MÉDICOS -->
+      @if (detalle.descansos.length) {
+        <div class="card">
+          <h3 class="card__subtitulo">Períodos de descanso médico</h3>
+          <table class="tabla-descansos">
+            <thead>
+              <tr>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Días</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of detalle.descansos; track d.id) {
+                <tr>
+                  <td>{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ d.fechaFin | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ d.diasDescanso }}</td>
+                  <td>{{ d.observacion ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- FOTOS -->
+      @if (detalle.urlFoto1 || detalle.urlFoto2) {
+        <div class="card">
+          <h3 class="card__subtitulo">Fotografías</h3>
+          <div class="fotos-detalle">
+            @if (detalle.urlFoto1) {
+              <a [href]="detalle.urlFoto1" target="_blank">
+                <img [src]="detalle.urlFoto1" class="foto-thumb" alt="Foto 1" />
+              </a>
+            }
+            @if (detalle.urlFoto2) {
+              <a [href]="detalle.urlFoto2" target="_blank">
+                <img [src]="detalle.urlFoto2" class="foto-thumb" alt="Foto 2" />
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ELABORADO POR -->
+      <div class="card">
+        <h3 class="card__subtitulo">Elaborado por</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Nombre</span>
+            <span class="info-value">{{ detalle.elaboradoPorNombre ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Cargo</span>
+            <span class="info-value">{{ detalle.elaboradoPorCargo ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ detalle.elaboradoPorEmail ?? '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Teléfono</span>
+            <span class="info-value">{{ detalle.elaboradoPorTelefono ?? '—' }}</span>
+          </div>
         </div>
       </div>
 
     }
 
   </div>
-
-  <!-- VISOR DOCUMENTOS -->
-  @if (docVisorAbierto) {
-    <div class="visor-overlay" (click)="cerrarVisor()">
-      <div class="visor-modal" (click)="$event.stopPropagation()">
-        <div class="visor-header">
-          <span class="visor-nombre">{{ docVisorNombre }}</span>
-          <button type="button" class="visor-close" (click)="cerrarVisor()">
-            <i class="ti ti-x"></i>
-          </button>
-        </div>
-        <div class="visor-content">
-          @if (esImagen(docVisorTipo)) {
-            <img [src]="docVisorUrl" class="visor-img" alt="{{ docVisorNombre }}" />
-          } @else if (esPdf(docVisorTipo, docVisorNombre)) {
-            <iframe [src]="docVisorUrl" class="visor-iframe" title="{{ docVisorNombre }}"></iframe>
-          } @else {
-            <div class="visor-no-preview">
-              <i class="ti ti-file"></i>
-              <p>Vista previa no disponible para este tipo de archivo.</p>
-              <a [href]="docVisorUrl" target="_blank" class="btn-descargar">Descargar archivo</a>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
 
 </div>

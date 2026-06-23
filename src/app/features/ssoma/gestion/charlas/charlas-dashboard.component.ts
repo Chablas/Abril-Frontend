@@ -7,18 +7,23 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
 import { CharlasService } from './services/charlas.service';
-import { ProjectService } from '../../../../core/services/project.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FindDiaPipe } from './pipes/find-dia.pipe';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { AppGenericSelectComponent } from '../../../../shared/components/app-generic-select/app-generic-select.component';
+import { AppGenericSearchComponent } from '../../../../shared/components/app-generic-search/app-generic-search.component';
+import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
 import {
   DashSupervisoresRow, Capacitacion, NuevaCharlaCreateDto,
-  CharlaListItem, CharlaDetalle, UsuarioDto, Staff,
+  CharlaListItem, CharlaDetalle, UsuarioDto, Staff, CharlaGaleriaItem,
+  DashPersonalResult, DashPersonalItem, DashDiaSemana, DashProyectoItem,
 } from './dtos/charlas.dtos';
 
 Chart.register(...registerables);
@@ -27,7 +32,7 @@ Chart.register(...registerables);
   selector: 'app-charlas-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, AppGenericSelectComponent, AppGenericSearchComponent, FindDiaPipe],
   templateUrl: './charlas-dashboard.component.html',
   styleUrl: './charlas-dashboard.component.css',
 })
@@ -41,35 +46,51 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   proyectoId: number | undefined;
   mes = new Date().getMonth() + 1;
   anio = new Date().getFullYear();
-  readonly anioActual = new Date().getFullYear();
-  readonly meses = [
-    { val: 1, label: 'Enero' }, { val: 2, label: 'Febrero' }, { val: 3, label: 'Marzo' },
-    { val: 4, label: 'Abril' }, { val: 5, label: 'Mayo' }, { val: 6, label: 'Junio' },
-    { val: 7, label: 'Julio' }, { val: 8, label: 'Agosto' }, { val: 9, label: 'Septiembre' },
-    { val: 10, label: 'Octubre' }, { val: 11, label: 'Noviembre' }, { val: 12, label: 'Diciembre' },
-  ];
-  readonly anios = Array.from({ length: 4 }, (_, i) => this.anioActual - 1 + i);
+  mesesData: any[] = [];
+  aniosData: any[] = [];
 
-  // ── Tab 1: Dashboard supervisores ─────────────────────────────────────────────
+  // ── Tab 1: Dashboard ──────────────────────────────────────────────────────────
   tab1Rows: DashSupervisoresRow[] = [];
   loadingTab1 = false;
+
+  // Dashboard nuevo
+  dashVista: 'persona' | 'proyecto' = 'persona';
+  dashSemana = this.isoWeek(new Date());
+  dashAnio = new Date().getFullYear();
+  dashPersonalResult: DashPersonalResult = { dias: [], staff: [] };
+  dashProyectos: DashProyectoItem[] = [];
+  loadingDash = false;
+
+  // Editar asistencia (Tab 3)
+  editCharlaId: number | null = null;
+  editCharlaTitle = '';
+  editStaffChecks: Record<number, boolean> = {};
+  savingEdit = false;
 
   // ── Tab 2: Capacitaciones ─────────────────────────────────────────────────────
   capacitaciones: Capacitacion[] = [];
   loadingTab2 = false;
+  // modal nueva capacitacion
+  showNuevaCapModal = false;
   subirFecha = new Date().toISOString().split('T')[0];
   subirTema = '';
-  subirFile: File | null = null;
+  subirFiles: File[] = [];
   subirLoading = false;
+  dragOver = false;
+  // inline viewer
+  viewerCapId: number | null = null;
+  viewerArchivoIdx: Record<number, number> = {};
 
   // ── Tab 3: Nueva charla ───────────────────────────────────────────────────────
   staff: Staff[] = [];
   supervisores: UsuarioDto[] = [];
+  charlaGaleria: CharlaGaleriaItem[] = [];
+  loadingTab3 = false;
+  showNuevaCharlaModal = false;
   form = {
-    titulo: '', tema: '', descripcion: '',
+    titulo: '',
+    tipo: 'Seguridad' as 'Seguridad' | 'Salud Ocupacional' | 'Medio Ambiente',
     fecha: new Date().toISOString().split('T')[0],
-    duracionHoras: 1,
-    supervisorId: null as number | null,
     workerIds: [] as number[],
   };
   staffChecks: Record<number, boolean> = {};
@@ -91,7 +112,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
 
   constructor(
     private svc: CharlasService,
-    private projectService: ProjectService,
+    private filters: SharedFiltersService,
     private loader: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -103,17 +124,18 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.activeTab = this.route.snapshot.data['tab'] ?? 1;
 
     forkJoin({
-      miProyecto: this.svc.getMiProyecto(),
-      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      supervisores: this.svc.getSupervisores(),
+      miProyecto: this.svc.getMiProyecto().pipe(catchError(() => of(null))),
+      proyectos: this.filters.getProyectos().pipe(catchError(() => of([]))),
+      supervisores: this.svc.getSupervisores().pipe(catchError(() => of([]))),
+      meses: this.filters.getMeses().pipe(catchError(() => of([]))),
+      anios: this.filters.getAnios().pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ miProyecto, proyectos, supervisores }) => {
-        this.proyectos = proyectos.data.map((p: any) => ({
-          id: p.projectId,
-          nombre: p.projectDescription ?? p.name ?? '',
-        }));
-        if (miProyecto) this.proyectoId = miProyecto.proyectoId;
-        this.supervisores = supervisores;
+      next: ({ miProyecto, proyectos, supervisores, meses, anios }) => {
+        this.proyectos = proyectos as any[];
+        this.mesesData = meses as any[];
+        this.aniosData = anios as any[];
+        if (miProyecto) this.proyectoId = (miProyecto as any).proyectoId;
+        this.supervisores = supervisores as any[];
         this.loading = false;
         this.cdr.markForCheck();
         if (this.proyectoId) this.loadAll();
@@ -136,75 +158,233 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.activeTab = n;
     this.cdr.markForCheck();
     if (n === 1 && !this.tab1Rows.length) this.loadTab1();
-    if (n === 2 && !this.capacitaciones.length) this.loadTab2();
-    if (n === 3 && this.proyectoId && !this.staff.length) this.loadStaff();
+    if (n === 2) this.loadTab2();
+    if (n === 3 && this.proyectoId) this.loadTab3();
     if (n === 4 && !this.tab4Items.length) this.loadTab4();
   }
 
   onProyectoChange(): void {
     if (!this.proyectoId) return;
     this.loadAll();
-    if (this.activeTab === 3) this.loadStaff();
+    if (this.activeTab === 3) this.loadTab3();
   }
 
   loadAll(): void {
     this.loadTab1();
-    this.loadTab2();
     this.loadTab4();
+    if (this.activeTab === 2) this.loadTab2();
   }
 
   // ── Tab 1 ──────────────────────────────────────────────────────────────────────
   loadTab1(): void {
-    if (!this.proyectoId) return;
-    this.loadingTab1 = true;
-    this.svc.getDashboardSupervisores(this.proyectoId, this.mes, this.anio).subscribe({
-      next: (rows) => { this.tab1Rows = rows; this.loadingTab1 = false; this.cdr.markForCheck(); },
-      error: (err: HttpErrorResponse) => { this.loadingTab1 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    this.loadDash();
+  }
+
+  loadDash(): void {
+    this.loadingDash = true;
+    this.cdr.markForCheck();
+    if (this.dashVista === 'persona') {
+      if (!this.proyectoId) { this.loadingDash = false; this.cdr.markForCheck(); return; }
+      this.svc.getDashPersonal(this.proyectoId, this.dashSemana, this.dashAnio).subscribe({
+        next: (d) => { this.dashPersonalResult = d; this.loadingDash = false; this.cdr.markForCheck(); },
+        error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+      });
+    } else {
+      this.svc.getDashProyectos(this.dashSemana, this.dashAnio).subscribe({
+        next: (d) => { this.dashProyectos = d; this.loadingDash = false; this.cdr.markForCheck(); },
+        error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+      });
+    }
+  }
+
+  setDashVista(v: 'persona' | 'proyecto'): void {
+    this.dashVista = v;
+    this.loadDash();
+  }
+
+  semanaAnterior(): void {
+    if (this.dashSemana === 1) { this.dashSemana = 52; this.dashAnio--; }
+    else this.dashSemana--;
+    this.loadDash();
+  }
+
+  semanaSiguiente(): void {
+    const maxSemana = this.isoWeeksInYear(this.dashAnio);
+    if (this.dashSemana >= maxSemana) { this.dashSemana = 1; this.dashAnio++; }
+    else this.dashSemana++;
+    this.loadDash();
+  }
+
+  private isoWeek(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  }
+
+  private isoWeeksInYear(year: number): number {
+    const dec28 = new Date(Date.UTC(year, 11, 28));
+    return this.isoWeek(dec28);
+  }
+
+  getPctPersona(item: DashPersonalItem): number {
+    return item.charlasTotales > 0 ? Math.round(item.charlasAsistidas / item.charlasTotales * 100) : 0;
+  }
+
+  abrirEditAsistencia(charla: CharlaGaleriaItem): void {
+    this.editCharlaId = charla.id;
+    this.editCharlaTitle = charla.titulo;
+    this.editStaffChecks = {};
+    this.savingEdit = false;
+    // Pre-cargar asistencia actual
+    this.svc.getAsistencia(charla.id).subscribe({
+      next: (list) => {
+        list.forEach(a => { if (a.asistio) this.editStaffChecks[a.workerId] = true; });
+        this.cdr.markForCheck();
+      },
     });
+    this.cdr.markForCheck();
+  }
+
+  cerrarEditAsistencia(): void {
+    this.editCharlaId = null;
+    this.cdr.markForCheck();
+  }
+
+  toggleEditStaff(workerId: number): void {
+    this.editStaffChecks[workerId] = !this.editStaffChecks[workerId];
+    this.cdr.markForCheck();
+  }
+
+  countEditChecked(): number {
+    return Object.values(this.editStaffChecks).filter(Boolean).length;
+  }
+
+  guardarEditAsistencia(): void {
+    if (!this.editCharlaId) return;
+    const workerIds = Object.entries(this.editStaffChecks).filter(([, v]) => v).map(([k]) => Number(k));
+    this.savingEdit = true;
+    this.cdr.markForCheck();
+    this.svc.editarAsistencia(this.editCharlaId, workerIds).subscribe({
+      next: () => {
+        this.savingEdit = false;
+        this.cerrarEditAsistencia();
+        this.loadTab3();
+        Swal.fire({ icon: 'success', title: 'Asistencia actualizada', timer: 1500, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => { this.savingEdit = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  pctClass(pct: number): string {
+    if (pct >= 80) return 'pct-alto';
+    if (pct >= 50) return 'pct-medio';
+    return 'pct-bajo';
+  }
+
+  getPctProyecto(item: DashProyectoItem): number {
+    return item.totalPosiblesAsistencias > 0
+      ? Math.round(item.totalAsistencias / item.totalPosiblesAsistencias * 100) : 0;
   }
 
   getPct(r: DashSupervisoresRow): number {
     return r.totalAsistentes > 0 ? Math.round(r.totalAsistio / r.totalAsistentes * 100) : 0;
   }
 
-  pctClass(r: DashSupervisoresRow): string {
-    const p = this.getPct(r);
-    if (p >= 80) return 'pct-alto';
-    if (p >= 50) return 'pct-medio';
-    return 'pct-bajo';
-  }
-
   // ── Tab 2 ──────────────────────────────────────────────────────────────────────
   loadTab2(): void {
-    if (!this.proyectoId) return;
     this.loadingTab2 = true;
-    this.svc.getCapacitaciones(this.proyectoId, this.mes, this.anio).subscribe({
+    this.svc.getMisCapacitaciones().subscribe({
       next: (data) => { this.capacitaciones = data; this.loadingTab2 = false; this.cdr.markForCheck(); },
       error: (err: HttpErrorResponse) => { this.loadingTab2 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }
 
+  abrirNuevaCapModal(): void {
+    this.subirFecha = new Date().toISOString().split('T')[0];
+    this.subirTema = '';
+    this.subirFiles = [];
+    this.dragOver = false;
+    this.showNuevaCapModal = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarNuevaCapModal(): void {
+    this.showNuevaCapModal = false;
+    this.cdr.markForCheck();
+  }
+
+  toggleViewer(id: number | null): void {
+    this.viewerCapId = this.viewerCapId === id ? null : id;
+    this.cdr.markForCheck();
+  }
+
   onSubirFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files?.length) this.subirFile = input.files[0];
+    if (input.files?.length) this.addFiles(Array.from(input.files));
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver = true;
+    this.cdr.markForCheck();
+  }
+
+  onDragLeave(): void {
+    this.dragOver = false;
+    this.cdr.markForCheck();
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver = false;
+    if (event.dataTransfer?.files.length) this.addFiles(Array.from(event.dataTransfer.files));
+    this.cdr.markForCheck();
+  }
+
+  addFiles(files: File[]): void {
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    files.forEach(f => {
+      if (allowed.includes(f.type) && !this.subirFiles.find(x => x.name === f.name && x.size === f.size))
+        this.subirFiles.push(f);
+    });
+    this.cdr.markForCheck();
+  }
+
+  removeFile(i: number): void {
+    this.subirFiles.splice(i, 1);
+    this.cdr.markForCheck();
   }
 
   subirEvidencia(): void {
-    if (!this.subirFecha || !this.subirTema || !this.subirFile) {
+    if (!this.subirFecha || !this.subirTema || !this.subirFiles.length) {
       Swal.fire({ icon: 'warning', title: 'Completa todos los campos', timer: 2000, showConfirmButton: false });
       return;
     }
     this.subirLoading = true;
-    this.svc.subirCapacitacion(this.subirFecha, this.subirTema, this.subirFile).subscribe({
+    this.cdr.markForCheck();
+    this.svc.subirCapacitacionMulti(this.subirFecha, this.subirTema, this.subirFiles).subscribe({
       next: () => {
         this.subirLoading = false;
-        this.subirTema = ''; this.subirFile = null;
+        this.showNuevaCapModal = false;
+        this.subirTema = ''; this.subirFiles = [];
         this.loadTab2();
-        Swal.fire({ icon: 'success', title: 'Evidencia subida', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Capacitación registrada', timer: 1500, showConfirmButton: false });
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => { this.subirLoading = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
+  }
+
+  getArchivoIdx(capId: number): number {
+    return this.viewerArchivoIdx[capId] ?? 0;
+  }
+
+  setArchivoIdx(capId: number, idx: number): void {
+    this.viewerArchivoIdx[capId] = idx;
+    this.cdr.markForCheck();
   }
 
   capEstadoClass(e: string): string {
@@ -213,12 +393,33 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   // ── Tab 3 ──────────────────────────────────────────────────────────────────────
-  private loadStaff(): void {
+  loadTab3(): void {
     if (!this.proyectoId) return;
-    this.svc.getStaff(this.proyectoId).subscribe({
-      next: (s) => { this.staff = s; this.staffChecks = {}; this.cdr.markForCheck(); },
-      error: (err: HttpErrorResponse) => { this.errorService.handleError(err); this.cdr.markForCheck(); },
+    this.loadingTab3 = true;
+    forkJoin({
+      galeria: this.svc.getCharlasProyecto(this.proyectoId, this.mes, this.anio).pipe(catchError(() => of([]))),
+      staff: this.staff.length ? of(this.staff) : this.svc.getStaff(this.proyectoId).pipe(catchError(() => of([]))),
+    }).subscribe({
+      next: ({ galeria, staff }) => {
+        this.charlaGaleria = galeria as CharlaGaleriaItem[];
+        this.staff = staff as Staff[];
+        this.loadingTab3 = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.loadingTab3 = false; this.cdr.markForCheck(); },
     });
+  }
+
+  abrirNuevaCharlaModal(): void {
+    this.form = { titulo: '', tipo: 'Seguridad', fecha: new Date().toISOString().split('T')[0], workerIds: [] };
+    this.staffChecks = {};
+    this.showNuevaCharlaModal = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarNuevaCharlaModal(): void {
+    this.showNuevaCharlaModal = false;
+    this.cdr.markForCheck();
   }
 
   toggleStaff(workerId: number): void {
@@ -231,29 +432,28 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     const dto: NuevaCharlaCreateDto = {
       proyectoId: this.proyectoId,
       titulo: this.form.titulo,
-      tema: this.form.tema || undefined,
-      descripcion: this.form.descripcion || undefined,
+      tema: this.form.tipo,
       fecha: this.form.fecha,
-      duracionHoras: this.form.duracionHoras,
-      supervisorId: this.form.supervisorId ?? undefined,
+      duracionHoras: 1,
       workerIds: this.form.workerIds,
     };
     this.savingForm = true;
     this.svc.crearNuevaCharla(dto).subscribe({
       next: () => {
         this.savingForm = false;
-        this.resetForm();
-        this.loadTab4();
-        Swal.fire({ icon: 'success', title: 'Charla creada', timer: 2000, showConfirmButton: false });
+        this.showNuevaCharlaModal = false;
+        this.loadTab3();
+        Swal.fire({ icon: 'success', title: 'Charla registrada', timer: 1800, showConfirmButton: false });
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => { this.savingForm = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }
 
-  resetForm(): void {
-    this.form = { titulo: '', tema: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], duracionHoras: 1, supervisorId: null, workerIds: [] };
-    this.staffChecks = {};
+  tipoClass(tipo: string): string {
+    if (tipo === 'Salud Ocupacional') return 'tipo--salud';
+    if (tipo === 'Medio Ambiente') return 'tipo--ambiente';
+    return 'tipo--seguridad';
   }
 
   // ── Tab 4 ──────────────────────────────────────────────────────────────────────
@@ -266,6 +466,10 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   get tab4TotalPages(): number { return Math.ceil(this.tab4Total / this.tab4PageSize); }
+
+  get miProyectoNombre(): string {
+    return this.proyectos.find(p => p.id === this.proyectoId)?.nombre ?? 'Mi proyecto';
+  }
 
   tab4GoPage(p: number): void {
     if (p < 1 || p > this.tab4TotalPages) return;
@@ -336,5 +540,5 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
 
   safeUrl(url: string): SafeResourceUrl { return this.sanitizer.bypassSecurityTrustResourceUrl(url); }
 
-  mesLabel(): string { return this.meses.find(m => m.val === this.mes)?.label ?? ''; }
+  mesLabel(): string { return this.mesesData.find(m => m.id == this.mes)?.nombre ?? ''; }
 }

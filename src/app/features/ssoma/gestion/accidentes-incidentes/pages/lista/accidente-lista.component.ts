@@ -3,10 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
 import { AccidenteIncidenteService } from '../../accidente-incidente.service';
-import { AccidenteIncidenteListItemDto } from '../../accidente-incidente.dtos';
-import { ProjectService } from '../../../../../../core/services/project.service';
+import { FlashReportListItemDto, FlashReportInicializarDto, CatalogoItemDto } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -22,24 +20,24 @@ import Swal from 'sweetalert2';
   styleUrl: './accidente-lista.component.css',
 })
 export class AccidenteListaComponent implements OnInit {
-  items: AccidenteIncidenteListItemDto[] = [];
+  items: FlashReportListItemDto[] = [];
   loading = true;
   total = 0;
   page = 1;
   readonly pageSize = 20;
 
   proyectos: any[] = [];
+  tipos: CatalogoItemDto[] = [];
   filtrosAbiertos = false;
 
   filtroProyectoId: number | undefined;
-  filtroTipo = '';
+  filtroTipoId: number | undefined;
   filtroEstado = '';
   filtroFechaDesde = '';
   filtroFechaHasta = '';
 
   constructor(
     private service: AccidenteIncidenteService,
-    private projectService: ProjectService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -47,13 +45,19 @@ export class AccidenteListaComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.projectService.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
-      next: (res) => {
-        this.proyectos = res.data;
+    this.loaderService.show();
+    this.service.inicializar().subscribe({
+      next: (init) => {
+        this.proyectos = init.proyectos.map((p) => ({ projectId: p.id, projectDescription: p.nombre }));
+        this.tipos = init.tipos;
+        this.loaderService.hide();
         this.cdr.markForCheck();
         this.load();
       },
-      error: () => this.load(),
+      error: () => {
+        this.loaderService.hide();
+        this.load();
+      },
     });
   }
 
@@ -64,7 +68,7 @@ export class AccidenteListaComponent implements OnInit {
     this.service
       .getList({
         proyectoId: this.filtroProyectoId,
-        tipo: this.filtroTipo || undefined,
+        tipoId: this.filtroTipoId,
         estado: this.filtroEstado || undefined,
         fechaDesde: this.filtroFechaDesde || undefined,
         fechaHasta: this.filtroFechaHasta || undefined,
@@ -96,7 +100,7 @@ export class AccidenteListaComponent implements OnInit {
     this.service
       .getList({
         proyectoId: this.filtroProyectoId,
-        tipo: this.filtroTipo || undefined,
+        tipoId: this.filtroTipoId,
         estado: this.filtroEstado || undefined,
         fechaDesde: this.filtroFechaDesde || undefined,
         fechaHasta: this.filtroFechaHasta || undefined,
@@ -122,7 +126,7 @@ export class AccidenteListaComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtroProyectoId = undefined;
-    this.filtroTipo = '';
+    this.filtroTipoId = undefined;
     this.filtroEstado = '';
     this.filtroFechaDesde = '';
     this.filtroFechaHasta = '';
@@ -155,36 +159,38 @@ export class AccidenteListaComponent implements OnInit {
     if (!result.isConfirmed) return;
     this.loaderService.show();
     this.service.eliminar(id).subscribe({
-      next: () => {
-        this.loaderService.hide();
-        this.load();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
+      next: () => { this.loaderService.hide(); this.load(); },
+      error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
     });
   }
 
-  get totalPages(): number {
-    return Math.ceil(this.total / this.pageSize);
-  }
-
-  get pagesArray(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
-  }
-
+  get totalPages(): number { return Math.ceil(this.total / this.pageSize); }
+  get pagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
   get hayFiltros(): boolean {
-    return !!(this.filtroProyectoId || this.filtroTipo || this.filtroEstado || this.filtroFechaDesde || this.filtroFechaHasta);
+    return !!(this.filtroProyectoId || this.filtroTipoId || this.filtroEstado || this.filtroFechaDesde || this.filtroFechaHasta);
   }
 
-  tipoClass(tipo: string): string {
-    return tipo === 'Accidente' ? 'tipo-accidente' : 'tipo-incidente';
+  nivelLabel(n?: number): string {
+    const labels = ['', 'Sin daño', 'Leve', 'c/tiempo perdido', 'Grave', 'Fatal', 'Fatal múltiple'];
+    return n && n >= 1 && n <= 6 ? `N${n} - ${labels[n]}` : '—';
+  }
+
+  nivelClass(n?: number): string {
+    if (!n) return '';
+    if (n <= 2) return 'nivel-bajo';
+    if (n <= 3) return 'nivel-medio';
+    if (n <= 4) return 'nivel-alto';
+    return 'nivel-critico';
+  }
+
+  tipoClass(codigo: string): string {
+    const map: Record<string, string> = { AC: 'tipo-accidente', IN: 'tipo-incidente', NC: 'tipo-nc', AL: 'tipo-alerta' };
+    return map[codigo] ?? 'tipo-incidente';
   }
 
   estadoClass(estado: string): string {
-    if (estado === 'Cerrado') return 'estado-cerrado';
-    if (estado === 'En Investigación') return 'estado-investigacion';
+    if (estado === 'Enviado') return 'estado-enviado';
+    if (estado === 'Borrador') return 'estado-borrador';
     return 'estado-abierto';
   }
 }

@@ -3,7 +3,7 @@
     <button type="button" class="hamburger-btn" (click)="onHamburgerClick()" aria-label="Abrir menú">
       <i class="ti ti-menu-2" aria-hidden="true"></i>
     </button>
-    <span class="ssoma-hero__badge">{{ badge }}</span>
+    <span *ngIf="badge" class="ssoma-hero__badge">{{ badge }}</span>
     <div class="ssoma-hero__vline"></div>
     <div class="ssoma-hero__title-wrap">
       <h1 class="ssoma-hero__title">{{ titulo }}</h1>

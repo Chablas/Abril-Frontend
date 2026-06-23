@@ -28,6 +28,8 @@ export class SearchSelect {
    * Por defecto usa el verde primario de la marca.
    */
   @Input() color: string = 'var(--color-abril-primary)';
+  /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
+  @Input() dark: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 

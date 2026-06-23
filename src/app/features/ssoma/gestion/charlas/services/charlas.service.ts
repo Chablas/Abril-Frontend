@@ -7,7 +7,8 @@ import {
   ProyectoInfo, Staff, CharlaResumen, AsistenciaDetail, Capacitacion, Resumen,
   CrearCharlaDto, GuardarAsistenciaDto,
   DashSupervisoresRow, ComparativoMes, NuevaCharlaCreateDto,
-  CharlaListResult, CharlaDetalle, UsuarioDto,
+  CharlaListResult, CharlaDetalle, UsuarioDto, CharlaGaleriaItem,
+  DashPersonalResult, DashProyectoItem,
 } from '../dtos/charlas.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -66,6 +67,10 @@ export class CharlasService {
     return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones`, { params });
   }
 
+  getMisCapacitaciones(): Observable<Capacitacion[]> {
+    return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones/mis?userId=${this.getUserId()}`);
+  }
+
   subirCapacitacion(fecha: string, tema: string, file: File): Observable<Capacitacion> {
     const userId = this.getUserId();
     const formData = new FormData();
@@ -73,6 +78,15 @@ export class CharlasService {
     formData.append('tema', tema);
     formData.append('file', file);
     return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia?userId=${userId}`, formData);
+  }
+
+  subirCapacitacionMulti(fecha: string, tema: string, files: File[]): Observable<Capacitacion> {
+    const userId = this.getUserId();
+    const formData = new FormData();
+    formData.append('fecha', fecha);
+    formData.append('tema', tema);
+    files.forEach(f => formData.append('files', f, f.name));
+    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia-multi?userId=${userId}`, formData);
   }
 
   cambiarEstado(id: number, estado: string): Observable<Capacitacion> {
@@ -100,6 +114,11 @@ export class CharlasService {
     return this.http.post<any>(`${this.base}/nueva?userId=${this.getUserId()}`, dto);
   }
 
+  getCharlasProyecto(proyectoId: number, mes: number, anio: number): Observable<CharlaGaleriaItem[]> {
+    const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
+    return this.http.get<CharlaGaleriaItem[]>(`${this.base}/charlas-proyecto`, { params });
+  }
+
   // ── NEW: Tab 4 — Evidencia / Aprobación ─────────────────────────────────────
   getLista(proyectoId?: number, estado?: string, page = 1, pageSize = 20): Observable<CharlaListResult> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
@@ -118,6 +137,21 @@ export class CharlasService {
 
   rechazar(id: number, motivo: string): Observable<any> {
     return this.http.put<any>(`${this.base}/${id}/rechazar?userId=${this.getUserId()}`, { motivo });
+  }
+
+  // ── NEW: Dashboard por persona y por proyecto ────────────────────────────────
+  getDashPersonal(proyectoId: number, semana: number, anio: number): Observable<DashPersonalResult> {
+    const params = new HttpParams().set('proyectoId', proyectoId).set('semana', semana).set('anio', anio);
+    return this.http.get<DashPersonalResult>(`${this.base}/dashboard-personal`, { params });
+  }
+
+  editarAsistencia(charlaId: number, workerIds: number[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`, { workerIds });
+  }
+
+  getDashProyectos(semana: number, anio: number): Observable<DashProyectoItem[]> {
+    const params = new HttpParams().set('semana', semana).set('anio', anio);
+    return this.http.get<DashProyectoItem[]>(`${this.base}/dashboard-proyectos`, { params });
   }
 
   // ── NEW: Supervisor (app_user) search ────────────────────────────────────────
