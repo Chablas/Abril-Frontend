@@ -57,6 +57,7 @@ export interface CrearInspeccionRequest {
   conclusiones?: string;
   respuestas: InspeccionRespuestaRequest[];
   hallazgos: InspeccionHallazgoRequest[];
+  fotosAreaBase64?: string[];
 }
 
 export interface CerrarHallazgoRequest {
@@ -130,6 +131,7 @@ export interface InspeccionDetalleDto {
   createdAt: string;
   respuestas: InspeccionRespuestaDto[];
   hallazgos: InspeccionHallazgoDto[];
+  fotosArea: InspeccionHallazgoFotoDto[];
 }
 
 export interface InspeccionListItemDto {

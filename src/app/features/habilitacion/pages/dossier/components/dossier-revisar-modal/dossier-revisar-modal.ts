@@ -82,10 +82,15 @@ export class DossierRevisarModal implements OnInit {
     return 'chip-blue';
   }
 
-  verArchivo(doc: DossierDocumentoDto): void {
-    if (!doc.archivoPath) return;
+  getArchivoPath(doc: DossierDocumentoDto): string | null {
+    return doc.archivoPath ?? doc.archivos?.[doc.archivos.length - 1]?.archivoPath ?? null;
+  }
+
+  verArchivo(doc: DossierDocumentoDto, path?: string): void {
+    const p = path ?? this.getArchivoPath(doc);
+    if (!p) return;
     this.visorNombre = doc.nombreArchivo ?? doc.tipoDoc;
-    this.visorUrl = doc.archivoPath;
+    this.visorUrl = p;
     this.cdr.detectChanges();
   }
 

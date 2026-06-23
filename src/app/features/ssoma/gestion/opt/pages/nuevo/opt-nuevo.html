@@ -261,7 +261,34 @@
     <!-- ─────────────────── PASO 3 ─────────────────── -->
     @if (paso === 3) {
       <div class="paso-body">
-        <h2 class="paso-title"><i class="ti ti-messages"></i> Retroalimentación</h2>
+
+        <h2 class="paso-title">
+          <i class="ti ti-camera"></i> Fotos de la actividad
+          <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
+            {{ fotosAreaBase64.length }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada. Máximo 10.</p>
+
+        <div class="fotos-area-grid">
+          @for (preview of fotosAreaPreview; track $index) {
+            <div class="foto-area-thumb">
+              <img [src]="preview" alt="Foto {{ $index + 1 }}" />
+              <button type="button" class="foto-remove" (click)="quitarFotoArea($index)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
+          @if (fotosAreaBase64.length < 10) {
+            <label class="foto-area-add">
+              <i class="ti ti-camera-plus"></i>
+              <span>Agregar foto</span>
+              <input type="file" accept="image/*" multiple hidden (change)="onFotoAreaChange($event)" />
+            </label>
+          }
+        </div>
+
+        <h2 class="paso-title" style="margin-top: 2rem"><i class="ti ti-messages"></i> Retroalimentación</h2>
 
         <div class="toggle-grid">
           <label class="toggle-field">

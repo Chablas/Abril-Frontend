@@ -1,0 +1,80 @@
+@if (cargando) {
+  <div class="ent-loading">Cargando entregables...</div>
+} @else {
+  <table class="ent-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Documento</th>
+        <th>Estado</th>
+        <th>Fecha límite</th>
+        <th>Responsables</th>
+        <th>Archivo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of entregables; track e.id) {
+        <tr [class.ent-editing]="editandoId === e.id">
+          <td class="ent-num">{{ e.orden }}</td>
+          <td class="ent-nombre">{{ e.tipoNombre }}</td>
+
+          @if (editandoId === e.id) {
+            <td>
+              <select class="ent-input" [(ngModel)]="editForm.estado">
+                @for (s of estadosEntregable; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </td>
+            <td>
+              <input type="date" class="ent-input" [(ngModel)]="editForm.fechaLimite" />
+            </td>
+            <td>
+              <input type="text" class="ent-input" [(ngModel)]="editForm.observacion"
+                placeholder="Observación / responsable" />
+            </td>
+            <td></td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--save" (click)="guardar(e)" [disabled]="guardando">
+                {{ guardando ? '...' : 'Guardar' }}
+              </button>
+              <button class="btn-ent btn-ent--cancel" (click)="cancelarEdicion()">Cancelar</button>
+            </td>
+          } @else {
+            <td><span [class]="estadoClass(e.estado)">{{ e.estado }}</span></td>
+            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="ent-resp">
+              @if (e.responsables.length) {
+                @for (r of e.responsables; track r.id) { <span class="ent-tag">{{ r.nombre }}</span> }
+              } @else { <span class="ent-vacio">—</span> }
+            </td>
+            <td class="ent-archivo">
+              @if (e.urlArchivo) {
+                <a href="javascript:void(0)" (click)="verArchivo(e.urlArchivo)" class="ent-link">
+                  {{ e.nombreArchivo ?? 'Ver' }}
+                </a>
+              } @else if (subiendoId === e.id) {
+                <span class="ent-vacio">Subiendo...</span>
+              } @else {
+                <label class="btn-ent btn-ent--upload">
+                  Subir
+                  <input type="file" style="display:none" (change)="onArchivoSelect($event, e)" />
+                </label>
+              }
+            </td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--edit" (click)="editar(e)">Editar</button>
+              @if (e.urlArchivo) {
+                <label class="btn-ent btn-ent--upload">
+                  Reemplazar
+                  <input type="file" style="display:none" (change)="onArchivoSelect($event, e)" />
+                </label>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+}

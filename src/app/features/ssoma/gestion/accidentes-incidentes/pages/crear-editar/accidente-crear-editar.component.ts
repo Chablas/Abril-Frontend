@@ -12,6 +12,7 @@ import {
   CatalogoItemDto,
   ContratistaCatalogoDto,
   TrabajadorCatalogoDto,
+  ProyectoContratistaDto,
   NIVELES_CONSECUENCIA,
 } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -45,6 +46,11 @@ export class AccidenteCrearEditarComponent implements OnInit {
   partidas: CatalogoItemDto[] = [];
   contratistas: ContratistaCatalogoDto[] = [];
   trabajadores: TrabajadorCatalogoDto[] = [];
+  proyectoContratistas: ProyectoContratistaDto[] = [];
+
+  // estado local (no va al form)
+  jefeInmediatoWorkerId?: number;
+  elaboradoPorWorkerId?: number;
 
   readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
   readonly nivelesOpciones = [1, 2, 3, 4, 5, 6];
@@ -96,6 +102,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
         this.partidas = init.partidas;
         this.contratistas = init.contratistas;
         this.trabajadores = init.trabajadores;
+        this.proyectoContratistas = init.proyectoContratistas ?? [];
 
         if (this.modoEditar) {
           this.cargarDetalle();
@@ -205,6 +212,38 @@ export class AccidenteCrearEditarComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // ── Proyecto change ────────────────────────────────────────────────────────
+
+  onProyectoChange(id: number): void {
+    this.form.proyectoId = id;
+    this.form.empresaAbrilId = undefined;
+    this.form.contributorId = undefined;
+    this.jefeInmediatoWorkerId = undefined;
+    this.form.jefeInmediatoNombre = undefined;
+    this.cdr.detectChanges();
+  }
+
+  // ── Empresa change ─────────────────────────────────────────────────────────
+
+  onEmpresaChange(): void {
+    this.jefeInmediatoWorkerId = undefined;
+    this.form.jefeInmediatoNombre = undefined;
+    this.cdr.detectChanges();
+  }
+
+  // ── Jefe inmediato ─────────────────────────────────────────────────────────
+
+  onJefeSelect(id: number | undefined): void {
+    this.jefeInmediatoWorkerId = id;
+    if (id) {
+      const w = this.trabajadores.find((t) => t.id === id);
+      this.form.jefeInmediatoNombre = w?.nombreCompleto;
+    } else {
+      this.form.jefeInmediatoNombre = undefined;
+    }
+    this.cdr.detectChanges();
+  }
+
   // ── Trabajador autocompletado ──────────────────────────────────────────────
 
   onTrabajadorSelect(id: number | undefined): void {
@@ -214,6 +253,22 @@ export class AccidenteCrearEditarComponent implements OnInit {
       if (t) {
         this.form.trabajadorNombre = t.nombreCompleto;
         this.form.puestoTrabajo = t.cargo ?? this.form.puestoTrabajo;
+        this.form.edad = t.edad ?? this.form.edad;
+        this.form.aniosExperiencia = t.aniosExperiencia ?? this.form.aniosExperiencia;
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  // ── Elaborado por ──────────────────────────────────────────────────────────
+
+  onElaboradoPorSelect(id: number | undefined): void {
+    this.elaboradoPorWorkerId = id;
+    if (id) {
+      const w = this.trabajadores.find((t) => t.id === id);
+      if (w) {
+        this.form.elaboradoPorNombre = w.nombreCompleto;
+        this.form.elaboradoPorCargo = w.cargo ?? this.form.elaboradoPorCargo;
       }
     }
     this.cdr.detectChanges();
@@ -284,5 +339,38 @@ export class AccidenteCrearEditarComponent implements OnInit {
 
   trabajadoresOpts() {
     return this.trabajadores.map((t) => ({ id: t.id, label: `${t.nombreCompleto}${t.cargo ? ' — ' + t.cargo : ''}` }));
+  }
+
+  contratistasDelProyecto() {
+    if (!this.form.proyectoId) return this.contratistas;
+    const ids = new Set(
+      this.proyectoContratistas
+        .filter((pc) => pc.proyectoId === this.form.proyectoId)
+        .map((pc) => pc.contributorId),
+    );
+    return ids.size ? this.contratistas.filter((c) => ids.has(c.id)) : this.contratistas;
+  }
+
+  empresasAbrilDelProyecto() {
+    return this.empresasAbril;
+  }
+
+  jefeInmediatoOpts() {
+    const contributorId = this.tipoEmpresa === 'abril' ? this.form.empresaAbrilId : this.form.contributorId;
+    const workers = contributorId
+      ? this.trabajadores.filter((w) => w.contributorId === contributorId)
+      : this.trabajadores;
+    return workers.map((w) => ({ id: w.id, label: `${w.nombreCompleto}${w.cargo ? ' — ' + w.cargo : ''}` }));
+  }
+
+  elaboradoPorOpts() {
+    return this.trabajadores.map((w) => ({
+      id: w.id,
+      label: `${w.nombreCompleto}${w.cargo ? ' — ' + w.cargo : ''}`,
+    }));
+  }
+
+  partidasOpts() {
+    return this.partidas.map((p) => ({ id: p.id, nombre: p.nombre }));
   }
 }

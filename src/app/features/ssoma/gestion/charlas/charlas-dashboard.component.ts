@@ -398,7 +398,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.loadingTab3 = true;
     forkJoin({
       galeria: this.svc.getCharlasProyecto(this.proyectoId, this.mes, this.anio).pipe(catchError(() => of([]))),
-      staff: this.staff.length ? of(this.staff) : this.svc.getStaff(this.proyectoId).pipe(catchError(() => of([]))),
+      staff: this.svc.getStaff(this.proyectoId).pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ galeria, staff }) => {
         this.charlaGaleria = galeria as CharlaGaleriaItem[];

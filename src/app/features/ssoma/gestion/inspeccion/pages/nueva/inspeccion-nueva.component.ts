@@ -111,6 +111,11 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   descripcionCausas = '';
   conclusiones = '';
 
+  // Paso 4 — fotos de área
+  fotosAreaBase64: string[] = [];
+  fotosAreaPreview: string[] = [];
+  @ViewChild('fotoAreaInput') fotoAreaInput!: ElementRef<HTMLInputElement>;
+
   // Canvas inspector
   @ViewChild('canvasInspector') canvasInspector!: ElementRef<HTMLCanvasElement>;
   private ctxInspector?: CanvasRenderingContext2D;
@@ -176,6 +181,9 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     }
     if (this.paso === 2) {
       return this.respuestas.length > 0 && this.cntRespondidos === this.respuestas.length;
+    }
+    if (this.paso === 4) {
+      return this.fotosAreaBase64.length >= 3;
     }
     return true;
   }
@@ -329,6 +337,28 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   quitarFoto(h: HallazgoForm, idx: number): void {
     h.fotosBase64.splice(idx, 1);
     h.fotosPreview.splice(idx, 1);
+    this.cdr.markForCheck();
+  }
+
+  onFotoAreaChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    for (let i = 0; i < input.files.length && this.fotosAreaBase64.length < 10; i++) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target!.result as string;
+        this.fotosAreaPreview.push(dataUrl);
+        this.fotosAreaBase64.push(dataUrl.split(',')[1]);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(input.files[i]);
+    }
+    input.value = '';
+  }
+
+  quitarFotoArea(idx: number): void {
+    this.fotosAreaBase64.splice(idx, 1);
+    this.fotosAreaPreview.splice(idx, 1);
     this.cdr.markForCheck();
   }
 
@@ -493,11 +523,18 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
         return false;
       }
     }
+    if (this.paso === 4) {
+      if (this.fotosAreaBase64.length < 3) {
+        Swal.fire({ icon: 'warning', title: 'Mínimo 3 fotos del área', text: 'Agrega al menos 3 fotos del área inspeccionada para continuar.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+        return false;
+      }
+    }
     return true;
   }
 
   guardar(): void {
     if (this.guardando) return;
+    if (!this.validarPaso()) return;
     this.guardando = true;
     this.loaderService.show();
 
@@ -540,6 +577,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       conclusiones: this.conclusiones || undefined,
       respuestas: respuestasReq,
       hallazgos: hallazgosReq,
+      fotosAreaBase64: this.fotosAreaBase64,
     };
 
     this.inspeccionService.crear(request).subscribe({

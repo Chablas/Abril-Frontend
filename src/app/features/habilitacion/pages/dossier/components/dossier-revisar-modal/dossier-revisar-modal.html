@@ -33,7 +33,13 @@
             }
           </div>
           <div class="doc-actions">
-            @if (doc?.archivoPath) {
+            @if (doc && (doc.archivos?.length ?? 0) > 1) {
+              @for (a of doc.archivos; track a.id) {
+                <button type="button" class="btn-ghost-sm" (click)="verArchivo(doc!, a.archivoPath)">
+                  <i class="ti ti-eye"></i> Ver {{ $index + 1 }}
+                </button>
+              }
+            } @else if (doc && getArchivoPath(doc)) {
               <button type="button" class="btn-ghost-sm" (click)="verArchivo(doc!)">
                 <i class="ti ti-eye"></i> Ver
               </button>

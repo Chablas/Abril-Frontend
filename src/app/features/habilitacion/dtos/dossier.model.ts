@@ -35,6 +35,13 @@ export interface DossierSemanaDto {
   na: number;
 }
 
+export interface DossierArchivoDto {
+  id: number;
+  nombreArchivo: string;
+  archivoPath: string;
+  createdAt: string;
+}
+
 export interface DossierDocumentoDto {
   id: number;
   dossierId: number;
@@ -44,6 +51,7 @@ export interface DossierDocumentoDto {
   estado: DossierEstadoDocumento;
   createdAt: string;
   updatedAt: string | null;
+  archivos: DossierArchivoDto[];
 }
 
 export interface DossierSemanaDetalleDto extends DossierSemanaDto {

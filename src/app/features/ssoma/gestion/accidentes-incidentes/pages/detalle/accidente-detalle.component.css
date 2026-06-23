@@ -8,6 +8,43 @@
   background: var(--color-abril-page-bg, #f5f3ef);
 }
 
+.detalle-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 2px solid #e8e5df;
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: #2d6a4f; }
+.tab-btn--active { color: #2d6a4f; border-bottom-color: #2d6a4f; }
+
+.rm050-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #aaa;
+  gap: 12px;
+}
+.rm050-placeholder i { font-size: 2.5rem; }
+.rm050-placeholder p { font-size: 0.95rem; margin: 0; }
+
 .detalle-body {
   flex: 1;
   overflow-y: auto;
@@ -183,8 +220,12 @@
 .tabla-descansos td { padding: 7px 10px; border-bottom: 0.5px solid #f0ede8; color: #1a1a18; }
 
 /* ── FOTOS ────────────────────────────────────────────── */
-.fotos-detalle { display: flex; gap: 12px; flex-wrap: wrap; }
-.foto-thumb { width: 160px; height: 120px; object-fit: cover; border-radius: 10px; border: 0.5px solid #e8e5df; cursor: pointer; }
+.fotos-detalle { display: flex; gap: 16px; flex-wrap: wrap; }
+.foto-slot { display: flex; flex-direction: column; gap: 6px; }
+.foto-thumb { width: 160px; height: 120px; object-fit: cover; border-radius: 10px; border: 0.5px solid #e8e5df; }
+.foto-acciones { display: flex; gap: 12px; font-size: 0.8rem; }
+.foto-acciones a { color: var(--color-primary, #2d6a4f); text-decoration: none; font-weight: 500; }
+.foto-acciones a:hover { text-decoration: underline; }
 
 /* ── SPIN ─────────────────────────────────────────────── */
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }

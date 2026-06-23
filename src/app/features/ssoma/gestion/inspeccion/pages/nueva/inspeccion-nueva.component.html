@@ -293,7 +293,34 @@
     <!-- ═══ PASO 4 — CIERRE ══════════════════════════════════════════ -->
     @if (paso === 4) {
       <div class="form-section">
-        <h2 class="section-title">Conclusiones</h2>
+        <h2 class="section-title">
+          Fotos del área inspeccionada
+          <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
+            {{ fotosAreaBase64.length }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos del área. Máximo 10.</p>
+
+        <div class="fotos-area-grid">
+          @for (preview of fotosAreaPreview; track $index) {
+            <div class="foto-area-thumb">
+              <img [src]="preview" alt="Foto área {{ $index + 1 }}" />
+              <button type="button" class="foto-remove" (click)="quitarFotoArea($index)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          }
+          @if (fotosAreaBase64.length < 10) {
+            <label class="foto-area-add">
+              <i class="ti ti-camera-plus"></i>
+              <span>Agregar foto</span>
+              <input #fotoAreaInput type="file" accept="image/*" multiple hidden
+                (change)="onFotoAreaChange($event)" />
+            </label>
+          }
+        </div>
+
+        <h2 class="section-title" style="margin-top: 2rem">Conclusiones</h2>
 
         <div class="form-group">
           <label class="form-label">Descripción de causas de resultados desfavorables</label>

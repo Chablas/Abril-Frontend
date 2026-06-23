@@ -55,6 +55,7 @@ export interface CrearOptRequest {
   trabajadores: OptTrabajadorRequest[];
   verificaciones: OptVerificacionRequest[];
   pasos: OptPasoRequest[];
+  fotosAreaBase64?: string[];
 }
 
 // ── Respuesta lista ────────────────────────────────────────────────────────────
@@ -151,6 +152,7 @@ export interface OptDetalleDto {
   trabajadores: OptTrabajadorDto[];
   verificaciones: OptVerificacionDto[];
   pasos: OptPasoDto[];
+  fotosArea: string[];
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────

@@ -108,6 +108,10 @@ export class OptNuevo implements OnInit, AfterViewInit {
   accionRequerida = '';
   accionObservacion = '';
 
+  // PASO 3 — fotos de la actividad
+  fotosAreaBase64: string[] = [];
+  fotosAreaPreview: string[] = [];
+
   // Canvas observador
   @ViewChild('canvasObs') canvasObs!: ElementRef<HTMLCanvasElement>;
   private ctxObs?: CanvasRenderingContext2D;
@@ -459,6 +463,28 @@ export class OptNuevo implements OnInit, AfterViewInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  onFotoAreaChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    for (let i = 0; i < input.files.length && this.fotosAreaBase64.length < 10; i++) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target!.result as string;
+        this.fotosAreaPreview.push(dataUrl);
+        this.fotosAreaBase64.push(dataUrl.split(',')[1]);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(input.files[i]);
+    }
+    input.value = '';
+  }
+
+  quitarFotoArea(idx: number): void {
+    this.fotosAreaBase64.splice(idx, 1);
+    this.fotosAreaPreview.splice(idx, 1);
+    this.cdr.markForCheck();
+  }
+
   validarPaso(): boolean {
     if (this.paso === 1) {
       if (!this.proyectoId || this.proyectoId <= 0) {
@@ -480,11 +506,18 @@ export class OptNuevo implements OnInit, AfterViewInit {
         return false;
       }
     }
+    if (this.paso === 3) {
+      if (this.fotosAreaBase64.length < 3) {
+        Swal.fire({ icon: 'warning', title: 'Mínimo 3 fotos de la actividad', text: 'Agrega al menos 3 fotos de la actividad observada para continuar.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+        return false;
+      }
+    }
     return true;
   }
 
   guardar(): void {
     if (this.guardando) return;
+    if (!this.validarPaso()) return;
     this.guardando = true;
     this.loaderService.show();
 
@@ -530,6 +563,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
       trabajadores: trabajadoresReq,
       verificaciones: verificacionesReq,
       pasos: pasosReq,
+      fotosAreaBase64: this.fotosAreaBase64,
     };
 
     this.optService.crearOpt(request).subscribe({

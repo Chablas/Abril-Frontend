@@ -10,6 +10,19 @@
     (primaryClick)="irAEditar()">
   </app-abril-page-header>
 
+  <!-- TABS -->
+  <nav class="detalle-tabs">
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'flash'" (click)="setTab('flash')">
+      <i class="ti ti-file-description"></i> Flash Report
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'entregables'" (click)="setTab('entregables')">
+      <i class="ti ti-checklist"></i> Entregables
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tabActiva === 'rm050'" (click)="setTab('rm050')">
+      <i class="ti ti-report"></i> Investigación RM-050
+    </button>
+  </nav>
+
   <div class="detalle-body">
 
     @if (loading) {
@@ -17,7 +30,17 @@
       <div class="skeleton-block skeleton-block--sm"></div>
     }
 
-    @if (!loading && detalle) {
+    <!-- TAB: ENTREGABLES -->
+    @if (!loading && tabActiva === 'entregables') {
+      <app-entregables-tab [accidenteId]="id" />
+    }
+
+    <!-- TAB: RM-050 -->
+    @if (!loading && tabActiva === 'rm050') {
+      <app-rm050-tab [accidenteId]="id" [detalle]="detalle" />
+    }
+
+    @if (!loading && detalle && tabActiva === 'flash') {
 
       <!-- BOTÓN ENVIAR -->
       @if (!detalle.enviado) {
@@ -36,7 +59,8 @@
           <i class="ti ti-circle-check"></i>
           Flash Report enviado el {{ detalle.fechaEnvio | date:'dd/MM/yyyy HH:mm' }}
           @if (detalle.urlPdfSharepoint) {
-            · <a [href]="detalle.urlPdfSharepoint" target="_blank" class="link-pdf">Ver PDF en SharePoint</a>
+            · <a href="javascript:void(0)" (click)="abrirArchivo(detalle.urlPdfSharepoint)" class="link-pdf">Ver PDF</a>
+            · <a href="javascript:void(0)" (click)="descargarArchivo(detalle.urlPdfSharepoint)" class="link-pdf">Descargar PDF</a>
           }
         </div>
       }
@@ -189,14 +213,22 @@
           <h3 class="card__subtitulo">Fotografías</h3>
           <div class="fotos-detalle">
             @if (detalle.urlFoto1) {
-              <a [href]="detalle.urlFoto1" target="_blank">
-                <img [src]="detalle.urlFoto1" class="foto-thumb" alt="Foto 1" />
-              </a>
+              <div class="foto-slot">
+                @if (foto1Blob) { <img [src]="foto1Blob" class="foto-thumb" alt="Foto 1" /> }
+                <div class="foto-acciones">
+                  <a href="javascript:void(0)" (click)="abrirArchivo(detalle.urlFoto1)">Ver</a>
+                  <a href="javascript:void(0)" (click)="descargarArchivo(detalle.urlFoto1)">Descargar</a>
+                </div>
+              </div>
             }
             @if (detalle.urlFoto2) {
-              <a [href]="detalle.urlFoto2" target="_blank">
-                <img [src]="detalle.urlFoto2" class="foto-thumb" alt="Foto 2" />
-              </a>
+              <div class="foto-slot">
+                @if (foto2Blob) { <img [src]="foto2Blob" class="foto-thumb" alt="Foto 2" /> }
+                <div class="foto-acciones">
+                  <a href="javascript:void(0)" (click)="abrirArchivo(detalle.urlFoto2)">Ver</a>
+                  <a href="javascript:void(0)" (click)="descargarArchivo(detalle.urlFoto2)">Descargar</a>
+                </div>
+              </div>
             }
           </div>
         </div>

@@ -30,7 +30,7 @@
             displayField="projectDescription"
             placeholder="Seleccionar proyecto"
             [value]="form.proyectoId || undefined"
-            (valueChange)="form.proyectoId = $event ?? 0"
+            (valueChange)="onProyectoChange($event ?? 0)"
           />
           @if (errores['proyectoId']) { <span class="campo-error">{{ errores['proyectoId'] }}</span> }
         </div>
@@ -66,22 +66,28 @@
 
         <div class="form-field">
           <label>Etapa del proyecto</label>
-          <select class="campo-input" [(ngModel)]="form.etapaProyectoId" name="etapaProyectoId">
-            <option [ngValue]="undefined">— Sin etapa —</option>
-            @for (e of etapas; track e.id) {
-              <option [ngValue]="e.id">{{ e.nombre }}</option>
-            }
-          </select>
+          <app-search-select
+            [options]="etapas"
+            valueField="id"
+            displayField="nombre"
+            placeholder="— Sin etapa —"
+            [allowClear]="true"
+            [value]="form.etapaProyectoId"
+            (valueChange)="form.etapaProyectoId = $event"
+          />
         </div>
 
         <div class="form-field">
           <label>Partida</label>
-          <select class="campo-input" [(ngModel)]="form.partidaId" name="partidaId">
-            <option [ngValue]="undefined">— Sin partida —</option>
-            @for (p of partidas; track p.id) {
-              <option [ngValue]="p.id">{{ p.nombre }}</option>
-            }
-          </select>
+          <app-search-select
+            [options]="partidasOpts()"
+            valueField="id"
+            displayField="nombre"
+            placeholder="— Sin partida —"
+            [allowClear]="true"
+            [value]="form.partidaId"
+            (valueChange)="form.partidaId = $event"
+          />
         </div>
 
       </div>
@@ -96,11 +102,11 @@
           <label>Tipo de empresa</label>
           <div class="radio-group">
             <label class="radio-label">
-              <input type="radio" name="tipoEmpresa" value="abril" [(ngModel)]="tipoEmpresa" />
+              <input type="radio" name="tipoEmpresa" value="abril" [(ngModel)]="tipoEmpresa" (ngModelChange)="onEmpresaChange()" />
               Empresa Abril
             </label>
             <label class="radio-label">
-              <input type="radio" name="tipoEmpresa" value="contratista" [(ngModel)]="tipoEmpresa" />
+              <input type="radio" name="tipoEmpresa" value="contratista" [(ngModel)]="tipoEmpresa" (ngModelChange)="onEmpresaChange()" />
               Contratista
             </label>
           </div>
@@ -109,31 +115,44 @@
         @if (tipoEmpresa === 'abril') {
           <div class="form-field">
             <label>Razón social (Abril)</label>
-            <select class="campo-input" [(ngModel)]="form.empresaAbrilId" name="empresaAbrilId">
-              <option [ngValue]="undefined">— Seleccionar —</option>
-              @for (e of empresasAbril; track e.id) {
-                <option [ngValue]="e.id">{{ e.nombre }}</option>
-              }
-            </select>
+            <app-search-select
+              [options]="empresasAbrilDelProyecto()"
+              valueField="id"
+              displayField="nombre"
+              placeholder="— Seleccionar empresa —"
+              [allowClear]="true"
+              [value]="form.empresaAbrilId"
+              (valueChange)="form.empresaAbrilId = $event; onEmpresaChange()"
+            />
           </div>
         }
 
         @if (tipoEmpresa === 'contratista') {
           <div class="form-field">
             <label>Contratista</label>
-            <select class="campo-input" [(ngModel)]="form.contributorId" name="contributorId">
-              <option [ngValue]="undefined">— Seleccionar —</option>
-              @for (c of contratistas; track c.id) {
-                <option [ngValue]="c.id">{{ c.razonSocial }}</option>
-              }
-            </select>
+            <app-search-select
+              [options]="contratistasDelProyecto()"
+              valueField="id"
+              displayField="razonSocial"
+              placeholder="— Seleccionar contratista —"
+              [allowClear]="true"
+              [value]="form.contributorId"
+              (valueChange)="form.contributorId = $event; onEmpresaChange()"
+            />
           </div>
         }
 
         <div class="form-field">
           <label>Jefe inmediato</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.jefeInmediatoNombre" name="jefeInmediato"
-            placeholder="Nombre del jefe inmediato" />
+          <app-search-select
+            [options]="jefeInmediatoOpts()"
+            valueField="id"
+            displayField="label"
+            placeholder="Buscar jefe inmediato"
+            [allowClear]="true"
+            [value]="jefeInmediatoWorkerId"
+            (valueChange)="onJefeSelect($event)"
+          />
         </div>
 
       </div>
@@ -329,6 +348,19 @@
     <section class="flash-section">
       <h3 class="flash-section__title"><i class="ti ti-pen"></i> Elaborado por</h3>
       <div class="form-grid">
+
+        <div class="form-field form-field--full">
+          <label>Buscar trabajador</label>
+          <app-search-select
+            [options]="elaboradoPorOpts()"
+            valueField="id"
+            displayField="label"
+            placeholder="Buscar por nombre"
+            [allowClear]="true"
+            [value]="elaboradoPorWorkerId"
+            (valueChange)="onElaboradoPorSelect($event)"
+          />
+        </div>
 
         <div class="form-field">
           <label>Nombre</label>

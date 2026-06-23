@@ -8,6 +8,10 @@ import {
   FlashReportDetalleDto,
   CrearFlashReportRequest,
   ActualizarFlashReportRequest,
+  EntregableDto,
+  ActualizarEntregableRequest,
+  Rm050Dto,
+  GuardarRm050Request,
 } from './accidente-incidente.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -66,5 +70,27 @@ export class AccidenteIncidenteService {
 
   eliminar(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/${id}`, { headers: this.authHeaders() });
+  }
+
+  getEntregables(accidenteId: number): Observable<EntregableDto[]> {
+    return this.http.get<EntregableDto[]>(`${this.base}/${accidenteId}/entregables`, { headers: this.authHeaders() });
+  }
+
+  actualizarEntregable(entregableId: number, req: ActualizarEntregableRequest): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/entregables/${entregableId}`, req, { headers: this.authHeaders() });
+  }
+
+  subirArchivoEntregable(entregableId: number, archivo: File): Observable<{ url: string; message: string }> {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    return this.http.post<{ url: string; message: string }>(`${this.base}/entregables/${entregableId}/archivo`, form, { headers: new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}` }) });
+  }
+
+  getRm050(accidenteId: number): Observable<Rm050Dto> {
+    return this.http.get<Rm050Dto>(`${this.base}/${accidenteId}/rm050`, { headers: this.authHeaders() });
+  }
+
+  guardarRm050(accidenteId: number, req: GuardarRm050Request): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/${accidenteId}/rm050`, req, { headers: this.authHeaders() });
   }
 }
