@@ -73,6 +73,23 @@ export class GestionCroquisView {
     return Math.round((item.requisitosSubidos / item.requisitosEvaluables) * 100);
   }
 
+  /** Total de compromisos con fecha límite por municipalidad/fiscalización. */
+  compromisosLimiteTotal(c: CroquisGestionDTO): number {
+    return c.compromisosLimitePendientes + c.compromisosLimiteEnProceso + c.compromisosLimiteCulminados;
+  }
+
+  /** Ancho (% exacto, sin redondear) de un segmento sobre un total, para la barra apilada. */
+  segWidth(count: number, total: number): number {
+    if (!total) return 0;
+    return (count / total) * 100;
+  }
+
+  /** % redondeado de un segmento sobre un total (para las etiquetas). */
+  segPct(count: number, total: number): number {
+    if (!total) return 0;
+    return Math.round((count / total) * 100);
+  }
+
   // ── Apertura del croquis agrandado (solo lectura) ──────────────────────
   open(c: CroquisGestionDTO): void {
     this.selected = c;

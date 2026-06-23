@@ -1,4 +1,6 @@
-<div class="flex flex-col gap-3">
+<div class="flex flex-col lg:flex-row gap-4">
+
+ <div class="flex-1 min-w-0 flex flex-col gap-3">
 
   <!-- Navegación de mes + leyenda -->
   <div class="flex items-center justify-between flex-wrap gap-2">
@@ -51,6 +53,56 @@
       </div>
     </div>
   </div>
+
+ </div>
+
+ <!-- Columna de cumplimiento de limpiezas -->
+ <div class="w-full lg:w-[300px] shrink-0 flex flex-col gap-3">
+   <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
+     <span class="text-sm font-semibold text-gray-700">Cumplimiento de limpiezas</span>
+     <p class="text-[11px] text-gray-400 -mt-1">Atenciones realizadas sobre las programadas hasta hoy (sin contar futuras).</p>
+
+     <!-- Total (combinada) -->
+     <div class="rounded-lg border border-[#64BC04]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#509603]">Total</span>
+         <span class="text-sm font-semibold text-[#509603]">{{ pct(cumplimiento?.totalHechas || 0, cumplimiento?.totalProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.totalHechas || 0, cumplimiento?.totalProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.totalHechas || 0 }} de {{ cumplimiento?.totalProgramadas || 0 }} limpiezas</span>
+     </div>
+
+     <!-- Departamento -->
+     <div class="rounded-lg border border-[#509603]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#509603] inline-flex items-center gap-1.5">
+           <span class="w-2 h-2 rounded-full bg-[#64BC04]"></span> Departamento
+         </span>
+         <span class="text-sm font-semibold text-[#509603]">{{ pct(cumplimiento?.departamentoHechas || 0, cumplimiento?.departamentoProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.departamentoHechas || 0, cumplimiento?.departamentoProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.departamentoHechas || 0 }} de {{ cumplimiento?.departamentoProgramadas || 0 }} limpiezas</span>
+     </div>
+
+     <!-- Área común -->
+     <div class="rounded-lg border border-[#0086A5]/30 bg-white p-3 flex flex-col gap-1">
+       <div class="flex items-center justify-between">
+         <span class="text-xs font-bold uppercase tracking-wide text-[#0086A5] inline-flex items-center gap-1.5">
+           <span class="w-2 h-2 rounded-full bg-[#0086A5]"></span> Área común
+         </span>
+         <span class="text-sm font-semibold text-[#0086A5]">{{ pct(cumplimiento?.comunHechas || 0, cumplimiento?.comunProgramadas || 0) }}%</span>
+       </div>
+       <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+         <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="pct(cumplimiento?.comunHechas || 0, cumplimiento?.comunProgramadas || 0)"></div>
+       </div>
+       <span class="text-[11px] text-gray-400">{{ cumplimiento?.comunHechas || 0 }} de {{ cumplimiento?.comunProgramadas || 0 }} limpiezas</span>
+     </div>
+   </div>
+ </div>
 
 </div>
 

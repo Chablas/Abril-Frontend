@@ -87,12 +87,59 @@
             <span>Creado: {{ c.createdDateTime | date:'dd/MM/yyyy' }}</span>
             <span *ngIf="c.fechaInicio">Inicio: {{ c.fechaInicio | date:'dd/MM/yyyy' }}</span>
             <span *ngIf="c.fechaFin">Fin: {{ c.fechaFin | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="c.fechaFinMunicipalidad" class="text-[#B45309] font-medium">
+              Límite municipalidad: {{ c.fechaFinMunicipalidad | date:'dd/MM/yyyy' }}
+            </span>
           </div>
         </div>
-        <span *ngIf="c.esCritico"
-          class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FAD5D4] text-[#D30000] border border-[#D30000]/30 shrink-0">
-          CRÍTICO
-        </span>
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          <span *ngIf="c.esCritico"
+            class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FAD5D4] text-[#D30000] border border-[#D30000]/30">
+            CRÍTICO
+          </span>
+          <span *ngIf="tieneFechaMunicipalidad(c)"
+            class="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold bg-[#FEF3C7] text-[#B45309] border border-[#B45309]/30 text-right">
+            CON FECHA LÍMITE MUNICIPALIDAD/FISCALIZACIÓN
+          </span>
+        </div>
+      </div>
+
+      <!-- Fecha límite por municipalidad/fiscalización (editable inline) -->
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Fecha límite municipalidad/fiscalización</span>
+          <div class="flex items-center gap-2" *ngIf="editFechaMuniId !== c.vecinoCompromisoId">
+            <button type="button" (click)="startEditFechaMuni(c)"
+              class="text-[11px] text-[#B45309] hover:underline cursor-pointer inline-flex items-center gap-1">
+              <i class="ti ti-calendar-clock"></i>
+              {{ c.fechaFinMunicipalidad ? 'Editar fecha límite' : 'Añadir fecha fin de municipalidad/fiscalización' }}
+            </button>
+            <button *ngIf="c.fechaFinMunicipalidad" type="button" (click)="quitarFechaMuni(c)"
+              class="text-[11px] text-gray-400 hover:text-[#D30000] cursor-pointer inline-flex items-center gap-1">
+              <i class="ti ti-trash"></i> Quitar
+            </button>
+          </div>
+        </div>
+
+        <ng-container *ngIf="editFechaMuniId === c.vecinoCompromisoId; else verFechaMuni">
+          <div class="flex items-center gap-2 flex-wrap">
+            <input type="date" [(ngModel)]="fechaMuniDraft" [max]="c.fechaFin ? (c.fechaFin | date:'yyyy-MM-dd') : null"
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[10px] py-[9px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+            <button type="button" (click)="saveFechaMuni(c)"
+              class="px-3 py-[6px] rounded-lg bg-[#64BC04] text-white text-xs font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+              Guardar
+            </button>
+            <button type="button" (click)="cancelEditFechaMuni()"
+              class="px-3 py-[6px] rounded-lg bg-gray-100 text-gray-600 text-xs font-medium cursor-pointer hover:bg-gray-200 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #verFechaMuni>
+          <p class="text-sm text-gray-700">
+            {{ c.fechaFinMunicipalidad ? (c.fechaFinMunicipalidad | date:'dd/MM/yyyy') : '—' }}
+          </p>
+        </ng-template>
       </div>
 
       <!-- Estado del compromiso -->

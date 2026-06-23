@@ -38,7 +38,7 @@
 <app-base-modal
   *ngIf="selected"
   [title]="'Croquis · ' + selected.projectDescription"
-  width="w-[1150px]"
+  width="w-[1360px] max-w-[95vw]"
   height="h-[90vh]"
   (closeModal)="close()">
 
@@ -208,6 +208,7 @@
                 <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="solicitudesAprobadasPct(selected)"></div>
               </div>
               <span class="text-[11px] text-gray-400">{{ selected.solicitudesAprobadas }} de {{ selected.solicitudesEvaluables }} solicitudes</span>
+              <span class="text-[11px] text-gray-400 italic">Solicitudes aceptadas sobre las evaluables (aceptadas + por responder; no cuenta las denegadas).</span>
             </div>
 
             <div class="flex flex-col gap-1">
@@ -219,6 +220,7 @@
                 <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="aprobadosPct(selected)"></div>
               </div>
               <span class="text-[11px] text-gray-400">{{ selected.entregablesAprobados }} de {{ selected.entregablesEvaluables }} entregables</span>
+              <span class="text-[11px] text-gray-400 italic">Entregables aprobados sobre los evaluables (falta + enviado + aprobado; no cuenta los "No aplica").</span>
             </div>
           </div>
 
@@ -235,6 +237,51 @@
                 <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="requisitosSubidosPct(selected)"></div>
               </div>
               <span class="text-[11px] text-gray-400">{{ selected.requisitosSubidos }} de {{ selected.requisitosEvaluables }} requisitos</span>
+              <span class="text-[11px] text-gray-400 italic">Requisitos subidos sobre los evaluables (subidos + no subidos; no cuenta los "No aplica").</span>
+            </div>
+          </div>
+
+          <!-- Englobado: Compromisos (desglose por estado) -->
+          <div class="rounded-lg border border-[#B45309]/30 bg-white p-3 flex flex-col gap-3">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#B45309]">Compromisos</span>
+
+            <!-- Barra 1: todos los compromisos -->
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Por estado (todos)</span>
+                <span class="text-[11px] text-gray-400">{{ selected.compromisosCount }} compromiso(s)</span>
+              </div>
+              <div class="flex h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#9CA3AF]" [style.width.%]="segWidth(selected.compromisosPendientes, selected.compromisosCount)" title="Pendiente"></div>
+                <div class="h-full bg-[#0086A5]" [style.width.%]="segWidth(selected.compromisosEnProceso, selected.compromisosCount)" title="En proceso"></div>
+                <div class="h-full bg-[#64BC04]" [style.width.%]="segWidth(selected.compromisosCulminados, selected.compromisosCount)" title="Culminado"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#9CA3AF]"></span>Pendiente {{ selected.compromisosPendientes }} ({{ segPct(selected.compromisosPendientes, selected.compromisosCount) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span>En proceso {{ selected.compromisosEnProceso }} ({{ segPct(selected.compromisosEnProceso, selected.compromisosCount) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#64BC04]"></span>Culminado {{ selected.compromisosCulminados }} ({{ segPct(selected.compromisosCulminados, selected.compromisosCount) }}%)</span>
+              </div>
+            </div>
+
+            <!-- Barra 2: solo compromisos con fecha límite por municipalidad/fiscalización -->
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Por estado (con fecha límite municipalidad/fiscalización)</span>
+                <span class="text-[11px] text-gray-400">{{ compromisosLimiteTotal(selected) }} compromiso(s)</span>
+              </div>
+              <div class="flex h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#9CA3AF]" [style.width.%]="segWidth(selected.compromisosLimitePendientes, compromisosLimiteTotal(selected))" title="Pendiente"></div>
+                <div class="h-full bg-[#0086A5]" [style.width.%]="segWidth(selected.compromisosLimiteEnProceso, compromisosLimiteTotal(selected))" title="En proceso"></div>
+                <div class="h-full bg-[#64BC04]" [style.width.%]="segWidth(selected.compromisosLimiteCulminados, compromisosLimiteTotal(selected))" title="Culminado"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#9CA3AF]"></span>Pendiente {{ selected.compromisosLimitePendientes }} ({{ segPct(selected.compromisosLimitePendientes, compromisosLimiteTotal(selected)) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span>En proceso {{ selected.compromisosLimiteEnProceso }} ({{ segPct(selected.compromisosLimiteEnProceso, compromisosLimiteTotal(selected)) }}%)</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#64BC04]"></span>Culminado {{ selected.compromisosLimiteCulminados }} ({{ segPct(selected.compromisosLimiteCulminados, compromisosLimiteTotal(selected)) }}%)</span>
+              </div>
+              <span *ngIf="compromisosLimiteTotal(selected) === 0" class="text-[11px] text-gray-400 italic">
+                No hay compromisos catalogados con fecha límite por municipalidad/fiscalización.
+              </span>
             </div>
           </div>
 

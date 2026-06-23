@@ -18,6 +18,7 @@ import {
   VecinoLimpiezaDTO,
   VecinoLimpiezasResponseDTO,
   VecinoLimpiezaCreateDTO,
+  VecinoLimpiezaCumplimientoDTO,
   VecinoCompromisoSelectDTO,
   CroquisGestionResponseDTO,
   VecinoRequisitosResponseDTO,
@@ -190,6 +191,15 @@ export class GestionVecinosService {
     );
   }
 
+  /** Fija o limpia (null) la fecha límite por municipalidad/fiscalización de un compromiso. */
+  updateCompromisoFechaMunicipalidad(compromisoId: number, fechaFinMunicipalidad: string | null): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/compromisos/${compromisoId}/fecha-municipalidad`,
+      { fechaFinMunicipalidad },
+      { headers: this.authHeaders() },
+    );
+  }
+
   updateEntregableEstado(entregableId: number, vecinoEntregableEstadoId: number): Observable<ApiMessageDTO> {
     return this.http.patch<ApiMessageDTO>(
       `${this.apiUrl}/compromisos/entregables/${entregableId}/estado`,
@@ -247,6 +257,13 @@ export class GestionVecinosService {
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/limpiezas/${limpiezaId}`, {
       headers: this.authHeaders(),
     });
+  }
+
+  getLimpiezasCumplimiento(projectId: number): Observable<VecinoLimpiezaCumplimientoDTO> {
+    return this.http.get<VecinoLimpiezaCumplimientoDTO>(
+      `${this.apiUrl}/proyectos/${projectId}/limpiezas/cumplimiento`,
+      { headers: this.authHeaders() },
+    );
   }
 
   /** Compromisos de las solicitudes de un vecino, para relacionar la atención de limpieza. */

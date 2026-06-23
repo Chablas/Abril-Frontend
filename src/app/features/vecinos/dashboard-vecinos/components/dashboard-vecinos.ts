@@ -78,12 +78,31 @@ export class DashboardVecinos implements AfterViewInit {
     return items.reduce((s, i) => s + i.count, 0);
   }
 
+  pct(hechas: number, programadas: number): number {
+    if (!programadas) return 0;
+    return Math.round((hechas / programadas) * 100);
+  }
+
+  /** Un proyecto se muestra solo si tiene algún dato (vecinos, solicitudes, compromisos o limpiezas). */
+  hasData(p: DashboardProjectDTO): boolean {
+    return (
+      p.vecinosCount > 0 ||
+      this.total(p.solicitudes) > 0 ||
+      this.total(p.compromisos) > 0 ||
+      (p.limpiezas?.totalProgramadas ?? 0) > 0
+    );
+  }
+
+  get proyectosVisibles(): DashboardProjectDTO[] {
+    return this.data?.proyectos.filter((p) => this.hasData(p)) ?? [];
+  }
+
   // ── Render de donuts ───────────────────────────────────────────────────────
 
   private renderAll(): void {
     if (!this.data) return;
     this.renderBlock(this.data.resumen);
-    this.data.proyectos.forEach((p) => this.renderBlock(p));
+    this.proyectosVisibles.forEach((p) => this.renderBlock(p));
   }
 
   private renderBlock(block: DashboardProjectDTO): void {
@@ -112,7 +131,7 @@ export class DashboardVecinos implements AfterViewInit {
     pdf.setTextColor(0);
 
     let y = 28;
-    const blocks = [this.data.resumen, ...this.data.proyectos];
+    const blocks = [this.data.resumen, ...this.proyectosVisibles];
     blocks.forEach((b, idx) => {
       y = this.drawPdfBlock(pdf, b, marginX, y, usableW, pageH, idx === 0);
     });

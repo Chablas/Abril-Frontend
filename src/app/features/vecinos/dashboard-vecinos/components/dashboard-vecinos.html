@@ -57,7 +57,7 @@
 
   <!-- ── POR PROYECTO ──────────────────────────────────────────────────── -->
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-    <div *ngFor="let p of data.proyectos"
+    <div *ngFor="let p of proyectosVisibles"
       class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-4">
 
       <div class="flex items-center justify-between gap-2">
@@ -66,7 +66,7 @@
         </h3>
         <div class="flex items-baseline gap-1 shrink-0">
           <span class="text-xl font-bold text-[#64BC04]">{{ p.vecinosCount }}</span>
-          <span class="text-[10px] text-gray-400 uppercase">Vec.</span>
+          <span class="text-[10px] text-gray-400 uppercase">Vecinos</span>
         </div>
       </div>
 
@@ -93,11 +93,52 @@
           </span>
         </div>
       </div>
+
+      <!-- Cumplimiento de limpiezas -->
+      <div class="flex flex-col gap-2 border-t border-gray-100 pt-3">
+        <span class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold text-center">Cumplimiento de limpiezas</span>
+
+        <!-- Total -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500">Total</span>
+            <span class="text-[11px] font-semibold text-[#509603]">{{ pct(p.limpiezas.totalHechas, p.limpiezas.totalProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.totalHechas, p.limpiezas.totalProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.totalHechas }} de {{ p.limpiezas.totalProgramadas }}</span>
+        </div>
+
+        <!-- Departamento -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500 inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#64BC04]"></span> Departamento</span>
+            <span class="text-[11px] font-semibold text-[#509603]">{{ pct(p.limpiezas.departamentoHechas, p.limpiezas.departamentoProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.departamentoHechas, p.limpiezas.departamentoProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.departamentoHechas }} de {{ p.limpiezas.departamentoProgramadas }}</span>
+        </div>
+
+        <!-- Área común -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-500 inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0086A5]"></span> Área común</span>
+            <span class="text-[11px] font-semibold text-[#0086A5]">{{ pct(p.limpiezas.comunHechas, p.limpiezas.comunProgramadas) }}%</span>
+          </div>
+          <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="pct(p.limpiezas.comunHechas, p.limpiezas.comunProgramadas)"></div>
+          </div>
+          <span class="text-[10px] text-gray-400">{{ p.limpiezas.comunHechas }} de {{ p.limpiezas.comunProgramadas }}</span>
+        </div>
+      </div>
     </div>
 
-    <p *ngIf="data.proyectos.length === 0"
+    <p *ngIf="proyectosVisibles.length === 0"
       class="md:col-span-2 xl:col-span-4 text-center text-sm text-gray-400 italic py-10">
-      No hay proyectos registrados.
+      No hay proyectos con datos.
     </p>
   </div>
 
