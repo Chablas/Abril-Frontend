@@ -5,6 +5,7 @@ import { Proyectos } from './features/proyectos/components/proyectos';
 import { Area } from './features/area/components/area';
 import { Companies } from './pages/companies/companies';
 import { Workers } from './pages/workers/workers';
+import { Feriados } from './features/feriados/components/feriados';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -35,6 +36,12 @@ const routes: Routes = [
         component: Workers,
         canActivate: [roleGuard],
         data: { titulo: 'CONFIGURACIÓN - LISTA DE TRABAJADORES', featureKey: 'configuracion.workers' },
+      },
+      {
+        path: 'feriados',
+        component: Feriados,
+        canActivate: [roleGuard],
+        data: { titulo: 'CONFIGURACIÓN - FERIADOS Y DÍAS NO LABORABLES', featureKey: 'configuracion.feriados' },
       },
     ],
   },

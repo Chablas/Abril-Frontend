@@ -12,12 +12,20 @@ export interface LessonReminderDTO {
   active: boolean;
 }
 
+export interface LessonReminderWorkerOptionDTO {
+  workerId: number;
+  fullName?: string;
+  email?: string;
+}
+
 export interface LessonReminderPagedDTO {
   page: number;
   pageSize: number;
   totalRecords: number;
   totalPages: number;
   data: LessonReminderDTO[];
+  /** Solo viene poblado en la carga inicial (includeWorkers=true). */
+  workers?: LessonReminderWorkerOptionDTO[] | null;
 }
 
 export interface ToggleLessonReminderResultDTO {

@@ -138,6 +138,11 @@ export class LessonsDashboard implements AfterViewInit {
         this.areaTreeRoots = this.buildAreaTree(data.filter((d) => d.lessonAreaId != null));
         this.areaLevels = this.areaTreeRoots.length ? [this.areaTreeRoots] : [];
         this.selectedAreaNodes = this.areaTreeRoots.length ? [undefined] : [];
+
+        // Forzar detección de cambios para que los search-select rendericen correctamente
+        // cuando las opciones llegan de forma asíncrona — evita que el control quede "vacío"
+        // hasta la primera interacción del usuario.
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
