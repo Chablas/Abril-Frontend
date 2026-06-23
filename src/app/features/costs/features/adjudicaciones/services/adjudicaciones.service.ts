@@ -268,6 +268,19 @@ export class AdjudicacionesService {
     );
   }
 
+  /** Paso 3 — Oficina Técnica solicita a Costos el V°B° / comentarios de todos los documentos. */
+  sendContractReviewEmail(
+    projectSubContractorId: number,
+    dto: { graphAccessToken: string },
+  ): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/send-contract-review-email`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   sendAllLevantamientoEmail(
     projectSubContractorId: number,
     dto: { graphAccessToken: string },
