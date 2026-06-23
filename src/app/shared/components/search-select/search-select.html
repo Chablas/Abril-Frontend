@@ -12,17 +12,25 @@
     <button
       type="button"
       (click)="toggle($event)"
-      class="w-full flex items-center justify-between border cursor-pointer focus:outline-none transition-colors"
-      [ngClass]="[
+      class="w-full flex items-center justify-between cursor-pointer focus:outline-none transition-colors"
+      [ngClass]="dark ? [
+        'rounded-[7px] pl-[10px] pr-[8px] h-[30px] text-[11px] font-medium',
+        'border border-[rgba(255,255,255,0.2)]',
+        isOpen ? 'bg-[#2a4a71]' : 'bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)]'
+      ] : [
         compact
-          ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] focus:ring-1 focus:ring-[var(--ss-accent)]/20'
-          : 'rounded-lg bg-white pl-[12px] pr-[10px] py-[10px] text-sm focus:ring-2 focus:ring-[var(--ss-accent)]/30',
+          ? 'rounded-[6px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[32px] text-[0.78rem] border focus:ring-1 focus:ring-[var(--ss-accent)]/20'
+          : 'rounded-lg bg-white pl-[12px] pr-[10px] py-[10px] text-sm border focus:ring-2 focus:ring-[var(--ss-accent)]/30',
         isOpen
           ? 'border-[var(--ss-accent)] ring-2 ring-[var(--ss-accent)]/30'
           : compact ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]'
       ]"
     >
-      <span class="ss-trigger-label" [class.ss-full]="fullText" [ngClass]="hasValue ? 'text-gray-800' : 'text-gray-400'">
+      <span
+        class="ss-trigger-label"
+        [class.ss-full]="fullText"
+        [ngClass]="dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-400')"
+      >
         {{ selectedLabel }}
       </span>
       <span class="flex items-center gap-[8px]">

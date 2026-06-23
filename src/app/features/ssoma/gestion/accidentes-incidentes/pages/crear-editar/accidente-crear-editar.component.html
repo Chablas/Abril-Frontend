@@ -3,80 +3,367 @@
   <app-abril-page-header
     badge="SSOMA"
     [titulo]="titulo"
-    subtitulo="Accidentes e Incidentes"
+    subtitulo="Formulario Flash Report — SSO-FO-035"
     [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
-    [botonPrimario]="{ label: guardando ? 'Guardando...' : 'Guardar', icono: guardando ? 'ti-loader-2' : 'ti-check' }"
-    (secondaryClick)="cancelar()"
-    (primaryClick)="guardar()">
+    (secondaryClick)="cancelar()">
   </app-abril-page-header>
 
-  <div class="form-body">
-    <div class="card">
+  @if (cargando) {
+    <div class="skeleton-form">
+      @for (_ of [1,2,3,4,5]; track $index) { <div class="skeleton-row"></div> }
+    </div>
+  }
 
+  @if (!cargando) {
+  <form class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
+
+    <!-- ══════════════════════ DATOS DEL EVENTO ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-info-circle"></i> Datos del evento</h3>
       <div class="form-grid">
 
-        <!-- Proyecto -->
-        <div class="form-group form-group--full">
-          <label class="form-label">Proyecto <span class="req">*</span></label>
-          <select class="form-input" [(ngModel)]="form.proyectoId" [class.input-error]="errores['proyectoId']">
-            <option [ngValue]="0">Seleccionar proyecto...</option>
-            @for (p of proyectos; track p.projectId) {
-              <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
+        <div class="form-field">
+          <label>Proyecto *</label>
+          <app-search-select
+            [options]="proyectosOpts()"
+            valueField="projectId"
+            displayField="projectDescription"
+            placeholder="Seleccionar proyecto"
+            [value]="form.proyectoId || undefined"
+            (valueChange)="form.proyectoId = $event ?? 0"
+          />
+          @if (errores['proyectoId']) { <span class="campo-error">{{ errores['proyectoId'] }}</span> }
+        </div>
+
+        <div class="form-field">
+          <label>Tipo de evento *</label>
+          <select class="campo-input" [(ngModel)]="form.tipoId" name="tipoId">
+            <option [ngValue]="0" disabled>Seleccionar tipo</option>
+            @for (t of tipos; track t.id) {
+              <option [ngValue]="t.id">{{ t.nombre }}</option>
             }
           </select>
-          @if (errores['proyectoId']) { <span class="error-msg">{{ errores['proyectoId'] }}</span> }
+          @if (errores['tipoId']) { <span class="campo-error">{{ errores['tipoId'] }}</span> }
         </div>
 
-        <!-- Fecha -->
-        <div class="form-group">
-          <label class="form-label">Fecha <span class="req">*</span></label>
-          <input type="date" class="form-input" [(ngModel)]="form.fecha" [class.input-error]="errores['fecha']" />
-          @if (errores['fecha']) { <span class="error-msg">{{ errores['fecha'] }}</span> }
+        <div class="form-field">
+          <label>Fecha *</label>
+          <input type="date" class="campo-input" [(ngModel)]="form.fecha" name="fecha" />
+          @if (errores['fecha']) { <span class="campo-error">{{ errores['fecha'] }}</span> }
         </div>
 
-        <!-- Tipo -->
-        <div class="form-group">
-          <label class="form-label">Tipo <span class="req">*</span></label>
-          <select class="form-input" [(ngModel)]="form.tipo" [class.input-error]="errores['tipo']">
-            <option value="Incidente">Incidente</option>
-            <option value="Accidente">Accidente</option>
+        <div class="form-field">
+          <label>Hora</label>
+          <input type="time" class="campo-input" [(ngModel)]="form.hora" name="hora" />
+        </div>
+
+        <div class="form-field form-field--full">
+          <label>Lugar exacto *</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
+            placeholder="Ej: Sótano 2, eje C-D, zona de excavación" />
+          @if (errores['lugarExacto']) { <span class="campo-error">{{ errores['lugarExacto'] }}</span> }
+        </div>
+
+        <div class="form-field">
+          <label>Etapa del proyecto</label>
+          <select class="campo-input" [(ngModel)]="form.etapaProyectoId" name="etapaProyectoId">
+            <option [ngValue]="undefined">— Sin etapa —</option>
+            @for (e of etapas; track e.id) {
+              <option [ngValue]="e.id">{{ e.nombre }}</option>
+            }
           </select>
-          @if (errores['tipo']) { <span class="error-msg">{{ errores['tipo'] }}</span> }
         </div>
 
-        <!-- Estado -->
-        <div class="form-group">
-          <label class="form-label">Estado</label>
-          <select class="form-input" [(ngModel)]="form.estado">
-            <option value="Abierto">Abierto</option>
-            <option value="En Investigación">En Investigación</option>
-            <option value="Cerrado">Cerrado</option>
+        <div class="form-field">
+          <label>Partida</label>
+          <select class="campo-input" [(ngModel)]="form.partidaId" name="partidaId">
+            <option [ngValue]="undefined">— Sin partida —</option>
+            @for (p of partidas; track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}</option>
+            }
           </select>
-        </div>
-
-        <!-- Descripción -->
-        <div class="form-group form-group--full">
-          <label class="form-label">Descripción <span class="req">*</span></label>
-          <textarea
-            class="form-input form-textarea"
-            [(ngModel)]="form.descripcion"
-            [class.input-error]="errores['descripcion']"
-            rows="4"
-            placeholder="Describa el accidente o incidente ocurrido..."></textarea>
-          @if (errores['descripcion']) { <span class="error-msg">{{ errores['descripcion'] }}</span> }
         </div>
 
       </div>
+    </section>
 
-      <div class="form-footer">
-        <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
-        <button type="button" class="btn-guardar" [disabled]="guardando" (click)="guardar()">
-          @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
-          @else { <i class="ti ti-check"></i> Guardar }
+    <!-- ══════════════════════ EMPRESA INVOLUCRADA ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-building"></i> Empresa involucrada</h3>
+      <div class="form-grid">
+
+        <div class="form-field form-field--full">
+          <label>Tipo de empresa</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="tipoEmpresa" value="abril" [(ngModel)]="tipoEmpresa" />
+              Empresa Abril
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="tipoEmpresa" value="contratista" [(ngModel)]="tipoEmpresa" />
+              Contratista
+            </label>
+          </div>
+        </div>
+
+        @if (tipoEmpresa === 'abril') {
+          <div class="form-field">
+            <label>Razón social (Abril)</label>
+            <select class="campo-input" [(ngModel)]="form.empresaAbrilId" name="empresaAbrilId">
+              <option [ngValue]="undefined">— Seleccionar —</option>
+              @for (e of empresasAbril; track e.id) {
+                <option [ngValue]="e.id">{{ e.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (tipoEmpresa === 'contratista') {
+          <div class="form-field">
+            <label>Contratista</label>
+            <select class="campo-input" [(ngModel)]="form.contributorId" name="contributorId">
+              <option [ngValue]="undefined">— Seleccionar —</option>
+              @for (c of contratistas; track c.id) {
+                <option [ngValue]="c.id">{{ c.razonSocial }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="form-field">
+          <label>Jefe inmediato</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.jefeInmediatoNombre" name="jefeInmediato"
+            placeholder="Nombre del jefe inmediato" />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ TRABAJADOR AFECTADO ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-user"></i> Trabajador afectado</h3>
+      <div class="form-grid">
+
+        <div class="form-field form-field--full">
+          <label>Buscar trabajador</label>
+          <app-search-select
+            [options]="trabajadoresOpts()"
+            valueField="id"
+            displayField="label"
+            placeholder="Buscar por nombre"
+            [allowClear]="true"
+            [value]="form.workerId"
+            (valueChange)="onTrabajadorSelect($event)"
+          />
+        </div>
+
+        <div class="form-field form-field--full">
+          <label>Nombre del trabajador</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.trabajadorNombre" name="trabajadorNombre"
+            placeholder="Nombre completo" />
+        </div>
+
+        <div class="form-field">
+          <label>Puesto de trabajo</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.puestoTrabajo" name="puestoTrabajo" />
+        </div>
+
+        <div class="form-field">
+          <label>Edad</label>
+          <input type="number" class="campo-input" [(ngModel)]="form.edad" name="edad" min="18" max="70" />
+        </div>
+
+        <div class="form-field">
+          <label>Años de experiencia</label>
+          <input type="number" class="campo-input" [(ngModel)]="form.aniosExperiencia" name="aniosExp" min="0" />
+        </div>
+
+        <div class="form-field">
+          <label>Celular</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.celularTrabajador" name="celular" placeholder="9XXXXXXXX" />
+        </div>
+
+        <div class="form-field">
+          <label>Parte del cuerpo afectada</label>
+          <select class="campo-input" [(ngModel)]="form.parteAfectadaId" name="parteAfectadaId">
+            <option [ngValue]="undefined">— Sin especificar —</option>
+            @for (p of partes; track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ DAÑOS Y CONSECUENCIAS ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-alert-triangle"></i> Daños y consecuencias</h3>
+      <div class="form-grid">
+
+        <div class="form-field form-field--full">
+          <label>Daño al proceso / equipo / material</label>
+          <textarea class="campo-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
+            placeholder="Describa el daño a proceso, equipo o material"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label>Consecuencia real — Personal</label>
+          <select class="campo-input" [(ngModel)]="form.consecuenciaRealPersonal" name="consecReal">
+            <option [ngValue]="undefined">— Sin consecuencia —</option>
+            @for (n of nivelesOpciones; track n) {
+              <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>Consecuencia potencial — Personal</label>
+          <select class="campo-input" [(ngModel)]="form.consecuenciaPotencialPersonal" name="consecPot">
+            <option [ngValue]="undefined">— Sin consecuencia —</option>
+            @for (n of nivelesOpciones; track n) {
+              <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
+            }
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ DESCRIPCIÓN ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-file-text"></i> Descripción del evento</h3>
+      <div class="form-grid">
+        <div class="form-field form-field--full">
+          <textarea class="campo-input campo-textarea" [(ngModel)]="form.descripcion" name="descripcion" rows="5"
+            placeholder="Describa con detalle cómo ocurrió el evento, secuencia de hechos, condiciones del entorno..."></textarea>
+          @if (errores['descripcion']) { <span class="campo-error">{{ errores['descripcion'] }}</span> }
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════ ACCIONES INMEDIATAS ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-bolt"></i> Acciones inmediatas</h3>
+      <div class="form-grid">
+        <div class="form-field form-field--full">
+          <textarea class="campo-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
+            placeholder="Liste las acciones tomadas inmediatamente después del evento..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════ PERÍODOS DE DESCANSO ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title">
+        <i class="ti ti-bed"></i> Períodos de descanso médico
+        <button type="button" class="btn-add-small" (click)="agregarDescanso()">
+          <i class="ti ti-plus"></i> Agregar
         </button>
-      </div>
+      </h3>
 
+      @if (!form.descansos.length) {
+        <p class="empty-hint">Sin períodos de descanso. Haga clic en Agregar para añadir uno.</p>
+      }
+
+      @for (d of form.descansos; track $index; let i = $index) {
+        <div class="descanso-row">
+          <div class="form-field">
+            <label>Fecha inicio</label>
+            <input type="date" class="campo-input" [(ngModel)]="d.fechaInicio" [name]="'descIni' + i" />
+          </div>
+          <div class="form-field">
+            <label>Fecha fin</label>
+            <input type="date" class="campo-input" [(ngModel)]="d.fechaFin" [name]="'descFin' + i" />
+          </div>
+          <div class="form-field form-field--flex">
+            <label>Observación</label>
+            <input type="text" class="campo-input" [(ngModel)]="d.observacion" [name]="'descObs' + i" placeholder="Opcional" />
+          </div>
+          <button type="button" class="btn-del-row" (click)="quitarDescanso(i)" title="Quitar">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- ══════════════════════ FOTOGRAFÍAS ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-camera"></i> Fotografías</h3>
+      <div class="fotos-grid">
+
+        <div class="foto-slot">
+          <label class="foto-label">Foto 1</label>
+          @if (foto1Preview) {
+            <div class="foto-preview-wrap">
+              <img [src]="foto1Preview" class="foto-preview" alt="Foto 1" />
+              <button type="button" class="btn-quitar-foto" (click)="quitarFoto(1)"><i class="ti ti-x"></i></button>
+            </div>
+          } @else {
+            <label class="foto-upload-btn">
+              <i class="ti ti-photo-up"></i> Seleccionar foto
+              <input type="file" accept="image/*" (change)="onFotoSelect($event, 1)" style="display:none" />
+            </label>
+          }
+        </div>
+
+        <div class="foto-slot">
+          <label class="foto-label">Foto 2</label>
+          @if (foto2Preview) {
+            <div class="foto-preview-wrap">
+              <img [src]="foto2Preview" class="foto-preview" alt="Foto 2" />
+              <button type="button" class="btn-quitar-foto" (click)="quitarFoto(2)"><i class="ti ti-x"></i></button>
+            </div>
+          } @else {
+            <label class="foto-upload-btn">
+              <i class="ti ti-photo-up"></i> Seleccionar foto
+              <input type="file" accept="image/*" (change)="onFotoSelect($event, 2)" style="display:none" />
+            </label>
+          }
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ ELABORADO POR ══════════════════════ -->
+    <section class="flash-section">
+      <h3 class="flash-section__title"><i class="ti ti-pen"></i> Elaborado por</h3>
+      <div class="form-grid">
+
+        <div class="form-field">
+          <label>Nombre</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorNombre" name="elaboradoNombre" />
+        </div>
+
+        <div class="form-field">
+          <label>Cargo</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorCargo" name="elaboradoCargo" />
+        </div>
+
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" class="campo-input" [(ngModel)]="form.elaboradoPorEmail" name="elaboradoEmail" />
+        </div>
+
+        <div class="form-field">
+          <label>Teléfono</label>
+          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorTelefono" name="elaboradoTel" />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════ BOTONES ══════════════════════ -->
+    <div class="form-actions">
+      <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+      <button type="submit" class="btn-guardar" [disabled]="guardando">
+        @if (guardando) { <i class="ti ti-loader-2 spin"></i> }
+        @else { <i class="ti ti-device-floppy"></i> }
+        {{ guardando ? 'Guardando...' : 'Guardar borrador' }}
+      </button>
     </div>
-  </div>
+
+  </form>
+  }
 
 </div>

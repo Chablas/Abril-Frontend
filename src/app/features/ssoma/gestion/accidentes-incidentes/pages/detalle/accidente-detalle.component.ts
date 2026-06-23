@@ -3,32 +3,27 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AccidenteIncidenteService } from '../../accidente-incidente.service';
-import { AccidenteIncidenteDetalleDto, DocumentoAdjuntoDto, SubirDocumentoRequest } from '../../accidente-incidente.dtos';
+import { FlashReportDetalleDto, NIVELES_CONSECUENCIA } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
-import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-accidente-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, AbrilPageHeaderComponent],
   templateUrl: './accidente-detalle.component.html',
   styleUrl: './accidente-detalle.component.css',
 })
 export class AccidenteDetalleComponent implements OnInit {
   id!: number;
-  detalle: AccidenteIncidenteDetalleDto | null = null;
+  detalle: FlashReportDetalleDto | null = null;
   loading = true;
+  enviando = false;
 
-  subiendoDoc = false;
-  docVisorUrl: SafeResourceUrl | null = null;
-  docVisorNombre = '';
-  docVisorTipo = '';
-  docVisorAbierto = false;
+  readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
 
   constructor(
     private route: ActivatedRoute,
@@ -36,7 +31,6 @@ export class AccidenteDetalleComponent implements OnInit {
     private service: AccidenteIncidenteService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-    private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -72,73 +66,63 @@ export class AccidenteDetalleComponent implements OnInit {
     this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
   }
 
-  onFileSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      const request: SubirDocumentoRequest = {
-        nombreArchivo: file.name,
-        tipoArchivo: file.type,
-        tamanioBytes: file.size,
-        contenidoBase64: base64,
-      };
-      this.subiendoDoc = true;
-      this.cdr.detectChanges();
-      this.service.subirDocumento(this.id, request).subscribe({
-        next: () => {
-          this.subiendoDoc = false;
-          this.cargar();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.subiendoDoc = false;
-          this.errorService.handleError(err);
-          this.cdr.detectChanges();
-        },
-      });
-    };
-    reader.readAsDataURL(file);
-    input.value = '';
-  }
+  async confirmarEnviar(): Promise<void> {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar Flash Report?',
+      html: `Se generará el PDF del Flash Report <strong>${this.detalle?.codigo}</strong>, se subirá a SharePoint y se enviará por correo a SSOMA y Proyectos.<br><br>Esta acción no se puede deshacer.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1b3a2d',
+    });
+    if (!result.isConfirmed) return;
 
-  abrirVisor(doc: DocumentoAdjuntoDto): void {
-    this.docVisorNombre = doc.nombreArchivo;
-    this.docVisorTipo = doc.tipoArchivo;
-    const esPdf = doc.tipoArchivo === 'application/pdf' || doc.nombreArchivo.toLowerCase().endsWith('.pdf');
-    this.docVisorUrl = this.sanitizer.bypassSecurityTrustResourceUrl(doc.urlSharepoint);
-    this.docVisorAbierto = true;
+    this.enviando = true;
     this.cdr.detectChanges();
+    this.loaderService.show();
+
+    this.service.enviar(this.id).subscribe({
+      next: async (res) => {
+        this.enviando = false;
+        this.loaderService.hide();
+        await Swal.fire({
+          icon: 'success',
+          title: 'Flash Report enviado',
+          text: res.message,
+          timer: 2500,
+          showConfirmButton: false,
+        });
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviando = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 
-  cerrarVisor(): void {
-    this.docVisorAbierto = false;
-    this.docVisorUrl = null;
-    this.cdr.detectChanges();
+  nivelLabel(n?: number): string {
+    return n && n >= 1 && n <= 6 ? this.nivelesConsecuencia[n] : '—';
   }
 
-  esImagen(tipoArchivo: string): boolean {
-    return tipoArchivo.startsWith('image/');
+  nivelClass(n?: number): string {
+    if (!n) return '';
+    if (n <= 2) return 'nivel-bajo';
+    if (n <= 3) return 'nivel-medio';
+    if (n <= 4) return 'nivel-alto';
+    return 'nivel-critico';
   }
 
-  esPdf(tipoArchivo: string, nombre: string): boolean {
-    return tipoArchivo === 'application/pdf' || nombre.toLowerCase().endsWith('.pdf');
-  }
-
-  formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1048576).toFixed(1)} MB`;
-  }
-
-  tipoClass(tipo: string): string {
-    return tipo === 'Accidente' ? 'tipo-accidente' : 'tipo-incidente';
+  tipoClass(codigo: string): string {
+    const map: Record<string, string> = { AC: 'tipo-accidente', IN: 'tipo-incidente', NC: 'tipo-nc', AL: 'tipo-alerta' };
+    return map[codigo] ?? 'tipo-incidente';
   }
 
   estadoClass(estado: string): string {
-    if (estado === 'Cerrado') return 'estado-cerrado';
-    if (estado === 'En Investigación') return 'estado-investigacion';
-    return 'estado-abierto';
+    if (estado === 'Enviado') return 'estado-enviado';
+    return 'estado-borrador';
   }
 }

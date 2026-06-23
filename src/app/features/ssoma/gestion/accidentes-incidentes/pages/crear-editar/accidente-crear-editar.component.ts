@@ -4,18 +4,27 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AccidenteIncidenteService } from '../../accidente-incidente.service';
-import { CrearAccidenteIncidenteRequest, ActualizarAccidenteIncidenteRequest } from '../../accidente-incidente.dtos';
-import { ProjectService } from '../../../../../../core/services/project.service';
+import {
+  CrearFlashReportRequest,
+  DescansoRequest,
+  FlashReportInicializarDto,
+  FlashProyectoDto,
+  CatalogoItemDto,
+  ContratistaCatalogoDto,
+  TrabajadorCatalogoDto,
+  NIVELES_CONSECUENCIA,
+} from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-accidente-crear-editar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './accidente-crear-editar.component.html',
   styleUrl: './accidente-crear-editar.component.css',
 })
@@ -23,16 +32,38 @@ export class AccidenteCrearEditarComponent implements OnInit {
   modoEditar = false;
   id?: number;
   guardando = false;
+  cargando = true;
 
-  proyectos: any[] = [];
+  init?: FlashReportInicializarDto;
 
-  form: CrearAccidenteIncidenteRequest = {
+  // listas para selects
+  proyectos: FlashProyectoDto[] = [];
+  tipos: CatalogoItemDto[] = [];
+  etapas: CatalogoItemDto[] = [];
+  partes: CatalogoItemDto[] = [];
+  empresasAbril: CatalogoItemDto[] = [];
+  partidas: CatalogoItemDto[] = [];
+  contratistas: ContratistaCatalogoDto[] = [];
+  trabajadores: TrabajadorCatalogoDto[] = [];
+
+  readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
+  readonly nivelesOpciones = [1, 2, 3, 4, 5, 6];
+
+  // Tipo de empresa: 'abril' | 'contratista'
+  tipoEmpresa: 'abril' | 'contratista' = 'abril';
+
+  // Fotos preview
+  foto1Preview: string | null = null;
+  foto2Preview: string | null = null;
+
+  form: CrearFlashReportRequest = {
     proyectoId: 0,
-    fecha: '',
+    tipoId: 0,
+    fecha: new Date().toISOString().substring(0, 10),
+    hora: '',
+    lugarExacto: '',
     descripcion: '',
-    tipo: 'Incidente',
-    estado: 'Abierto',
-    responsableId: undefined,
+    descansos: [],
   };
 
   errores: Record<string, string> = {};
@@ -41,7 +72,6 @@ export class AccidenteCrearEditarComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private service: AccidenteIncidenteService,
-    private projectService: ProjectService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -55,69 +85,165 @@ export class AccidenteCrearEditarComponent implements OnInit {
     }
 
     this.loaderService.show();
-    this.projectService.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
-      next: (res) => {
-        this.proyectos = res.data;
-        this.loaderService.hide();
-        if (this.modoEditar) this.cargarDetalle();
-        else this.cdr.detectChanges();
+    this.service.inicializar().subscribe({
+      next: (init) => {
+        this.init = init;
+        this.proyectos = init.proyectos;
+        this.tipos = init.tipos;
+        this.etapas = init.etapasProyecto;
+        this.partes = init.partesAfectadas;
+        this.empresasAbril = init.empresasAbril;
+        this.partidas = init.partidas;
+        this.contratistas = init.contratistas;
+        this.trabajadores = init.trabajadores;
+
+        if (this.modoEditar) {
+          this.cargarDetalle();
+        } else {
+          this.cargando = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+        }
       },
       error: () => {
         this.loaderService.hide();
-        if (this.modoEditar) this.cargarDetalle();
-        else this.cdr.detectChanges();
+        this.cargando = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
   cargarDetalle(): void {
-    this.loaderService.show();
     this.service.getDetalle(this.id!).subscribe({
       next: (res) => {
+        this.tipoEmpresa = res.empresaAbrilId ? 'abril' : 'contratista';
         this.form = {
           proyectoId: res.proyectoId,
+          tipoId: res.tipoId,
           fecha: res.fecha.substring(0, 10),
+          hora: res.hora ?? '',
+          lugarExacto: res.lugarExacto,
           descripcion: res.descripcion,
-          tipo: res.tipo,
-          estado: res.estado,
-          responsableId: res.responsableId,
+          empresaAbrilId: res.empresaAbrilId,
+          contributorId: res.contributorId,
+          jefeInmediatoNombre: res.jefeInmediatoNombre,
+          etapaProyectoId: res.etapaProyectoId,
+          partidaId: res.partidaId,
+          workerId: res.workerId,
+          trabajadorNombre: res.trabajadorNombre,
+          puestoTrabajo: res.puestoTrabajo,
+          edad: res.edad,
+          aniosExperiencia: res.aniosExperiencia,
+          celularTrabajador: res.celularTrabajador,
+          parteAfectadaId: res.parteAfectadaId,
+          danoProceso: res.danoProceso,
+          consecuenciaRealPersonal: res.consecuenciaRealPersonal,
+          consecuenciaPotencialPersonal: res.consecuenciaPotencialPersonal,
+          accionesInmediatas: res.accionesInmediatas,
+          elaboradoPorNombre: res.elaboradoPorNombre,
+          elaboradoPorCargo: res.elaboradoPorCargo,
+          elaboradoPorEmail: res.elaboradoPorEmail,
+          elaboradoPorTelefono: res.elaboradoPorTelefono,
+          descansos: res.descansos.map((d) => ({
+            fechaInicio: d.fechaInicio.substring(0, 10),
+            fechaFin: d.fechaFin.substring(0, 10),
+            observacion: d.observacion,
+          })),
         };
+        this.foto1Preview = res.urlFoto1 ?? null;
+        this.foto2Preview = res.urlFoto2 ?? null;
+        this.cargando = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
+        this.cargando = false;
         this.errorService.handleError(err);
         this.cdr.detectChanges();
       },
     });
   }
 
+  // ── Fotos ──────────────────────────────────────────────────────────────────
+
+  onFotoSelect(event: Event, slot: 1 | 2): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const b64 = reader.result as string;
+      if (slot === 1) {
+        this.form.foto1Base64 = b64;
+        this.foto1Preview = b64;
+      } else {
+        this.form.foto2Base64 = b64;
+        this.foto2Preview = b64;
+      }
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  quitarFoto(slot: 1 | 2): void {
+    if (slot === 1) { this.form.foto1Base64 = undefined; this.foto1Preview = null; }
+    else { this.form.foto2Base64 = undefined; this.foto2Preview = null; }
+    this.cdr.detectChanges();
+  }
+
+  // ── Descansos ──────────────────────────────────────────────────────────────
+
+  agregarDescanso(): void {
+    this.form.descansos.push({ fechaInicio: '', fechaFin: '' });
+    this.cdr.detectChanges();
+  }
+
+  quitarDescanso(i: number): void {
+    this.form.descansos.splice(i, 1);
+    this.cdr.detectChanges();
+  }
+
+  // ── Trabajador autocompletado ──────────────────────────────────────────────
+
+  onTrabajadorSelect(id: number | undefined): void {
+    this.form.workerId = id;
+    if (id) {
+      const t = this.trabajadores.find((w) => w.id === id);
+      if (t) {
+        this.form.trabajadorNombre = t.nombreCompleto;
+        this.form.puestoTrabajo = t.cargo ?? this.form.puestoTrabajo;
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  // ── Validación y guardado ──────────────────────────────────────────────────
+
   validar(): boolean {
     this.errores = {};
-    if (!this.form.proyectoId || this.form.proyectoId <= 0)
-      this.errores['proyectoId'] = 'El proyecto es requerido.';
-    if (!this.form.fecha)
-      this.errores['fecha'] = 'La fecha es requerida.';
-    if (!this.form.descripcion?.trim())
-      this.errores['descripcion'] = 'La descripción es requerida.';
-    if (!this.form.tipo)
-      this.errores['tipo'] = 'El tipo es requerido.';
+    if (!this.form.proyectoId) this.errores['proyectoId'] = 'Proyecto requerido.';
+    if (!this.form.tipoId) this.errores['tipoId'] = 'Tipo requerido.';
+    if (!this.form.fecha) this.errores['fecha'] = 'Fecha requerida.';
+    if (!this.form.lugarExacto?.trim()) this.errores['lugarExacto'] = 'Lugar exacto requerido.';
+    if (!this.form.descripcion?.trim()) this.errores['descripcion'] = 'Descripción requerida.';
     return Object.keys(this.errores).length === 0;
   }
 
   guardar(): void {
-    if (!this.validar()) {
-      this.cdr.detectChanges();
-      return;
-    }
+    if (!this.validar()) { this.cdr.detectChanges(); return; }
+
+    // Limpiar empresa no usada
+    if (this.tipoEmpresa === 'abril') this.form.contributorId = undefined;
+    else this.form.empresaAbrilId = undefined;
 
     this.guardando = true;
     this.cdr.detectChanges();
     this.loaderService.show();
 
     const obs$ = this.modoEditar
-      ? this.service.actualizar(this.id!, this.form as ActualizarAccidenteIncidenteRequest)
+      ? this.service.actualizar(this.id!, this.form)
       : this.service.crear(this.form);
 
     obs$.subscribe({
@@ -126,7 +252,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
         this.loaderService.hide();
         await Swal.fire({
           icon: 'success',
-          title: this.modoEditar ? 'Actualizado' : 'Registrado',
+          title: this.modoEditar ? 'Actualizado' : 'Flash Report creado',
           text: res.message ?? 'Operación exitosa.',
           timer: 1800,
           showConfirmButton: false,
@@ -144,14 +270,19 @@ export class AccidenteCrearEditarComponent implements OnInit {
   }
 
   cancelar(): void {
-    if (this.modoEditar) {
-      this.router.navigate(['/ssoma/gestion/accidentes-incidentes', this.id]);
-    } else {
-      this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
-    }
+    if (this.modoEditar) this.router.navigate(['/ssoma/gestion/accidentes-incidentes', this.id]);
+    else this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
   }
 
   get titulo(): string {
-    return this.modoEditar ? 'Editar registro' : 'Nuevo registro';
+    return this.modoEditar ? 'Editar Flash Report' : 'Nuevo Flash Report';
+  }
+
+  proyectosOpts() {
+    return this.proyectos.map((p) => ({ projectId: p.id, projectDescription: p.nombre }));
+  }
+
+  trabajadoresOpts() {
+    return this.trabajadores.map((t) => ({ id: t.id, label: `${t.nombreCompleto}${t.cargo ? ' — ' + t.cargo : ''}` }));
   }
 }

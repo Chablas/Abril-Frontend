@@ -176,19 +176,54 @@
 
 .tipo-accidente { background: #fee2e2; color: #991b1b; }
 .tipo-incidente  { background: #fef3c7; color: #92400e; }
+.tipo-nc         { background: #ede9fe; color: #5b21b6; }
+.tipo-alerta     { background: #e0f2fe; color: #075985; }
 
 /* ── ESTADO CHIP ──────────────────────────────────────── */
 .estado-chip {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
 }
 
-.estado-abierto       { background: #fee2e2; color: #991b1b; }
-.estado-investigacion { background: #fef3c7; color: #92400e; }
-.estado-cerrado       { background: #eaf2ee; color: #1b3a2d; }
+.estado-abierto   { background: #fee2e2; color: #991b1b; }
+.estado-borrador  { background: #fef3c7; color: #92400e; }
+.estado-enviado   { background: #eaf2ee; color: #1b3a2d; }
+
+/* ── CÓDIGO BADGE ─────────────────────────────────────── */
+.codigo-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0ede8;
+  border: 0.5px solid #d8d4ce;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #1b3a2d;
+  font-family: monospace;
+}
+
+/* ── NIVEL CHIP ───────────────────────────────────────── */
+.nivel-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.nivel-bajo    { background: #dcfce7; color: #166534; }
+.nivel-medio   { background: #fef9c3; color: #713f12; }
+.nivel-alto    { background: #fee2e2; color: #991b1b; }
+.nivel-critico { background: #1b3a2d; color: #fff; }
+
+/* ── COLS ─────────────────────────────────────────────── */
+.td-codigo    { white-space: nowrap; }
+.td-trabajador { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── DOC COUNT ────────────────────────────────────────── */
 .doc-count {

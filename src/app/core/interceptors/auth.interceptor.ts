@@ -10,6 +10,11 @@ function isAuthEndpoint(url: string): boolean {
   return url.includes('/auth/refresh') || url.includes('/auth/login') || url.includes('/microsoft/login');
 }
 
+/** Endpoints públicos que no requieren token — sin este check se dispara CORS preflight innecesario. */
+function isPublicEndpoint(url: string): boolean {
+  return url.includes('/shared-filters/');
+}
+
 /**
  * Refresh compartido entre peticiones: si varias requests reciben 401 a la vez,
  * todas esperan el mismo refresh en vuelo en lugar de disparar uno cada una.
@@ -24,7 +29,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
 
   const authReq =
-    token && !req.headers.has('Authorization')
+    token && !req.headers.has('Authorization') && !isPublicEndpoint(req.url)
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : req;
 

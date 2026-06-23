@@ -26,6 +26,12 @@ export interface AsistenciaDetail {
   asistio: boolean;
 }
 
+export interface ArchivoItem {
+  id: number;
+  url: string;
+  nombre: string;
+}
+
 export interface Capacitacion {
   id: number | null;
   workerId: number;
@@ -35,6 +41,7 @@ export interface Capacitacion {
   evidenciaUrl: string | null;
   evidenciaNombre: string | null;
   estado: 'Falta' | 'Enviado' | 'Aprobado' | 'Rechazado';
+  archivos: ArchivoItem[];
 }
 
 export interface Resumen {
@@ -91,6 +98,16 @@ export interface NuevaCharlaCreateDto {
   workerIds: number[];
 }
 
+// ── NEW: Tab 3 — Galería charlas proyecto ────────────────────────────────────
+export interface CharlaGaleriaItem {
+  id: number;
+  titulo: string;
+  tipo: string;
+  fecha: string;
+  totalAsistentes: number;
+  totalAsistio: number;
+}
+
 // ── NEW: Tab 4 — Lista paginada ───────────────────────────────────────────────
 export interface CharlaListItem {
   id: number;
@@ -129,6 +146,47 @@ export interface CharlaDetalle {
   aprobadoEn: string | null;
   motivoRechazo: string | null;
   evidenciaSubidaEn: string | null;
+}
+
+// ── NEW: Dashboard Por Persona (matriz semanal) ──────────────────────────────
+export interface DashDiaSemana {
+  numDia: number;
+  nombre: string;
+  fecha: string;
+}
+
+export interface DashPersonaAsistDia {
+  numDia: number;
+  asistio: boolean | null; // null = no hubo charla ese día para este worker
+}
+
+export interface DashPersonalItem {
+  workerId: number;
+  nombre: string;
+  cargo: string;
+  dias: DashPersonaAsistDia[];
+  charlasAsistidas: number;
+  charlasTotales: number;
+  capsSemana: number;
+  capsAprobMes: number;
+  capsAcumMes: number;
+}
+
+export interface DashPersonalResult {
+  dias: DashDiaSemana[];
+  staff: DashPersonalItem[];
+}
+
+// ── NEW: Dashboard Por Proyecto ──────────────────────────────────────────────
+export interface DashProyectoItem {
+  proyectoId: number;
+  nombre: string;
+  totalStaff: number;
+  charlasDictadas: number;
+  totalAsistencias: number;
+  totalPosiblesAsistencias: number;
+  capsEnviadasSemana: number;
+  capsAprobMes: number;
 }
 
 // ── NEW: Supervisor (app_user) ────────────────────────────────────────────────
