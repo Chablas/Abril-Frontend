@@ -127,7 +127,7 @@ export class Sidebar implements OnInit, OnDestroy {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
-  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'costos', 'proyectos']);
+  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'costos', 'proyectos', 'contabilidad']);
 
   hasAccordion(module: NavModule): boolean {
     return this.accordionModuleKeys.has(module.key);

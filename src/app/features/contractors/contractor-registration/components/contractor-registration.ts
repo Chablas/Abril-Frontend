@@ -103,6 +103,12 @@ export class ContractorRegistration implements OnInit {
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        const backendMsg = err.error?.message as string | undefined;
+        if (err.status !== 404 && backendMsg) {
+          Swal.fire({ icon: 'warning', title: 'No se pudo consultar', text: backendMsg });
+          return;
+        }
         this.errorService.handleError(err);
       },
     });
@@ -128,6 +134,11 @@ export class ContractorRegistration implements OnInit {
         this.dniLookupLoading = false;
         if (err.status === 404) {
           Swal.fire({ icon: 'error', title: 'DNI no encontrado', text: 'No se encontró información para el DNI ingresado.' });
+          return;
+        }
+        const backendMsg = err.error?.message as string | undefined;
+        if (backendMsg) {
+          Swal.fire({ icon: 'warning', title: 'No se pudo consultar', text: backendMsg });
           return;
         }
         this.errorService.handleError(err);
