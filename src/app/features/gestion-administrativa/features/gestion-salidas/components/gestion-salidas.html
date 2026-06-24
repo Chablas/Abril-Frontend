@@ -13,10 +13,14 @@
 
 <div class="page-container flex flex-col gap-[20px] bg-white flex-1 overflow-y-auto">
 
-  <!-- ── Filtros ────────────────────────────────────────────────────────── -->
-  <div class="filter-row">
+  <!-- ── Filtros + acciones ───────────────────────────────────────────── -->
+  <!-- Layout: una primera columna fija (primer filtro + "Marcar como rendidas"
+       debajo, posición respetada) y, al costado, un contenedor flex que envuelve
+       en varias líneas el resto de filtros/opciones. -->
+  <div class="flex items-start gap-x-4 gap-y-3">
 
-    <div class="w-[220px]">
+    <!-- Columna fija: Trabajador arriba, "Marcar como rendidas" siempre debajo -->
+    <div class="flex flex-col gap-3 shrink-0 w-[220px]">
       <app-search-select
         label="Trabajador"
         [options]="trabajadorOptions"
@@ -25,74 +29,87 @@
         [value]="filters.workerId"
         (valueChange)="filters.workerId = $event">
       </app-search-select>
+
+      <!-- Acción bulk: posición fija, siempre debajo del primer filtro -->
+      <div class="flex flex-col gap-1">
+        <button
+          type="button"
+          (click)="marcarRendidasBulk()"
+          [disabled]="selectedIds.size === 0"
+          class="h-[36px] px-4 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+          style="background:var(--color-abril-accent)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+          </svg>
+          Marcar como rendidas<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+        </button>
+        <span *ngIf="selectedIds.size === 0" class="text-xs text-gray-400">
+          Selecciona solicitudes aprobadas desde la columna "Rendición"
+        </span>
+      </div>
     </div>
 
-    <div class="w-[220px]">
-      <app-search-select
-        label="Lugar de proyecto"
-        [options]="lugarProyectoOptions"
-        valueField="gaLugarId"
-        displayField="nombreDisplay"
-        [value]="filters.lugarProyectoId"
-        (valueChange)="filters.lugarProyectoId = $event">
-      </app-search-select>
+    <!-- Resto de filtros/opciones: fluyen y hacen wrap ocupando el espacio restante -->
+    <div class="flex flex-wrap items-end gap-3 flex-1 min-w-0">
+
+      <div class="w-[220px]">
+        <app-search-select
+          label="Lugar de proyecto"
+          [options]="lugarProyectoOptions"
+          valueField="gaLugarId"
+          displayField="nombreDisplay"
+          [value]="filters.lugarProyectoId"
+          (valueChange)="filters.lugarProyectoId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="w-[180px]">
+        <app-search-select
+          label="Aprobación"
+          [options]="estadoAprobacionOptions"
+          valueField="value"
+          displayField="label"
+          [value]="filters.estadoAprobacion"
+          (valueChange)="filters.estadoAprobacion = $event">
+        </app-search-select>
+      </div>
+
+      <div class="w-[180px]">
+        <app-search-select
+          label="Rendición"
+          [options]="estadoRendicionOptions"
+          valueField="value"
+          displayField="label"
+          [value]="filters.estadoRendicion"
+          (valueChange)="filters.estadoRendicion = $event">
+        </app-search-select>
+      </div>
+
+      <button type="button" (click)="onSearch()" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+        </svg>
+        Buscar
+      </button>
+
+      <button type="button" (click)="toggleMyPendingReview()"
+        class="h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        [ngClass]="onlyMyPendingReview
+          ? 'bg-[var(--color-abril-lime)] text-white border-[var(--color-abril-lime)]'
+          : 'bg-white text-[var(--color-abril-lime)] border-[var(--color-abril-lime)] hover:bg-[var(--color-abril-lime-light)]'">
+        Pendientes de mi revisión
+      </button>
+
+      <button class="group flex items-center cursor-pointer gap-1.5 h-[38px] ml-auto" (click)="exportarExcel()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="color:var(--color-abril-accent)">
+          <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="currentColor"/>
+          <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
+        </svg>
+        <span style="color:var(--color-abril-primary)" class="group-hover:underline text-sm">Exportar a excel</span>
+      </button>
+
     </div>
 
-    <div class="w-[180px]">
-      <app-search-select
-        label="Aprobación"
-        [options]="estadoAprobacionOptions"
-        valueField="value"
-        displayField="label"
-        [value]="filters.estadoAprobacion"
-        (valueChange)="filters.estadoAprobacion = $event">
-      </app-search-select>
-    </div>
-
-    <div class="w-[180px]">
-      <app-search-select
-        label="Rendición"
-        [options]="estadoRendicionOptions"
-        valueField="value"
-        displayField="label"
-        [value]="filters.estadoRendicion"
-        (valueChange)="filters.estadoRendicion = $event">
-      </app-search-select>
-    </div>
-
-    <button type="button" (click)="onSearch()" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
-      </svg>
-      Buscar
-    </button>
-
-    <button class="group flex items-center cursor-pointer gap-1.5 h-[38px] ml-auto" (click)="exportarExcel()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="color:var(--color-abril-accent)">
-        <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="currentColor"/>
-        <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
-      </svg>
-      <span style="color:var(--color-abril-primary)" class="group-hover:underline text-sm">Exportar a excel</span>
-    </button>
-
-  </div>
-
-  <!-- ── Acción bulk: marcar como rendidas (siempre visible) ──────────── -->
-  <div class="flex items-center gap-3">
-    <button
-      type="button"
-      (click)="marcarRendidasBulk()"
-      [disabled]="selectedIds.size === 0"
-      class="h-[36px] px-4 text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-      style="background:var(--color-abril-accent)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
-      </svg>
-      Marcar como rendidas<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
-    </button>
-    <span *ngIf="selectedIds.size === 0" class="text-xs text-gray-400">
-      Selecciona solicitudes aprobadas desde la columna "Rendición"
-    </span>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->

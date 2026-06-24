@@ -48,6 +48,9 @@ export class GestionSalidas implements OnInit {
     estadoAprobacion:  null as string | null,
   };
 
+  /** Solo solicitudes pendientes cuyo aprobador soy yo. Activo por defecto. */
+  onlyMyPendingReview = true;
+
   /** IDs seleccionados para acción bulk. */
   selectedIds = new Set<number>();
 
@@ -125,6 +128,7 @@ export class GestionSalidas implements OnInit {
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
+      this.onlyMyPendingReview,
     ).subscribe({
       next: (data) => {
         this.salidas = data;
@@ -138,6 +142,12 @@ export class GestionSalidas implements OnInit {
   }
 
   onSearch(): void {
+    this.load();
+  }
+
+  /** Alterna "pendientes de mi revisión" y recarga. */
+  toggleMyPendingReview(): void {
+    this.onlyMyPendingReview = !this.onlyMyPendingReview;
     this.load();
   }
 
