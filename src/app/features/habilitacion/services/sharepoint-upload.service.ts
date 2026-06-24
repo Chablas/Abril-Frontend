@@ -25,10 +25,12 @@ export class SharepointUploadService {
     });
   }
 
-  getArchivoUrl(path: string): Observable<UploadResultDto> {
+  getArchivoUrl(path: string, ctx?: string): Observable<UploadResultDto> {
+    const params: Record<string, string> = { path };
+    if (ctx) params['ctx'] = ctx;
     return this.http.get<UploadResultDto>(`${HABILITACION_BASE}/archivos/url`, {
       headers: buildHabHeaders(),
-      params: { path },
+      params,
     });
   }
 

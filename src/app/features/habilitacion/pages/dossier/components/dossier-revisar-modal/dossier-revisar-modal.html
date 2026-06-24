@@ -3,10 +3,20 @@
 
   <div class="modal-header">
     <div class="modal-title">
-      <span class="modal-badge">DOSSIER SSOMA</span>
+      <div class="modal-title-top">
+        <span class="modal-badge">DOSSIER SSOMA</span>
+        @if (detalle) {
+          <h2>Semana {{ detalle.numeroSemana }} — {{ detalle.fechaInicio | date:'dd/MM' }} al {{ detalle.fechaFin | date:'dd/MM/yyyy' }}</h2>
+          <span class="chip" [ngClass]="chipSemana(detalle.estado)">{{ detalle.estado }}</span>
+        }
+      </div>
       @if (detalle) {
-        <h2>Semana {{ detalle.numeroSemana }} — {{ detalle.fechaInicio | date:'dd/MM' }} al {{ detalle.fechaFin | date:'dd/MM/yyyy' }}</h2>
-        <span class="chip" [ngClass]="chipSemana(detalle.estado)">{{ detalle.estado }}</span>
+        <div class="progress-row">
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="(detalle.subidos / detalle.totalDocs) * 100"></div>
+          </div>
+          <span>{{ detalle.subidos }}/{{ detalle.totalDocs }} documentos</span>
+        </div>
       }
     </div>
     <button type="button" class="modal-close" (click)="cerrar()">
@@ -18,46 +28,72 @@
     <div class="modal-loading"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
   } @else if (detalle) {
 
-    <div class="docs-list">
-      @for (tipo of tipos; track tipo) {
-        @let doc = getDoc(tipo);
-        <div class="doc-row">
-          <div class="doc-info">
-            <span class="doc-tipo">{{ tipo }}</span>
-            @if (doc) {
-              <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">
-                {{ doc.estado === 'NA' ? 'N/A' : doc.estado }}
-              </span>
-            } @else {
-              <span class="chip chip-sm chip-blue">Pendiente</span>
-            }
-          </div>
-          <div class="doc-actions">
-            @if (doc && (doc.archivos?.length ?? 0) > 1) {
-              @for (a of doc.archivos; track a.id) {
-                <button type="button" class="btn-ghost-sm" (click)="verArchivo(doc!, a.archivoPath)">
-                  <i class="ti ti-eye"></i> Ver {{ $index + 1 }}
+    @if (detalle.estado === 'Rechazado' && detalle.obsRevisor) {
+      <div class="obs-rechazado">
+        <i class="ti ti-alert-circle"></i>
+        <span><strong>Observación:</strong> {{ detalle.obsRevisor }}</span>
+      </div>
+    }
+
+    <div class="modal-body">
+
+      <div class="docs-list">
+        @for (tipo of tipos; track tipo) {
+          @let doc = getDoc(tipo);
+          <div class="doc-row"
+            [class.doc-row--subido]="doc?.estado === 'Subido'"
+            [class.doc-row--na]="doc?.estado === 'NA'"
+            [class.doc-row--pendiente]="!doc || doc.estado === 'Pendiente'">
+            <div class="doc-info">
+              <span class="doc-tipo">{{ tipo }}</span>
+              @if (doc) {
+                <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">
+                  {{ doc.estado === 'NA' ? 'N/A' : doc.estado }}
+                </span>
+              } @else {
+                <span class="chip chip-sm chip-blue">Pendiente</span>
+              }
+            </div>
+            <div class="doc-actions">
+              @if (doc && (doc.archivos?.length ?? 0) > 1) {
+                @for (a of doc.archivos; track a.id) {
+                  <button type="button" class="btn-ver" (click)="verArchivo(doc!, a.archivoPath)">
+                    <i class="ti ti-eye"></i> {{ $index + 1 }}
+                  </button>
+                }
+              } @else if (doc && getArchivoPath(doc)) {
+                <button type="button" class="btn-ver" (click)="verArchivo(doc!)">
+                  <i class="ti ti-eye"></i> Ver
                 </button>
               }
-            } @else if (doc && getArchivoPath(doc)) {
-              <button type="button" class="btn-ghost-sm" (click)="verArchivo(doc!)">
-                <i class="ti ti-eye"></i> Ver
-              </button>
-            }
+            </div>
           </div>
-        </div>
-      }
+        }
+      </div>
+
+      <div class="doc-preview">
+        @if (loadingDoc) {
+          <div class="doc-empty"><i class="ti ti-loader-2 spin"></i> Cargando…</div>
+        } @else if (docSafeUrl) {
+          <div class="doc-preview-header">
+            <span class="doc-preview-nombre">{{ visorNombre }}</span>
+          </div>
+          <iframe [src]="docSafeUrl" frameborder="0"></iframe>
+        } @else {
+          <div class="doc-empty">
+            <i class="ti ti-file-description" style="font-size:32px; margin-bottom:8px;"></i>
+            <span>Selecciona un documento para previsualizarlo</span>
+          </div>
+        }
+      </div>
+
     </div>
 
     @if (modoObservar) {
       <div class="observar-panel">
         <label class="form-label">Observación para el contratista</label>
-        <textarea
-          class="field-input"
-          rows="3"
-          [(ngModel)]="comentario"
-          placeholder="Detalla qué debe corregir el contratista…">
-        </textarea>
+        <textarea class="field-input" rows="3" [(ngModel)]="comentario"
+          placeholder="Detalla qué debe corregir el contratista…"></textarea>
         <div class="observar-actions">
           <button type="button" class="btn-ghost-sm" (click)="modoObservar = false">Cancelar</button>
           <button type="button" class="btn-primary" [disabled]="guardando" (click)="confirmarObservacion()">
@@ -82,9 +118,3 @@
     </div>
   }
 </div>
-
-<app-document-viewer
-  [archivoUrl]="visorUrl"
-  [nombre]="visorNombre"
-  (closed)="visorUrl = ''"
-/>
