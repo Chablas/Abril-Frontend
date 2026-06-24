@@ -234,23 +234,27 @@
           </div>
         </div>
 
-        <!-- Empresa reportada -->
-        <div class="form-grid">
-          <div class="col-2">
-            <label class="form-label">Empresa Reportada</label>
-            <app-search-select
-              [options]="empresas"
-              valueField="id"
-              displayField="nombre"
-              [value]="empresaReportadaId"
-              [showLabel]="false"
-              placeholder="Selecciona empresa"
-              (valueChange)="empresaReportadaId = $event"
-            ></app-search-select>
-          </div>
-        </div>
-
       </ng-container>
+
+      <!-- Empresa reportada — siempre visible -->
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="esAnonimaEmpresaReportada" />
+        <span>No identificar la empresa reportada</span>
+      </label>
+      <div *ngIf="!esAnonimaEmpresaReportada" class="form-grid">
+        <div class="col-2">
+          <label class="form-label">Empresa Reportada</label>
+          <app-search-select
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="empresaReportadaId"
+            [showLabel]="false"
+            placeholder="Selecciona empresa"
+            (valueChange)="empresaReportadaId = $event"
+          ></app-search-select>
+        </div>
+      </div>
     </section>
 
     <!-- ■ 4. DESCRIPCIÓN ─────────────────────────────────────────────── -->
@@ -262,10 +266,6 @@
         <div class="col-2">
           <label class="form-label">Descripción *</label>
           <textarea class="form-input" rows="4" placeholder="Describe el acto o condición subestándar observado…" [(ngModel)]="descripcion"></textarea>
-        </div>
-        <div class="col-2">
-          <label class="form-label">Descripción del Ocurrido</label>
-          <textarea class="form-input" rows="3" placeholder="¿Qué ocurrió exactamente? (opcional)" [(ngModel)]="descripcionOcurrido"></textarea>
         </div>
       </div>
     </section>
@@ -299,12 +299,12 @@
       <div class="form-grid">
 
         <div>
-          <label class="form-label">Plazo de Levantamiento</label>
+          <label class="form-label">Plazo de Levantamiento *</label>
           <input type="date" class="form-input" [(ngModel)]="plazoLevantamiento" />
         </div>
 
         <div class="col-2">
-          <label class="form-label">Plan de Acción</label>
+          <label class="form-label">Plan de Acción *</label>
           <textarea class="form-input" rows="3" placeholder="Describe las acciones correctivas a implementar…" [(ngModel)]="planAccion"></textarea>
         </div>
 

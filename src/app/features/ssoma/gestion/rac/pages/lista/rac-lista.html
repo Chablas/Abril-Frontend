@@ -25,13 +25,13 @@
     </button>
 
     <div class="filtros-bar" [class.filtros-bar--open]="filtrosAbiertos">
-      <select class="filtro-select" [(ngModel)]="filtroEstado">
+      <select class="filtro-select" [(ngModel)]="filtroEstado" (ngModelChange)="buscar()">
         <option value="">Todos los estados</option>
         <option value="Abierto">Abierto</option>
         <option value="Cerrado">Cerrado</option>
       </select>
 
-      <select class="filtro-select" [(ngModel)]="filtroSeveridad">
+      <select class="filtro-select" [(ngModel)]="filtroSeveridad" (ngModelChange)="buscar()">
         <option value="">Toda severidad</option>
         <option value="CRITICO">Crítico</option>
         <option value="ALTO">Alto</option>
@@ -39,7 +39,7 @@
         <option value="BAJO">Bajo</option>
       </select>
 
-      <select class="filtro-select" [(ngModel)]="filtroTipo">
+      <select class="filtro-select" [(ngModel)]="filtroTipo" (ngModelChange)="buscar()">
         <option value="">Todos los tipos</option>
         <option value="ACTO">Acto</option>
         <option value="CONDICION">Condición</option>
@@ -47,24 +47,24 @@
 
       <select class="filtro-select"
         [ngModel]="filtroProyectoId ?? ''"
-        (ngModelChange)="filtroProyectoId = $event ? +$event : null">
+        (ngModelChange)="filtroProyectoId = $event ? +$event : null; buscar()">
         <option value="">Todos los proyectos</option>
         <option *ngFor="let p of proyectos" [value]="p.id">{{ p.nombre }}</option>
       </select>
 
       <select class="filtro-select"
         [ngModel]="filtroEmpresaId ?? ''"
-        (ngModelChange)="filtroEmpresaId = $event ? +$event : null">
+        (ngModelChange)="filtroEmpresaId = $event ? +$event : null; buscar()">
         <option value="">Todas las empresas</option>
         <option *ngFor="let e of empresas" [value]="e.id">{{ e.razonSocial }}</option>
       </select>
 
       <label class="filtro-check">
-        <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" />
+        <input type="checkbox" [(ngModel)]="filtroSoloConPenalidad" (change)="buscar()" />
         Solo con penalidad
       </label>
 
-      <button type="button" class="btn-buscar" (click)="load()">
+      <button type="button" class="btn-buscar" (click)="buscar()">
         <i class="ti ti-search"></i> Buscar
       </button>
 

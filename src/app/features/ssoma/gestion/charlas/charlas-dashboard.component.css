@@ -422,6 +422,87 @@
   border-radius: 8px;
   padding: 4px;
 }
+.staff-list-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 0.5px solid #e2e0d8;
+  border-radius: 8px;
+}
+.staff-list-modal--full {
+  max-height: none;
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 0;
+  border: none;
+  border-left: 0.5px solid #e2e0d8;
+}
+.staff-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 0.5px solid #f0ede8;
+  transition: background 0.1s;
+}
+.staff-row:last-child { border-bottom: none; }
+.staff-row:hover { background: #f5f3ef; }
+.staff-row--on { background: #f0f7ec; }
+.staff-row-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a18;
+}
+.staff-row-cargo {
+  font-size: 11px;
+  color: #8a8880;
+  white-space: nowrap;
+}
+/* Modal dos columnas */
+.modal-panel--charla {
+  width: 780px;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+.charla-modal-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.charla-form-col {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  overflow-y: auto;
+}
+.charla-staff-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-left: 0.5px solid #e8e5df;
+  overflow: hidden;
+}
+.charla-staff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+}
+.charla-staff-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a18;
+}
 .check-label {
   display: flex;
   align-items: center;
