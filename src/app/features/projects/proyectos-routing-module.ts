@@ -9,6 +9,7 @@ import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement
 import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
 import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
 import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cronograma-list';
+import { CronogramaDashboard } from './cronograma-dashboard/cronograma-dashboard';
 
 const routes: Routes = [
   {
@@ -51,6 +52,21 @@ const routes: Routes = [
               titulo: 'CRONOGRAMA DE ACTIVIDADES',
               roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
               featureKey: 'projects.cronograma-actividades',
+            },
+          },
+        ],
+      },
+      {
+        path: 'cronograma-dashboard',
+        children: [
+          {
+            path: '',
+            component: CronogramaDashboard,
+            canActivate: [roleGuard],
+            data: {
+              titulo: 'DASHBOARD UDP',
+              roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP'],
+              featureKey: 'projects.cronograma-dashboard',
             },
           },
         ],

@@ -57,6 +57,7 @@ export class NavigationService {
       items: [
         { label: 'Dashboard de Proyectos',           route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
         { label: 'Cronograma de Actividades',     route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
+        { label: 'Dashboard UDP',                 route: '/projects/cronograma-dashboard',         featureKey: 'projects.cronograma-dashboard' },
         // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
         { label: 'Cronograma de hitos',           route: '/projects/milestone-schedule',           featureKey: 'projects.milestone-schedule' },
         { label: 'Control de IVTs',               route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
