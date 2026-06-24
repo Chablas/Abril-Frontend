@@ -29,6 +29,11 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/inspeccion/inspeccion.routes').then((m) => m.INSPECCION_ROUTES),
   },
   {
+    path: 'gestion/auditoria-ats',
+    loadChildren: () =>
+      import('./gestion/auditoria-ats/auditoria-ats.routes').then((m) => m.AUDITORIA_ATS_ROUTES),
+  },
+  {
     path: 'gestion/charlas',
     loadChildren: () =>
       import('./gestion/charlas/charlas.routes').then((m) => m.CHARLAS_ROUTES),
@@ -38,6 +43,13 @@ export const SSOMA_ROUTES: Routes = [
     loadChildren: () =>
       import('./gestion/accidentes-incidentes/accidente-incidente.routes').then(
         (m) => m.ACCIDENTE_INCIDENTE_ROUTES,
+      ),
+  },
+  {
+    path: 'gestion/amonestaciones',
+    loadChildren: () =>
+      import('./gestion/amonestaciones/amonestaciones.routes').then(
+        (m) => m.AMONESTACIONES_ROUTES,
       ),
   },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },

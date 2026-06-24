@@ -10,4 +10,6 @@ export interface WorkerSearchItemDto {
   activo: boolean;
   aniosExperiencia?: number;
   fechaIngreso?: string;
+  inhabilitadoSsoma?: boolean;
+  esAbril?: boolean;
 }

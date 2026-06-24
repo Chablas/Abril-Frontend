@@ -1,0 +1,283 @@
+<div class="page-wrapper">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Amonestaciones y Suspensiones"
+    subtitulo="Registro y seguimiento de amonestaciones e inhabilitaciones"
+    [tabs]="headerTabs"
+    [botonPrimario]="{ label: 'Generar amonestación', icono: 'ti-plus' }"
+    (primaryClick)="nuevaAmonestacion()"
+    (tabClick)="onTabClick($event)">
+  </app-abril-page-header>
+
+  <!-- ── TAB DASHBOARD ─────────────────────────────────────────── -->
+  @if (tab === 'dashboard') {
+    @if (loadingDashboard) {
+      <div class="loading-state">Cargando dashboard…</div>
+    } @else if (dashboard) {
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ dashboard.totalAmonestaciones }}</div>
+          <div class="kpi-label">Total amonestaciones</div>
+        </div>
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-value">{{ dashboard.amonestacionesMesActual }}</div>
+          <div class="kpi-label">Este mes</div>
+        </div>
+        <div class="kpi-card kpi-orange">
+          <div class="kpi-value">{{ dashboard.trabajadoresConMas5Puntos }}</div>
+          <div class="kpi-label">Trabajadores &gt;5 puntos</div>
+        </div>
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-value">{{ dashboard.trabajadoresInhabilitados }}</div>
+          <div class="kpi-label">Inhabilitados</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+
+        <!-- Por tipo de sanción -->
+        <div class="chart-card">
+          <div class="chart-title">Por tipo de sanción</div>
+          @for (t of dashboard.porTipoSancion; track t.tipoNombre) {
+            <div class="bar-item">
+              <span class="bar-label">{{ t.tipoNombre }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="(t.total / (dashboard.totalAmonestaciones || 1)) * 100"></div>
+              </div>
+              <span class="bar-count">{{ t.total }}</span>
+            </div>
+          }
+          @if (dashboard.porTipoSancion.length === 0) {
+            <div class="empty-chart">Sin datos</div>
+          }
+        </div>
+
+        <!-- Por proyecto -->
+        <div class="chart-card">
+          <div class="chart-title">Por proyecto</div>
+          @for (p of dashboard.porProyecto; track p.proyectoNombre) {
+            <div class="bar-item">
+              <span class="bar-label">{{ p.proyectoNombre }}</span>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill--teal"
+                     [style.width.%]="(p.total / (dashboard.totalAmonestaciones || 1)) * 100"></div>
+              </div>
+              <span class="bar-count">{{ p.total }}</span>
+            </div>
+          }
+          @if (dashboard.porProyecto.length === 0) {
+            <div class="empty-chart">Sin datos</div>
+          }
+        </div>
+
+      </div>
+
+      <!-- Tendencia mensual -->
+      @if (dashboard.tendencia.length > 0) {
+        <div class="chart-card chart-card--full">
+          <div class="chart-title">Tendencia mensual</div>
+          <div class="tendencia-grid">
+            @for (t of dashboard.tendencia; track t.mes + '-' + t.anio) {
+              <div class="tendencia-item">
+                <div class="tendencia-bar-wrap">
+                  <div class="tendencia-bar"
+                       [style.height.%]="(t.total / (maxTendencia)) * 100"></div>
+                </div>
+                <div class="tendencia-label">{{ MESES[t.mes] }}<br>{{ t.anio }}</div>
+                <div class="tendencia-count">{{ t.total }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    } @else {
+      <div class="empty-state">No hay datos disponibles.</div>
+    }
+  }
+
+  <!-- ── TAB LISTA ─────────────────────────────────────────────── -->
+  @if (tab === 'lista') {
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Desde</label>
+        <input type="date" class="filter-control" [(ngModel)]="filtroFechaDesde" />
+      </div>
+      <div class="filter-group">
+        <label>Hasta</label>
+        <input type="date" class="filter-control" [(ngModel)]="filtroFechaHasta" />
+      </div>
+      <button class="btn-filtrar" (click)="filtrar()">Filtrar</button>
+    </div>
+
+    @if (loadingLista) {
+      <div class="loading-state">Cargando…</div>
+    } @else if (lista.length === 0) {
+      <div class="empty-state">No se encontraron amonestaciones.</div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Fecha</th>
+              <th>Trabajador</th>
+              <th>Empresa</th>
+              <th>Proyecto</th>
+              <th>Tipo sanción</th>
+              <th>Pts</th>
+              <th>Penalización</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of lista; track a.id) {
+              <tr>
+                <td><code>{{ a.codigo }}</code></td>
+                <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <div class="worker-cell">
+                    <span>{{ a.workerNombre }}</span>
+                    <small>{{ a.workerDni }}</small>
+                  </div>
+                </td>
+                <td>{{ a.empresaNombre }}</td>
+                <td>{{ a.proyectoNombre }}</td>
+                <td>
+                  <span class="badge" [ngClass]="nivelColor(a.nivelGravedad)">
+                    {{ a.tipoSancionNombre }}
+                  </span>
+                </td>
+                <td class="puntos-cell">{{ a.puntosInfraccion }}</td>
+                <td>
+                  @if (a.aplicaPenalizacion) {
+                    <span class="monto">S/ {{ a.montoCalculado | number:'1.2-2' }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  <button class="btn-ver" (click)="verDetalle(a.id)">Ver</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      @if (totalPaginas > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="query.page === 1" (click)="cambiarPagina(query.page! - 1)">‹</button>
+          @for (p of paginas; track p) {
+            <button class="page-btn" [class.active]="p === query.page" (click)="cambiarPagina(p)">{{ p }}</button>
+          }
+          <button class="page-btn" [disabled]="query.page === totalPaginas" (click)="cambiarPagina(query.page! + 1)">›</button>
+        </div>
+      }
+    }
+  }
+
+  <!-- ── TAB PUNTAJE ────────────────────────────────────────────── -->
+  @if (tab === 'puntaje') {
+
+    <div class="puntaje-search-area">
+      <div class="form-group">
+        <label>Buscar trabajador</label>
+        <div class="search-wrapper">
+          <input type="text" class="form-control"
+                 [ngModel]="puntajeQuery"
+                 (ngModelChange)="onPuntajeQueryChange($event)"
+                 placeholder="Nombre o DNI del trabajador…" />
+        </div>
+        @if (puntajeSearching) { <div class="search-hint">Buscando…</div> }
+        @if (puntajeResults.length > 0) {
+          <ul class="search-dropdown">
+            @for (w of puntajeResults; track w.id) {
+              <li (click)="selectPuntajeWorker(w)" [class.inhabilitado]="w.inhabilitadoSsoma">
+                <span class="worker-name">{{ w.apellidoNombre }}</span>
+                <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+                @if (w.inhabilitadoSsoma) {
+                  <span class="badge-inhabilitado">INHABILITADO</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (loadingPuntaje) {
+      <div class="loading-state">Cargando puntaje…</div>
+    } @else if (puntajeDto) {
+
+      <div class="puntaje-card" [class.puntaje-card--inhabilitado]="puntajeDto.inhabilitado">
+
+        @if (puntajeDto.inhabilitado) {
+          <div class="inhabilitado-banner">
+            ⚠ TRABAJADOR INHABILITADO — acumuló {{ puntajeDto.puntosAcumulados }}/10 puntos
+          </div>
+        }
+
+        <div class="puntaje-info-grid">
+          <div><label>Nombre</label><span>{{ puntajeDto.nombre }}</span></div>
+          <div><label>DNI</label><span>{{ puntajeDto.dni }}</span></div>
+          <div><label>Empresa</label><span>{{ puntajeDto.empresaNombre }}</span></div>
+        </div>
+
+        <div class="puntaje-bar-area">
+          <div class="puntaje-bar-header">
+            <span>Puntaje acumulado</span>
+            <strong [style.color]="puntajeBarColor">{{ puntajeDto.puntosAcumulados }} / 10</strong>
+          </div>
+          <div class="puntaje-bar-track">
+            <div class="puntaje-bar-fill"
+                 [style.width]="puntajeBarWidth"
+                 [style.background]="puntajeBarColor"></div>
+          </div>
+          <div class="puntaje-bar-ticks">
+            @for (n of [0,1,2,3,4,5,6,7,8,9,10]; track n) {
+              <span>{{ n }}</span>
+            }
+          </div>
+        </div>
+
+        @if (puntajeDto.historial.length > 0) {
+          <div class="historial-title">Historial de amonestaciones</div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>Código</th><th>Fecha</th><th>Tipo</th><th>Pts</th><th>Penaliz.</th></tr>
+              </thead>
+              <tbody>
+                @for (h of puntajeDto.historial; track h.id) {
+                  <tr>
+                    <td><code>{{ h.codigo }}</code></td>
+                    <td>{{ h.fecha | date:'dd/MM/yyyy' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="nivelColor(h.nivelGravedad)">{{ h.tipoSancionNombre }}</span>
+                    </td>
+                    <td class="puntos-cell">{{ h.puntosInfraccion }}</td>
+                    <td>
+                      @if (h.aplicaPenalizacion) {
+                        S/ {{ h.montoCalculado | number:'1.2-2' }}
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state" style="margin-top:12px">Sin historial de amonestaciones.</div>
+        }
+      </div>
+    }
+  }
+
+</div>

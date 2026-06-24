@@ -1,0 +1,219 @@
+<div class="panel-overlay">
+  <div class="panel-container">
+
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+          <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3"/>
+          <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3"/>
+          <line x1="16" y1="5" x2="19" y2="8"/>
+        </svg>
+        Generar Amonestación
+      </div>
+      <button class="btn-close" (click)="cerrar()" title="Cerrar">✕</button>
+    </div>
+
+    <!-- Loader init -->
+    @if (loadingInit) {
+      <div class="panel-loading">Cargando catálogos…</div>
+    } @else if (init) {
+
+    <div class="panel-body">
+
+      <!-- Trabajador -->
+      <div class="section-title">Trabajador</div>
+      <div class="form-group">
+        <label>Buscar trabajador *</label>
+        <div class="search-wrapper">
+          <input type="text" class="form-control"
+                 [ngModel]="workerQuery"
+                 (ngModelChange)="onWorkerQueryChange($event)"
+                 placeholder="Nombre o DNI..."
+                 [disabled]="!!workerSelected" />
+          @if (workerSelected) {
+            <button class="btn-clear" (click)="clearWorker()">✕</button>
+          }
+        </div>
+        @if (workerSearching) {
+          <div class="search-hint">Buscando…</div>
+        }
+        @if (workerResults.length > 0) {
+          <ul class="search-dropdown">
+            @for (w of workerResults; track w.id) {
+              <li (click)="selectWorker(w)"
+                  [class.inhabilitado]="w.inhabilitadoSsoma">
+                <span class="worker-name">{{ w.apellidoNombre }}</span>
+                <span class="worker-meta">DNI: {{ w.dni }} | {{ w.empresaActual }}</span>
+                @if (w.inhabilitadoSsoma) {
+                  <span class="badge-inhabilitado">INHABILITADO</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      @if (workerSelected) {
+        <div class="worker-card">
+          <div class="worker-info">
+            <strong>{{ workerSelected.apellidoNombre }}</strong>
+            <span>DNI: {{ workerSelected.dni }}</span>
+            <span>Cargo: {{ workerSelected.cargo || '—' }}</span>
+            <span>Empresa: {{ workerSelected.empresaActual || '—' }}</span>
+          </div>
+        </div>
+      }
+
+      <!-- Datos del evento -->
+      <div class="section-title">Datos del evento</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Proyecto *</label>
+          <select class="form-control" [(ngModel)]="proyectoId">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (p of init.proyectos; track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha *</label>
+          <input type="date" class="form-control" [(ngModel)]="fecha" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Partida</label>
+        <select class="form-control" [(ngModel)]="partidaId">
+          <option [ngValue]="null">— Ninguna —</option>
+          @for (p of init.partidas; track p.id) {
+            <option [ngValue]="p.id">{{ p.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Sanción e infracción -->
+      <div class="section-title">Tipo de sanción e infracción</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de sanción *</label>
+          <select class="form-control" [(ngModel)]="tipoSancionId">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (ts of init.tiposSancion; track ts.id) {
+              <option [ngValue]="ts.id">{{ ts.nombre }} ({{ ts.nivelGravedad }})</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Infracción cometida *</label>
+          <select class="form-control" [(ngModel)]="infraccionTipoId">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (it of init.infraccionesTipo; track it.id) {
+              <option [ngValue]="it.id">{{ it.nombre }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Puntos -->
+      <div class="form-group">
+        <label>Puntos por infracción (0-10) *</label>
+        <div class="puntos-row">
+          <input type="range" min="0" max="10" [(ngModel)]="puntosInfraccion" class="puntos-slider" />
+          <span class="puntos-valor" [class.puntos-alto]="puntosInfraccion >= 7">
+            {{ puntosInfraccion }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Suspensión -->
+      @if (generaSuspension) {
+        <div class="form-group form-group--suspension">
+          <label>Días de suspensión</label>
+          <input type="number" class="form-control" [(ngModel)]="diasSuspension" min="1" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha inicio suspensión</label>
+            <input type="date" class="form-control" [(ngModel)]="fechaInicioSuspension" />
+          </div>
+          <div class="form-group">
+            <label>Fecha fin suspensión</label>
+            <input type="date" class="form-control" [(ngModel)]="fechaFinSuspension" />
+          </div>
+        </div>
+      }
+
+      <!-- Penalización (solo contratistas) -->
+      @if (workerSelected && !workerSelected.esAbril) {
+        <div class="section-title">Penalización económica</div>
+        <div class="form-group form-check">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="aplicaPenalizacion" />
+            Aplicar penalización económica a la contratista
+          </label>
+        </div>
+        @if (aplicaPenalizacion) {
+          <div class="form-group">
+            <label>Sanción (RAC infracciones)</label>
+            <select class="form-control" [(ngModel)]="sancionInfraccionId">
+              <option [ngValue]="null">— Seleccionar infracción —</option>
+              @for (ri of init.racInfracciones; track ri.id) {
+                <option [ngValue]="ri.id">
+                  {{ ri.nombre }}
+                  @if (ri.montoFijo) { — S/ {{ ri.montoFijo | number:'1.2-2' }} }
+                  @if (ri.factorUit) { — {{ ri.factorUit }}xUIT (S/ {{ ri.factorUit * init.uitActual | number:'1.2-2' }}) }
+                </option>
+              }
+            </select>
+          </div>
+        }
+      }
+
+      <!-- Descripción -->
+      <div class="section-title">Descripción del hecho</div>
+      <div class="form-group">
+        <label>Descripción *</label>
+        <textarea class="form-control" [(ngModel)]="descripcion" rows="4"
+                  placeholder="Descripción detallada de la infracción..."></textarea>
+      </div>
+
+      <!-- Fotos -->
+      <div class="section-title">Evidencias fotográficas</div>
+      <div class="form-group">
+        <label>Fotos (máximo 3)</label>
+        <input type="file" accept="image/*" multiple (change)="onFotosChange($event)"
+               [disabled]="fotosSeleccionadas.length >= 3" class="form-control" />
+        @if (fotosSeleccionadas.length > 0) {
+          <div class="fotos-preview">
+            @for (f of fotosSeleccionadas; track f.nombre; let i = $index) {
+              <div class="foto-thumb">
+                <img [src]="f.base64" [alt]="f.nombre" />
+                <button class="foto-remove" (click)="removeFoto(i)">✕</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+    </div><!-- /panel-body -->
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      <button class="btn btn-secondary" (click)="cerrar()" [disabled]="saving">
+        Cancelar
+      </button>
+      <button class="btn btn-primary" (click)="submit()"
+              [disabled]="!canSubmit">
+        @if (saving) { Guardando… } @else { Registrar amonestación }
+      </button>
+    </div>
+
+    }<!-- /else loadingInit -->
+
+  </div><!-- /panel-container -->
+</div><!-- /panel-overlay -->

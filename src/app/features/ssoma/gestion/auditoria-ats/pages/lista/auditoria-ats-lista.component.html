@@ -1,0 +1,148 @@
+<div class="lista-page">
+
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Auditoría de ATS"
+    subtitulo="Registro y evaluación de calidad de ATS"
+    [botonPrimario]="{ label: 'Nueva auditoría', icono: 'ti-plus' }"
+    (primaryClick)="nueva()">
+  </app-abril-page-header>
+
+  <!-- Filtros -->
+  <div class="filtros-card">
+    <div class="filtros-grid">
+
+      <div class="form-group">
+        <label class="form-label">Trabajador auditado</label>
+        <app-search-select
+          [options]="workers"
+          valueField="workerId"
+          displayField="apellidoNombre"
+          placeholder="Todos..."
+          [value]="filtroAuditadoId"
+          (valueChange)="filtroAuditadoId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          placeholder="Todos..."
+          [value]="filtroProyectoId"
+          (valueChange)="filtroProyectoId = $event">
+        </app-search-select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Fecha desde</label>
+        <input type="date" class="form-input" [(ngModel)]="filtroFechaDesde" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Fecha hasta</label>
+        <input type="date" class="form-input" [(ngModel)]="filtroFechaHasta" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-input" [(ngModel)]="filtroEstado">
+          <option value="">Todos</option>
+          <option value="Evaluado">Evaluado</option>
+          <option value="Borrador">Borrador</option>
+        </select>
+      </div>
+
+    </div>
+    <div class="filtros-actions">
+      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
+        <i class="ti ti-refresh"></i> Limpiar
+      </button>
+      <button type="button" class="btn-buscar" (click)="buscar()">
+        <i class="ti ti-search"></i> Buscar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="tabla-wrap">
+    @if (loading) {
+      <div class="loading-row">
+        <i class="ti ti-loader-2 spin"></i> Cargando...
+      </div>
+    } @else if (items.length === 0) {
+      <div class="empty-row">
+        <i class="ti ti-clipboard-x"></i>
+        <span>No se encontraron auditorías con los filtros aplicados.</span>
+      </div>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Auditado</th>
+            <th>Auditor</th>
+            <th>Proyecto</th>
+            <th>Actividad</th>
+            <th>Resultado</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items; track item.id) {
+            <tr class="tabla-row" (click)="verDetalle(item.id)">
+              <td class="col-id">{{ item.id }}</td>
+              <td class="col-fecha">{{ item.fecha | date:'dd/MM/yy' }}</td>
+              <td class="col-nombre">{{ item.auditadoNombre }}</td>
+              <td class="col-nombre col-auditor">{{ item.auditorNombre }}</td>
+              <td class="col-proyecto">{{ item.proyectoNombre ?? '—' }}</td>
+              <td class="col-actividad">{{ item.actividad ?? '—' }}</td>
+              <td class="col-nivel">
+                @if (item.nivel && nivelConfig(item.nivel); as nc) {
+                  <span class="nivel-badge" [style.background]="nc.color" [style.color]="nc.textColor">
+                    {{ item.puntajePromedio | number:'1.1-1' }} · {{ nc.label }}
+                  </span>
+                } @else {
+                  <span class="nivel-badge nivel-badge--pending">Sin evaluar</span>
+                }
+              </td>
+              <td class="col-estado">
+                <span class="estado-badge" [class.estado-badge--ok]="item.estado === 'Evaluado'">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td class="col-acc">
+                <button type="button" class="btn-ver" (click)="$event.stopPropagation(); verDetalle(item.id)">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      @if (totalPaginas > 1) {
+        <div class="paginacion">
+          <button [disabled]="page === 1" (click)="irPagina(page - 1)" class="pag-btn">
+            <i class="ti ti-chevron-left"></i>
+          </button>
+          @for (p of paginas; track p) {
+            <button class="pag-btn" [class.pag-btn--active]="p === page" (click)="irPagina(p)">
+              {{ p }}
+            </button>
+          }
+          <button [disabled]="page === totalPaginas" (click)="irPagina(page + 1)" class="pag-btn">
+            <i class="ti ti-chevron-right"></i>
+          </button>
+          <span class="pag-info">{{ total }} registros</span>
+        </div>
+      }
+    }
+  </div>
+
+</div>
