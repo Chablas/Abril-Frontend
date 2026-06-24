@@ -112,6 +112,8 @@ export class NavigationService {
         { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard', featureKey: 'ssoma.gestion.inspeccion' },
         { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas', featureKey: 'ssoma.gestion.charlas' },
         { label: 'Accidentes e Incidentes', route: '/ssoma/gestion/accidentes-incidentes/lista', featureKey: 'ssoma.gestion.accidentes-incidentes' },
+        { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista', featureKey: 'ssoma.gestion.auditoria-ats' },
+        { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones', featureKey: 'ssoma.gestion.amonestaciones' },
       ],
     },
     {

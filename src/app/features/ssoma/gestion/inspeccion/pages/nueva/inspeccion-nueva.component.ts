@@ -103,9 +103,11 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   nuevoHallazgo: HallazgoForm = this.emptyHallazgo();
 
   // Paso 4 — cierre
+  inspectorId: number | null = null;
   inspectorNombre = '';
   inspectorCargo = '';
   inspectorEmpresa = '';
+  representanteId: number | null = null;
   representanteNombre = '';
   representanteCargo = '';
   descripcionCausas = '';
@@ -337,6 +339,40 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   quitarFoto(h: HallazgoForm, idx: number): void {
     h.fotosBase64.splice(idx, 1);
     h.fotosPreview.splice(idx, 1);
+    this.cdr.markForCheck();
+  }
+
+  onInspectorChange(id: number | null): void {
+    this.inspectorId = id;
+    if (!id) {
+      this.inspectorNombre = '';
+      this.inspectorCargo = '';
+      this.inspectorEmpresa = '';
+    } else {
+      const w = this.workers.find(x => x.workerId === id);
+      if (w) {
+        this.inspectorNombre = w.apellidoNombre;
+        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        this.inspectorCargo = partes.join(' / ');
+        this.inspectorEmpresa = w.empresaNombre ?? '';
+      }
+    }
+    this.cdr.markForCheck();
+  }
+
+  onRepresentanteChange(id: number | null): void {
+    this.representanteId = id;
+    if (!id) {
+      this.representanteNombre = '';
+      this.representanteCargo = '';
+    } else {
+      const w = this.workers.find(x => x.workerId === id);
+      if (w) {
+        this.representanteNombre = w.apellidoNombre;
+        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        this.representanteCargo = partes.join(' / ');
+      }
+    }
     this.cdr.markForCheck();
   }
 

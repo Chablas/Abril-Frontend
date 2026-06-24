@@ -336,6 +336,18 @@
 
         <h2 class="section-title">Inspector</h2>
 
+        <div class="form-group">
+          <label class="form-label">Buscar inspector</label>
+          <app-search-select
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            placeholder="Buscar trabajador..."
+            [value]="inspectorId"
+            (valueChange)="onInspectorChange($event)">
+          </app-search-select>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Nombre</label>
@@ -369,6 +381,18 @@
         </div>
 
         <h2 class="section-title">Representante del área (RM 050)</h2>
+
+        <div class="form-group">
+          <label class="form-label">Buscar representante</label>
+          <app-search-select
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            placeholder="Buscar trabajador..."
+            [value]="representanteId"
+            (valueChange)="onRepresentanteChange($event)">
+          </app-search-select>
+        </div>
 
         <div class="form-row">
           <div class="form-group">
