@@ -79,7 +79,6 @@ export class RacLista implements OnInit {
       soloConPenalidad: this.filtroSoloConPenalidad || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
       empresaReportadaId: this.filtroEmpresaId ?? undefined,
-      page: 1,
     };
     this.query = q;
     this.racService.getList(q).subscribe({
@@ -98,6 +97,11 @@ export class RacLista implements OnInit {
     });
   }
 
+  buscar(): void {
+    this.query = { ...this.query, page: 1 };
+    this.load();
+  }
+
   cambiarPagina(p: number): void {
     if (p < 1 || (this.result && p > this.result.totalPages)) return;
     this.query = { ...this.query, page: p };
@@ -111,6 +115,7 @@ export class RacLista implements OnInit {
     this.filtroSoloConPenalidad = false;
     this.filtroProyectoId = null;
     this.filtroEmpresaId = null;
+    this.query = { ...this.query, page: 1 };
     this.load();
   }
 

@@ -441,55 +441,61 @@
         <!-- Modal Nueva Charla -->
         @if (showNuevaCharlaModal) {
           <div class="modal-backdrop" (click)="cerrarNuevaCharlaModal()"></div>
-          <div class="modal-panel modal-panel--sm">
+          <div class="modal-panel modal-panel--charla">
             <div class="modal-header">
               <span class="modal-titulo">Nueva Charla</span>
               <button class="modal-close" type="button" (click)="cerrarNuevaCharlaModal()">
                 <i class="ti ti-x"></i>
               </button>
             </div>
-            <div class="modal-body" style="flex-direction: column; padding: 20px; gap: 14px; overflow-y: auto;">
-              <div class="form-group">
-                <label>Título <span class="req">*</span></label>
-                <input type="text" class="form-input" [(ngModel)]="form.titulo"
-                  placeholder="Ej: Uso correcto de EPP..." />
-              </div>
-              <div class="form-group">
-                <label>Tipo <span class="req">*</span></label>
-                <div class="tipo-toggle">
-                  @for (t of ['Seguridad','Salud Ocupacional','Medio Ambiente']; track t) {
-                    <button type="button" class="tipo-btn"
-                      [class.tipo-btn--seg]="t === 'Seguridad' && form.tipo === t"
-                      [class.tipo-btn--sal]="t === 'Salud Ocupacional' && form.tipo === t"
-                      [class.tipo-btn--amb]="t === 'Medio Ambiente' && form.tipo === t"
-                      [class.tipo-btn--active]="form.tipo === t"
-                      (click)="form.tipo = $any(t)">{{ t }}</button>
-                  }
+            <div class="charla-modal-body">
+              <!-- Columna izquierda: campos -->
+              <div class="charla-form-col">
+                <div class="form-group">
+                  <label>Título <span class="req">*</span></label>
+                  <input type="text" class="form-input" [(ngModel)]="form.titulo"
+                    placeholder="Ej: Uso correcto de EPP..." />
+                </div>
+                <div class="form-group">
+                  <label>Tipo <span class="req">*</span></label>
+                  <div class="tipo-toggle">
+                    @for (t of ['Seguridad','Salud Ocupacional','Medio Ambiente']; track t) {
+                      <button type="button" class="tipo-btn"
+                        [class.tipo-btn--seg]="t === 'Seguridad' && form.tipo === t"
+                        [class.tipo-btn--sal]="t === 'Salud Ocupacional' && form.tipo === t"
+                        [class.tipo-btn--amb]="t === 'Medio Ambiente' && form.tipo === t"
+                        [class.tipo-btn--active]="form.tipo === t"
+                        (click)="form.tipo = $any(t)">{{ t }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fecha <span class="req">*</span></label>
+                  <input type="date" class="form-input" [(ngModel)]="form.fecha" />
                 </div>
               </div>
-              <div class="form-group">
-                <label>Fecha <span class="req">*</span></label>
-                <input type="date" class="form-input" [(ngModel)]="form.fecha" />
-              </div>
-              <div class="form-group">
-                <label>Asistentes <span class="req">*</span></label>
+              <!-- Columna derecha: asistentes -->
+              <div class="charla-staff-col">
+                <div class="charla-staff-header">
+                  <span class="charla-staff-label">Asistentes <span class="req">*</span></span>
+                  @if (staff.length) {
+                    <span class="form-hint" style="margin:0">{{ form.workerIds.length }} / {{ staff.length }}</span>
+                  }
+                </div>
                 @if (!staff.length) {
                   <p class="form-hint">Sin staff registrado para este proyecto.</p>
                 } @else {
-                  <div class="staff-check-grid staff-check-grid--modal">
+                  <div class="staff-list-modal staff-list-modal--full">
                     @for (s of staff; track s.workerId) {
-                      <label class="check-label" (click)="toggleStaff(s.workerId)">
+                      <label class="staff-row" [class.staff-row--on]="staffChecks[s.workerId]" (click)="toggleStaff(s.workerId)">
                         <div class="check-box" [class.check-box--on]="staffChecks[s.workerId]">
                           @if (staffChecks[s.workerId]) { <i class="ti ti-check"></i> }
                         </div>
-                        <div class="staff-info">
-                          <span class="staff-name">{{ s.nombreCompleto }}</span>
-                          <span class="staff-cargo">{{ s.cargo }}</span>
-                        </div>
+                        <span class="staff-row-name">{{ s.nombreCompleto }}</span>
+                        <span class="staff-row-cargo">{{ s.categoria }}{{ s.categoria && s.cargo ? ' · ' : '' }}{{ s.cargo }}</span>
                       </label>
                     }
                   </div>
-                  <p class="form-hint">{{ form.workerIds.length }} de {{ staff.length }} seleccionados</p>
                 }
               </div>
             </div>

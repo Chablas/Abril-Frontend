@@ -261,6 +261,18 @@ export class Trabajadores implements OnInit, OnDestroy {
     });
   }
 
+  private recargarWorkerEnLista(): void {
+    const workerId = this.selectedWorker?.workerId ?? null;
+    if (workerId === null) return;
+    this.loadWorkers(this.currentPage, () => {
+      const fresh = this.workers.find((w) => w.workerId === workerId);
+      if (fresh) {
+        this.selectedWorker = fresh;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   actualizar(): void {
     const workerId = this.selectedWorker?.workerId ?? null;
     const entregableId = this.selectedEntregable?.id ?? null;
@@ -270,7 +282,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         const fresh = this.workers.find((w) => w.workerId === workerId);
         if (fresh) {
           this.selectedWorker = fresh;
-          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         }
       }
     });
@@ -771,6 +783,7 @@ export class Trabajadores implements OnInit, OnDestroy {
             obsAbril: this.panelObsAbril || undefined,
           });
         }
+        this.recargarWorkerEnLista();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -809,6 +822,7 @@ export class Trabajadores implements OnInit, OnDestroy {
               showConfirmButton: false,
             });
             if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
+            this.recargarWorkerEnLista();
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
