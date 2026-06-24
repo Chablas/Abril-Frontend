@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
@@ -13,6 +12,7 @@ import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import {
   ProjectsDashboardDTO,
+  ProjectsDashboardResponseDto,
   ProjectsDashboardFilterItemDTO,
   ProjectsDashboardItemDTO,
   ProyectoDetalleDTO,
@@ -80,16 +80,13 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loading = true;
     this.loaderService.show();
-    forkJoin({
-      filters: this.service.getFilters(),
-      data: this.service.getDashboard({}),
-    }).subscribe({
-      next: ({ filters, data }) => {
-        this.proyectos = filters.proyectos ?? [];
-        this.estados = filters.estados ?? [];
-        this.responsables = filters.responsables ?? [];
-        this.especialidades = filters.especialidades ?? [];
-        this.data = data;
+    this.service.getDashboard({}).subscribe({
+      next: (res: ProjectsDashboardResponseDto) => {
+        this.proyectos      = res.filtros.proyectos      ?? [];
+        this.estados        = res.filtros.estados        ?? [];
+        this.responsables   = res.filtros.responsables   ?? [];
+        this.especialidades = res.filtros.especialidades ?? [];
+        this.data = res;
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -216,8 +213,12 @@ export class ProjectsDashboard implements OnInit, OnDestroy {
       fechaHasta: this.fechaHasta || undefined,
     };
     this.service.getDashboard(params).subscribe({
-      next: (data) => {
-        this.data = data;
+      next: (res: ProjectsDashboardResponseDto) => {
+        this.proyectos      = res.filtros.proyectos      ?? [];
+        this.estados        = res.filtros.estados        ?? [];
+        this.responsables   = res.filtros.responsables   ?? [];
+        this.especialidades = res.filtros.especialidades ?? [];
+        this.data = res;
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();

@@ -711,6 +711,15 @@
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
+/* ── Vista Gantt dhtmlx ───────────────────────────────────────────────────── */
+.gantt-full-container {
+  height: calc(100vh - 220px);
+  min-height: 400px;
+  overflow: hidden;
+  position: relative;
+  border-top: 1px solid #e2e8f0;
+}
+
 .avance-opt:hover:not(.avance-opt-active) {
   border-color: #9ca3af;
   color: #6b7280;
@@ -1168,6 +1177,8 @@
 /* ── Columnas de línea base / desfase / semáforo ──────────────────────────── */
 .col-desfase { width: 90px; }
 .col-sema    { width: 70px; }
+.col-dur     { width: 80px; }
+.td-dur      { font-size: 0.83rem; color: #6b7280; white-space: nowrap; text-align: right; padding-right: 1.25rem; }
 
 /* ── Celda de fecha editable — modo lectura ───────────────────────────────── */
 .td-fecha-editable { cursor: pointer; }

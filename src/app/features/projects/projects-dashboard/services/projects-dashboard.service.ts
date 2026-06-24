@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
-  ProjectsDashboardDTO,
+  ProjectsDashboardResponseDto,
   ProjectsDashboardFiltersDTO,
   ProyectoDetalleDTO,
 } from '../dtos/projectsDashboard.model';
@@ -33,7 +33,7 @@ export class ProjectsDashboardService {
     });
   }
 
-  getDashboard(params: ProjectsDashboardParams): Observable<ProjectsDashboardDTO> {
+  getDashboard(params: ProjectsDashboardParams): Observable<ProjectsDashboardResponseDto> {
     let httpParams = new HttpParams();
     if (params.proyectoId) httpParams = httpParams.set('proyectoId', String(params.proyectoId));
     if (params.estado) httpParams = httpParams.set('estado', params.estado);
@@ -41,7 +41,7 @@ export class ProjectsDashboardService {
       httpParams = httpParams.set('responsableId', String(params.responsableId));
     if (params.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
     if (params.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
-    return this.http.get<ProjectsDashboardDTO>(this.base, {
+    return this.http.get<ProjectsDashboardResponseDto>(this.base, {
       headers: buildAuthHeaders(),
       params: httpParams,
     });

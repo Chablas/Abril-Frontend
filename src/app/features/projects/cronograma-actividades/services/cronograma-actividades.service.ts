@@ -4,12 +4,13 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   ProyectoSimpleDto,
-  ActividadDto,
+  ActividadesProyectoResponseDto,
   CascadaResultDto,
   ActualizarPredecesorasResultDto,
   CrearActividadRequest,
   ReordenarItem,
   EditarActividadRequest,
+  EditarActividadResultDto,
 } from '../dtos/cronograma-actividades.dtos';
 
 function buildAuthHeaders(): Record<string, string> {
@@ -29,20 +30,20 @@ export class CronogramaActividadesService {
     });
   }
 
-  getActividades(proyectoId: number): Observable<ActividadDto[]> {
-    return this.http.get<ActividadDto[]>(`${this.base}/${proyectoId}/actividades`, {
+  getActividades(proyectoId: number): Observable<ActividadesProyectoResponseDto> {
+    return this.http.get<ActividadesProyectoResponseDto>(`${this.base}/${proyectoId}/actividades`, {
       headers: buildAuthHeaders(),
     });
   }
 
-  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<ActividadDto> {
-    return this.http.post<ActividadDto>(`${this.base}/${proyectoId}/actividades`, body, {
+  crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<EditarActividadResultDto> {
+    return this.http.post<EditarActividadResultDto>(`${this.base}/${proyectoId}/actividades`, body, {
       headers: buildAuthHeaders(),
     });
   }
 
-  editarActividad(id: number, body: EditarActividadRequest): Observable<ActividadDto> {
-    return this.http.put<ActividadDto>(`${this.base}/actividades/${id}`, body, {
+  editarActividad(id: number, body: EditarActividadRequest): Observable<EditarActividadResultDto> {
+    return this.http.put<EditarActividadResultDto>(`${this.base}/actividades/${id}`, body, {
       headers: buildAuthHeaders(),
     });
   }
