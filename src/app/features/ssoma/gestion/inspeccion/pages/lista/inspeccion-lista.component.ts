@@ -10,13 +10,12 @@ import { ProjectService } from '../../../../../../core/services/project.service'
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
-import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-inspeccion-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './inspeccion-lista.component.html',
   styleUrl: './inspeccion-lista.component.css',
 })
@@ -122,6 +121,11 @@ export class InspeccionListaComponent implements OnInit {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  onProyectoChange(id: number | null): void {
+    this.filtroProyectoId = id ?? undefined;
+    this.load();
   }
 
   limpiarFiltros(): void {

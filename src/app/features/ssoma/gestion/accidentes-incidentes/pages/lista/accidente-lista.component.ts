@@ -8,14 +8,13 @@ import { FlashReportListItemDto, FlashReportInicializarDto, CatalogoItemDto } fr
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
-import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-accidente-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './accidente-lista.component.html',
   styleUrl: './accidente-lista.component.css',
 })
