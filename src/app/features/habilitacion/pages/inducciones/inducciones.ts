@@ -16,6 +16,7 @@ import { InduccionListDto } from '../../dtos/induccion.model';
 })
 export class Inducciones implements OnInit {
   inducciones: InduccionListDto[] = [];
+  private _todas: InduccionListDto[] = [];
   loading = false;
 
   filtroEstado = '';
@@ -43,13 +44,18 @@ export class Inducciones implements OnInit {
     const params: Record<string, unknown> = {
       empresaId: this.authService.getEmpresaId(),
     };
-    if (this.filtroEstado) params['estado'] = this.filtroEstado;
+    if (this.filtroEstado && this.filtroEstado !== 'INGRESO') params['estado'] = this.filtroEstado;
     if (this.filtroFechaDesde) params['fechaDesde'] = this.filtroFechaDesde;
     if (this.filtroFechaHasta) params['fechaHasta'] = this.filtroFechaHasta;
 
     this.induccionService.getList(params).subscribe({
       next: (res) => {
-        this.inducciones = res ?? [];
+        this._todas = res ?? [];
+        this.inducciones = this.filtroEstado === 'INGRESO'
+          ? this._todas.filter(i => i.ingresoConfirmado && i.estado !== 'REALIZADA')
+          : this.filtroEstado === 'PROGRAMADA'
+            ? this._todas.filter(i => !i.ingresoConfirmado)
+            : this._todas;
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
