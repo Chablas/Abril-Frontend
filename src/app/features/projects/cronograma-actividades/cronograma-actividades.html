@@ -77,7 +77,7 @@
           {{ actividades.length }} actividad{{ actividades.length !== 1 ? 'es' : '' }}
         </span>
         <div class="toolbar-actions">
-          <button class="btn-secondary" [class.btn-lb-on]="lineaBaseVisible" (click)="toggleLineaBase()">
+          <button class="btn-secondary" [class.btn-lb-on]="!lineaBaseVisible" (click)="toggleLineaBase()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               style="margin-right:0.35rem;flex-shrink:0">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -182,11 +182,13 @@
               [class.lvl-2]="act.hierarchyLevel === 2"
               [class.lvl-deep]="act.hierarchyLevel >= 3"
               [class.row-dragging]="dragActId === act.projectActivityId"
-              [class.drop-above]="dropTargetId === act.projectActivityId && dropAbove"
-              [class.drop-below]="dropTargetId === act.projectActivityId && !dropAbove"
+              [class.drop-above]="dropTargetId === act.projectActivityId && dropPosition === 'before'"
+              [class.drop-below]="dropTargetId === act.projectActivityId && dropPosition === 'after'"
+              [class.drop-inside]="dropTargetId === act.projectActivityId && dropPosition === 'inside'"
               [ngStyle]="getRowStyle(act)"
+              [attr.draggable]="true"
               (click)="onRowClick(act)"
-              (dblclick)="onRowDblClick(act)"
+              (dragstart)="onDragStart(act, $event)"
               (dragover)="onDragOver(act, $event)"
               (dragleave)="onDragLeave(act, $event)"
               (drop)="onDrop(act, $event)"
@@ -194,8 +196,6 @@
             >
               <td
                 class="td-order td-drag-handle"
-                [attr.draggable]="true"
-                (dragstart)="onDragStart(act, $event)"
                 (click)="$event.stopPropagation()"
               >
                 <div class="order-cell">

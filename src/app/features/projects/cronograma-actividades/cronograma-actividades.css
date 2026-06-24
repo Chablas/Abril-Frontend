@@ -250,6 +250,12 @@
 /* ── Indicadores de drop ──────────────────────────────────────────────────── */
 .drop-above td { box-shadow: 0 -2px 0 0 var(--azul); }
 .drop-below td { box-shadow: 0 2px 0 0 var(--azul); }
+.drop-inside td {
+  background: rgba(46, 109, 180, 0.15) !important;
+  box-shadow: 0 1px 0 0 #2E6DB4, 0 -1px 0 0 #2E6DB4;
+}
+.drop-inside td:first-child { box-shadow: 0 1px 0 0 #2E6DB4, 0 -1px 0 0 #2E6DB4, -1px 0 0 0 #2E6DB4; }
+.drop-inside td:last-child  { box-shadow: 0 1px 0 0 #2E6DB4, 0 -1px 0 0 #2E6DB4,  1px 0 0 0 #2E6DB4; }
 
 /* ── Filas coloreadas — regla compartida ──────────────────────────────────── */
 .data-table tbody tr.row-dark td,
