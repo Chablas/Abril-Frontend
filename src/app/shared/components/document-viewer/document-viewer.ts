@@ -37,6 +37,7 @@ const OFFICE_EXTS = ['docx', 'xlsx', 'pptx', 'doc', 'xls'];
 export class DocumentViewer implements OnChanges, OnDestroy {
   @Input() archivoUrl = '';
   @Input() nombre = '';
+  @Input() libraryCtx = '';
   @Output() closed = new EventEmitter<void>();
   @ViewChild('pdfContainer') pdfContainer?: ElementRef<HTMLDivElement>;
 
@@ -102,7 +103,7 @@ export class DocumentViewer implements OnChanges, OnDestroy {
     this.imgUrl = '';
     this.tempUrl = '';
 
-    this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
+    this.sharepointService.getArchivoUrl(archivoUrl, this.libraryCtx || undefined).subscribe({
       next: (res) => {
         this.tempUrl = res.url;
         if (this.tipo === 'pdf' || this.tipo === 'img') {

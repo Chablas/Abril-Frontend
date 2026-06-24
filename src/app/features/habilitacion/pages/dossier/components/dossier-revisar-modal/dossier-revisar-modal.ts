@@ -3,15 +3,17 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnDestroy,
   OnInit,
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { DossierService } from '../../../../services/dossier.service';
+import { SharepointUploadService } from '../../../../services/sharepoint-upload.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import {
@@ -25,11 +27,11 @@ import {
 @Component({
   selector: 'app-dossier-revisar-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, DocumentViewer],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dossier-revisar-modal.html',
   styleUrl: './dossier-revisar-modal.css',
 })
-export class DossierRevisarModal implements OnInit {
+export class DossierRevisarModal implements OnInit, OnDestroy {
   @Input() semanaId!: number;
   @Output() closed = new EventEmitter<boolean>();
 
@@ -38,13 +40,18 @@ export class DossierRevisarModal implements OnInit {
   guardando = false;
   comentario = '';
   modoObservar = false;
-  visorUrl = '';
+
+  docSafeUrl: SafeResourceUrl | null = null;
+  loadingDoc = false;
   visorNombre = '';
+  private docBlobUrl = '';
 
   readonly tipos = DOSSIER_TIPOS;
 
   constructor(
     private dossierService: DossierService,
+    private sharepointService: SharepointUploadService,
+    private sanitizer: DomSanitizer,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private cdr: ChangeDetectorRef,
@@ -63,6 +70,10 @@ export class DossierRevisarModal implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.revokeBlobUrl();
   }
 
   getDoc(tipo: DossierTipoDocumento): DossierDocumentoDto | undefined {
@@ -90,8 +101,41 @@ export class DossierRevisarModal implements OnInit {
     const p = path ?? this.getArchivoPath(doc);
     if (!p) return;
     this.visorNombre = doc.nombreArchivo ?? doc.tipoDoc;
-    this.visorUrl = p;
+    this.loadingDoc = true;
+    this.docSafeUrl = null;
     this.cdr.detectChanges();
+    this.sharepointService.getArchivoUrl(p, 'dossier-semanal').subscribe({
+      next: (res) => {
+        fetch(res.url)
+          .then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.blob();
+          })
+          .then((blob) => {
+            this.revokeBlobUrl();
+            this.docBlobUrl = URL.createObjectURL(blob);
+            this.docSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.docBlobUrl);
+            this.loadingDoc = false;
+            this.cdr.detectChanges();
+          })
+          .catch(() => {
+            this.docSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.url);
+            this.loadingDoc = false;
+            this.cdr.detectChanges();
+          });
+      },
+      error: () => {
+        this.loadingDoc = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private revokeBlobUrl(): void {
+    if (this.docBlobUrl) {
+      URL.revokeObjectURL(this.docBlobUrl);
+      this.docBlobUrl = '';
+    }
   }
 
   aprobar(): void {
@@ -128,12 +172,7 @@ export class DossierRevisarModal implements OnInit {
       next: () => {
         this.guardando = false;
         this.loaderService.hide();
-        Swal.fire({
-          icon: 'success',
-          title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'success', title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada', timer: 1500, showConfirmButton: false });
         this.closed.emit(true);
       },
       error: (err: HttpErrorResponse) => {
