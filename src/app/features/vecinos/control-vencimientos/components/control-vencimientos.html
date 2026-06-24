@@ -1,0 +1,65 @@
+<app-abril-page-header
+  badge="ADMINISTRACIÓN DE OBRA"
+  titulo="Control de Vencimientos"
+  subtitulo="Seguimiento de licencias y permisos próximos a vencer."
+  [tabs]="[
+    { label: 'Dashboard',              icono: 'ti-layout-dashboard', route: '/vecinos/dashboard',             featureKey: 'vecinos.dashboard' },
+    { label: 'Gestión de Vecinos',     icono: 'ti-users',            route: '/vecinos/gestion',               featureKey: 'vecinos.gestion' },
+    { label: 'Croquis',                icono: 'ti-map-2',            route: '/vecinos/croquis',               featureKey: 'vecinos.croquis' },
+    { label: 'Control de Vencimientos', icono: 'ti-calendar-due',    route: '/vecinos/control-vencimientos',  featureKey: 'vecinos.control-vencimientos' }
+  ]">
+</app-abril-page-header>
+
+<div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-4">
+
+  <!-- ── Acciones ───────────────────────────────────────────────────────── -->
+  <div class="flex justify-end">
+    <button type="button" (click)="openAddModal()"
+      class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2">
+      <span class="ti ti-plus text-base"></span>
+      Crear licencia
+    </button>
+  </div>
+
+  <!-- ── Tabla de licencias ─────────────────────────────────────────────── -->
+  <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
+    <table class="w-full text-sm">
+      <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+        <tr class="text-left">
+          <th class="px-4 py-3 font-medium">Archivo</th>
+          <th class="px-4 py-3 font-medium">Fecha de vencimiento</th>
+          <th class="px-4 py-3 font-medium">Fecha de recordatorio</th>
+          <th class="px-4 py-3 font-medium text-center">Días de antelación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of licencias" class="border-t border-[#E5EAF0] hover:bg-gray-50">
+          <td class="px-4 py-3">
+            <a [href]="fileUrl(l.archivoUrl)" target="_blank" rel="noopener"
+              class="text-[#0086A5] hover:underline flex items-center gap-1.5">
+              <span class="ti ti-file-text"></span>
+              {{ l.originalFileName || 'Ver archivo' }}
+            </a>
+          </td>
+          <td class="px-4 py-3 text-gray-700">{{ l.fechaVencimiento }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ l.fechaRecordatorio }}</td>
+          <td class="px-4 py-3 text-center text-gray-700">{{ l.diasAntes }}</td>
+        </tr>
+
+        <tr *ngIf="licencias.length === 0">
+          <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+            No hay licencias registradas.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modal de creación ─────────────────────────────────────────────────── -->
+<app-licencia-add
+  *ngIf="showAddModal"
+  (closeModal)="closeAddModal()"
+  (created)="onCreated()">
+</app-licencia-add>

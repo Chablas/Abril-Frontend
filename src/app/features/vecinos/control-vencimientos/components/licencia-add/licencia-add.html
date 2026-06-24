@@ -1,0 +1,76 @@
+<app-base-modal [title]="'Crear licencia'" width="w-[560px]" (closeModal)="closeModal.emit()">
+
+  <form (ngSubmit)="submit()" class="flex flex-col gap-5 mt-2">
+
+    <!-- ── Archivo de la licencia ──────────────────────────────────────── -->
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-sm text-[var(--color-abril-primary)] font-medium">
+        Archivo de la licencia <span class="text-red-500">*</span>
+      </label>
+
+      <app-file-selector
+        *ngIf="!selectedFile"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
+        hint="PDF, Word, Excel o imagen"
+        (fileSelected)="onFileSelected($event)">
+      </app-file-selector>
+
+      <div *ngIf="selectedFile"
+        class="flex items-center justify-between border border-[#D6DEE5] rounded-lg px-3 py-2 bg-gray-50">
+        <span class="text-sm text-gray-700 truncate">{{ selectedFile.file.name }}</span>
+        <button type="button" (click)="removeFile()"
+          class="text-red-500 text-sm font-medium cursor-pointer hover:underline ml-3 shrink-0">
+          Quitar
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Fecha de vencimiento ────────────────────────────────────────── -->
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-sm text-[var(--color-abril-primary)] font-medium">
+        Fecha de vencimiento <span class="text-red-500">*</span>
+      </label>
+      <input type="date" name="fechaVencimiento" [(ngModel)]="fechaVencimiento"
+        (ngModelChange)="onVencimientoChange()"
+        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+    </div>
+
+    <!-- ── Recordatorio (bidireccional) ────────────────────────────────── -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[var(--color-abril-primary)] font-medium">
+          Fecha de recordatorio <span class="text-red-500">*</span>
+        </label>
+        <input type="date" name="fechaRecordatorio" [(ngModel)]="fechaRecordatorio"
+          (ngModelChange)="onRecordatorioChange()" [max]="fechaVencimiento || null"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+      </div>
+
+      <div class="flex flex-col gap-[6px]">
+        <label class="text-sm text-[var(--color-abril-primary)] font-medium">
+          Días de antelación <span class="text-red-500">*</span>
+        </label>
+        <input type="number" min="0" name="diasAntes" [(ngModel)]="diasAntes"
+          (ngModelChange)="onDiasChange()" placeholder="Ej. 30"
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-500 -mt-2">
+      Completa cualquiera de los dos campos: el otro se calcula automáticamente en base a la fecha de vencimiento.
+    </p>
+
+    <!-- ── Acciones ────────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-3 pt-1">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 rounded-lg border border-[#D6DEE5] text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="submit"
+        class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+        Guardar licencia
+      </button>
+    </div>
+
+  </form>
+</app-base-modal>

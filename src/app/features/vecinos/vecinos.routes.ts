@@ -22,4 +22,13 @@ export const VECINOS_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'CROQUIS', featureKey: 'vecinos.croquis' },
   },
+  {
+    path: 'control-vencimientos',
+    loadComponent: () =>
+      import('./control-vencimientos/components/control-vencimientos').then(
+        (m) => m.ControlVencimientos,
+      ),
+    canActivate: [roleGuard],
+    data: { titulo: 'CONTROL DE VENCIMIENTOS', featureKey: 'vecinos.control-vencimientos' },
+  },
 ];

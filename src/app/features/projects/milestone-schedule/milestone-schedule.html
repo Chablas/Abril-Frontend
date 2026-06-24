@@ -159,13 +159,14 @@
             <span class="text-sm font-medium">Volver al listado</span>
         </button>
 
-        <h2 class="text-base font-semibold text-gray-700 truncate flex-1 text-center">
-            {{ selectedProjectName }}
-        </h2>
+        <div class="flex items-center justify-center gap-2 flex-1 min-w-0">
+            <h2 class="text-base font-semibold text-gray-700 truncate">{{ selectedProjectName }}</h2>
+            <span *ngIf="noMilestones && undatedTasks.length > 0" class="chip-plantilla">PLANTILLA</span>
+        </div>
 
         <div *ngIf="showEditButton" class="flex gap-[8px] shrink-0">
-            <button (click)="openCreateMilestoneScheduleModal()" [disabled]="loader"
-                class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
+            <button *ngIf="!noMilestones" (click)="openCreateMilestoneScheduleModal()" [disabled]="loader"
+                class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:var(--color-abril-lime-light);border-color:var(--color-abril-lime);color:var(--color-abril-lime)">
                 <div class="flex items-center gap-[6px]">
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
                         <path
@@ -187,6 +188,20 @@
         </div>
     </div>
 
+    <!-- Subheader stats — solo en vista plantilla -->
+    <div *ngIf="noMilestones && undatedTasks.length > 0" class="subheader-stats">
+        <span class="stat-text">{{ undatedTasks.length }} hitos</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-text">{{ statConFecha }} con fecha</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-text">{{ statSinFecha }} sin fecha</span>
+        <span class="stat-sep">·</span>
+        <div class="progress-bar-thin">
+            <div class="progress-fill-thin" [style.width]="pctConFecha + '%'"></div>
+        </div>
+        <span class="stat-pct">{{ pctConFecha }}%</span>
+    </div>
+
     <!-- KPI cards -->
     <div *ngIf="!noMilestones" class="kpi-cards">
         <div class="kpi-card" style="border-top: 3px solid var(--color-abril-primary)">
@@ -206,29 +221,56 @@
         </div>
     </div>
 
-    <!-- Hitos sin fecha (plantilla) — pendientes de programar -->
+    <!-- Plantilla de hitos — tabla compacta -->
     <div *ngIf="noMilestones && undatedTasks.length > 0" class="bg-white rounded-lg overflow-hidden border" style="border-color:var(--color-abril-border)">
-        <div class="px-4 py-2 text-sm font-medium" style="background:var(--color-abril-primary-light);color:#4fa003">
-            Hitos de la plantilla — agregá fechas para programarlos en el Gantt
+
+        <!-- Toolbar: búsqueda + filtros -->
+        <div class="plantilla-toolbar">
+            <input type="text" [(ngModel)]="busqueda" placeholder="Buscar hito..."
+                class="plantilla-search" />
+            <div class="filtros-wrap">
+                <button class="filtro-btn" [ngClass]="{'filtro-active-todos': filtroActivo === 'todos'}"
+                    (click)="filtroActivo = 'todos'">Todos</button>
+                <button class="filtro-btn" [ngClass]="{'filtro-active-sin-fecha': filtroActivo === 'sin-fecha'}"
+                    (click)="filtroActivo = 'sin-fecha'">Sin fecha</button>
+                <button class="filtro-btn" [ngClass]="{'filtro-active-con-fecha': filtroActivo === 'con-fecha'}"
+                    (click)="filtroActivo = 'con-fecha'">Con fecha</button>
+            </div>
         </div>
-        <table class="w-full">
+
+        <!-- Tabla de hitos -->
+        <table class="hitos-tabla">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Hito</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
             <tbody>
-                <tr *ngFor="let task of undatedTasks" class="border-t" style="border-color:var(--color-abril-border)">
-                    <td class="px-4 py-2 text-sm">{{ task.text }}</td>
-                    <td class="px-4 py-2 text-sm text-center">
-                        <span *ngIf="task.start_date" class="text-green-600 text-xs">
-                            {{ task.start_date | date:'dd/MM/yyyy' }}<ng-container *ngIf="task.end_date"> → {{ task.end_date | date:'dd/MM/yyyy' }}</ng-container>
+                <tr *ngFor="let hito of hitosFiltrados; let i = index">
+                    <td class="td-num">{{ i + 1 }}</td>
+                    <td class="td-nombre">{{ hito.text }}</td>
+                    <td class="td-fecha">
+                        <input type="date" [(ngModel)]="hito.startDate" (change)="onFechaChange(hito)" />
+                    </td>
+                    <td class="td-fecha">
+                        <input type="date" [(ngModel)]="hito.endDate" (change)="onFechaChange(hito)" />
+                    </td>
+                    <td class="td-badge">
+                        <span class="badge" [ngClass]="tieneFecha(hito) ? 'badge-con-fecha' : 'badge-sin-fecha'">
+                            {{ tieneFecha(hito) ? 'Con fecha' : 'Sin fecha' }}
                         </span>
                     </td>
-                    <td class="px-4 py-2 text-right" *ngIf="showEditButton">
-                        <button (click)="editUndatedTask(task)"
-                            class="text-xs hover:underline cursor-pointer" style="color:var(--color-abril-accent)">
-                            {{ task.start_date ? 'Editar fecha' : 'Agregar fecha' }}
-                        </button>
-                    </td>
+                </tr>
+                <tr *ngIf="hitosFiltrados.length === 0">
+                    <td colspan="5" class="td-empty">Sin hitos para los filtros seleccionados.</td>
                 </tr>
             </tbody>
         </table>
+
     </div>
 
     <!-- Estado vacío — sin hitos ni plantilla -->

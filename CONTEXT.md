@@ -4,32 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-14 — **Migración masiva AbrilPageHeaderComponent + sidebar direct-nav**.
-> - `AbrilPageHeaderComponent` (`shared/components/abril-page-header/`) aplicado en: contractors/management, costs/adjudicaciones, costs/configuration (5 páginas), habilitacion/control-acceso, ssoma/salud-ocupacional (dashboard, emos, programaciones, interconsultas, convalidaciones, catalogos, reportes), ssoma/gestion/rac (dashboard, lista, nuevo, detalle, cerrar, penalidades), ssoma/gestion/paso (dashboard), security (users, roles), configuracion (proyectos, area, companies, workers). Inputs: `badge`, `titulo`, `subtitulo`, `pills`, `tabs: AbrilPageTab[]`, `botonPrimario?: SsomaHeaderBtn`, `botonSecundario?: SsomaHeaderBtn`. Outputs: `primaryClick`, `secondaryClick`. Tabs usan `RouterLink` activo por ruta.
-> - `layout.ts isFullPage()` extendido para todas las rutas migradas (retorna `true` → oculta header global).
-> - `:host { display:flex; flex-direction:column; flex:1; min-height:0 }` en CSS de todos los componentes migrados. Root div cambia `h-full` → `flex-1 min-h-0`.
-> - **Sidebar direct-nav sin dropdown**: `onModuleClick` y `toggleOverflowMenu` navegan directo (sin abrir desplegable) para: `ssoma` → `/ssoma/salud-ocupacional/dashboard`, `control-acceso` → `/habilitacion/control-acceso`, `clinica` → `/clinica/dashboard`, `habilitacion` → `/habilitacion/gestion` (admin) o `/habilitacion/dashboard-contratista` (contratista), `proyectos` → `/projects/projects-dashboard`, `mejora-continua` → `/mejora-continua/dashboard`, `gestion-administrativa` → `/gestion-administrativa/solicitud-salidas`, `arquitectura-comercial` → `/arquitectura-comercial/dashboard`, `evaluaciones` → `/evaluaciones/dashboard`, `seguridad` → `/security/users`, `configuracion` → `/configuracion/proyectos`. Cada módulo mantiene 1 item en `items[]` solo para pasar el filtro de visibilidad del sidebar.
-> - `angular.json` budget initial: `maximumWarning: 1MB`, `maximumError: 1.5MB` (bundle supera 1MB por libs incluidas).
->
-> **2026-06-12 — SSOMA RAC PASO 12-13**: módulo frontend `features/ssoma/gestion/rac/` creado completo. PASO 12: `rac.dtos.ts` (20 interfaces), `rac.service.ts` (12 métodos, helper `buildParams(q: object)`), `rac.routes.ts` (6 rutas lazy — `''→dashboard`, `dashboard`, `lista`, `nuevo`, `penalidades`, `:id/cerrar`, `:id`), 6 páginas stub, ruta `gestion/rac` registrada en `ssoma.routes.ts`. PASO 13: `RacDashboard` implementación completa — KPI grid (Abiertos/Cerrados/Críticos/Vencidos con countUp), tabla "RACs por Proyecto" (top 5), "Top Categorías" con barras horizontales y chips de ámbito, empty state, skeleton loader. CSS con variables en `:host`, clases `.rac-*`, `.ambito-chip--blue/green/teal`, responsive 1200/900/760px.
->
-> **2026-06-12 — habilitacion/trabajadores: modal de catálogos**. Nuevo `CatCatalogosService` (`features/habilitacion/services/cat-catalogos.service.ts`) con CRUD completo (GET admin, POST, PUT, PATCH toggle) para `CatCategoriaAdminDto` y `CatOcupacionAdminDto`. Nuevo componente standalone `CatalogosModal` (`components/catalogos-modal/`) con tabs Categorías / Ocupaciones, edición inline, toggle activo/inactivo y agregar nuevo ítem. Botón "Catálogos" visible solo para roles `ADMINISTRADOR SSOMA` y `ADMINISTRADOR DE UDP` (getter `puedeGestionarCatalogos`), ubicado antes del botón "Nuevo Trabajador" en la topbar. Todos los endpoints de escritura del backend son `[AllowAnonymous]` — no requieren token.
->
-> **2026-06-12 — PASO mejoras UI**: instanciar-modal: título "Agregar PASO al Proyecto"; carga proyectos via `forkJoin` (PASOs del año + proyectos), filtra `estado === 'ACTIVO'` estricto y excluye proyectos con PASO existente del año; setter `anio` recarga lista automáticamente; campo "Mes de inicio" enviado como `mesInicio` en `InstanciarPasoDto`. paso-lista: checkbox "Ver históricos" con getter `programasFiltrados` (años actual y anterior); `proyectosActivos: Set<number>` cargado en `ngOnInit` forkJoin con `ProjectService` para excluir proyectos FINALIZADOS/INACTIVOS del dropdown; `verEvidencia()` patrón fetch+blob. ejecucion-modal: `ejecucionGuardada` persiste ejecución post-upload para mostrar evidencia sin cerrar modal; `ultimaEjecucionConEvidencia` getter prioriza `ejecucionGuardada`; botones "Ver" (→ `abrirVisor` → `DocumentViewer`) + "Descargar" (→ `descargarDocumento` → `SharepointUploadService.getArchivoUrl`) — patrón idéntico a `trabajadores.ts`; `<app-document-viewer>` al final del template.
->
-> **2026-06-11 (v2)** — PASO: ruta correcta es `/ssoma/gestion/paso/` (ssoma.routes.ts monta PASO en `path: 'gestion/paso'`, NO en `salud-ocupacional/paso`). Fixes paso-lista: TabAmbito sin SSOMA, `activo !== false` en countTab/actividadesTab, historicoData como `PasoHistoricoAnioDto[]`, getter historicoTotales agrega array, historicoDataFiltrada sin filtro, cambiarVista siempre recarga historico, onProyectoChange resetea vista a 'mes', loadDetalle resetea historicoData y recarga historico al cambiar proyecto en vista proyecto, CSS tabla histórica, SPI null handling. paso-dashboard: irADetalle/irANuevoPrograma usan `/ssoma/gestion/paso/`, botón "Nuevo programa" usa sessionStorage. instanciar-modal: usa ProjectGetDTO y getProjectsPaged. paso-nav: rutas `/ssoma/gestion/paso/...`.
->
-> **2026-06-08** — bandeja: aprobación mes a mes para items empresa mensuales (BandejaItemDto.meses[], seleccionarMesBandeja(), aprobar/rechazar usan id del mes, chips de mes con color por estado). empresa: closeDrawer() solo llama guardarObservaciones() si panelObsContratista tiene contenido (evita PUT vacío innecesario). versiones-doc: columna "Subido por" → "Archivo" (muestra nombreArchivo del primer archivo o nombre extraído de archivoUrl).
->
-> **2026-06-07** — empresa: vigencia estimada en drawer mensual (getVigenciaEstimada, sentinel IDs, día 27 mes siguiente), sección "ARCHIVOS ENVIADOS" en no-mensuales, validación vigencia futura en enviarDocumento(), reset panelVigencia al reabrir drawer en estado Enviado/Rechazado. bandeja: panel detalle-meta (vigencia editable, selector archivos múltiples por mes), vigenciaEditable pre-calculada en selectItem(), seleccionarArchivo(), aprobar() pasa vigencia al backend. DTOs: archivos? en EmpresaEntregableDto y BandejaItemDto.
->
-> **2026-06-06 (v3)** — empresa.ts: investigación bug estado no se actualiza en lista sin refresh. NgZone inyectado, optimistic update en ngZone.run(), setTimeout 500ms antes de recargarEntregables(). Bug raíz pendiente: probable race condition backend.
->
-> **2026-06-06 (v2)** — Empresa mensual: dropdown selector de mes con dots de estado, historial de envíos inline, drag & drop fix (_dropJustHappened flag), validación de extensiones en addFiles(), fix mes incorrecto en enviarDocumento (mesFijo/anioFijo + callback recargarEntregables), fix archivos mes no visibles (recargarEntregables con afterLoad callback), fix eliminarArchivo URL (empresaId+archivoId), backend: EnviarDocumentoRequest Mes/Anio, CrearOActualizarEntregableMesAsync desde /archivos/enviar.
->
-> **2026-06-03** — Módulo PASO completo: DTOs, 3 servicios, 5 componentes reutilizables (spi-badge, ejecucion-modal, instanciar-modal, actividad-tree, paso-gantt), 5 páginas (dashboard, lista, detalle, actividad-detalle, alertas), rutas lazy bajo `/ssoma/gestion/paso/`, item de navegación en sidebar. Módulo Evaluaciones: pantalla asignaciones supervisores, rediseño `/evaluaciones/evaluar`.
->
-> **2026-06-02** — `sctr-subir` refactor: modal 2 pasos (datos básicos → trabajadores+visor). Fechas movidas al paso 2 como inputs flatpickr (material_green, `appendTo:body`, cierre manual con `mousedown capture`). `safeArchivoUrl` cacheado en `_safeArchivoUrl` (evita reload de iframe en cada change detection). Drag & drop en `.panel-visor` (`dragenter/dragover/drop` + `isDragging` overlay). Submit exitoso no cierra modal: resetea fechas + recarga workers. Columnas worker-row en grid (`1.5rem minmax(0,2fr) minmax(0,0.9fr) 4rem`), DNI extraído a `<span class="worker-dni">`, `.wizard-paso2` asimétrico (`0.6fr 1fr`). flatpickr en `angular.json` styles (`material_green.css`); import `* as flatpickr`, callable resuelto con `.default ?? flatpickr`.
+> **Última actualización**: 2026-06-07 — Bug fix commitInlineEdit (change+input en date picker), columna DURACIÓN en tabla, export PDF client-side (jsPDF), campo Duración complementario en modal Nueva Actividad, patch local padresActualizados en crear/editar.
 
 ---
 
@@ -68,6 +43,44 @@ npm run serve:ssr:Abril   # corre dist/Abril/server/server.mjs
 Producción: `environment.prod.ts` (sustituido por `angular.json` fileReplacements).
 
 > **Nota**: `apiUrl` termina en `/`. Las rutas se concatenan como `${environment.apiUrl}api/v1/...` (sin `/` inicial).
+
+---
+
+## REGLAS DE CODIFICACIÓN (obligatorias en todo código nuevo)
+
+### R1 — 1 acción de usuario = 1 llamada HTTP
+Cada acción (ngOnInit de una página, click en detalle, cambio de filtro, cambio de página)
+debe hacer **una sola llamada HTTP**. Nunca dos llamadas en paralelo ni secuenciales
+para construir la misma vista.
+
+```typescript
+// PROHIBIDO en ngOnInit
+this.service.getDatos(page).subscribe(...);
+this.service.getFiltros().subscribe(...);  // segunda llamada prohibida
+
+// CORRECTO — el backend devuelve todo junto
+this.service.getDatosConFiltros(page).subscribe(res => {
+  this.datos = res.data;
+  this.filtros = res.filtros;
+});
+```
+
+### R2 — Sin llamadas anidadas
+Prohibido hacer una llamada HTTP y dentro del subscribe hacer otra.
+
+```typescript
+// PROHIBIDO
+this.service.getProyecto(id).subscribe(proyecto => {
+  this.service.getActividades(proyecto.id).subscribe(...); // llamada anidada prohibida
+});
+
+// CORRECTO — el endpoint GET /proyecto/{id} ya trae las actividades incluidas
+this.service.getProyectoConActividades(id).subscribe(...);
+```
+
+### R3 — Estructura por features
+DTOs y services van en `features/<nombre-feature>/dtos/` y `features/<nombre-feature>/services/`.
+No agregar nada nuevo en `core/dtos/` ni `core/services/`.
 
 ---
 
@@ -110,13 +123,7 @@ src/app/
             ├── catalogos/
             ├── services/         # http-base.ts + un servicio por recurso
             ├── dtos/
-            ├── shared/           # utils del módulo (no UI compartida global)
-            └── paso/             # Módulo PASO — lazy desde ssoma.routes.ts → /ssoma/gestion/paso
-                ├── paso.routes.ts
-                ├── dtos/paso.dtos.ts
-                ├── services/     # paso.service.ts | paso-actividad.service.ts | paso-ejecucion.service.ts
-                ├── components/   # spi-badge | ejecucion-modal | instanciar-modal | actividad-tree | paso-gantt
-                └── pages/        # dashboard | lista | detalle | actividad-detalle | alertas
+            └── shared/           # utils del módulo (no UI compartida global)
 ```
 
 ### Convención `configuracion/` (módulo NgModule con routes internas)
@@ -169,8 +176,6 @@ Redirect interno: `''` → `'proyectos'`. Reutiliza servicios/DTOs de SSOMA (`Ca
    /contractors                             → CONTRACTORS_ADMIN_ROUTES
    /arquitectura-comercial                  → ArquitecturaComercialModule
    /ssoma                                   → SSOMA_ROUTES
-     /ssoma/salud-ocupacional               → SALUD_OCUPACIONAL_ROUTES
-     /ssoma/gestion/paso                    → PASO_ROUTES (lazy, featureKey: ssoma.gestion.paso)
    /configuracion                           → CONFIGURACION_ROUTES
    /habilitacion                            → HABILITACION_ROUTES
    /clinica                                 → CLINICA_ROUTES (dashboard, agenda, programaciones, interconsultas, emos)
@@ -429,7 +434,6 @@ Importables como standalone desde cualquier feature.
 | `Header`, `Sidebar`, `SidebarMobile`, `NavIcon`                              | —                     | `shared/components/header,sidebar*,nav-icon/`                                            | Usados por Layout. **`NavIcon`** acepta `key` (string) y `size` (number); registra SVGs por `iconKey` en un `ngSwitch`. Keys actuales: `projects`, `contractors`, `costs`, `security`, `ssoma`, `config`. Para añadir un módulo al sidebar con icono nuevo, hay que **agregar un `<svg *ngSwitchCase="'<key>'">`** en `nav-icon.html`. |
 | `FileSelector`, `FilePreview`, `ImagePreview`, `DraggableImage`, `CameraWeb` | varios                | `shared/components/file-selector,file-preview,image-preview,draggable-image,camera-web/` | Manejo de archivos/imágenes.                                                                                                                                                                                                                                                                                                           |
 | `DocumentViewer`                                                             | `app-document-viewer` | `shared/components/document-viewer/`                                                     | Visor de documentos modal. Inputs: `archivoUrl` (ruta relativa o URL), `nombre`. Output: `closed`. Llama `getArchivoUrl(path)` para obtener URL firmada, luego fetch-as-blob para PDF/imagen. `archivoUrl = ''` cierra el visor. Reutilizable en cualquier feature de habilitación.                                                    |
-| `AbrilPageHeaderComponent`                                                   | `app-abril-page-header` | `shared/components/abril-page-header/abril-page-header.component`                      | Header estándar de página. Inputs: `badge` (chip superior), `titulo`, `subtitulo`, `pills: string[]`, `tabs: AbrilPageTab[]` (navegan por RouterLink activo), `botonPrimario?: SsomaHeaderBtn { label, icono }`, `botonSecundario?: SsomaHeaderBtn`. Outputs: `primaryClick`, `secondaryClick`. Requiere que el componente padre tenga `:host { display:flex; flex-direction:column; flex:1; min-height:0 }` y que `layout.ts isFullPage()` retorne `true` para su ruta. Usado en: contractors, costs, habilitacion/control-acceso, ssoma (salud-ocupacional, rac, paso), security, configuracion. |
 
 **Importación correcta** (standalone):
 
@@ -572,50 +576,6 @@ Base: `${apiUrl}api/v1/ssoma/salud-ocupacional`
 
 > **Catálogos cacheados** usan `shareReplay(1)`. Llamar `invalidateCache()` después de mutar un catálogo para refrescar dropdowns.
 
-### SSOMA — PASO (Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente)
-
-Base: `${apiUrl}api/v1/ssoma-paso` — controller unificado. Actividades y ejecuciones como sub-rutas.
-
-| Método | Endpoint | Servicio |
-| ------ | -------- | -------- |
-| GET    | `/api/v1/ssoma-paso?anio=&proyectoId=&estado=&esPlantilla=` | `PasoService.getAll` |
-| GET    | `/api/v1/ssoma-paso/{id}` | `PasoService.getById` |
-| POST   | `/api/v1/ssoma-paso` | `PasoService.create` |
-| PUT    | `/api/v1/ssoma-paso/{id}` | `PasoService.update` |
-| PATCH  | `/api/v1/ssoma-paso/{id}/aprobar` | `PasoService.aprobar` |
-| POST   | `/api/v1/ssoma-paso/{id}/instanciar` | `PasoService.instanciar` |
-| GET    | `/api/v1/ssoma-paso/{id}/gantt` | `PasoService.getGantt` |
-| GET    | `/api/v1/ssoma-paso/{id}/spi` | `PasoService.getSpi` |
-| GET    | `/api/v1/ssoma-paso/{id}/reporte?format=excel\|pdf` | `PasoService.exportReporte` (Blob) |
-| GET    | `/api/v1/ssoma-paso/dashboard` | `PasoService.getDashboard` |
-| GET    | `/api/v1/ssoma-paso/alertas` | `PasoService.getAlertas` |
-| GET    | `/api/v1/ssoma-paso/categorias` | `PasoService.getCategorias` |
-| GET    | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.getById` |
-| POST   | `/api/v1/ssoma-paso/actividad` | `PasoActividadService.create` |
-| PUT    | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.update` |
-| DELETE | `/api/v1/ssoma-paso/actividad/{id}` | `PasoActividadService.delete` |
-| POST   | `/api/v1/ssoma-paso/ejecucion` | `PasoEjecucionService.create` |
-| PATCH  | `/api/v1/ssoma-paso/ejecucion/{id}/evidencia` | `PasoEjecucionService.subirEvidencia` (multipart, campo `file`) |
-| GET    | `/api/v1/ssoma-paso/{id}/resumen-mes?anio=&mes=` | `PasoService.getResumenMes` → `PasoResumenMesDto` |
-| GET    | `/api/v1/ssoma-paso/proyecto/{proyectoId}/historico` | `PasoService.getHistorico` → `PasoHistoricoAnioDto[]` |
-| GET    | `/api/v1/ssoma-paso/actividad/{id}/auditoria` | `PasoService.getAuditoria` → `PasoAuditoriaDto[]` |
-
-**DTOs clave** (`paso/dtos/paso.dtos.ts`):
-- `PasoActividadDto.categoriaAmbito: 'Seguridad' | 'Salud' | 'Ambiente'` — SSOMA **no** es valor válido.
-- `PasoResumenMesDto`: `totalProgramadas`, `completadas`, `pendientes`, `vencidas`, `porcentajeAvance`, `seguridad/salud/ambiente/ssoma: PasoResumenMesAmbitoDto`, `actividades: PasoResumenMesActividadDto[]`.
-- `PasoHistoricoAnioDto`: `anio`, `totalProgramadas`, `totalEjecutadas`, `totalVencidas`, `spiGeneral`, `spiColor`, `porcentajeAvance`.
-- Colores por ámbito: Seguridad→azul, Salud→verde, Ambiente→teal. SPI: ≥0.95=verde, 0.80-0.94=amarillo, <0.80=rojo.
-
-### Evaluaciones — Asignaciones de Supervisores
-
-| Método | Endpoint | Servicio |
-| ------ | -------- | -------- |
-| GET    | `/api/v1/evaluaciones/asignaciones-supervisor` | `EvAsignacionesService.getSupervisores` |
-| GET    | `/api/v1/evaluaciones/asignaciones-supervisor/proyectos` | `EvAsignacionesService.getProyectos` |
-| PUT    | `/api/v1/evaluaciones/asignaciones-supervisor/{supervisorWorkerId}` | `EvAsignacionesService.updateAsignaciones` (body: `{ projectIds: number[] }`) |
-
-**DTOs**: `SupervisorAsignacionDto { workerId, nombreCompleto, cargo, subarea, proyectos: ProyectoAsignadoDto[] }`, `ProyectoAsignadoDto { projectId, projectDescription }`. Filtra subareas `Unidad de Proyectos` y `Planeamiento BIM`.
-
 ### Arquitectura Comercial
 
 Base: `${apiUrl}api/v1/arquitectura-comercial`
@@ -684,9 +644,8 @@ Base: `${apiUrl}api/v1/arquitectura-comercial`
 
 ### `features/security/` — ✅ CRUD completo
 
-- `/security/users` (gestión de usuarios) y `/security/roles`. Rol: `ADMINISTRADOR DEL SISTEMA`.
+- `/security/users` (gestión de usuarios). Rol: `ADMINISTRADOR DEL SISTEMA`.
 - Lista paginada con búsqueda client-side. CRUD completo: crear, editar, toggle activo/inactivo.
-- **Sidebar**: módulo `seguridad` navega directo a `/security/users` — sin dropdown. `AbrilPageHeaderComponent` con badge `"SEGURIDAD"` y tabs Usuarios / Roles en ambas páginas. `isFullPage()` retorna `true` para `/security/**`.
 - Ver §13 para detalles de implementación.
 
 ### `features/projects/` — ✅ Producción / 🔵 En evolución
@@ -737,47 +696,6 @@ Componente standalone (`milestone-schedule.ts/.html/.css`) sobre **dhtmlx-gantt 
 - **Eliminar**: botón basura en cada fila → Swal → DELETE → `loadActividades()`.
 - **DTOs añadidos**: `CreateActividadBody`, `UpdateActividadBody` (en `core/dtos/arquitectura-comercial/actividades.model.ts`).
 - **Métodos de servicio añadidos**: `createActividad()`, `updateActividad()`, `deleteActividad()` (en `ArquitecturaComercialService`).
-
-### `features/ssoma/salud-ocupacional/paso/` — 🔵 Módulo PASO (2026-06-11)
-
-Programa Anual de Seguridad, Salud Ocupacional y Medio Ambiente. Lazy bajo `/ssoma/salud-ocupacional/paso/`.
-
-**Rutas**:
-```
-/paso/dashboard        → PasoDashboardComponent   (featureKey: ssoma.paso.dashboard)
-/paso/lista            → PasoListaComponent        (featureKey: ssoma.paso.lista)
-/paso/alertas          → PasoAlertasComponent      (featureKey: ssoma.paso.alertas)
-/paso/actividad/:id    → PasoActividadDetalleComponent
-/paso/:id              → PasoDetalleComponent
-```
-
-**Vista lista** (`PasoListaComponent`) — toggle `vista: 'mes'|'año'|'proyecto'`:
-- **Mes**: navegador de mes + `resumenMes` (endpoint `resumen-mes`). KPI strip solo muestra toggle; KPIs de mes aparecen en sección `mes-kpis` abajo.
-- **Año**: árbol de actividades por ámbito (tabs Seguridad / Salud / Ambiente). `actividadesTab` filtra por `categoriaAmbito === tabActiva`.
-- **Proyecto**: tabla por año (`PasoHistoricoAnioDto[]`) con columnas Año | Programadas | Ejecutadas | Vencidas | SPI | Avance + fila de totales (`historicoTotales` getter). Si `paso.proyectoId` es null muestra aviso.
-- `TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente'` — SSOMA eliminado en lista, detalle y actividad-tree.
-- `loadHistorico(proyectoId)` se dispara en `loadDetalle()` si ya estás en vista Proyecto, o en `cambiarVista('proyecto')` si `historicoData` es null.
-
-**Componentes reutilizables**:
-- `SpiBadgeComponent` — pill con semáforo: ≥0.95 verde / 0.80-0.94 amarillo / <0.80 rojo.
-- `EjecucionModalComponent` — registra ejecución + drag & drop evidencia.
-- `InstanciarModalComponent` — wizard 2 pasos: proyecto+año → confirmar. Usa `ProjectService.getWithResidentByUserId()`.
-- `ActividadTreeComponent` — agrupa `PasoActividadDto[]` por `categoriaId`. `@Input() ambito: 'Seguridad'|'Salud'|'Ambiente'`.
-- `PasoGanttComponent` — existe pero **desconectado** (no se usa en lista/detalle).
-
-**Sidebar**: entrada "Prog. Anual SSOMA" en grupo "Salud Ocupacional" de `navigation.service.ts` (featureKey `ssoma.paso.dashboard`).
-
-### `features/evaluaciones/asignaciones/` — ✅ Asignaciones de Supervisores (2026-06-03)
-
-Pantalla para la jefa de UDP para asignar proyectos a supervisores de subareas "Unidad de Proyectos" y "Planeamiento BIM".
-
-- Ruta: `/evaluaciones/asignaciones` (featureKey: `evaluaciones.asignaciones`)
-- Modal de edición con checkboxes. DTOs: `SupervisorAsignacionDto.nombreCompleto`, `ProyectoAsignadoDto.projectId/projectDescription`.
-- Nav item condicional (`*ngIf="hasAsignaciones"`) añadido al topbar de las 4 páginas existentes de evaluaciones.
-
-### `features/evaluaciones/pages/evaluar-residente/` — 🔄 Rediseño (2026-06-03)
-
-Grid 2 columnas de cards (1 col mobile ≤640px). Paleta de 8 colores por `projectId % 8`. Buscador con focus ring. Contador "X/Y evaluados". Badge "✓ Evaluado" con opacidad 60% en cards ya evaluadas. Lógica de evaluación sin cambios.
 
 ### `features/clinica/` — ✅ Módulo Clínica (nuevo en 2026-05-26)
 
@@ -833,13 +751,10 @@ Panel de gestión para la clínica ocupacional (rol: `clinica.agenda` featureKey
 ### `features/ssoma/salud-ocupacional/` — ✅ Completado
 
 - Dashboard, EMOs, Programaciones, Interconsultas, Convalidaciones, Catálogos (Clínicas/Médicos/Tipos de EMO con CRUD).
-- **Sidebar**: módulo `ssoma` navega directo a `/ssoma/salud-ocupacional/dashboard` — sin dropdown. Patrón igual que `clinica` y `control-acceso`: `onModuleClick` y `toggleOverflowMenu` interceptan la clave `'ssoma'` y usan `router.navigate`. El módulo mantiene 1 item en `items[]` para pasar el filtro de visibilidad del sidebar (`.filter(m => m.items.length > 0)`).
-- **Todos los pages** usan `AbrilPageHeaderComponent` con badge `"SALUD OCUPACIONAL"` y tabs de navegación entre secciones. `isFullPage()` retorna `true` para todas las rutas `/ssoma/salud-ocupacional/*`.
 
 ### `features/configuracion/` — ✅ Completo
 
 Standalone routes. Razones Sociales (read-only), Proyectos (CRUD con emails SSOMA), Trabajadores (read-only — crear/editar worker migrado a Habilitación).
-- **Sidebar**: módulo `configuracion` navega directo a `/configuracion/proyectos` — sin dropdown. `AbrilPageHeaderComponent` con badge `"CONFIGURACIÓN"` y tabs Proyectos / Áreas / Razones Sociales / Trabajadores en todas las páginas. `isFullPage()` retorna `true` para `/configuracion/**`.
 
 ### `features/gestion-administrativa/` — ✅ Implementado (detalle en §14)
 
@@ -1337,68 +1252,10 @@ aprobarMasivo()                   // Swal confirm → bulkAprobar por tipo
 - Header de lista: checkbox "Seleccionar todos" (`[indeterminate]`) + botón "✓ Aprobar (N)" visible cuando `selectedIds.size > 0`.
 - Cada `.bandeja-card` es flex-row: `<input.card-checkbox>` + `<div.bc-content>`. Click en checkbox no propaga a `selectItem`.
 
-#### Panel detalle-meta (col derecha, entre detalle-header y doc-body)
+#### Flujo aprobación unitaria (sin cambios)
 
-Campos visibles cuando hay `selectedItem`:
-
-- **VIGENCIA**: `<input type="date" [(ngModel)]="vigenciaEditable">` — siempre visible. Valor pre-calculado en `selectItem()` y `seleccionarMesBandeja()`.
-- **Chips de mes** (`*ngIf="selectedItem.esMensual && selectedItem.meses?.length > 0"`): un chip por mes (`mes.mes/mes.anio`). El chip seleccionado toma el color del estado del mes (verde=Aprobado, naranja=Enviado, rojo=Rechazado). Los no-seleccionados siempre gris. Click → `seleccionarMesBandeja(m)`.
-- **Archivos múltiples del mes** (`*ngIf="mesSeleccionadoBandeja?.archivos?.length > 1"`): chips "📄 N" para items mensuales.
-- **Archivos múltiples sin mes** (`*ngIf="!esMensual && selectedItem.archivos?.length > 1"`): chips "📄 N" para items no-mensuales.
-
-#### Lógica vigenciaEditable (pre-calculada al seleccionar)
-
-```ts
-// En selectItem():
-if (item.esMensual && item.meses?.length > 0) {
-  mesSeleccionadoBandeja = item.meses[0];
-  vigenciaEditable = item.meses[0].vigencia ? new Date(...).toISOString().substring(0,10) : '';
-  // luego carga archivo del mes[0]
-} else {
-  mesSeleccionadoBandeja = null;
-  sentinel → '2040-12-31'; else → item.vigencia ?? ''
-}
-
-// En seleccionarMesBandeja(mes):
-sentinel → '2040-12-31'
-else → día 27 del mes siguiente (mesSig/anioSig)
-si mes.vigencia existe → lo usa directamente
-```
-
-#### Aprobación/rechazo con mes seleccionado
-
-```ts
-aprobar(item): void {
-  const id = (item.esMensual && mesSeleccionadoBandeja) ? mesSeleccionadoBandeja.id : item.id;
-  executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: vigenciaEditable || undefined }, 'Aprobado');
-}
-```
-
-El `executeAction()` redirige a `aprobarEmpresa(mesId, payload)` — el backend espera el ID del mes, no del item padre.
-
-#### BandejaItemDto — campos clave
-
-```ts
-interface BandejaItemDto {
-  id: number; tipo: string; nombreEntregable: string;
-  entidadNombre: string; empresaNombre?: string; proyectoNombre?: string;
-  estado: string; vigencia?: string; archivoUrl?: string;
-  archivos?: { nombreArchivo: string; archivoUrl: string }[];
-  itemId?: number; esMensual?: boolean; mes?: number; anio?: number;
-  mesesPendientes?: number;
-  meses?: {
-    id: number; mes: number; anio: number; estado: string; vigencia?: string;
-    archivos?: { id: number; nombreArchivo: string; archivoUrl: string; esZip: boolean; orden: number }[];
-  }[];
-}
-```
-
-#### Flujo aprobación unitaria
-
-- **TRABAJADOR/EQUIPO**: `executeAction(item, { estado, vigencia })` → `aprobarTrabajador/Equipo(item.id, payload)`.
-- **EMPRESA no-mensual**: `executeAction(item, { estado, vigencia })` → `aprobarEmpresa(item.id, payload)`.
-- **EMPRESA mensual**: `executeAction({ ...item, id: mesSeleccionadoBandeja.id }, { estado, vigencia })` → `aprobarEmpresa(mesId, payload)`.
-- **INDUCCION**: aprobación masiva via `aprobarGrupo()` — sin vigencia.
+- **TRABAJADOR/EMPRESA/EQUIPO**: Swal input vigencia → `bandejaService.aprobarXxx(id, { vigencia })`.
+- **INDUCCION**: Swal sin vigencia → `bandejaService.aprobarInduccion(id)`.
 
 #### Nomenclatura — colisión resuelta
 
@@ -1498,27 +1355,15 @@ Filter-bar fila 1: búsqueda + pills Todos/Contratistas/Casa + toggle retirados 
 
 1. `selectEquipo(eq)` → llama `loadEntregablesEquipo(eq.id)`.
 2. `selectEntregable(e)` → puebla `panelVigencia`, `panelArchivoUrl`, `panelArchivoNombre`, `panelObsAbril`, `panelEstado`; abre drawer.
-3. Upload → staging local: `archivosPendientes: ArchivoStagingDto[]`. Botón **ENVIAR** llama `enviarDocumento()` → sube archivos secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar todos. **Ya NO existe `autoMarcarEnviado()`.**
+3. Upload → `subirArchivo()` → `res.path` asignado a `panelArchivoUrl` → `autoMarcarEnviado()` (PUT inmediato estado='Enviado').
 4. `actualizarEntregableLocal(updates)`: `findIndex` en `entregables[]` → spread merge → actualiza `selectedEntregable` — **sin reload** de la lista completa.
 5. Campo observaciones unificado: `panelObsAbril` sirve para ambos roles. Payload envía como `obsContratista` (si es contratista) o `obsAbril` (si es admin).
-6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin.
+6. Rama contratista en `guardarEntregable()`: payload solo con `{ archivoUrl?, vigencia?, obsContratista? }` — sin `estado` ni campos admin. Sin botón "ENVIAR DOCUMENTO" (eliminado); flujo es auto-save en upload.
 7. Botón GUARDAR (admin): habilitado si no se requiere vigencia, o si `panelVigencia` está completo.
 
-**Staging multi-archivo** (los 3 componentes):
-- `panelArchivoUrl` y `panelArchivoNombre` eliminados como propiedades → reemplazados por `archivosPendientes: ArchivoStagingDto[]`.
-- Getters: `get uploadingFile()` = `archivosPendientes.some(a => a.subiendo)`, `get panelArchivoUrl()` = primer archivo con path.
-- `onFileSelected()`: acepta múltiples archivos, los agrega al staging sin subir inmediatamente.
-- `quitarArchivo(idx)`: elimina un archivo del staging.
-- `enviarDocumento()`: sube secuencialmente + llama `/archivos/enviar` al final.
+**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`. `VersionesDoc` es el mismo componente genérico que usa Trabajadores.
 
-**Vigencia contratista** (los 3 componentes):
-- `requiereVigencia=true` → input date editable.
-- `requiereVigencia=false` → span readonly con fecha formateada.
-- Items permanentes en empresa (itemId 12/13): muestra texto "Permanente", no input.
-
-**Historial de versiones**: `versionesLoader = (id) => equipoService.getVersiones(id)` pasado a `<app-hab-versiones-doc [loader]="versionesLoader">`.
-
-**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false` (en `guardarEntregable` admin).
+**`vigencia` sin requiereVigencia**: el payload envía `'2040-12-31'` como fecha dummy cuando `requiereVigencia === false`.
 
 ### Página Control de Acceso — mobile-first operaciones en obra
 
@@ -2538,23 +2383,6 @@ abrirProgramarInduccion(): void {
   - `guardarObservaciones()`: captura `id` y `obs` como locales antes del posible reset; llama `updateEntregable(id, { obsContratista })` sin `estado`; errores a través de `errorService.handleError`.
   - `closeDrawer()`: llama `guardarObservaciones()` ANTES de `selectedEntregable = null` — cubre overlay click, botón X, ESC y selección de nuevo trabajador.
   - HTML: `(blur)="guardarObservaciones()"` en textarea TUS OBSERVACIONES del bloque contratista.
-
-### Panel entregables empresa — bug estado post-ENVIAR (2026-06-06)
-
-`features/habilitacion/pages/empresa/empresa.ts` — investigación activa:
-
-**Síntoma**: tras ENVIAR un entregable mensual, el chip de estado en la tabla no cambia a "Enviado" hasta refrescar la página manualmente.
-
-**Cambios aplicados en esta sesión**:
-- `NgZone` añadido al import y al constructor (`private ngZone: NgZone`).
-- Optimistic update en `enviarDocumento()` next: `this.entregables[idx] = { ...this.entregables[idx], estado: 'Enviado' }` + `this.entregables = [...this.entregables]` envuelto en `this.ngZone.run(() => {...})`.
-- `recargarEntregables()` diferida 500ms con `setTimeout(..., 500)` para evitar race condition donde el backend aún no ha committeado el nuevo estado al momento del GET.
-- `console.log('entregables frescos:', ...)` en el `next` de `recargarEntregables()` (diagnóstico — quitar en producción).
-- afterLoad callback también hace `this.entregables[idx] = { ...frescoEntregable }` + `this.entregables = [...this.entregables]` + `cdr.detectChanges()`.
-
-**Hipótesis pendiente de confirmar**: `recargarEntregables()` obtiene datos stale del backend (el estado del entregable padre no se recalcula inmediatamente tras el POST a `/archivos/enviar`) y sobreescribe el optimistic update. Confirmar con el console.log: si muestra `estado: 'Falta'` (viejo), es race condition backend → incrementar timeout o no sobreescribir estado en afterLoad. Si muestra `estado: 'Enviado'` (correcto), el problema es Angular CD y debe revisarse si algún ancestro usa OnPush.
-
-**Estado del Layout**: no usa `ChangeDetectionStrategy.OnPush` (Default). `App` tampoco. El componente `Empresa` tampoco.
 
 ### Panel entregables empresa — auto-save y reglas por itemId
 
@@ -3811,160 +3639,279 @@ Botón "Línea Base" en toolbar (`btn-secondary` + `.btn-lb-on` cuando activo). 
 
 ---
 
-## Sesión 2026-06-06 — Habilitación: multi-archivo staging + vigencia contratista + entregables mensuales
+## Sesión 2026-06-02 — Arquitectura, contratos API y rediseños UI
 
-### Upload multi-archivo (empresa, trabajadores, equipos)
+### Reglas de codificación establecidas (ver sección §REGLAS al inicio)
+- R1: 1 acción de usuario = 1 llamada HTTP
+- R2: Sin llamadas anidadas en subscribe
+- R3: Estructura por features — DTOs y services en features/<nombre>/
 
-**Patrón anterior eliminado**: `panelArchivoUrl: string`, `panelArchivoNombre: string`, `uploadingFile: boolean`, `autoMarcarEnviado()`, `subirArchivo()` en upload zone.
+### Fixes de llamadas múltiples
+- CronogramaActividades ngOnInit: 2 llamadas → 1
+  (getActividades ahora devuelve `{ proyecto, actividades }` — loadProyectos() eliminado)
+- CronogramaActividades guardar() editar: 2 llamadas → 1
+  (predecessorIds van en el body del PUT, cascada viene en el response)
+- ProjectsDashboard ngOnInit: forkJoin eliminado → 1 llamada
+  (getDashboard() devuelve filtros incluidos en el response)
 
-**Nuevo patrón** (`ArchivoStagingDto` en `trabajador.model.ts`):
-```ts
-interface ArchivoStagingDto { file: File; nombre: string; path?: string; esZip: boolean; zipContenido?: string; subiendo: boolean; error: boolean; }
-```
-- Los 3 componentes tienen `archivosPendientes: ArchivoStagingDto[]`.
-- `onFileSelected()` acepta múltiples archivos (input con `multiple`) y los agrega al array local.
-- Botón ENVIAR llama `enviarDocumento()` → sube secuencialmente con `subirArchivoMultiple()` → llama `sharepointService.enviarDocumento()` al terminar.
-- `quitarArchivo(idx)` elimina del array.
-- **Nuevos endpoints** en `sharepoint-upload.service.ts`: `POST /archivos/subir-multiple`, `POST /archivos/enviar`.
+### Nuevos DTOs agregados (cronograma-actividades.dtos.ts)
+- `ProyectoCronogramaHeaderDto` `{ projectId, projectDescription, responsableUdp, fechaInicio }`
+- `ActividadesProyectoResponseDto` `{ proyecto, actividades }`
+- `EditarActividadRequest` — extendido con `predecessorIds?: number[] | null`
+- `EditarActividadResultDto` `{ actividad, cascada: CascadaResultDto | null }`
 
-### Vigencia contratista
+### Nuevos DTOs agregados (projectsDashboard.model.ts)
+- `ProjectsDashboardResponseDto` — extiende `ProjectsDashboardDTO` con campo `filtros: ProjectsDashboardFiltersDTO`
 
-Los 3 componentes muestran siempre el campo vigencia en la sección contratista:
-- `requiereVigencia = true` → `<input type="date">` editable.
-- `requiereVigencia = false` → `<span>` con fecha formateada o "—".
-- `esPermanente` (empresa itemId 12/13) → texto "Permanente", input deshabilitado.
+### Badge predecesoras
+- Antes: mostraba conteo `← 1`
+- Ahora: muestra número de orden `← 45` o `← 45, 76` o `← 45, 76 +1`
+- `getPredecessorasLabel(act)` en `cronograma-actividades.ts` — usa `getDisplayIndex` (posición 1-based en array, igual que el tooltip)
 
-Lógica en `enviarDocumento()`:
-- Contratista + requiereVigencia → envía `panelVigencia`.
-- Admin → envía `panelVigencia`.
-- Contratista + !requiereVigencia → `undefined` (backend calcula).
+### Rediseño plantilla de hitos (milestone-schedule)
+- Quitado botón "Nuevo hito" en vista plantilla (`*ngIf="!noMilestones"`)
+- Chip `PLANTILLA` junto al nombre del proyecto (solo visible cuando `noMilestones && undatedTasks.length > 0`)
+- Subheader stats: `X hitos · X con fecha · X sin fecha · [barra 3px] X%`
+- Layout compacto tipo tabla: `# | Hito | Inicio | Fin | Estado`
+- Fechas como puntos de referencia (sin semáforo vencido/programado)
+- Badge binario: `Con fecha` / `Sin fecha`
+- Filtros: Todos / Sin fecha / Con fecha
+- Búsqueda client-side por nombre del hito
+- Propiedades de tarea renombradas: `plannedStart/plannedEnd` → `startDate/endDate`
+- Métodos: `tieneFecha()`, `hitosFiltrados`, `statConFecha`, `statSinFecha`, `pctConFecha`, `onFechaChange()`
 
-### Entregables mensuales (empresa.ts / empresa.html)
-
-**Nuevos DTOs** en `empresa.model.ts`:
-- `EntregableMesDto { id, mes, anio, estado, vigencia?, archivoUrl?, obsAbril?, obsContratista?, motivoRechazo? }`.
-- `EmpresaEntregableDto` extendido: `esMensual: boolean`, `motivoRechazo?`, `meses: EntregableMesDto[]`.
-- `EmpresaEntregableUpdateDto` extendido: `motivoRechazo?`, `mes?`, `anio?`.
-
-**Nuevas propiedades en empresa.ts**:
-- `mesSeleccionado: EntregableMesDto | null` — mes activo en el selector.
-- `mesPanelMes: number` (0-indexed), `mesPanelAnio: number` — mes/año del selector.
-- `mesesNombres[]`, getters `mesesDisponibles` (últimos 12 meses), `mesActualLabel`.
-
-**Drawer empresa — bloques mensuales**:
-- **Contratista + esMensual**: selector de mes (`onMesChange(mes, anio)`), info de estado del mes seleccionado (si ya aprobado/rechazado → bloque bloqueado), zona de upload, textarea obs. Botón ENVIAR = "ENVIAR {mesActualLabel}"; disabled si mes ya aprobado/rechazado.
-- **Admin + esMensual**: tabla de meses con columnas Mes/Estado/Acciones. Por cada mes en estado `Enviado`: botones ✓ (`aprobarMesEspecifico`) y ✕ (`rechazarMesEspecifico`). Motivo de rechazo en tooltip.
-- Bloques no-mensuales: condición añadida `&& !selectedEntregable.esMensual`.
-
-**Nuevos métodos en empresa.ts**:
-- `onMesChange(mes, anio)`: actualiza selector + busca `mesSeleccionado` en `e.meses`.
-- `aprobarMesEspecifico(mes: EntregableMesDto)`: Swal confirm → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Aprobado', vigencia? })`.
-- `rechazarMesEspecifico(mes: EntregableMesDto)`: Swal textarea → `habEmpresaService.aprobarMes(empresaId, mes.id, { estado:'Rechazado', motivoRechazo })`.
-- `eliminarArchivoVersion(archivoId)`: Swal confirm → `habEmpresaService.eliminarArchivo(archivoId)`.
-
-**Nuevos métodos en `hab-empresa.service.ts`**:
-- `getMesesEntregable(empresaId, itemId, proyectoId)` → `GET /empresas/{id}/entregables/{itemId}/meses`.
-- `aprobarMes(empresaId, entregableId, dto)` → `PATCH /empresas/{id}/entregables/{entregableId}/mes`.
-- `eliminarArchivo(archivoId)` → `DELETE /archivos/{archivoId}`.
-
-### Bandeja — badge meses pendientes
-
-`BandejaItemDto` extendido con `itemId?`, `esMensual?`, `mes?`, `anio?`, `mesesPendientes?`.
-
-En `bandeja.html`, debajo del nombre del entregable:
-```html
-<span *ngIf="item.esMensual && item.mesesPendientes > 1" class="btn-chip chip-orange">
-  {{ item.mesesPendientes }} meses pendientes
-</span>
-```
-
-### CSS añadido
-
-En `empresa.css`, `trabajadores.css`, `equipos.css`:
-- `.archivo-list`, `.archivo-item`, `.archivo-item--subiendo`, `.archivo-item--error`
-- `.archivo-nombre`, `.archivo-zip-badge`, `.archivo-estado`, `.archivo-estado--error`
-
-En `empresa.css` además: `.mes-estado-aprobado/enviado/rechazado/falta`.
-
-**Commit**: `d763264` en master.
+### Reestructura carpetas (confirmado en esta sesión)
+- `cronograma-actividades/dtos/` y `cronograma-actividades/services/` separados de `core/`
+- `projects-dashboard/dtos/` y `projects-dashboard/services/` separados de `core/`
 
 ---
 
-## Sesión 2026-06-06 (v2) — Empresa mensual: UX, bugs, drag&drop, validaciones
+## Sesión 2026-06-07 — Cronograma de Actividades: bug fix date picker, duración, PDF, padresActualizados
 
-### Dropdown selector de mes
-- Reemplazado `<select>` por dropdown custom con backdrop invisible (click-outside), dot de color + estado por mes.
-- `mesDropdownOpen`, `getMesEstado(mes,anio)`, `toggleMesDropdown()`, `cerrarMesDropdown()`, `seleccionarMes(mes,anio)` en `empresa.ts`.
-- Clases CSS: `.mes-dropdown`, `.mes-dropdown-trigger`, `.mes-dropdown-list`, `.mes-dropdown-item--active`, `.mes-estado-dot`, `.mes-estado-label`.
+### 1. Bug fix — `commitInlineEdit()`: date picker nativo no disparaba `input`
 
-### Historial de envíos inline (solo mensual)
-- Botón toggle "Ver historial de envíos" en footer del drawer; panel inline con `*ngFor` de versiones ordenadas por `createdAt` desc.
-- `historialVersiones`, `loadingHistorial`, `mostrarHistorial`, `cargarHistorial()` en `empresa.ts`.
-- Para no-mensuales: mantiene modal `VersionesDoc` genérico.
+**Problema**: el popover de edición inline usaba `[(ngModel)]="inlineEditValue"` en `<input type="date">`. El date picker nativo del browser dispara `change` (no `input`) al seleccionar una fecha sin hacer blur primero. Angular's `DefaultValueAccessor` solo escucha `input`, por lo que `inlineEditValue` nunca se actualizaba → payload enviaba `plannedEndDate: null`.
 
-### Admin tabla de meses
-- Celda "Ver" → `*ngFor` sobre `m.archivos[]`; fallback a `m.archivoUrl` con `ng-template #archivoFallback`.
-- Botones APROBAR/RECHAZAR del footer deshabilitados con `*ngIf="!selectedEntregable.esMensual"`.
+**Fix aplicado** (`cronograma-actividades.html`):
+```html
+<!-- antes -->
+[(ngModel)]="inlineEditValue"
 
-### Bug — mes incorrecto al enviar
-- `mesFijo` y `anioFijo` capturados ANTES del async en `enviarDocumento()`.
-- `recargarEntregables()` extendido con `afterLoad?: (list) => void` callback.
-- En `next` de `enviarDocumento`: captura `itemIdFijo = selectedEntregable.itemId` antes de `closeDrawer()`, llama `recargarEntregables(callback)` donde el callback busca el entregable fresco y restaura `mesPanelMes`/`mesPanelAnio`/`mesSeleccionado`.
+<!-- después -->
+[value]="inlineEditValue"
+(change)="inlineEditValue = $any($event.target).value"
+(input)="inlineEditValue = $any($event.target).value"
+```
 
-### Bug — archivos del mes no visibles
-- `recargarEntregables` ahora llama `afterLoad?.(list)` después de actualizar `selectedEntregable`/`mesSeleccionado`.
-- `this.entregables = [...list]` (nueva referencia) + `detectChanges()` adicional fuerzan re-render inmediato de la lista.
+**Regla derivada**: en cualquier `<input type="date">` donde el valor se necesite capturar en tiempo real (sin esperar blur), usar siempre `(change)` + `(input)` en lugar de solo `[(ngModel)]`.
 
-### Drag & drop
-- `_dropJustHappened` flag: bloquea `triggerFileInput()` 300ms post-drop para evitar que el browser abra el picker.
-- `onDrop()`: `stopImmediatePropagation()` + reset del fileInput value + flag.
-- Drop zones: `(click)` movido al `div.upload-empty` interior (no en el contenedor de drag).
-- `console.log` de diagnóstico agregado en `onDragOver`/`onDrop` (pendiente quitar en prod).
+**Fix secundario en el mismo commit**: guard `inlineEditInFlight` para evitar múltiples PUT por Enter + click simultáneo. La propiedad `private inlineEditInFlight = false` se setea antes del HTTP call y se resetea en `next`/`error`.
 
-### Validación de extensiones en addFiles()
-- Extensiones permitidas: `.pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv` (sin `.zip`).
-- Archivo rechazado → `Swal.fire` warning + `continue` (no se agrega al staging).
-- `accept` del input actualizado a las mismas extensiones.
+---
 
-### Fix eliminarArchivo URL
-- `hab-empresa.service.ts`: `eliminarArchivo(empresaId, archivoId)` → `DELETE /empresas/{empresaId}/archivos/{archivoId}`.
-- `empresa.ts`: llama `eliminarArchivo(this.empresaId!, archivoId)`.
+### 2. Columna DURACIÓN en la tabla
 
-### Backend (commits previos)
-- `EnviarDocumentoRequest`: campos `Mes?` y `Anio?` agregados.
-- `ArchivoHabilitacionController.Enviar()`: cuando `Mes`/`Anio` presentes → `CrearOActualizarEntregableMesAsync` en vez de `FindAsync`; `version.HabEmpresaId = ent.Id`.
-- `IHabEmpresaRepository` inyectado en el controller.
-- `HabEmpresaRepository.GetEntregablesEmpresaAsync`: archivos de cada `EntregableMesDto` con fallback al registro base (datos legacy).
+**Posición**: entre "FIN PROG." y las columnas de Línea Base.
 
-**Commit frontend**: pendiente (esta sesión).
+**Método** (`cronograma-actividades.ts`):
+```ts
+getDuracion(act: ActividadDto): number | null {
+  if (!act.plannedStartDate || !act.plannedEndDate) return null;
+  const diff = new Date(act.plannedEndDate.slice(0,10)).getTime()
+             - new Date(act.plannedStartDate.slice(0,10)).getTime();
+  return Math.abs(Math.round(diff / 86400000)) + 1;
+}
+```
 
-## Sesión 2026-06-16 — OPT: chips trabajador, fix canvas firma, fix scroll paso 2 (no resuelto del todo)
+- Aplica a todos los nodos (padres e hijos).
+- Sin fechas → muestra `"—"`.
+- Formato: `"Nd"` (ej. `"45d"`).
+- CSS: `.col-dur { width: 80px }`, `.td-dur { text-align: center }`.
+- Columna también incluida en el skeleton de carga (mantiene alineación de columnas).
 
-### Trabajador — datos de solo lectura + aniosExperiencia
-- `WorkerHabilitacionListDto` (`habilitacion/dtos/trabajador.model.ts`): agregado `aniosExperiencia?: number`.
-- `opt-nuevo.html` paso 2: el `form-row` con 3 selects/inputs editables (tipo / tiempo en obra / años exp.) dentro de cada `trab-card` se reemplazó por `.trab-datos` con chips de solo lectura (`.trab-chip`): tipo, tiempo en obra, años exp., ocupación. CSS nuevo en `opt-nuevo.css`.
-- `onTrabajadorObservadoChange()`: el `dto` que se pasa a `agregarTrabajador()` ahora copia `w.aniosExperiencia` (antes se perdía).
+---
 
-### Fix — canvas de firma del observador no renderizaba (OnPush)
-- `initCanvasObs()` no llamaba `cdr.markForCheck()` al final; bajo `OnPush`, el `setTimeout(100)` de `siguiente()` que monta el paso 3 nunca refrescaba la vista y el `<canvas>` quedaba como imagen rota. Fix: `markForCheck()` al final de `initCanvasObs()`.
-- Verificado con spec temporal (TestBed + mock de `getContext('2d')`): renderiza `<canvas>` real, `initCanvasObs()` dispara CD, y dibujar con mouse traza líneas y guarda la firma en base64 vía `toDataURL`.
+### 3. Export PDF client-side (`exportarPDF()`)
 
-### opt-detalle — firmas vía `app-document-viewer` (intentado y revertido)
-- Se reemplazaron los `<img [src]="...">` de firma (observador y trabajadores, que apuntan a paths de SharePoint que requieren auth) por `app-document-viewer`, igual patrón que el visor de PET en `opt-nuevo`. Commit `6910fc6`.
-- El bloque en `opt-detalle.html` fue revertido manualmente después (ya no se muestra ningún visor de firma ahí); `opt-detalle.ts` quedó con el import de `DocumentViewer` sin usar en el template. Pendiente decidir si se reintenta o se limpia el import.
+**Botón**: toolbar entre "Importar desde MS Project" y "Nueva Actividad". Siempre visible (no depende de `esAdmin`).
 
-### SearchSelect — dropdown flotante
-- `search-select.html`: `z-5` → `z-50` en el dropdown; contenedor `.relative` → `.relative.overflow-visible`. Para que el dropdown flote sobre el contenido de abajo en vez de empujarlo.
-- Se verificó (spec temporal) que `select()` ya cierra el dropdown e limpia `searchText` de forma síncrona e incondicional, independiente de qué haga el padre con `value` después — no requirió cambios en `SearchSelect` para el flujo de "seleccionar → agregar → cerrar → limpiar".
+**Implementación** (`cronograma-actividades.ts`, al final del componente):
+- `jsPDF('l', 'mm', 'a4')` — landscape A4.
+- Header: rect `#1B263B` + texto `#E0E1DD`, nombre del proyecto (izq) y fecha de exportación `dd/mm/yyyy` (der).
+- Columnas base siempre: `#, Actividad, Inicio Prog., Fin Prog., Duración, Avance%, Estado`.
+- Columnas LB solo si `this.lineaBaseVisible === true`: `LB Inicio, LB Fin, Desfase Ini., Desfase Fin., Semáforo`.
+- Itera `this.actividades` completo (sin filtrar por `collapsedIds`).
+- Jerarquía visual: indenta `act.activityDescription` con `'  '.repeat(act.hierarchyLevel)` (2 espacios por nivel).
+- Semáforo: texto `'Verde'`/`'Amarillo'`/`'Rojo'` (no se puede renderizar el dot CSS en jsPDF).
+- Colores en `didParseCell`: estado y semáforo con `textColor` RGB.
+- Nombre de archivo: `{projectDescription}_cronograma_{yyyy-mm-dd}.pdf` (caracteres especiales sanitizados).
+- **0 llamadas HTTP** (R1 cumplido).
+- No toca `buildColorMap()`, `buildAvanceMap()`, `buildParentIds()`.
 
-### Bug — scroll manual roto en paso 2 (parcialmente resuelto, sigue reportado en navegador real)
-Reporte: en paso 2, al seleccionar un trabajador, "Verificación de entrenamiento" queda inalcanzable — no se puede scrollear ni interactuar con ella. Sí se activa scroll al agregar varios "pasos observados".
+---
 
-Diagnóstico por capas (cada uno confirmado con Playwright headless contra un repro aislado, sin necesidad de login):
-1. `.paso-body` tenía `overflow-y:auto` pero sin `min-height:0` → como flex-item de `.nuevo-root`, nunca se encogía para activar el overflow. **Fix**: `min-height:0` en `.paso-body`.
-2. Más profundo: `.page-content` (shell `Layout`) usa `flex-1 min-h-0 overflow-y-auto` pero **no es `display:flex`** — son solo utilidades de tamaño como flex-item. El host `<app-opt-nuevo>` nunca recibía una altura real, crecía a su contenido completo, y quien terminaba scrolleando era `.page-content` (arrastrando header/stepper/footer). **Fix**: `height:100%` en `:host` de `opt-nuevo.css`. Confirmado con métricas reales (`scrollHeight`/`clientHeight`) antes/después en un repro standalone con Tailwind CDN.
-3. Se descartó por evidencia (no por intuición) la hipótesis de que `.paso-body{display:flex;flex-direction:column}` causara "shrink" de sus hijos al desbordar — comparación lado a lado (flex vs block) con contenido realista mostró comportamiento idéntico. Se dejó igual `display:block` por simplicidad, no como fix confirmado.
+### 4. Modal Nueva Actividad — campo Duración complementario
 
-**Estado real**: ambos fixes (1 y 2) están aplicados y verificados de forma aislada (Playwright sin login), pero el usuario reportó que en su `ng serve` real, después de reiniciar el dev server y hard-refresh, el síntoma persiste igual. No se pudo verificar en vivo por falta de credenciales de prueba contra el backend (`localhost:5236`) — la sesión quedó en este punto, pendiente de credenciales de prueba o inspección manual de DevTools por el usuario para diagnosticar la diferencia entre el repro aislado y la app real.
+**Solo visible** cuando `modalMode === 'crear'`. Posición: alineado bajo "Fin Programado" (segunda columna del `field-row`).
 
-**Commits de esta sesión** (sin push hasta confirmación): `c751444`, `0a4b5a9`, `6910fc6`, `992ff27`, `0e171ba`, y el pendiente de este fix de scroll (`height:100%` + `min-height:0` + `display:block` en `.paso-body`, revert del `scrollIntoView` automático, revert manual de firmas en `opt-detalle.html`).
+**Variable de estado** (propiedad del componente):
+```ts
+nuevaDuracionDias: number | null = null;
+```
+Reseteada en `abrirModalCrear()` y `cerrarModal()`.
+
+**Flujo bidireccional**:
+- Usuario cambia "Fin Programado" → `onFormPlannedEndChange(val)` actualiza `formPlannedEnd` y recalcula `nuevaDuracionDias`.
+- Usuario escribe en "Duración" → `onNuevaDuracionChange(val)` actualiza `nuevaDuracionDias` y recalcula `formPlannedEnd`.
+
+**Cálculo timezone-safe** (usa `new Date(y, m-1, d)` en hora local, no UTC):
+```ts
+onFormPlannedEndChange(val: string): void {
+  this.formPlannedEnd = val;
+  if (!this.formPlannedStart || !val || val.length < 10) { this.nuevaDuracionDias = null; return; }
+  const [sy,sm,sd] = this.formPlannedStart.split('-').map(Number);
+  const [ey,em,ed] = val.split('-').map(Number);
+  const diff = Math.round((new Date(ey,em-1,ed).getTime() - new Date(sy,sm-1,sd).getTime()) / 86400000) + 1;
+  this.nuevaDuracionDias = diff >= 1 ? diff : null;
+}
+
+onNuevaDuracionChange(val: string): void {
+  const n = parseInt(val, 10);
+  this.nuevaDuracionDias = isNaN(n) || n < 1 ? null : n;
+  if (!this.formPlannedStart || this.nuevaDuracionDias === null) return;
+  const [y,m,d] = this.formPlannedStart.split('-').map(Number);
+  const end = new Date(y, m-1, d);
+  end.setDate(end.getDate() + this.nuevaDuracionDias - 1);
+  this.formPlannedEnd = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+}
+```
+
+**Input "Fin Programado"**: reemplazado `[(ngModel)]` por `[ngModel]` + `(change)` + `(input)` (mismo patrón que el fix del popover inline).
+
+**No toca** `guardar()`, la lógica de submit, ni métodos fuera del modal.
+
+---
+
+### 5. Patch local `padresActualizados` en crear/editar
+
+**Motivación**: el backend puede actualizar el campo `esPadre`, `progressPercentage` u otros campos de los nodos padre cuando se crea/edita un hijo. El frontend aplica un patch quirúrgico sobre cada padre devuelto para mantener la tabla consistente sin recargar.
+
+**DTOs actualizados** (`cronograma-actividades.dtos.ts`):
+```ts
+export interface CrearActividadResultDto {
+  actividad: ActividadDto;
+  padresActualizados?: ActividadDto[];
+}
+
+export interface EditarActividadResultDto {
+  actividad: ActividadDto;
+  cascada: CascadaResultDto | null;
+  padresActualizados?: ActividadDto[];   // ← nuevo
+}
+```
+
+**Servicio**: `crearActividad()` cambia de `Observable<ActividadDto>` a `Observable<CrearActividadResultDto>`.
+
+**Patrón de patch** (aplicado en `guardar()` rama crear y rama editar):
+```ts
+(res.padresActualizados ?? []).forEach((padre) => {
+  const idx = this.actividades.findIndex(a => a.projectActivityId === padre.projectActivityId);
+  if (idx !== -1) this.actividades[idx] = { ...this.actividades[idx], ...padre };
+});
+```
+
+- En **editar**: se aplica después de `patchActividadLocal(res.actividad)`, antes de `buildAvanceMap()`.
+- En **crear**: se aplica antes de `cerrarModal(); this.recargar()` (el `recargar()` posterior reconcilia cualquier estado).
+- **0 llamadas HTTP adicionales** (R1 cumplido). No toca funciones protegidas.
+
+---
+
+## Sesión 2026-06-24 — Dashboard UDP (cronograma-dashboard)
+
+### Resumen
+Nuevo módulo de dashboard ejecutivo para gerencia, accesible en `/projects/cronograma-dashboard`.
+Diseñado con referencia visual tipo Power BI en Claude Design antes de implementar en Angular.
+
+### Archivos creados (Frontend)
+
+features/projects/cronograma-dashboard/
+  ├── dtos/cronograma-dashboard.dtos.ts
+  ├── services/cronograma-dashboard.service.ts
+  ├── cronograma-dashboard.ts
+  ├── cronograma-dashboard.html
+  └── cronograma-dashboard.css
+
+### DTOs
+
+CronogramaDashboardKpisDto {
+  totalProyectos, porcentajeAvancePromedio, proyectosAlDia,
+  proyectosConRetraso, proyectosSinActividades, actividadesVencidas,
+  actividadesCulminadasEstaSemana, actividadesCulminadasEsteMes
+}
+
+CronogramaDashboardProyectoDto {
+  projectId, projectDescription, responsableUdp,
+  totalActividades, culminadas, enProceso, vencidas, pendientes,
+  porcentajeAvance, diasRetraso,
+  semaforo: 'VERDE' | 'AMARILLO' | 'ROJO',
+  estado: 'AL_DIA' | 'CON_RETRASO' | 'SIN_ACTIVIDADES'
+}
+
+CronogramaDashboardResponsableDto { userId, nombreCompleto }
+CronogramaDashboardResponseDto { kpis, proyectos, responsables }
+
+### Endpoint backend
+
+GET /api/v1/cronograma-actividades/dashboard?responsableId=&estado=
+
+Devuelve en una sola query: KPIs globales + lista de proyectos con avance calculado + lista de responsables para filtro.
+
+KPIs globales:
+- TotalProyectos — proyectos UDP activos con al menos 1 actividad
+- PorcentajeAvancePromedio — promedio del avance nivel 0 por proyecto
+- ProyectosAlDia — sin actividades vencidas
+- ProyectosConRetraso — con al menos 1 actividad vencida (plannedEndDate < hoy y actualEndDate IS NULL)
+- ProyectosSinActividades — proyectos UDP activos sin actividades
+- ActividadesVencidas — total global
+- ActividadesCulminadasEstaSemana / EsteMes
+
+Por proyecto:
+- Semáforo: VERDE (0 días retraso) / AMARILLO (1-7 días) / ROJO (>7 días)
+- DiasRetraso: MAX días de retraso entre actividades vencidas del proyecto
+- Avance: igual que getAvance() del cronograma (actualEndDate != null → 100, sino progressPercentage)
+
+### Diseño visual
+
+- Fondo general: #f0f4f8
+- KPI cards: fondo blanco, border-top: 4px solid <color-acento>, sin sombra
+- Filas CON_RETRASO en tabla: fondo #FFF5F5
+- Barra de avance: verde ≥75%, azul ≥50%, naranja ≥25%, rojo <25%
+- Semáforo: círculo 10px de color sólido
+- Actividades en tabla: formato total / culminadas / vencidas
+- Click en fila navega a /projects/cronograma-actividades/:projectId
+- Skeleton shimmer mientras carga
+
+### Routing y navegación
+
+- Ruta: cronograma-dashboard en proyectos-routing-module.ts
+- featureKey: projects.cronograma-dashboard
+- titulo: DASHBOARD UDP
+- roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP']
+- Navigation item: { label: 'Dashboard UDP', route: '/projects/cronograma-dashboard', featureKey: 'projects.cronograma-dashboard' }
+
+### SQL aplicado (defaultdb_local — PostgreSQL 17)
+
+INSERT INTO feature (feature_key, module_id)
+VALUES ('projects.cronograma-dashboard', 6)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO role_feature (role_id, feature_id)
+VALUES (2, 91), (3, 91)
+ON CONFLICT DO NOTHING;
+-- feature_id = 91, role_id 2 = ADMINISTRADOR DE UDP, role_id 3 = USUARIO DE UDP
+
+### Notas
+
+- El endpoint de debug GET /api/v1/debug/cronograma-dashboard-feature fue creado temporalmente y eliminado antes del merge.
+- El SQL de producción (Aiven) está pendiente de aplicar cuando la conexión esté disponible.
+- El diseño fue prototipado en Claude Design antes de implementar en Angular.

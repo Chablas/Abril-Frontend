@@ -1,18 +1,22 @@
-import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { gantt } from 'dhtmlx-gantt';
 import { CronogramaActividadesService } from './services/cronograma-actividades.service';
 import {
-  ProyectoSimpleDto,
   ActividadDto,
+  ActividadesProyectoResponseDto,
+  ProyectoCronogramaHeaderDto,
   CrearActividadRequest,
   EditarActividadRequest,
+  EditarActividadResultDto,
   ReordenarItem,
   CascadaResultDto,
-  CascadaCambioDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -31,14 +35,13 @@ interface PredResultItem {
   templateUrl: './cronograma-actividades.html',
   styleUrl: './cronograma-actividades.css',
 })
-export class CronogramaActividades implements OnInit {
+export class CronogramaActividades implements OnInit, OnDestroy {
   // Datos
-  proyectos: ProyectoSimpleDto[] = [];
+  proyectoHeader: ProyectoCronogramaHeaderDto | null = null;
   actividades: ActividadDto[] = [];
   selectedProyectoId: number | null = null;
 
   // Cargas
-  loadingProyectos = false;
   loadingActividades = false;
   guardando = false;
 
@@ -104,12 +107,20 @@ export class CronogramaActividades implements OnInit {
   // Línea base
   lineaBaseVisible = false;
 
+  // Duración en modal crear
+  nuevaDuracionDias: number | null = null;
+
   // Edición inline — popover flotante
+  private inlineEditInFlight = false;
   inlineEditCell: { id: number; field: 'start' | 'end' | 'lbStart' | 'lbEnd' } | null = null;
   inlineEditValue = '';
   inlinePopoverPos = { top: 0, left: 0 };
 
   @ViewChild('popoverDateInput') popoverDateInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('ganttContainer') ganttContainerRef?: ElementRef;
+
+  // Vista Gantt dhtmlx
+  vistaGantt = false;
 
   constructor(
     private service: CronogramaActividadesService,
@@ -135,54 +146,26 @@ export class CronogramaActividades implements OnInit {
       return;
     }
     this.selectedProyectoId = id;
-    this.loadProyectos();      // para mostrar nombre + responsable del proyecto
     this.loadActividades(id);
+  }
+
+  ngOnDestroy(): void {
+    gantt.clearAll();
   }
 
   volver(): void {
     this.router.navigate(['/projects/cronograma-actividades']);
   }
 
-  get proyecto(): ProyectoSimpleDto | undefined {
-    return this.proyectos.find((p) => p.projectId === this.selectedProyectoId);
-  }
-
   // ── Carga de datos ─────────────────────────────────────────────────────────
-
-  private loadProyectos(): void {
-    this.loadingProyectos = true;
-    this.loaderService.show();
-    this.service.getProyectos().subscribe({
-      next: (res) => {
-        this.proyectos = res;
-        this.loadingProyectos = false;
-        this.loaderService.hide();
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loadingProyectos = false;
-        this.errorService.handleError(err);
-      },
-    });
-  }
-
-  onProyectoChange(id: number | null): void {
-    this.actividades = [];
-    this.collapsedIds.clear();
-    this.ganttModalAct = null;
-    this.parentIds.clear();
-    this.rowStyleMap.clear();
-    this.avanceMap.clear();
-    if (!id) return;
-    this.loadActividades(id);
-  }
 
   private loadActividades(proyectoId: number): void {
     this.loadingActividades = true;
     this.loaderService.show();
     this.service.getActividades(proyectoId).subscribe({
-      next: (res) => {
-        this.actividades = res ?? [];
+      next: (res: ActividadesProyectoResponseDto) => {
+        this.proyectoHeader = res.proyecto;
+        this.actividades    = res.actividades ?? [];
         this.buildParentIds();
         this.buildColorMap();
         this.buildAvanceMap();
@@ -741,7 +724,9 @@ export class CronogramaActividades implements OnInit {
     this.formProgress = 0;
     this.formNivel = 1;
     this.formPadreId = null;
+    this.nuevaDuracionDias = null;
     this.guardando = false;
+    this.nuevaDuracionDias = null;
     this.modalOpen = true;
   }
 
@@ -770,6 +755,7 @@ export class CronogramaActividades implements OnInit {
     this.formPredecesoras = [];
     this.predSearch = '';
     this.predDropdownIdx = -1;
+    this.nuevaDuracionDias = null;
   }
 
   onOverlayClick(e: MouseEvent): void {
@@ -788,6 +774,19 @@ export class CronogramaActividades implements OnInit {
     this.actividades[idx].plannedEndDate      = res.plannedEndDate;
     this.actividades[idx].actualEndDate       = res.actualEndDate;
     this.actividades[idx].progressPercentage  = res.progressPercentage;
+    this.actividades[idx].predecesoras        = res.predecesoras;
+  }
+
+  private patchPadresActualizados(padres: ActividadDto[]): void {
+    for (const padre of padres) {
+      const idx = this.actividades.findIndex((a) => a.projectActivityId === padre.projectActivityId);
+      if (idx !== -1) {
+        this.actividades[idx].plannedStartDate = padre.plannedStartDate;
+        this.actividades[idx].plannedEndDate   = padre.plannedEndDate;
+      }
+    }
+    this.buildAvanceMap();
+    this.buildColorMap();
   }
 
   private mostrarCascadaSiHayCambios(preview: CascadaResultDto): void {
@@ -977,6 +976,17 @@ export class CronogramaActividades implements OnInit {
     return `Predecesoras: ${nombres.join(', ')}`;
   }
 
+  getPredecessorasLabel(act: ActividadDto): string {
+    if (!act.predecesoras?.length) return '';
+    const MAX = 2;
+    const nums = act.predecesoras.map((p) => {
+      const found = this.actividades.find((a) => a.projectActivityId === p);
+      return found ? this.getDisplayIndex(found) : '?';
+    });
+    if (nums.length <= MAX) return '← ' + nums.join(', ');
+    return '← ' + nums.slice(0, MAX).join(', ') + ' +' + (nums.length - MAX);
+  }
+
   // ── CRUD ───────────────────────────────────────────────────────────────────
 
   onProgressChange(val: number): void {
@@ -1021,74 +1031,45 @@ export class CronogramaActividades implements OnInit {
         parentId: this.formNivel > 1 ? this.formPadreId : null,
       };
       this.service.crearActividad(this.selectedProyectoId, body).subscribe({
-        next: () => { this.cerrarModal(); this.recargar(); },
+        next: (res: EditarActividadResultDto) => {
+          if (res.padresActualizados?.length) this.patchPadresActualizados(res.padresActualizados);
+          this.cerrarModal();
+          this.recargar();
+        },
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
       });
     } else {
-      const esPadre = this.editandoAct?.esPadre ?? false;
+      const actividadId  = this.editandoId!;
+      const predSnapshot = [...this.formPredecesoras];
 
-      // Capturar antes de cerrarModal() para que el reset no los pise
-      const actividadId    = this.editandoId!;
-      const predSnapshot   = [...this.formPredecesoras];
-
-      // Detectar qué cambió para saber si hay que verificar cascada
       const predCambiaron =
         JSON.stringify([...predSnapshot].sort()) !==
         JSON.stringify([...(this.editandoAct?.predecesoras ?? [])].sort());
 
-      const fechasCambiaron =
-        (this.formPlannedStart || null) !== (this.editandoAct?.plannedStartDate?.slice(0, 10) ?? null) ||
-        (this.formPlannedEnd   || null) !== (this.editandoAct?.plannedEndDate?.slice(0, 10)   ?? null);
-
       const body: EditarActividadRequest = {
         activityDescription: this.formActividad.trim(),
-        plannedStartDate: this.formPlannedStart || null,
-        plannedEndDate: this.formPlannedEnd || null,
-        actualEndDate: this.formActualEnd || null,
-        progressPercentage: Number(this.formProgress) || 0,
+        plannedStartDate:    this.formPlannedStart || null,
+        plannedEndDate:      this.formPlannedEnd   || null,
+        actualEndDate:       this.formActualEnd    || null,
+        progressPercentage:  Number(this.formProgress) || 0,
+        predecessorIds:      predCambiaron ? predSnapshot : null,
       };
 
       this.service.editarActividad(actividadId, body).subscribe({
-        next: (res) => {
-          this.patchActividadLocal(res);
-          this.buildAvanceMap();
+        next: (res: EditarActividadResultDto) => {
+          this.patchActividadLocal(res.actividad);
+          if (res.padresActualizados?.length) {
+            this.patchPadresActualizados(res.padresActualizados);
+          } else {
+            this.buildAvanceMap();
+          }
           this.guardando = false;
           this.cerrarModal();
           this.cdr.detectChanges();
 
-          // ── Verificar cascada ──────────────────────────────────────────────
-          if (predCambiaron) {
-            // Guardar predecesoras → respuesta incluye preview de cascada
-            this.service.actualizarPredecesoras(actividadId, {
-              predecessorIds: predSnapshot,
-            }).subscribe({
-              next: (predRes) => {
-                const idx = this.actividades.findIndex(
-                  (a) => a.projectActivityId === actividadId,
-                );
-                if (idx !== -1) {
-                  this.actividades[idx].predecesoras = predRes.predecesoras;
-                }
-                this.mostrarCascadaSiHayCambios(predRes.previewCascada);
-                this.cdr.detectChanges();
-              },
-              error: (err: HttpErrorResponse) => {
-                const msg =
-                  typeof err.error === 'string'
-                    ? err.error
-                    : (err.error?.message ?? err.error?.detail ?? 'Error al guardar predecesoras.');
-                Swal.fire({ icon: 'error', title: 'Predecesoras', text: msg, confirmButtonColor: '#2596be' });
-              },
-            });
-          } else if (!esPadre && fechasCambiaron) {
-            // Llamar al preview de cascada
-            this.service.previewCascada(this.selectedProyectoId!).subscribe({
-              next: (preview) => {
-                this.mostrarCascadaSiHayCambios(preview);
-                this.cdr.detectChanges();
-              },
-              error: () => { /* si falla el preview, no bloqueamos al usuario */ },
-            });
+          if (res.cascada) {
+            this.mostrarCascadaSiHayCambios(res.cascada);
+            this.cdr.detectChanges();
           }
         },
         error: (err: HttpErrorResponse) => { this.guardando = false; this.errorService.handleError(err); },
@@ -1156,8 +1137,9 @@ export class CronogramaActividades implements OnInit {
     this.loadingActividades = true;
     this.loaderService.show();
     this.service.getActividades(this.selectedProyectoId).subscribe({
-      next: (res) => {
-        this.actividades = res ?? [];
+      next: (res: ActividadesProyectoResponseDto) => {
+        this.proyectoHeader = res.proyecto;
+        this.actividades    = res.actividades ?? [];
         this.buildParentIds();
         this.buildColorMap();
         this.buildAvanceMap();
@@ -1238,20 +1220,22 @@ export class CronogramaActividades implements OnInit {
   }
 
   commitInlineEdit(): void {
-    if (!this.inlineEditCell) return;
+    const nativeVal = this.popoverDateInputRef?.nativeElement?.value;
+    if (!this.inlineEditCell || this.inlineEditInFlight) return;
+    this.inlineEditInFlight = true;
 
-    const value = this.inlineEditValue;
+    const value = nativeVal ?? this.inlineEditValue;
     const cell  = this.inlineEditCell;
     this.inlineEditCell = null;
     this.cdr.detectChanges();
 
     const act = this.actividades.find((a) => a.projectActivityId === cell.id);
-    if (!act) return;
+    if (!act) { this.inlineEditInFlight = false; return; }
 
     if (cell.field === 'start' || cell.field === 'end') {
       const cur = (cell.field === 'start'
         ? act.plannedStartDate : act.plannedEndDate)?.slice(0, 10) ?? '';
-      if ((value || '') === cur) return;
+      if ((value || '') === cur) { this.inlineEditInFlight = false; return; }
 
       const body: EditarActividadRequest = {
         activityDescription: act.activityDescription,
@@ -1262,8 +1246,21 @@ export class CronogramaActividades implements OnInit {
       };
 
       this.service.editarActividad(act.projectActivityId, body).subscribe({
-        next: (res) => { this.patchActividadLocal(res); this.buildAvanceMap(); this.cdr.detectChanges(); },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        next: (res: EditarActividadResultDto) => {
+          this.patchActividadLocal(res.actividad);
+          if (res.padresActualizados?.length) {
+            this.patchPadresActualizados(res.padresActualizados);
+          } else {
+            this.buildAvanceMap();
+            this.buildColorMap();
+          }
+          this.inlineEditInFlight = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.inlineEditInFlight = false;
+          this.errorService.handleError(err);
+        },
       });
     } else {
       // Edición de línea base
@@ -1282,9 +1279,13 @@ export class CronogramaActividades implements OnInit {
               if (cell.field === 'lbStart') this.actividades[idx].baselineStartDate = value || null;
               else                          this.actividades[idx].baselineEndDate   = value || null;
             }
+            this.inlineEditInFlight = false;
             this.cdr.detectChanges();
           },
-          error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+          error: (err: HttpErrorResponse) => {
+            this.inlineEditInFlight = false;
+            this.errorService.handleError(err);
+          },
         });
       };
 
@@ -1298,7 +1299,10 @@ export class CronogramaActividades implements OnInit {
           cancelButtonText:  'Cancelar',
           confirmButtonColor: '#2596be',
           cancelButtonColor:  '#9ca3af',
-        }).then((result) => { if (result.isConfirmed) doSave(); });
+        }).then((result) => {
+          if (result.isConfirmed) doSave();
+          else this.inlineEditInFlight = false;
+        });
       } else {
         doSave();
       }
@@ -1349,6 +1353,211 @@ export class CronogramaActividades implements OnInit {
     if (d <= 0)  return 'semaforo-verde';
     if (d <= 7)  return 'semaforo-amarillo';
     return 'semaforo-rojo';
+  }
+
+  // ── Duración ───────────────────────────────────────────────────────────────
+
+  getDuracion(act: ActividadDto): string {
+    if (!act.plannedStartDate || !act.plannedEndDate) return '—';
+    const days = Math.round(
+      (new Date(act.plannedEndDate).getTime() - new Date(act.plannedStartDate).getTime()) / 86400000,
+    );
+    return days >= 0 ? `${days}d` : '—';
+  }
+
+  onNuevaDuracionChange(dias: number | null): void {
+    this.nuevaDuracionDias = dias;
+    if (!this.formPlannedStart || !dias || dias < 1) return;
+    const start = new Date(this.formPlannedStart);
+    start.setDate(start.getDate() + dias);
+    this.formPlannedEnd = start.toISOString().slice(0, 10);
+  }
+
+  onFormPlannedEndChange(val: string): void {
+    this.formPlannedEnd = val;
+    if (this.modalMode !== 'crear' || !this.formPlannedStart || !val) {
+      if (this.modalMode === 'crear') this.nuevaDuracionDias = null;
+      return;
+    }
+    const days = Math.round(
+      (new Date(val).getTime() - new Date(this.formPlannedStart).getTime()) / 86400000,
+    );
+    this.nuevaDuracionDias = days >= 0 ? days : null;
+  }
+
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+
+  getSemaforoTexto(act: ActividadDto): string {
+    const cls = this.getSemaforoClass(act);
+    if (cls === 'semaforo-verde')    return 'Verde';
+    if (cls === 'semaforo-amarillo') return 'Amarillo';
+    if (cls === 'semaforo-rojo')     return 'Rojo';
+    return '—';
+  }
+
+  // ── Vista Gantt dhtmlx ─────────────────────────────────────────────────────
+
+  toggleVistaGantt(): void {
+    if (!this.vistaGantt) {
+      this.vistaGantt = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.initGanttView();
+        this.renderGanttActividades();
+        setTimeout(() => this.drawGanttTodayLine(), 50);
+      }, 0);
+    } else {
+      this.destroyGanttView();
+      this.vistaGantt = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  private initGanttView(): void {
+    if (!this.ganttContainerRef) return;
+
+    gantt.clearAll();
+    (gantt.config as any).csp = false;
+    gantt.config.readonly = true;
+    (gantt.config as any).drag_move = false;
+    (gantt.config as any).drag_resize = false;
+    (gantt.config as any).drag_progress = false;
+    gantt.config.show_links = false;
+    gantt.config.row_height = 28;
+    gantt.config.bar_height = 16;
+    gantt.config.scale_height = 44;
+    (gantt.config as any).fit_tasks = true;
+    gantt.config.grid_width = 440;
+    (gantt.config as any).scroll_size = 8;
+
+    gantt.config.scales = [
+      { unit: 'month', step: 1, format: '%F %Y' },
+      { unit: 'week', step: 1, format: 'Sem %W' },
+    ];
+
+    gantt.config.columns = [
+      { name: 'text', label: 'Actividad', tree: true, width: '*', min_width: 180 },
+      {
+        name: 'start_date',
+        label: 'Inicio',
+        align: 'center',
+        width: 80,
+        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.start_date),
+      },
+      {
+        name: 'end_date',
+        label: 'Fin',
+        align: 'center',
+        width: 80,
+        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.end_date),
+      },
+      {
+        name: 'avance',
+        label: 'Av.%',
+        align: 'center',
+        width: 48,
+        template: (task: any) => `${task['avance']}%`,
+      },
+    ];
+
+    gantt.templates.task_class = (_s: any, _e: any, task: any) =>
+      `gantt-cron-lvl-${Math.min(task['hierarchyLevel'] ?? 0, 3)}`;
+
+    gantt.templates.task_text = () => '';
+
+    gantt.templates.grid_row_class = (_s: any, _e: any, task: any) =>
+      `gantt-cron-row-lvl-${Math.min(task['hierarchyLevel'] ?? 0, 3)}`;
+
+    gantt.templates.tooltip_text = (start: Date, end: Date, task: any) => {
+      const fmt = gantt.date.date_to_str('%d/%m/%Y');
+      return `<b>${task.text}</b><br/>Inicio: ${fmt(start)}<br/>Fin: ${fmt(end)}<br/>Avance: ${task['avance']}%`;
+    };
+
+    gantt.init(this.ganttContainerRef.nativeElement);
+  }
+
+  private renderGanttActividades(): void {
+    const hoy = new Date();
+    const tasks = this.actividades.map((act) => {
+      const info = this.rowStyleMap.get(act.projectActivityId);
+      const barColor = info?.color ?? info?.bg ?? '#415a77';
+
+      let start: Date;
+      let end: Date;
+      if (!act.plannedStartDate) {
+        start = new Date(hoy);
+        end = new Date(hoy.getTime() + 86_400_000);
+      } else {
+        start = new Date(act.plannedStartDate);
+        end = act.plannedEndDate
+          ? new Date(act.plannedEndDate)
+          : new Date(new Date(act.plannedStartDate).getTime() + 86_400_000);
+      }
+
+      return {
+        id: act.projectActivityId,
+        text: act.activityDescription,
+        start_date: start,
+        end_date: end,
+        parent: act.parentId ?? 0,
+        open: true,
+        color: barColor,
+        hierarchyLevel: act.hierarchyLevel,
+        avance: this.getAvance(act),
+      };
+    });
+
+    gantt.parse({ data: tasks, links: [] });
+
+    const firstDate = this.actividades
+      .map((a) => (a.plannedStartDate ? new Date(a.plannedStartDate) : null))
+      .filter((d): d is Date => d !== null)
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    if (firstDate) gantt.showDate(firstDate);
+  }
+
+  private drawGanttTodayLine(): void {
+    if (!this.ganttContainerRef) return;
+    const el: HTMLElement = this.ganttContainerRef.nativeElement;
+    const existing = el.querySelector('#today-line-custom');
+    if (existing) existing.remove();
+
+    const state = gantt.getState();
+    if (!state.min_date || !state.max_date) return;
+
+    const totalMs = state.max_date.getTime() - state.min_date.getTime();
+    if (totalMs <= 0) return;
+
+    const nowMs = new Date().getTime() - state.min_date.getTime();
+    if (nowMs <= 0 || nowMs >= totalMs) return;
+
+    const pct = (nowMs / totalMs) * 100;
+    const dataArea = el.querySelector('.gantt_data_area') as HTMLElement | null;
+    if (!dataArea) return;
+
+    const line = document.createElement('div');
+    line.id = 'today-line-custom';
+    line.style.cssText = [
+      'position:absolute',
+      'top:0',
+      'bottom:0',
+      `left:${pct}%`,
+      'width:2px',
+      'background:#f59e0b',
+      'opacity:0.85',
+      'pointer-events:none',
+      'z-index:10',
+    ].join(';');
+    dataArea.appendChild(line);
+  }
+
+  private destroyGanttView(): void {
+    if (this.ganttContainerRef) {
+      const el: HTMLElement = this.ganttContainerRef.nativeElement;
+      const line = el.querySelector('#today-line-custom');
+      if (line) line.remove();
+    }
+    gantt.clearAll();
   }
 
   // ── Modal Importar MPP ─────────────────────────────────────────────────────
@@ -1416,5 +1625,108 @@ export class CronogramaActividades implements OnInit {
     } else {
       doImport();
     }
+  }
+
+  exportarPdf(): void {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const today = new Date();
+    const dd    = String(today.getDate()).padStart(2, '0');
+    const mm    = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy  = today.getFullYear();
+    const fechaLabel = `${dd}/${mm}/${yyyy}`;
+    const fechaFile  = `${yyyy}-${mm}-${dd}`;
+
+    doc.setFillColor(27, 38, 59);
+    doc.rect(0, 0, pageW, 18, 'F');
+    doc.setTextColor(224, 225, 221);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    const titulo = this.proyectoHeader?.projectDescription ?? 'Cronograma de Actividades';
+    doc.text(titulo, 10, 11);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exportado: ${fechaLabel}`, pageW - 10, 11, { align: 'right' });
+
+    const colsBase = [
+      { header: '#',            dataKey: 'num'     },
+      { header: 'Actividad',    dataKey: 'act'     },
+      { header: 'Inicio Prog.', dataKey: 'ini'     },
+      { header: 'Fin Prog.',    dataKey: 'fin'     },
+      { header: 'Duración',     dataKey: 'dur'     },
+      { header: 'Avance%',      dataKey: 'avance'  },
+      { header: 'Estado',       dataKey: 'estado'  },
+    ];
+    const colsLb = [
+      { header: 'LB Inicio',    dataKey: 'lbIni'   },
+      { header: 'LB Fin',       dataKey: 'lbFin'   },
+      { header: 'Desfase Ini.', dataKey: 'dsfIni'  },
+      { header: 'Desfase Fin.', dataKey: 'dsfFin'  },
+      { header: 'Semáforo',     dataKey: 'semaforo'},
+    ];
+    const columns = this.lineaBaseVisible ? [...colsBase, ...colsLb] : colsBase;
+
+    const rows = this.actividades.map((act, i) => {
+      const indent = '  '.repeat(act.hierarchyLevel ?? 0);
+      const row: Record<string, string> = {
+        num:    String(i + 1),
+        act:    indent + act.activityDescription,
+        ini:    this.formatDate(act.plannedStartDate),
+        fin:    this.formatDate(act.plannedEndDate),
+        dur:    this.getDuracion(act),
+        avance: `${this.getAvance(act)}%`,
+        estado: this.getEstado(act),
+      };
+      if (this.lineaBaseVisible) {
+        row['lbIni']    = this.formatDate(act.baselineStartDate);
+        row['lbFin']    = this.formatDate(act.baselineEndDate);
+        row['dsfIni']   = this.formatDesfase(this.getDesfaseDias(act, 'start'));
+        row['dsfFin']   = this.formatDesfase(this.getDesfaseDias(act, 'end'));
+        row['semaforo'] = this.getSemaforoTexto(act);
+      }
+      return row;
+    });
+
+    autoTable(doc, {
+      startY: 22,
+      columns,
+      body: rows,
+      theme: 'grid',
+      styles:             { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+      headStyles:         { fillColor: [27, 38, 59], textColor: [224, 225, 221], fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        num:      { cellWidth: 8,    halign: 'center' },
+        act:      { cellWidth: 'auto' },
+        ini:      { cellWidth: 22,   halign: 'center' },
+        fin:      { cellWidth: 22,   halign: 'center' },
+        dur:      { cellWidth: 18,   halign: 'center' },
+        avance:   { cellWidth: 18,   halign: 'center' },
+        estado:   { cellWidth: 22,   halign: 'center' },
+        lbIni:    { cellWidth: 22,   halign: 'center' },
+        lbFin:    { cellWidth: 22,   halign: 'center' },
+        dsfIni:   { cellWidth: 20,   halign: 'center' },
+        dsfFin:   { cellWidth: 20,   halign: 'center' },
+        semaforo: { cellWidth: 20,   halign: 'center' },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.dataKey === 'estado') {
+          const v = data.cell.raw as string;
+          if (v === 'CULMINADA')   { data.cell.styles.textColor = [20, 83, 45];   data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'VENCIDO')     { data.cell.styles.textColor = [127, 29, 29];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'EN PROGRESO') { data.cell.styles.textColor = [30, 58, 95]; }
+        }
+        if (data.section === 'body' && data.column.dataKey === 'semaforo') {
+          const v = data.cell.raw as string;
+          if (v === 'Verde')    { data.cell.styles.textColor = [20, 83, 45];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Amarillo') { data.cell.styles.textColor = [120, 80, 0];  data.cell.styles.fontStyle = 'bold'; }
+          if (v === 'Rojo')     { data.cell.styles.textColor = [127, 29, 29]; data.cell.styles.fontStyle = 'bold'; }
+        }
+      },
+    });
+
+    const nombre = this.proyectoHeader?.projectDescription ?? 'cronograma';
+    const safe   = nombre.replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑ ]/g, '').trim().replace(/\s+/g, '_');
+    doc.save(`${safe}_cronograma_${fechaFile}.pdf`);
   }
 }

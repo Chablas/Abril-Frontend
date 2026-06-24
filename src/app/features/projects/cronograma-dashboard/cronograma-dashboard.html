@@ -1,0 +1,174 @@
+<div class="page-wrapper">
+
+  <!-- HEADER -->
+  <div class="header-section">
+    <div class="header-left">
+      <h1 class="header-title">Dashboard UDP</h1>
+      <p class="header-subtitle">Unidad de Proyectos</p>
+    </div>
+    <div class="header-right">
+      <span class="fecha-actual">{{ fechaActual | date:"EEEE, d 'de' MMMM 'de' yyyy" }}</span>
+      <button class="btn-outline" (click)="irAlCronograma()">Ir al Cronograma</button>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filter-card">
+    <span class="filter-label">FILTROS</span>
+    <div class="filter-controls">
+      <select class="filter-select" [(ngModel)]="selectedResponsableId">
+        <option [ngValue]="null">Responsable: Todos</option>
+        <option *ngFor="let r of responsables" [ngValue]="r.userId">{{ r.nombreCompleto }}</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="selectedEstado">
+        <option value="">Estado: Todos</option>
+        <option value="AL_DIA">Al día</option>
+        <option value="CON_RETRASO">Con retraso</option>
+        <option value="SIN_ACTIVIDADES">Sin actividades</option>
+      </select>
+      <button class="btn-primary" (click)="buscar()">Buscar</button>
+      <button class="btn-ghost" (click)="limpiar()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="errorMsg" class="error-banner">{{ errorMsg }}</div>
+
+  <!-- KPI SKELETON -->
+  <div class="kpi-grid" *ngIf="loading">
+    <div class="kpi-card skeleton-card" *ngFor="let i of [1,2,3,4,5,6,7,8]">
+      <div class="skeleton-line sk-label"></div>
+      <div class="skeleton-line sk-value"></div>
+    </div>
+  </div>
+
+  <!-- KPI DATA -->
+  <div class="kpi-grid" *ngIf="!loading && kpis">
+    <div class="kpi-card" style="border-top-color: #1E3A5F">
+      <span class="kpi-label">TOTAL PROYECTOS</span>
+      <span class="kpi-value" style="color: #1E3A5F">{{ kpis.totalProyectos }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #2E6DB4">
+      <span class="kpi-label">AVANCE PROMEDIO</span>
+      <span class="kpi-value" style="color: #2E6DB4">{{ kpis.porcentajeAvancePromedio }}%</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #1B6B3A">
+      <span class="kpi-label">PROYECTOS AL DÍA</span>
+      <span class="kpi-value" style="color: #1B6B3A">{{ kpis.proyectosAlDia }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #C0392B">
+      <span class="kpi-label">CON RETRASO</span>
+      <span class="kpi-value" style="color: #C0392B">{{ kpis.proyectosConRetraso }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #D97706">
+      <span class="kpi-label">SIN ACTIVIDADES</span>
+      <span class="kpi-value" style="color: #D97706">{{ kpis.proyectosSinActividades }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #C0392B">
+      <span class="kpi-label">ACTIVIDADES VENCIDAS</span>
+      <span class="kpi-value" style="color: #C0392B">{{ kpis.actividadesVencidas }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #1B6B3A">
+      <span class="kpi-label">CULMINADAS ESTA SEMANA</span>
+      <span class="kpi-value" style="color: #1B6B3A">{{ kpis.actividadesCulminadasEstaSemana }}</span>
+    </div>
+    <div class="kpi-card" style="border-top-color: #2E6DB4">
+      <span class="kpi-label">CULMINADAS ESTE MES</span>
+      <span class="kpi-value" style="color: #2E6DB4">{{ kpis.actividadesCulminadasEsteMes }}</span>
+    </div>
+  </div>
+
+  <!-- TABLE SKELETON -->
+  <div class="table-card" *ngIf="loading">
+    <div class="skeleton-line sk-title" style="margin-bottom: 20px"></div>
+    <div class="skeleton-line sk-row" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- TABLE DATA -->
+  <div class="table-card" *ngIf="!loading && kpis">
+    <div class="table-header-row">
+      <div class="table-header-left">
+        <span class="table-title">Proyectos</span>
+        <span class="badge-count">{{ proyectos.length }}</span>
+      </div>
+      <span class="table-header-legend">ACTIVIDADES: TOTAL / CULMINADAS / VENCIDAS</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="proyectos-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>PROYECTO</th>
+            <th>RESPONSABLE</th>
+            <th>ACTIVIDADES</th>
+            <th>AVANCE</th>
+            <th>ESTADO</th>
+            <th>SEMÁFORO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let p of proyectos; let i = index"
+            class="table-row"
+            [class.row-retraso]="p.estado === 'CON_RETRASO'"
+            (click)="irAProyecto(p.projectId)"
+          >
+            <td class="col-num">{{ i + 1 }}</td>
+            <td class="col-proyecto">{{ p.projectDescription }}</td>
+            <td class="col-responsable">{{ p.responsableUdp }}</td>
+            <td class="col-actividades">
+              <ng-container *ngIf="p.estado !== 'SIN_ACTIVIDADES'; else sinActs">
+                {{ p.totalActividades }} /
+                <span class="acts-culminadas">{{ p.culminadas }}</span> /
+                <span class="acts-vencidas">{{ p.vencidas }}</span>
+              </ng-container>
+              <ng-template #sinActs>
+                <span class="acts-sin">— / — / —</span>
+              </ng-template>
+            </td>
+            <td class="col-avance">
+              <div class="avance-container">
+                <div class="avance-track">
+                  <div
+                    class="avance-fill"
+                    [style.width.%]="p.estado === 'SIN_ACTIVIDADES' ? 0 : p.porcentajeAvance"
+                    [style.background-color]="avanceBarColor(p.porcentajeAvance, p.estado)"
+                  ></div>
+                </div>
+                <span class="avance-pct" *ngIf="p.estado !== 'SIN_ACTIVIDADES'">{{ p.porcentajeAvance }}%</span>
+                <span class="avance-pct acts-sin" *ngIf="p.estado === 'SIN_ACTIVIDADES'">—</span>
+              </div>
+            </td>
+            <td class="col-estado">
+              <span
+                class="badge-estado"
+                [class.estado-al-dia]="p.estado === 'AL_DIA'"
+                [class.estado-retraso]="p.estado === 'CON_RETRASO'"
+                [class.estado-sin-acts]="p.estado === 'SIN_ACTIVIDADES'"
+              >
+                <ng-container *ngIf="p.estado === 'AL_DIA'">AL DÍA</ng-container>
+                <ng-container *ngIf="p.estado === 'CON_RETRASO'">CON RETRASO</ng-container>
+                <ng-container *ngIf="p.estado === 'SIN_ACTIVIDADES'">SIN ACTIVIDADES</ng-container>
+              </span>
+            </td>
+            <td class="col-semaforo">
+              <span
+                class="semaforo-dot"
+                [style.background-color]="
+                  p.semaforo === 'VERDE' ? '#1B6B3A' :
+                  p.semaforo === 'AMARILLO' ? '#D97706' :
+                  p.semaforo === 'ROJO' ? '#C0392B' : '#94A3B8'
+                "
+              ></span>
+            </td>
+          </tr>
+          <tr *ngIf="proyectos.length === 0">
+            <td colspan="7" class="empty-row">No hay proyectos para los filtros seleccionados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
