@@ -3823,3 +3823,95 @@ export interface EditarActividadResultDto {
 - En **editar**: se aplica después de `patchActividadLocal(res.actividad)`, antes de `buildAvanceMap()`.
 - En **crear**: se aplica antes de `cerrarModal(); this.recargar()` (el `recargar()` posterior reconcilia cualquier estado).
 - **0 llamadas HTTP adicionales** (R1 cumplido). No toca funciones protegidas.
+
+---
+
+## Sesión 2026-06-24 — Dashboard UDP (cronograma-dashboard)
+
+### Resumen
+Nuevo módulo de dashboard ejecutivo para gerencia, accesible en `/projects/cronograma-dashboard`.
+Diseñado con referencia visual tipo Power BI en Claude Design antes de implementar en Angular.
+
+### Archivos creados (Frontend)
+
+features/projects/cronograma-dashboard/
+  ├── dtos/cronograma-dashboard.dtos.ts
+  ├── services/cronograma-dashboard.service.ts
+  ├── cronograma-dashboard.ts
+  ├── cronograma-dashboard.html
+  └── cronograma-dashboard.css
+
+### DTOs
+
+CronogramaDashboardKpisDto {
+  totalProyectos, porcentajeAvancePromedio, proyectosAlDia,
+  proyectosConRetraso, proyectosSinActividades, actividadesVencidas,
+  actividadesCulminadasEstaSemana, actividadesCulminadasEsteMes
+}
+
+CronogramaDashboardProyectoDto {
+  projectId, projectDescription, responsableUdp,
+  totalActividades, culminadas, enProceso, vencidas, pendientes,
+  porcentajeAvance, diasRetraso,
+  semaforo: 'VERDE' | 'AMARILLO' | 'ROJO',
+  estado: 'AL_DIA' | 'CON_RETRASO' | 'SIN_ACTIVIDADES'
+}
+
+CronogramaDashboardResponsableDto { userId, nombreCompleto }
+CronogramaDashboardResponseDto { kpis, proyectos, responsables }
+
+### Endpoint backend
+
+GET /api/v1/cronograma-actividades/dashboard?responsableId=&estado=
+
+Devuelve en una sola query: KPIs globales + lista de proyectos con avance calculado + lista de responsables para filtro.
+
+KPIs globales:
+- TotalProyectos — proyectos UDP activos con al menos 1 actividad
+- PorcentajeAvancePromedio — promedio del avance nivel 0 por proyecto
+- ProyectosAlDia — sin actividades vencidas
+- ProyectosConRetraso — con al menos 1 actividad vencida (plannedEndDate < hoy y actualEndDate IS NULL)
+- ProyectosSinActividades — proyectos UDP activos sin actividades
+- ActividadesVencidas — total global
+- ActividadesCulminadasEstaSemana / EsteMes
+
+Por proyecto:
+- Semáforo: VERDE (0 días retraso) / AMARILLO (1-7 días) / ROJO (>7 días)
+- DiasRetraso: MAX días de retraso entre actividades vencidas del proyecto
+- Avance: igual que getAvance() del cronograma (actualEndDate != null → 100, sino progressPercentage)
+
+### Diseño visual
+
+- Fondo general: #f0f4f8
+- KPI cards: fondo blanco, border-top: 4px solid <color-acento>, sin sombra
+- Filas CON_RETRASO en tabla: fondo #FFF5F5
+- Barra de avance: verde ≥75%, azul ≥50%, naranja ≥25%, rojo <25%
+- Semáforo: círculo 10px de color sólido
+- Actividades en tabla: formato total / culminadas / vencidas
+- Click en fila navega a /projects/cronograma-actividades/:projectId
+- Skeleton shimmer mientras carga
+
+### Routing y navegación
+
+- Ruta: cronograma-dashboard en proyectos-routing-module.ts
+- featureKey: projects.cronograma-dashboard
+- titulo: DASHBOARD UDP
+- roles: ['USUARIO DE UDP', 'ADMINISTRADOR DE UDP']
+- Navigation item: { label: 'Dashboard UDP', route: '/projects/cronograma-dashboard', featureKey: 'projects.cronograma-dashboard' }
+
+### SQL aplicado (defaultdb_local — PostgreSQL 17)
+
+INSERT INTO feature (feature_key, module_id)
+VALUES ('projects.cronograma-dashboard', 6)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO role_feature (role_id, feature_id)
+VALUES (2, 91), (3, 91)
+ON CONFLICT DO NOTHING;
+-- feature_id = 91, role_id 2 = ADMINISTRADOR DE UDP, role_id 3 = USUARIO DE UDP
+
+### Notas
+
+- El endpoint de debug GET /api/v1/debug/cronograma-dashboard-feature fue creado temporalmente y eliminado antes del merge.
+- El SQL de producción (Aiven) está pendiente de aplicar cuando la conexión esté disponible.
+- El diseño fue prototipado en Claude Design antes de implementar en Angular.
