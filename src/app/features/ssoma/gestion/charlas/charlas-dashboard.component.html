@@ -110,8 +110,8 @@
                       @if (!dashPersonalResult.dias.length) {
                         <th class="ta-c">Días</th>
                       }
-                      <th class="col-pct ta-c">% Semana</th>
-                      <th class="col-caps ta-c">Caps<br><small>sem/mes</small></th>
+                      <th class="col-pct ta-c">% Mes</th>
+                      <th class="col-caps ta-c">Caps<br><small>mes/meta</small></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -138,7 +138,7 @@
                         <td class="ta-c">
                           <div class="pct-pill" [class]="pctClass(pct)">{{ pct }}%</div>
                         </td>
-                        <td class="ta-c td-muted">{{ p.capsSemana }}/{{ p.capsAprobMes }}</td>
+                        <td class="ta-c td-muted">{{ p.capsAcumMes }}/2</td>
                       </tr>
                     }
                   </tbody>

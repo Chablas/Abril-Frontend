@@ -229,7 +229,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   getPctPersona(item: DashPersonalItem): number {
-    return item.charlasTotales > 0 ? Math.round(item.charlasAsistidas / item.charlasTotales * 100) : 0;
+    return Math.min(100, Math.round(item.capsAcumMes / 2 * 100));
   }
 
   abrirEditAsistencia(charla: CharlaGaleriaItem): void {
