@@ -10,7 +10,15 @@ import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.mode
 export class MicrosoftAuthService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
-  private readonly scopes: PopupRequest = { scopes: ['User.Read', 'Files.ReadWrite', 'Mail.Send'] };
+  private readonly scopes: PopupRequest = {
+    scopes: ['User.Read', 'Files.ReadWrite', 'Mail.Send'],
+    // Fuerza el selector de cuenta en cada inicio de sesión. Sin esto, Azure AD
+    // hace SSO silencioso reutilizando la sesión activa de Microsoft (la cookie de
+    // login.microsoftonline.com que sobrevive a nuestro logout, ya que solo limpiamos
+    // el cache local de MSAL y no cerramos sesión del lado de Microsoft). Así el
+    // usuario siempre puede escoger otra cuenta de Abril tras cerrar sesión.
+    prompt: 'select_account',
+  };
   private readonly apiUrl = `${environment.apiUrl}api/v1/microsoft`;
 
   private msalInstance: PublicClientApplication | null = null;
