@@ -28,8 +28,8 @@ export const routes: Routes = [
       {
         path: 'projects',
         loadChildren: () =>
-          import('./features/projects/proyectos-module')
-          .then(m => m.ProyectosModule)
+          import('./features/projects/proyectos.routes')
+          .then(m => m.PROJECTS_ROUTES)
       },
 
       {

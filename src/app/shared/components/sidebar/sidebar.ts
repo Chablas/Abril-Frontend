@@ -127,7 +127,7 @@ export class Sidebar implements OnInit, OnDestroy {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
-  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'costos']);
+  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'costos', 'proyectos']);
 
   hasAccordion(module: NavModule): boolean {
     return this.accordionModuleKeys.has(module.key);
@@ -156,7 +156,6 @@ export class Sidebar implements OnInit, OnDestroy {
         clinica: '/clinica/dashboard',
         'mejora-continua': '/mejora-continua/dashboard',
         'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-        proyectos: '/projects/projects-dashboard',
         ssoma: '/ssoma/salud-ocupacional/dashboard',
         'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
         'arquitectura-comercial': '/arquitectura-comercial/dashboard',
