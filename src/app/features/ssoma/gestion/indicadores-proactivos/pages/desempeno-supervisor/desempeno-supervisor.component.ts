@@ -27,6 +27,8 @@ export interface DesempenoSupervisorDto {
   pctInspecciones: number;
   pctCharlas: number;
   pctGeneral: number;
+  fechaLogro100: string | null;
+  esPrimeroEnProyecto: boolean;
 }
 
 interface ProyectoSimple { id: number; nombre: string; }
@@ -65,6 +67,27 @@ export class DesempenoSupervisorComponent implements OnInit {
     return s.reduce((acc, x) => acc + x.pctGeneral, 0) / s.length;
   });
 
+  /** Semana del mes en curso (null si el mes seleccionado no es el actual) */
+  semanaActual = computed(() => {
+    const hoy = new Date();
+    if (hoy.getMonth() + 1 !== this.mes() || hoy.getFullYear() !== this.anio()) return null;
+    const dia = hoy.getDate();
+    if (dia <= 7)  return 1;
+    if (dia <= 14) return 2;
+    if (dia <= 21) return 3;
+    return 4;
+  });
+
+  /** % esperado al ritmo de 25% por semana */
+  metaEsperada = computed(() => {
+    const semana = this.semanaActual();
+    if (semana !== null) return semana * 25;
+    const hoy = new Date();
+    const mesSelec  = new Date(this.anio(), this.mes() - 1, 1);
+    const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return mesSelec < mesActual ? 100 : 0;
+  });
+
   meses = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
     { valor: 3, nombre: 'Marzo' }, { valor: 4, nombre: 'Abril' },
@@ -76,18 +99,14 @@ export class DesempenoSupervisorComponent implements OnInit {
   anios = [2024, 2025, 2026, 2027];
 
   readonly INDICADORES = [
-    { key: 'Racs',         label: 'RAC',         color: '#0f4c75', icon: 'ti-file-description' },
-    { key: 'Opt',          label: 'OPT',          color: '#7c3aed', icon: 'ti-eye' },
-    { key: 'Inspecciones', label: 'Insp.',         color: '#0891b2', icon: 'ti-clipboard-check' },
-    { key: 'Charlas',      label: 'Charlas',      color: '#16a34a', icon: 'ti-presentation' },
+    { key: 'Racs',         label: 'RAC',     color: '#0f4c75', icon: 'ti-file-description' },
+    { key: 'Opt',          label: 'OPT',     color: '#7c3aed', icon: 'ti-eye' },
+    { key: 'Inspecciones', label: 'Insp.',   color: '#0891b2', icon: 'ti-clipboard-check' },
+    { key: 'Charlas',      label: 'Charlas', color: '#16a34a', icon: 'ti-presentation' },
   ];
 
   constructor() {
-    // Auto-reload al cambiar mes/año
-    effect(() => {
-      this.mes(); this.anio();
-      this.cargar();
-    });
+    effect(() => { this.mes(); this.anio(); this.cargar(); });
   }
 
   ngOnInit(): void {
@@ -131,10 +150,7 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   barW(pct: number): string { return `${Math.min(100, pct)}%`; }
 
-  /** Al menos un indicador alcanzó 100% */
-  superaEnAlguno(s: DesempenoSupervisorDto): boolean {
-    return this.INDICADORES.some(ind => this.pct(s, ind.key) >= 100);
-  }
+  metaMarkerLeft(): string { return `${this.metaEsperada()}%`; }
 
   colorClass(pct: number): string {
     if (pct >= 100) return 'c-verde';
@@ -148,5 +164,25 @@ export class DesempenoSupervisorComponent implements OnInit {
     if (p >= 70) return 'c-amarillo';
     if (p >= 50) return 'c-naranja';
     return 'c-rojo';
+  }
+
+  ritmoClass(s: DesempenoSupervisorDto): string {
+    const meta = this.metaEsperada();
+    if (!meta || s.pctGeneral >= 100) return '';
+    if (s.pctGeneral >= meta)         return 'ritmo-ok';
+    if (s.pctGeneral >= meta * 0.8)   return 'ritmo-cerca';
+    return 'ritmo-atras';
+  }
+
+  ritmoLabel(s: DesempenoSupervisorDto): string {
+    const meta = this.metaEsperada();
+    const sem  = this.semanaActual();
+    if (!meta || !sem || s.pctGeneral >= 100) return '';
+    if (s.pctGeneral >= meta) return `Al ritmo · sem ${sem}`;
+    return `↓ Meta sem ${sem}: ${meta}%`;
+  }
+
+  mostrarRitmo(s: DesempenoSupervisorDto): boolean {
+    return !!this.semanaActual() && s.pctGeneral < 100;
   }
 }
