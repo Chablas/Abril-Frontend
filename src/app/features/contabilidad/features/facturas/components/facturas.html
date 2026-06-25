@@ -3,87 +3,260 @@
   titulo="Facturas"
   subtitulo="Registro y gestión de facturas de proveedores."
   [tabs]="[
-    { label: 'Facturas', icono: 'ti-file-invoice', route: '/contabilidad/facturas', featureKey: 'accounting.invoices' }
+    { label: 'Facturas',      icono: 'ti-file-invoice', route: '/contabilidad/facturas',     featureKey: 'accounting.invoices' },
+    { label: 'Configuración', icono: 'ti-settings',     route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
   ]"
   [botonPrimario]="{ label: 'Nueva factura', icono: 'ti-plus' }"
   (primaryClick)="openCreate()">
 </app-abril-page-header>
 
-<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-4">
+<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-3">
 
-  <!-- Filtros -->
-  <div class="flex flex-wrap items-end gap-4">
-    <div class="flex-1 min-w-[220px]">
-      <label class="block text-xs font-medium text-gray-500 mb-1">Buscar</label>
-      <input
-        type="text"
-        [(ngModel)]="filters.search"
-        (keydown.enter)="onSearch()"
-        placeholder="N° de factura, proveedor o RUC"
-        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-abril-primary)] focus:outline-none" />
-    </div>
+  <!-- ── FILTROS ───────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-end gap-4 py-1">
 
-    <div class="min-w-[240px]">
+    <!-- Razón social proveedor -->
+    <div class="w-[230px]">
       <app-search-select
+        label="Razón social proveedor"
+        placeholder="— Todos —"
         [options]="suppliers"
         valueField="contributorId"
         displayField="contributorName"
         [value]="filters.contributorId"
-        (valueChange)="onSupplierFilterChange($event)"
-        label="Proveedor"
-        placeholder="— Todos —">
+        (valueChange)="filters.contributorId = $event"
+        [allowClear]="true">
       </app-search-select>
     </div>
 
-    <button
-      (click)="onSearch()"
-      class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+    <!-- RUC proveedor -->
+    <div class="w-[150px] flex flex-col gap-[6px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC proveedor</label>
+      <input
+        type="text"
+        [(ngModel)]="filters.contributorRuc"
+        (keyup.enter)="onSearch()"
+        placeholder="Buscar…"
+        class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <!-- Razón social Abril -->
+    <div class="w-[230px]">
+      <app-search-select
+        label="Razón social Abril"
+        placeholder="— Todas —"
+        [options]="abrilCompanies"
+        valueField="contributorId"
+        displayField="contributorName"
+        [value]="filters.abrilContributorId"
+        (valueChange)="filters.abrilContributorId = $event"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
+    <!-- Filtros avanzados -->
+    <ng-container *ngIf="showAdvanced">
+
+      <!-- RUC Abril -->
+      <div class="w-[150px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">RUC Abril</label>
+        <input
+          type="text"
+          [(ngModel)]="filters.abrilContributorRuc"
+          (keyup.enter)="onSearch()"
+          placeholder="Buscar…"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <!-- Serie -->
+      <div class="w-[110px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Serie</label>
+        <input
+          type="text"
+          [(ngModel)]="filters.serie"
+          (keyup.enter)="onSearch()"
+          placeholder="F001"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <!-- Correlativo -->
+      <div class="w-[130px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Correlativo</label>
+        <input
+          type="text"
+          [(ngModel)]="filters.correlativo"
+          (keyup.enter)="onSearch()"
+          placeholder="1234"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <!-- Forma de pago -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Forma de pago"
+          placeholder="— Todas —"
+          [options]="paymentForms"
+          valueField="invoicePaymentFormId"
+          displayField="invoicePaymentFormDescription"
+          [value]="filters.invoicePaymentFormId"
+          (valueChange)="filters.invoicePaymentFormId = $event"
+          [allowClear]="true">
+        </app-search-select>
+      </div>
+
+      <!-- Rango de total -->
+      <div class="w-[120px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Total mín.</label>
+        <input
+          type="number" min="0" step="0.01"
+          [(ngModel)]="filters.totalMin"
+          (keyup.enter)="onSearch()"
+          placeholder="0.00"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+      <div class="w-[120px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Total máx.</label>
+        <input
+          type="number" min="0" step="0.01"
+          [(ngModel)]="filters.totalMax"
+          (keyup.enter)="onSearch()"
+          placeholder="0.00"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <!-- Rango de fecha de emisión -->
+      <div class="w-[160px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Emisión desde</label>
+        <input
+          type="date"
+          [(ngModel)]="filters.issueDateFrom"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+      <div class="w-[160px] flex flex-col gap-[6px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Emisión hasta</label>
+        <input
+          type="date"
+          [(ngModel)]="filters.issueDateTo"
+          class="border rounded-lg bg-white px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+    </ng-container>
+
+    <!-- Botón búsqueda avanzada -->
+    <button type="button" (click)="showAdvanced = !showAdvanced"
+      class="h-[42px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary)">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="currentColor"/>
+      </svg>
+      {{ showAdvanced ? 'Ocultar filtros' : 'Búsqueda avanzada' }}
+    </button>
+
+    <!-- Botón buscar -->
+    <button type="button" (click)="onSearch()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
+      </svg>
       Buscar
     </button>
+
+    <!-- Toggle de vista + contador -->
+    <div class="ml-auto flex items-center gap-3 self-end">
+      <span class="text-xs text-gray-400 pb-[2px]">{{ totalRecords }} registros</span>
+      <app-view-toggle
+        [modes]="viewModes"
+        [value]="viewMode"
+        (valueChange)="viewMode = $any($event)">
+      </app-view-toggle>
+    </div>
+
   </div>
 
-  <!-- Tabla -->
-  <div class="overflow-x-auto rounded-lg border border-gray-200">
-    <table class="min-w-full divide-y divide-gray-200 text-sm">
-      <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-        <tr>
-          <th class="px-4 py-3">Emisión</th>
-          <th class="px-4 py-3">N° Factura</th>
-          <th class="px-4 py-3">Proveedor</th>
-          <th class="px-4 py-3">RUC</th>
-          <th class="px-4 py-3">Descripción</th>
-          <th class="px-4 py-3">Forma de pago</th>
-          <th class="px-4 py-3 text-right">Total</th>
-          <th class="px-4 py-3 text-center">Documento</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100 bg-white">
-        @for (inv of invoices; track inv.invoiceId) {
-          <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 whitespace-nowrap">{{ inv.issueDate }}</td>
-            <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">{{ inv.invoiceNumber }}</td>
-            <td class="px-4 py-3">{{ inv.contributorName }}</td>
-            <td class="px-4 py-3 whitespace-nowrap">{{ inv.contributorRuc }}</td>
-            <td class="px-4 py-3 max-w-[260px] truncate" [title]="inv.description">{{ inv.description }}</td>
-            <td class="px-4 py-3 whitespace-nowrap">{{ inv.invoicePaymentFormDescription }}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-right">{{ inv.total | number: '1.2-2' }}</td>
-            <td class="px-4 py-3 text-center">
-              @if (inv.documentUrl) {
-                <a [href]="inv.documentUrl" target="_blank" rel="noopener"
-                   class="text-[var(--color-abril-primary)] hover:underline">Ver</a>
-              } @else {
-                <span class="text-gray-300">—</span>
-              }
-            </td>
-          </tr>
-        } @empty {
+  <!-- ── TABLA ─────────────────────────────────────────────────────── -->
+  @if (viewMode === 'table') {
+    <div class="overflow-x-auto rounded-lg border" style="border-color:var(--color-abril-border)">
+      <table class="min-w-full divide-y text-sm" style="border-color:var(--color-abril-border)">
+        <thead class="text-left text-xs uppercase" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
           <tr>
-            <td colspan="8" class="px-4 py-8 text-center text-gray-400">No hay facturas registradas.</td>
+            <th class="px-4 py-3">Emisión</th>
+            <th class="px-4 py-3">N° Factura</th>
+            <th class="px-4 py-3">Proveedor</th>
+            <th class="px-4 py-3">RUC</th>
+            <th class="px-4 py-3">Razón social Abril</th>
+            <th class="px-4 py-3">Descripción</th>
+            <th class="px-4 py-3">Forma de pago</th>
+            <th class="px-4 py-3 text-right">Total</th>
+            <th class="px-4 py-3 text-center">Documento</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          @for (inv of invoices; track inv.invoiceId) {
+            <tr class="hover:bg-gray-50 cursor-pointer" (click)="openDetail(inv.invoiceId)">
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.issueDate }}</td>
+              <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">{{ inv.invoiceNumber }}</td>
+              <td class="px-4 py-3">{{ inv.contributorName }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.contributorRuc }}</td>
+              <td class="px-4 py-3">{{ inv.abrilContributorName ?? '—' }}</td>
+              <td class="px-4 py-3 max-w-[260px] truncate" [title]="inv.description">{{ inv.description }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">{{ inv.invoicePaymentFormDescription }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-right">{{ inv.currencySymbol || inv.currencyCode || '' }} {{ inv.total | number: '1.2-2' }}</td>
+              <td class="px-4 py-3 text-center">
+                @if (inv.documentUrl) {
+                  <a [href]="inv.documentUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
+                     class="text-[var(--color-abril-primary)] hover:underline">Ver</a>
+                } @else {
+                  <span class="text-gray-300">—</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="px-4 py-8 text-center text-gray-400">No hay facturas registradas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- ── TARJETAS ──────────────────────────────────────────────────── -->
+  @if (viewMode === 'cards') {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (inv of invoices; track inv.invoiceId) {
+        <div class="rounded-xl border p-4 flex flex-col gap-2 hover:shadow-sm transition-shadow cursor-pointer" style="border-color:var(--color-abril-border)"
+          (click)="openDetail(inv.invoiceId)">
+          <div class="flex items-start justify-between gap-2">
+            <span class="font-semibold text-gray-800">{{ inv.invoiceNumber }}</span>
+            <span class="text-xs rounded-lg px-2 py-0.5 whitespace-nowrap" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
+              {{ inv.invoicePaymentFormDescription }}
+            </span>
+          </div>
+          <div class="text-sm text-gray-700 font-medium line-clamp-1" [title]="inv.contributorName">{{ inv.contributorName }}</div>
+          <div class="text-xs text-gray-400">RUC {{ inv.contributorRuc }}</div>
+          <div class="text-xs text-gray-500 line-clamp-1" [title]="inv.abrilContributorName ?? ''">
+            Abril: <b>{{ inv.abrilContributorName ?? '—' }}</b>
+          </div>
+          <div class="text-sm text-gray-600 line-clamp-2" [title]="inv.description">{{ inv.description }}</div>
+          <div class="flex items-center justify-between pt-1 border-t" style="border-color:var(--color-abril-border)">
+            <span class="text-xs text-gray-400">{{ inv.issueDate }}</span>
+            <span class="font-semibold" style="color:var(--color-abril-primary)">{{ inv.currencySymbol || inv.currencyCode || 'S/' }} {{ inv.total | number: '1.2-2' }}</span>
+          </div>
+          <div>
+            @if (inv.documentUrl) {
+              <a [href]="inv.documentUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
+                 class="text-xs text-[var(--color-abril-primary)] hover:underline">Ver documento</a>
+            } @else {
+              <span class="text-xs text-gray-300">Sin documento</span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full px-4 py-8 text-center text-gray-400">No hay facturas registradas.</div>
+      }
+    </div>
+  }
 
   <div>
     <app-paginator
@@ -99,7 +272,31 @@
   <app-factura-create
     [suppliers]="suppliers"
     [paymentForms]="paymentForms"
+    [abrilCompanies]="abrilCompanies"
+    [folders]="folders"
+    [currencies]="currencies"
     (closeModal)="onCreateClosed()"
     (saved)="onCreated()">
   </app-factura-create>
+}
+
+@if (detailInvoiceId) {
+  <app-factura-detail
+    [invoiceId]="detailInvoiceId"
+    (closeModal)="closeDetail()"
+    (edit)="onDetailEdit($event)">
+  </app-factura-detail>
+}
+
+@if (editDetail) {
+  <app-factura-edit
+    [detail]="editDetail"
+    [suppliers]="suppliers"
+    [paymentForms]="paymentForms"
+    [abrilCompanies]="abrilCompanies"
+    [folders]="folders"
+    [currencies]="currencies"
+    (closeModal)="closeEdit()"
+    (saved)="onEdited()">
+  </app-factura-edit>
 }

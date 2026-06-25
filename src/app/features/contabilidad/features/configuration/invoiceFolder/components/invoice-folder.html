@@ -1,0 +1,35 @@
+<div class="flex flex-col gap-4">
+
+  <!-- Botón nueva carpeta -->
+  <div>
+    <button type="button" (click)="showCreateModal = true"
+      class="bg-[#E5F7D1] py-[6px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer flex items-center gap-[10px] hover:opacity-90 transition-opacity">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14M5 12h14" stroke="#64BC04" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="font-medium">Nueva carpeta</span>
+    </button>
+  </div>
+
+  <!-- Lista -->
+  <app-invoice-folder-list
+    [filters]="filters"
+    (pagedData)="onPagedData($event)">
+  </app-invoice-folder-list>
+
+  <!-- Paginador -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
+
+</div>
+
+<!-- Modal crear -->
+<app-invoice-folder-create
+  *ngIf="showCreateModal"
+  (closeModal)="showCreateModal = false"
+  (saved)="list.load(1)">
+</app-invoice-folder-create>

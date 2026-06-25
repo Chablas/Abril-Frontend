@@ -14,6 +14,8 @@ import { InvoiceService } from '../../services/invoice.service';
 import {
   InvoiceSupplierDto,
   InvoicePaymentFormDto,
+  InvoiceFolderOptionDto,
+  InvoiceCurrencyDto,
   InvoiceSupplierCreateDto,
 } from '../../dtos/invoice.dtos';
 
@@ -27,6 +29,9 @@ import {
 export class FacturaCreate {
   @Input() suppliers: InvoiceSupplierDto[] = [];
   @Input() paymentForms: InvoicePaymentFormDto[] = [];
+  @Input() abrilCompanies: InvoiceSupplierDto[] = [];
+  @Input() folders: InvoiceFolderOptionDto[] = [];
+  @Input() currencies: InvoiceCurrencyDto[] = [];
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
@@ -34,19 +39,27 @@ export class FacturaCreate {
   // ── Formulario de factura ──────────────────────────────────────────
   form = {
     issueDate: '',
-    invoiceNumber: '',
+    serie: '',
+    correlativo: '',
     contributorId: null as number | null,
+    abrilContributorId: null as number | null,
+    invoiceFolderId: null as number | null,
     description: '',
     invoicePaymentFormId: null as number | null,
     total: null as number | null,
+    currencyId: null as number | null,
   };
   documentFile: File | null = null;
   documentName = '';
+
+  // RUC del proveedor (sincronizado bidireccionalmente con el desplegable)
+  supplierRuc = '';
 
   // ── Modal de nuevo proveedor (consulta RUC) ────────────────────────
   showSupplierModal = false;
   rucInput = '';
   supplierLookupDone = false;
+  manualEntry = false;
   newSupplier: InvoiceSupplierCreateDto = this.emptySupplier();
 
   constructor(
@@ -67,17 +80,36 @@ export class FacturaCreate {
     };
   }
 
-  get selectedSupplierRuc(): string {
-    const s = this.suppliers.find((x) => x.contributorId === this.form.contributorId);
-    return s ? s.contributorRuc : '';
+  // ── Sincronización bidireccional Proveedor ↔ RUC ───────────────────
+  /** El usuario elige un proveedor en el desplegable → se completa el RUC. */
+  onSupplierChange(contributorId: number | null): void {
+    this.form.contributorId = contributorId;
+    const s = this.suppliers.find((x) => x.contributorId === contributorId);
+    this.supplierRuc = s ? s.contributorRuc : '';
+  }
+
+  /** El usuario escribe un RUC → se selecciona el proveedor coincidente en el desplegable. */
+  onRucChange(ruc: string): void {
+    this.supplierRuc = ruc;
+    const s = this.suppliers.find((x) => x.contributorRuc === ruc.trim());
+    this.form.contributorId = s ? s.contributorId : null;
   }
 
   // ── Acciones del modal de proveedor ────────────────────────────────
   openSupplierModal(): void {
     this.rucInput = '';
     this.supplierLookupDone = false;
+    this.manualEntry = false;
     this.newSupplier = this.emptySupplier();
     this.showSupplierModal = true;
+  }
+
+  /** Habilita el registro manual (por si la consulta de RUC está caída). */
+  enableManualEntry(): void {
+    this.newSupplier = this.emptySupplier();
+    this.newSupplier.contributorRuc = this.rucInput.trim();
+    this.supplierLookupDone = false;
+    this.manualEntry = true;
   }
 
   closeSupplierModal(): void {
@@ -103,6 +135,7 @@ export class FacturaCreate {
           contributorDepartment: data.contributorDepartment ?? '',
         };
         this.supplierLookupDone = true;
+        this.manualEntry = false;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -122,6 +155,10 @@ export class FacturaCreate {
   }
 
   saveSupplier(): void {
+    if (this.manualEntry && this.newSupplier.contributorRuc.trim().length !== 11) {
+      Swal.fire({ icon: 'error', title: 'RUC inválido', text: 'El RUC debe tener 11 dígitos.' });
+      return;
+    }
     if (!this.newSupplier.contributorName.trim()) {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'La razón social es obligatoria.' });
       return;
@@ -132,7 +169,7 @@ export class FacturaCreate {
         this.loaderService.hide();
         // Agregar al desplegable y seleccionarlo
         this.suppliers = [supplier, ...this.suppliers.filter((s) => s.contributorId !== supplier.contributorId)];
-        this.form.contributorId = supplier.contributorId;
+        this.onSupplierChange(supplier.contributorId);
         this.showSupplierModal = false;
         Swal.fire({ icon: 'success', title: 'Proveedor registrado', timer: 1400, showConfirmButton: false });
       },
@@ -157,18 +194,27 @@ export class FacturaCreate {
   // ── Guardar factura ────────────────────────────────────────────────
   save(): void {
     if (!this.form.issueDate) return this.requiredAlert('Ingrese la fecha de emisión.');
-    if (!this.form.invoiceNumber.trim()) return this.requiredAlert('Ingrese el número de factura.');
+    if (!this.form.serie.trim()) return this.requiredAlert('Ingrese la serie de la factura.');
+    if (!this.form.correlativo.trim()) return this.requiredAlert('Ingrese el correlativo de la factura.');
+    if (!/^\d+$/.test(this.form.correlativo.trim())) return this.requiredAlert('El correlativo debe ser numérico.');
     if (!this.form.contributorId) return this.requiredAlert('Seleccione un proveedor.');
+    if (!this.form.abrilContributorId) return this.requiredAlert('Seleccione la razón social de Abril.');
+    if (!this.form.invoiceFolderId) return this.requiredAlert('Seleccione la carpeta donde se guardará la factura.');
     if (!this.form.description.trim()) return this.requiredAlert('Ingrese la descripción del bien o servicio.');
     if (!this.form.invoicePaymentFormId) return this.requiredAlert('Seleccione la forma de pago.');
+    if (!this.form.currencyId) return this.requiredAlert('Seleccione la moneda.');
     if (this.form.total == null || this.form.total <= 0) return this.requiredAlert('Ingrese un total válido.');
 
     const formData = new FormData();
     formData.append('IssueDate', this.form.issueDate);
-    formData.append('InvoiceNumber', this.form.invoiceNumber.trim());
+    formData.append('Serie', this.form.serie.trim());
+    formData.append('Correlativo', this.form.correlativo.trim());
     formData.append('ContributorId', this.form.contributorId.toString());
+    formData.append('AbrilContributorId', this.form.abrilContributorId.toString());
+    formData.append('InvoiceFolderId', this.form.invoiceFolderId.toString());
     formData.append('Description', this.form.description.trim());
     formData.append('InvoicePaymentFormId', this.form.invoicePaymentFormId.toString());
+    formData.append('CurrencyId', this.form.currencyId.toString());
     formData.append('Total', this.form.total.toString());
     if (this.documentFile) formData.append('DocumentFile', this.documentFile, this.documentFile.name);
 
