@@ -200,6 +200,28 @@
               >
                 <div class="order-cell">
                   <button
+                    class="btn-nivel btn-nivel-move"
+                    [disabled]="!canMoveUp(act)"
+                    (click)="moveUp(act, $event)"
+                    title="Mover arriba"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn-nivel btn-nivel-move"
+                    [disabled]="!canMoveDown(act)"
+                    (click)="moveDown(act, $event)"
+                    title="Mover abajo"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  <button
                     class="btn-nivel"
                     [disabled]="!canSubirNivel(act)"
                     (click)="subirNivelActividad(act, $event)"

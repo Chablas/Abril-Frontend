@@ -1,9 +1,6 @@
 /* ── Variables ────────────────────────────────────────────────────────────── */
 :host {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  display: block;
   --azul: #2596be;
   --azul-light: #e6f4f9;
   --verde: #63bf03;
@@ -23,7 +20,6 @@
   flex-direction: column;
   gap: 1rem;
   background: #f0f4f8;
-  min-height: 100%;
 }
 
 /* ── Cards ────────────────────────────────────────────────────────────────── */
@@ -233,7 +229,7 @@
 }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
-.col-order     { width: 76px; }
+.col-order     { width: 114px; }
 .col-actividad { min-width: 200px; }
 .col-fecha     { width: 110px; }
 .col-avance    { width: 150px; }
@@ -341,6 +337,9 @@
 .row-dark .btn-nivel:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.15);
 }
+
+.btn-nivel-move:not(:disabled) { color: #2e6db4; }
+.btn-nivel-move:hover:not(:disabled) { background: #f0f4f8; }
 
 /* ── Celdas de tabla ──────────────────────────────────────────────────────── */
 .td-order { color: #9ca3af; font-size: 0.82rem; }

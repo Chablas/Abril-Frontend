@@ -520,8 +520,16 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     return Math.max(act.hierarchyLevel, ...children.map((c) => this.getSubtreeMaxLevel(c.projectActivityId)));
   }
 
+  private isDescendant(actId: number, ancestorId: number): boolean {
+    const act = this.actividades.find((a) => a.projectActivityId === actId);
+    if (!act || act.parentId === null) return false;
+    if (act.parentId === ancestorId) return true;
+    return this.isDescendant(act.parentId, ancestorId);
+  }
+
   private canDropInside(target: ActividadDto): boolean {
     if (!this.dragSrc) return false;
+    if (this.isDescendant(target.projectActivityId, this.dragSrc.projectActivityId)) return false;
     const newSrcLevel = target.hierarchyLevel + 1;
     if (newSrcLevel > 3) return false;
     const levelDiff = newSrcLevel - this.dragSrc.hierarchyLevel;
@@ -540,10 +548,13 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
     if (!src || !dropPos) return;
 
-    // ── Zona central: requiere nuevo endpoint ────────────────────────────────
+    // ── Zona central: anidar bajo la fila destino ────────────────────────────
     if (dropPos === 'inside') {
-      // TODO: requiere nuevo endpoint para mover actividad a padre arbitrario
-      Swal.fire({ icon: 'info', title: 'En construcción', text: 'Esta funcionalidad requiere un endpoint adicional', confirmButtonColor: '#2596be' });
+      this.loaderService.show();
+      this.service.bajarNivel(this.selectedProyectoId!, src.projectActivityId, act.projectActivityId).subscribe({
+        next: () => { this.loaderService.hide(); this.recargarConEstado(); },
+        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+      });
       return;
     }
 
@@ -553,19 +564,21 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     const mismoParent = srcPid === null ? tgtPid === null : tgtPid === srcPid;
     if (!mismoParent || src.projectActivityId === act.projectActivityId) return;
 
-    const srcIdx = this.actividades.findIndex(
-      (a) => a.projectActivityId === src.projectActivityId,
-    );
+    this.reordenarEnLista(src, act, dropPos as 'before' | 'after');
+  }
+
+  private reordenarEnLista(src: ActividadDto, dest: ActividadDto, position: 'before' | 'after'): void {
+    const srcIdx = this.actividades.findIndex((a) => a.projectActivityId === src.projectActivityId);
     if (srcIdx === -1) return;
     const subtree = this.getSubtreeSlice(srcIdx);
     const subtreeIds = new Set(subtree.map((a) => a.projectActivityId));
 
     const listaPlana = this.actividades.filter((a) => !subtreeIds.has(a.projectActivityId));
 
-    const tgtIdx = listaPlana.findIndex((a) => a.projectActivityId === act.projectActivityId);
+    const tgtIdx = listaPlana.findIndex((a) => a.projectActivityId === dest.projectActivityId);
     if (tgtIdx === -1) return;
 
-    listaPlana.splice(dropPos === 'before' ? tgtIdx : tgtIdx + 1, 0, ...subtree);
+    listaPlana.splice(position === 'before' ? tgtIdx : tgtIdx + 1, 0, ...subtree);
 
     const sinCambio = listaPlana.every(
       (a, i) => a.projectActivityId === this.actividades[i].projectActivityId,
@@ -643,6 +656,38 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       next: () => { this.loaderService.hide(); this.recargar(); },
       error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
     });
+  }
+
+  // ── Mover entre hermanos ──────────────────────────────────────────────────
+
+  private getSiblings(act: ActividadDto): ActividadDto[] {
+    return this.actividades.filter((a) => a.parentId === act.parentId);
+  }
+
+  canMoveUp(act: ActividadDto): boolean {
+    const sibs = this.getSiblings(act);
+    return sibs.length > 1 && sibs[0].projectActivityId !== act.projectActivityId;
+  }
+
+  canMoveDown(act: ActividadDto): boolean {
+    const sibs = this.getSiblings(act);
+    return sibs.length > 1 && sibs[sibs.length - 1].projectActivityId !== act.projectActivityId;
+  }
+
+  moveUp(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    const sibs = this.getSiblings(act);
+    const idx = sibs.findIndex((s) => s.projectActivityId === act.projectActivityId);
+    if (idx <= 0) return;
+    this.reordenarEnLista(act, sibs[idx - 1], 'before');
+  }
+
+  moveDown(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    const sibs = this.getSiblings(act);
+    const idx = sibs.findIndex((s) => s.projectActivityId === act.projectActivityId);
+    if (idx >= sibs.length - 1) return;
+    this.reordenarEnLista(act, sibs[idx + 1], 'after');
   }
 
   // ── Crear con nivel ────────────────────────────────────────────────────────
