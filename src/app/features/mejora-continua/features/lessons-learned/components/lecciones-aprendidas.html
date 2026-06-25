@@ -9,7 +9,9 @@
     { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders' }
   ]"
   [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
-  (primaryClick)="showCreateModal = true">
+  [botonPrimarioDeshabilitado]="!canUpload"
+  [botonPrimarioTooltip]="canUpload ? '' : uploadBlockedMessage"
+  (primaryClick)="onNuevoRegistro()">
 </app-abril-page-header>
 
 <div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-4">

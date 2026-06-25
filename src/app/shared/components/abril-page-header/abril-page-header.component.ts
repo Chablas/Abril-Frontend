@@ -37,6 +37,10 @@ export class AbrilPageHeaderComponent {
   @Input() pills: SsomaHeaderPill[] = [];
   @Input() tabs: AbrilPageTab[] = [];
   @Input() botonPrimario?: SsomaHeaderBtn;
+  /** Deshabilita el botón primario (no emite primaryClick y se ve atenuado). */
+  @Input() botonPrimarioDeshabilitado = false;
+  /** Tooltip a mostrar sobre el botón primario (útil al estar deshabilitado). */
+  @Input() botonPrimarioTooltip?: string;
   @Input() botonSecundario?: SsomaHeaderBtn;
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();

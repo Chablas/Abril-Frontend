@@ -82,6 +82,13 @@
 .ssoma-hero__btn--ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
 .ssoma-hero__btn--primary { background: #16a34a; color: #fff; border: none; }
 .ssoma-hero__btn--primary:hover { background: #15803d; }
+.ssoma-hero__btn:disabled,
+.ssoma-hero__btn:disabled:hover {
+  background: #cbd5e1;
+  color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
 
 /* ── Hamburger (hidden on desktop) ── */
 .hamburger-btn {
