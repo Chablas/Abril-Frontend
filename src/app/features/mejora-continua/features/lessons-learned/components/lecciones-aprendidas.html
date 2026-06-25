@@ -42,13 +42,13 @@
   <!-- Filters -->
   <div class="flex flex-col">
     <div class="flex flex-wrap gap-4 py-3 items-end">
-      
+
       <!-- Área en cascada (recuadro verde para destacar). Mantiene padding vertical
            (py-2); el margen inferior negativo (-mb-2) cancela ese padding inferior
            para que, con items-end, los controles queden alineados con el resto. -->
-      <div class="bg-[var(--color-abril-lime-light)] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3">
+      <div class="bg-[var(--color-abril-lime-light)] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3 w-full sm:w-auto">
         <ng-container *ngFor="let level of areaLevels; let i = index">
-          <div class="w-[200px]">
+          <div class="w-full sm:w-[200px]">
             <app-search-select
               [label]="i === 0 ? 'Área' : 'Subárea'"
               [options]="level"
@@ -56,30 +56,33 @@
               displayField="name"
               [value]="selectedAreaNodes[i]?.id"
               (valueChange)="onAreaNodeChange(i, $event)"
+              [fullText]="true"
               [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'">
             </app-search-select>
           </div>
         </ng-container>
       </div>
 
-      <div class="w-[220px]">
+      <div class="w-full sm:w-[220px]">
         <app-search-select
           label="Proyecto"
           [options]="projectOptions"
           valueField="projectId"
           displayField="projectDescription"
           [value]="filtersTable.projectId"
+          [fullText]="true"
           (valueChange)="filtersTable.projectId = $event">
         </app-search-select>
       </div>
 
-      <div class="w-[200px]">
+      <div class="w-full sm:w-[200px]">
         <app-search-select
           label="Estado"
           [options]="approvalStatusOptions"
           valueField="value"
           displayField="label"
           [value]="filtersTable.approvalStatus"
+          [fullText]="true"
           (valueChange)="filtersTable.approvalStatus = $event">
         </app-search-select>
       </div>
@@ -88,35 +91,38 @@
       <ng-container *ngIf="showFilters">
 
         <!-- Un dropdown por cada catalog_type activo en scope_item -->
-        <div *ngFor="let cat of categoryOptions" class="w-[220px]">
+        <div *ngFor="let cat of categoryOptions" class="w-full sm:w-[220px]">
           <app-search-select
             [label]="cat.group.catalogTypeName"
             [options]="cat.options"
             valueField="catalogItemId"
             displayField="catalogItemDescription"
             [value]="getCatalogSelection(cat.group.catalogTypeId)"
+            [fullText]="true"
             (valueChange)="onCatalogSelectionChange(cat.group.catalogTypeId, $event)">
           </app-search-select>
         </div>
 
-        <div class="w-[220px]">
+        <div class="w-full sm:w-[220px]">
           <app-search-select
             label="Periodo"
             [options]="periodOptions"
             valueField="periodDate"
             displayField="periodLabel"
             [value]="filtersTable.periodDate"
+            [fullText]="true"
             (valueChange)="filtersTable.periodDate = $event">
           </app-search-select>
         </div>
 
-        <div class="w-[220px]">
+        <div class="w-full sm:w-[220px]">
           <app-search-select
             label="Usuario"
             [options]="userOptions"
             valueField="userId"
             displayField="fullName"
             [value]="filtersTable.userId"
+            [fullText]="true"
             (valueChange)="filtersTable.userId = $event">
           </app-search-select>
         </div>
@@ -124,7 +130,7 @@
       </ng-container>
 
       <button type="button" (click)="toggleMyPendingReview()"
-        class="h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
+        class="w-full sm:w-auto justify-center h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
         [ngClass]="filtersTable.onlyMyPendingReview
           ? 'bg-[var(--color-abril-lime)] text-white border-[var(--color-abril-lime)]'
           : 'bg-white text-[var(--color-abril-lime)] border-[var(--color-abril-lime)] hover:bg-[var(--color-abril-lime-light)]'">
@@ -132,7 +138,7 @@
       </button>
 
       <button type="button" (click)="showFilters = !showFilters"
-        class="h-[38px] px-4 bg-[var(--color-abril-lime-light)] rounded-lg text-[var(--color-abril-lime)] text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-light)] transition-colors flex items-center gap-2">
+        class="w-full sm:w-auto justify-center h-[38px] px-4 bg-[var(--color-abril-lime-light)] rounded-lg text-[var(--color-abril-lime)] text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-light)] transition-colors flex items-center gap-2">
         <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
           <path fill-rule="evenodd" clip-rule="evenodd"
             d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
@@ -142,7 +148,7 @@
       </button>
 
       <button type="button" (click)="onSearch()"
-        class="h-[38px] px-5 bg-[var(--color-abril-lime)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-hover)] transition-colors flex items-center gap-2">
+        class="w-full sm:w-auto justify-center h-[38px] px-5 bg-[var(--color-abril-lime)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-hover)] transition-colors flex items-center gap-2">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
         </svg>
