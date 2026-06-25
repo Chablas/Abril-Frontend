@@ -397,6 +397,11 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.guardarEntregable();
   }
 
+  onAdminVigenciaChange(val: string): void {
+    this.panelVigencia = val;
+    this.guardarEntregable();
+  }
+
   private extractFileName(url: string): string {
     try {
       const parts = url.split(/[\\/]/);
@@ -774,14 +779,7 @@ export class Trabajadores implements OnInit, OnDestroy {
             obsContratista: this.panelObsAbril || undefined,
           });
         } else {
-          const vigencia = !this.selectedEntregable?.requiereVigencia
-            ? '2040-12-31'
-            : this.panelVigencia || undefined;
-          this.actualizarEntregableLocal({
-            estado: this.panelEstado,
-            vigencia,
-            obsAbril: this.panelObsAbril || undefined,
-          });
+          if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
         }
         this.recargarWorkerEnLista();
       },

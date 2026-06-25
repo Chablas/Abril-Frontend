@@ -1,0 +1,253 @@
+<div class="seg-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Indicadores Proactivos"
+    titulo="Seguimiento de Indicadores Proactivos"
+    subtitulo="Avance mensual comparativo por proyecto — todos los proyectos activos"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="cargar()">
+  </app-abril-page-header>
+
+  <div class="seg-body">
+
+    <!-- ── FILTROS ─────────────────────────────────────────────────────────── -->
+    <div class="filtros-card">
+      <div class="filtros-grid">
+        <div class="filtro-group">
+          <label class="filtro-label">Mes</label>
+          <select class="filtro-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
+            <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
+          </select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Año</label>
+          <select class="filtro-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
+            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+        <div class="filtro-action">
+          <button type="button" class="btn-cargar" (click)="cargar()">
+            <i class="ti ti-search"></i> Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RANKING RESUMEN ─────────────────────────────────────────────────── -->
+    <ng-container *ngIf="proyectos().length > 0">
+
+      <div class="periodo-label">
+        <i class="ti ti-calendar"></i>
+        Período: <strong>{{ nombreMes(mes()) }} {{ anio() }}</strong>
+        &nbsp;·&nbsp; {{ proyectos().length }} proyectos activos
+      </div>
+
+      <!-- Tarjetas de ranking -->
+      <div class="ranking-grid">
+        <div
+          *ngFor="let p of ranking; let i = index"
+          class="ranking-card"
+          [class.ranking-card--gold]="i === 0"
+          [class.ranking-card--silver]="i === 1"
+          [class.ranking-card--bronze]="i === 2">
+
+          <div class="ranking-pos">
+            <span class="pos-num">{{ i + 1 }}</span>
+            <i class="ti ti-medal" *ngIf="i < 3"></i>
+          </div>
+
+          <div class="ranking-info">
+            <h3 class="ranking-nombre">{{ p.proyectoNombre }}</h3>
+            <span class="ranking-empresas">{{ p.totalEmpresasActivas }} empresa(s) activa(s)</span>
+          </div>
+
+          <div class="ranking-pct" [ngClass]="pctClass(p.pctProactivoGeneral)">
+            {{ p.pctProactivoGeneral | number:'1.0-0' }}%
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TABLA COMPARATIVA ────────────────────────────────────────────── -->
+      <div class="tabla-wrap">
+        <table class="tabla-seg">
+          <thead>
+            <tr>
+              <th class="th-proyecto">Proyecto</th>
+              <th class="th-center">Empresas</th>
+              <th class="th-center">RACS<br><small>gen. / meta</small></th>
+              <th class="th-center">RACS<br><small>cerr. / meta</small></th>
+              <th class="th-center">OPT<br><small>real / meta</small></th>
+              <th class="th-center">ATS<br><small>real / meta</small></th>
+              <th class="th-center">Charlas<br><small>real / meta</small></th>
+              <th class="th-center">Insp.<br><small>real / meta</small></th>
+              <th class="th-center">General</th>
+              <th class="th-center">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let p of ranking">
+              <!-- Fila del proyecto -->
+              <tr class="tr-proyecto" (click)="toggleExpandir(p.proyectoId)">
+                <td class="td-nombre">
+                  <i class="ti ti-building-skyscraper"></i>
+                  {{ p.proyectoNombre }}
+                </td>
+                <td class="td-center">{{ p.totalEmpresasActivas }}</td>
+                <!-- RACS generados -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualRacsTotal }} / {{ p.metaRacsTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctRacs)" [style.width]="barWidth(p.pctRacs)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctRacs)">{{ p.pctRacs | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- RACS cerrados -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualRacsCerradosTotal }} / {{ p.metaRacsTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctRacsCerrados)" [style.width]="barWidth(p.pctRacsCerrados)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctRacsCerrados)">{{ p.pctRacsCerrados | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- OPT -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualOptTotal }} / {{ p.metaOptTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctOpt)" [style.width]="barWidth(p.pctOpt)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctOpt)">{{ p.pctOpt | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- ATS -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualAtsTotal }} / {{ p.metaAtsTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctAts)" [style.width]="barWidth(p.pctAts)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctAts)">{{ p.pctAts | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- Charlas -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualCharlasTotal }} / {{ p.metaCharlasTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctCharlas)" [style.width]="barWidth(p.pctCharlas)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctCharlas)">{{ p.pctCharlas | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- Inspecciones -->
+                <td class="td-center">
+                  <div class="indicador-cell">
+                    <span class="ind-valores">{{ p.actualInspeccionesTotal }} / {{ p.metaInspeccionesTotal }}</span>
+                    <div class="barra-wrap">
+                      <div class="barra-fill" [ngClass]="pctClass(p.pctInspecciones)" [style.width]="barWidth(p.pctInspecciones)"></div>
+                    </div>
+                    <span class="ind-pct" [ngClass]="pctClass(p.pctInspecciones)">{{ p.pctInspecciones | number:'1.0-0' }}%</span>
+                  </div>
+                </td>
+                <!-- General -->
+                <td class="td-center">
+                  <span class="badge-general" [ngClass]="pctClass(p.pctProactivoGeneral)">
+                    {{ p.pctProactivoGeneral | number:'1.0-0' }}%
+                  </span>
+                </td>
+                <!-- Expandir -->
+                <td class="td-center">
+                  <button type="button" class="btn-expandir" (click)="toggleExpandir(p.proyectoId); $event.stopPropagation()">
+                    <i class="ti" [class.ti-chevron-down]="proyectoExpandido() !== p.proyectoId" [class.ti-chevron-up]="proyectoExpandido() === p.proyectoId"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Filas por empresa (desplegable) -->
+              <ng-container *ngIf="proyectoExpandido() === p.proyectoId">
+                <tr *ngFor="let emp of p.empresas" class="tr-empresa">
+                  <td class="td-nombre td-empresa-nombre">
+                    <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo !== 'Casa'"></i>
+                    {{ emp.empresaNombre }}
+                    <span class="chip-inactivo" *ngIf="!emp.esActiva">Inactiva</span>
+                  </td>
+                  <td class="td-center">{{ emp.promedioTrabajadores | number:'1.0-0' }} trab.</td>
+                  <!-- RACS gen -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualRacs }} / {{ emp.metaRacs }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctRacs)">{{ emp.pctRacs | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- RACS cerr -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualRacsCerrados }} / {{ emp.metaRacs }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctRacsCerrados)">{{ emp.pctRacsCerrados | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- OPT -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualOpt }} / {{ emp.metaOpt }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctOpt)">{{ emp.pctOpt | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- ATS -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualAts }} / {{ emp.metaAts }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctAts)">{{ emp.pctAts | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- Charlas -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualCharlas }} / {{ emp.metaCharlas }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctCharlas)">{{ emp.pctCharlas | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- Inspecciones -->
+                  <td class="td-center">
+                    <div class="indicador-cell">
+                      <span class="ind-valores">{{ emp.actualInspecciones }} / {{ emp.metaInspecciones }}</span>
+                      <span class="ind-pct" [ngClass]="pctClass(emp.pctInspecciones)">{{ emp.pctInspecciones | number:'1.0-0' }}%</span>
+                    </div>
+                  </td>
+                  <!-- General empresa -->
+                  <td class="td-center">
+                    <span class="badge-general badge-general--sm" [ngClass]="pctClass(emp.pctProactivoGeneral)">
+                      {{ emp.pctProactivoGeneral | number:'1.0-0' }}%
+                    </span>
+                  </td>
+                  <td></td>
+                </tr>
+              </ng-container>
+
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- LEYENDA -->
+      <div class="leyenda">
+        <span class="leyenda-item pct--verde"><i class="ti ti-circle-filled"></i> ≥ 100%</span>
+        <span class="leyenda-item pct--amarillo"><i class="ti ti-circle-filled"></i> 75–99%</span>
+        <span class="leyenda-item pct--naranja"><i class="ti ti-circle-filled"></i> 50–74%</span>
+        <span class="leyenda-item pct--rojo"><i class="ti ti-circle-filled"></i> &lt; 50%</span>
+      </div>
+
+    </ng-container>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="proyectos().length === 0">
+      <i class="ti ti-chart-bar empty-state__icon"></i>
+      <p class="empty-state__text">No hay proyectos activos para el período seleccionado.</p>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,215 @@
+<div class="dash-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Gerencia"
+    titulo="Dashboard Acumulado"
+    subtitulo="Resumen ejecutivo de desempeño SSOMA — todos los proyectos"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="cargar()">
+  </app-abril-page-header>
+
+  <div class="dash-body">
+
+    <!-- FILTROS -->
+    <div class="filtros-card">
+      <div class="filtros-grid">
+        <div class="filtro-group">
+          <label class="filtro-label">Mes</label>
+          <select class="filtro-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
+            <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
+          </select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Año</label>
+          <select class="filtro-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
+            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+        <div class="filtro-action">
+          <button type="button" class="btn-cargar" (click)="cargar()">
+            <i class="ti ti-search"></i> Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="kpis() as k">
+
+      <div class="periodo-label">
+        <i class="ti ti-calendar-stats"></i>
+        <strong>{{ nombreMes(mes()) }} {{ anio() }}</strong>
+        &nbsp;·&nbsp; Grupo Inmobiliario Abril · SSOMA
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid">
+
+        <div class="kpi-card kpi-card--primary">
+          <div class="kpi-icon"><i class="ti ti-building-skyscraper"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-valor">{{ k.totalProyectos }}</span>
+            <span class="kpi-label">Proyectos evaluados</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" [ngClass]="scoreClass(k.promedio)">
+          <div class="kpi-icon"><i class="ti ti-chart-bar"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-valor">{{ k.promedio | number:'1.1-1' }}</span>
+            <span class="kpi-label">Puntaje promedio <small>/ 110 pts</small></span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--verde">
+          <div class="kpi-icon"><i class="ti ti-medal"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-valor">{{ k.excelentes }}</span>
+            <span class="kpi-label">Proyectos excelentes <small>(≥ 90 pts)</small></span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-card--rojo">
+          <div class="kpi-icon"><i class="ti ti-alert-triangle"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-valor">{{ k.criticos }}</span>
+            <span class="kpi-label">Requieren atención <small>(< 70 pts)</small></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MEJOR / PEOR -->
+      <div class="extremos-grid">
+        <div class="extremo-card extremo-card--mejor">
+          <div class="extremo-badge"><i class="ti ti-trophy"></i> Mejor desempeño</div>
+          <div class="extremo-nombre">{{ k.mejor.proyectoNombre }}</div>
+          <div class="extremo-score" [ngClass]="scoreClass(k.mejor.puntajeTotal)">
+            {{ k.mejor.puntajeTotal | number:'1.1-1' }} pts
+          </div>
+        </div>
+        <div class="extremo-card extremo-card--peor">
+          <div class="extremo-badge"><i class="ti ti-arrow-up"></i> Mayor oportunidad</div>
+          <div class="extremo-nombre">{{ k.peor.proyectoNombre }}</div>
+          <div class="extremo-score" [ngClass]="scoreClass(k.peor.puntajeTotal)">
+            {{ k.peor.puntajeTotal | number:'1.1-1' }} pts
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA RESUMEN COMPLETA -->
+      <div class="tabla-wrap">
+        <div class="tabla-titulo">
+          <i class="ti ti-list-details"></i> Resumen por Proyecto
+        </div>
+        <table class="tabla-acum">
+          <thead>
+            <tr>
+              <th class="th-pos">#</th>
+              <th class="th-proyecto">Proyecto</th>
+              <th class="th-center">Proactivos<br><small>40%</small></th>
+              <th class="th-center">PASSO<br><small>25%</small></th>
+              <th class="th-center">Cierre Acc.<br><small>20%</small></th>
+              <th class="th-center">Cierre Hall.<br><small>15%</small></th>
+              <th class="th-center">Bonus</th>
+              <th class="th-total">Puntaje Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of tablaCombinada()" class="tr-proyecto">
+              <td class="td-pos">
+                <span class="medal">{{ medalIcon(row.ranking) }}</span>
+              </td>
+              <td class="td-nombre">{{ row.proyectoNombre }}</td>
+
+              <!-- Proactivos -->
+              <td class="td-center">
+                <div class="cell-stack">
+                  <div class="mini-barra-wrap">
+                    <div class="mini-barra" [ngClass]="scoreClass(row.pctProactivos)"
+                         [style.width]="barPct(row.pctProactivos, 100)"></div>
+                  </div>
+                  <span [ngClass]="scoreClass(row.pctProactivos)" class="cell-pct">
+                    {{ row.pctProactivos | number:'1.0-0' }}%
+                  </span>
+                  <span class="cell-pts">{{ row.puntajeProactivos | number:'1.1-1' }} pts</span>
+                </div>
+              </td>
+
+              <!-- PASSO -->
+              <td class="td-center">
+                <div class="cell-stack">
+                  <div class="mini-barra-wrap">
+                    <div class="mini-barra" [ngClass]="scoreClass(row.pctPasso)"
+                         [style.width]="barPct(row.pctPasso, 100)"></div>
+                  </div>
+                  <span [ngClass]="scoreClass(row.pctPasso)" class="cell-pct">
+                    {{ row.pctPasso | number:'1.0-0' }}%
+                  </span>
+                  <span class="cell-pts">{{ row.puntajePasso | number:'1.1-1' }} pts</span>
+                </div>
+              </td>
+
+              <!-- Cierre Accidentes -->
+              <td class="td-center">
+                <div class="cell-stack">
+                  <div class="mini-barra-wrap">
+                    <div class="mini-barra" [ngClass]="scoreClass(row.pctCierreAccidentes)"
+                         [style.width]="barPct(row.pctCierreAccidentes, 100)"></div>
+                  </div>
+                  <span [ngClass]="scoreClass(row.pctCierreAccidentes)" class="cell-pct">
+                    {{ row.pctCierreAccidentes | number:'1.0-0' }}%
+                  </span>
+                  <span class="cell-pts">{{ row.puntajeCierreAccidentes | number:'1.1-1' }} pts</span>
+                </div>
+              </td>
+
+              <!-- Cierre Hallazgos -->
+              <td class="td-center">
+                <div class="cell-stack">
+                  <div class="mini-barra-wrap">
+                    <div class="mini-barra" [ngClass]="scoreClass(row.pctCierreHallazgos)"
+                         [style.width]="barPct(row.pctCierreHallazgos, 100)"></div>
+                  </div>
+                  <span [ngClass]="scoreClass(row.pctCierreHallazgos)" class="cell-pct">
+                    {{ row.pctCierreHallazgos | number:'1.0-0' }}%
+                  </span>
+                  <span class="cell-pts">{{ row.puntajeCierreHallazgos | number:'1.1-1' }} pts</span>
+                </div>
+              </td>
+
+              <!-- Bonus -->
+              <td class="td-center">
+                <span class="bonus-chip" [class.bonus-chip--activo]="row.bonusProactivos > 0">
+                  +{{ row.bonusProactivos | number:'1.1-1' }}
+                </span>
+              </td>
+
+              <!-- Total -->
+              <td class="td-total">
+                <div class="total-cell" [ngClass]="scoreClass(row.puntajeTotal)">
+                  <span class="total-num">{{ row.puntajeTotal | number:'1.1-1' }}</span>
+                  <span class="total-den">/ 110</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- LEYENDA -->
+      <div class="leyenda">
+        <span class="leg-item score--verde"><i class="ti ti-circle-filled"></i> Excelente (≥ 90)</span>
+        <span class="leg-item score--amarillo"><i class="ti ti-circle-filled"></i> Bueno (70–89)</span>
+        <span class="leg-item score--naranja"><i class="ti ti-circle-filled"></i> Regular (50–69)</span>
+        <span class="leg-item score--rojo"><i class="ti ti-circle-filled"></i> Crítico (< 50)</span>
+      </div>
+
+    </ng-container>
+
+    <div class="empty-state" *ngIf="!kpis()">
+      <i class="ti ti-chart-bar empty-state__icon"></i>
+      <p class="empty-state__text">Sin datos para el período seleccionado.</p>
+    </div>
+
+  </div>
+</div>

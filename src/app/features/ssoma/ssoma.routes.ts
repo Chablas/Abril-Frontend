@@ -52,5 +52,12 @@ export const SSOMA_ROUTES: Routes = [
         (m) => m.AMONESTACIONES_ROUTES,
       ),
   },
+  {
+    path: 'gestion/indicadores-proactivos',
+    loadChildren: () =>
+      import('./gestion/indicadores-proactivos/indicadores-proactivos.routes').then(
+        (m) => m.INDICADORES_PROACTIVOS_ROUTES,
+      ),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

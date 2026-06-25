@@ -18,6 +18,7 @@ export interface BandejaItemDto {
   mes?: number;
   anio?: number;
   mesesPendientes?: number;
+  requiereVigencia?: boolean;
   meses?: {
     id: number;
     mes: number;
