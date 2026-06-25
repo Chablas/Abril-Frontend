@@ -107,6 +107,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/vecinos/vecinos.routes')
           .then(m => m.VECINOS_ROUTES)
+      },
+
+      {
+        path: 'contabilidad',
+        loadChildren: () =>
+          import('./features/contabilidad/contabilidad.routes')
+          .then(m => m.CONTABILIDAD_ROUTES)
       }
     ]
   },

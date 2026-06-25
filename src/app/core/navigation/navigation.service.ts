@@ -175,6 +175,16 @@ export class NavigationService {
       ],
     },
     {
+      key: 'contabilidad',
+      label: 'Contabilidad',
+      iconKey: 'receipt',
+      baseRoute: '/contabilidad',
+      items: [
+        { label: 'Facturas', route: '/contabilidad/facturas', featureKey: 'accounting.invoices' },
+      ],
+      groups: [],
+    },
+    {
       key: 'seguridad',
       label: 'Seguridad',
       iconKey: 'shield-lock',

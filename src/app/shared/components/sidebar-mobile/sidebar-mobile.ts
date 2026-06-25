@@ -80,7 +80,7 @@ export class SidebarMobile implements OnInit {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
-  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas']);
+  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'contabilidad']);
 
   hasAccordion(module: NavModule): boolean {
     return this.accordionModuleKeys.has(module.key);
