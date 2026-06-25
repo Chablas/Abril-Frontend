@@ -1,0 +1,241 @@
+/* ── Root ──────────────────────────────────────────────────────────────────── */
+.dp-root { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
+
+.dp-body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Filtros ────────────────────────────────────────────────────────────────── */
+.filtros-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+}
+
+.filtros-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.filtro-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.filtro-group--wide { flex: 2; min-width: 220px; }
+.filtro-label { font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+
+.filtro-select {
+  height: 2.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color .15s;
+}
+.filtro-select:focus { border-color: #0f4c75; background: #fff; }
+
+.filtro-action { display: flex; align-items: flex-end; }
+
+.btn-cargar {
+  display: flex; align-items: center; gap: 0.4rem;
+  height: 2.25rem; padding: 0 1.25rem;
+  background: #0f4c75; color: #fff;
+  border: none; border-radius: 0.5rem;
+  font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-cargar:hover:not(:disabled) { background: #0a3a5c; }
+.btn-cargar:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Cabecera del reporte ───────────────────────────────────────────────────── */
+.reporte-header {
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rh-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.rh-proyecto { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; }
+.rh-periodo { font-size: 0.875rem; color: #64748b; display: flex; align-items: center; gap: 0.35rem; }
+
+/* Gauge */
+.rh-gauge { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.gauge-svg { width: 110px; height: 110px; }
+.gauge-arc { transition: stroke-dashoffset .6s ease; }
+.gauge-num { font-size: 18px; font-weight: 700; }
+.gauge-sub { font-size: 10px; fill: #94a3b8; }
+.gauge-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ── KPI strip ──────────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.kpi-chip {
+  flex: 1; min-width: 130px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.kpi-chip__label { font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.kpi-chip__pct { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.kpi-chip__vals { font-size: 0.78rem; color: #94a3b8; }
+
+/* ── Gráfico ────────────────────────────────────────────────────────────────── */
+.chart-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+.chart-card__title {
+  font-size: 0.875rem; font-weight: 700; color: #0f172a;
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.chart-wrap { height: 280px; position: relative; }
+
+/* ── Puntaje strip ──────────────────────────────────────────────────────────── */
+.puntaje-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ps-card {
+  flex: 1; min-width: 120px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  display: flex; flex-direction: column; gap: 0.1rem;
+}
+.ps-label { font-size: 0.7rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.ps-pct { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.ps-pts { font-size: 0.8rem; color: #64748b; }
+.ps-pct-total { font-size: 1.6rem; font-weight: 800; color: inherit; }
+
+.ps-card--proactivos { border-top: 3px solid #0f4c75; }
+.ps-card--passo      { border-top: 3px solid #7c3aed; }
+.ps-card--accidentes { border-top: 3px solid #dc2626; }
+.ps-card--hallazgos  { border-top: 3px solid #ea580c; }
+.ps-card--bonus      { border-top: 3px solid #94a3b8; }
+.ps-card--bonus-activo { border-top-color: #16a34a; }
+.ps-card--total      { border-top: 3px solid #64748b; }
+
+/* ── Tabla de empresas ──────────────────────────────────────────────────────── */
+.tabla-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+}
+.tabla-title {
+  font-size: 0.875rem; font-weight: 700; color: #0f172a;
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.tabla-emp { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.tabla-emp th {
+  padding: 0.55rem 0.75rem;
+  background: #f1f5f9; color: #475569;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  border-bottom: 2px solid #e2e8f0;
+}
+.th-empresa { text-align: left; min-width: 180px; }
+.th-center  { text-align: center; min-width: 90px; }
+
+.tr-emp { cursor: pointer; transition: background .1s; }
+.tr-emp:hover { background: #f8fafc; }
+.tr-emp--inactiva { opacity: .55; }
+
+.td-nombre {
+  padding: 0.55rem 0.75rem;
+  color: #1e293b; font-weight: 600;
+  display: flex; align-items: center; gap: 0.4rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.td-center {
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.chip-inact {
+  font-size: 0.65rem; background: #f1f5f9; color: #94a3b8;
+  border-radius: 9999px; padding: 1px 6px; font-weight: 600;
+}
+.expand-icon { margin-left: auto; color: #94a3b8; font-size: 0.85rem; }
+
+.cell-ind { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mini-bar-wrap { width: 60px; height: 5px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+.mini-bar { height: 100%; border-radius: 9999px; transition: width .4s; }
+.cell-pct { font-size: 0.8rem; font-weight: 700; }
+.cell-vals { font-size: 0.7rem; color: #94a3b8; }
+.na { color: #cbd5e1; }
+
+/* Detalle expandido */
+.tr-detalle td { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.td-detalle { padding: 0.5rem 0.75rem; }
+.detalle-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.d-chip {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.78rem; color: #475569;
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 0.4rem; padding: 0.25rem 0.6rem;
+}
+
+/* ── Color helpers ──────────────────────────────────────────────────────────── */
+.pct--verde    { color: #16a34a; }
+.pct--amarillo { color: #ca8a04; }
+.pct--naranja  { color: #ea580c; }
+.pct--rojo     { color: #dc2626; }
+
+.mini-bar.pct--verde    { background: #16a34a; }
+.mini-bar.pct--amarillo { background: #ca8a04; }
+.mini-bar.pct--naranja  { background: #ea580c; }
+.mini-bar.pct--rojo     { background: #dc2626; }
+
+.score--verde    { color: #16a34a; border-top-color: #16a34a !important; }
+.score--amarillo { color: #ca8a04; border-top-color: #ca8a04 !important; }
+.score--naranja  { color: #ea580c; border-top-color: #ea580c !important; }
+.score--rojo     { color: #dc2626; border-top-color: #dc2626 !important; }
+
+/* ── Badge general empresa ──────────────────────────────────────────────────── */
+.badge-gen {
+  display: inline-block;
+  font-size: 0.8rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 9999px;
+  background: #f1f5f9;
+}
+.badge-gen.pct--verde    { background: #dcfce7; }
+.badge-gen.pct--amarillo { background: #fef9c3; }
+.badge-gen.pct--naranja  { background: #ffedd5; }
+.badge-gen.pct--rojo     { background: #fee2e2; }
+
+/* ── Empty state ────────────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+}
+.empty-state__icon { font-size: 3rem; }
+.empty-state__text { font-size: 0.9rem; text-align: center; }

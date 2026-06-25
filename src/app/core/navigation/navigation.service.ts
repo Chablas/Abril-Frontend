@@ -115,6 +115,12 @@ export class NavigationService {
         { label: 'Accidentes e Incidentes', route: '/ssoma/gestion/accidentes-incidentes/lista', featureKey: 'ssoma.gestion.accidentes-incidentes' },
         { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista', featureKey: 'ssoma.gestion.auditoria-ats' },
         { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones', featureKey: 'ssoma.gestion.amonestaciones' },
+        { label: 'Programación de Indicadores', route: '/ssoma/gestion/indicadores-proactivos/programacion', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Seguimiento de Indicadores', route: '/ssoma/gestion/indicadores-proactivos/seguimiento', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Puntaje del Mes', route: '/ssoma/gestion/indicadores-proactivos/puntaje', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Dashboard SSOMA', route: '/ssoma/gestion/indicadores-proactivos/dashboard', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Dashboard por Proyecto', route: '/ssoma/gestion/indicadores-proactivos/dashboard-proyecto', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Desempeño del Supervisor', route: '/ssoma/gestion/indicadores-proactivos/desempeno-supervisor', featureKey: 'ssoma.gestion.indicadores-proactivos' },
       ],
     },
     {
