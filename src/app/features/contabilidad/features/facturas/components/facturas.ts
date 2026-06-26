@@ -19,17 +19,19 @@ import {
   InvoiceFolderOptionDto,
   InvoiceCurrencyDto,
   InvoiceDetailDto,
+  InvoiceBlockGroupDto,
   InvoiceFilterDto,
 } from '../dtos/invoice.dtos';
 import { FacturaCreate } from './create/create';
 import { FacturaImport } from './import/import';
 import { FacturaDetail } from './detail/detail';
 import { FacturaEdit } from './edit/edit';
+import { FacturaAttach } from './attach/attach';
 
 @Component({
   selector: 'app-facturas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, FacturaAttach, AbrilPageHeaderComponent],
   templateUrl: './facturas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -70,9 +72,64 @@ export class Facturas implements OnInit {
   detailInvoiceId: number | null = null;
   editDetail: InvoiceDetailDto | null = null;
 
-  // Vista tabla / tarjetas
-  viewMode: 'table' | 'cards' = 'table';
+  // Adjuntar documento (factura sin documento)
+  attachInvoice: InvoiceDto | null = null;
+
+  // Hover de bloques
+  hoveredInvoice: InvoiceDto | null = null;
+  popX = 0;
+  popY = 0;
+
+  onBlockEnter(inv: InvoiceDto, event: MouseEvent): void {
+    this.hoveredInvoice = inv;
+    this.movePopover(event);
+  }
+
+  movePopover(event: MouseEvent): void {
+    // Posición fija junto al cursor, sin salir del viewport.
+    const w = 300, h = 230, margin = 14;
+    let x = event.clientX + margin;
+    let y = event.clientY + margin;
+    if (typeof window !== 'undefined') {
+      if (x + w > window.innerWidth) x = event.clientX - w - margin;
+      if (y + h > window.innerHeight) y = window.innerHeight - h - margin;
+    }
+    this.popX = Math.max(margin, x);
+    this.popY = Math.max(margin, y);
+  }
+
+  onBlockLeave(): void {
+    this.hoveredInvoice = null;
+  }
+
+  /** Clic en un bloque: si tiene documento lo abre en otra pestaña; si no, abre el modal para adjuntar. */
+  onBlockClick(inv: InvoiceDto): void {
+    this.hoveredInvoice = null;
+    if (inv.documentUrl) {
+      window.open(inv.documentUrl, '_blank', 'noopener');
+    } else {
+      this.attachInvoice = inv;
+    }
+  }
+
+  closeAttach(): void {
+    this.attachInvoice = null;
+  }
+
+  onAttached(): void {
+    this.attachInvoice = null;
+    this.loadBlocks();
+  }
+
+  // Vista bloques / tabla / tarjetas
+  viewMode: 'blocks' | 'table' | 'cards' = 'blocks';
+  blockGroups: InvoiceBlockGroupDto[] = [];
   readonly viewModes: ViewToggleMode[] = [
+    {
+      value: 'blocks',
+      label: 'Bloques',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v5H4V4Zm0 7h16v5H4v-5Zm0 7h16v3H4v-3Z" stroke="currentColor" stroke-width="1.4"/></svg>',
+    },
     {
       value: 'table',
       label: 'Tabla',
@@ -107,6 +164,7 @@ export class Facturas implements OnInit {
         this.currencies = res.currencies;
         this.applyPaged(res.invoices);
         this.loaderService.hide();
+        this.loadBlocks();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -138,8 +196,29 @@ export class Facturas implements OnInit {
     this.totalRecords = res.totalRecords;
   }
 
+  /** Carga las facturas agrupadas por razón social de Abril (vista de bloques). */
+  loadBlocks(): void {
+    this.loaderService.show();
+    this.service.getBlocks(this.filters).subscribe({
+      next: (groups) => {
+        this.blockGroups = groups;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  onViewModeChange(mode: string): void {
+    this.viewMode = mode as 'blocks' | 'table' | 'cards';
+    if (mode === 'blocks') this.loadBlocks();
+  }
+
   onSearch(): void {
-    this.loadTable(1);
+    if (this.viewMode === 'blocks') this.loadBlocks();
+    else this.loadTable(1);
   }
 
   onPageChange(page: number): void {

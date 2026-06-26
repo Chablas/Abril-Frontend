@@ -13,6 +13,7 @@ import {
   InvoiceDetailDto,
   InvoiceDashboardDto,
   InvoiceDashboardInitDto,
+  InvoiceBlockGroupDto,
   SunatContributorDTO,
 } from '../dtos/invoice.dtos';
 
@@ -74,6 +75,13 @@ export class InvoiceService {
     });
   }
 
+  getBlocks(filter: InvoiceFilterDto): Observable<InvoiceBlockGroupDto[]> {
+    return this.http.get<InvoiceBlockGroupDto[]>(`${this.apiUrl}/blocks`, {
+      headers: this.headers,
+      params: this.buildParams(filter),
+    });
+  }
+
   getDetail(invoiceId: number): Observable<InvoiceDetailDto> {
     return this.http.get<InvoiceDetailDto>(`${this.apiUrl}/${invoiceId}`, { headers: this.headers });
   }
@@ -89,6 +97,11 @@ export class InvoiceService {
   /** Importación masiva desde el Excel de órdenes de pago + archivos. */
   import(formData: FormData): Observable<ApiMessageDTO> {
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}/import`, formData, { headers: this.headers });
+  }
+
+  /** Adjunta/actualiza el documento de una factura existente. */
+  uploadDocument(invoiceId: number, formData: FormData): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/${invoiceId}/document`, formData, { headers: this.headers });
   }
 
   getByRuc(ruc: string): Observable<SunatContributorDTO> {

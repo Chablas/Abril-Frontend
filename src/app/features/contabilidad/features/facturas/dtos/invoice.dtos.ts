@@ -20,6 +20,13 @@ export interface InvoiceDto {
   createdDateTime: string;
 }
 
+/** Grupo de facturas por razón social de Abril (vista de bloques). */
+export interface InvoiceBlockGroupDto {
+  abrilName: string;
+  count: number;
+  items: InvoiceDto[];
+}
+
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export interface InvoiceChartItemDto {
   label: string;

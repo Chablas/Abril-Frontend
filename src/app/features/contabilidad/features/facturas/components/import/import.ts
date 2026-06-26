@@ -16,6 +16,7 @@ interface ParsedRow {
   paymentOrderNumber: string;
   description: string;
   proveedorName: string;
+  ruc: string;
   documentType: string;
   serie: string;
   correlativo: string;
@@ -42,6 +43,15 @@ export class FacturaImport {
   excelName = '';
   rows: ParsedRow[] = [];
 
+  // Filtros del resumen
+  fNumber = '';
+  fRazon = '';
+  fRuc = '';
+  fOnlyMissing = false;
+
+  /** Fila resaltada mientras se arrastra un archivo sobre ella. */
+  dragRow: ParsedRow | null = null;
+
   constructor(
     private service: InvoiceService,
     private loaderService: LoaderService,
@@ -51,6 +61,20 @@ export class FacturaImport {
 
   get matchedCount(): number {
     return this.rows.filter((r) => r.file).length;
+  }
+
+  /** Registros visibles según los filtros del resumen. */
+  get filteredRows(): ParsedRow[] {
+    const num = this.fNumber.trim().toLowerCase();
+    const raz = this.fRazon.trim().toLowerCase();
+    const ruc = this.fRuc.trim().toLowerCase();
+    return this.rows.filter((r) => {
+      if (this.fOnlyMissing && r.file) return false;
+      if (num && !this.invoiceNumber(r).toLowerCase().includes(num)) return false;
+      if (raz && !r.proveedorName.toLowerCase().includes(raz)) return false;
+      if (ruc && !r.ruc.toLowerCase().includes(ruc)) return false;
+      return true;
+    });
   }
 
   // ── Paso 1: Excel ──────────────────────────────────────────────────
@@ -99,6 +123,7 @@ export class FacturaImport {
           paymentOrderNumber: String(r[0] ?? '').trim(),
           description: String(r[1] ?? '').trim(),
           proveedorName: String(r[2] ?? '').trim(),
+          ruc: '', // El Excel aún no trae RUC; se llenará cuando exista la columna.
           documentType: String(r[3] ?? '').trim(),
           serie,
           correlativo,
@@ -231,6 +256,24 @@ export class FacturaImport {
     input.value = '';
   }
 
+  // Arrastrar y soltar un archivo directamente sobre un registro.
+  onRowDragOver(r: ParsedRow, event: DragEvent): void {
+    event.preventDefault();
+    this.dragRow = r;
+  }
+
+  onRowDragLeave(r: ParsedRow, event: DragEvent): void {
+    event.preventDefault();
+    if (this.dragRow === r) this.dragRow = null;
+  }
+
+  onRowDrop(r: ParsedRow, event: DragEvent): void {
+    event.preventDefault();
+    this.dragRow = null;
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.assignRowFile(r, file);
+  }
+
   private assignRowFile(r: ParsedRow, file: File): void {
     r.file = file;
     r.displayFileName = file.name;
@@ -242,7 +285,7 @@ export class FacturaImport {
   }
 
   private warn(text: string): void {
-    Swal.fire({ icon: 'info', title: 'Atención', text, timer: 3500, showConfirmButton: false });
+    Swal.fire({ icon: 'info', title: 'Atención', text });
   }
 
   // ── Guardar ────────────────────────────────────────────────────────

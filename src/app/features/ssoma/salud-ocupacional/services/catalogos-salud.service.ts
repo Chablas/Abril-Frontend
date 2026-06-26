@@ -10,6 +10,8 @@ import {
   EmoTipoDto,
   EmoTipoUpsertDto,
   EmpresaSimpleDto,
+  EmpresaCreateDto,
+  SunatContributorDTO,
   ExamenTipoDto,
   MedicoSimpleDto,
   MedicoUpsertDto,
@@ -74,6 +76,20 @@ export class CatalogosSaludService {
         catchError((err) => { this.empresas$ = undefined; throw err; }),
       );
     return this.empresas$;
+  }
+
+  /** Consulta RUC a SUNAT para el alta de una razón social. */
+  getEmpresaByRuc(ruc: string): Observable<SunatContributorDTO> {
+    return this.http.get<SunatContributorDTO>(`${this.apiUrl}/empresas/ruc/${ruc}`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Crea una razón social (contribuyente). */
+  createEmpresa(dto: EmpresaCreateDto): Observable<EmpresaSimpleDto> {
+    return this.http.post<EmpresaSimpleDto>(`${this.apiUrl}/empresas`, dto, {
+      headers: buildAuthHeaders(),
+    });
   }
 
   invalidateCache(): void {
