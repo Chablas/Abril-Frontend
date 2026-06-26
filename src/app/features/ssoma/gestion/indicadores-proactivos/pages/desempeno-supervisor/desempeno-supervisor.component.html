@@ -77,22 +77,12 @@
            [class.sup-card--primero]="s.esPrimeroEnProyecto"
            [class.sup-card--completo]="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
 
-        <!-- Badge primero en proyecto -->
-        <div class="sup-badge-top sup-badge-top--trofeo" *ngIf="s.esPrimeroEnProyecto">
-          <i class="ti ti-trophy"></i> 1° en proyecto
-        </div>
-
-        <!-- Badge completó (no es el primero) -->
-        <div class="sup-badge-top sup-badge-top--check" *ngIf="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
-          <i class="ti ti-circle-check"></i> Meta completada
-        </div>
-        <div class="sup-crown sup-crown--best" *ngIf="esMejor(s)">
-          <i class="ti ti-trophy"></i> Mejor del proyecto
-        </div>
-
         <div class="sup-card__head">
-          <div class="sup-avatar" [ngClass]="colorClass(s.pctGeneral)">
-            {{ iniciales(s.supervisorNombre) }}
+          <div class="sup-avatar-wrap">
+            <div class="sup-avatar" [ngClass]="colorClass(s.pctGeneral)">
+              {{ iniciales(s.supervisorNombre) }}
+            </div>
+            <i class="ti ti-trophy sup-trofeo" *ngIf="s.esPrimeroEnProyecto" title="1° en proyecto"></i>
           </div>
           <div class="sup-info">
             <div class="sup-nombre" [title]="s.supervisorNombre">{{ nombreTitleCase(s.supervisorNombre) }}</div>
@@ -119,7 +109,7 @@
           </div>
         </div>
 
-        <!-- 4 indicadores -->
+        <!-- 4 indicadores con barra -->
         <div class="sup-inds">
           <div *ngFor="let ind of INDICADORES" class="sup-ind">
             <div class="sup-ind__row">
@@ -137,6 +127,15 @@
                    [style.width]="barW(pct(s, ind.key))"
                    [style.background]="ind.color"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Checks informativos: Lección + Eval. Contratista + Eval. Residente -->
+        <div class="sup-checks-row">
+          <div *ngFor="let c of CHECKS" class="sup-check-item" [class.sup-check-item--ok]="hizo(s, c.key)">
+            <i class="ti" [ngClass]="c.icon"></i>
+            <span>{{ c.label }}</span>
+            <i class="ti sup-check-icon" [ngClass]="hizo(s, c.key) ? 'ti-circle-check' : 'ti-circle-x'"></i>
           </div>
         </div>
 

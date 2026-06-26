@@ -11,6 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of }   from 'rxjs';
 import { catchError }     from 'rxjs/operators';
 import { Router }        from '@angular/router';
+import Swal              from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import { ErrorService }   from '../../../core/services/error.service';
 import {
@@ -133,6 +134,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   get modalCargaFiltradas(): ActividadListItemDTO[] {
     return this.modalCargaActividades.filter(a => {
+      if (this.estadoGantt(a) === 'PENDIENTE') return false;
       if (this.modalCargaExcluirCulminadas && a.finEfectivo) return false;
       if (this.modalCargaFiltroEstado && this.estadoGantt(a) !== this.modalCargaFiltroEstado) return false;
       return true;
@@ -575,6 +577,23 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     const req: EnviarAlertaRequestDTO = { actividadIds: [hito.id], tipoAlerta: 'HITO_PROXIMO' };
     this.service.enviarAlertasActividades(req).subscribe({
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  enviandoAlertaHitos = false;
+  enviarAlertaHitos(): void {
+    const ids = this.hitosCriticos.map(h => h.id).filter((id): id is number => !!id);
+    if (!ids.length) return;
+    this.enviandoAlertaHitos = true;
+    this.service.enviarAlertasActividades({ actividadIds: ids, tipoAlerta: 'HITO_PROXIMO' }).subscribe({
+      next: () => {
+        this.enviandoAlertaHitos = false;
+        Swal.fire({ icon: 'success', title: 'Alerta enviada', text: `Se notificó a los responsables de ${ids.length} hitos críticos.`, timer: 3000, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoAlertaHitos = false;
+        this.errorService.handleError(err);
+      },
     });
   }
 
