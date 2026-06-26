@@ -31,6 +31,8 @@
     <button *ngIf="botonPrimario"
             type="button"
             class="ssoma-hero__btn ssoma-hero__btn--primary"
+            [disabled]="botonPrimarioDeshabilitado"
+            [title]="botonPrimarioTooltip || ''"
             (click)="primaryClick.emit()">
       <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
       <span>{{ botonPrimario.label }}</span>

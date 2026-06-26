@@ -17,6 +17,8 @@ export class FileSelector {
   @Input() accept = '.png,.jpg,.jpeg';
   @Input() label = 'Arrastra archivos aquí o';
   @Input() hint = 'PNG, JPG, JPEG';
+  /** Color del borde, ícono y texto destacado. Por defecto el verde claro original. */
+  @Input() color = '#64BC04';
 
   @Output() fileSelected = new EventEmitter<SelectedFile>();
 

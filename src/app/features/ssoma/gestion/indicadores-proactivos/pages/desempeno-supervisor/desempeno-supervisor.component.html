@@ -8,7 +8,7 @@
     (secondaryClick)="cargar()">
   </app-abril-page-header>
 
-  <!-- FILTROS COMPACTOS -->
+  <!-- FILTROS -->
   <div class="ds-filtros">
     <div class="ds-filtros__left">
 
@@ -45,6 +45,12 @@
         <span class="f-meta-chip"><i class="ti ti-presentation"></i> Charlas: 2</span>
         <span class="f-meta-chip f-meta-chip--semana"><i class="ti ti-target"></i> Meta: {{ metaSemanal() }}%</span>
       </div>
+
+      <div class="f-semana" *ngIf="semanaActual()">
+        <i class="ti ti-calendar-week"></i>
+        <span>Sem. {{ semanaActual() }} &nbsp;·&nbsp; Meta esperada: <strong>{{ metaEsperada() }}%</strong></span>
+      </div>
+
     </div>
 
     <div class="ds-kpi" *ngIf="supervisores().length">
@@ -68,11 +74,17 @@
     <div class="ds-grid" *ngIf="supervisores().length">
       <div *ngFor="let s of supervisores()"
            class="sup-card"
-           [class.sup-card--star]="superaEnAlguno(s)">
+           [class.sup-card--primero]="s.esPrimeroEnProyecto"
+           [class.sup-card--completo]="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
 
-        <!-- Corona de reconocimiento -->
-        <div class="sup-crown" *ngIf="superaEnAlguno(s)">
-          <i class="ti ti-star-filled"></i> Superó meta
+        <!-- Badge primero en proyecto -->
+        <div class="sup-badge-top sup-badge-top--trofeo" *ngIf="s.esPrimeroEnProyecto">
+          <i class="ti ti-trophy"></i> 1° en proyecto
+        </div>
+
+        <!-- Badge completó (no es el primero) -->
+        <div class="sup-badge-top sup-badge-top--check" *ngIf="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
+          <i class="ti ti-circle-check"></i> Meta completada
         </div>
         <div class="sup-crown sup-crown--best" *ngIf="esMejor(s)">
           <i class="ti ti-trophy"></i> Mejor del proyecto
@@ -86,20 +98,34 @@
             <div class="sup-nombre" [title]="s.supervisorNombre">{{ nombreTitleCase(s.supervisorNombre) }}</div>
             <div class="sup-proyecto"><i class="ti ti-building"></i> {{ s.proyectoNombre }}</div>
           </div>
-          <div class="sup-badge" [ngClass]="colorClass(s.pctGeneral)">
+          <div class="sup-pct-badge" [ngClass]="colorClass(s.pctGeneral)">
             {{ s.pctGeneral | number:'1.0-0' }}%
           </div>
         </div>
 
-        <div class="sup-global-bar">
-          <div class="sup-global-fill" [ngClass]="colorClass(s.pctGeneral)"
-               [style.width]="barW(s.pctGeneral)"></div>
+        <!-- Barra general + marcador de meta semanal -->
+        <div class="sup-global-wrap">
+          <div class="sup-global-bar">
+            <div class="sup-global-fill" [ngClass]="colorClass(s.pctGeneral)"
+                 [style.width]="barW(s.pctGeneral)"></div>
+            <div class="sup-meta-marker"
+                 *ngIf="semanaActual() && metaEsperada() > 0 && metaEsperada() < 100"
+                 [style.left]="metaMarkerLeft()"
+                 [title]="'Meta sem. ' + semanaActual() + ': ' + metaEsperada() + '%'">
+            </div>
+          </div>
+          <div class="sup-ritmo" *ngIf="mostrarRitmo(s)" [ngClass]="ritmoClass(s)">
+            {{ ritmoLabel(s) }}
+          </div>
         </div>
 
+        <!-- 4 indicadores -->
         <div class="sup-inds">
           <div *ngFor="let ind of INDICADORES" class="sup-ind">
             <div class="sup-ind__row">
-              <span class="sup-ind__name"><i class="ti" [ngClass]="ind.icon"></i> {{ ind.label }}</span>
+              <span class="sup-ind__name">
+                <i class="ti" [ngClass]="ind.icon"></i> {{ ind.label }}
+              </span>
               <span class="sup-ind__frac">
                 <strong [ngClass]="colorClass(pct(s, ind.key))">{{ actual(s, ind.key) }}</strong>
                 <span class="sep">/</span>{{ meta(s, ind.key) }}
@@ -107,10 +133,16 @@
               </span>
             </div>
             <div class="sup-ind__track">
-              <div class="sup-ind__fill" [style.width]="barW(pct(s, ind.key))"
+              <div class="sup-ind__fill"
+                   [style.width]="barW(pct(s, ind.key))"
                    [style.background]="ind.color"></div>
             </div>
           </div>
+        </div>
+
+        <div class="sup-fecha-logro" *ngIf="s.fechaLogro100">
+          <i class="ti ti-calendar-check"></i>
+          Completado el {{ s.fechaLogro100 | date:'d MMM' }}
         </div>
 
       </div>

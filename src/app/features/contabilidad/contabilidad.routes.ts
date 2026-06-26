@@ -15,4 +15,15 @@ export const CONTABILIDAD_ROUTES: Routes = [
       roles: [Roles.CONTABILIDAD_USUARIO, Roles.ADMINISTRADOR_SISTEMA],
     },
   },
+  {
+    path: 'configuracion',
+    loadComponent: () =>
+      import('./features/configuration/contabilidad-configuracion').then((m) => m.ContabilidadConfiguracion),
+    canActivate: [roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN',
+      featureKey: 'accounting.configuration',
+      roles: [Roles.CONTABILIDAD_USUARIO, Roles.ADMINISTRADOR_SISTEMA],
+    },
+  },
 ];

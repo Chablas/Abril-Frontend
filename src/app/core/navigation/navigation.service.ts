@@ -182,7 +182,14 @@ export class NavigationService {
       items: [
         { label: 'Facturas', route: '/contabilidad/facturas', featureKey: 'accounting.invoices' },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Configuración', route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' },
+          ],
+        },
+      ],
     },
     {
       key: 'seguridad',

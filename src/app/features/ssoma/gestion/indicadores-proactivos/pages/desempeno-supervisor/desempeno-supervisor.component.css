@@ -1,9 +1,9 @@
 .ds-root { display: flex; flex-direction: column; min-height: 100%; }
 
-/* ── Filtros ────────────────────────────────────────────────────────────── */
+/* ── Filtros ──────────────────────────────────────────────────────────── */
 .ds-filtros {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem; padding: 0.5rem 1.5rem;
+  gap: 1rem; padding: 0.6rem 1.5rem;
   background: #fff; border-bottom: 1px solid #e9edf2;
 }
 .ds-filtros__left { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem; }
@@ -30,19 +30,27 @@
   border-radius: 9999px; padding: 1px 8px;
 }
 
-/* KPI */
+.f-semana {
+  display: flex; align-items: center; gap: 0.35rem; align-self: flex-end;
+  font-size: 0.72rem; color: #1d4ed8;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  border-radius: 9999px; padding: 2px 10px;
+}
+.f-semana strong { font-weight: 700; }
+
+/* KPI promedio */
 .ds-kpi {
   display: flex; align-items: center; gap: 0.75rem;
   background: #f8fafc; border: 1px solid #e9edf2;
   border-radius: 0.5rem; padding: 0.5rem 1rem;
   min-width: 210px; flex-shrink: 0;
 }
-.ds-kpi__num   { font-size: 1.8rem; font-weight: 800; line-height: 1; color: #0f172a; }
+.ds-kpi__num   { font-size: 1.8rem; font-weight: 800; line-height: 1; }
 .ds-kpi__title { font-size: 0.75rem; font-weight: 700; color: #1e293b; }
 .ds-kpi__sub   { font-size: 0.67rem; color: #94a3b8; margin-top: 1px; }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.ds-body { padding: 1rem 1.5rem; flex: 1; }
+.ds-body { padding: 1.25rem 1.5rem; flex: 1; }
 
 .ds-empty {
   display: flex; flex-direction: column; align-items: center;
@@ -53,17 +61,17 @@
 /* ── Grid ─────────────────────────────────────────────────────────────── */
 .ds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
 }
 
 /* ── Tarjeta ──────────────────────────────────────────────────────────── */
 .sup-card {
   background: #fff;
-  border: 1px solid #e9edf2;
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  display: flex; flex-direction: column; gap: 0.55rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
   transition: box-shadow .15s, transform .15s;
   position: relative;
 }
@@ -71,58 +79,91 @@
   box-shadow: 0 4px 20px rgba(15,76,117,.08);
   transform: translateY(-1px);
 }
-
-/* Destacado — sutil, solo borde dorado + fondo casi imperceptible */
-.sup-card--star {
-  border-color: #e2b846;
-  box-shadow: 0 0 0 2px rgba(226,184,70,.18);
+.sup-card--primero {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 2px rgba(212,160,23,.15);
 }
+.sup-card--completo { border-color: #86efac; }
 
-/* Badge "Superó meta" */
-.sup-crown {
-  display: inline-flex; align-items: center; gap: 0.2rem;
-  font-size: 0.6rem; font-weight: 700; color: #92400e;
-  background: #fef3c7; border: 1px solid #fde68a;
-  border-radius: 9999px; padding: 1px 7px;
-  align-self: flex-start; letter-spacing: .02em;
+/* ── Badges superiores ───────────────────────────────────────────────── */
+.sup-badge-top {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: .03em;
+  border-radius: 9999px; padding: 2px 9px; align-self: flex-start;
 }
-.sup-crown .ti { font-size: 0.62rem; color: #d97706; }
+.sup-badge-top--trofeo {
+  background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+}
+.sup-badge-top--trofeo .ti { color: #d97706; }
+.sup-badge-top--check {
+  background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;
+}
+.sup-badge-top--check .ti { color: #16a34a; }
 
-/* Cabecera */
+/* ── Cabecera ─────────────────────────────────────────────────────────── */
 .sup-card__head { display: flex; align-items: center; gap: 0.6rem; }
 
 .sup-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.78rem; font-weight: 800; flex-shrink: 0;
-  background: #eef2f7; color: #334155;
 }
+.sup-avatar.c-verde    { background: #dcfce7; color: #166534; }
+.sup-avatar.c-amarillo { background: #fef9c3; color: #92400e; }
+.sup-avatar.c-naranja  { background: #ffedd5; color: #9a3412; }
+.sup-avatar.c-rojo     { background: #fee2e2; color: #991b1b; }
 
 .sup-info  { flex: 1; min-width: 0; }
 .sup-nombre {
-  font-size: 0.75rem; font-weight: 700; color: #0f172a;
+  font-size: 0.78rem; font-weight: 700; color: #0f172a;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
 }
 .sup-proyecto {
-  font-size: 0.64rem; color: #94a3b8;
+  font-size: 0.65rem; color: #94a3b8;
   display: flex; align-items: center; gap: 0.2rem; margin-top: 1px;
 }
 
-.sup-badge { font-size: 1rem; font-weight: 800; flex-shrink: 0; color: #0f172a; }
+.sup-pct-badge { font-size: 1.05rem; font-weight: 800; flex-shrink: 0; }
+.sup-pct-badge.c-verde    { color: #16a34a; }
+.sup-pct-badge.c-amarillo { color: #ca8a04; }
+.sup-pct-badge.c-naranja  { color: #ea580c; }
+.sup-pct-badge.c-rojo     { color: #dc2626; }
 
-/* Barra global — un solo color primario con opacidad según avance */
+/* ── Barra global ─────────────────────────────────────────────────────── */
+.sup-global-wrap { display: flex; flex-direction: column; gap: 3px; }
+
 .sup-global-bar {
-  height: 4px; background: #f1f5f9; border-radius: 9999px; overflow: hidden;
+  height: 6px; background: #f1f5f9; border-radius: 9999px;
+  overflow: visible; position: relative;
 }
 .sup-global-fill {
   height: 100%; border-radius: 9999px; transition: width .5s ease;
-  background: #0f4c75;
 }
-/* Solo para críticos (<50%) usamos un tono más apagado */
-.sup-global-fill.c-rojo { background: #cbd5e1; }
+.sup-global-fill.c-verde    { background: #16a34a; }
+.sup-global-fill.c-amarillo { background: #ca8a04; }
+.sup-global-fill.c-naranja  { background: #ea580c; }
+.sup-global-fill.c-rojo     { background: #dc2626; }
 
-/* 4 Indicadores */
-.sup-inds { display: flex; flex-direction: column; gap: 0.35rem; }
+/* Marcador de meta semanal */
+.sup-meta-marker {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 2px; background: #3b82f6; border-radius: 1px;
+  transform: translateX(-50%);
+}
+.sup-meta-marker::after {
+  content: '';
+  position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 50%; background: #3b82f6;
+}
+
+/* Ritmo */
+.sup-ritmo { font-size: 0.64rem; font-weight: 600; }
+.ritmo-ok    { color: #16a34a; }
+.ritmo-cerca { color: #ca8a04; }
+.ritmo-atras { color: #dc2626; }
+
+/* ── Indicadores x4 ──────────────────────────────────────────────────── */
+.sup-inds { display: flex; flex-direction: column; gap: 0.4rem; }
 .sup-ind  { display: flex; flex-direction: column; gap: 2px; }
 .sup-ind__row { display: flex; align-items: center; justify-content: space-between; }
 .sup-ind__name {
@@ -134,10 +175,14 @@
   font-size: 0.68rem; color: #94a3b8;
   display: flex; align-items: center; gap: 0.15rem;
 }
-.sup-ind__frac strong { font-size: 0.78rem; font-weight: 700; color: #0f172a; }
-.sup-ind__frac .sep   { color: #e2e8f0; }
+.sup-ind__frac strong { font-size: 0.8rem; font-weight: 700; }
+.sup-ind__frac strong.c-verde    { color: #16a34a; }
+.sup-ind__frac strong.c-amarillo { color: #ca8a04; }
+.sup-ind__frac strong.c-naranja  { color: #ea580c; }
+.sup-ind__frac strong.c-rojo     { color: #dc2626; }
+.sup-ind__frac .sep { color: #e2e8f0; }
 
-.sup-check { font-size: 0.65rem; font-weight: 700; color: #0f4c75; margin-left: 2px; }
+.sup-check { font-size: 0.65rem; font-weight: 700; color: #16a34a; margin-left: 2px; }
 
 .sup-crown--best {
   background: #fef9c3; border-color: #fbbf24; color: #78350f;
@@ -155,14 +200,17 @@
   line-height: 1.3; word-break: break-word;
 }
 
-.sup-ind__track {
-  height: 3px; background: #f1f5f9; border-radius: 9999px; overflow: hidden;
-}
-.sup-ind__fill { height: 100%; border-radius: 9999px; transition: width .4s ease; }
+.sup-ind__track { height: 3px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
+.sup-ind__fill  { height: 100%; border-radius: 9999px; transition: width .4s ease; }
 
-/* ── Status colors — usados solo en el badge y avatar ─────────────────── */
-/* Verde solo cuando llega al 100%, resto es el primary o gris */
-.c-verde    { color: #0f4c75; }
-.c-amarillo { color: #334155; }
-.c-naranja  { color: #475569; }
-.c-rojo     { color: #94a3b8; }
+.sup-fecha-logro {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.65rem; color: #16a34a; font-weight: 600;
+  border-top: 1px solid #f1f5f9; padding-top: 0.4rem;
+}
+
+/* ── Colors KPI promedio ─────────────────────────────────────────────── */
+.ds-kpi__num.c-verde    { color: #16a34a; }
+.ds-kpi__num.c-amarillo { color: #ca8a04; }
+.ds-kpi__num.c-naranja  { color: #ea580c; }
+.ds-kpi__num.c-rojo     { color: #dc2626; }

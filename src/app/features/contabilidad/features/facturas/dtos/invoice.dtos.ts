@@ -1,16 +1,58 @@
 export interface InvoiceDto {
   invoiceId: number;
   issueDate: string;
+  serie: string;
+  correlativo: string;
   invoiceNumber: string;
   contributorId: number;
   contributorRuc: string;
   contributorName: string;
+  abrilContributorId?: number | null;
+  abrilContributorName?: string | null;
   description: string;
   invoicePaymentFormId: number;
   invoicePaymentFormDescription: string;
   total: number;
+  currencyId?: number | null;
+  currencyCode?: string | null;
+  currencySymbol?: string | null;
   documentUrl?: string | null;
   createdDateTime: string;
+}
+
+/** Moneda para el desplegable del formulario. */
+export interface InvoiceCurrencyDto {
+  currencyId: number;
+  currencyCode: string;
+  currencyDescription: string;
+  currencySymbol?: string | null;
+}
+
+/** Detalle completo de una factura (modal ver/editar). */
+export interface InvoiceDetailDto {
+  invoiceId: number;
+  issueDate: string;
+  serie: string;
+  correlativo: string;
+  invoiceNumber: string;
+  contributorId: number;
+  contributorRuc: string;
+  contributorName: string;
+  abrilContributorId?: number | null;
+  abrilContributorName?: string | null;
+  abrilContributorRuc?: string | null;
+  description: string;
+  invoicePaymentFormId: number;
+  invoicePaymentFormDescription: string;
+  total: number;
+  currencyId?: number | null;
+  currencyCode?: string | null;
+  currencySymbol?: string | null;
+  invoiceFolderId?: number | null;
+  invoiceFolderName?: string | null;
+  documentUrl?: string | null;
+  createdDateTime: string;
+  updatedDateTime?: string | null;
 }
 
 export interface InvoiceSupplierDto {
@@ -26,7 +68,17 @@ export interface InvoicePaymentFormDto {
 
 export interface InvoiceFilterDto {
   search?: string | null;
+  serie?: string | null;
+  correlativo?: string | null;
   contributorId?: number | null;
+  contributorRuc?: string | null;
+  abrilContributorId?: number | null;
+  abrilContributorRuc?: string | null;
+  invoicePaymentFormId?: number | null;
+  totalMin?: number | null;
+  totalMax?: number | null;
+  issueDateFrom?: string | null;
+  issueDateTo?: string | null;
   page: number;
 }
 
@@ -38,9 +90,20 @@ export interface PagedResponseDTO<T> {
   data: T[];
 }
 
+/** Opción del desplegable "Carpeta a guardar". */
+export interface InvoiceFolderOptionDto {
+  invoiceFolderId: number;
+  name: string;
+}
+
 export interface InvoiceInitDto {
   suppliers: InvoiceSupplierDto[];
   paymentForms: InvoicePaymentFormDto[];
+  /** Razones sociales que maneja Abril (contribuyentes con es_abril = true). */
+  abrilCompanies: InvoiceSupplierDto[];
+  /** Carpetas de OneDrive configuradas para guardar facturas. */
+  folders: InvoiceFolderOptionDto[];
+  currencies: InvoiceCurrencyDto[];
   invoices: PagedResponseDTO<InvoiceDto>;
 }
 

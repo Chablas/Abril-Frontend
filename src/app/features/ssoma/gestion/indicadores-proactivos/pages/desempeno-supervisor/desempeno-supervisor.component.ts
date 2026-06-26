@@ -36,6 +36,8 @@ export interface DesempenoSupervisorDto {
   pctEvalContratista: number;
   pctEvalResidente: number;
   pctGeneral: number;
+  fechaLogro100: string | null;
+  esPrimeroEnProyecto: boolean;
 }
 
 interface ProyectoSimple { id: number; nombre: string; }
@@ -88,6 +90,25 @@ export class DesempenoSupervisorComponent implements OnInit {
     const max = Math.max(...sups.map(x => x.pctGeneral));
     return s.pctGeneral === max && max >= this.metaSemanal();
   }
+
+  semanaActual = computed(() => {
+    const hoy = new Date();
+    if (hoy.getMonth() + 1 !== this.mes() || hoy.getFullYear() !== this.anio()) return null;
+    const dia = hoy.getDate();
+    if (dia <= 7)  return 1;
+    if (dia <= 14) return 2;
+    if (dia <= 21) return 3;
+    return 4;
+  });
+
+  metaEsperada = computed(() => {
+    const semana = this.semanaActual();
+    if (semana !== null) return semana * 25;
+    const hoy = new Date();
+    const mesSelec  = new Date(this.anio(), this.mes() - 1, 1);
+    const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return mesSelec < mesActual ? 100 : 0;
+  });
 
   meses = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
@@ -167,6 +188,8 @@ export class DesempenoSupervisorComponent implements OnInit {
     return nombre.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }
 
+  metaMarkerLeft(): string { return `${this.metaEsperada()}%`; }
+
   colorClass(pct: number): string {
     if (pct >= 100) return 'c-verde';
     if (pct >= 75)  return 'c-amarillo';
@@ -179,5 +202,25 @@ export class DesempenoSupervisorComponent implements OnInit {
     if (p >= 70) return 'c-amarillo';
     if (p >= 50) return 'c-naranja';
     return 'c-rojo';
+  }
+
+  ritmoClass(s: DesempenoSupervisorDto): string {
+    const meta = this.metaEsperada();
+    if (!meta || s.pctGeneral >= 100) return '';
+    if (s.pctGeneral >= meta)         return 'ritmo-ok';
+    if (s.pctGeneral >= meta * 0.8)   return 'ritmo-cerca';
+    return 'ritmo-atras';
+  }
+
+  ritmoLabel(s: DesempenoSupervisorDto): string {
+    const meta = this.metaEsperada();
+    const sem  = this.semanaActual();
+    if (!meta || !sem || s.pctGeneral >= 100) return '';
+    if (s.pctGeneral >= meta) return `Al ritmo · sem ${sem}`;
+    return `↓ Meta sem ${sem}: ${meta}%`;
+  }
+
+  mostrarRitmo(s: DesempenoSupervisorDto): boolean {
+    return !!this.semanaActual() && s.pctGeneral < 100;
   }
 }
