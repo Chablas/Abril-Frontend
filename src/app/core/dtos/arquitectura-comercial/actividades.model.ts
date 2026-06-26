@@ -56,6 +56,7 @@ export interface ActividadesQueryParams {
   etapaId?: number | null;
   search?: string | null;
   soloActivas?: boolean | null;
+  filtroUserId?: number | null;
   pagina?: number;
   porPagina?: number;
 }

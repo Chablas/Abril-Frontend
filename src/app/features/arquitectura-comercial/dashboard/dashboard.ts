@@ -27,6 +27,9 @@ import {
   CategoriaDashboardItemDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
+  ActividadListItemDTO,
+} from '../../../core/dtos/arquitectura-comercial/actividades.model';
+import {
   ActividadAlertaDTO,
   DashboardFiltroDTO,
   EnviarAlertaRequestDTO,
@@ -96,6 +99,54 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalAlertaActividades: ActividadAlertaDTO[] = [];
   modalAlertaLoading    = false;
   seleccionados         = new Set<number>();
+
+  // ─── modal actividades trabajador ──────────────────────────────
+  modalCargaVisible    = false;
+  modalCargaNombre     = '';
+  modalCargaLoading    = false;
+  modalCargaActividades: ActividadListItemDTO[] = [];
+  modalCargaStats      = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
+
+  abrirModalCarga(sup: TareasPorArquitectoDTO): void {
+    this.modalCargaVisible    = true;
+    this.modalCargaNombre     = sup.nombre;
+    this.modalCargaLoading    = true;
+    this.modalCargaActividades = [];
+    this.service.getActividades({ filtroUserId: sup.userId, soloActivas: true, porPagina: 500 }).subscribe({
+      next: res => {
+        // Excluir culminadas — mostrar solo carga activa pendiente
+        this.modalCargaActividades = (res.items ?? []).filter(a => !a.finEfectivo);
+        const items = this.modalCargaActividades;
+        this.modalCargaStats = {
+          hitos:       items.filter(a => a.partidaDeControl === 'HITO').length,
+          entregables: items.filter(a => a.partidaDeControl === 'ENTREGABLE').length,
+          consultas:   items.filter(a => a.partidaDeControl === 'CONSULTA').length,
+          culminadas:  items.filter(a => a.finEfectivo).length,
+          vencidas:    items.filter(a => !a.finEfectivo && a.finProgramado
+                         && new Date(a.finProgramado) < new Date()).length,
+        };
+        this.modalCargaLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.modalCargaLoading = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  cerrarModalCarga(): void { this.modalCargaVisible = false; }
+
+  estadoCargaColor(a: ActividadListItemDTO): string {
+    if (a.finEfectivo) return '#1B6B3A';
+    if (a.inicioEfectivo) return '#2E6DB4';
+    if (a.finProgramado && new Date(a.finProgramado) < new Date()) return '#C0392B';
+    return '#D4A017';
+  }
+
+  estadoCargaLabel(a: ActividadListItemDTO): string {
+    if (a.finEfectivo) return 'Culminado';
+    if (a.inicioEfectivo) return 'En proceso';
+    if (a.finProgramado && new Date(a.finProgramado) < new Date()) return 'Vencido';
+    return 'Pendiente';
+  }
 
   // ─── modal hitos ───────────────────────────────────────────────
   modalHitosVisible = false;
@@ -279,42 +330,57 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   private renderTiposChart() {
-    if (!this.tiposRef?.nativeElement || !this.distribucionTipos.length) return;
-    const COLORS = ['#1B3A6B', '#2E6DB4', '#27AE60'];
+    if (!this.tiposRef?.nativeElement) return;
+    const sinProg = Math.max(0,
+      this.kpis.totalActividades - this.kpis.culminadas - this.kpis.enProceso
+      - this.kpis.vencidas - this.kpis.pendientes);
+    const labels = ['Culminadas', 'En proceso', 'Vencidas', 'Pendientes', 'Sin prog.'];
+    const vals   = [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes, sinProg];
+    const colors = ['#1B6B3A', '#2E6DB4', '#C0392B', '#4A5568', '#CBD5E1'];
     this.tiposChart = new Chart(this.tiposRef.nativeElement, {
       type: 'doughnut',
       data: {
-        labels: this.distribucionTipos.map(t => t.label),
-        datasets: [{
-          data: this.distribucionTipos.map(t => t.value),
-          backgroundColor: COLORS,
-          borderWidth: 0,
-          hoverOffset: 6,
-        }],
+        labels,
+        datasets: [{ data: vals, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 5 }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '68%',
+        cutout: '70%',
         plugins: {
           datalabels: { display: false },
-          legend: {
-            position: 'bottom',
-            labels: { boxWidth: 10, font: { size: 10 }, color: '#64748B', padding: 12, usePointStyle: true },
-          },
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#1E293B',
             callbacks: {
               label: (ctx) => {
-                const total = (ctx.dataset.data as number[]).reduce((a, b) => a + b, 0);
-                const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
-                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                const total = (ctx.dataset.data as number[]).reduce((a:number,b:number)=>a+b,0);
+                const pct   = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} – ${pct}%`;
               },
             },
           },
         },
       },
     });
+  }
+
+  get estadoDonutItems() {
+    const total   = this.kpis.totalActividades || 1;
+    const sinProg = Math.max(0, total - this.kpis.culminadas - this.kpis.enProceso
+                                      - this.kpis.vencidas   - this.kpis.pendientes);
+    return [
+      { label: 'Culminadas', value: this.kpis.culminadas, color: '#1B6B3A',
+        pct: Math.round(this.kpis.culminadas / total * 100) },
+      { label: 'En proceso', value: this.kpis.enProceso,  color: '#2E6DB4',
+        pct: Math.round(this.kpis.enProceso  / total * 100) },
+      { label: 'Vencidas',   value: this.kpis.vencidas,   color: '#C0392B',
+        pct: Math.round(this.kpis.vencidas   / total * 100) },
+      { label: 'Pendientes', value: this.kpis.pendientes, color: '#4A5568',
+        pct: Math.round(this.kpis.pendientes / total * 100) },
+      { label: 'Sin prog.',  value: sinProg,               color: '#CBD5E1',
+        pct: Math.round(sinProg              / total * 100) },
+    ];
   }
 
   // getter para usar IES en el ranking (supervisores ya tiene el índice compuesto)

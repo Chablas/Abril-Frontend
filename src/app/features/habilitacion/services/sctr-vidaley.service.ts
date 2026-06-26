@@ -62,6 +62,12 @@ export class SctrVidaLeyService {
     });
   }
 
+  getPorTrabajador(workerId: number): Observable<SctrVidaLeyDto[]> {
+    return this.http.get<SctrVidaLeyDto[]>(`${this.base}/por-trabajador/${workerId}`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
   getProximosVencer(dias: number = 30): Observable<SctrVidaLeyDto[]> {
     return this.http.get<SctrVidaLeyDto[]>(`${this.base}/proximos-vencer`, {
       headers: buildHabHeaders(),

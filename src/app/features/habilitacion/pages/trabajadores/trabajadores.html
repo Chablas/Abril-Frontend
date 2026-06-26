@@ -174,9 +174,9 @@
                 </svg>
               </button>
               <button
-                *ngIf="isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa' && (!w.tieneEmo || (w.diasRestantesEmo !== null && w.diasRestantesEmo !== undefined && w.diasRestantesEmo <= 6))"
+                *ngIf="isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa'"
                 class="icon-btn icon-btn--emo"
-                title="Programar EMO"
+                [title]="w.tieneEmo ? 'Programar nuevo EMO' : 'Programar EMO'"
                 (click)="$event.stopPropagation(); abrirProgramarEmo(w)"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -475,6 +475,26 @@
     </div>
 
     <div class="modal-body">
+
+      <!-- SCTR / Vida Ley: últimas 3 pólizas vinculadas al trabajador -->
+      <ng-container *ngIf="selectedEntregable && (selectedEntregable.itemId === 11 || selectedEntregable.itemId === 13)">
+        <div class="field-grp">
+          <label class="field-lbl">ÚLTIMAS PÓLIZAS</label>
+          <div *ngIf="loadingSctrPolizas" class="list-msg" style="font-size:12px">Cargando…</div>
+          <div *ngIf="!loadingSctrPolizas && sctrPolizasWorker.length === 0" class="no-data" style="font-size:12px">Sin pólizas registradas.</div>
+          <div *ngFor="let p of sctrPolizasWorker" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+            <span style="flex:1;color:#0f172a">{{ p.mes }}/{{ p.anio }} · {{ p.tipoPoliza }}</span>
+            <span [class]="'btn-chip ' + (p.estado === 'Aprobado' ? 'chip-green' : p.estado === 'Enviado' ? 'chip-orange' : 'chip-gray')" style="font-size:10px">{{ p.estado }}</span>
+            <span *ngIf="p.vigencia" style="color:#64748b">{{ p.vigencia | date:'dd/MM/yyyy' }}</span>
+            <button *ngIf="p.archivoUrl" type="button" class="icon-btn-circle" title="Abrir en nueva pestaña"
+              (click)="abrirDocumento(p.archivoUrl!)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </ng-container>
 
       <ng-container *ngIf="esSoloLecturaPanel(selectedEntregable)">
         <div class="panel-note" *ngIf="esSctrVidaley(selectedEntregable)">
