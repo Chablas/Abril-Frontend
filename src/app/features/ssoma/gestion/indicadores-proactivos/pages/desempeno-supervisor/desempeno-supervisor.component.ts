@@ -18,14 +18,23 @@ export interface DesempenoSupervisorDto {
   metaOpt: number;
   metaInspecciones: number;
   metaCharlas: number;
+  metaLeccion: number;
+  metaEvalContratista: number;
+  metaEvalResidente: number;
   actualRacs: number;
   actualOpt: number;
   actualInspecciones: number;
   actualCharlas: number;
+  actualLeccion: number;
+  actualEvalContratista: number;
+  actualEvalResidente: number;
   pctRacs: number;
   pctOpt: number;
   pctInspecciones: number;
   pctCharlas: number;
+  pctLeccion: number;
+  pctEvalContratista: number;
+  pctEvalResidente: number;
   pctGeneral: number;
 }
 
@@ -53,10 +62,7 @@ export class DesempenoSupervisorComponent implements OnInit {
   proyectos = signal<ProyectoSimple[]>([]);
 
   supervisores = computed(() => {
-    const pid = this.proyectoFiltro();
-    const all = this.todos();
-    const filtered = pid ? all.filter(s => s.proyectoId === pid) : all;
-    return [...filtered].sort((a, b) => b.pctGeneral - a.pctGeneral);
+    return [...this.todos()].sort((a, b) => b.pctGeneral - a.pctGeneral);
   });
 
   promedioProyecto = computed(() => {
@@ -64,6 +70,24 @@ export class DesempenoSupervisorComponent implements OnInit {
     if (!s.length) return 0;
     return s.reduce((acc, x) => acc + x.pctGeneral, 0) / s.length;
   });
+
+  metaSemanal = computed(() => {
+    const hoy = new Date();
+    const esMesActual = hoy.getMonth() + 1 === this.mes() && hoy.getFullYear() === this.anio();
+    if (!esMesActual) return 100;
+    const dia = hoy.getDate();
+    if (dia <= 7)  return 25;
+    if (dia <= 14) return 50;
+    if (dia <= 21) return 75;
+    return 100;
+  });
+
+  esMejor(s: DesempenoSupervisorDto): boolean {
+    const sups = this.supervisores();
+    if (!sups.length) return false;
+    const max = Math.max(...sups.map(x => x.pctGeneral));
+    return s.pctGeneral === max && max >= this.metaSemanal();
+  }
 
   meses = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
@@ -76,16 +100,18 @@ export class DesempenoSupervisorComponent implements OnInit {
   anios = [2024, 2025, 2026, 2027];
 
   readonly INDICADORES = [
-    { key: 'Racs',         label: 'RAC',         color: '#0f4c75', icon: 'ti-file-description' },
-    { key: 'Opt',          label: 'OPT',          color: '#7c3aed', icon: 'ti-eye' },
-    { key: 'Inspecciones', label: 'Insp.',         color: '#0891b2', icon: 'ti-clipboard-check' },
-    { key: 'Charlas',      label: 'Charlas',      color: '#16a34a', icon: 'ti-presentation' },
+    { key: 'Racs',            label: 'RAC',              color: '#0f4c75', icon: 'ti-file-description' },
+    { key: 'Opt',             label: 'OPT',              color: '#7c3aed', icon: 'ti-eye' },
+    { key: 'Inspecciones',    label: 'Insp.',            color: '#0891b2', icon: 'ti-clipboard-check' },
+    { key: 'Charlas',         label: 'Charlas',          color: '#16a34a', icon: 'ti-presentation' },
+    { key: 'Leccion',         label: 'Lecc. Aprendida',  color: '#b45309', icon: 'ti-bulb' },
+    { key: 'EvalContratista', label: 'Eval. Contratista',color: '#be185d', icon: 'ti-building' },
+    { key: 'EvalResidente',   label: 'Eval. Residente',  color: '#0369a1', icon: 'ti-user-check' },
   ];
 
   constructor() {
-    // Auto-reload al cambiar mes/año
     effect(() => {
-      this.mes(); this.anio();
+      this.mes(); this.anio(); this.proyectoFiltro();
       this.cargar();
     });
   }
@@ -102,7 +128,9 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   cargar(): void {
     this.loader.show();
-    const params = new HttpParams().set('mes', this.mes()).set('anio', this.anio());
+    let params = new HttpParams().set('mes', this.mes()).set('anio', this.anio());
+    const pid = this.proyectoFiltro();
+    if (pid) params = params.set('proyectoId', pid);
     this.http.get<DesempenoSupervisorDto[]>(this.base, { headers: this.authHeaders(), params }).subscribe({
       next: data => { this.todos.set(data); this.loader.hide(); },
       error: err  => { this.loader.hide(); this.errorSvc.handleError(err); },
@@ -131,9 +159,12 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   barW(pct: number): string { return `${Math.min(100, pct)}%`; }
 
-  /** Al menos un indicador alcanzó 100% */
   superaEnAlguno(s: DesempenoSupervisorDto): boolean {
-    return this.INDICADORES.some(ind => this.pct(s, ind.key) >= 100);
+    return s.pctGeneral >= this.metaSemanal();
+  }
+
+  nombreTitleCase(nombre: string): string {
+    return nombre.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }
 
   colorClass(pct: number): string {
