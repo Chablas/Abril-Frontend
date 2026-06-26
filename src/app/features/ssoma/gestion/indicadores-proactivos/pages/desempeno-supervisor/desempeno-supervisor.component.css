@@ -184,10 +184,25 @@
 
 .sup-check { font-size: 0.65rem; font-weight: 700; color: #16a34a; margin-left: 2px; }
 
+.sup-crown--best {
+  background: #fef9c3; border-color: #fbbf24; color: #78350f;
+  margin-top: 2px;
+}
+.sup-crown--best .ti { color: #f59e0b; }
+
+.f-meta-chip--semana {
+  background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 700;
+}
+
+.sup-nombre {
+  font-size: 0.7rem; font-weight: 600; color: #0f172a;
+  white-space: normal; overflow: visible; text-overflow: unset;
+  line-height: 1.3; word-break: break-word;
+}
+
 .sup-ind__track { height: 3px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
 .sup-ind__fill  { height: 100%; border-radius: 9999px; transition: width .4s ease; }
 
-/* ── Fecha de logro ───────────────────────────────────────────────────── */
 .sup-fecha-logro {
   display: flex; align-items: center; gap: 0.3rem;
   font-size: 0.65rem; color: #16a34a; font-weight: 600;

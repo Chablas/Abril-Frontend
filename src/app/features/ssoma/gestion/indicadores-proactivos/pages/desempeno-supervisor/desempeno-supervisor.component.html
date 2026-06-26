@@ -43,6 +43,7 @@
         <span class="f-meta-chip"><i class="ti ti-eye"></i> OPT: 2</span>
         <span class="f-meta-chip"><i class="ti ti-clipboard-check"></i> Insp: 2</span>
         <span class="f-meta-chip"><i class="ti ti-presentation"></i> Charlas: 2</span>
+        <span class="f-meta-chip f-meta-chip--semana"><i class="ti ti-target"></i> Meta: {{ metaSemanal() }}%</span>
       </div>
 
       <div class="f-semana" *ngIf="semanaActual()">
@@ -85,13 +86,16 @@
         <div class="sup-badge-top sup-badge-top--check" *ngIf="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
           <i class="ti ti-circle-check"></i> Meta completada
         </div>
+        <div class="sup-crown sup-crown--best" *ngIf="esMejor(s)">
+          <i class="ti ti-trophy"></i> Mejor del proyecto
+        </div>
 
         <div class="sup-card__head">
           <div class="sup-avatar" [ngClass]="colorClass(s.pctGeneral)">
             {{ iniciales(s.supervisorNombre) }}
           </div>
           <div class="sup-info">
-            <div class="sup-nombre" [title]="s.supervisorNombre">{{ s.supervisorNombre }}</div>
+            <div class="sup-nombre" [title]="s.supervisorNombre">{{ nombreTitleCase(s.supervisorNombre) }}</div>
             <div class="sup-proyecto"><i class="ti ti-building"></i> {{ s.proyectoNombre }}</div>
           </div>
           <div class="sup-pct-badge" [ngClass]="colorClass(s.pctGeneral)">

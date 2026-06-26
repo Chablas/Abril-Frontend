@@ -56,7 +56,51 @@
     </button>
   </div>
 
-  <!-- kpi-grid integrado en db-estado-card -->
+  <!-- ══ KPI BAR ══ -->
+  <div class="kpi-bar">
+    <div class="kpi-card" style="border-top-color:#1B3A6B">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-list-check" style="color:#1B3A6B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.totalActividades }}</span>
+      <span class="kpi-title">Total actividades</span>
+      <span class="kpi-sub">proyecto</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#1B6B3A">
+      <div class="kpi-icon-wrap" style="background:#EAF3DE"><i class="ti ti-circle-check" style="color:#1B6B3A;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B6B3A">{{ kpis.culminadas }}</span>
+      <span class="kpi-title">Culminadas</span>
+      <span class="kpi-sub">a tiempo</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#2E6DB4">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-player-play" style="color:#2E6DB4;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#2E6DB4">{{ kpis.enProceso }}</span>
+      <span class="kpi-title">En proceso</span>
+      <span class="kpi-sub">activas</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#C0392B">
+      <div class="kpi-icon-wrap" style="background:#FDF2F2"><i class="ti ti-alert-circle" style="color:#C0392B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#C0392B">{{ kpis.vencidas }}</span>
+      <span class="kpi-title">Vencidas</span>
+      <span class="kpi-sub">sin cerrar</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#D4A017">
+      <div class="kpi-icon-wrap" style="background:#FEF9E7"><i class="ti ti-clock" style="color:#D4A017;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#D4A017">{{ kpis.pendientes }}</span>
+      <span class="kpi-title">Pendientes</span>
+      <span class="kpi-sub">sin iniciar</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#0F6E56">
+      <div class="kpi-icon-wrap" style="background:#D1FAE5"><i class="ti ti-gauge" style="color:#0F6E56;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#0F6E56">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
+      <span class="kpi-title">Eficiencia media</span>
+      <span class="kpi-sub">SPI real</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#1B3A6B">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-trending-up" style="color:#1B3A6B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+      <span class="kpi-title">Progreso global</span>
+      <span class="kpi-sub">del proyecto</span>
+    </div>
+  </div>
 
   <!-- ══ ALERTAS (clickeables) ══ -->
   <div class="alert-grid">
@@ -228,7 +272,7 @@
                class="rank-item carga-item"
                [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
                [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
-               (click)="filtrarPorSupervisor(sup.userId)"
+               (click)="abrirModalCarga(sup)"
                [title]="sup.nombre + ' — click para filtrar'">
             <div class="rank-accent" [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')"></div>
             <div class="sup-avatar" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">
@@ -265,20 +309,53 @@
       <div class="card-header">
         <span class="card-title">PARTIDAS DE CONTROL</span>
         <div class="hbar-legend">
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#10b981"></span>Culm.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#3b82f6"></span>En P.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#ef4444"></span>Venc.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#6b7280"></span>Pend.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#1B6B3A"></span>Culm.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#2E6DB4"></span>En P.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#C0392B"></span>Venc.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#4A5568"></span>Pend.</span>
         </div>
       </div>
+
+      <!-- Layout: donut izquierda + barras derecha -->
+      <div style="display:flex;gap:24px;align-items:flex-start">
+
+        <!-- Donut distribución estado (como PowerApps) -->
+        <div class="partidas-donut-col">
+          <p class="partidas-donut-title">Distribución</p>
+          <div style="position:relative;display:flex;align-items:center;gap:16px">
+            <!-- Donut -->
+            <div class="partidas-donut-wrap">
+              <canvas #tiposCanvas></canvas>
+              <div class="partidas-donut-center">
+                <span class="partidas-donut-total" style="color:#1B3A6B">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+                <span class="partidas-donut-label">global</span>
+              </div>
+            </div>
+            <!-- Leyenda lateral como PowerApps -->
+            <div class="partidas-tipo-list">
+              <div *ngFor="let item of estadoDonutItems" class="partidas-tipo-item">
+                <span class="partidas-tipo-dot" [style.background]="item.color"></span>
+                <span class="partidas-tipo-name">{{ item.label }}</span>
+                <span class="partidas-tipo-val" [style.color]="item.color">{{ item.value }} – {{ item.pct }}%</span>
+              </div>
+            </div>
+          </div>
+          <!-- Barra progreso total -->
+          <div style="margin-top:8px;background:#E2E8F0;border-radius:4px;overflow:hidden;height:5px;display:flex">
+            <div *ngFor="let item of estadoDonutItems" [style.width.%]="item.pct" [style.background]="item.color" style="height:5px"></div>
+          </div>
+        </div>
+
+        <!-- Barras por categoría -->
+        <div style="flex:1;min-width:0">
       <div class="partidas-scroll-body" *ngIf="distribucionPorCategoria.length; else sinPartidas">
         <div *ngFor="let cat of distribucionPorCategoria" class="hbar-row">
           <span class="hbar-label hbar-label-nav" (click)="filtrarPorCategoria(cat.nombre)" [title]="cat.nombre">{{ cat.nombre }}</span>
           <div class="hbar-bar" style="cursor:pointer" (click)="filtrarPorCategoria(cat.nombre)">
             <ng-container *ngIf="cat.total > 0; else emptyBarP">
-              <div class="hbar-seg" style="background:#10b981" [style.flex]="cat.culminadas"></div>
-              <div class="hbar-seg" style="background:#3b82f6" [style.flex]="cat.enProceso"></div>
-              <div class="hbar-seg" style="background:#ef4444" [style.flex]="cat.vencidas"></div>
+              <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="cat.culminadas"></div>
+              <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="cat.enProceso"></div>
+              <div class="hbar-seg" style="background:#C0392B" [style.flex]="cat.vencidas"></div>
               <div class="hbar-seg" style="background:#6b7280" [style.flex]="cat.pendientes"></div>
             </ng-container>
             <ng-template #emptyBarP><div class="hbar-empty-seg"></div></ng-template>
@@ -296,10 +373,10 @@
         <div class="hbar-row hbar-total-row" *ngIf="kpis.totalActividades > 0">
           <span class="hbar-label hbar-label-total">TOTAL</span>
           <div class="hbar-bar hbar-bar-total">
-            <div class="hbar-seg" style="background:#10b981" [style.flex]="kpis.culminadas"></div>
-            <div class="hbar-seg" style="background:#3b82f6" [style.flex]="kpis.enProceso"></div>
-            <div class="hbar-seg" style="background:#ef4444" [style.flex]="kpis.vencidas"></div>
-            <div class="hbar-seg" style="background:#6b7280" [style.flex]="kpis.pendientes"></div>
+            <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="kpis.culminadas"></div>
+            <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="kpis.enProceso"></div>
+            <div class="hbar-seg" style="background:#C0392B" [style.flex]="kpis.vencidas"></div>
+            <div class="hbar-seg" style="background:#4A5568" [style.flex]="kpis.pendientes"></div>
           </div>
           <span class="hbar-pct hbar-pct-total">{{ kpis.progresoGlobal | number:'1.0-1' }}%</span>
           <span class="hbar-cnt">({{ kpis.totalActividades }})</span>
@@ -312,90 +389,10 @@
         </div>
       </div>
       <ng-template #sinPartidas><p class="empty-msg">Sin datos</p></ng-template>
+        </div> <!-- fin barras -->
+      </div> <!-- fin layout flex -->
     </div>
 
-    <!-- ══ FILA 3: Distribución por Estado ══ -->
-    <div class="dash-row-3">
-      <!-- Culminadas -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('CULMINADO')">
-        <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#D1FAE5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6L9 17L4 12" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <span class="ec-pct" style="color:#059669">
-            {{ kpis.totalActividades > 0 ? (kpis.culminadas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
-          </span>
-        </div>
-        <div class="ec-num" style="color:#059669">{{ kpis.culminadas }}</div>
-        <div class="ec-label">Culminadas</div>
-        <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#10b981"
-               [style.width.%]="kpis.totalActividades > 0 ? kpis.culminadas / kpis.totalActividades * 100 : 0"></div>
-        </div>
-      </div>
-      <!-- En Proceso -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('EN PROCESO')">
-        <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#DBEAFE">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#2563EB" stroke-width="2"/>
-              <path d="M12 6V12L16 14" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <span class="ec-pct" style="color:#2563EB">
-            {{ kpis.totalActividades > 0 ? (kpis.enProceso / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
-          </span>
-        </div>
-        <div class="ec-num" style="color:#2563EB">{{ kpis.enProceso }}</div>
-        <div class="ec-label">En Proceso</div>
-        <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#3b82f6"
-               [style.width.%]="kpis.totalActividades > 0 ? kpis.enProceso / kpis.totalActividades * 100 : 0"></div>
-        </div>
-      </div>
-      <!-- Vencidas -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('VENCIDO')">
-        <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#FEE2E2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2"/>
-              <path d="M12 8V12M12 16H12.01" stroke="#DC2626" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <span class="ec-pct" style="color:#DC2626">
-            {{ kpis.totalActividades > 0 ? (kpis.vencidas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
-          </span>
-        </div>
-        <div class="ec-num" style="color:#DC2626">{{ kpis.vencidas }}</div>
-        <div class="ec-label">Vencidas</div>
-        <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#ef4444"
-               [style.width.%]="kpis.totalActividades > 0 ? kpis.vencidas / kpis.totalActividades * 100 : 0"></div>
-        </div>
-      </div>
-      <!-- Pendientes -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('PENDIENTE')">
-        <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#F1F5F9">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#64748B" stroke-width="2"/>
-              <path d="M12 8V12M12 16H12.01" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <span class="ec-pct" style="color:#64748B">
-            {{ kpis.totalActividades > 0 ? (kpis.pendientes / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
-          </span>
-        </div>
-        <div class="ec-num" style="color:#64748B">{{ kpis.pendientes }}</div>
-        <div class="ec-label">Pendientes</div>
-        <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#6b7280"
-               [style.width.%]="kpis.totalActividades > 0 ? kpis.pendientes / kpis.totalActividades * 100 : 0"></div>
-        </div>
-      </div>
-    </div><!-- /dash-row-3 -->
 
   </div><!-- /dash-body -->
 
@@ -506,6 +503,89 @@
         <div *ngIf="enviandoAlerta" class="loader-spinner" style="width:14px;height:14px;border-width:2px;border-top-color:#fff"></div>
         {{ enviandoAlerta ? 'Enviando...' : 'Enviar alerta (' + seleccionados.size + ')' }}
       </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL CARGA TRABAJADOR ══ -->
+<div *ngIf="modalCargaVisible" class="modal-backdrop" (click)="cerrarModalCarga()">
+  <div class="modal-box" style="max-width:820px" (click)="$event.stopPropagation()">
+
+    <div class="modal-header" style="background:#1B3A6B">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap">
+          <i class="ti ti-user" style="color:#fff;font-size:16px"></i>
+        </div>
+        <div>
+          <h2 class="modal-title">{{ modalCargaNombre }}</h2>
+          <p class="modal-sub">{{ modalCargaActividades.length }} actividades activas pendientes</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalCarga()">✕</button>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div style="display:flex;gap:8px;padding:10px 16px;background:#F4F6F9;border-bottom:1px solid #E0E8F0;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#EAF3DE;border-radius:6px;font-size:11px;font-weight:600;color:#1B6B3A">
+        ✓ {{ modalCargaStats.culminadas }} culminadas
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#FDF2F2;border-radius:6px;font-size:11px;font-weight:600;color:#C0392B">
+        ⚠ {{ modalCargaStats.vencidas }} vencidas
+      </div>
+      <div style="padding:4px 10px;background:#EDF4FB;border-radius:6px;font-size:11px;font-weight:600;color:#1B3A6B">
+        H {{ modalCargaStats.hitos }} · E {{ modalCargaStats.entregables }} · C {{ modalCargaStats.consultas }}
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="modalCargaLoading" class="modal-loading">
+      <div class="loader-spinner" style="width:32px;height:32px;border-width:2px"></div>
+      <span>Cargando actividades...</span>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!modalCargaLoading" class="modal-body" style="max-height:460px">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Actividad</th>
+              <th>Tipo</th>
+              <th>Etapa</th>
+              <th>Estado</th>
+              <th>Inicio Prog.</th>
+              <th>Fin Prog.</th>
+              <th>SPI</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of modalCargaActividades">
+              <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="a.nombre">{{ a.nombre }}</td>
+              <td>
+                <span style="font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600"
+                  [style.background]="a.partidaDeControl==='HITO'?'#EDE9FE':a.partidaDeControl==='ENTREGABLE'?'#DBEAFE':'#FEF9C3'"
+                  [style.color]="a.partidaDeControl==='HITO'?'#5B21B6':a.partidaDeControl==='ENTREGABLE'?'#1E3A8A':'#713F12'">
+                  {{ a.partidaDeControl ?? '—' }}
+                </span>
+              </td>
+              <td>{{ a.etapaNombre ?? '—' }}</td>
+              <td>
+                <span style="font-size:10px;font-weight:600" [style.color]="estadoCargaColor(a)">
+                  {{ estadoCargaLabel(a) }}
+                </span>
+              </td>
+              <td style="font-size:11px;color:#64748B">{{ a.inicioProgramado ?? '—' }}</td>
+              <td style="font-size:11px;color:#64748B">{{ a.finProgramado ?? '—' }}</td>
+              <td style="font-weight:700;font-size:12px"
+                [style.color]="a.spi && a.spi>=1?'#1B6B3A':a.spi&&a.spi>=0.8?'#D4A017':'#C0392B'">
+                {{ a.spi ? (a.spi | number:'1.2-2') : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p *ngIf="modalCargaActividades.length === 0" class="empty-msg">Sin actividades encontradas</p>
     </div>
 
   </div>

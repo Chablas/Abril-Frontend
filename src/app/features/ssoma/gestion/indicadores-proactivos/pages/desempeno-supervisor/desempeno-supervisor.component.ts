@@ -18,14 +18,23 @@ export interface DesempenoSupervisorDto {
   metaOpt: number;
   metaInspecciones: number;
   metaCharlas: number;
+  metaLeccion: number;
+  metaEvalContratista: number;
+  metaEvalResidente: number;
   actualRacs: number;
   actualOpt: number;
   actualInspecciones: number;
   actualCharlas: number;
+  actualLeccion: number;
+  actualEvalContratista: number;
+  actualEvalResidente: number;
   pctRacs: number;
   pctOpt: number;
   pctInspecciones: number;
   pctCharlas: number;
+  pctLeccion: number;
+  pctEvalContratista: number;
+  pctEvalResidente: number;
   pctGeneral: number;
   fechaLogro100: string | null;
   esPrimeroEnProyecto: boolean;
@@ -55,10 +64,7 @@ export class DesempenoSupervisorComponent implements OnInit {
   proyectos = signal<ProyectoSimple[]>([]);
 
   supervisores = computed(() => {
-    const pid = this.proyectoFiltro();
-    const all = this.todos();
-    const filtered = pid ? all.filter(s => s.proyectoId === pid) : all;
-    return [...filtered].sort((a, b) => b.pctGeneral - a.pctGeneral);
+    return [...this.todos()].sort((a, b) => b.pctGeneral - a.pctGeneral);
   });
 
   promedioProyecto = computed(() => {
@@ -67,7 +73,24 @@ export class DesempenoSupervisorComponent implements OnInit {
     return s.reduce((acc, x) => acc + x.pctGeneral, 0) / s.length;
   });
 
-  /** Semana del mes en curso (null si el mes seleccionado no es el actual) */
+  metaSemanal = computed(() => {
+    const hoy = new Date();
+    const esMesActual = hoy.getMonth() + 1 === this.mes() && hoy.getFullYear() === this.anio();
+    if (!esMesActual) return 100;
+    const dia = hoy.getDate();
+    if (dia <= 7)  return 25;
+    if (dia <= 14) return 50;
+    if (dia <= 21) return 75;
+    return 100;
+  });
+
+  esMejor(s: DesempenoSupervisorDto): boolean {
+    const sups = this.supervisores();
+    if (!sups.length) return false;
+    const max = Math.max(...sups.map(x => x.pctGeneral));
+    return s.pctGeneral === max && max >= this.metaSemanal();
+  }
+
   semanaActual = computed(() => {
     const hoy = new Date();
     if (hoy.getMonth() + 1 !== this.mes() || hoy.getFullYear() !== this.anio()) return null;
@@ -78,7 +101,6 @@ export class DesempenoSupervisorComponent implements OnInit {
     return 4;
   });
 
-  /** % esperado al ritmo de 25% por semana */
   metaEsperada = computed(() => {
     const semana = this.semanaActual();
     if (semana !== null) return semana * 25;
@@ -99,14 +121,20 @@ export class DesempenoSupervisorComponent implements OnInit {
   anios = [2024, 2025, 2026, 2027];
 
   readonly INDICADORES = [
-    { key: 'Racs',         label: 'RAC',     color: '#0f4c75', icon: 'ti-file-description' },
-    { key: 'Opt',          label: 'OPT',     color: '#7c3aed', icon: 'ti-eye' },
-    { key: 'Inspecciones', label: 'Insp.',   color: '#0891b2', icon: 'ti-clipboard-check' },
-    { key: 'Charlas',      label: 'Charlas', color: '#16a34a', icon: 'ti-presentation' },
+    { key: 'Racs',            label: 'RAC',              color: '#0f4c75', icon: 'ti-file-description' },
+    { key: 'Opt',             label: 'OPT',              color: '#7c3aed', icon: 'ti-eye' },
+    { key: 'Inspecciones',    label: 'Insp.',            color: '#0891b2', icon: 'ti-clipboard-check' },
+    { key: 'Charlas',         label: 'Charlas',          color: '#16a34a', icon: 'ti-presentation' },
+    { key: 'Leccion',         label: 'Lecc. Aprendida',  color: '#b45309', icon: 'ti-bulb' },
+    { key: 'EvalContratista', label: 'Eval. Contratista',color: '#be185d', icon: 'ti-building' },
+    { key: 'EvalResidente',   label: 'Eval. Residente',  color: '#0369a1', icon: 'ti-user-check' },
   ];
 
   constructor() {
-    effect(() => { this.mes(); this.anio(); this.cargar(); });
+    effect(() => {
+      this.mes(); this.anio(); this.proyectoFiltro();
+      this.cargar();
+    });
   }
 
   ngOnInit(): void {
@@ -121,7 +149,9 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   cargar(): void {
     this.loader.show();
-    const params = new HttpParams().set('mes', this.mes()).set('anio', this.anio());
+    let params = new HttpParams().set('mes', this.mes()).set('anio', this.anio());
+    const pid = this.proyectoFiltro();
+    if (pid) params = params.set('proyectoId', pid);
     this.http.get<DesempenoSupervisorDto[]>(this.base, { headers: this.authHeaders(), params }).subscribe({
       next: data => { this.todos.set(data); this.loader.hide(); },
       error: err  => { this.loader.hide(); this.errorSvc.handleError(err); },
@@ -149,6 +179,14 @@ export class DesempenoSupervisorComponent implements OnInit {
   }
 
   barW(pct: number): string { return `${Math.min(100, pct)}%`; }
+
+  superaEnAlguno(s: DesempenoSupervisorDto): boolean {
+    return s.pctGeneral >= this.metaSemanal();
+  }
+
+  nombreTitleCase(nombre: string): string {
+    return nombre.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
 
   metaMarkerLeft(): string { return `${this.metaEsperada()}%`; }
 

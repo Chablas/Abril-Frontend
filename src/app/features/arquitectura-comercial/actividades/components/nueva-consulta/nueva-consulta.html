@@ -42,15 +42,31 @@
       </div>
 
       <div class="col-span-2">
-        <label class="field-label">Etapa</label>
+        <label class="field-label">Etapa *</label>
         <select class="field-input" [(ngModel)]="model.etapaId" [disabled]="loadingEtapas">
-          <option [ngValue]="null">Sin etapa</option>
+          <option [ngValue]="null">{{ loadingEtapas ? 'Cargando…' : 'Sin etapa' }}</option>
           <option *ngFor="let e of etapas; trackBy: trackByEtapa" [ngValue]="e.id">{{ e.nombre }}</option>
         </select>
       </div>
 
       <div>
-        <label class="field-label">Inicio programado</label>
+        <label class="field-label">Categoría *</label>
+        <select class="field-input" [(ngModel)]="model.categoriaId">
+          <option [ngValue]="null">Sin categoría</option>
+          <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Especialidad *</label>
+        <select class="field-input" [(ngModel)]="model.especialidadId">
+          <option [ngValue]="null">Sin especialidad</option>
+          <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label">Inicio programado *</label>
         <input type="date" class="field-input" [(ngModel)]="model.inicioProgramado" />
       </div>
 
