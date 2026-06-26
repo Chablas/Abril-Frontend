@@ -101,27 +101,60 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   seleccionados         = new Set<number>();
 
   // ─── modal actividades trabajador ──────────────────────────────
-  modalCargaVisible    = false;
-  modalCargaNombre     = '';
-  modalCargaLoading    = false;
-  modalCargaActividades: ActividadListItemDTO[] = [];
-  modalCargaStats      = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
+  modalCargaVisible            = false;
+  modalCargaNombre             = '';
+  modalCargaLoading            = false;
+  modalCargaActividades        : ActividadListItemDTO[] = [];
+  modalCargaExcluirCulminadas  = true;
+  modalCargaFiltroEstado       = '';
+  modalCargaStats              = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
+
+  private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
+  private pd(iso: string): Date { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+
+  estadoGantt(a: ActividadListItemDTO): 'CULMINADO'|'EN_PROCESO'|'VENCIDO'|'EN_RIESGO'|'PENDIENTE' {
+    const hoy = this.hoy();
+    if (a.finEfectivo)  return 'CULMINADO';
+    if (a.inicioEfectivo) return 'EN_PROCESO';
+    if (a.finProgramado && this.pd(a.finProgramado) < hoy) return 'VENCIDO';
+    if (a.inicioProgramado && this.pd(a.inicioProgramado) <= hoy) return 'EN_RIESGO';
+    return 'PENDIENTE';
+  }
+
+  estadoGanttLabel(a: ActividadListItemDTO): string {
+    const map = { CULMINADO:'✓ Culminado', EN_PROCESO:'▶ En proceso', VENCIDO:'⚠ Vencido', EN_RIESGO:'● En riesgo', PENDIENTE:'○ Pendiente' };
+    return map[this.estadoGantt(a)];
+  }
+
+  estadoGanttColor(a: ActividadListItemDTO): string {
+    const map = { CULMINADO:'#9CA3AF', EN_PROCESO:'#3B82F6', VENCIDO:'#EF4444', EN_RIESGO:'#F59E0B', PENDIENTE:'#93C5FD' };
+    return map[this.estadoGantt(a)];
+  }
+
+  get modalCargaFiltradas(): ActividadListItemDTO[] {
+    return this.modalCargaActividades.filter(a => {
+      if (this.modalCargaExcluirCulminadas && a.finEfectivo) return false;
+      if (this.modalCargaFiltroEstado && this.estadoGantt(a) !== this.modalCargaFiltroEstado) return false;
+      return true;
+    });
+  }
 
   abrirModalCarga(sup: TareasPorArquitectoDTO): void {
-    this.modalCargaVisible    = true;
-    this.modalCargaNombre     = sup.nombre;
-    this.modalCargaLoading    = true;
-    this.modalCargaActividades = [];
+    this.modalCargaVisible           = true;
+    this.modalCargaNombre            = sup.nombre;
+    this.modalCargaLoading           = true;
+    this.modalCargaActividades       = [];
+    this.modalCargaExcluirCulminadas = true;
+    this.modalCargaFiltroEstado      = '';
     this.service.getActividades({ filtroUserId: sup.userId, soloActivas: true, porPagina: 500 }).subscribe({
       next: res => {
-        // Excluir culminadas — mostrar solo carga activa pendiente
-        this.modalCargaActividades = (res.items ?? []).filter(a => !a.finEfectivo);
+        this.modalCargaActividades = res.items ?? [];
         const items = this.modalCargaActividades;
         this.modalCargaStats = {
           hitos:       items.filter(a => a.partidaDeControl === 'HITO').length,
           entregables: items.filter(a => a.partidaDeControl === 'ENTREGABLE').length,
           consultas:   items.filter(a => a.partidaDeControl === 'CONSULTA').length,
-          culminadas:  items.filter(a => a.finEfectivo).length,
+          culminadas:  items.filter(a => !!a.finEfectivo).length,
           vencidas:    items.filter(a => !a.finEfectivo && a.finProgramado
                          && new Date(a.finProgramado) < new Date()).length,
         };

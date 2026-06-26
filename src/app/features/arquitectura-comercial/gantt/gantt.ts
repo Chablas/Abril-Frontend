@@ -11,6 +11,7 @@ import { ArquitecturaComercialService } from '../../../core/services/arquitectur
 import {
   GanttActividadDTO,
   ProyectoConActividadesDTO,
+  SupervisorAcDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
 
 type TipoFiltro = '' | 'HITO' | 'ENTREGABLE' | 'CONSULTA';
@@ -53,6 +54,7 @@ export interface GanttRow {
   nombre: string;
   tipo: string | null;
   etapa: string | null;
+  proyecto: string | null;
   status: Status;
   startPlan: Date;
   endPlan: Date;
@@ -87,9 +89,11 @@ export class Gantt implements OnInit {
   readonly etapasFijas = ['PREVENTA','OBRA','EDIFICIO ENTREGADO','POST VENTA Y EXPERIENCIA','ALMACEN'];
 
   proyectos: ProyectoConActividadesDTO[] = [];
+  supervisores: SupervisorAcDTO[] = [];
   get proyectosConActividades() { return this.proyectos.filter(p => !p.sinActividades); }
 
   selectedProyectoId: number | null = null;
+  filtroSupervisorId: number | null = null;
   get selectedProyecto() { return this.proyectos.find(p => p.id === this.selectedProyectoId) ?? null; }
 
   tipoFiltro: TipoFiltro = '';
@@ -107,7 +111,7 @@ export class Gantt implements OnInit {
   timelineWidth = 0;
   todayLeft = 0;
   pxPerDay = PX.month;
-  readonly leftWidth = 660;
+  readonly leftWidth = 780;
 
   readonly legend = [
     { label: 'Pendiente',        color: STATUS_COLOR.PENDIENTE  },
@@ -121,7 +125,7 @@ export class Gantt implements OnInit {
 
   constructor(private service: ArquitecturaComercialService, private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void { this.loadProyectos(); }
+  ngOnInit(): void { this.loadProyectos(); this.loadSupervisores(); }
 
   loadProyectos(): void {
     this.service.getProyectosConActividades().subscribe({
@@ -139,7 +143,14 @@ export class Gantt implements OnInit {
     });
   }
 
-  onProyectoChange(): void { this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
+  loadSupervisores(): void {
+    this.service.getSupervisoresAc().subscribe({
+      next: data => { this.supervisores = data; this.cdr.detectChanges(); },
+    });
+  }
+
+  onProyectoChange(): void { this.filtroSupervisorId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
+  onSupervisorChange(): void { this.selectedProyectoId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
   setTipo(t: TipoFiltro): void { this.tipoFiltro = t; this.loadGantt(); }
   onFiltroChange(): void { this.loadGantt(); }
 
@@ -153,20 +164,54 @@ export class Gantt implements OnInit {
   private _rawData: GanttActividadDTO[] = [];
 
   loadGantt(): void {
-    if (!this.selectedProyectoId) return;
+    if (!this.selectedProyectoId && !this.filtroSupervisorId) return;
     this.loading = true;
     this.cdr.detectChanges();
-    this.service.getGantt({ proyectoId: this.selectedProyectoId, tipo: this.tipoFiltro || null,
-                            etapa: this.etapaNombreFiltro, soloActivas: null })
-      .subscribe({
-        next: data => {
-          this._rawData = data;
+
+    if (this.filtroSupervisorId) {
+      // Carga todas las actividades del supervisor (todos los proyectos) y las convierte al formato Gantt
+      this.service.getActividades({
+        filtroUserId: this.filtroSupervisorId,
+        tipo: this.tipoFiltro || null,
+        soloActivas: this.excluirCulminadas ? true : null,
+        porPagina: 500,
+      }).subscribe({
+        next: res => {
+          const ganttItems: GanttActividadDTO[] = (res.items ?? []).map(a => ({
+            id: a.id,
+            projectId: a.projectId,
+            projectNombre: a.projectNombre,
+            orden: a.orden,
+            nombre: a.nombre,
+            tipo: a.partidaDeControl,
+            etapaId: a.etapaId,
+            etapaNombre: a.etapaNombre,
+            activo: a.activo,
+            inicioProgramado: a.inicioProgramado,
+            finProgramado: a.finProgramado,
+            inicioEfectivo: a.inicioEfectivo,
+            finEfectivo: a.finEfectivo,
+          }));
+          this._rawData = ganttItems;
           this.loading  = false;
-          this.rebuildTimeline(data);
+          this.rebuildTimeline(ganttItems);
           this.cdr.detectChanges();
         },
         error: () => { this.loading = false; this.cdr.detectChanges(); },
       });
+    } else {
+      this.service.getGantt({ proyectoId: this.selectedProyectoId, tipo: this.tipoFiltro || null,
+                              etapa: this.etapaNombreFiltro, soloActivas: null })
+        .subscribe({
+          next: data => {
+            this._rawData = data;
+            this.loading  = false;
+            this.rebuildTimeline(data);
+            this.cdr.detectChanges();
+          },
+          error: () => { this.loading = false; this.cdr.detectChanges(); },
+        });
+    }
   }
 
   private rebuildTimeline(data: GanttActividadDTO[]): void {
@@ -238,6 +283,7 @@ export class Gantt implements OnInit {
         nombre:    a.nombre,
         tipo:      a.tipo,
         etapa:     a.etapaNombre,
+        proyecto:  a.projectNombre ?? null,
         status,
         startPlan,
         endPlan,

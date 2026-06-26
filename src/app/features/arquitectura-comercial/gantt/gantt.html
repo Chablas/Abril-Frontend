@@ -17,8 +17,18 @@
     <div class="gp-project">
       <i class="ti ti-building-skyscraper" style="color:#9CA3AF;font-size:15px"></i>
       <select [(ngModel)]="selectedProyectoId" (ngModelChange)="onProyectoChange()" class="gp-psel">
-        <option [ngValue]="null" disabled>Seleccionar proyecto…</option>
+        <option [ngValue]="null">Todos los proyectos</option>
         <option *ngFor="let p of proyectosConActividades; trackBy: trackByProyecto" [ngValue]="p.id">{{ p.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="gp-sep"></div>
+
+    <div class="gp-project">
+      <i class="ti ti-user" style="color:#9CA3AF;font-size:15px"></i>
+      <select [(ngModel)]="filtroSupervisorId" (ngModelChange)="onSupervisorChange()" class="gp-psel">
+        <option [ngValue]="null">Todos los supervisores</option>
+        <option *ngFor="let s of supervisores" [ngValue]="s.id">{{ s.apellidoNombre }}</option>
       </select>
     </div>
 
@@ -65,20 +75,20 @@
   </div>
 
   <!-- ══ EMPTY STATE ══ -->
-  <div *ngIf="!selectedProyecto" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
+  <div *ngIf="!selectedProyectoId && !filtroSupervisorId" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
     <i class="ti ti-chart-gantt" style="font-size:52px;color:#D1D5DB;display:block;margin-bottom:12px"></i>
-    <p style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px">Selecciona un proyecto</p>
-    <p style="font-size:.875rem;color:#9CA3AF;max-width:360px">Elige un proyecto del selector superior para visualizar el cronograma.</p>
+    <p style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px">Selecciona un proyecto o supervisor</p>
+    <p style="font-size:.875rem;color:#9CA3AF;max-width:360px">Elige un proyecto o supervisor del selector superior para visualizar el cronograma.</p>
   </div>
 
-  <div *ngIf="selectedProyecto && !loading && ganttRows.length === 0" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
+  <div *ngIf="(selectedProyectoId || filtroSupervisorId) && !loading && ganttRows.length === 0" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px">
     <i class="ti ti-calendar-off" style="font-size:52px;color:#D1D5DB;display:block;margin-bottom:12px"></i>
     <p style="font-size:1rem;font-weight:600;color:#374151;margin-bottom:6px">Sin actividades con fechas</p>
     <p style="font-size:.875rem;color:#9CA3AF;max-width:360px">No hay actividades que cumplan los filtros seleccionados.</p>
   </div>
 
   <!-- ══ GANTT ══ -->
-  <div *ngIf="selectedProyecto && ganttRows.length > 0"
+  <div *ngIf="(selectedProyectoId || filtroSupervisorId) && ganttRows.length > 0"
        style="flex:1;min-height:0;overflow:auto;background:#fff">
     <div class="gp-inner" [style.width.px]="leftWidth + timelineWidth">
 
@@ -87,11 +97,12 @@
         <!-- Left header -->
         <div class="gp-left gp-left-head" [style.width.px]="leftWidth">
           <div class="gp-lh-cell" style="width:220px">Actividad</div>
+          <div class="gp-lh-cell" style="width:120px">Proyecto</div>
           <div class="gp-lh-cell" style="width:90px">Tipo</div>
-          <div class="gp-lh-cell" style="width:100px">Etapa</div>
+          <div class="gp-lh-cell" style="width:80px">Etapa</div>
           <div class="gp-lh-cell" style="width:90px">Estado</div>
           <div class="gp-lh-cell" style="width:80px">Inicio</div>
-          <div class="gp-lh-cell" style="width:80px">Fin</div>
+          <div class="gp-lh-cell" style="width:80px">Fin Prog.</div>
         </div>
         <!-- Timeline header -->
         <div class="gp-tl-head" [style.width.px]="timelineWidth" style="position:relative">
@@ -118,12 +129,13 @@
           <!-- Left data -->
           <div class="gp-left gp-left-data" [style.width.px]="leftWidth">
             <div class="gp-ld-cell" style="width:220px;white-space:normal;line-height:1.3;font-size:11px" [title]="row.nombre">{{ row.nombre }}</div>
+            <div class="gp-ld-cell" style="width:120px;font-size:10px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="row.proyecto ?? ''">{{ row.proyecto ?? '—' }}</div>
             <div class="gp-ld-cell" style="width:90px">
               <span *ngIf="row.tipo" [class]="tipoClass(row.tipo)">{{ row.tipo }}</span>
               <span *ngIf="!row.tipo">—</span>
             </div>
-            <div class="gp-ld-cell" style="width:100px">
-              <span *ngIf="row.etapa" [class]="etapaClass(row.etapa)">{{ row.etapa | slice:0:12 }}</span>
+            <div class="gp-ld-cell" style="width:80px">
+              <span *ngIf="row.etapa" [class]="etapaClass(row.etapa)">{{ row.etapa | slice:0:10 }}</span>
               <span *ngIf="!row.etapa">—</span>
             </div>
             <div class="gp-ld-cell" style="width:90px">
