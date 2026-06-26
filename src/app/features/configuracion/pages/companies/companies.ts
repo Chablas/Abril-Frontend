@@ -9,12 +9,13 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { CompanyEditForm } from './components/company-edit-form/company-edit-form';
+import { CompanyCreateForm } from './components/company-create-form/company-create-form';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-config-companies',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm, CompanyCreateForm, AbrilPageHeaderComponent],
   templateUrl: './companies.html',
   styleUrl: './companies.css',
 })
@@ -34,6 +35,7 @@ export class Companies implements OnInit, OnDestroy {
 
   editModalOpen = false;
   editCompany: EmpresaSimpleDto | null = null;
+  createModalOpen = false;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -130,6 +132,19 @@ export class Companies implements OnInit, OnDestroy {
 
   onEditSaved(): void {
     this.closeEditModal();
+  }
+
+  openCreateModal(): void {
+    this.createModalOpen = true;
+  }
+
+  closeCreateModal(): void {
+    this.createModalOpen = false;
+  }
+
+  onCreated(): void {
+    this.createModalOpen = false;
+    this.load();
   }
 
   get hasActiveFilters(): boolean {

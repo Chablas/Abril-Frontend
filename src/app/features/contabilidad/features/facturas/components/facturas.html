@@ -11,7 +11,7 @@
   (primaryClick)="openCreate()">
 </app-abril-page-header>
 
-<div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-3">
+<div class="bg-white rounded-lg flex flex-col flex-1 p-5 gap-3">
 
   <!-- ── FILTROS ───────────────────────────────────────────────────── -->
   <div class="flex flex-wrap items-end gap-4 py-1">
@@ -169,11 +169,49 @@
       <app-view-toggle
         [modes]="viewModes"
         [value]="viewMode"
-        (valueChange)="viewMode = $any($event)">
+        (valueChange)="onViewModeChange($event)">
       </app-view-toggle>
     </div>
 
   </div>
+
+  <!-- ── BLOQUES (agrupados por razón social Abril) ────────────────── -->
+  @if (viewMode === 'blocks') {
+    <div class="flex flex-col gap-5">
+      @for (group of blockGroups; track group.abrilName) {
+        <div class="rounded-xl border" style="border-color:var(--color-abril-border)">
+          <div class="flex items-center justify-between px-4 py-2 rounded-t-xl" style="background:var(--color-abril-primary-light)">
+            <span class="text-sm font-semibold" style="color:var(--color-abril-primary-dark)">{{ group.abrilName }}</span>
+            <span class="text-xs text-gray-500">{{ group.count }} factura(s)</span>
+          </div>
+          <div class="flex flex-wrap gap-2 p-3">
+            @for (inv of group.items; track inv.invoiceId) {
+              <button type="button"
+                (mouseenter)="onBlockEnter(inv, $event)"
+                (mousemove)="movePopover($event)"
+                (mouseleave)="onBlockLeave()"
+                (click)="onBlockClick(inv)"
+                [ngClass]="inv.documentUrl
+                  ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
+                  : 'bg-amber-50 text-amber-700 border-amber-300'"
+                class="rounded-md border px-3 py-1.5 text-xs font-medium cursor-pointer hover:opacity-90 transition-opacity"
+                [title]="''">
+                {{ inv.invoiceNumber }}
+              </button>
+            }
+          </div>
+        </div>
+      } @empty {
+        <div class="px-4 py-10 text-center text-gray-400">No hay facturas registradas.</div>
+      }
+    </div>
+
+    <!-- Leyenda -->
+    <div class="flex items-center gap-4 text-xs text-gray-500">
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded" style="background:var(--color-abril-primary)"></span> Con documento</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded bg-amber-200 border border-amber-300"></span> Sin documento</span>
+    </div>
+  }
 
   <!-- ── TABLA ─────────────────────────────────────────────────────── -->
   @if (viewMode === 'table') {
@@ -259,15 +297,40 @@
     </div>
   }
 
-  <div>
-    <app-paginator
-      [totalRecords]="totalRecords"
-      [currentPage]="currentPage"
-      [totalPages]="totalPages"
-      (pageChange)="onPageChange($event)">
-    </app-paginator>
-  </div>
+  @if (viewMode !== 'blocks') {
+    <div>
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)">
+      </app-paginator>
+    </div>
+  }
 </div>
+
+<!-- Popover de detalle al pasar el mouse por un bloque -->
+@if (hoveredInvoice) {
+  <div class="fixed z-[60] w-[300px] rounded-xl border bg-white shadow-xl p-3 pointer-events-none"
+    style="border-color:var(--color-abril-border)"
+    [style.left.px]="popX" [style.top.px]="popY">
+    <div class="flex items-center justify-between gap-2 mb-1">
+      <span class="font-semibold text-gray-800">{{ hoveredInvoice.invoiceNumber }}</span>
+      <span class="text-sm font-semibold" style="color:var(--color-abril-primary)">
+        {{ hoveredInvoice.currencySymbol || hoveredInvoice.currencyCode || 'S/' }} {{ hoveredInvoice.total | number: '1.2-2' }}
+      </span>
+    </div>
+    <div class="text-sm text-gray-700 font-medium line-clamp-1">{{ hoveredInvoice.contributorName }}</div>
+    <div class="text-xs text-gray-400 mb-1">RUC {{ hoveredInvoice.contributorRuc || '—' }}</div>
+    <div class="grid grid-cols-1 gap-0.5 text-xs text-gray-500">
+      <div>Razón social Abril: <b class="text-gray-700">{{ hoveredInvoice.abrilContributorName || '—' }}</b></div>
+      <div>Emisión: <b class="text-gray-700">{{ hoveredInvoice.issueDate }}</b></div>
+      <div>Forma de pago: <b class="text-gray-700">{{ hoveredInvoice.invoicePaymentFormDescription || '—' }}</b></div>
+      <div class="line-clamp-2">Descripción: <span class="text-gray-700">{{ hoveredInvoice.description }}</span></div>
+      <div>Documento: <b [class]="hoveredInvoice.documentUrl ? 'text-[var(--color-abril-primary)]' : 'text-amber-600'">{{ hoveredInvoice.documentUrl ? 'Adjunto' : 'Sin documento' }}</b></div>
+    </div>
+  </div>
+}
 
 @if (showCreateModal) {
   <app-factura-create
@@ -286,6 +349,14 @@
     (closeModal)="showImportModal = false"
     (saved)="onImported()">
   </app-factura-import>
+}
+
+@if (attachInvoice) {
+  <app-factura-attach
+    [invoice]="attachInvoice"
+    (closeModal)="closeAttach()"
+    (saved)="onAttached()">
+  </app-factura-attach>
 }
 
 @if (detailInvoiceId) {

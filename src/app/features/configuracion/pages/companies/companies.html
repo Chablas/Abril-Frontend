@@ -8,7 +8,9 @@
     { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
     { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' },
     { label: 'Feriados y Días no Laborables', icono: 'ti-calendar', route: '/configuracion/feriados' }
-  ]">
+  ]"
+  [botonPrimario]="{ label: 'Nueva razón social', icono: 'ti-plus' }"
+  (primaryClick)="openCreateModal()">
 </app-abril-page-header>
 
 <section class="p-6 space-y-4 flex-1 min-h-0">
@@ -105,3 +107,9 @@
   (closed)="closeEditModal()"
   (saved)="onEditSaved()"
 ></app-company-edit-form>
+
+<app-company-create-form
+  *ngIf="createModalOpen"
+  (closed)="closeCreateModal()"
+  (saved)="onCreated()"
+></app-company-create-form>
