@@ -180,6 +180,7 @@ export class NavigationService {
       iconKey: 'receipt',
       baseRoute: '/contabilidad',
       items: [
+        { label: 'Dashboard', route: '/contabilidad/dashboard', featureKey: 'accounting.dashboard' },
         { label: 'Facturas', route: '/contabilidad/facturas', featureKey: 'accounting.invoices' },
       ],
       groups: [

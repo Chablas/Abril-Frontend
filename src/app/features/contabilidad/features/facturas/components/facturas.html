@@ -3,8 +3,9 @@
   titulo="Facturas"
   subtitulo="Registro y gestión de facturas de proveedores."
   [tabs]="[
-    { label: 'Facturas',      icono: 'ti-file-invoice', route: '/contabilidad/facturas',     featureKey: 'accounting.invoices' },
-    { label: 'Configuración', icono: 'ti-settings',     route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/contabilidad/dashboard',     featureKey: 'accounting.dashboard' },
+    { label: 'Facturas',      icono: 'ti-file-invoice',     route: '/contabilidad/facturas',      featureKey: 'accounting.invoices' },
+    { label: 'Configuración', icono: 'ti-settings',         route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
   ]"
   [botonPrimario]="{ label: 'Nueva factura', icono: 'ti-plus' }"
   (primaryClick)="openCreate()">
@@ -278,6 +279,13 @@
     (closeModal)="onCreateClosed()"
     (saved)="onCreated()">
   </app-factura-create>
+}
+
+@if (showImportModal) {
+  <app-factura-import
+    (closeModal)="showImportModal = false"
+    (saved)="onImported()">
+  </app-factura-import>
 }
 
 @if (detailInvoiceId) {

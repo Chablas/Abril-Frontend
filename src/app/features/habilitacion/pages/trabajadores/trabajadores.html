@@ -572,7 +572,7 @@
         <div class="field-grp">
           <label class="field-lbl">ESTADO</label>
           <ng-container *ngIf="puedeAprobarEntregableActual; else estadoReadonlyTrab">
-            <select class="field-input" [(ngModel)]="panelEstado" (ngModelChange)="onEstadoChange()">
+            <select class="field-input" [(ngModel)]="panelEstado">
               <option value="Aprobado">Aprobado</option>
               <option value="Rechazado">Rechazado</option>
               <option value="Falta">Falta</option>
@@ -591,7 +591,7 @@
 
         <div class="field-grp">
           <label class="field-lbl">VIGENCIA</label>
-          <input *ngIf="puedeAprobarEntregableActual" type="date" class="field-input" [ngModel]="panelVigencia" (ngModelChange)="onAdminVigenciaChange($event)" />
+          <input *ngIf="puedeAprobarEntregableActual" type="date" class="field-input" [(ngModel)]="panelVigencia" />
           <span *ngIf="!puedeAprobarEntregableActual"
             class="field-input field-readonly"
             style="display:block;padding:8px 12px;color:#64748b">
@@ -677,8 +677,8 @@
       >{{ uploadingFile ? 'Subiendo…' : 'ENVIAR' }}</button>
     </div>
 
-    <!-- Footer admin/Casa: GUARDAR con archivo -->
-    <div class="modal-footer" *ngIf="!isContratista() && !esSoloLecturaPanel(selectedEntregable) && puedeEditar(selectedEntregable) && archivosPendientes.length > 0">
+    <!-- Footer admin/Casa: GUARDAR -->
+    <div class="modal-footer" *ngIf="!isContratista() && !esSoloLecturaPanel(selectedEntregable) && puedeEditar(selectedEntregable)">
       <button
         type="button"
         class="btn-primary"

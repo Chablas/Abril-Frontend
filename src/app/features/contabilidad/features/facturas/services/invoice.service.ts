@@ -11,6 +11,8 @@ import {
   PagedResponseDTO,
   InvoiceDto,
   InvoiceDetailDto,
+  InvoiceDashboardDto,
+  InvoiceDashboardInitDto,
   SunatContributorDTO,
 } from '../dtos/invoice.dtos';
 
@@ -58,6 +60,20 @@ export class InvoiceService {
     });
   }
 
+  getDashboardInit(filter: InvoiceFilterDto): Observable<InvoiceDashboardInitDto> {
+    return this.http.get<InvoiceDashboardInitDto>(`${this.apiUrl}/dashboard/init`, {
+      headers: this.headers,
+      params: this.buildParams(filter),
+    });
+  }
+
+  getDashboard(filter: InvoiceFilterDto): Observable<InvoiceDashboardDto> {
+    return this.http.get<InvoiceDashboardDto>(`${this.apiUrl}/dashboard`, {
+      headers: this.headers,
+      params: this.buildParams(filter),
+    });
+  }
+
   getDetail(invoiceId: number): Observable<InvoiceDetailDto> {
     return this.http.get<InvoiceDetailDto>(`${this.apiUrl}/${invoiceId}`, { headers: this.headers });
   }
@@ -68,6 +84,11 @@ export class InvoiceService {
 
   update(formData: FormData): Observable<ApiMessageDTO> {
     return this.http.put<ApiMessageDTO>(this.apiUrl, formData, { headers: this.headers });
+  }
+
+  /** Importación masiva desde el Excel de órdenes de pago + archivos. */
+  import(formData: FormData): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/import`, formData, { headers: this.headers });
   }
 
   getByRuc(ruc: string): Observable<SunatContributorDTO> {

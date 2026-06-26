@@ -5,6 +5,17 @@ import { Roles } from '../../core/constants/roles';
 export const CONTABILIDAD_ROUTES: Routes = [
   { path: '', redirectTo: 'facturas', pathMatch: 'full' },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./features/dashboard/dashboard').then((m) => m.FacturasDashboard),
+    canActivate: [roleGuard],
+    data: {
+      titulo: 'DASHBOARD',
+      featureKey: 'accounting.dashboard',
+      roles: [Roles.CONTABILIDAD_USUARIO, Roles.ADMINISTRADOR_SISTEMA],
+    },
+  },
+  {
     path: 'facturas',
     loadComponent: () =>
       import('./features/facturas/components/facturas').then((m) => m.Facturas),

@@ -22,13 +22,14 @@ import {
   InvoiceFilterDto,
 } from '../dtos/invoice.dtos';
 import { FacturaCreate } from './create/create';
+import { FacturaImport } from './import/import';
 import { FacturaDetail } from './detail/detail';
 import { FacturaEdit } from './edit/edit';
 
 @Component({
   selector: 'app-facturas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, FacturaCreate, FacturaDetail, FacturaEdit, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, AbrilPageHeaderComponent],
   templateUrl: './facturas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -62,6 +63,7 @@ export class Facturas implements OnInit {
   totalRecords = 0;
 
   showCreateModal = false;
+  showImportModal = false;
   showAdvanced = false;
 
   // Ver detalle / editar
@@ -145,7 +147,16 @@ export class Facturas implements OnInit {
   }
 
   openCreate(): void {
+    this.showImportModal = true;
+  }
+
+  openManualCreate(): void {
     this.showCreateModal = true;
+  }
+
+  onImported(): void {
+    this.showImportModal = false;
+    this.loadInit();
   }
 
   onCreateClosed(): void {

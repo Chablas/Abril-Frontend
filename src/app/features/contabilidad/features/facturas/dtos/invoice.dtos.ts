@@ -20,6 +20,39 @@ export interface InvoiceDto {
   createdDateTime: string;
 }
 
+// ── Dashboard ──────────────────────────────────────────────────────────────
+export interface InvoiceChartItemDto {
+  label: string;
+  total: number;
+  count: number;
+  year: number;
+  month: number;
+}
+
+export interface InvoiceCurrencyTotalDto {
+  currencyCode: string;
+  currencySymbol?: string | null;
+  total: number;
+  count: number;
+}
+
+export interface InvoiceDashboardDto {
+  totalCount: number;
+  totalsByCurrency: InvoiceCurrencyTotalDto[];
+  byMonth: InvoiceChartItemDto[];
+  byPaymentForm: InvoiceChartItemDto[];
+  byAbril: InvoiceChartItemDto[];
+  topSuppliers: InvoiceChartItemDto[];
+}
+
+export interface InvoiceDashboardInitDto {
+  suppliers: InvoiceSupplierDto[];
+  paymentForms: InvoicePaymentFormDto[];
+  abrilCompanies: InvoiceSupplierDto[];
+  currencies: InvoiceCurrencyDto[];
+  dashboard: InvoiceDashboardDto;
+}
+
 /** Moneda para el desplegable del formulario. */
 export interface InvoiceCurrencyDto {
   currencyId: number;
