@@ -183,6 +183,7 @@ export class ArquitecturaComercialService {
     if (q.tipo) params = params.set('tipo', q.tipo);
     if (q.etapa) params = params.set('etapa', q.etapa);
     if (q.soloActivas != null) params = params.set('soloActivas', q.soloActivas);
+    if (q.filtroUserId != null) params = params.set('filtroUserId', q.filtroUserId);
     return this.http.get<GanttActividadDTO[]>(`${this.apiUrl}/gantt`, {
       params,
       headers: this.authHeaders(),

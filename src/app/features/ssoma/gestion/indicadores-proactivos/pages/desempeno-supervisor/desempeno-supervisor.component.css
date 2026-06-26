@@ -50,7 +50,7 @@
 .ds-kpi__sub   { font-size: 0.67rem; color: #94a3b8; margin-top: 1px; }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.ds-body { padding: 1.25rem 1.5rem; flex: 1; }
+.ds-body { padding: 0.75rem 1rem; flex: 1; }
 
 .ds-empty {
   display: flex; flex-direction: column; align-items: center;
@@ -61,17 +61,17 @@
 /* ── Grid ─────────────────────────────────────────────────────────────── */
 .ds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.4rem;
 }
 
 /* ── Tarjeta ──────────────────────────────────────────────────────────── */
 .sup-card {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.875rem;
-  padding: 1rem;
-  display: flex; flex-direction: column; gap: 0.6rem;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
   transition: box-shadow .15s, transform .15s;
   position: relative;
 }
@@ -195,13 +195,47 @@
 }
 
 .sup-nombre {
-  font-size: 0.7rem; font-weight: 600; color: #0f172a;
+  font-size: 0.7rem; font-weight: 700; color: #0f172a;
   white-space: normal; overflow: visible; text-overflow: unset;
-  line-height: 1.3; word-break: break-word;
+  line-height: 1.25; word-break: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 
 .sup-ind__track { height: 3px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
 .sup-ind__fill  { height: 100%; border-radius: 9999px; transition: width .4s ease; }
+
+/* ── Avatar wrap + trofeo flotante ───────────────────────────────────── */
+.sup-avatar-wrap { position: relative; flex-shrink: 0; }
+.sup-trofeo {
+  position: absolute; top: -5px; right: -5px;
+  font-size: 0.75rem; color: #d97706;
+  background: #fef3c7; border: 1.5px solid #fde68a;
+  border-radius: 50%; width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* ── Checks informativos (Lección + Eval. Contratista + Eval. Residente) ─ */
+.sup-checks-row {
+  display: flex; gap: 0.25rem; flex-wrap: nowrap;
+  border-top: 1px solid #f1f5f9; padding-top: 0.4rem;
+}
+.sup-check-item {
+  display: flex; align-items: center; gap: 0.15rem;
+  font-size: 0.58rem; font-weight: 700;
+  border-radius: 5px; padding: 2px 4px;
+  flex: 1; justify-content: center; min-width: 0;
+  white-space: nowrap;
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+}
+.sup-check-item .ti:first-child { font-size: 0.6rem; flex-shrink: 0; }
+.sup-check-item span { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: clip; }
+.sup-check-icon { font-size: 0.72rem; flex-shrink: 0; }
+.sup-check-item--ok {
+  background: #f0fdf4; border-color: #86efac; color: #15803d;
+}
+.sup-check-item--ok .sup-check-icon { color: #16a34a; }
+.sup-check-item:not(.sup-check-item--ok) .sup-check-icon { color: #f87171; }
 
 .sup-fecha-logro {
   display: flex; align-items: center; gap: 0.3rem;

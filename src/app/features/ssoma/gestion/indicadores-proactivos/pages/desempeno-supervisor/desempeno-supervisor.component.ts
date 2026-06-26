@@ -121,14 +121,21 @@ export class DesempenoSupervisorComponent implements OnInit {
   anios = [2024, 2025, 2026, 2027];
 
   readonly INDICADORES = [
-    { key: 'Racs',            label: 'RAC',              color: '#0f4c75', icon: 'ti-file-description' },
-    { key: 'Opt',             label: 'OPT',              color: '#7c3aed', icon: 'ti-eye' },
-    { key: 'Inspecciones',    label: 'Insp.',            color: '#0891b2', icon: 'ti-clipboard-check' },
-    { key: 'Charlas',         label: 'Charlas',          color: '#16a34a', icon: 'ti-presentation' },
-    { key: 'Leccion',         label: 'Lecc. Aprendida',  color: '#b45309', icon: 'ti-bulb' },
-    { key: 'EvalContratista', label: 'Eval. Contratista',color: '#be185d', icon: 'ti-building' },
-    { key: 'EvalResidente',   label: 'Eval. Residente',  color: '#0369a1', icon: 'ti-user-check' },
+    { key: 'Racs',         label: 'RAC',     color: '#0f4c75', icon: 'ti-file-description' },
+    { key: 'Opt',          label: 'OPT',     color: '#7c3aed', icon: 'ti-eye' },
+    { key: 'Inspecciones', label: 'Insp.',   color: '#0891b2', icon: 'ti-clipboard-check' },
+    { key: 'Charlas',      label: 'Charlas', color: '#16a34a', icon: 'ti-presentation' },
   ];
+
+  readonly CHECKS = [
+    { key: 'Leccion',         label: 'Lección',     icon: 'ti-bulb' },
+    { key: 'EvalContratista', label: 'Contratista', icon: 'ti-building' },
+    { key: 'EvalResidente',   label: 'Residente',   icon: 'ti-user-check' },
+  ];
+
+  hizo(s: DesempenoSupervisorDto, key: string): boolean {
+    return ((s as any)[`actual${key}`] ?? 0) > 0;
+  }
 
   constructor() {
     effect(() => {
