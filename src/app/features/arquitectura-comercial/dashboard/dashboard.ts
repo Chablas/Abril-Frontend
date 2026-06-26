@@ -17,6 +17,7 @@ import {
   ArqComercialDashboardDTO,
   ArqComercialKpiDTO,
   ArqComercialAlertDTO,
+  ChartItemDTO,
   SupervisorProgresoDTO,
   HitoCriticoDTO,
   TareasPorArquitectoDTO,
@@ -100,12 +101,16 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalHitosVisible = false;
   tabHito           : TabHito = 'VENCER';
 
+  distribucionTipos: ChartItemDTO[] = [];
+
   // ─── charts ───────────────────────────────────────────────────
   private avanceChart    ?: Chart;
   private eficienciaChart?: Chart;
+  private tiposChart     ?: Chart;
 
   @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
   @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('tiposCanvas')      tiposRef     !: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private service     : ArquitecturaComercialService,
@@ -167,6 +172,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.avanceSemanal           = d.avanceSemanal            ?? [];
     this.eficienciaSpi           = d.eficienciaSpi            ?? [];
     this.distribucionPorCategoria= d.distribucionPorCategoria ?? [];
+    this.distribucionTipos       = d.distribucionTipos        ?? [];
     this.cdr.detectChanges();
     this.destruirCharts();
     setTimeout(() => { this.renderCharts(); this.cdr.detectChanges(); }, 50);
@@ -176,11 +182,13 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   private destruirCharts() {
     this.avanceChart?.destroy();
     this.eficienciaChart?.destroy();
+    this.tiposChart?.destroy();
   }
 
   private renderCharts() {
     this.renderAvanceChart();
     this.renderEficienciaChart();
+    this.renderTiposChart();
   }
 
   private renderAvanceChart() {
@@ -194,23 +202,24 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           {
             label: 'Programado',
             data: data.map(s => s.programado),
-            borderColor: '#B0BAD0',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderDash: [4, 3],
+            borderColor: '#D6E4F0',
+            backgroundColor: 'rgba(214,228,240,0.25)',
+            borderWidth: 2,
+            borderDash: [5, 4],
             pointRadius: 0,
             tension: 0.3,
+            fill: true,
           },
           {
             label: 'Real',
             data: data.map(s => s.real),
-            borderColor: '#4A7FD4',
-            backgroundColor: 'rgba(74,127,212,0.08)',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#4A7FD4',
+            borderColor: '#1B3A6B',
+            backgroundColor: 'rgba(27,58,107,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#1B3A6B',
             pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
+            pointBorderWidth: 2,
             fill: true,
             tension: 0.4,
           },
@@ -243,11 +252,11 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         datasets: [{
           label: 'SPI %',
           data: vals,
-          borderColor: '#2D9E5F',
-          backgroundColor: 'rgba(45,158,95,0.08)',
+          borderColor: '#27AE60',
+          backgroundColor: 'rgba(39,174,96,0.08)',
           borderWidth: 2,
           pointRadius: 4,
-          pointBackgroundColor: vals.map(v => v >= 95 ? '#2D9E5F' : v >= 80 ? '#C4860A' : '#C94040'),
+          pointBackgroundColor: vals.map(v => v >= 95 ? '#1B6B3A' : v >= 80 ? '#D4A017' : '#C0392B'),
           pointBorderColor: '#fff',
           pointBorderWidth: 1.5,
           fill: true,
@@ -267,6 +276,50 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         },
       },
     });
+  }
+
+  private renderTiposChart() {
+    if (!this.tiposRef?.nativeElement || !this.distribucionTipos.length) return;
+    const COLORS = ['#1B3A6B', '#2E6DB4', '#27AE60'];
+    this.tiposChart = new Chart(this.tiposRef.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels: this.distribucionTipos.map(t => t.label),
+        datasets: [{
+          data: this.distribucionTipos.map(t => t.value),
+          backgroundColor: COLORS,
+          borderWidth: 0,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+          datalabels: { display: false },
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 10, font: { size: 10 }, color: '#64748B', padding: 12, usePointStyle: true },
+          },
+          tooltip: {
+            backgroundColor: '#1E293B',
+            callbacks: {
+              label: (ctx) => {
+                const total = (ctx.dataset.data as number[]).reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // getter para usar IES en el ranking (supervisores ya tiene el índice compuesto)
+  get rankingIES() {
+    return [...this.supervisores].sort((a, b) => b.progreso - a.progreso);
   }
 
   // ─── supervisor / carga helpers ──────────────────────────────
@@ -306,17 +359,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   cargaTagStyle(total: number): { bg: string; color: string } {
     const s = this.cargaStats;
     if (!s) return { bg: '#F1F5F9', color: '#64748B' };
-    if (total > s.avg * 1.3) return { bg: '#FEE2E2', color: '#DC2626' };
-    if (total < s.avg * 0.7) return { bg: '#D1FAE5', color: '#059669' };
-    return { bg: '#DBEAFE', color: '#2563EB' };
+    if (total > s.avg * 1.3) return { bg: '#FDF2F2', color: '#C0392B' };
+    if (total < s.avg * 0.7) return { bg: '#EAF3DE', color: '#1B6B3A' };
+    return { bg: '#EDF4FB', color: '#2E6DB4' };
   }
 
   cargaBarGradient(total: number): string {
     const s = this.cargaStats;
-    if (!s) return '#CBD5E1';
-    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#F87171,#DC2626)';
-    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#4ADE80,#16A34A)';
-    return 'linear-gradient(90deg,#60A5FA,#2563EB)';
+    if (!s) return '#D6E4F0';
+    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#E74C3C,#C0392B)';
+    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#27AE60,#1B6B3A)';
+    return 'linear-gradient(90deg,#2E6DB4,#1B3A6B)';
   }
 
   get cargaInsights(): string[] {
@@ -465,17 +518,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   getAvatarBg(p: number): string {
-    if (p >= 75) return '#EAF5EF';
-    if (p >= 60) return '#EAF0FB';
-    if (p >= 45) return '#FBF3E4';
-    return '#FAE9E9';
+    if (p >= 75) return '#EAF3DE';
+    if (p >= 60) return '#EDF4FB';
+    if (p >= 45) return '#FEF9E7';
+    return '#FDF2F2';
   }
 
   getAvatarColor(p: number): string {
-    if (p >= 75) return '#2D9E5F';
-    if (p >= 60) return '#4A7FD4';
-    if (p >= 45) return '#C4860A';
-    return '#C94040';
+    if (p >= 75) return '#1B6B3A';
+    if (p >= 60) return '#2E6DB4';
+    if (p >= 45) return '#D4A017';
+    return '#C0392B';
   }
 
   getComentario(sup: SupervisorProgresoDTO): string {
@@ -487,17 +540,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   getComentarioBg(sup: SupervisorProgresoDTO): string {
-    if (sup.progreso >= 75) return '#EAF5EF';
-    if (sup.progreso >= 60) return '#EAF0FB';
-    if (sup.progreso >= 45) return '#FBF3E4';
-    return '#FAE9E9';
+    if (sup.progreso >= 75) return '#EAF3DE';
+    if (sup.progreso >= 60) return '#EDF4FB';
+    if (sup.progreso >= 45) return '#FEF9E7';
+    return '#FDF2F2';
   }
 
   getComentarioColor(sup: SupervisorProgresoDTO): string {
-    if (sup.progreso >= 75) return '#2D9E5F';
-    if (sup.progreso >= 60) return '#4A7FD4';
-    if (sup.progreso >= 45) return '#C4860A';
-    return '#C94040';
+    if (sup.progreso >= 75) return '#1B6B3A';
+    if (sup.progreso >= 60) return '#2E6DB4';
+    if (sup.progreso >= 45) return '#D4A017';
+    return '#C0392B';
   }
   getProyectada(p: number)     { return Math.min(100, Math.round(p * 1.12)); }
 

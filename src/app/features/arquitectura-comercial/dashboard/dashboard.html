@@ -56,7 +56,51 @@
     </button>
   </div>
 
-  <!-- kpi-grid integrado en db-estado-card -->
+  <!-- ══ KPI BAR ══ -->
+  <div class="kpi-bar">
+    <div class="kpi-card" style="border-top-color:#1B3A6B">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-list-check" style="color:#1B3A6B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.totalActividades }}</span>
+      <span class="kpi-title">Total actividades</span>
+      <span class="kpi-sub">proyecto</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#1B6B3A">
+      <div class="kpi-icon-wrap" style="background:#EAF3DE"><i class="ti ti-circle-check" style="color:#1B6B3A;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B6B3A">{{ kpis.culminadas }}</span>
+      <span class="kpi-title">Culminadas</span>
+      <span class="kpi-sub">a tiempo</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#2E6DB4">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-player-play" style="color:#2E6DB4;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#2E6DB4">{{ kpis.enProceso }}</span>
+      <span class="kpi-title">En proceso</span>
+      <span class="kpi-sub">activas</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#C0392B">
+      <div class="kpi-icon-wrap" style="background:#FDF2F2"><i class="ti ti-alert-circle" style="color:#C0392B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#C0392B">{{ kpis.vencidas }}</span>
+      <span class="kpi-title">Vencidas</span>
+      <span class="kpi-sub">sin cerrar</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#D4A017">
+      <div class="kpi-icon-wrap" style="background:#FEF9E7"><i class="ti ti-clock" style="color:#D4A017;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#D4A017">{{ kpis.pendientes }}</span>
+      <span class="kpi-title">Pendientes</span>
+      <span class="kpi-sub">sin iniciar</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#0F6E56">
+      <div class="kpi-icon-wrap" style="background:#D1FAE5"><i class="ti ti-gauge" style="color:#0F6E56;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#0F6E56">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
+      <span class="kpi-title">Eficiencia media</span>
+      <span class="kpi-sub">SPI real</span>
+    </div>
+    <div class="kpi-card" style="border-top-color:#1B3A6B">
+      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-trending-up" style="color:#1B3A6B;font-size:14px"></i></div>
+      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+      <span class="kpi-title">Progreso global</span>
+      <span class="kpi-sub">del proyecto</span>
+    </div>
+  </div>
 
   <!-- ══ ALERTAS (clickeables) ══ -->
   <div class="alert-grid">
@@ -265,20 +309,47 @@
       <div class="card-header">
         <span class="card-title">PARTIDAS DE CONTROL</span>
         <div class="hbar-legend">
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#10b981"></span>Culm.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#3b82f6"></span>En P.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#ef4444"></span>Venc.</span>
-          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#6b7280"></span>Pend.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#1B6B3A"></span>Culm.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#2E6DB4"></span>En P.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#C0392B"></span>Venc.</span>
+          <span class="hbar-leg-item"><span class="hbar-leg-dot" style="background:#4A5568"></span>Pend.</span>
         </div>
       </div>
+
+      <!-- Layout: donut izquierda + barras derecha -->
+      <div style="display:flex;gap:24px;align-items:flex-start">
+
+        <!-- Donut tipos -->
+        <div class="partidas-donut-col">
+          <p class="partidas-donut-title">Por tipo</p>
+          <div class="partidas-donut-wrap">
+            <canvas #tiposCanvas></canvas>
+            <!-- Centro del donut: total -->
+            <div class="partidas-donut-center">
+              <span class="partidas-donut-total">{{ kpis.totalActividades }}</span>
+              <span class="partidas-donut-label">actividades</span>
+            </div>
+          </div>
+          <!-- Items debajo -->
+          <div class="partidas-tipo-list" *ngIf="distribucionTipos.length">
+            <div *ngFor="let t of distribucionTipos; let i=index" class="partidas-tipo-item">
+              <span class="partidas-tipo-dot" [style.background]="['#4F46E5','#0891B2','#059669'][i]"></span>
+              <span class="partidas-tipo-name">{{ t.label }}</span>
+              <span class="partidas-tipo-val">{{ t.value }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barras por categoría -->
+        <div style="flex:1;min-width:0">
       <div class="partidas-scroll-body" *ngIf="distribucionPorCategoria.length; else sinPartidas">
         <div *ngFor="let cat of distribucionPorCategoria" class="hbar-row">
           <span class="hbar-label hbar-label-nav" (click)="filtrarPorCategoria(cat.nombre)" [title]="cat.nombre">{{ cat.nombre }}</span>
           <div class="hbar-bar" style="cursor:pointer" (click)="filtrarPorCategoria(cat.nombre)">
             <ng-container *ngIf="cat.total > 0; else emptyBarP">
-              <div class="hbar-seg" style="background:#10b981" [style.flex]="cat.culminadas"></div>
-              <div class="hbar-seg" style="background:#3b82f6" [style.flex]="cat.enProceso"></div>
-              <div class="hbar-seg" style="background:#ef4444" [style.flex]="cat.vencidas"></div>
+              <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="cat.culminadas"></div>
+              <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="cat.enProceso"></div>
+              <div class="hbar-seg" style="background:#C0392B" [style.flex]="cat.vencidas"></div>
               <div class="hbar-seg" style="background:#6b7280" [style.flex]="cat.pendientes"></div>
             </ng-container>
             <ng-template #emptyBarP><div class="hbar-empty-seg"></div></ng-template>
@@ -296,10 +367,10 @@
         <div class="hbar-row hbar-total-row" *ngIf="kpis.totalActividades > 0">
           <span class="hbar-label hbar-label-total">TOTAL</span>
           <div class="hbar-bar hbar-bar-total">
-            <div class="hbar-seg" style="background:#10b981" [style.flex]="kpis.culminadas"></div>
-            <div class="hbar-seg" style="background:#3b82f6" [style.flex]="kpis.enProceso"></div>
-            <div class="hbar-seg" style="background:#ef4444" [style.flex]="kpis.vencidas"></div>
-            <div class="hbar-seg" style="background:#6b7280" [style.flex]="kpis.pendientes"></div>
+            <div class="hbar-seg" style="background:#1B6B3A" [style.flex]="kpis.culminadas"></div>
+            <div class="hbar-seg" style="background:#2E6DB4" [style.flex]="kpis.enProceso"></div>
+            <div class="hbar-seg" style="background:#C0392B" [style.flex]="kpis.vencidas"></div>
+            <div class="hbar-seg" style="background:#4A5568" [style.flex]="kpis.pendientes"></div>
           </div>
           <span class="hbar-pct hbar-pct-total">{{ kpis.progresoGlobal | number:'1.0-1' }}%</span>
           <span class="hbar-cnt">({{ kpis.totalActividades }})</span>
@@ -312,86 +383,88 @@
         </div>
       </div>
       <ng-template #sinPartidas><p class="empty-msg">Sin datos</p></ng-template>
+        </div> <!-- fin barras -->
+      </div> <!-- fin layout flex -->
     </div>
 
     <!-- ══ FILA 3: Distribución por Estado ══ -->
     <div class="dash-row-3">
       <!-- Culminadas -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('CULMINADO')">
+      <div class="dash-card estado-dist-item" style="border-top:3px solid #1B6B3A" (click)="filtrarPorEstado('CULMINADO')">
         <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#D1FAE5">
+          <div class="ec-icon-wrap" style="background:#EAF3DE">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6L9 17L4 12" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 6L9 17L4 12" stroke="#1B6B3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <span class="ec-pct" style="color:#059669">
+          <span class="ec-pct" style="color:#1B6B3A">
             {{ kpis.totalActividades > 0 ? (kpis.culminadas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
           </span>
         </div>
-        <div class="ec-num" style="color:#059669">{{ kpis.culminadas }}</div>
+        <div class="ec-num" style="color:#1B6B3A">{{ kpis.culminadas }}</div>
         <div class="ec-label">Culminadas</div>
         <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#10b981"
+          <div class="ec-bar-fill" style="background:#1B6B3A"
                [style.width.%]="kpis.totalActividades > 0 ? kpis.culminadas / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>
       <!-- En Proceso -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('EN PROCESO')">
+      <div class="dash-card estado-dist-item" style="border-top:3px solid #2E6DB4" (click)="filtrarPorEstado('EN PROCESO')">
         <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#DBEAFE">
+          <div class="ec-icon-wrap" style="background:#EDF4FB">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#2563EB" stroke-width="2"/>
-              <path d="M12 6V12L16 14" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="10" stroke="#2E6DB4" stroke-width="2"/>
+              <path d="M12 6V12L16 14" stroke="#2E6DB4" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <span class="ec-pct" style="color:#2563EB">
+          <span class="ec-pct" style="color:#2E6DB4">
             {{ kpis.totalActividades > 0 ? (kpis.enProceso / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
           </span>
         </div>
-        <div class="ec-num" style="color:#2563EB">{{ kpis.enProceso }}</div>
+        <div class="ec-num" style="color:#2E6DB4">{{ kpis.enProceso }}</div>
         <div class="ec-label">En Proceso</div>
         <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#3b82f6"
+          <div class="ec-bar-fill" style="background:#2E6DB4"
                [style.width.%]="kpis.totalActividades > 0 ? kpis.enProceso / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>
       <!-- Vencidas -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('VENCIDO')">
+      <div class="dash-card estado-dist-item" style="border-top:3px solid #C0392B" (click)="filtrarPorEstado('VENCIDO')">
         <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#FEE2E2">
+          <div class="ec-icon-wrap" style="background:#FDF2F2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2"/>
-              <path d="M12 8V12M12 16H12.01" stroke="#DC2626" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="10" stroke="#C0392B" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="#C0392B" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <span class="ec-pct" style="color:#DC2626">
+          <span class="ec-pct" style="color:#C0392B">
             {{ kpis.totalActividades > 0 ? (kpis.vencidas / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
           </span>
         </div>
-        <div class="ec-num" style="color:#DC2626">{{ kpis.vencidas }}</div>
+        <div class="ec-num" style="color:#C0392B">{{ kpis.vencidas }}</div>
         <div class="ec-label">Vencidas</div>
         <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#ef4444"
+          <div class="ec-bar-fill" style="background:#C0392B"
                [style.width.%]="kpis.totalActividades > 0 ? kpis.vencidas / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>
       <!-- Pendientes -->
-      <div class="dash-card estado-dist-item" (click)="filtrarPorEstado('PENDIENTE')">
+      <div class="dash-card estado-dist-item" style="border-top:3px solid #D4A017" (click)="filtrarPorEstado('PENDIENTE')">
         <div class="ec-top">
-          <div class="ec-icon-wrap" style="background:#F1F5F9">
+          <div class="ec-icon-wrap" style="background:#FEF9E7">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#64748B" stroke-width="2"/>
-              <path d="M12 8V12M12 16H12.01" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="10" stroke="#D4A017" stroke-width="2"/>
+              <path d="M12 8V12M12 16H12.01" stroke="#D4A017" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <span class="ec-pct" style="color:#64748B">
+          <span class="ec-pct" style="color:#D4A017">
             {{ kpis.totalActividades > 0 ? (kpis.pendientes / kpis.totalActividades * 100 | number:'1.0-0') : 0 }}%
           </span>
         </div>
-        <div class="ec-num" style="color:#64748B">{{ kpis.pendientes }}</div>
+        <div class="ec-num" style="color:#D4A017">{{ kpis.pendientes }}</div>
         <div class="ec-label">Pendientes</div>
         <div class="ec-bar-track">
-          <div class="ec-bar-fill" style="background:#6b7280"
+          <div class="ec-bar-fill" style="background:#D4A017"
                [style.width.%]="kpis.totalActividades > 0 ? kpis.pendientes / kpis.totalActividades * 100 : 0"></div>
         </div>
       </div>

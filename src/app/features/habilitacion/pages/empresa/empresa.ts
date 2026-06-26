@@ -915,6 +915,28 @@ export class Empresa implements OnInit {
     this.loadProyectos();
   }
 
+  cambiarEstadoMes(mes: EntregableMesDto, nuevoEstado: string): void {
+    if (!this.selectedEntregable || !this.empresaId || nuevoEstado === mes.estado) return;
+
+    if (nuevoEstado === 'Rechazado') {
+      this.rechazarMesEspecifico(mes);
+      return;
+    }
+
+    this.loaderService.show();
+    this.habEmpresaService.aprobarMes(this.empresaId, mes.id, { estado: nuevoEstado }).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: 'Estado actualizado', timer: 1200, showConfirmButton: false });
+        this.recargarEntregables();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   aprobarMesEspecifico(mes: EntregableMesDto): void {
     if (!this.selectedEntregable || !this.empresaId) return;
     Swal.fire({

@@ -399,6 +399,9 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   onAdminVigenciaChange(val: string): void {
     this.panelVigencia = val;
+    if (!val) return;
+    const year = parseInt(val.split('-')[0], 10);
+    if (isNaN(year) || year < 1900 || year > 2100) return;
     this.guardarEntregable();
   }
 

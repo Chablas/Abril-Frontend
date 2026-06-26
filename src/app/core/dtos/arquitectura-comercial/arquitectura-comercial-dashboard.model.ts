@@ -72,6 +72,7 @@ export interface ArqComercialDashboardDTO {
   eficienciaSpi               : EficienciaSpiDTO[];
   categorias                  : CategoriaItemDTO[];
   distribucionPorCategoria    : CategoriaDashboardItemDTO[];
+  distribucionTipos           : ChartItemDTO[];
 }
 
 export interface TareasPorArquitectoDTO {

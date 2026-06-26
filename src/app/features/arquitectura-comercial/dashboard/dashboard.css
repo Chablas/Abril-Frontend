@@ -95,44 +95,137 @@
 /* Ocupa las 2 columnas (compatibilidad) */
 .db-full { grid-column: 1 / -1; }
 
-/* ── R1-A: Estado ── */
-.db-estado-card { display: flex; flex-direction: column; gap: 8px; }
-
-.db-estado-grid {
+/* ══ KPI BAR ══ */
+.kpi-bar {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+  flex-shrink: 0;
 }
 
-.db-kpi {
+.kpi-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border-top: 3px solid #1B3A6B;
+  padding: 10px 12px 10px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  background: #F8FAFC;
-  border: 1px solid #F1F5F9;
-  border-radius: 7px;
-  padding: 5px 4px;
+  gap: 2px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
 }
 
-.db-kpi-val {
-  font-size: 18px;
+.kpi-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.kpi-num {
+  font-size: 22px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
 }
 
-.db-kpi-lab {
-  font-size: 8px;
-  font-weight: 600;
-  color: #94A3B8;
+.kpi-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #475569;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  text-align: center;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
 }
+
+.kpi-sub {
+  font-size: 9px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+/* ── R1-A: Estado (legacy) ── */
+.db-estado-card { display: flex; flex-direction: column; gap: 8px; }
+.db-estado-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.db-kpi { display: flex; flex-direction: column; align-items: center; gap: 1px; background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 7px; padding: 5px 4px; }
+.db-kpi-val { font-size: 18px; font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+.db-kpi-lab { font-size: 8px; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.3px; text-align: center; }
 
 /* ── R1-B: Partidas ── */
 .db-partidas-card { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Donut tipos ── */
+.partidas-donut-col {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.partidas-donut-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin: 0;
+  align-self: flex-start;
+}
+.partidas-donut-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+.partidas-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+.partidas-donut-total {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1E293B;
+  line-height: 1;
+}
+.partidas-donut-label {
+  font-size: 9px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+.partidas-tipo-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+.partidas-tipo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.partidas-tipo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.partidas-tipo-name { color: #475569; flex: 1; }
+.partidas-tipo-val  { font-weight: 700; color: #1E293B; }
 
 /* ── Charts ── */
 .db-chart-wrap {
@@ -166,12 +259,12 @@
   flex-direction: column;
   gap: 6px;
   padding: 8px 12px;
-  background: #F0F2F5;
+  background: #F4F6F9;
 }
 
 /* ─── Header ─── */
 .dash-header {
-  background: #1E3A5F;
+  background: #1B3A6B;
   border-radius: 9px;
   padding: 7px 14px;
   display: flex;
@@ -203,7 +296,7 @@
   appearance: none;
   -webkit-appearance: none;
 }
-.dash-select option { background: #1E3A5F; color:#fff; }
+.dash-select option { background: #1B3A6B; color:#fff; }
 
 .dash-search-btn {
   display: flex;
@@ -244,10 +337,10 @@
   transition: all 0.15s;
   letter-spacing: 0.3px;
 }
-.cat-pill:hover { border-color: #1E3A5F; color: #1E3A5F; }
+.cat-pill:hover { border-color: #1B3A6B; color: #1B3A6B; }
 .cat-pill.active {
-  background: #1E3A5F;
-  border-color: #1E3A5F;
+  background: #1B3A6B;
+  border-color: #1B3A6B;
   color: #fff;
 }
 .cat-pill-dot {
@@ -362,7 +455,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .07em;
-  color: #1E3A5F;
+  color: #1B3A6B;
   text-transform: uppercase;
 }
 .rank-subtitle {
@@ -832,7 +925,7 @@
 .partidas-title {
   font-size: 10px;
   font-weight: 700;
-  color: #1E3A5F;
+  color: #1B3A6B;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -881,7 +974,7 @@
   background: #F8FAFC;
   border-color: #E2E8F0;
 }
-.hbar-total-row .hbar-label { color: #1E3A5F; font-weight: 700; letter-spacing: 0.3px; }
+.hbar-total-row .hbar-label { color: #1B3A6B; font-weight: 700; letter-spacing: 0.3px; }
 
 /* Label */
 .hbar-label {
@@ -908,7 +1001,7 @@
   font-size: 11px; font-weight: 700; color: #374151;
   min-width: 36px; text-align: right; flex-shrink: 0;
 }
-.hbar-pct-total { color: #1E3A5F; }
+.hbar-pct-total { color: #1B3A6B; }
 
 /* Conteo total */
 .hbar-cnt { font-size: 10px; color: #CBD5E1; flex-shrink: 0; min-width: 32px; }
@@ -926,7 +1019,7 @@
 
 /* Elementos navegables */
 .hbar-label-nav { cursor: pointer; transition: color 0.12s; }
-.hbar-label-nav:hover { color: #1E3A5F; text-decoration: underline; text-underline-offset: 2px; }
+.hbar-label-nav:hover { color: #1B3A6B; text-decoration: underline; text-underline-offset: 2px; }
 
 .hbar-c-nav { cursor: pointer; border-radius: 4px; padding: 1px 5px; transition: background 0.12s; }
 .hbar-c-cul.hbar-c-nav:hover { background: #d1fae5; }
@@ -1243,7 +1336,7 @@
   transition: all 0.15s;
   margin-bottom: -1px;
 }
-.hito-tab:hover { color: #1E3A5F; }
+.hito-tab:hover { color: #1B3A6B; }
 .hito-tab.active { color:#1E3A5F; border-bottom-color:#1E3A5F; }
 .tab-badge {
   font-size: 10px;
@@ -1300,7 +1393,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #1E3A5F;
+  background: #1B3A6B;
   border: none;
   border-radius: 7px;
   padding: 7px 18px;
