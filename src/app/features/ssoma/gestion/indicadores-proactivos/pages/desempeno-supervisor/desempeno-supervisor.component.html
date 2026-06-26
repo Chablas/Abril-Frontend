@@ -38,6 +38,12 @@
 
       <div class="f-sep"></div>
 
+      <button class="f-btn-pdf" (click)="exportarPdf()" *ngIf="supervisores().length">
+        <i class="ti ti-file-type-pdf"></i> PDF
+      </button>
+
+      <div class="f-sep"></div>
+
       <div class="f-metas">
         <span class="f-meta-chip"><i class="ti ti-file-description"></i> RAC: 4</span>
         <span class="f-meta-chip"><i class="ti ti-eye"></i> OPT: 2</span>
@@ -75,7 +81,8 @@
       <div *ngFor="let s of supervisores()"
            class="sup-card"
            [class.sup-card--primero]="s.esPrimeroEnProyecto"
-           [class.sup-card--completo]="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto">
+           [class.sup-card--completo]="s.pctGeneral >= 100 && !s.esPrimeroEnProyecto"
+           [ngClass]="ritmoCardClass(s)">
 
         <div class="sup-card__head">
           <div class="sup-avatar-wrap">
@@ -117,31 +124,44 @@
                 <i class="ti" [ngClass]="ind.icon"></i> {{ ind.label }}
               </span>
               <span class="sup-ind__frac">
-                <strong [ngClass]="colorClass(pct(s, ind.key))">{{ actual(s, ind.key) }}</strong>
+                <strong [class.ind-ok]="pct(s, ind.key) >= 100">{{ actual(s, ind.key) }}</strong>
                 <span class="sep">/</span>{{ meta(s, ind.key) }}
-                <span class="sup-check" *ngIf="pct(s, ind.key) >= 100">✓</span>
+                <span class="sup-ind__check" *ngIf="pct(s, ind.key) >= 100">✓</span>
               </span>
             </div>
             <div class="sup-ind__track">
               <div class="sup-ind__fill"
-                   [style.width]="barW(pct(s, ind.key))"
-                   [style.background]="ind.color"></div>
+                   [class.sup-ind__fill--ok]="pct(s, ind.key) >= 100"
+                   [class.sup-ind__fill--prog]="pct(s, ind.key) < 100"
+                   [style.width]="barW(pct(s, ind.key))"></div>
             </div>
           </div>
         </div>
 
         <!-- Checks informativos: Lección + Eval. Contratista + Eval. Residente -->
         <div class="sup-checks-row">
-          <div *ngFor="let c of CHECKS" class="sup-check-item" [class.sup-check-item--ok]="hizo(s, c.key)">
-            <i class="ti" [ngClass]="c.icon"></i>
-            <span>{{ c.label }}</span>
-            <i class="ti sup-check-icon" [ngClass]="hizo(s, c.key) ? 'ti-circle-check' : 'ti-circle-x'"></i>
-          </div>
+          <ng-container *ngFor="let c of CHECKS">
+            <div *ngIf="c.key !== 'EvalResidente' || !s.esSaludOcupacional"
+                 class="sup-check-item" [class.sup-check-item--ok]="hizo(s, c.key)">
+              <i class="ti" [ngClass]="c.icon"></i>
+              <span>{{ c.label }}</span>
+              <i class="ti sup-check-icon" [ngClass]="hizo(s, c.key) ? 'ti-circle-check' : 'ti-circle-x'"></i>
+            </div>
+          </ng-container>
         </div>
 
-        <div class="sup-fecha-logro" *ngIf="s.fechaLogro100">
-          <i class="ti ti-calendar-check"></i>
-          Completado el {{ s.fechaLogro100 | date:'d MMM' }}
+        <div class="sup-fecha-logro" *ngIf="s.fechaLogro100 || tendenciaDelta(s) !== null">
+          <ng-container *ngIf="s.fechaLogro100">
+            <i class="ti ti-calendar-check"></i>
+            Completado el {{ s.fechaLogro100 | date:'d MMM' }}
+          </ng-container>
+          <span class="sup-tend"
+                *ngIf="tendenciaDelta(s) !== null"
+                [class.sup-tend--sube]="tendenciaDelta(s)! > 0"
+                [class.sup-tend--baja]="tendenciaDelta(s)! < 0"
+                [class.sup-tend--igual]="tendenciaDelta(s)! === 0">
+            {{ tendenciaDelta(s)! > 0 ? '▲' : tendenciaDelta(s)! < 0 ? '▼' : '=' }}{{ tendenciaDelta(s)! !== 0 ? (tendenciaDelta(s)! | number:'1.0-1') + '%' : '' }}
+          </span>
         </div>
 
       </div>

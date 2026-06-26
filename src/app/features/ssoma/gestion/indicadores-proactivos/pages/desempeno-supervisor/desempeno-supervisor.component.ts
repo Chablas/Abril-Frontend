@@ -6,6 +6,8 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { environment } from '../../../../../../../environments/environment';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export interface DesempenoSupervisorDto {
   supervisorId: number;
@@ -38,6 +40,8 @@ export interface DesempenoSupervisorDto {
   pctGeneral: number;
   fechaLogro100: string | null;
   esPrimeroEnProyecto: boolean;
+  pctGeneralMesAnterior: number | null;
+  esSaludOcupacional: boolean;
 }
 
 interface ProyectoSimple { id: number; nombre: string; }
@@ -64,7 +68,11 @@ export class DesempenoSupervisorComponent implements OnInit {
   proyectos = signal<ProyectoSimple[]>([]);
 
   supervisores = computed(() => {
-    return [...this.todos()].sort((a, b) => b.pctGeneral - a.pctGeneral);
+    return [...this.todos()].sort((a, b) => {
+      if (a.esPrimeroEnProyecto !== b.esPrimeroEnProyecto)
+        return a.esPrimeroEnProyecto ? -1 : 1;
+      return b.pctGeneral - a.pctGeneral;
+    });
   });
 
   promedioProyecto = computed(() => {
@@ -196,6 +204,56 @@ export class DesempenoSupervisorComponent implements OnInit {
   }
 
   metaMarkerLeft(): string { return `${this.metaEsperada()}%`; }
+
+  tendenciaDelta(s: DesempenoSupervisorDto): number | null {
+    if (s.pctGeneralMesAnterior == null) return null;
+    return Math.round((s.pctGeneral - s.pctGeneralMesAnterior) * 10) / 10;
+  }
+
+  ritmoCardClass(s: DesempenoSupervisorDto): string {
+    const meta = this.metaEsperada();
+    if (!meta || s.pctGeneral >= 100) return '';
+    if (s.pctGeneral < meta * 0.8) return 'sup-card--riesgo';
+    if (s.pctGeneral < meta)        return 'sup-card--cerca';
+    return '';
+  }
+
+  exportarPdf(): void {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const mes    = this.nombreMes(this.mes());
+    const anio   = this.anio();
+    const proy   = this.proyectos().find(p => p.id === this.proyectoFiltro())?.nombre ?? 'Todos los proyectos';
+
+    doc.setFontSize(13);
+    doc.text(`Desempeño del Supervisor — ${mes} ${anio}`, 14, 14);
+    doc.setFontSize(9);
+    doc.text(`Proyecto: ${proy}`, 14, 20);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Supervisor', 'Proyecto', '%', 'RAC', 'OPT', 'Insp.', 'Charlas', 'Lección', 'Contratista', 'Residente', 'Tend.']],
+      body: this.supervisores().map(s => [
+        this.nombreTitleCase(s.supervisorNombre),
+        s.proyectoNombre,
+        `${s.pctGeneral}%`,
+        `${s.actualRacs}/${s.metaRacs}`,
+        `${s.actualOpt}/${s.metaOpt}`,
+        `${s.actualInspecciones}/${s.metaInspecciones}`,
+        `${s.actualCharlas}/${s.metaCharlas}`,
+        s.actualLeccion > 0 ? '✓' : '—',
+        s.actualEvalContratista > 0 ? '✓' : '—',
+        s.actualEvalResidente > 0 ? '✓' : '—',
+        this.tendenciaDelta(s) != null
+          ? (this.tendenciaDelta(s)! >= 0 ? `▲${this.tendenciaDelta(s)}%` : `▼${Math.abs(this.tendenciaDelta(s)!)}%`)
+          : '—',
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: [15, 76, 117], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    doc.save(`desempeno-supervisor-${mes}-${anio}.pdf`);
+  }
 
   colorClass(pct: number): string {
     if (pct >= 100) return 'c-verde';
