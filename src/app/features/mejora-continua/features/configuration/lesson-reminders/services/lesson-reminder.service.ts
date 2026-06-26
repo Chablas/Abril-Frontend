@@ -15,6 +15,7 @@ import {
   WorkerRevisorItemDTO,
   WorkerRevisorOptionDTO,
   WorkerRevisorUpdateDTO,
+  ToggleAutoApproveLessonResultDTO,
 } from '../dtos/workerRevisor.model';
 
 @Injectable({ providedIn: 'root' })
@@ -126,5 +127,13 @@ export class LessonReminderService {
     return this.http.put<ApiMessageDTO>(`${this.apiUrl}/worker-revisor/${workerId}`, dto, {
       headers: this.authHeaders(),
     });
+  }
+
+  toggleAutoApproveLesson(workerId: number): Observable<ToggleAutoApproveLessonResultDTO> {
+    return this.http.put<ToggleAutoApproveLessonResultDTO>(
+      `${this.apiUrl}/worker-revisor/${workerId}/auto-approve`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 }
