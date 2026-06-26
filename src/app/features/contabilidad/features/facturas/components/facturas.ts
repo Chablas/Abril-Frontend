@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -16,7 +16,6 @@ import {
   InvoiceDto,
   InvoiceSupplierDto,
   InvoicePaymentFormDto,
-  InvoiceFolderOptionDto,
   InvoiceCurrencyDto,
   InvoiceDetailDto,
   InvoiceBlockGroupDto,
@@ -42,7 +41,6 @@ export class Facturas implements OnInit {
   suppliers: InvoiceSupplierDto[] = [];
   paymentForms: InvoicePaymentFormDto[] = [];
   abrilCompanies: InvoiceSupplierDto[] = [];
-  folders: InvoiceFolderOptionDto[] = [];
   currencies: InvoiceCurrencyDto[] = [];
 
   filters: InvoiceFilterDto = {
@@ -74,6 +72,11 @@ export class Facturas implements OnInit {
 
   // Adjuntar documento (factura sin documento)
   attachInvoice: InvoiceDto | null = null;
+
+  // Menú contextual (clic derecho sobre una factura)
+  ctxInvoice: InvoiceDto | null = null;
+  ctxX = 0;
+  ctxY = 0;
 
   // Hover de bloques
   hoveredInvoice: InvoiceDto | null = null;
@@ -121,6 +124,85 @@ export class Facturas implements OnInit {
     this.loadBlocks();
   }
 
+  // ── Menú contextual (clic derecho → Firmar) ────────────────────────
+  onInvoiceContextMenu(inv: InvoiceDto, event: MouseEvent): void {
+    event.preventDefault();
+    this.hoveredInvoice = null;
+    this.ctxInvoice = inv;
+    // Posición junto al cursor, sin salir del viewport.
+    const w = 230, h = 110, margin = 8;
+    let x = event.clientX;
+    let y = event.clientY;
+    if (typeof window !== 'undefined') {
+      if (x + w > window.innerWidth) x = window.innerWidth - w - margin;
+      if (y + h > window.innerHeight) y = window.innerHeight - h - margin;
+    }
+    this.ctxX = Math.max(margin, x);
+    this.ctxY = Math.max(margin, y);
+  }
+
+  @HostListener('document:click')
+  @HostListener('document:contextmenu')
+  @HostListener('document:scroll')
+  @HostListener('window:resize')
+  closeCtxMenu(): void {
+    this.ctxInvoice = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.ctxInvoice = null;
+  }
+
+  /** Firma la factura: genera un PDF firmado (sin tocar el original). */
+  signInvoice(inv: InvoiceDto): void {
+    this.ctxInvoice = null;
+    if (!inv.documentUrl) {
+      Swal.fire({ icon: 'info', title: 'Sin documento', text: 'Esta factura no tiene un documento que firmar.' });
+      return;
+    }
+
+    Swal.fire({
+      title: '¿Firmar esta factura?',
+      text: `Se generará un PDF firmado de ${inv.invoiceNumber} (el documento original se conserva).`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: 'Firmar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.sign(inv.invoiceId).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          inv.signedDocumentUrl = res.signedDocumentUrl;
+          Swal.fire({
+            icon: 'success',
+            title: 'Factura firmada',
+            html: `Se generó el documento firmado. <a href="${res.signedDocumentUrl}" target="_blank" rel="noopener" style="color:#64BC04;text-decoration:underline">Abrir documento firmado</a>`,
+            confirmButtonColor: '#64BC04',
+          });
+          if (this.viewMode === 'blocks') this.loadBlocks();
+          else this.loadTable(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  /** Abre el documento firmado en una pestaña nueva. */
+  openSigned(inv: InvoiceDto): void {
+    this.ctxInvoice = null;
+    if (inv.signedDocumentUrl && typeof window !== 'undefined') {
+      window.open(inv.signedDocumentUrl, '_blank', 'noopener');
+    }
+  }
+
   // Vista bloques / tabla / tarjetas
   viewMode: 'blocks' | 'table' | 'cards' = 'blocks';
   blockGroups: InvoiceBlockGroupDto[] = [];
@@ -160,7 +242,6 @@ export class Facturas implements OnInit {
         this.suppliers = res.suppliers;
         this.paymentForms = res.paymentForms;
         this.abrilCompanies = res.abrilCompanies;
-        this.folders = res.folders;
         this.currencies = res.currencies;
         this.applyPaged(res.invoices);
         this.loaderService.hide();

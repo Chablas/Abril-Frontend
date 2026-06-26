@@ -19,27 +19,26 @@
     <div class="filters-grid">
       <div class="filter-search">
         <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Razón social, RUC, dirección o partida"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
+        <app-search-input
+          width="100%"
+          placeholder="Razón social"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)">
+        </app-search-input>
       </div>
 
       <div>
         <label class="filter-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filters.estado" (change)="onFilterChange()">
-          <option value="">Todos</option>
-          <option value="activo">Activos</option>
-          <option value="inactivo">Inactivos</option>
-        </select>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="value"
+          displayField="label"
+          placeholder="Todos"
+          [showLabel]="false"
+          [allowClear]="false"
+          [value]="filters.estado"
+          (valueChange)="onEstadoChange($event)">
+        </app-search-select>
       </div>
     </div>
 
