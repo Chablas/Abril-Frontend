@@ -13,6 +13,7 @@ import Swal from 'sweetalert2';
 import { DossierService } from '../../../../services/dossier.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import {
   DOSSIER_TIPOS,
   DossierDocumentoDto,
@@ -24,7 +25,7 @@ import {
 @Component({
   selector: 'app-dossier-upload-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DocumentViewer],
   templateUrl: './dossier-upload-modal.html',
   styleUrl: './dossier-upload-modal.css',
 })
@@ -39,6 +40,10 @@ export class DossierUploadModal implements OnInit {
   readonly tipos = DOSSIER_TIPOS;
 
   subiendoPor: Record<string, boolean> = {};
+  eliminandoPor: Record<number, boolean> = {};
+
+  viewerPath = '';
+  viewerNombre = '';
 
   constructor(
     private dossierService: DossierService,
@@ -112,11 +117,14 @@ export class DossierUploadModal implements OnInit {
 
   marcarNa(tipo: DossierTipoDocumento): void {
     const doc = this.getDoc(tipo);
-    if (!doc || doc.estado === 'NA') return;
+    if (!doc) return;
+    const esRevertir = doc.estado === 'NA';
     Swal.fire({
       icon: 'question',
-      title: '¿Marcar como No Aplica?',
-      text: `Documento: ${tipo}`,
+      title: esRevertir ? '¿Revertir N/A?' : '¿Marcar como No Aplica?',
+      text: esRevertir
+        ? `El documento "${tipo}" volverá a estado Pendiente.`
+        : `El documento "${tipo}" se marcará como No Aplica.`,
       showCancelButton: true,
       confirmButtonText: 'Confirmar',
       cancelButtonText: 'Cancelar',
@@ -125,6 +133,45 @@ export class DossierUploadModal implements OnInit {
       this.dossierService.marcarDocumentoNa(doc.id).subscribe({
         next: () => this.load(),
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  verArchivo(archivoPath: string, nombre: string): void {
+    this.viewerPath = archivoPath;
+    this.viewerNombre = nombre;
+    this.cdr.detectChanges();
+  }
+
+  onViewerClosed(): void {
+    this.viewerPath = '';
+    this.viewerNombre = '';
+    this.cdr.detectChanges();
+  }
+
+  eliminarArchivo(archivoId: number, tipo: string): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar archivo?',
+      text: `Se eliminará este archivo de "${tipo}".`,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminandoPor[archivoId] = true;
+      this.cdr.detectChanges();
+      this.dossierService.eliminarArchivo(archivoId).subscribe({
+        next: () => {
+          this.eliminandoPor[archivoId] = false;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.eliminandoPor[archivoId] = false;
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
       });
     });
   }
