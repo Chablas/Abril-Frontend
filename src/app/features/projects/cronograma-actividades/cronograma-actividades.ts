@@ -1484,7 +1484,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     gantt.config.bar_height = 16;
     gantt.config.scale_height = 44;
     (gantt.config as any).fit_tasks = true;
-    gantt.config.grid_width = 440;
+    gantt.config.grid_width = 1135;
     (gantt.config as any).scroll_size = 8;
 
     gantt.config.scales = [
@@ -1493,28 +1493,25 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     ];
 
     gantt.config.columns = [
-      { name: 'text', label: 'Actividad', tree: true, width: '*', min_width: 180 },
-      {
-        name: 'start_date',
-        label: 'Inicio',
-        align: 'center',
-        width: 80,
-        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.start_date),
-      },
-      {
-        name: 'end_date',
-        label: 'Fin',
-        align: 'center',
-        width: 80,
-        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.end_date),
-      },
-      {
-        name: 'avance',
-        label: 'Av.%',
-        align: 'center',
-        width: 48,
-        template: (task: any) => `${task['avance']}%`,
-      },
+      { name: 'orden', label: '#', align: 'center', width: 35,
+        template: (task: any) => task['orden'] },
+      { name: 'text', label: 'Actividad', tree: true, width: 500, min_width: 500 },
+      { name: 'start_date', label: 'Inicio Prog.', align: 'center', width: 90,
+        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.start_date) },
+      { name: 'end_date', label: 'Fin Prog.', align: 'center', width: 90,
+        template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.end_date) },
+      { name: 'duracion', label: 'Duración', align: 'center', width: 65,
+        template: (task: any) => task['duracion'] },
+      { name: 'desfaseIni', label: 'Desfase Ini.', align: 'center', width: 75,
+        template: (task: any) => task['desfaseIni'] },
+      { name: 'desfaseFin', label: 'Desfase Fin.', align: 'center', width: 75,
+        template: (task: any) => task['desfaseFin'] },
+      { name: 'semaforo', label: 'Semáforo', align: 'center', width: 55,
+        template: (task: any) => task['semaforo'] },
+      { name: 'finReal', label: 'Fin Real', align: 'center', width: 60,
+        template: (task: any) => task['finReal'] },
+      { name: 'avance', label: 'Avance', align: 'center', width: 90,
+        template: (task: any) => `${task['avance']}%` },
     ];
 
     gantt.templates.task_class = (_s: any, _e: any, task: any) =>
@@ -1561,6 +1558,12 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         color: barColor,
         hierarchyLevel: act.hierarchyLevel,
         avance: this.getAvance(act),
+        orden: act.order,
+        duracion: this.getDuracion(act),
+        desfaseIni: this.formatDesfase(this.getDesfaseDias(act, 'start')),
+        desfaseFin: this.formatDesfase(this.getDesfaseDias(act, 'end')),
+        semaforo: this.getSemaforoTexto(act),
+        finReal: this.formatDate(act.actualEndDate),
       };
     });
 
