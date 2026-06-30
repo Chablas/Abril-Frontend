@@ -317,7 +317,7 @@
                     } @else {
                       <div class="fotos-strip">
                         @for (f of fotosCache.get(a.id)!; track f.id) {
-                          <div class="foto-link">
+                          <div class="foto-link" (click)="abrirFoto(f)" title="Ver imagen">
                             <img [src]="fotoSrc(f)" [alt]="f.nombreArchivo ?? 'Evidencia'" class="foto-thumb" loading="lazy" />
                           </div>
                         }
@@ -766,8 +766,8 @@
               <div class="det-pdf-area">
                 <div class="det-pdf-toolbar">
                   <span class="det-pdf-label"><i class="ti ti-file-type-pdf"></i> Documento</span>
-                  @if (detalle.pdfUrl) {
-                    <a class="det-pdf-link" [href]="detalle.pdfUrl" target="_blank" rel="noopener">
+                  @if (pdfApiUrl) {
+                    <a class="det-pdf-link" [href]="pdfApiUrl" target="_blank" rel="noopener">
                       <i class="ti ti-external-link"></i> Abrir en nueva pestaña
                     </a>
                   }
@@ -846,3 +846,10 @@
 
   <app-fab label="Generar amonestación" (clicked)="nuevaAmonestacion()"></app-fab>
 </div>
+
+@if (fotoLightbox) {
+  <div class="lightbox-overlay" (click)="cerrarLightbox()">
+    <button class="lightbox-close" (click)="cerrarLightbox()"><i class="ti ti-x"></i></button>
+    <img class="lightbox-img" [src]="fotoLightbox" alt="Evidencia" (click)="$event.stopPropagation()" />
+  </div>
+}

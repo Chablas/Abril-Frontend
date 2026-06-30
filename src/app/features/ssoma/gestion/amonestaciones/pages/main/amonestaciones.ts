@@ -89,6 +89,7 @@ export class Amonestaciones implements OnInit {
   fotosCache = new Map<number, AmonFotoDto[]>();
   fotosExpandidoId: number | null = null;
   loadingFotosId: number | null = null;
+  fotoLightbox: string | null = null;
 
   toggleFotosRow(id: number, event: Event): void {
     event.stopPropagation();
@@ -333,24 +334,22 @@ export class Amonestaciones implements OnInit {
         this.detalle = d;
         this.loadingDetalle = false;
         this.cdr.markForCheck();
-        // Si no hay URL de SharePoint, cargar el PDF desde la API como blob
-        if (!d?.pdfUrl) {
-          this.loadingPdf = true;
-          this.cdr.markForCheck();
-          this.svc.getPdfBlob(id).subscribe({
-            next: (blob) => {
-              const url = URL.createObjectURL(blob);
-              this._blobObjectUrl = url;
-              this.pdfBlobUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-              this.loadingPdf = false;
-              this.cdr.markForCheck();
-            },
-            error: () => {
-              this.loadingPdf = false;
-              this.cdr.markForCheck();
-            },
-          });
-        }
+        // Siempre cargar el PDF desde el endpoint API (maneja redirect a SharePoint)
+        this.loadingPdf = true;
+        this.cdr.markForCheck();
+        this.svc.getPdfBlob(id).subscribe({
+          next: (blob) => {
+            const url = URL.createObjectURL(blob);
+            this._blobObjectUrl = url;
+            this.pdfBlobUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+            this.loadingPdf = false;
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.loadingPdf = false;
+            this.cdr.markForCheck();
+          },
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.loadingDetalle = false;
@@ -377,8 +376,12 @@ export class Amonestaciones implements OnInit {
   }
 
   get pdfSrc(): SafeResourceUrl | null {
-    if (this.detalle?.pdfUrl) return this.safeUrl(this.detalle.pdfUrl);
     return this.pdfBlobUrl;
+  }
+
+  get pdfApiUrl(): string | null {
+    if (!this.detalle) return null;
+    return this.svc.getPdfUrl(this.detalle.id);
   }
 
   // ── Cierre ────────────────────────────────────────────────────────
@@ -459,6 +462,16 @@ export class Amonestaciones implements OnInit {
 
   safeUrl(url: string): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  abrirFoto(f: AmonFotoDto): void {
+    this.fotoLightbox = this.fotoSrc(f);
+    this.cdr.markForCheck();
+  }
+
+  cerrarLightbox(): void {
+    this.fotoLightbox = null;
+    this.cdr.markForCheck();
   }
 
   fotoSrc(f: AmonFotoDto): string {
