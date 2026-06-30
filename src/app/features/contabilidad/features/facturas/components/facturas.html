@@ -335,6 +335,38 @@
   </div>
 }
 
+<!-- Menú contextual (clic derecho en una factura) -->
+@if (ctxInvoice) {
+  <div class="fixed z-[70] w-[230px] rounded-lg border bg-white shadow-xl py-1 text-sm"
+    style="border-color:var(--color-abril-border)"
+    [style.left.px]="ctxX" [style.top.px]="ctxY"
+    (click)="$event.stopPropagation()"
+    (contextmenu)="$event.preventDefault()">
+    <div class="px-3 py-1.5 text-xs text-gray-400 border-b truncate" style="border-color:var(--color-abril-border)">
+      {{ ctxInvoice.invoiceNumber }}
+    </div>
+    <button type="button"
+      [disabled]="!ctxInvoice.documentUrl"
+      [title]="!ctxInvoice.documentUrl ? 'La factura no tiene documento que firmar' : ''"
+      (click)="signInvoice(ctxInvoice)"
+      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="#64BC04"/>
+      </svg>
+      <span class="font-medium text-gray-700">Firmar</span>
+    </button>
+    @if (ctxInvoice.signedDocumentUrl) {
+      <button type="button" (click)="openSigned(ctxInvoice)"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 cursor-pointer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M14 3h7v7M21 3l-9 9M5 5h6M5 5v14h14v-6" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="text-gray-600">Ver documento firmado</span>
+      </button>
+    }
+  </div>
+}
+
 @if (showCreateModal) {
   <app-factura-create
     [suppliers]="suppliers"

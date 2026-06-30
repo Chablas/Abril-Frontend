@@ -2,6 +2,7 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -127,6 +128,8 @@ export class Facturas implements OnInit {
   // ── Menú contextual (clic derecho → Firmar) ────────────────────────
   onInvoiceContextMenu(inv: InvoiceDto, event: MouseEvent): void {
     event.preventDefault();
+    // Evitar que este mismo contextmenu burbujee a document y cierre el menú recién abierto.
+    event.stopPropagation();
     this.hoveredInvoice = null;
     this.ctxInvoice = inv;
     // Posición junto al cursor, sin salir del viewport.

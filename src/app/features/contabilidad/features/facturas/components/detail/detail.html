@@ -69,6 +69,14 @@
         } @else {
           <span class="text-sm text-gray-400">Esta factura no tiene documento adjunto.</span>
         }
+
+        @if (detail.signedDocumentUrl) {
+          <a [href]="detail.signedDocumentUrl" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-2 text-sm font-medium" style="color:var(--color-abril-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="currentColor"/></svg>
+            Abrir documento firmado
+          </a>
+        }
       </div>
 
       <!-- Acciones -->
