@@ -43,7 +43,7 @@
             </td>
           } @else {
             <td><span [class]="estadoClass(e.estado)">{{ e.estado }}</span></td>
-            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
             <td class="ent-resp">
               @if (e.responsables.length) {
                 @for (r of e.responsables; track r.id) { <span class="ent-tag">{{ r.nombre }}</span> }
@@ -124,7 +124,7 @@
             <td>{{ m.descripcion }}</td>
             <td>{{ m.tipo ?? '—' }}</td>
             <td>{{ m.responsableNombre ?? '—' }}</td>
-            <td>{{ m.fechaCompromiso ? (m.fechaCompromiso | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ m.fechaCompromiso ? (m.fechaCompromiso | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
             <td><span [class]="estadoClass(m.estado)">{{ m.estado }}</span></td>
             <td class="ent-acciones">
               <button class="btn-ent" (click)="editarMedida(m)" title="Editar"><i class="ti ti-edit"></i></button>
