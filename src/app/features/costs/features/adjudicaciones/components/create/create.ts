@@ -135,6 +135,20 @@ export class Create implements OnInit {
       ?.instructivosFolderName ?? null;
   }
 
+  /** Partidas de control que pertenecen a la especialidad seleccionada (filtrado en cascada). */
+  get filteredWorkItemCategories() {
+    if (!this.createDto.workSpecialtyId) return [];
+    return this.createFormData.workItemCategories
+      .filter(c => c.workSpecialtyId === this.createDto.workSpecialtyId);
+  }
+
+  /** Partidas que pertenecen a la partida de control seleccionada (filtrado en cascada). */
+  get filteredWorkItems() {
+    if (!this.createDto.workItemCategoryId) return [];
+    return this.createFormData.workItems
+      .filter(w => w.workItemCategoryId === this.createDto.workItemCategoryId);
+  }
+
   /** True solo cuando hay una partida seleccionada (para mostrar el indicador de formas de valorización). */
   get isWorkItemSelected(): boolean {
     return !!this.createDto.workItemId;
@@ -169,6 +183,21 @@ export class Create implements OnInit {
 
   onWorkItemChange(workItemId: number): void {
     this.createDto.workItemId = workItemId;
+    this.recomputeContractName();
+  }
+
+  /** Al cambiar la especialidad se reinicia la partida de control y la partida (cascada). */
+  onWorkSpecialtyChange(workSpecialtyId: number | null): void {
+    this.createDto.workSpecialtyId = workSpecialtyId;
+    this.createDto.workItemCategoryId = 0;
+    this.createDto.workItemId = 0;
+    this.recomputeContractName();
+  }
+
+  /** Al cambiar la partida de control se reinicia la partida (cascada). */
+  onWorkItemCategoryChange(workItemCategoryId: number): void {
+    this.createDto.workItemCategoryId = workItemCategoryId;
+    this.createDto.workItemId = 0;
     this.recomputeContractName();
   }
 

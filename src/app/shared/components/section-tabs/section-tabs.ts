@@ -28,7 +28,7 @@ export interface SectionTab {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex border-b border-[#64BC04]">
+    <div class="flex border-b border-[var(--st-accent)]" [style.--st-accent]="color">
       <button
         *ngFor="let t of tabs; trackBy: trackById"
         type="button"
@@ -36,7 +36,7 @@ export interface SectionTab {
         (click)="select(t)"
         class="cursor-pointer px-4 py-2.5 text-sm font-medium rounded-t-lg border transition-colors flex items-center gap-2"
         [ngClass]="value === t.id
-          ? 'border-t-[#64BC04] border-x-[#64BC04] border-b-white text-[#64BC04] -mb-px bg-white'
+          ? 'border-t-[var(--st-accent)] border-x-[var(--st-accent)] border-b-white text-[var(--st-accent)] -mb-px bg-white'
           : 'border-transparent text-gray-500 hover:text-gray-700'"
         [class.opacity-40]="t.disabled"
         [class.cursor-not-allowed]="t.disabled">
@@ -53,6 +53,12 @@ export interface SectionTab {
 export class SectionTabs {
   @Input() tabs: SectionTab[] = [];
   @Input() value: string | null = null;
+  /**
+   * Color de acento (borde y texto de la pestaña activa). Acepta cualquier valor
+   * CSS de color o variable de la paleta (ej. 'var(--color-abril-primary)').
+   * Por defecto usa el verde lima corporativo.
+   */
+  @Input() color: string = '#64BC04';
   @Output() valueChange = new EventEmitter<string>();
 
   select(t: SectionTab): void {

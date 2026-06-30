@@ -22,9 +22,23 @@ export class NavigationService {
       iconKey: 'trending-up',
       baseRoute: '/mejora-continua',
       items: [
-        { label: 'Mejora Continua', route: '/mejora-continua/dashboard', featureKey: 'mejora-continua.dashboard' },
+        { label: 'Dashboard',            route: '/mejora-continua/dashboard',        featureKey: 'mejora-continua.dashboard' },
+        { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned',  featureKey: 'mejora-continua.lessons-learned' },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Configuración de lecciones', route: '/mejora-continua/lecciones-configuracion',     featureKey: 'mejora-continua.config.lecciones-configuracion' },
+            { label: 'Áreas',                       route: '/mejora-continua/configuration/areas',          featureKey: 'mejora-continua.config.areas' },
+            { label: 'Relaciones por área',         route: '/mejora-continua/configuration/area-relations', featureKey: 'mejora-continua.config.area-relations' },
+            { label: 'Plantillas',                  route: '/mejora-continua/configuration/templates',      featureKey: 'mejora-continua.config.templates' },
+            { label: 'Tipos de catálogo',           route: '/mejora-continua/configuration/catalog-types',  featureKey: 'mejora-continua.config.catalog-types' },
+            { label: 'Ítems de catálogo',           route: '/mejora-continua/configuration/catalog-items',  featureKey: 'mejora-continua.config.catalog-items' },
+            { label: 'Recordatorios',               route: '/mejora-continua/configuration/reminders',      featureKey: 'mejora-continua.config.reminders' },
+          ],
+        },
+      ],
     },
     {
       key: 'proyectos',
@@ -67,10 +81,10 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email', featureKey: 'costs.config.staff-project-email' },
-            { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Partidas',             route: '/costs/configuration/work-item',            featureKey: 'costs.config.work-item' },
+            { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Especialidades',       route: '/costs/configuration/work-specialty',       featureKey: 'costs.config.work-specialty' },
+            { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email', featureKey: 'costs.config.staff-project-email' },
             { label: 'Planos por proyecto',  route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
             { label: 'Carpeta adjudicaciones', route: '/costs/configuration/adjudicacion-folder', featureKey: 'costs.config.adjudicacion-folder' },
             { label: 'Correos C. y Ppto.',   route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },

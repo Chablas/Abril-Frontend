@@ -4,15 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { WorkSpecialtyList } from './list/list';
 import { WorkSpecialtyCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { WorkSpecialtyFilterDto } from '../dtos/work-specialty-filter.dto';
 import { WorkSpecialtyDto } from '../dtos/work-specialty.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-work-specialty',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkSpecialtyList, WorkSpecialtyCreate, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, WorkSpecialtyList, WorkSpecialtyCreate, Paginator, SearchInput],
   templateUrl: './work-specialty.html',
   styleUrl: './work-specialty.css',
 })
@@ -28,6 +28,11 @@ export class WorkSpecialty implements OnInit {
   showCreateModal = false;
 
   ngOnInit(): void {}
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
+  }
 
   onSearch(): void {
     this.list.load(1);

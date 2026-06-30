@@ -1,8 +1,8 @@
 <app-base-modal [title]="'EDITAR PARTIDA DE CONTROL'" width="w-[860px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-5">
 
-    <!-- Descripción + Estado -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- Descripción + Especialidad + Estado -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="flex flex-col gap-1.5">
         <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Descripción</label>
         <input
@@ -10,6 +10,17 @@
           [(ngModel)]="dto.workItemCategoryDescription"
           placeholder="Ingresa la descripción..."
           class="border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <app-search-select
+          label="Especialidad"
+          [options]="specialties"
+          valueField="workSpecialtyId"
+          displayField="workSpecialtyDescription"
+          placeholder="Selecciona la especialidad"
+          [fullText]="true"
+          [(value)]="dto.workSpecialtyId" />
       </div>
 
       <div class="flex flex-col gap-1.5">

@@ -27,13 +27,14 @@
 
         <div class="flex flex-col gap-[4px]">
           <app-search-select [fullText]="true" label="Especialidad" [options]="createFormData.workSpecialties"
-            valueField="workSpecialtyId" displayField="workSpecialtyDescription" [(value)]="createDto.workSpecialtyId" />
+            valueField="workSpecialtyId" displayField="workSpecialtyDescription"
+            [value]="createDto.workSpecialtyId" (valueChange)="onWorkSpecialtyChange($event)" />
         </div>
 
-        <div class="flex flex-col gap-[6px]">
-          <app-search-select [fullText]="true" label="Partida de control" [options]="createFormData.workItemCategories"
+        <div *ngIf="createDto.workSpecialtyId" class="flex flex-col gap-[6px]">
+          <app-search-select [fullText]="true" label="Partida de control" [options]="filteredWorkItemCategories"
             valueField="workItemCategoryId" displayField="workItemCategoryDescription"
-            [(value)]="createDto.workItemCategoryId" />
+            [value]="createDto.workItemCategoryId" (valueChange)="onWorkItemCategoryChange($event)" />
           <p *ngIf="submitted && !createDto.workItemCategoryId" class="text-xs text-red-500">Campo requerido</p>
           <ng-container *ngIf="selectedWorkItemCategorySyncStatus !== null" [ngSwitch]="selectedWorkItemCategorySyncStatus">
             <span *ngSwitchCase="1" class="flex items-center gap-1 text-[11px] text-[#009C87]">
@@ -61,8 +62,8 @@
           </span>
         </div>
 
-        <div class="flex flex-col gap-[4px]">
-          <app-search-select [fullText]="true" label="Partida" [options]="createFormData.workItems" valueField="workItemId"
+        <div *ngIf="createDto.workItemCategoryId" class="flex flex-col gap-[4px]">
+          <app-search-select [fullText]="true" label="Partida" [options]="filteredWorkItems" valueField="workItemId"
             displayField="workItemDescription" [value]="createDto.workItemId" (valueChange)="onWorkItemChange($event)" />
           <p *ngIf="submitted && !createDto.workItemId" class="text-xs text-red-500">Campo requerido</p>
 
@@ -309,6 +310,7 @@
             *ngIf="quotationFileItems.length < maxQuotationFiles"
             accept="*"
             hint="Cualquier archivo"
+            color="var(--color-abril-primary)"
             (fileSelected)="onQuotationImageSelected($event)">
           </app-file-selector>
           <app-file-preview [files]="quotationFileItems" (remove)="removeQuotationFile($event)"></app-file-preview>
@@ -324,6 +326,7 @@
             *ngIf="comparativeFileItems.length < maxComparativeFiles"
             accept="*"
             hint="Cualquier archivo"
+            color="var(--color-abril-primary)"
             (fileSelected)="onComparativeImageSelected($event)">
           </app-file-selector>
           <app-file-preview [files]="comparativeFileItems" (remove)="removeComparativeFile($event)"></app-file-preview>

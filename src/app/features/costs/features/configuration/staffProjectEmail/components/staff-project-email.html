@@ -1,21 +1,4 @@
-<app-abril-page-header
-  badge="COSTOS · CONFIGURACIÓN"
-  titulo="Correos por Proyecto"
-  subtitulo="Destinatarios de correo asociados a cada proyecto."
-  [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
-  (primaryClick)="showCreateModal = true"
-  [tabs]="[
-    { label: 'Correos Proyecto',  icono: 'ti-mail',     route: '/costs/configuration/staff-project-email' },
-    { label: 'Partidas Control',  icono: 'ti-category', route: '/costs/configuration/work-item-category' },
-    { label: 'Partidas',          icono: 'ti-list',     route: '/costs/configuration/work-item' },
-    { label: 'Especialidades',    icono: 'ti-stack-2',  route: '/costs/configuration/work-specialty' },
-    { label: 'Planos Proyecto',   icono: 'ti-link',     route: '/costs/configuration/project-link' },
-    { label: 'Carpeta Adj.',      icono: 'ti-folder',   route: '/costs/configuration/adjudicacion-folder' },
-    { label: 'Correos C. Ppto.',  icono: 'ti-mail-cog', route: '/costs/configuration/costos-presupuestos-email' }
-  ]">
-</app-abril-page-header>
-
-<div class="flex flex-col gap-4 bg-white rounded-lg p-5 flex-1 min-h-0">
+<div class="flex flex-col gap-4 flex-1 min-h-0">
 
   <!-- Filtros -->
   <div class="flex flex-wrap gap-3 items-end">
@@ -44,11 +27,13 @@
 
     <div class="flex flex-col gap-[6px]">
       <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Correo electrónico</label>
-      <input
-        type="text"
-        [(ngModel)]="filters.email"
+      <app-search-input
+        width="220px"
         placeholder="Buscar por correo..."
-        class="w-[220px] border rounded-lg px-3 py-[10px] text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+        [value]="filters.email || ''"
+        (valueChange)="filters.email = $event"
+        (keyup.enter)="onSearch()">
+      </app-search-input>
     </div>
 
     <button type="button" (click)="onSearch()"

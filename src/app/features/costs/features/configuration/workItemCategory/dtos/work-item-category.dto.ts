@@ -18,9 +18,17 @@ export interface WorkItemCategoryAnexo4ClauseDto {
   sortOrder: number;
 }
 
+/** Opción para el desplegable de especialidades. */
+export interface WorkSpecialtyOptionDto {
+  workSpecialtyId: number;
+  workSpecialtyDescription: string;
+}
+
 export interface WorkItemCategoryDto {
   workItemCategoryId: number;
   workItemCategoryDescription: string;
+  workSpecialtyId?: number | null;
+  workSpecialtyDescription?: string | null;
   createdDateTime: string;
   createdUserId: number;
   updatedDateTime?: string;

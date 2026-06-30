@@ -63,7 +63,19 @@ export class LessonsDashboard implements AfterViewInit {
     '#74c31d', '#5aa904', '#509603', '#468403', '#3c7102', '#325e02',
     '#284b02', '#1e3801', '#142601', '#0a1300',
   ];
-  readonly doughnutColors = ['#D4F0C2', '#BEE7E8', '#C7CEEA', '#F9D8A6', '#FFF1A8', '#F6C1CC'];
+  // Colores saturados: se usan como borde fuerte de los gráficos circulares y como
+  // punto de color en las leyendas; el relleno se obtiene pastelizándolos con pastel().
+  readonly doughnutColors = ['#64BC04', '#0086A5', '#5B6CC4', '#F9A826', '#EAB308', '#EC6A8A'];
+
+  /** Aclara un color hex mezclándolo con blanco para obtener un relleno pastel. */
+  private pastel(hex: string, amount = 0.6): string {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    const mix = (c: number) => Math.round(c + (255 - c) * amount);
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  }
 
   data?: LessonsDashboardDataDTO;
   filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [], projects: [] };
@@ -431,7 +443,15 @@ export class LessonsDashboard implements AfterViewInit {
       type: 'pie',
       data: {
         labels: sorted.map((x) => x.label),
-        datasets: [{ data: sorted.map((x) => x.value), backgroundColor: this.colors }],
+        datasets: [
+          {
+            data: sorted.map((x) => x.value),
+            // Relleno pastel + borde fuerte del mismo color (igual que las barras).
+            backgroundColor: sorted.map((_, i) => this.pastel(this.colors[i % this.colors.length])),
+            borderColor: sorted.map((_, i) => this.colors[i % this.colors.length]),
+            borderWidth: 2,
+          },
+        ],
       },
       options: {
         maintainAspectRatio: false,
@@ -481,7 +501,11 @@ export class LessonsDashboard implements AfterViewInit {
       const hasData = phase.stages.length > 0;
       const labels = hasData ? phase.stages.map((s) => s.label) : ['Sin datos'];
       const values = hasData ? phase.stages.map((s) => s.value) : [1];
-      const bg = hasData ? this.doughnutColors.slice(0, values.length) : ['#EEF1F4'];
+      // Relleno pastel + borde fuerte del mismo color (igual que las barras).
+      const borders = hasData
+        ? values.map((_, i) => this.doughnutColors[i % this.doughnutColors.length])
+        : ['#D9DEE8'];
+      const fills = hasData ? borders.map((c) => this.pastel(c)) : ['#F1F3F7'];
 
       // Texto "Sin datos" centrado para fases sin lecciones (al filtrar por área).
       const emptyTextPlugin = {
@@ -502,7 +526,7 @@ export class LessonsDashboard implements AfterViewInit {
       Chart.getChart(canvas)?.destroy();
       new Chart(canvas, {
         type: 'doughnut',
-        data: { labels, datasets: [{ data: values, backgroundColor: bg, borderColor: bg, borderWidth: 2 }] },
+        data: { labels, datasets: [{ data: values, backgroundColor: fills, borderColor: borders, borderWidth: 2 }] },
         options: {
           responsive: true,
           maintainAspectRatio: false,

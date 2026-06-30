@@ -21,6 +21,7 @@ export interface WorkItemCategoryAnexo4ClauseUpsertDto {
 export interface WorkItemCategoryEditDto {
   workItemCategoryId: number;
   workItemCategoryDescription: string;
+  workSpecialtyId: number | null;
   active: boolean;
   clauses: WorkItemCategoryClauseUpsertDto[];
   anexo3Clauses: WorkItemCategoryAnexo3ClauseUpsertDto[];

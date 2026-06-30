@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../../../shared/components/search-select/search-select';
 import { WorkSpecialtyService } from '../../../services/work-specialty.service';
 import { WorkSpecialtyEditDto } from '../../../dtos/work-specialty-edit.dto';
 import { LoaderService } from '../../../../../../../../core/services/loader.service';
@@ -12,11 +13,16 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-work-specialty-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './edit.html',
 })
 export class WorkSpecialtyEdit {
   @Input() dto: WorkSpecialtyEditDto = { workSpecialtyId: 0, workSpecialtyDescription: '', active: true };
+
+  readonly statusOptions = [
+    { value: true, label: 'ACTIVO' },
+    { value: false, label: 'INACTIVO' },
+  ];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
