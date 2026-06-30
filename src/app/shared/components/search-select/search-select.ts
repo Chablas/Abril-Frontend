@@ -85,6 +85,7 @@ export class SearchSelect {
   select(option: any) {
     this.value = option[this.valueField];
     this.valueChange.emit(this.value);
+    this.notifyChange();
     this.isOpen = false;
     this.searchText = '';
   }
@@ -93,7 +94,16 @@ export class SearchSelect {
     event.stopPropagation();
     this.value = null;
     this.valueChange.emit(null);
+    this.notifyChange();
     this.searchText = '';
+  }
+
+  /**
+   * Emite un evento DOM que burbujea para que contenedores como app-base-modal puedan detectar
+   * que el usuario cambió este desplegable (que no produce un evento `change` nativo).
+   */
+  private notifyChange() {
+    this.el.nativeElement.dispatchEvent(new Event('modalfieldchange', { bubbles: true }));
   }
 
   close() {

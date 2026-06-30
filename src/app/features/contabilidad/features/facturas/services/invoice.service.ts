@@ -108,6 +108,12 @@ export class InvoiceService {
     return this.http.get<SunatContributorDTO>(`${this.apiUrl}/ruc/${ruc}`, { headers: this.headers });
   }
 
+  /** Genera el documento firmado (PDF con la firma) de una factura y devuelve su URL. */
+  sign(invoiceId: number): Observable<{ message: string; signedDocumentUrl: string }> {
+    return this.http.post<{ message: string; signedDocumentUrl: string }>(
+      `${this.apiUrl}/${invoiceId}/sign`, {}, { headers: this.headers });
+  }
+
   createSupplier(dto: InvoiceSupplierCreateDto): Observable<InvoiceSupplierDto> {
     return this.http.post<InvoiceSupplierDto>(`${this.apiUrl}/supplier`, dto, { headers: this.headers });
   }
