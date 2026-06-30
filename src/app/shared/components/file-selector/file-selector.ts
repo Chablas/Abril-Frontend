@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface SelectedFile {
@@ -21,6 +21,8 @@ export class FileSelector {
   @Input() color = '#64BC04';
 
   @Output() fileSelected = new EventEmitter<SelectedFile>();
+
+  constructor(private el: ElementRef) {}
 
   onDragOver(e: DragEvent) {
     e.preventDefault();
@@ -48,5 +50,8 @@ export class FileSelector {
       const preview = URL.createObjectURL(file);
       this.fileSelected.emit({ preview, file });
     });
+    // Evento DOM que burbujea para que app-base-modal detecte que se soltó/eligió un archivo
+    // (el drag&drop no produce un evento `change` nativo).
+    this.el.nativeElement.dispatchEvent(new Event('modalfieldchange', { bubbles: true }));
   }
 }

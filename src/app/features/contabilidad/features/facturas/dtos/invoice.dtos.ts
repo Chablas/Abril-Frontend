@@ -17,6 +17,7 @@ export interface InvoiceDto {
   currencyCode?: string | null;
   currencySymbol?: string | null;
   documentUrl?: string | null;
+  signedDocumentUrl?: string | null;
   createdDateTime: string;
 }
 
@@ -91,6 +92,7 @@ export interface InvoiceDetailDto {
   invoiceFolderId?: number | null;
   invoiceFolderName?: string | null;
   documentUrl?: string | null;
+  signedDocumentUrl?: string | null;
   createdDateTime: string;
   updatedDateTime?: string | null;
 }
@@ -130,19 +132,11 @@ export interface PagedResponseDTO<T> {
   data: T[];
 }
 
-/** Opción del desplegable "Carpeta a guardar". */
-export interface InvoiceFolderOptionDto {
-  invoiceFolderId: number;
-  name: string;
-}
-
 export interface InvoiceInitDto {
   suppliers: InvoiceSupplierDto[];
   paymentForms: InvoicePaymentFormDto[];
   /** Razones sociales que maneja Abril (contribuyentes con es_abril = true). */
   abrilCompanies: InvoiceSupplierDto[];
-  /** Carpetas de OneDrive configuradas para guardar facturas. */
-  folders: InvoiceFolderOptionDto[];
   currencies: InvoiceCurrencyDto[];
   invoices: PagedResponseDTO<InvoiceDto>;
 }

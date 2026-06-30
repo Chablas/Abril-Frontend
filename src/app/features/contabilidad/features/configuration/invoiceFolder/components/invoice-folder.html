@@ -1,35 +1,52 @@
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-5 max-w-[760px]">
 
-  <!-- Botón nueva carpeta -->
-  <div>
-    <button type="button" (click)="showCreateModal = true"
-      class="bg-[#E5F7D1] py-[6px] px-[20px] rounded-lg border border-[#64BC04] text-[#64BC04] cursor-pointer flex items-center gap-[10px] hover:opacity-90 transition-opacity">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M12 5v14M5 12h14" stroke="#64BC04" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="font-medium">Nueva carpeta</span>
-    </button>
+  <!-- Estado actual -->
+  <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+    <div class="flex items-center gap-2">
+      <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        [ngClass]="{
+          'bg-[#D7FAF4] text-[#009C87]': folder,
+          'bg-[#FAD5D4] text-[#D30000]': !folder
+        }">
+        {{ folder ? 'CONFIGURADA' : 'SIN CONFIGURAR' }}
+      </span>
+      <span class="text-sm text-gray-500">Carpeta donde se guardan todas las facturas</span>
+    </div>
+
+    <div *ngIf="folder" class="flex flex-col gap-1 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="text-gray-500">Carpeta detectada:</span>
+        <b class="text-gray-700">{{ folder.folderName ?? '—' }}</b>
+      </div>
+      <a [href]="folder.webUrl ?? folder.linkUrl" target="_blank" rel="noopener noreferrer"
+        class="hover:underline truncate block" style="color:var(--color-abril-primary)" [title]="folder.linkUrl">
+        {{ folder.webUrl ?? folder.linkUrl }}
+      </a>
+    </div>
+
+    <p *ngIf="!folder" class="text-sm text-gray-400 italic">
+      Aún no se ha configurado una carpeta. Pega un link más abajo para empezar a guardar las facturas ahí.
+    </p>
   </div>
 
-  <!-- Lista -->
-  <app-invoice-folder-list
-    [filters]="filters"
-    (pagedData)="onPagedData($event)">
-  </app-invoice-folder-list>
-
-  <!-- Paginador -->
-  <app-paginator
-    [totalRecords]="totalRecords"
-    [currentPage]="currentPage"
-    [totalPages]="totalPages"
-    (pageChange)="onPageChange($event)">
-  </app-paginator>
+  <!-- Editar link -->
+  <div class="flex flex-col gap-1.5">
+    <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Link de la carpeta (SharePoint / OneDrive)</label>
+    <div class="flex gap-2">
+      <input
+        type="url"
+        [(ngModel)]="linkUrl"
+        placeholder="https://abrilinmob.sharepoint.com/sites/.../Forms/AllItems.aspx"
+        class="flex-1 min-w-0 border rounded-lg px-3 py-2.5 text-sm focus:outline-none" style="border-color:var(--color-abril-border)" />
+      <button type="button" (click)="save()"
+        class="px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors whitespace-nowrap" style="background:var(--color-abril-primary)">
+        Guardar
+      </button>
+    </div>
+    <span class="text-xs text-gray-400">
+      Pega el enlace de la carpeta/biblioteca y pulsa <b>Guardar</b>. El sistema lo detecta y a partir de ahí
+      todas las facturas (con su estructura de subcarpetas) se guardarán ahí.
+    </span>
+  </div>
 
 </div>
-
-<!-- Modal crear -->
-<app-invoice-folder-create
-  *ngIf="showCreateModal"
-  (closeModal)="showCreateModal = false"
-  (saved)="list.load(1)">
-</app-invoice-folder-create>

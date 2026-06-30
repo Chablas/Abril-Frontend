@@ -1,0 +1,56 @@
+<div class="flex flex-col gap-5 max-w-[760px]">
+
+  <!-- Firma actual -->
+  <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+    <div class="flex items-center gap-2">
+      <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        [ngClass]="{
+          'bg-[#D7FAF4] text-[#009C87]': current,
+          'bg-[#FAD5D4] text-[#D30000]': !current
+        }">
+        {{ current ? 'CONFIGURADA' : 'SIN CONFIGURAR' }}
+      </span>
+      <span class="text-sm text-gray-500">Firma que se estampa en los documentos firmados</span>
+    </div>
+
+    <div *ngIf="current" class="flex items-center gap-3">
+      <img [src]="current.imageDataUrl" alt="Firma actual"
+        class="h-[90px] w-auto rounded-md border bg-[repeating-conic-gradient(#f3f4f6_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px]"
+        style="border-color:var(--color-abril-border)" />
+    </div>
+
+    <p *ngIf="!current" class="text-sm text-gray-400 italic">
+      Aún no se ha configurado una firma. Dibújala abajo y pulsa <b>Guardar</b>.
+    </p>
+  </div>
+
+  <!-- Dibujar nueva firma -->
+  <div class="flex flex-col gap-2">
+    <label class="text-sm font-medium" style="color:var(--color-abril-primary)">
+      {{ current ? 'Dibujar una nueva firma (reemplaza la actual)' : 'Dibujar la firma' }}
+    </label>
+
+    <canvas #canvas
+      width="600" height="200"
+      class="w-full max-w-[600px] rounded-lg border bg-white touch-none cursor-crosshair"
+      style="border-color:var(--color-abril-border)"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp()"
+      (pointerleave)="onPointerUp()">
+    </canvas>
+
+    <div class="flex items-center gap-3">
+      <button type="button" (click)="clear()"
+        class="px-4 py-2 rounded-lg border text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+        Limpiar
+      </button>
+      <button type="button" (click)="save()"
+        class="px-5 py-2 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
+        Guardar
+      </button>
+      <span class="text-xs text-gray-400">Dibuja con el mouse manteniendo presionado el botón izquierdo.</span>
+    </div>
+  </div>
+
+</div>

@@ -1,4 +1,4 @@
-<app-base-modal [title]="'Editar factura'" width="w-[760px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'Editar factura'" width="w-[760px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
     <!-- Fecha de emisión -->
@@ -54,21 +54,6 @@
         (valueChange)="form.abrilContributorId = $event"
         [showLabel]="false"
         placeholder="— Selecciona razón social —"
-        [allowClear]="true">
-      </app-search-select>
-    </div>
-
-    <!-- Carpeta a guardar -->
-    <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">Carpeta a guardar *</label>
-      <app-search-select
-        [options]="folders"
-        valueField="invoiceFolderId"
-        displayField="name"
-        [value]="form.invoiceFolderId"
-        (valueChange)="form.invoiceFolderId = $event"
-        [showLabel]="false"
-        placeholder="— Selecciona carpeta —"
         [allowClear]="true">
       </app-search-select>
     </div>

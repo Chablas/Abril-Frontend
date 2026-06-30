@@ -14,7 +14,6 @@ import { InvoiceService } from '../../services/invoice.service';
 import {
   InvoiceSupplierDto,
   InvoicePaymentFormDto,
-  InvoiceFolderOptionDto,
   InvoiceCurrencyDto,
   InvoiceSupplierCreateDto,
 } from '../../dtos/invoice.dtos';
@@ -30,7 +29,6 @@ export class FacturaCreate {
   @Input() suppliers: InvoiceSupplierDto[] = [];
   @Input() paymentForms: InvoicePaymentFormDto[] = [];
   @Input() abrilCompanies: InvoiceSupplierDto[] = [];
-  @Input() folders: InvoiceFolderOptionDto[] = [];
   @Input() currencies: InvoiceCurrencyDto[] = [];
 
   @Output() closeModal = new EventEmitter<void>();
@@ -43,7 +41,6 @@ export class FacturaCreate {
     correlativo: '',
     contributorId: null as number | null,
     abrilContributorId: null as number | null,
-    invoiceFolderId: null as number | null,
     description: '',
     invoicePaymentFormId: null as number | null,
     total: null as number | null,
@@ -199,7 +196,6 @@ export class FacturaCreate {
     if (!/^\d+$/.test(this.form.correlativo.trim())) return this.requiredAlert('El correlativo debe ser numérico.');
     if (!this.form.contributorId) return this.requiredAlert('Seleccione un proveedor.');
     if (!this.form.abrilContributorId) return this.requiredAlert('Seleccione la razón social de Abril.');
-    if (!this.form.invoiceFolderId) return this.requiredAlert('Seleccione la carpeta donde se guardará la factura.');
     if (!this.form.description.trim()) return this.requiredAlert('Ingrese la descripción del bien o servicio.');
     if (!this.form.invoicePaymentFormId) return this.requiredAlert('Seleccione la forma de pago.');
     if (!this.form.currencyId) return this.requiredAlert('Seleccione la moneda.');
@@ -211,7 +207,6 @@ export class FacturaCreate {
     formData.append('Correlativo', this.form.correlativo.trim());
     formData.append('ContributorId', this.form.contributorId.toString());
     formData.append('AbrilContributorId', this.form.abrilContributorId.toString());
-    formData.append('InvoiceFolderId', this.form.invoiceFolderId.toString());
     formData.append('Description', this.form.description.trim());
     formData.append('InvoicePaymentFormId', this.form.invoicePaymentFormId.toString());
     formData.append('CurrencyId', this.form.currencyId.toString());

@@ -14,7 +14,11 @@
       (mousedown)="$event.stopPropagation()"
       (click)="$event.stopPropagation()">
 
-      <div [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'">
+      <div
+        [class]="height ? 'px-5 pt-3 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden' : 'p-[20px] flex flex-col'"
+        (input)="markDirty()"
+        (change)="markDirty()"
+        (modalfieldchange)="markDirty()">
         <h1 [class]="height ? 'text-base text-center flex-shrink-0 mb-2 pr-6' : 'text-2xl text-center'">{{ title }}</h1>
         <ng-content></ng-content>
       </div>

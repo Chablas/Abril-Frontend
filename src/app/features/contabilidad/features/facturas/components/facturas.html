@@ -191,6 +191,7 @@
                 (mousemove)="movePopover($event)"
                 (mouseleave)="onBlockLeave()"
                 (click)="onBlockClick(inv)"
+                (contextmenu)="onInvoiceContextMenu(inv, $event)"
                 [ngClass]="inv.documentUrl
                   ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
                   : 'bg-amber-50 text-amber-700 border-amber-300'"
@@ -232,7 +233,8 @@
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white">
           @for (inv of invoices; track inv.invoiceId) {
-            <tr class="hover:bg-gray-50 cursor-pointer" (click)="openDetail(inv.invoiceId)">
+            <tr class="hover:bg-gray-50 cursor-pointer" (click)="openDetail(inv.invoiceId)"
+              (contextmenu)="onInvoiceContextMenu(inv, $event)">
               <td class="px-4 py-3 whitespace-nowrap">{{ inv.issueDate }}</td>
               <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">{{ inv.invoiceNumber }}</td>
               <td class="px-4 py-3">{{ inv.contributorName }}</td>
@@ -265,7 +267,8 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       @for (inv of invoices; track inv.invoiceId) {
         <div class="rounded-xl border p-4 flex flex-col gap-2 hover:shadow-sm transition-shadow cursor-pointer" style="border-color:var(--color-abril-border)"
-          (click)="openDetail(inv.invoiceId)">
+          (click)="openDetail(inv.invoiceId)"
+          (contextmenu)="onInvoiceContextMenu(inv, $event)">
           <div class="flex items-start justify-between gap-2">
             <span class="font-semibold text-gray-800">{{ inv.invoiceNumber }}</span>
             <span class="text-xs rounded-lg px-2 py-0.5 whitespace-nowrap" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
@@ -332,12 +335,43 @@
   </div>
 }
 
+<!-- Menú contextual (clic derecho en una factura) -->
+@if (ctxInvoice) {
+  <div class="fixed z-[70] w-[230px] rounded-lg border bg-white shadow-xl py-1 text-sm"
+    style="border-color:var(--color-abril-border)"
+    [style.left.px]="ctxX" [style.top.px]="ctxY"
+    (click)="$event.stopPropagation()"
+    (contextmenu)="$event.preventDefault()">
+    <div class="px-3 py-1.5 text-xs text-gray-400 border-b truncate" style="border-color:var(--color-abril-border)">
+      {{ ctxInvoice.invoiceNumber }}
+    </div>
+    <button type="button"
+      [disabled]="!ctxInvoice.documentUrl"
+      [title]="!ctxInvoice.documentUrl ? 'La factura no tiene documento que firmar' : ''"
+      (click)="signInvoice(ctxInvoice)"
+      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" fill="#64BC04"/>
+      </svg>
+      <span class="font-medium text-gray-700">Firmar</span>
+    </button>
+    @if (ctxInvoice.signedDocumentUrl) {
+      <button type="button" (click)="openSigned(ctxInvoice)"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 cursor-pointer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M14 3h7v7M21 3l-9 9M5 5h6M5 5v14h14v-6" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="text-gray-600">Ver documento firmado</span>
+      </button>
+    }
+  </div>
+}
+
 @if (showCreateModal) {
   <app-factura-create
     [suppliers]="suppliers"
     [paymentForms]="paymentForms"
     [abrilCompanies]="abrilCompanies"
-    [folders]="folders"
     [currencies]="currencies"
     (closeModal)="onCreateClosed()"
     (saved)="onCreated()">
@@ -373,7 +407,6 @@
     [suppliers]="suppliers"
     [paymentForms]="paymentForms"
     [abrilCompanies]="abrilCompanies"
-    [folders]="folders"
     [currencies]="currencies"
     (closeModal)="closeEdit()"
     (saved)="onEdited()">

@@ -1,6 +1,6 @@
+/** Carpeta única (singleton) configurada para guardar las facturas. */
 export interface InvoiceFolderDto {
   invoiceFolderId: number;
-  name: string;
   linkUrl: string;
   driveId: string;
   folderId: string;
@@ -11,22 +11,7 @@ export interface InvoiceFolderDto {
   createdUserId: number;
 }
 
-export interface InvoiceFolderCreateDto {
-  name: string;
+/** Datos para configurar/actualizar la carpeta única: solo el link pegado por el usuario. */
+export interface InvoiceFolderSaveDto {
   linkUrl: string;
-  driveId: string;
-  folderId: string;
-}
-
-export interface InvoiceFolderUpdateDto {
-  invoiceFolderId: number;
-  name: string;
-  linkUrl: string;
-  driveId: string;
-  folderId: string;
-  active: boolean;
-}
-
-export interface InvoiceFolderFilterDto {
-  page: number;
 }

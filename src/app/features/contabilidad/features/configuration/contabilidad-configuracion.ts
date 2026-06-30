@@ -4,8 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SectionTabs, SectionTab } from '../../../../shared/components/section-tabs/section-tabs';
 import { InvoiceFolder } from './invoiceFolder/components/invoice-folder';
+import { ManagerSignature } from './managerSignature/components/manager-signature';
 
-type ConfigSection = 'carpeta-facturas';
+type ConfigSection = 'carpeta-facturas' | 'firma-gg';
 
 /**
  * Contenedor de configuración de Contabilidad. Agrupa en una sola ruta
@@ -17,7 +18,7 @@ type ConfigSection = 'carpeta-facturas';
 @Component({
   selector: 'app-contabilidad-configuracion',
   standalone: true,
-  imports: [CommonModule, SectionTabs, InvoiceFolder, AbrilPageHeaderComponent],
+  imports: [CommonModule, SectionTabs, InvoiceFolder, ManagerSignature, AbrilPageHeaderComponent],
   templateUrl: './contabilidad-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -27,6 +28,7 @@ export class ContabilidadConfiguracion implements OnInit {
 
   readonly sectionTabs: SectionTab[] = [
     { id: 'carpeta-facturas', label: 'Carpeta facturas' },
+    { id: 'firma-gg', label: 'Firma de Gerente General' },
   ];
 
   private readonly validSections = this.sectionTabs.map((t) => t.id);
