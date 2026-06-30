@@ -9,12 +9,13 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-accidente-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './accidente-lista.component.html',
   styleUrl: './accidente-lista.component.css',
 })

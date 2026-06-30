@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { RacService } from '../../services/rac.service';
 import { RacDashboardDto } from '../../dtos/rac.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-rac-dashboard',
   standalone: true,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, AbrilPageHeaderComponent],
   templateUrl: './rac-dashboard.html',
   styleUrl: './rac-dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

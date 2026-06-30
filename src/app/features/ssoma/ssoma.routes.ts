@@ -59,5 +59,17 @@ export const SSOMA_ROUTES: Routes = [
         (m) => m.INDICADORES_PROACTIVOS_ROUTES,
       ),
   },
+  {
+    path: 'gestion/checklist',
+    loadChildren: () =>
+      import('./gestion/checklist/checklist.routes').then((m) => m.CHECKLIST_ROUTES),
+  },
+  {
+    path: 'gestion/presupuesto-materiales',
+    loadChildren: () =>
+      import('./gestion/presupuesto-materiales/presupuesto.routes').then(
+        (m) => m.PRESUPUESTO_MATERIALES_ROUTES,
+      ),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

@@ -15,6 +15,7 @@ import { TopicoAtencionDto, TopicoFiltrosDto } from './topico.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 export const SSOMA_TABS = [
   { label: 'Dashboard',      icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
@@ -35,7 +36,7 @@ export const SSOMA_TABS = [
   selector: 'app-salud-topico',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, TopicoModalComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, TopicoModalComponent],
   templateUrl: './topico.component.html',
   styleUrl: './topico.component.css',
 })

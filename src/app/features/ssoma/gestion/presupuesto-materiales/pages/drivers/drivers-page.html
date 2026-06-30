@@ -1,0 +1,102 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Drivers por Proyecto"
+    subtitulo="HH, Área Techada y Trabajadores usados para calcular ratios"
+    [tabs]="[
+      { label: 'Importación S10', icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
+      { label: 'Drivers',         icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' }
+    ]"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div *ngIf="loading" class="loading-msg">Cargando proyectos...</div>
+
+    <div *ngIf="!loading" class="drivers-table-wrap">
+      <table class="drivers-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Estado</th>
+            <th class="num-col">HH Total</th>
+            <th class="num-col">Área (m²)</th>
+            <th class="num-col">Trabajadores</th>
+            <th>Fuente HH</th>
+            <th class="num-col">Familias c/ ratio</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let d of drivers">
+            <!-- Fila normal -->
+            <tr *ngIf="editandoId !== d.projectId" class="driver-row">
+              <td class="proyecto-cell">
+                <button class="link-btn" (click)="irAProyecto(d.projectId)">
+                  {{ d.projectDescription }}
+                </button>
+              </td>
+              <td>
+                <span class="badge" [class.badge-ok]="d.estado === 'Finalizado'" [class.badge-warn]="d.estado !== 'Finalizado'">
+                  {{ d.estado }}
+                </span>
+              </td>
+              <td class="num-col">{{ d.hhTotalCasa | number:'1.0-0' }}</td>
+              <td class="num-col">{{ d.areaTechadaM2 | number:'1.2-2' }}</td>
+              <td class="num-col">{{ d.trabajadores }}</td>
+              <td><span class="badge" [ngClass]="fuenteClass(d)">{{ fuente(d) }}</span></td>
+              <td class="num-col">{{ d.familiasConRatio }}</td>
+              <td class="actions-cell">
+                <button class="btn-edit" (click)="abrirEdicion(d)" title="Editar drivers">
+                  <i class="ti ti-pencil"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Fila de edición inline -->
+            <tr *ngIf="editandoId === d.projectId" class="edit-row">
+              <td colspan="8" class="edit-cell">
+                <div class="edit-form">
+                  <strong>{{ d.projectDescription }}</strong>
+
+                  <div class="edit-fields">
+                    <label>HH Total
+                      <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01" />
+                    </label>
+                    <label>Área Techada (m²)
+                      <input type="number" [(ngModel)]="form.areaTechadaM2" min="0" step="0.01" />
+                    </label>
+                    <label>Trabajadores
+                      <input type="number" [(ngModel)]="form.trabajadores" min="0" />
+                    </label>
+                    <label>Fuente HH
+                      <select [(ngModel)]="form.hhFuente">
+                        <option value="HH_REAL">Real (proyecto finalizado)</option>
+                        <option value="HH_PROYECTADO">Proyectado (activo)</option>
+                        <option value="HH_CALCULADO_MEDIANA">Calculado por mediana</option>
+                      </select>
+                    </label>
+                    <label class="check-label">
+                      <input type="checkbox" [(ngModel)]="form.recalcularRatios" />
+                      Recalcular ratios automáticamente
+                    </label>
+                  </div>
+
+                  <div class="edit-actions">
+                    <button class="btn-save" (click)="guardar(d.projectId)">
+                      <i class="ti ti-check"></i> Guardar
+                    </button>
+                    <button class="btn-cancel" (click)="cancelarEdicion()">
+                      <i class="ti ti-x"></i> Cancelar
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

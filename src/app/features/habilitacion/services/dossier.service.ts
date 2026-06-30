@@ -85,6 +85,20 @@ export class DossierService {
     });
   }
 
+  // GET /dossier/archivo/{archivoId}/url
+  getArchivoUrl(archivoId: number): Observable<{ url: string }> {
+    return this.http.get<{ url: string }>(`${this.base}/archivo/${archivoId}/url`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  // DELETE /dossier/archivo/{archivoId}
+  eliminarArchivo(archivoId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/archivo/${archivoId}`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
   // GET /dossier/documento/{docId}/url
   getDocumentoUrl(docId: number): Observable<{ url: string }> {
     return this.http.get<{ url: string }>(`${this.base}/documento/${docId}/url`, {

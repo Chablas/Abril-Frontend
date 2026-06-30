@@ -1,215 +1,271 @@
 <div class="dash-root">
 
-  <app-abril-page-header
-    badge="SSOMA · Gerencia"
-    titulo="Dashboard Acumulado"
-    subtitulo="Resumen ejecutivo de desempeño SSOMA — todos los proyectos"
-    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    (secondaryClick)="cargar()">
-  </app-abril-page-header>
-
-  <div class="dash-body">
-
-    <!-- FILTROS -->
-    <div class="filtros-card">
-      <div class="filtros-grid">
-        <div class="filtro-group">
-          <label class="filtro-label">Mes</label>
-          <select class="filtro-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
-            <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
-          </select>
-        </div>
-        <div class="filtro-group">
-          <label class="filtro-label">Año</label>
-          <select class="filtro-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
-            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-          </select>
-        </div>
-        <div class="filtro-action">
-          <button type="button" class="btn-cargar" (click)="cargar()">
-            <i class="ti ti-search"></i> Aplicar
-          </button>
-        </div>
+  <!-- ══ TOOLBAR ═══════════════════════════════════════════════════════════ -->
+  <div class="dash-toolbar">
+    <div class="dt-brand">
+      <div class="dt-brand__badge">SSOMA</div>
+      <div>
+        <div class="dt-brand__title">Dashboard de Seguridad</div>
+        <div class="dt-brand__sub">{{ tablaCombinada().length }} proyectos activos · {{ nombreMes(mes()) }} {{ anio() }}</div>
       </div>
     </div>
+    <div class="dt-controls">
+      <select class="dt-sel" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
+        <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
+      </select>
+      <select class="dt-sel dt-sel--xs" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
+        <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+      </select>
+      <button class="dt-btn" (click)="cargar()"><i class="ti ti-refresh"></i> Actualizar</button>
+    </div>
+  </div>
 
-    <ng-container *ngIf="kpis() as k">
+  <!-- ══ GRID ══════════════════════════════════════════════════════════════ -->
+  <div class="dash-body">
+    <ng-container *ngIf="tablaCombinada().length > 0; else emptyTpl">
+      <div class="dash-grid">
 
-      <div class="periodo-label">
-        <i class="ti ti-calendar-stats"></i>
-        <strong>{{ nombreMes(mes()) }} {{ anio() }}</strong>
-        &nbsp;·&nbsp; Grupo Inmobiliario Abril · SSOMA
-      </div>
-
-      <!-- KPI CARDS -->
-      <div class="kpi-grid">
-
-        <div class="kpi-card kpi-card--primary">
-          <div class="kpi-icon"><i class="ti ti-building-skyscraper"></i></div>
-          <div class="kpi-info">
-            <span class="kpi-valor">{{ k.totalProyectos }}</span>
-            <span class="kpi-label">Proyectos evaluados</span>
+        <!-- ■ PANORAMA ────────────────────────────────────────────────────── -->
+        <div class="card area-ranking card--ink">
+          <div class="card-hd card-hd--ink">
+            <span class="chd-label">PANORAMA GENERAL</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }}</span>
           </div>
-        </div>
-
-        <div class="kpi-card" [ngClass]="scoreClass(k.promedio)">
-          <div class="kpi-icon"><i class="ti ti-chart-bar"></i></div>
-          <div class="kpi-info">
-            <span class="kpi-valor">{{ k.promedio | number:'1.1-1' }}</span>
-            <span class="kpi-label">Puntaje promedio <small>/ 110 pts</small></span>
-          </div>
-        </div>
-
-        <div class="kpi-card kpi-card--verde">
-          <div class="kpi-icon"><i class="ti ti-medal"></i></div>
-          <div class="kpi-info">
-            <span class="kpi-valor">{{ k.excelentes }}</span>
-            <span class="kpi-label">Proyectos excelentes <small>(≥ 90 pts)</small></span>
-          </div>
-        </div>
-
-        <div class="kpi-card kpi-card--rojo">
-          <div class="kpi-icon"><i class="ti ti-alert-triangle"></i></div>
-          <div class="kpi-info">
-            <span class="kpi-valor">{{ k.criticos }}</span>
-            <span class="kpi-label">Requieren atención <small>(< 70 pts)</small></span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- MEJOR / PEOR -->
-      <div class="extremos-grid">
-        <div class="extremo-card extremo-card--mejor">
-          <div class="extremo-badge"><i class="ti ti-trophy"></i> Mejor desempeño</div>
-          <div class="extremo-nombre">{{ k.mejor.proyectoNombre }}</div>
-          <div class="extremo-score" [ngClass]="scoreClass(k.mejor.puntajeTotal)">
-            {{ k.mejor.puntajeTotal | number:'1.1-1' }} pts
-          </div>
-        </div>
-        <div class="extremo-card extremo-card--peor">
-          <div class="extremo-badge"><i class="ti ti-arrow-up"></i> Mayor oportunidad</div>
-          <div class="extremo-nombre">{{ k.peor.proyectoNombre }}</div>
-          <div class="extremo-score" [ngClass]="scoreClass(k.peor.puntajeTotal)">
-            {{ k.peor.puntajeTotal | number:'1.1-1' }} pts
-          </div>
-        </div>
-      </div>
-
-      <!-- TABLA RESUMEN COMPLETA -->
-      <div class="tabla-wrap">
-        <div class="tabla-titulo">
-          <i class="ti ti-list-details"></i> Resumen por Proyecto
-        </div>
-        <table class="tabla-acum">
-          <thead>
-            <tr>
-              <th class="th-pos">#</th>
-              <th class="th-proyecto">Proyecto</th>
-              <th class="th-center">Proactivos<br><small>40%</small></th>
-              <th class="th-center">PASSO<br><small>25%</small></th>
-              <th class="th-center">Cierre Acc.<br><small>20%</small></th>
-              <th class="th-center">Cierre Hall.<br><small>15%</small></th>
-              <th class="th-center">Bonus</th>
-              <th class="th-total">Puntaje Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of tablaCombinada()" class="tr-proyecto">
-              <td class="td-pos">
-                <span class="medal">{{ medalIcon(row.ranking) }}</span>
-              </td>
-              <td class="td-nombre">{{ row.proyectoNombre }}</td>
-
-              <!-- Proactivos -->
-              <td class="td-center">
-                <div class="cell-stack">
-                  <div class="mini-barra-wrap">
-                    <div class="mini-barra" [ngClass]="scoreClass(row.pctProactivos)"
-                         [style.width]="barPct(row.pctProactivos, 100)"></div>
-                  </div>
-                  <span [ngClass]="scoreClass(row.pctProactivos)" class="cell-pct">
-                    {{ row.pctProactivos | number:'1.0-0' }}%
-                  </span>
-                  <span class="cell-pts">{{ row.puntajeProactivos | number:'1.1-1' }} pts</span>
+          <div class="rank-list">
+            <div *ngFor="let row of tablaCombinada(); let i = index"
+                 class="rk-row" [ngClass]="rkClass(row.puntajeTotal)">
+              <div class="rk-pos">{{ i + 1 }}</div>
+              <div class="rk-info">
+                <div class="rk-nombre" [title]="row.proyectoNombre">{{ row.proyectoNombre }}</div>
+                <div class="rk-chips">
+                  <span class="chip" [ngClass]="chipClass(row.pctProactivoGeneral)">IND {{ row.pctProactivoGeneral | number:'1.0-0' }}%</span>
+                  <span class="chip" [ngClass]="chipClass(row.pctPasso)">PASSO {{ row.pctPasso | number:'1.0-0' }}%</span>
+                  <span class="chip" [ngClass]="chipClass(row.pctCierreAccidentes)">ACC {{ row.pctCierreAccidentes | number:'1.0-0' }}%</span>
                 </div>
-              </td>
+              </div>
+              <div class="rk-score" [ngClass]="scoreColorClass(row.puntajeTotal)">
+                {{ row.puntajeTotal | number:'1.0-0' }}<small>pts</small>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- PASSO -->
-              <td class="td-center">
-                <div class="cell-stack">
-                  <div class="mini-barra-wrap">
-                    <div class="mini-barra" [ngClass]="scoreClass(row.pctPasso)"
-                         [style.width]="barPct(row.pctPasso, 100)"></div>
-                  </div>
-                  <span [ngClass]="scoreClass(row.pctPasso)" class="cell-pct">
-                    {{ row.pctPasso | number:'1.0-0' }}%
-                  </span>
-                  <span class="cell-pts">{{ row.puntajePasso | number:'1.1-1' }} pts</span>
+        <!-- ■ PROACTIVOS — gauges semicirculares ─────────────────────────── -->
+        <div class="card area-proactivos">
+          <div class="card-hd">
+            <span class="chd-label">CUMPLIMIENTO INDICADORES PROACTIVOS</span>
+            <span class="chd-period">Acum. {{ anio() }}</span>
+          </div>
+          <div class="gauge-grid">
+            <div *ngFor="let row of tablaCombinada()" class="gauge-item">
+              <svg viewBox="0 0 84 50" class="gauge-svg">
+                <!-- Track semicircle -->
+                <circle cx="42" cy="42" r="30" class="g-track"
+                        stroke-dasharray="94.25 94.25"
+                        transform="rotate(180 42 42)"/>
+                <!-- Value arc -->
+                <circle cx="42" cy="42" r="30" class="g-arc"
+                        [ngClass]="gaugeArcClass(row.pctProactivoGeneral)"
+                        [attr.stroke-dasharray]="gaugeHalfDash(row.pctProactivoGeneral)"
+                        transform="rotate(180 42 42)"/>
+                <!-- Percentage label -->
+                <text x="42" y="40" text-anchor="middle" class="g-pct"
+                      [ngClass]="gTextClass(row.pctProactivoGeneral)">{{ row.pctProactivoGeneral | number:'1.0-0' }}%</text>
+              </svg>
+              <div class="gauge-name">{{ row.nombreCorto }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ■ PASSO — barras ─────────────────────────────────────────────── -->
+        <div class="card area-passo">
+          <div class="card-hd">
+            <span class="chd-label">PROG. ANUAL SSOMA (PASSO)</span>
+            <span class="chd-period">Acum. {{ anio() }}</span>
+          </div>
+          <div class="bar-list">
+            <div *ngFor="let row of tablaCombinada()" class="bar-row">
+              <span class="bar-lbl">{{ row.nombreCorto }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [ngClass]="barClass(row.pctPasso)"
+                     [style.width.%]="row.pctPasso > 100 ? 100 : row.pctPasso"></div>
+                <div class="bar-meta75"></div>
+              </div>
+              <span class="bar-val" [ngClass]="semClass(row.pctPasso)">{{ row.pctPasso | number:'1.0-0' }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ■ REACTIVOS ───────────────────────────────────────────────────── -->
+        <div class="card area-reactivos">
+          <div class="card-hd">
+            <span class="chd-label">INDICADORES REACTIVOS — IF · IG · IA</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }}</span>
+          </div>
+          <div class="rx-layout" *ngIf="reactivosTotales() as tot">
+            <div class="rx-totals">
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="ifColorClass(tot.IF)">{{ tot.IF | number:'1.1-1' }}</div>
+                <div class="rx-kpi__lbl">Índice de Frecuencia</div>
+                <div class="rx-kpi__form">acc × 10⁶ / HHT</div>
+              </div>
+              <div class="rx-sep"></div>
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="igColorClass(tot.IG)">{{ tot.IG | number:'1.0-0' }}</div>
+                <div class="rx-kpi__lbl">Índice de Gravedad</div>
+                <div class="rx-kpi__form">días × 10⁶ / HHT</div>
+              </div>
+              <div class="rx-sep"></div>
+              <div class="rx-kpi">
+                <div class="rx-kpi__n" [ngClass]="iaColorClass(tot.IA)">{{ tot.IA | number:'1.2-2' }}</div>
+                <div class="rx-kpi__lbl">Índice de Accidentabilidad</div>
+                <div class="rx-kpi__form">IF × IG / 1 000</div>
+              </div>
+              <div class="rx-sep"></div>
+              <div class="rx-kpi rx-kpi--neutral">
+                <div class="rx-kpi__n rx-hht">{{ tot.totalHHT | number:'1.0-0' }}</div>
+                <div class="rx-kpi__lbl">HH Trabajadas</div>
+                <div class="rx-kpi__form">{{ tot.totalAcc }} acc · {{ tot.totalDias }} días</div>
+              </div>
+            </div>
+            <div class="rx-table-wrap">
+              <table class="rx-tbl">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th>HHT</th>
+                    <th>Acc</th>
+                    <th>Días</th>
+                    <th>IF</th>
+                    <th>IG</th>
+                    <th>IA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of tablaCombinada()">
+                    <td class="rx-t-nombre">{{ row.nombreCorto }}</td>
+                    <td class="rx-t-num">{{ row.hht | number:'1.0-0' }}</td>
+                    <td class="rx-t-num">{{ row.accidentes }}</td>
+                    <td class="rx-t-num">{{ row.diasPerdidos }}</td>
+                    <td class="rx-t-idx" [ngClass]="ifColorClass(row.if)">{{ row.if | number:'1.1-1' }}</td>
+                    <td class="rx-t-idx" [ngClass]="igColorClass(row.ig)">{{ row.ig | number:'1.0-0' }}</td>
+                    <td class="rx-t-idx" [ngClass]="iaColorClass(row.ia)">{{ row.ia | number:'1.2-2' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ■ CIERRE ACCIDENTES ───────────────────────────────────────────── -->
+        <div class="card area-acc">
+          <div class="card-hd">
+            <span class="chd-label">CIERRE DE ACCIDENTES</span>
+            <span class="chd-period">{{ nombreMes(mes()) }}</span>
+          </div>
+          <div class="tile-grid">
+            <ng-container *ngFor="let row of tablaCombinada()">
+              <!-- Sin accidentes registrados este período -->
+              <div *ngIf="row.accidentesTotales === 0; else conAcc" class="tile tile--safe">
+                <div class="tile-safe-icon">✓</div>
+                <div class="tile-name">{{ row.nombreCorto }}</div>
+                <div class="tile-safe-lbl">Sin accidentes</div>
+              </div>
+              <ng-template #conAcc>
+                <div class="tile" [ngClass]="tileClass(row.pctCierreAccidentes)">
+                  <div class="tile-pct" [ngClass]="tileValClass(row.pctCierreAccidentes)">{{ row.pctCierreAccidentes | number:'1.0-0' }}%</div>
+                  <div class="tile-name">{{ row.nombreCorto }}</div>
+                  <div class="tile-ratio">{{ row.accidentesTotales - row.accidentesAbiertos }}/{{ row.accidentesTotales }}</div>
                 </div>
-              </td>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
 
-              <!-- Cierre Accidentes -->
-              <td class="td-center">
-                <div class="cell-stack">
-                  <div class="mini-barra-wrap">
-                    <div class="mini-barra" [ngClass]="scoreClass(row.pctCierreAccidentes)"
-                         [style.width]="barPct(row.pctCierreAccidentes, 100)"></div>
-                  </div>
-                  <span [ngClass]="scoreClass(row.pctCierreAccidentes)" class="cell-pct">
-                    {{ row.pctCierreAccidentes | number:'1.0-0' }}%
-                  </span>
-                  <span class="cell-pts">{{ row.puntajeCierreAccidentes | number:'1.1-1' }} pts</span>
+        <!-- ■ CIERRE HALLAZGOS ────────────────────────────────────────────── -->
+        <div class="card area-hall">
+          <div class="card-hd">
+            <span class="chd-label">CIERRE DE HALLAZGOS</span>
+            <span class="chd-period">{{ nombreMes(mes()) }}</span>
+          </div>
+          <div class="tile-grid">
+            <ng-container *ngFor="let row of tablaCombinada()">
+              <div *ngIf="row.hallazgosTotales === 0; else conHall" class="tile tile--safe">
+                <div class="tile-safe-icon">✓</div>
+                <div class="tile-name">{{ row.nombreCorto }}</div>
+                <div class="tile-safe-lbl">Sin hallazgos</div>
+              </div>
+              <ng-template #conHall>
+                <div class="tile" [ngClass]="tileClass(row.pctCierreHallazgos)">
+                  <div class="tile-pct" [ngClass]="tileValClass(row.pctCierreHallazgos)">{{ row.pctCierreHallazgos | number:'1.0-0' }}%</div>
+                  <div class="tile-name">{{ row.nombreCorto }}</div>
+                  <div class="tile-ratio">{{ row.hallazgosCerrados }}/{{ row.hallazgosTotales }}</div>
                 </div>
-              </td>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
 
-              <!-- Cierre Hallazgos -->
-              <td class="td-center">
-                <div class="cell-stack">
-                  <div class="mini-barra-wrap">
-                    <div class="mini-barra" [ngClass]="scoreClass(row.pctCierreHallazgos)"
-                         [style.width]="barPct(row.pctCierreHallazgos, 100)"></div>
-                  </div>
-                  <span [ngClass]="scoreClass(row.pctCierreHallazgos)" class="cell-pct">
-                    {{ row.pctCierreHallazgos | number:'1.0-0' }}%
-                  </span>
-                  <span class="cell-pts">{{ row.puntajeCierreHallazgos | number:'1.1-1' }} pts</span>
-                </div>
-              </td>
+        <!-- ■ TOP PROYECTOS ───────────────────────────────────────────────── -->
+        <div class="card area-mejores">
+          <div class="card-hd">
+            <span class="chd-label">TOP PROYECTOS</span>
+            <span class="chd-period">{{ nombreMes(mes()) }}</span>
+          </div>
+          <div class="award-list">
+            <div class="award award--passo">
+              <div class="award__ribbon">
+                <span class="award__icon">🏆</span>
+                <span class="award__rank">N°1</span>
+              </div>
+              <div class="award__body">
+                <div class="award__cat">PASSO · Prog. Anual</div>
+                <div class="award__name">{{ mejorPasso().proyectoNombre }}</div>
+                <div class="award__val award__val--teal">{{ mejorPasso().pctPasso | number:'1.1-1' }}<span>%</span></div>
+              </div>
+            </div>
+            <div class="award-divider"></div>
+            <div class="award award--proactivo">
+              <div class="award__ribbon">
+                <span class="award__icon">⭐</span>
+                <span class="award__rank">N°1</span>
+              </div>
+              <div class="award__body">
+                <div class="award__cat">PROACTIVOS · Indicadores</div>
+                <div class="award__name">{{ mejorProactivo().proyectoNombre }}</div>
+                <div class="award__val award__val--blue">{{ mejorProactivo().pctProactivoGeneral | number:'1.1-1' }}<span>%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- Bonus -->
-              <td class="td-center">
-                <span class="bonus-chip" [class.bonus-chip--activo]="row.bonusProactivos > 0">
-                  +{{ row.bonusProactivos | number:'1.1-1' }}
-                </span>
-              </td>
+        <!-- ■ PUNTAJE MENSUAL ─────────────────────────────────────────────── -->
+        <div class="card area-puntaje">
+          <div class="card-hd">
+            <span class="chd-label">PUNTAJE MENSUAL ALCANZADO</span>
+            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }} · máx 110 pts</span>
+          </div>
+          <div class="score-list">
+            <div *ngFor="let row of tablaCombinada(); let i = index" class="score-row">
+              <span class="score-pos" [ngClass]="scoreColorClass(row.puntajeTotal)">#{{ i + 1 }}</span>
+              <span class="score-nombre">{{ row.proyectoNombre }}</span>
+              <div class="score-track">
+                <div class="score-fill" [ngClass]="scoreBarClass(row.puntajeTotal)"
+                     [style.width.%]="(row.puntajeTotal / 110) * 100"></div>
+              </div>
+              <span class="score-val" [ngClass]="scoreColorClass(row.puntajeTotal)">{{ row.puntajeTotal | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
 
-              <!-- Total -->
-              <td class="td-total">
-                <div class="total-cell" [ngClass]="scoreClass(row.puntajeTotal)">
-                  <span class="total-num">{{ row.puntajeTotal | number:'1.1-1' }}</span>
-                  <span class="total-den">/ 110</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
-
-      <!-- LEYENDA -->
-      <div class="leyenda">
-        <span class="leg-item score--verde"><i class="ti ti-circle-filled"></i> Excelente (≥ 90)</span>
-        <span class="leg-item score--amarillo"><i class="ti ti-circle-filled"></i> Bueno (70–89)</span>
-        <span class="leg-item score--naranja"><i class="ti ti-circle-filled"></i> Regular (50–69)</span>
-        <span class="leg-item score--rojo"><i class="ti ti-circle-filled"></i> Crítico (< 50)</span>
-      </div>
-
     </ng-container>
 
-    <div class="empty-state" *ngIf="!kpis()">
-      <i class="ti ti-chart-bar empty-state__icon"></i>
-      <p class="empty-state__text">Sin datos para el período seleccionado.</p>
-    </div>
-
+    <ng-template #emptyTpl>
+      <div class="dash-empty">
+        <i class="ti ti-chart-bar"></i>
+        <p>Sin datos para el período seleccionado.</p>
+      </div>
+    </ng-template>
   </div>
 </div>

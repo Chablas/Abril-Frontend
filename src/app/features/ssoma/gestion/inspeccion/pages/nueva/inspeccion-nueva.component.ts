@@ -28,6 +28,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 
 interface RespuestaForm {
@@ -63,7 +64,7 @@ interface HallazgoForm {
   selector: 'app-inspeccion-nueva',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './inspeccion-nueva.component.html',
   styleUrl: './inspeccion-nueva.component.css',
 })

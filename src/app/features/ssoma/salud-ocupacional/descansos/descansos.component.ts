@@ -8,8 +8,10 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { SSOMA_TABS } from '../topico/topico.component';
 import { DescansosService } from './descansos.service';
+import { DescansoModalComponent } from './descanso-modal.component';
 import { DescansoMedicoListItemDto, DescansoFilterDto } from './descansos.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -19,7 +21,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-descansos',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, FabButton, DescansoModalComponent],
   templateUrl: './descansos.component.html',
   styleUrl: './descansos.component.css',
 })
@@ -36,21 +38,31 @@ export class DescansosComponent implements OnInit, OnDestroy {
 
   filtros: DescansoFilterDto = {};
 
+  modalVisible = false;
+  descansoSeleccionadoId: number | null = null;
+
   readonly estadoOpts = [
     { id: '', nombre: 'Todos' },
-    { id: 'Pendiente', nombre: 'Pendiente' },
-    { id: 'Aprobado', nombre: 'Aprobado' },
-    { id: 'Rechazado', nombre: 'Rechazado' },
+    { id: 'Pendiente',  nombre: 'Pendiente' },
+    { id: 'Aprobado',   nombre: 'Aprobado' },
+    { id: 'Rechazado',  nombre: 'Rechazado' },
+    { id: 'Completado', nombre: 'Completado' },
+  ];
+
+  readonly tipoOpts = [
+    { id: '',            nombre: 'Todos' },
+    { id: 'Particular',  nombre: 'Particular' },
+    { id: 'Ocupacional', nombre: 'Ocupacional' },
   ];
 
   private workerChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
-    private svc: DescansosService,
-    private errorService: ErrorService,
+    private svc          : DescansosService,
+    private errorService : ErrorService,
     private loaderService: LoaderService,
-    private cdr: ChangeDetectorRef,
+    private cdr          : ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -86,10 +98,21 @@ export class DescansosComponent implements OnInit, OnDestroy {
   onWorkerChange(): void { this.workerChange$.next(); }
   onPageChange(p: number): void { this.load(p); }
 
-  limpiarFiltros(): void {
-    this.filtros = {};
-    this.load(1);
+  limpiarFiltros(): void { this.filtros = {}; this.load(1); }
+
+  abrirModal(id?: number): void {
+    this.descansoSeleccionadoId = id ?? null;
+    this.modalVisible = true;
+    this.cdr.detectChanges();
   }
+
+  cerrarModal(): void {
+    this.modalVisible = false;
+    this.descansoSeleccionadoId = null;
+    this.cdr.detectChanges();
+  }
+
+  onGuardado(): void { this.cerrarModal(); this.load(this.currentPage); }
 
   eliminar(d: DescansoMedicoListItemDto, ev: MouseEvent): void {
     ev.stopPropagation();
@@ -103,15 +126,25 @@ export class DescansosComponent implements OnInit, OnDestroy {
       confirmButtonColor: '#dc2626',
     }).then(r => {
       if (!r.isConfirmed) return;
+      this.loaderService.show();
       this.svc.delete(d.id).subscribe({
-        next: () => this.load(this.currentPage),
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        next: () => { this.loaderService.hide(); this.load(this.currentPage); },
+        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
       });
     });
   }
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId  || this.filtros.estado);
+           || this.filtros.workerId   || this.filtros.estado || this.filtros.tipo);
+  }
+
+  estadoBadgeClass(estado: string): string {
+    return ({
+      'Pendiente' : 'badge-amber',
+      'Aprobado'  : 'badge-green',
+      'Rechazado' : 'badge-red',
+      'Completado': 'badge-blue',
+    } as Record<string, string>)[estado] ?? 'badge-gray';
   }
 }

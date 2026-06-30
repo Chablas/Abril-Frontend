@@ -1,0 +1,148 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar Contratista"
+  subtitulo="Califica el desempeño de los contratistas en tu área."
+  [tabs]="[
+    { label: 'Ver Evaluaciones',  icono: 'ti-list',           route: '/evaluaciones/ver-contratistas' },
+    { label: 'Evaluar',           icono: 'ti-pencil',          route: '/evaluaciones/evaluar-contratista' },
+    { label: 'Dashboard',         icono: 'ti-chart-bar',       route: '/evaluaciones/dashboard-contratistas' }
+  ]">
+</app-abril-page-header>
+
+<div class="ec-root">
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+
+  <!-- SIN PERÍODO ACTIVO -->
+  <div class="empty-state" *ngIf="!loading && !inicio?.periodo">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin período activo</h3>
+    <p>No hay un período de evaluación abierto en este momento.</p>
+  </div>
+
+  <!-- SIN ÁREA EVALUADORA -->
+  <div class="empty-state" *ngIf="!loading && inicio?.periodo && !inicio?.miAreaNombre">
+    <i class="ti ti-user-question"></i>
+    <h3>Sin área asignada</h3>
+    <p>Tu perfil de trabajador no tiene un área de evaluación configurada. Contacta al administrador.</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="ec-content" *ngIf="!loading && inicio?.periodo && inicio?.miAreaNombre">
+
+    <!-- PANEL IZQUIERDO: lista de contratistas -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">Contratistas a evaluar</div>
+        <div class="panel-badge">{{ inicio?.miAreaNombre }}</div>
+      </div>
+      <div class="period-info" *ngIf="inicio?.periodo">
+        <i class="ti ti-calendar"></i>
+        {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }} ·
+        {{ inicio!.periodo!.diasRestantes }} días restantes
+      </div>
+
+      <!-- Sin contratistas -->
+      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length">
+        <i class="ti ti-building-off"></i>
+        <p>No hay contratistas con tareo este mes en tus proyectos.</p>
+      </div>
+
+      <!-- Lista de contratistas -->
+      <div class="contractor-list" *ngIf="inicio?.contratistasAEvaluar?.length">
+        <div class="contractor-card"
+          *ngFor="let c of inicio!.contratistasAEvaluar"
+          [class.active]="contraHistaSeleccionada?.contributorId === c.contributorId && contraHistaSeleccionada?.proyectoId === c.proyectoId"
+          [class.evaluated]="c.yaEvalue"
+          (click)="!c.yaEvalue && seleccionarContratista(c)">
+          <div class="cc-header">
+            <div class="cc-avatar">{{ c.contributorNombre.charAt(0) }}</div>
+            <div class="cc-info">
+              <div class="cc-name">{{ c.contributorNombre }}</div>
+              <div class="cc-ruc">{{ c.contributorRuc }}</div>
+              <div class="cc-project"><i class="ti ti-building"></i> {{ c.proyectoNombre }}</div>
+            </div>
+          </div>
+          <div class="cc-footer">
+            <span class="cc-days"><i class="ti ti-calendar-event"></i> {{ c.diasLaborados }} días</span>
+            <span *ngIf="c.yaEvalue" class="cc-nota" [ngClass]="estadoClase(c.notaPrevia)">
+              <i class="ti ti-check"></i> {{ c.notaPrevia }} — {{ estadoLabel(c.notaPrevia) }}
+            </span>
+            <span *ngIf="!c.yaEvalue" class="cc-pendiente">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: formulario de evaluación -->
+    <div class="panel-right">
+      <!-- Sin selección -->
+      <div class="empty-form" *ngIf="!contraHistaSeleccionada">
+        <i class="ti ti-arrow-left"></i>
+        <p>Selecciona un contratista para evaluarlo</p>
+      </div>
+
+      <!-- Formulario activo -->
+      <div class="eval-form" *ngIf="contraHistaSeleccionada">
+        <div class="ef-header">
+          <div>
+            <div class="ef-title">{{ contraHistaSeleccionada.contributorNombre }}</div>
+            <div class="ef-sub">{{ contraHistaSeleccionada.proyectoNombre }} · {{ contraHistaSeleccionada.diasLaborados }} días laborados</div>
+          </div>
+          <button class="btn-cambiar" (click)="cambiarContratista()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+
+        <!-- Escala de referencia -->
+        <div class="scale-ref">
+          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
+            {{ p }}: {{ puntajeLabel[p] }}
+          </span>
+        </div>
+
+        <!-- Criterios -->
+        <div class="criteria-list">
+          <div class="criterion-row" *ngFor="let d of detalles; let i = index">
+            <div class="cr-num">{{ i + 1 }}</div>
+            <div class="cr-text">{{ d.criterio }}</div>
+            <div class="cr-puntaje">
+              <button *ngFor="let p of puntajes"
+                class="puntaje-btn"
+                [class.selected]="d.puntaje === p"
+                [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                (click)="d.puntaje = p; markForCheck()">
+                {{ p }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comentario -->
+        <div class="comentario-section">
+          <label class="cmt-label">Comentario (opcional)</label>
+          <textarea class="cmt-input" rows="3" [(ngModel)]="comentario"
+            placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
+        </div>
+
+        <!-- Nota preview + botón -->
+        <div class="ef-footer">
+          <div class="nota-preview" *ngIf="notaCalculada > 0">
+            <span class="np-label">Nota {{ inicio?.miAreaNombre }}:</span>
+            <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+            <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+          </div>
+          <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+            <i class="ti ti-device-floppy"></i>
+            {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

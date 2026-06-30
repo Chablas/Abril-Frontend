@@ -37,3 +37,49 @@
 .btn-ent--cancel  { background: #f0ede8; color: #666; }
 .btn-ent--upload  { background: #e8f0f5; color: #1a5276; display: inline-block; }
 .btn-ent--upload:hover { background: #d4e6f1; }
+
+
+/* ── Medidas de control ─────────────────────────────────────────────────── */
+.medidas-section {
+  margin-top: 24px;
+  border-top: 2px solid #e8e5df;
+  padding-top: 16px;
+}
+
+.medidas-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.medidas-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b3a2d;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.medidas-hint {
+  font-size: 11px;
+  color: #8a8880;
+  font-style: italic;
+}
+
+.medida-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.medida-add__input { flex: 1; }
+
+.btn-ent--danger {
+  color: #dc2626;
+  border-color: #fee2e2;
+  background: #fff5f5;
+}
+.btn-ent--danger:hover { background: #fee2e2; }

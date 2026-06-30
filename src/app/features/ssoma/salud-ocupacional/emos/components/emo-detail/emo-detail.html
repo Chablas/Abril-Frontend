@@ -32,6 +32,9 @@
       <button type="button" [class.active]="activeTab === 'convalidaciones'" (click)="setTab('convalidaciones')">
         Convalidaciones <small>({{ emo.convalidaciones?.length || 0 }})</small>
       </button>
+      <button type="button" [class.active]="activeTab === 'clinica'" (click)="setTab('clinica')">
+        Clínica
+      </button>
       <button type="button" [class.active]="activeTab === 'historial'" (click)="setTab('historial')">
         Historial
       </button>
@@ -154,6 +157,112 @@
           </tbody>
         </table>
       </div>
+    </section>
+
+    <!-- Tab: Clínica -->
+    <section *ngIf="activeTab === 'clinica'" class="tab-panel">
+
+      <!-- Programación vinculada -->
+      <h4 class="section-subtitle">Programación</h4>
+      <ng-container *ngIf="emo.programacion; else sinProg">
+        <dl class="info-grid">
+          <div>
+            <dt>Fecha programada</dt>
+            <dd>{{ emo.programacion.fechaProgramada | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Hora</dt>
+            <dd>{{ emo.programacion.horaProgramada || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Check-in</dt>
+            <dd>{{ emo.programacion.checkInHora || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ emo.programacion.estado }}</dd>
+          </div>
+          <div>
+            <dt>Clínica</dt>
+            <dd>{{ emo.programacion.clinicaNombre || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Médico</dt>
+            <dd>{{ emo.programacion.medicoNombre || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Origen</dt>
+            <dd>{{ emo.programacion.origen || '—' }}</dd>
+          </div>
+          <div *ngIf="emo.programacion.motivoRechazo">
+            <dt>Motivo rechazo</dt>
+            <dd class="text-red-600">{{ emo.programacion.motivoRechazo }}</dd>
+          </div>
+        </dl>
+      </ng-container>
+      <ng-template #sinProg>
+        <p class="empty">Sin programación vinculada a este EMO.</p>
+      </ng-template>
+
+      <!-- Interconsulta vinculada -->
+      <h4 class="section-subtitle" style="margin-top:1.5rem">Interconsulta</h4>
+      <ng-container *ngIf="emo.interconsulta; else sinInter">
+        <dl class="info-grid">
+          <div>
+            <dt>Especialidad</dt>
+            <dd>{{ emo.interconsulta.especialidad }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ emo.interconsulta.estado }}</dd>
+          </div>
+          <div>
+            <dt>Médico deriva</dt>
+            <dd>{{ emo.interconsulta.medicoDeriva || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Fecha derivación</dt>
+            <dd>{{ emo.interconsulta.fechaDerivacion | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Fecha atención</dt>
+            <dd>{{ emo.interconsulta.fechaAtencion ? (emo.interconsulta.fechaAtencion | date: 'dd/MM/yyyy') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Centro atención</dt>
+            <dd>{{ emo.interconsulta.centroAtencion || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Diagnóstico</dt>
+            <dd>{{ emo.interconsulta.diagnostico || '—' }}</dd>
+          </div>
+          <div>
+            <dt>CIE-10</dt>
+            <dd>{{ emo.interconsulta.cie10 || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Resultado</dt>
+            <dd>{{ emo.interconsulta.resultado || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Requiere seguimiento</dt>
+            <dd>{{ emo.interconsulta.requiereSeguimiento ? 'Sí' : 'No' }}</dd>
+          </div>
+          <div class="col-span-2">
+            <dt>Informe / Evidencia</dt>
+            <dd>
+              <a *ngIf="emo.interconsulta.urlInforme" [href]="emo.interconsulta.urlInforme"
+                 target="_blank" rel="noopener" class="link">
+                Abrir documento
+              </a>
+              <span *ngIf="!emo.interconsulta.urlInforme">—</span>
+            </dd>
+          </div>
+        </dl>
+      </ng-container>
+      <ng-template #sinInter>
+        <p class="empty">Sin interconsulta vinculada a este EMO.</p>
+      </ng-template>
     </section>
 
     <!-- Tab: Historial -->

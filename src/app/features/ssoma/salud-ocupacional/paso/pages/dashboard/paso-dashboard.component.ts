@@ -9,11 +9,12 @@ import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.componen
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-paso-dashboard',
   standalone: true,
-  imports: [CommonModule, SpiBadgeComponent, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, SpiBadgeComponent, AbrilPageHeaderComponent],
   templateUrl: './paso-dashboard.component.html',
   styleUrl: './paso-dashboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -23,6 +23,7 @@ import {
 } from '../shared/dias-vencer.utils';
 import { EmoCreate } from './components/emo-create/emo-create';
 import { EmoDetail } from './components/emo-detail/emo-detail';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 interface FilterOption {
   id: string;
@@ -32,7 +33,7 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoCreate, EmoDetail, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, Paginator, SearchSelect, EmoCreate, EmoDetail, AbrilPageHeaderComponent],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })

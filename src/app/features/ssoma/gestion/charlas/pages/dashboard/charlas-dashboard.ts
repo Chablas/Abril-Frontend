@@ -15,6 +15,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 import {
   DashSupervisoresRow, ComparativoMes, Staff, NuevaCharlaCreateDto,
   CharlaListItem, CharlaDetalle, UsuarioDto,
@@ -26,7 +27,7 @@ Chart.register(...registerables);
   selector: 'app-charlas-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './charlas-dashboard.html',
   styleUrl: './charlas-dashboard.css',
 })

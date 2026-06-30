@@ -25,7 +25,7 @@ import {
   diasVencerStyle,
 } from '../../../shared/dias-vencer.utils';
 
-type TabKey = 'datos' | 'examenes' | 'restricciones' | 'convalidaciones' | 'historial';
+type TabKey = 'datos' | 'examenes' | 'restricciones' | 'convalidaciones' | 'clinica' | 'historial';
 
 @Component({
   selector: 'app-emo-detail',

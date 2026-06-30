@@ -7,12 +7,13 @@ import { InspeccionDashboardDto } from '../../inspeccion.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-inspeccion-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, AbrilPageHeaderComponent],
   templateUrl: './inspeccion-dashboard.component.html',
   styleUrl: './inspeccion-dashboard.component.css',
 })

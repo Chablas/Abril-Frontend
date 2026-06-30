@@ -19,12 +19,14 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { SSOMA_TABS } from '../topico/topico.component';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { CasoSocialModalComponent } from './caso-social-modal.component';
 
 @Component({
   selector: 'app-asistente-social',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, CasoSocialModalComponent],
   templateUrl: './asistente-social.component.html',
   styleUrl: './asistente-social.component.css',
 })
@@ -38,6 +40,9 @@ export class AsistenteSocialComponent implements OnInit, OnDestroy {
   totalPages = 1;
   totalRecords = 0;
   currentPage = 1;
+
+  modalVisible = false;
+  modalCasoId: string | null = null;
 
   filtros: CasoSocialFilterDto = {};
 
@@ -133,7 +138,18 @@ export class AsistenteSocialComponent implements OnInit, OnDestroy {
   }
 
   abrirModal(caso?: CasoSocialListItemDto): void {
-    // modal de creación/edición — pendiente de implementar
+    this.modalCasoId = caso?.id ?? null;
+    this.modalVisible = true;
+    this.cdr.detectChanges();
+  }
+
+  onModalClosed(): void {
+    this.modalVisible = false;
+    this.cdr.detectChanges();
+  }
+
+  onModalSaved(): void {
+    this.load(this.currentPage);
   }
 
   get hasFilters(): boolean {

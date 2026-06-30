@@ -28,43 +28,79 @@
       @for (tipo of tipos; track tipo) {
         @let doc = getDoc(tipo);
         <div class="doc-row" [class.doc-row--ok]="doc?.estado === 'Subido'" [class.doc-row--na]="doc?.estado === 'NA'">
-          <div class="doc-info">
-            <span class="doc-tipo">{{ tipo }}</span>
-            @if (doc) {
-              <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">{{ labelDoc(doc.estado) }}</span>
-            } @else {
-              <span class="chip chip-sm chip-blue">Pendiente</span>
-            }
-            @if (doc?.nombreArchivo) {
-              <span class="doc-archivo"><i class="ti ti-paperclip"></i> {{ doc!.nombreArchivo }}</span>
-            }
+
+          <div class="doc-head">
+            <div class="doc-info">
+              <span class="doc-tipo">{{ tipo }}</span>
+              @if (doc) {
+                <span class="chip chip-sm" [ngClass]="chipDoc(doc.estado)">{{ labelDoc(doc.estado) }}</span>
+              } @else {
+                <span class="chip chip-sm chip-blue">Pendiente</span>
+              }
+            </div>
+            <div class="doc-actions">
+              @if (subiendoPor[tipo]) {
+                <span class="uploading-label"><i class="ti ti-loader-2 spin"></i> Subiendo…</span>
+              } @else {
+                <label class="btn-upload" [class.btn-disabled]="doc?.estado === 'NA'">
+                  <i class="ti ti-upload"></i> Subir
+                  <input
+                    [id]="'file-' + tipo"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
+                    style="display:none"
+                    (change)="onFileSelected($event, tipo)"
+                    [disabled]="doc?.estado === 'NA'"
+                  />
+                </label>
+                @if (doc?.estado !== 'NA') {
+                  <button type="button" class="btn-na" (click)="marcarNa(tipo)">N/A</button>
+                } @else {
+                  <button type="button" class="btn-na btn-na--revert" (click)="marcarNa(tipo)">
+                    <i class="ti ti-rotate-clockwise-2"></i> Revertir
+                  </button>
+                }
+              }
+            </div>
           </div>
 
-          <div class="doc-actions">
-            @if (subiendoPor[tipo]) {
-              <span class="uploading-label"><i class="ti ti-loader-2 spin"></i> Subiendo…</span>
-            } @else {
-              <label class="btn-upload" [class.btn-disabled]="doc?.estado === 'NA'">
-                <i class="ti ti-upload"></i> Subir
-                <input
-                  [id]="'file-' + tipo"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
-                  style="display:none"
-                  (change)="onFileSelected($event, tipo)"
-                  [disabled]="doc?.estado === 'NA'"
-                />
-              </label>
-              @if (doc?.estado !== 'NA') {
-                <button
-                  type="button"
-                  class="btn-na"
-                  (click)="marcarNa(tipo)">
-                  N/A
-                </button>
+          <!-- Archivos subidos (tabla de registros) -->
+          @if (doc?.archivos && doc!.archivos.length > 0) {
+            <div class="archivos-list">
+              @for (archivo of doc!.archivos; track archivo.id) {
+                <div class="archivo-item">
+                  <i class="ti ti-paperclip archivo-icon"></i>
+                  <button type="button" class="archivo-nombre-btn" (click)="verArchivo(archivo.archivoPath, archivo.nombreArchivo)">
+                    {{ archivo.nombreArchivo }}
+                  </button>
+                  <span class="archivo-fecha">{{ archivo.createdAt | date:'dd/MM/yy' }}</span>
+                  <button
+                    type="button"
+                    class="btn-archivo-del"
+                    title="Eliminar"
+                    [disabled]="!!eliminandoPor[archivo.id] || detalle.estado === 'Aprobado'"
+                    (click)="eliminarArchivo(archivo.id, tipo)">
+                    @if (eliminandoPor[archivo.id]) {
+                      <i class="ti ti-loader-2 spin"></i>
+                    } @else {
+                      <i class="ti ti-trash"></i>
+                    }
+                  </button>
+                </div>
               }
-            }
-          </div>
+            </div>
+          } @else if (doc?.nombreArchivo) {
+            <div class="archivos-list">
+              <div class="archivo-item">
+                <i class="ti ti-paperclip archivo-icon"></i>
+                <button type="button" class="archivo-nombre-btn" (click)="verArchivo(doc!.archivoPath!, doc!.nombreArchivo!)">
+                  {{ doc!.nombreArchivo }}
+                </button>
+                <span class="archivo-fecha">{{ doc!.updatedAt ?? doc!.createdAt | date:'dd/MM/yy' }}</span>
+              </div>
+            </div>
+          }
+
         </div>
       }
     </div>
@@ -87,3 +123,11 @@
     </div>
   }
 </div>
+
+<!-- DocumentViewer reutilizado — maneja PDF, imágenes, Office y descarga -->
+<app-document-viewer
+  [archivoUrl]="viewerPath"
+  [nombre]="viewerNombre"
+  libraryCtx="dossier-semanal"
+  (closed)="onViewerClosed()">
+</app-document-viewer>

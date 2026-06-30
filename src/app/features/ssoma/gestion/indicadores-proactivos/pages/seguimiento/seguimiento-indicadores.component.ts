@@ -4,13 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { IndicadoresProactivosService } from '../../indicadores-proactivos.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { IndicadorProactivoProyectoDto } from '../../indicadores-proactivos.dtos';
 
 @Component({
   selector: 'app-seguimiento-indicadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './seguimiento-indicadores.component.html',
   styleUrls: ['./seguimiento-indicadores.component.css'],
 })
@@ -63,19 +62,52 @@ export class SeguimientoIndicadoresComponent implements OnInit {
     return this.meses.find(m => m.valor === mes)?.nombre ?? '';
   }
 
-  pctClass(pct: number): string {
-    if (pct >= 100) return 'pct--verde';
-    if (pct >= 75) return 'pct--amarillo';
-    if (pct >= 50) return 'pct--naranja';
-    return 'pct--rojo';
+  /** Clases semáforo estilo DS (c-verde / c-amarillo / c-naranja / c-rojo) */
+  colorClass(pct: number): string {
+    if (pct >= 100) return 'c-verde';
+    if (pct >= 75)  return 'c-amarillo';
+    if (pct >= 50)  return 'c-naranja';
+    return 'c-rojo';
+  }
+
+  /** Clase border-left de la card según estado */
+  cardStatusClass(pct: number): string {
+    if (pct >= 100) return 'proy-card--completo';
+    if (pct >= 75)  return 'proy-card--cerca';
+    return 'proy-card--riesgo';
   }
 
   barWidth(pct: number): string {
     return `${Math.min(100, pct)}%`;
   }
 
+  pctLabel(meta: number, pct: number): string {
+    return meta > 0 ? `${Math.round(pct)}%` : 'N/A';
+  }
+
+  colorClassInd(meta: number, pct: number): string {
+    return meta > 0 ? this.colorClass(pct) : 'c-na';
+  }
+
+  /** @deprecated use colorClass */
+  pctClass = this.colorClass.bind(this);
+  /** @deprecated use colorClassInd */
+  pctClassInd = this.colorClassInd.bind(this);
+
   /** Ranking: ordena de mayor a menor pctProactivoGeneral */
   get ranking(): IndicadorProactivoProyectoDto[] {
     return [...this.proyectos()].sort((a, b) => b.pctProactivoGeneral - a.pctProactivoGeneral);
+  }
+
+  get kpis() {
+    const data = this.proyectos();
+    if (!data.length) return null;
+    const avg = data.reduce((s, p) => s + p.pctProactivoGeneral, 0) / data.length;
+    return {
+      promedio: avg,
+      enMeta:   data.filter(p => p.pctProactivoGeneral >= 100).length,
+      enRiesgo: data.filter(p => p.pctProactivoGeneral >= 75 && p.pctProactivoGeneral < 100).length,
+      criticos: data.filter(p => p.pctProactivoGeneral < 75).length,
+    };
   }
 }

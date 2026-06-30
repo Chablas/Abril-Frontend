@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
-import { AccidenteTrabajoListItemDto, AccidenteFilterDto } from './accidentes.dtos';
+import { AccidenteTrabajoListItemDto, AccidenteFilterDto, AccidenteTrabajoDetalleDto } from './accidentes.dtos';
 
 function authHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -31,8 +31,20 @@ export class AccidentesService {
     });
   }
 
-  delete(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.base}/${id}`, {
+  getDetalle(id: number): Observable<AccidenteTrabajoDetalleDto> {
+    return this.http.get<AccidenteTrabajoDetalleDto>(`${this.base}/${id}`, {
+      headers: authHeaders(),
+    });
+  }
+
+  marcarReinduccion(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/${id}/reinduccion`, {}, {
+      headers: authHeaders(),
+    });
+  }
+
+  cerrar(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/${id}/cerrar`, {}, {
       headers: authHeaders(),
     });
   }

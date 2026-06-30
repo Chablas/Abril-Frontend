@@ -13,7 +13,11 @@ import {
   ContratistaCatalogoDto,
   TrabajadorCatalogoDto,
   ProyectoContratistaDto,
+  TrabajadorAfectadoRequest,
   NIVELES_CONSECUENCIA,
+  TURNOS,
+  TIPOS_CONTACTO,
+  NIVELES_CONSECUENCIA_INCIDENTE,
 } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -51,9 +55,14 @@ export class AccidenteCrearEditarComponent implements OnInit {
   // estado local (no va al form)
   jefeInmediatoWorkerId?: number;
   elaboradoPorWorkerId?: number;
+  sinTrabajadorAfectado = false;
+
+  trabajadorNuevo: TrabajadorAfectadoRequest = { trabajadorNombre: '' };
 
   readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
   readonly nivelesOpciones = [1, 2, 3, 4, 5, 6];
+  readonly turnos = TURNOS;
+  readonly tiposContacto = TIPOS_CONTACTO;
 
   // Tipo de empresa: 'abril' | 'contratista'
   tipoEmpresa: 'abril' | 'contratista' = 'abril';
@@ -69,7 +78,9 @@ export class AccidenteCrearEditarComponent implements OnInit {
     hora: '',
     lugarExacto: '',
     descripcion: '',
+    danioProcesFlag: false,
     descansos: [],
+    trabajadores: [],
   };
 
   errores: Record<string, string> = {};
@@ -143,6 +154,11 @@ export class AccidenteCrearEditarComponent implements OnInit {
           aniosExperiencia: res.aniosExperiencia,
           celularTrabajador: res.celularTrabajador,
           parteAfectadaId: res.parteAfectadaId,
+          turno: res.turno,
+          tipoContacto: res.tipoContacto,
+          danioProcesFlag: res.danioProcesFlag ?? false,
+          atencionMedica: res.atencionMedica,
+          centroAtencion: res.centroAtencion,
           danoProceso: res.danoProceso,
           consecuenciaRealPersonal: res.consecuenciaRealPersonal,
           consecuenciaPotencialPersonal: res.consecuenciaPotencialPersonal,
@@ -155,6 +171,15 @@ export class AccidenteCrearEditarComponent implements OnInit {
             fechaInicio: d.fechaInicio.substring(0, 10),
             fechaFin: d.fechaFin.substring(0, 10),
             observacion: d.observacion,
+          })),
+          trabajadores: (res.trabajadores ?? []).map((t) => ({
+            workerId: t.workerId,
+            trabajadorNombre: t.trabajadorNombre,
+            puestoTrabajo: t.puestoTrabajo,
+            edad: t.edad,
+            aniosExperiencia: t.aniosExperiencia,
+            celularTrabajador: t.celularTrabajador,
+            parteAfectadaId: t.parteAfectadaId,
           })),
         };
         this.foto1Preview = res.urlFoto1 ?? null;
@@ -247,16 +272,28 @@ export class AccidenteCrearEditarComponent implements OnInit {
   // ── Trabajador autocompletado ──────────────────────────────────────────────
 
   onTrabajadorSelect(id: number | undefined): void {
-    this.form.workerId = id;
+    this.trabajadorNuevo.workerId = id;
     if (id) {
       const t = this.trabajadores.find((w) => w.id === id);
       if (t) {
-        this.form.trabajadorNombre = t.nombreCompleto;
-        this.form.puestoTrabajo = t.cargo ?? this.form.puestoTrabajo;
-        this.form.edad = t.edad ?? this.form.edad;
-        this.form.aniosExperiencia = t.aniosExperiencia ?? this.form.aniosExperiencia;
+        this.trabajadorNuevo.trabajadorNombre = t.nombreCompleto;
+        this.trabajadorNuevo.puestoTrabajo = t.cargo ?? this.trabajadorNuevo.puestoTrabajo;
+        this.trabajadorNuevo.edad = t.edad ?? this.trabajadorNuevo.edad;
+        this.trabajadorNuevo.aniosExperiencia = t.aniosExperiencia ?? this.trabajadorNuevo.aniosExperiencia;
       }
     }
+    this.cdr.detectChanges();
+  }
+
+  agregarTrabajador(): void {
+    if (!this.trabajadorNuevo.trabajadorNombre?.trim()) return;
+    this.form.trabajadores.push({ ...this.trabajadorNuevo });
+    this.trabajadorNuevo = { trabajadorNombre: '' };
+    this.cdr.detectChanges();
+  }
+
+  quitarTrabajador(index: number): void {
+    this.form.trabajadores.splice(index, 1);
     this.cdr.detectChanges();
   }
 
@@ -283,6 +320,19 @@ export class AccidenteCrearEditarComponent implements OnInit {
     if (!this.form.fecha) this.errores['fecha'] = 'Fecha requerida.';
     if (!this.form.lugarExacto?.trim()) this.errores['lugarExacto'] = 'Lugar exacto requerido.';
     if (!this.form.descripcion?.trim()) this.errores['descripcion'] = 'Descripción requerida.';
+    if (!this.form.accionesInmediatas?.trim()) this.errores['accionesInmediatas'] = 'Acciones inmediatas requeridas.';
+
+    // Incidente con primeros auxilios (N2) obliga a registrar al trabajador afectado
+    const primerAuxilio = this.esIncidente && this.form.consecuenciaRealPersonal === 2;
+    if (primerAuxilio && this.sinTrabajadorAfectado) {
+      this.sinTrabajadorAfectado = false; // forzar sección visible
+      this.errores['trabajadores'] = 'Con primeros auxilios (N2) debe registrar al trabajador afectado.';
+    } else if (!this.sinTrabajadorAfectado && !this.esIncidente && this.form.trabajadores.length === 0) {
+      this.errores['trabajadores'] = 'Debe añadir al menos un trabajador afectado.';
+    } else if (!this.sinTrabajadorAfectado && primerAuxilio && this.form.trabajadores.length === 0) {
+      this.errores['trabajadores'] = 'Con primeros auxilios debe registrar al trabajador que recibió atención.';
+    }
+
     return Object.keys(this.errores).length === 0;
   }
 
@@ -327,6 +377,24 @@ export class AccidenteCrearEditarComponent implements OnInit {
   cancelar(): void {
     if (this.modoEditar) this.router.navigate(['/ssoma/gestion/accidentes-incidentes', this.id]);
     else this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
+  }
+
+  get tipoCodigo(): string {
+    return this.tipos.find((t) => t.id === this.form.tipoId)?.codigo ?? '';
+  }
+
+  get esIncidente(): boolean {
+    return this.tipoCodigo === 'IN';
+  }
+
+  // Consecuencia REAL: incidente solo N1-N2 (sin daño / primeros auxilios)
+  get nivelesReal(): number[] {
+    return this.esIncidente ? [1, 2] : this.nivelesOpciones;
+  }
+
+  // Consecuencia POTENCIAL: siempre todos (lo que PODRÍA haber pasado)
+  get nivelesPotencial(): number[] {
+    return this.nivelesOpciones;
   }
 
   get titulo(): string {

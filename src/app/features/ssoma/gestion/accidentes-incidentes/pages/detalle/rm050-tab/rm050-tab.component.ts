@@ -13,6 +13,7 @@ import {
   Rm050Dto,
   GuardarRm050Request,
   GuardarAccionCorrectivaRequest,
+  AccionCorrectivaDto,
   GRAVEDADES_ACCIDENTE,
   ESTADOS_ACCION,
 } from '../../../accidente-incidente.dtos';
@@ -32,6 +33,7 @@ export class Rm050TabComponent implements OnInit {
 
   loading = true;
   guardando = false;
+  accionesVencidas: any[] = [];
 
   readonly gravedades = GRAVEDADES_ACCIDENTE;
   readonly estadosAccion = ESTADOS_ACCION;
@@ -66,6 +68,7 @@ export class Rm050TabComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarVencidas();
   }
 
   cargar(): void {
@@ -106,6 +109,7 @@ export class Rm050TabComponent implements OnInit {
       aprobadoPorNombre: rm.aprobadoPorNombre ?? '',
       aprobadoPorCargo: rm.aprobadoPorCargo ?? '',
       accionesCorrectivas: rm.accionesCorrectivas.map((a) => ({
+        id: a.id,
         descripcion: a.descripcion,
         tipo: a.tipo ?? 'Correctiva',
         responsableNombre: a.responsableNombre ?? '',
@@ -155,6 +159,42 @@ export class Rm050TabComponent implements OnInit {
         this.cdr.detectChanges();
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar la investigación.' });
       },
+    });
+  }
+
+  cargarVencidas(): void {
+    this.service.getAccionesVencidas().subscribe({
+      next: (v) => {
+        this.accionesVencidas = v.filter((a) => a.accidenteId === this.accidenteId);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  crearLeccion(accion: GuardarAccionCorrectivaRequest): void {
+    Swal.fire({
+      title: 'Crear lección aprendida',
+      html: `<p style="font-size:13px">Se creará una lección aprendida basada en esta acción correctiva:<br><strong>${accion.descripcion}</strong></p>
+             <input id="impacto" class="swal2-input" placeholder="Descripción del impacto/aprendizaje">`,
+      showCancelButton: true,
+      confirmButtonText: 'Crear',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => (document.getElementById('impacto') as HTMLInputElement).value,
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      const proyectoId = this.detalle?.proyectoId ?? 0;
+      this.service
+        .crearLeccionDesdeAccion(accion.id!, {
+          proyectoId,
+          areaId: 1,
+          impactDescription: result.value,
+        })
+        .subscribe({
+          next: () =>
+            Swal.fire({ icon: 'success', title: 'Lección creada', timer: 1800, showConfirmButton: false }),
+          error: () => Swal.fire({ icon: 'error', title: 'Error al crear la lección' }),
+        });
     });
   }
 
