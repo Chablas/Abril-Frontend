@@ -18,10 +18,13 @@ import {
   ReordenarItem,
   CascadaResultDto,
   ImportarMppResultDto,
+  CrearActividadMasivoItem,
+  CrearActividadesMasivoResultDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SectionTabs } from '../../../shared/components/section-tabs/section-tabs';
 
 interface PredResultItem {
   act: ActividadDto;
@@ -32,7 +35,7 @@ interface PredResultItem {
 @Component({
   selector: 'app-cronograma-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SectionTabs],
   templateUrl: './cronograma-actividades.html',
   styleUrl: './cronograma-actividades.css',
 })
@@ -75,6 +78,12 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   formNivel = 1;
   formPadreId: number | null = null;
   private readonly NIVEL0 = { bg: '#1B263B', text: '#E0E1DD' } as const;
+  private readonly NIVEL0_ENTRIES = [
+    { bg: '#ffffff', text: '#1E3A5F', border: '#2E6DB4', color: '#2E6DB4' },
+    { bg: '#ffffff', text: '#1E3A5F', border: '#1B6B3A', color: '#1B6B3A' },
+    { bg: '#ffffff', text: '#1E3A5F', border: '#D97706', color: '#D97706' },
+    { bg: '#ffffff', text: '#1E3A5F', border: '#C0392B', color: '#C0392B' },
+  ] as const;
   private readonly GANTT_WEEK_PX = 50;
   private readonly GANTT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   private readonly LEVEL1_COLORS = [
@@ -120,6 +129,19 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   // Vista Gantt dhtmlx
   vistaGantt = false;
 
+  // Pestañas de tipo cronograma
+  tipoCronogramaActivo: string | null = null;
+
+  // Modal creación masiva
+  masivoModalOpen = false;
+  guardandoMasivo = false;
+  masivoFilas: { nombre: string; inicioProgramado: string; finProgramado: string }[] = [];
+  readonly cronogramaTabs = [
+    { id: 'ANTEPROYECTO',          label: 'Anteproyecto' },
+    { id: 'PROYECTO',              label: 'Proyecto' },
+    { id: 'PROYECTO_ACTUALIZACION', label: 'Proyecto de Actualización' },
+  ];
+
   constructor(
     private service: CronogramaActividadesService,
     private loaderService: LoaderService,
@@ -144,7 +166,17 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       return;
     }
     this.selectedProyectoId = id;
-    this.loadActividades(id);
+  }
+
+  onTabChange(id: string): void {
+    this.tipoCronogramaActivo = id;
+    this.actividades = [];
+    this.collapsedIds.clear();
+    if (this.vistaGantt) {
+      this.destroyGanttView();
+      this.vistaGantt = false;
+    }
+    this.loadActividades(this.selectedProyectoId!);
   }
 
   ngOnDestroy(): void {
@@ -160,7 +192,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   private loadActividades(proyectoId: number): void {
     this.loadingActividades = true;
     this.loaderService.show();
-    this.service.getActividades(proyectoId).subscribe({
+    this.service.getActividades(proyectoId, this.tipoCronogramaActivo!).subscribe({
       next: (res: ActividadesProyectoResponseDto) => {
         this.proyectoHeader = res.proyecto;
         this.actividades    = res.actividades ?? [];
@@ -188,11 +220,29 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   private buildColorMap(): void {
     this.rowStyleMap.clear();
+    // Only true root activities (no parent) count as nivel-0
+    const nivel0Count = this.actividades.filter(
+      (a) => (a.hierarchyLevel != null ? Number(a.hierarchyLevel) : 0) <= 0 && a.parentId == null,
+    ).length;
+    let nivel0Idx = 0;
     let level1Idx = 0;
     for (const act of this.actividades) {
-      if (act.hierarchyLevel === 0) {
-        this.rowStyleMap.set(act.projectActivityId, { ...this.NIVEL0 });
-      } else if (act.hierarchyLevel === 1) {
+      // Coerce to number: guards against null/undefined from unexpected JSON responses
+      const level = act.hierarchyLevel != null ? Number(act.hierarchyLevel) : 0;
+      // An activity with a parent is never a root node, regardless of hierarchyLevel value
+      const isRoot = level <= 0 && act.parentId == null;
+
+      if (isRoot) {
+        if (nivel0Count === 1) {
+          // Single root — dark navy header style
+          this.rowStyleMap.set(act.projectActivityId, { ...this.NIVEL0 });
+        } else {
+          // Multiple roots — use bg/text/color from NIVEL0_ENTRIES cyclically
+          const entry = this.NIVEL0_ENTRIES[nivel0Idx % this.NIVEL0_ENTRIES.length];
+          this.rowStyleMap.set(act.projectActivityId, { ...entry });
+          nivel0Idx++;
+        }
+      } else if (level <= 1) {
         const color = this.LEVEL1_COLORS[level1Idx % this.LEVEL1_COLORS.length];
         this.rowStyleMap.set(act.projectActivityId, {
           bg: '#ffffff',
@@ -201,7 +251,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
           color,
         });
         level1Idx++;
-      } else if (act.hierarchyLevel === 2) {
+      } else if (level === 2) {
         const parentColor = this.findAncestorColorAtLevel(act, 1);
         this.rowStyleMap.set(act.projectActivityId, {
           bg: '#f0f4f8',
@@ -239,14 +289,19 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   getRowStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    if (!info) return {};
-    const style: Record<string, string> = { 'background-color': info.bg, color: info.text };
-    if (info.border) style['--lvl-border'] = info.border;
+    // Fallback: level-0 activity not yet in map (e.g. called before buildColorMap runs)
+    const resolved: { bg: string; text: string; border?: string } | null =
+      info ?? ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null ? this.NIVEL0 : null);
+    if (!resolved) return {};
+    const style: Record<string, string> = { 'background-color': resolved.bg, color: resolved.text };
+    if (resolved.border) style['--lvl-border'] = resolved.border;
     return style;
   }
 
   isDarkBg(act: ActividadDto): boolean {
-    return this.rowStyleMap.get(act.projectActivityId)?.text === '#E0E1DD';
+    const info = this.rowStyleMap.get(act.projectActivityId);
+    if (info) return info.text === '#E0E1DD';
+    return (act.hierarchyLevel ?? 0) <= 0 && act.parentId == null;
   }
 
   getBadgeStyle(act: ActividadDto): Record<string, string> {
@@ -772,19 +827,82 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   // ── Modal ──────────────────────────────────────────────────────────────────
 
   abrirModalCrear(): void {
-    this.modalMode = 'crear';
-    this.editandoId = null;
-    this.formActividad = '';
-    this.formPlannedStart = '';
-    this.formPlannedEnd = '';
-    this.formActualEnd = '';
-    this.formProgress = 0;
-    this.formNivel = 1;
-    this.formPadreId = null;
-    this.nuevaDuracionDias = null;
-    this.guardando = false;
-    this.nuevaDuracionDias = null;
-    this.modalOpen = true;
+    this.abrirModalMasivo();
+  }
+
+  // ── Modal creación masiva ──────────────────────────────────────────────────
+
+  abrirModalMasivo(): void {
+    this.masivoFilas = [{ nombre: '', inicioProgramado: '', finProgramado: '' }];
+    this.guardandoMasivo = false;
+    this.masivoModalOpen = true;
+  }
+
+  cerrarModalMasivo(): void {
+    this.masivoModalOpen = false;
+    this.masivoFilas = [];
+    this.guardandoMasivo = false;
+  }
+
+  onMasivoOverlayClick(e: MouseEvent): void {
+    if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.cerrarModalMasivo();
+    }
+  }
+
+  agregarFilaMasivo(): void {
+    this.masivoFilas = [...this.masivoFilas, { nombre: '', inicioProgramado: '', finProgramado: '' }];
+  }
+
+  eliminarFilaMasivo(i: number): void {
+    if (this.masivoFilas.length <= 1) return;
+    this.masivoFilas = this.masivoFilas.filter((_, idx) => idx !== i);
+  }
+
+  guardarMasivo(): void {
+    const invalida = this.masivoFilas.find(f => !f.nombre.trim());
+    if (invalida !== undefined) {
+      Swal.fire({ icon: 'warning', title: 'Nombre requerido', text: 'Cada actividad debe tener un nombre.', confirmButtonColor: '#1E3A5F' });
+      return;
+    }
+    const fechaInvalida = this.masivoFilas.find(
+      f => f.inicioProgramado && f.finProgramado && f.inicioProgramado > f.finProgramado,
+    );
+    if (fechaInvalida) {
+      Swal.fire({ icon: 'warning', title: 'Fechas inválidas', text: `En "${fechaInvalida.nombre}" el inicio es posterior al fin.`, confirmButtonColor: '#1E3A5F' });
+      return;
+    }
+
+    this.guardandoMasivo = true;
+    this.loaderService.show();
+    this.service
+      .crearActividadesMasivo(this.selectedProyectoId!, {
+        actividades: this.masivoFilas.map(f => ({
+          nombre: f.nombre.trim(),
+          inicioProgramado: f.inicioProgramado || null,
+          finProgramado: f.finProgramado || null,
+          tipoCronograma: this.tipoCronogramaActivo!,
+        })),
+      })
+      .subscribe({
+        next: (res: CrearActividadesMasivoResultDto) => {
+          this.guardandoMasivo = false;
+          this.loaderService.hide();
+          this.cerrarModalMasivo();
+          this.recargar();
+          const n = res.actividadesCreadas;
+          Swal.fire({
+            icon: 'success',
+            title: `${n} actividad${n !== 1 ? 'es' : ''} creada${n !== 1 ? 's' : ''}`,
+            confirmButtonColor: '#1E3A5F',
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoMasivo = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
   }
 
   abrirModalEditar(act: ActividadDto): void {
@@ -1086,6 +1204,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         progressPercentage: Number(this.formProgress) || 0,
         hierarchyLevel: this.formNivel,
         parentId: this.formNivel > 1 ? this.formPadreId : null,
+        tipoCronograma: this.tipoCronogramaActivo!,
       };
       this.service.crearActividad(this.selectedProyectoId, body).subscribe({
         next: (res: EditarActividadResultDto) => {
@@ -1180,7 +1299,9 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   }
 
   private recargar(): void {
-    if (this.selectedProyectoId) this.loadActividades(this.selectedProyectoId);
+    if (this.selectedProyectoId && this.tipoCronogramaActivo) {
+      this.loadActividades(this.selectedProyectoId);
+    }
   }
 
   /** Recarga desde BD preservando scroll (.page-content) y estado de colapso. */
@@ -1193,7 +1314,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
     this.loadingActividades = true;
     this.loaderService.show();
-    this.service.getActividades(this.selectedProyectoId).subscribe({
+    this.service.getActividades(this.selectedProyectoId, this.tipoCronogramaActivo!).subscribe({
       next: (res: ActividadesProyectoResponseDto) => {
         this.proyectoHeader = res.proyecto;
         this.actividades    = res.actividades ?? [];
@@ -1650,7 +1771,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
     const doImport = () => {
       this.importando = true;
-      this.service.importarMpp(this.selectedProyectoId!, this.mppFile!).subscribe({
+      this.service.importarMpp(this.selectedProyectoId!, this.mppFile!, this.tipoCronogramaActivo!).subscribe({
         next: (r: ImportarMppResultDto) => {
           this.importando = false;
           this.cerrarModalMpp();

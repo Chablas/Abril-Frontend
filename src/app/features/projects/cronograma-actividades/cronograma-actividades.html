@@ -25,6 +25,28 @@
   <!-- ── Tabla de actividades ── -->
   <div class="card table-card" *ngIf="selectedProyectoId">
 
+    <!-- Pestañas tipo cronograma -->
+    <div class="cron-tabs-wrapper">
+      <app-section-tabs
+        [tabs]="cronogramaTabs"
+        [value]="tipoCronogramaActivo"
+        (valueChange)="onTabChange($event)">
+      </app-section-tabs>
+    </div>
+
+    <!-- Placeholder: ninguna pestaña seleccionada -->
+    <div class="table-empty-state" *ngIf="!tipoCronogramaActivo && !loadingActividades">
+      <div class="empty-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <p class="empty-title">Selecciona un cronograma para comenzar</p>
+    </div>
+
     <!-- Skeleton mientras cargan las actividades -->
     <ng-container *ngIf="loadingActividades">
       <div class="skeleton-toolbar">
@@ -70,7 +92,7 @@
     </ng-container>
 
     <!-- Contenido cuando cargó -->
-    <ng-container *ngIf="!loadingActividades">
+    <ng-container *ngIf="!loadingActividades && tipoCronogramaActivo">
 
       <div class="table-toolbar">
         <span class="toolbar-info">
@@ -177,6 +199,7 @@
               [class.row-dark]="isDarkBg(act)"
               [class.row-light]="!isDarkBg(act)"
               [class.row-bordered]="act.hierarchyLevel >= 3"
+              [class.row-nivel0-multi]="!isDarkBg(act) && (act.hierarchyLevel ?? 0) <= 0"
               [class.lvl-0]="act.hierarchyLevel === 0"
               [class.lvl-1]="act.hierarchyLevel === 1"
               [class.lvl-2]="act.hierarchyLevel === 2"
@@ -456,7 +479,7 @@
   <div class="modal-box">
 
     <div class="modal-header">
-      <h3 class="modal-title">{{ modalMode === 'crear' ? 'Nueva Actividad' : 'Editar Actividad' }}</h3>
+      <h3 class="modal-title">Editar Actividad</h3>
       <button class="btn-modal-close" (click)="cerrarModal()" title="Cerrar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -476,27 +499,6 @@
           placeholder="Descripción de la actividad..."
           autocomplete="off"
         />
-      </div>
-
-      <!-- Nivel y Padre (solo en crear) -->
-      <div class="field-row" *ngIf="modalMode === 'crear'">
-        <div class="field">
-          <label class="field-label">Nivel</label>
-          <select class="field-input" [ngModel]="formNivel" (ngModelChange)="onFormNivelChange($event)">
-            <option [ngValue]="1">Nivel 1</option>
-            <option [ngValue]="2">Nivel 2</option>
-            <option [ngValue]="3">Nivel 3</option>
-          </select>
-        </div>
-        <div class="field" *ngIf="formNivel > 1">
-          <label class="field-label">Padre *</label>
-          <select class="field-input" [(ngModel)]="formPadreId">
-            <option [ngValue]="null">— Seleccionar padre —</option>
-            <option *ngFor="let p of padresDisponibles" [ngValue]="p.projectActivityId">
-              {{ p.order }}. {{ p.activityDescription }}
-            </option>
-          </select>
-        </div>
       </div>
 
       <!-- Fechas programadas -->
@@ -522,20 +524,6 @@
             [disabled]="!!editandoAct?.esPadre"
           />
         </div>
-      </div>
-
-      <!-- Duración (solo en crear) -->
-      <div class="field" *ngIf="modalMode === 'crear'">
-        <label class="field-label">Duración (días)</label>
-        <input
-          type="number"
-          class="field-input"
-          [ngModel]="nuevaDuracionDias"
-          (ngModelChange)="onNuevaDuracionChange($event)"
-          [disabled]="!formPlannedStart"
-          min="1"
-          placeholder="Ej: 30"
-        />
       </div>
 
       <!-- Avance -->
@@ -657,6 +645,92 @@
       <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
         {{ guardando ? 'Guardando...' : 'Guardar' }}
       </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal Nueva Actividad (creación masiva) ── -->
+<div class="modal-overlay" *ngIf="masivoModalOpen" (click)="onMasivoOverlayClick($event)">
+  <div class="modal-box modal-box-masivo">
+
+    <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+      <h3 class="modal-title">Nueva Actividad</h3>
+      <button class="btn-modal-close" (click)="cerrarModalMasivo()" [disabled]="guardandoMasivo" title="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" style="padding: 0; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <th style="width:35px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">#</th>
+            <th style="padding:8px 6px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Actividad</th>
+            <th style="width:130px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Inicio Prog.</th>
+            <th style="width:130px; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; text-transform:uppercase; color:#64748B;">Fin Prog.</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of masivoFilas; let i = index; let even = even"
+              [style.background]="even ? '#F8FAFC' : '#ffffff'">
+            <td style="width:35px; padding:5px 6px; text-align:center; font-size:13px; color:#94A3B8; font-variant-numeric:tabular-nums;">
+              {{ i + 1 }}
+            </td>
+            <td style="padding:5px 6px;">
+              <input type="text"
+                class="masivo-input"
+                [(ngModel)]="fila.nombre"
+                placeholder="Nombre de la actividad..."
+              />
+            </td>
+            <td style="width:130px; padding:5px 6px;">
+              <input type="date"
+                class="masivo-input masivo-input-date"
+                [(ngModel)]="fila.inicioProgramado"
+              />
+            </td>
+            <td style="width:130px; padding:5px 6px;">
+              <input type="date"
+                class="masivo-input masivo-input-date"
+                [(ngModel)]="fila.finProgramado"
+              />
+            </td>
+            <td style="width:36px; padding:5px 6px; text-align:center;">
+              <button type="button"
+                class="masivo-del-btn"
+                (click)="eliminarFilaMasivo(i)"
+                [disabled]="masivoFilas.length <= 1 || guardandoMasivo"
+                title="Eliminar fila">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer" style="border-top:1px solid #E2E8F0; padding-top:16px; justify-content:space-between; align-items:center;">
+      <button type="button"
+        class="masivo-btn-agregar"
+        (click)="agregarFilaMasivo()"
+        [disabled]="guardandoMasivo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Agregar fila
+      </button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-ghost" (click)="cerrarModalMasivo()" [disabled]="guardandoMasivo">Cancelar</button>
+        <button class="btn-primary" (click)="guardarMasivo()" [disabled]="guardandoMasivo">
+          {{ guardandoMasivo ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
     </div>
 
   </div>
