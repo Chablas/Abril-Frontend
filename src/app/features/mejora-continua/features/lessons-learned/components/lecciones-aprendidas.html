@@ -90,6 +90,20 @@
       <!-- Advanced filters -->
       <ng-container *ngIf="showFilters">
 
+        <!-- Revisor (jefe asignado al autor de la lección) -->
+        <div class="w-full sm:w-[220px]">
+          <app-search-select
+            label="Revisor"
+            [options]="reviewerOptions"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="filtersTable.reviewerWorkerId"
+            [fullText]="true"
+            placeholder="Todos los revisores"
+            (valueChange)="filtersTable.reviewerWorkerId = $event">
+          </app-search-select>
+        </div>
+
         <!-- Un dropdown por cada catalog_type activo en scope_item -->
         <div *ngFor="let cat of categoryOptions" class="w-full sm:w-[220px]">
           <app-search-select

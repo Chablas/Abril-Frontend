@@ -50,31 +50,57 @@
       </app-search-select>
     </div>
 
-    <!-- Usuario -->
-    <div class="w-[260px]">
+    <!-- Estado (primario) — por defecto 'Aprobada' -->
+    <div class="w-[200px]">
       <app-search-select
-        label="Usuario"
-        [options]="filters.users"
-        valueField="userId"
-        displayField="fullName"
-        [value]="selected.userId"
-        (valueChange)="selected.userId = $event ?? 0"
-        placeholder="Todos los usuarios">
+        label="Estado"
+        [options]="approvalStatusOptions"
+        valueField="value"
+        displayField="label"
+        [value]="selected.approvalStatus"
+        (valueChange)="selected.approvalStatus = $event"
+        placeholder="Todos los estados">
       </app-search-select>
     </div>
 
-    <!-- Proyectos (selección múltiple) -->
-    <div class="w-[240px]">
-      <app-multi-search-select
-        label="Proyectos"
-        [options]="filters.projects"
-        valueField="projectId"
-        displayField="projectDescription"
-        [value]="selected.projectIds"
-        (valueChange)="selected.projectIds = $event"
-        placeholder="Todos los proyectos">
-      </app-multi-search-select>
-    </div>
+    <!-- Filtros avanzados (colapsados tras "Búsqueda avanzada") -->
+    <ng-container *ngIf="showFilters">
+      <!-- Usuario -->
+      <div class="w-[260px]">
+        <app-search-select
+          label="Usuario"
+          [options]="filters.users"
+          valueField="userId"
+          displayField="fullName"
+          [value]="selected.userId"
+          (valueChange)="selected.userId = $event ?? 0"
+          placeholder="Todos los usuarios">
+        </app-search-select>
+      </div>
+
+      <!-- Proyectos (selección múltiple) -->
+      <div class="w-[240px]">
+        <app-multi-search-select
+          label="Proyectos"
+          [options]="filters.projects"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="selected.projectIds"
+          (valueChange)="selected.projectIds = $event"
+          placeholder="Todos los proyectos">
+        </app-multi-search-select>
+      </div>
+    </ng-container>
+
+    <button type="button" (click)="showFilters = !showFilters"
+      class="h-[38px] px-4 bg-[var(--color-abril-lime-light)] rounded-lg text-[var(--color-abril-lime)] text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-lime-light)] transition-colors flex items-center gap-2">
+      <svg class="w-4 h-4" viewBox="0 0 15 15" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd"
+          d="M6.417 0v9.167H5.5V11H6.417v3.667H8.25V11h.917V9.167H8.25V0H6.417ZM.917 0v3.668H0V5.5h.917v9.167H2.75V5.5h.917V3.668H2.75V0H.917ZM11.916.0002V5.5h-.917v1.833h.917v7.334h1.834V7.333h.917V5.5h-.917V0l-1.834.0002Z"
+          fill="var(--color-abril-lime)"/>
+      </svg>
+      {{ showFilters ? 'Ocultar filtros' : 'Busqueda avanzada' }}
+    </button>
 
     <button type="button" (click)="loadDashboard()"
       class="h-[38px] px-5 bg-[#64BC04] rounded-[10px] cursor-pointer flex items-center gap-2">
@@ -228,50 +254,6 @@
         <canvas #lessonsLineChart class="absolute inset-0 w-full"></canvas>
       </div>
     </div>
-  </div>
-
-  <!-- Usuarios pendientes del mes (accionable) -->
-  <div class="rounded-lg border border-gray-200 bg-white p-5">
-    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-      <div class="flex items-center gap-2">
-        <h3 class="font-semibold text-gray-800">USUARIOS PENDIENTES</h3>
-        <span class="text-xs bg-[#FAD5D4] text-[#D30000] rounded-full px-2 py-0.5 font-semibold">
-          {{ data?.pendingUsers?.length ?? 0 }}
-        </span>
-        <span class="text-xs text-gray-400">Período {{ data?.pendingPeriodLabel }}</span>
-      </div>
-      <a routerLink="/mejora-continua/configuration/reminders"
-        class="text-sm text-[#0086A5] hover:underline flex items-center gap-1">
-        Gestionar recordatorios
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      </a>
-    </div>
-
-    <div *ngIf="data?.pendingUsers?.length; else allDone"
-      class="max-h-[280px] overflow-y-auto divide-y divide-gray-100">
-      <div *ngFor="let u of data?.pendingUsers" class="py-2.5 flex flex-col sm:flex-row sm:items-center gap-2">
-        <div class="sm:w-[280px] flex flex-col">
-          <span class="text-sm font-medium text-gray-800">{{ u.fullName }}</span>
-          <a *ngIf="u.email" [href]="'mailto:' + u.email" class="text-xs text-[#0086A5] hover:underline">
-            {{ u.email }}
-          </a>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          <span *ngFor="let p of u.projects"
-            class="text-xs bg-gray-100 text-gray-600 border border-gray-200 rounded px-2 py-0.5">
-            {{ p }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <ng-template #allDone>
-      <div class="py-6 text-center text-sm text-[#009C87]">
-        🎉 ¡Todos al día! No hay usuarios pendientes en el período {{ data?.pendingPeriodLabel }}.
-      </div>
-    </ng-template>
   </div>
 
 </div>

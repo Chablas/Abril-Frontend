@@ -67,12 +67,13 @@ export class LeccionesAprendidas implements OnInit {
 
   // Filters raw
   filtersData: LessonFiltersDTO = {
-    projects: [], areas: [], periods: [], users: [], categories: [],
+    projects: [], areas: [], periods: [], users: [], reviewers: [], categories: [],
   };
 
   // Computed SearchSelect options (with null "Todos" prepended)
   projectOptions: any[] = [];
   userOptions: any[] = [];
+  reviewerOptions: any[] = [];
   periodOptions: any[] = [];
   /**
    * Por cada catalog_type, las opciones del dropdown (con el "Todos" inicial).
@@ -84,6 +85,8 @@ export class LeccionesAprendidas implements OnInit {
     projectId: null as number | null,
     periodDate: null as string | null,
     userId: null as number | null,
+    /** Revisor (jefe asignado al autor) — workerId o null = todos. */
+    reviewerWorkerId: null as number | null,
     /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
     catalogSelections: {} as Record<number, number | null>,
     /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. */
@@ -290,6 +293,7 @@ export class LeccionesAprendidas implements OnInit {
   private buildFilterOptions(fd: LessonFiltersDTO): void {
     this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
     this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
+    this.reviewerOptions = [{ workerId: null, fullName: 'Todos los revisores' }, ...(fd.reviewers ?? [])];
     this.periodOptions = [
       { periodDate: null, periodLabel: 'Todos los periodos' },
       ...fd.periods.map(p => ({
@@ -333,6 +337,7 @@ export class LeccionesAprendidas implements OnInit {
       lessonAreaIds: this.selectedAreaIds.length ? this.selectedAreaIds.join(',') : null,
       periodDate: this.filtersTable.periodDate,
       userId: this.filtersTable.userId,
+      reviewerWorkerId: this.filtersTable.reviewerWorkerId,
       catalogItemIds: selected.length > 0 ? selected.join(',') : null,
       approvalStatus: this.filtersTable.approvalStatus,
       onlyMyPendingReview: this.filtersTable.onlyMyPendingReview ? true : null,

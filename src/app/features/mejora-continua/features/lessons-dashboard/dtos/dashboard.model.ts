@@ -70,4 +70,6 @@ export interface SelectedDashboardFilters {
   /** lesson_area_ids efectivos (subárbol del nodo de área donde se detuvo el usuario). */
   lessonAreaIds: number[];
   projectIds: number[];
+  /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. Default 'APROBADA'. */
+  approvalStatus: string | null;
 }
