@@ -150,8 +150,8 @@
                 </div>
               </td>
               <td>{{ item.tipoEmo }}</td>
-              <td>{{ formatFecha(item.fecha) }}</td>
-              <td>{{ item.hora || '—' }}</td>
+              <td>{{ formatFecha(item.fechaProgramada) }}</td>
+              <td>{{ item.horaProgramada || '—' }}</td>
               <td class="text-gray-600">{{ item.clinica || '—' }}</td>
               <td class="text-gray-600">{{ item.medico || '—' }}</td>
               <td>
@@ -246,7 +246,7 @@
           <div class="day-body">
             <div *ngIf="dia.items.length === 0" class="day-empty">—</div>
             <div *ngFor="let p of dia.items" class="event-chip">
-              <div class="event-time">{{ p.hora || '--' }}</div>
+              <div class="event-time">{{ p.horaProgramada || '--' }}</div>
               <div class="event-body">
                 <div class="event-name">{{ p.workerNombre }}</div>
                 <span *ngIf="esAutomatico(p)"

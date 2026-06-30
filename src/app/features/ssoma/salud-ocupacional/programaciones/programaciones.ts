@@ -203,8 +203,8 @@ export class Programaciones implements OnInit, OnDestroy {
         fecha,
         key,
         items: this.calendarioItems
-          .filter((p) => (p.fecha || '').substring(0, 10) === key)
-          .sort((a, b) => (a.hora || '').localeCompare(b.hora || '')),
+          .filter((p) => (p.fechaProgramada || '').substring(0, 10) === key)
+          .sort((a, b) => (a.horaProgramada || '').localeCompare(b.horaProgramada || '')),
       });
     }
     this.calendarioDias = dias;

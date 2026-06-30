@@ -21,9 +21,11 @@ export interface ProgramacionListDto {
   workerNombre: string;
   workerDni: string;
   tipoEmo: string;
+  tipoEmoId?: number;
   empresa: string;
-  fecha: string;
-  hora?: string;
+  proyecto?: string | null;
+  fechaProgramada: string;
+  horaProgramada?: string | null;
   clinica?: string;
   medico?: string;
   estado: EstadoProgramacion;
@@ -34,6 +36,12 @@ export interface ProgramacionListDto {
   motivoRechazo?: string;
   emoResultadoId?: number;
   fechaNotificacion?: string;
+  fechaVencimientoEmo?: string | null;
+  ocupacion?: string | null;
+  categoria?: string | null;
+  tipoTrabajador?: string | null;
+  interconsultaEstado?: string | null;
+  tieneInterconsulta?: boolean;
 }
 
 export interface ProgramacionCreateDto {
