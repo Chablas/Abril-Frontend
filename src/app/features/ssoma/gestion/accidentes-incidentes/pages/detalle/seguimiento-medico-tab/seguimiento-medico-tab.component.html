@@ -92,7 +92,7 @@
                 </span>
               </div>
               <div class="sm-item__meta">
-                {{ d.fechaInicio | date:'dd/MM/yyyy' }} — {{ d.fechaFin | date:'dd/MM/yyyy' }}
+                {{ d.fechaInicio | date:'dd/MM/yyyy':'UTC' }} — {{ d.fechaFin | date:'dd/MM/yyyy':'UTC' }}
                 · <strong>{{ d.dias }}</strong> días
               </div>
             </div>
@@ -113,7 +113,7 @@
                 <span class="sm-item__title">{{ c.tipoNombre || 'Cita' }} #{{ c.id }}</span>
               </div>
               <div class="sm-item__meta">
-                {{ c.fechaCita | date:'dd/MM/yyyy' }}
+                {{ c.fechaCita | date:'dd/MM/yyyy':'UTC' }}
                 @if (c.horaCita) { · {{ c.horaCita }} }
                 @if (c.clinica) { · {{ c.clinica }} }
               </div>
@@ -146,8 +146,8 @@
                 </span>
               </div>
               <div class="sm-item__meta">
-                Cant.: {{ eq.cantidad }} · Préstamo: {{ eq.fechaPrestamo | date:'dd/MM/yyyy' }}
-                @if (eq.fechaDevolucion) { · Dev.: {{ eq.fechaDevolucion | date:'dd/MM/yyyy' }} }
+                Cant.: {{ eq.cantidad }} · Préstamo: {{ eq.fechaPrestamo | date:'dd/MM/yyyy':'UTC' }}
+                @if (eq.fechaDevolucion) { · Dev.: {{ eq.fechaDevolucion | date:'dd/MM/yyyy':'UTC' }} }
               </div>
             </div>
           }
@@ -165,7 +165,7 @@
           <dd>{{ detalle.altaMedica.tipoNombre || '—' }}</dd>
 
           <dt>Fecha</dt>
-          <dd>{{ detalle.altaMedica.fechaAlta | date:'dd/MM/yyyy' }}</dd>
+          <dd>{{ detalle.altaMedica.fechaAlta | date:'dd/MM/yyyy':'UTC' }}</dd>
 
           @if (detalle.altaMedica.medico) {
             <dt>Médico</dt>
@@ -182,7 +182,7 @@
             <dd>
               {{ detalle.altaMedica.descripcionRestriccion || 'Sí' }}
               @if (detalle.altaMedica.fechaFinRestriccion) {
-                <span class="sm-sub">Hasta: {{ detalle.altaMedica.fechaFinRestriccion | date:'dd/MM/yyyy' }}</span>
+                <span class="sm-sub">Hasta: {{ detalle.altaMedica.fechaFinRestriccion | date:'dd/MM/yyyy':'UTC' }}</span>
               }
             </dd>
           }

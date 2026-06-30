@@ -41,6 +41,18 @@
   </div>
 </div>
 
+<!-- Group selector — solo aparece cuando hay múltiples grupos -->
+<div class="abril-tab-groups" *ngIf="hasGroups">
+  <button
+    *ngFor="let g of tabGroups; let i = index"
+    class="atg-btn"
+    [class.atg-btn--active]="i === activeGroupIndex"
+    (click)="navigateToGroup(g)">
+    <i *ngIf="g.icono" class="ti {{ g.icono }}"></i>
+    {{ g.label }}
+  </button>
+</div>
+
 <div class="abril-tabs" *ngIf="visibleTabs.length">
   <nav class="abril-tabs__nav">
     <ng-container *ngFor="let tab of visibleTabs">

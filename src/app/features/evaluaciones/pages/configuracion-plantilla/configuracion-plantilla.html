@@ -2,11 +2,18 @@
   badge="EVALUACIONES"
   titulo="Configuración"
   subtitulo="Plantilla de criterios y áreas evaluadoras."
-  [tabs]="[
-    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
-    { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
-    { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
-    { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+    [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas' }
+    ]}
   ]">
 </app-abril-page-header>
 

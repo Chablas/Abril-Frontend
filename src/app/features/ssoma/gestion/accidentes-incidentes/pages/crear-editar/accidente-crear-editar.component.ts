@@ -182,8 +182,8 @@ export class AccidenteCrearEditarComponent implements OnInit {
             parteAfectadaId: t.parteAfectadaId,
           })),
         };
-        this.foto1Preview = res.urlFoto1 ?? null;
-        this.foto2Preview = res.urlFoto2 ?? null;
+        if (res.urlFoto1) this.cargarBlobFoto(1);
+        if (res.urlFoto2) this.cargarBlobFoto(2);
         this.cargando = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -198,6 +198,20 @@ export class AccidenteCrearEditarComponent implements OnInit {
   }
 
   // ── Fotos ──────────────────────────────────────────────────────────────────
+
+  private cargarBlobFoto(slot: 1 | 2): void {
+    const token = localStorage.getItem('access_token');
+    const url = this.service.getFotoUrl(this.id!, slot);
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => { if (!r.ok) throw new Error(); return r.blob(); })
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        if (slot === 1) this.foto1Preview = blobUrl;
+        else this.foto2Preview = blobUrl;
+        this.cdr.detectChanges();
+      })
+      .catch(() => this.cdr.detectChanges());
+  }
 
   onFotoSelect(event: Event, slot: 1 | 2): void {
     const input = event.target as HTMLInputElement;

@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 
@@ -23,6 +23,12 @@ export interface AbrilPageTab {
   featureKey?: string;
 }
 
+export interface AbrilPageTabGroup {
+  label: string;
+  icono?: string;
+  tabs: AbrilPageTab[];
+}
+
 @Component({
   selector: 'app-abril-page-header',
   standalone: true,
@@ -36,10 +42,9 @@ export class AbrilPageHeaderComponent {
   @Input() subtitulo = '';
   @Input() pills: SsomaHeaderPill[] = [];
   @Input() tabs: AbrilPageTab[] = [];
+  @Input() tabGroups: AbrilPageTabGroup[] = [];
   @Input() botonPrimario?: SsomaHeaderBtn;
-  /** Deshabilita el botón primario (no emite primaryClick y se ve atenuado). */
   @Input() botonPrimarioDeshabilitado = false;
-  /** Tooltip a mostrar sobre el botón primario (útil al estar deshabilitado). */
   @Input() botonPrimarioTooltip?: string;
   @Input() botonSecundario?: SsomaHeaderBtn;
   @Output() primaryClick = new EventEmitter<void>();
@@ -49,11 +54,33 @@ export class AbrilPageHeaderComponent {
 
   private layoutService = inject(LayoutService);
   private navigationService = inject(NavigationService);
+  private router = inject(Router);
+
+  get hasGroups(): boolean {
+    return this.tabGroups.length > 1;
+  }
+
+  get activeGroupIndex(): number {
+    const url = this.router.url;
+    const idx = this.tabGroups.findIndex(g =>
+      g.tabs.some(t => t.route && url.startsWith(t.route))
+    );
+    return idx >= 0 ? idx : 0;
+  }
+
+  get resolvedTabs(): AbrilPageTab[] {
+    return this.hasGroups ? (this.tabGroups[this.activeGroupIndex]?.tabs ?? []) : this.tabs;
+  }
 
   get visibleTabs(): AbrilPageTab[] {
-    return this.tabs.filter(
+    return this.resolvedTabs.filter(
       (t) => !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey),
     );
+  }
+
+  navigateToGroup(group: AbrilPageTabGroup): void {
+    const firstRoute = group.tabs.find(t => t.route)?.route;
+    if (firstRoute) this.router.navigateByUrl(firstRoute);
   }
 
   onHamburgerClick(): void {

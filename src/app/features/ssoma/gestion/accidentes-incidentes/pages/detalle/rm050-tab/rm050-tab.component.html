@@ -27,7 +27,7 @@
       <div class="rm-grid">
         <div class="rm-field">
           <label>Fecha y hora</label>
-          <div class="rm-valor-ro">{{ detalle?.fecha | date:'dd/MM/yyyy' }} {{ detalle?.hora ?? '' }}</div>
+          <div class="rm-valor-ro">{{ detalle?.fecha | date:'dd/MM/yyyy':'UTC' }} {{ detalle?.hora ?? '' }}</div>
         </div>
         <div class="rm-field">
           <label>Proyecto</label>

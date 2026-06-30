@@ -132,7 +132,7 @@
           </div>
           <div class="info-item">
             <span class="info-label">Fecha / Hora</span>
-            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy' }} {{ detalle.hora ?? '' }}</span>
+            <span class="info-value">{{ detalle.fecha | date:'dd/MM/yyyy':'UTC' }} {{ detalle.hora ?? '' }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Etapa</span>
@@ -283,8 +283,8 @@
             <tbody>
               @for (d of detalle.descansos; track d.id) {
                 <tr>
-                  <td>{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ d.fechaFin | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ d.fechaInicio | date:'dd/MM/yyyy':'UTC' }}</td>
+                  <td>{{ d.fechaFin | date:'dd/MM/yyyy':'UTC' }}</td>
                   <td>{{ d.diasDescanso }}</td>
                   <td>{{ d.observacion ?? '—' }}</td>
                 </tr>
