@@ -8,7 +8,6 @@ import {
 import { CommonModule, formatDate } from '@angular/common';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -46,7 +45,7 @@ interface AreaTreeNode {
 @Component({
   selector: 'app-lessons-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SearchSelect, MultiSearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SearchSelect, MultiSearchSelect, AbrilPageHeaderComponent],
   templateUrl: './lessons-dashboard.html',
   styleUrl: './lessons-dashboard.css',
 })
@@ -68,7 +67,20 @@ export class LessonsDashboard implements AfterViewInit {
 
   data?: LessonsDashboardDataDTO;
   filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [], projects: [] };
-  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaIds: [], projectIds: [] };
+  // approvalStatus arranca en 'APROBADA': al cargar el dashboard solo se muestran
+  // las lecciones aprobadas (el usuario puede cambiarlo a otro estado o a todos).
+  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaIds: [], projectIds: [], approvalStatus: 'APROBADA' };
+
+  /** Filtros avanzados (Usuario, Proyectos) colapsados tras "Búsqueda avanzada". */
+  showFilters = false;
+
+  // Opciones del filtro de estado de aprobación (igual que en Lecciones Aprendidas).
+  approvalStatusOptions = [
+    { value: null, label: 'Todos los estados' },
+    { value: 'PENDIENTE', label: 'Pendiente' },
+    { value: 'APROBADA', label: 'Aprobada' },
+    { value: 'RECHAZADA', label: 'Rechazada' },
+  ];
 
   // ── Filtro de área en cascada (misma lógica que Lecciones Aprendidas) ──────
   private areaTreeRoots: AreaTreeNode[] = [];
