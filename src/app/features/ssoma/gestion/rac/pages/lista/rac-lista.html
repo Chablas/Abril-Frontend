@@ -10,9 +10,7 @@
       { label: 'Penalidades', icono: 'ti-alert-triangle', route: '/ssoma/gestion/rac/penalidades' }
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    [botonPrimario]="{ label: 'Nuevo RAC', icono: 'ti-plus' }"
-    (secondaryClick)="load()"
-    (primaryClick)="irANuevo()">
+    (secondaryClick)="load()">
   </app-abril-page-header>
 
   <div class="lista-body">
@@ -214,10 +212,6 @@
 
   </div><!-- /lista-body -->
 
-  <!-- FAB -->
-  <button type="button" class="fab" (click)="irANuevo()" title="Nuevo RAC">
-    <i class="ti ti-plus"></i>
-    <span class="fab__label">Nuevo RAC</span>
-  </button>
 
+  <app-fab label="Nuevo RAC" (clicked)="irANuevo()"></app-fab>
 </div>

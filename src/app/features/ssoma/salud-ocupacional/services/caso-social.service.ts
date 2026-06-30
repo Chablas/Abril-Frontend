@@ -11,6 +11,9 @@ import {
   CasoSocialCerrarDto,
   CasoSocialFilterDto,
   SeguimientoCreateDto,
+  SctrGestionDto,
+  SctrGestionCreateDto,
+  SctrGestionUpdateDto,
 } from '../dtos/caso-social.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -67,6 +70,38 @@ export class CasoSocialService {
   deleteSeguimiento(seguimientoId: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(
       `${this.baseUrl}/seguimientos/${seguimientoId}`,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  // ── SCTR ────────────────────────────────────────────────────────────────────
+
+  getSctr(casoId: string): Observable<SctrGestionDto | null> {
+    return this.http.get<SctrGestionDto | null>(
+      `${this.baseUrl}/${casoId}/sctr`,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  createSctr(casoId: string, dto: SctrGestionCreateDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(
+      `${this.baseUrl}/${casoId}/sctr`,
+      dto,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  updateSctr(casoId: string, dto: SctrGestionUpdateDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.baseUrl}/${casoId}/sctr`,
+      dto,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  deleteSctr(casoId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.baseUrl}/${casoId}/sctr`,
       { headers: buildAuthHeaders() },
     );
   }

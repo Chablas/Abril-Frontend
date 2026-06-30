@@ -3,9 +3,7 @@
   <app-abril-page-header
     badge="SSOMA"
     titulo="Auditoría de ATS"
-    subtitulo="Registro y evaluación de calidad de ATS"
-    [botonPrimario]="{ label: 'Nueva auditoría', icono: 'ti-plus' }"
-    (primaryClick)="nueva()">
+    subtitulo="Registro y evaluación de calidad de ATS">
   </app-abril-page-header>
 
   <!-- Filtros -->
@@ -145,4 +143,6 @@
     }
   </div>
 
+
+  <app-fab label="Nueva auditoría" (clicked)="nueva()"></app-fab>
 </div>

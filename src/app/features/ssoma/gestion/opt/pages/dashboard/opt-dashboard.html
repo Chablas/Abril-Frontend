@@ -9,9 +9,7 @@
       { label: 'Lista',     icono: 'ti-list',             route: '/ssoma/gestion/opt/lista' }
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    [botonPrimario]="{ label: 'Nueva OPT', icono: 'ti-plus' }"
-    (secondaryClick)="load()"
-    (primaryClick)="irANuevo()">
+    (secondaryClick)="load()">
   </app-abril-page-header>
 
   <div class="dash-body">
@@ -185,4 +183,6 @@
 
   </div><!-- /dash-body -->
 
+
+  <app-fab label="Nueva OPT" (clicked)="irANuevo()"></app-fab>
 </div>

@@ -34,6 +34,35 @@ export interface EmoDetalleDto extends EmoListItemDto {
   examenes?: EmoExamenDetalleDto[];
   restricciones?: EmoRestriccionDto[];
   convalidaciones?: ConvalidacionListDto[];
+  programacion?: EmoProgramacionDetalleDto;
+  interconsulta?: EmoInterconsultaResumenDto;
+}
+
+export interface EmoProgramacionDetalleDto {
+  id: number;
+  fechaProgramada: string;
+  horaProgramada?: string;
+  checkInHora?: string;
+  clinicaNombre?: string;
+  medicoNombre?: string;
+  estado: string;
+  origen?: string;
+  motivoRechazo?: string;
+}
+
+export interface EmoInterconsultaResumenDto {
+  id: number;
+  especialidad: string;
+  medicoDeriva?: string;
+  fechaDerivacion: string;
+  fechaAtencion?: string;
+  centroAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  resultado?: string;
+  estado: string;
+  requiereSeguimiento: boolean;
+  urlInforme?: string;
 }
 
 export interface EmoExamenDetalleDto {

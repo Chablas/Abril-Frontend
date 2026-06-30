@@ -1,23 +1,15 @@
 <div class="detalle-root">
 
-  <!-- HEADER -->
-  <div class="det-header">
-    <button type="button" class="back-btn" (click)="volver()">
-      <i class="ti ti-arrow-left"></i>
-    </button>
-    <div class="det-header__title">
-      <span class="header-badge">SSOMA · INSPECCIONES</span>
-      @if (data) {
-        <h1>Inspección #{{ data.id }}</h1>
-        <span class="header-sub">{{ data.tipoNombre }} — {{ data.proyectoNombre }}</span>
-      } @else {
-        <h1>Detalle inspección</h1>
-      }
-    </div>
-    <button type="button" class="btn-pdf" (click)="descargarPdf()" [disabled]="descargandoPdf" title="Descargar PDF RM 050">
-      <i class="ti" [class.ti-download]="!descargandoPdf" [class.ti-loader-2]="descargandoPdf"></i>
-    </button>
-  </div>
+  <app-abril-page-header
+    badge="SSOMA"
+    [titulo]="data ? 'Inspección #' + data.id : 'Detalle inspección'"
+    [subtitulo]="data ? data.tipoNombre + ' — ' + data.proyectoNombre : ''"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    [botonPrimario]="{ label: descargandoPdf ? 'Descargando...' : 'Descargar PDF', icono: descargandoPdf ? 'ti-loader-2' : 'ti-download' }"
+    [botonPrimarioDeshabilitado]="descargandoPdf"
+    (secondaryClick)="volver()"
+    (primaryClick)="descargarPdf()">
+  </app-abril-page-header>
 
   <div class="det-body">
 

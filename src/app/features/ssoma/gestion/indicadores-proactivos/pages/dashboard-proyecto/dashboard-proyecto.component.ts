@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { IndicadoresProactivosService } from '../../indicadores-proactivos.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { IndicadorProactivoProyectoDto, MetaEmpresaDto, PuntajeMesDto } from '../../indicadores-proactivos.dtos';
 import { HttpClient } from '@angular/common/http';
 import { SelectOption } from '../../../../../../shared/services/shared-filters.service';
@@ -21,7 +20,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard-proyecto',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard-proyecto.component.html',
   styleUrls: ['./dashboard-proyecto.component.css'],
 })

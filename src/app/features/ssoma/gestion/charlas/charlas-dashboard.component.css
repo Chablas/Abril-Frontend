@@ -2,7 +2,7 @@
 
 .dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--color-abril-page-bg, #f5f3ef); }
 
-.dash-body { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.dash-body { flex: 1; overflow-y: auto; padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .dash-body--cap { padding: 8px !important; gap: 0; }
 .dash-body--stretch { padding: 6px 8px; }
 
@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 16px;
+  padding: 4px 8px;
   background: #F8FAFC;
   border-bottom: 1px solid #E2E8F0;
   flex-shrink: 0;
@@ -214,6 +214,15 @@
 .file-chip__remove:hover { color: #dc2626; }
 .file-chip__remove i { font-size: 11px; }
 
+/* ── TAB 2 FILTROS ───────────────────────────────── */
+.tab2-filtros {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 10px;
+  flex-wrap: wrap;
+}
+
 /* ── CAP FILE COUNT BADGE ────────────────────────── */
 .cap-file-count {
   display: inline-flex;
@@ -305,20 +314,20 @@
 /* ── CHARLA GALLERY ──────────────────────────────── */
 .charla-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
   padding: 4px 2px 80px;
 }
 
 .charla-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 0.5px solid #e2e0d8;
-  padding: 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   transition: box-shadow 0.15s, transform 0.1s;
   cursor: default;
 }
@@ -366,13 +375,13 @@
 
 .asist-ring {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
 }
 .asist-svg {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   color: #1b3a2d;
 }
 .asist-num {
@@ -381,12 +390,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #1a1a18;
   line-height: 1;
 }
-.asist-num small { font-size: 9px; font-weight: 400; color: #9ca3af; margin-left: 1px; }
+.asist-num small { font-size: 8px; font-weight: 400; color: #9ca3af; margin-left: 1px; }
 .asist-label { font-size: 11px; color: #9ca3af; }
 
 /* ── TIPO TOGGLE ─────────────────────────────────── */
@@ -556,7 +565,7 @@
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* ── CARDS ───────────────────────────────────────── */
-.dash-card { background: #fff; border: 0.5px solid #e8e5df; border-radius: 12px; padding: 14px 16px; }
+.dash-card { background: #fff; border: 0.5px solid #e8e5df; border-radius: 8px; padding: 0; }
 .table-card { background: #fff; border: 0.5px solid #e8e5df; border-radius: 12px; padding: 14px 16px; }
 
 .chart-title { font-size: 12px; font-weight: 700; color: #1a1a18; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -568,11 +577,11 @@
 
 .dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .dash-table th {
-  padding: 6px 8px; font-size: 10px; font-weight: 600; color: #a8a59e;
-  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 4px 5px; font-size: 10px; font-weight: 600; color: #a8a59e;
+  text-transform: uppercase; letter-spacing: 0.04em;
   border-bottom: 0.5px solid #e8e5df; text-align: left;
 }
-.dash-table td { padding: 8px; border-bottom: 0.5px solid #f0ede8; color: #1a1a18; }
+.dash-table td { padding: 3px 5px; border-bottom: 0.5px solid #f0ede8; color: #1a1a18; }
 .dash-table tbody tr:last-child td { border-bottom: none; }
 .dash-table tbody tr:hover { background: #fafaf8; }
 .ta-c { text-align: center; }
@@ -741,28 +750,11 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.10);
 }
 
-/* Semana navegador */
-.semana-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.semana-nav__btn {
-  width: 28px; height: 28px;
-  border: 0.5px solid #d4d0c8;
-  border-radius: 7px;
-  background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background 0.12s;
-}
-.semana-nav__btn:hover { background: #f0ebe2; }
-.semana-nav__label {
+.dash-mes-label {
   font-size: 13px;
   font-weight: 600;
   color: #1a1a18;
-  min-width: 150px;
-  text-align: center;
+  text-transform: capitalize;
 }
 
 /* Cards por persona */
@@ -839,26 +831,28 @@
 .dash-matrix { width: 100%; }
 .dash-matrix .col-nombre { min-width: 160px; }
 .dash-matrix .col-cargo  { min-width: 120px; color: #8a8778; font-size: 12px; }
-.dash-matrix .col-dia    { min-width: 70px; }
-.dash-matrix .col-pct    { min-width: 90px; }
-.dash-matrix .col-caps   { min-width: 80px; }
+.dash-matrix .col-dia    { min-width: 44px; }
+.dash-matrix .col-pct    { min-width: 72px; }
+.dash-matrix .col-caps   { min-width: 70px; }
 
-.dia-nombre { display: block; font-weight: 600; font-size: 12px; }
+.col-dia { min-width: 44px; width: 44px; }
+
+.dia-nombre { display: block; font-weight: 600; font-size: 10px; }
 .dia-fecha  { display: block; font-size: 10px; color: #8a8778; }
 
-.asist-cell { padding: 6px 4px !important; }
+.asist-cell { padding: 2px 1px !important; }
 
 .asist-check {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 50%;
   background: #dcfce7; color: #15803d;
-  font-size: 14px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
 }
 .asist-x {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 50%;
   background: #fee2e2; color: #dc2626;
-  font-size: 14px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
 }
 .asist-none {
   display: inline-block;
@@ -875,11 +869,73 @@
 .pct-pill.pct-bajo  { background: #fee2e2; color: #dc2626; }
 
 .matrix-legend {
-  display: flex; gap: 16px; padding: 8px 12px;
-  font-size: 11px; color: #8a8778;
+  display: flex; gap: 12px; padding: 4px 8px;
+  font-size: 10px; color: #8a8778;
   border-top: 0.5px solid #e8e5df;
 }
 .matrix-legend span { display: flex; align-items: center; gap: 5px; }
+
+/* ── ASIST STAT (reemplaza el ring SVG) ─────────────── */
+.asist-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  background: #f5f3ef;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.asist-stat--alto  { background: #dcfce7; }
+.asist-stat--medio { background: #fef3c7; }
+.asist-stat--bajo  { background: #fee2e2; }
+.asist-stat__n {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a18;
+  line-height: 1;
+}
+.asist-stat--alto  .asist-stat__n { color: #15803d; }
+.asist-stat--medio .asist-stat__n { color: #b45309; }
+.asist-stat--bajo  .asist-stat__n { color: #dc2626; }
+.asist-stat__sep {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* ── STICKY COLS (dashboard Tab 1) ──────────────────── */
+.th-sticky-left,
+.td-sticky-left {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+.th-sticky-left { background: #fafaf8; }
+
+.th-sticky-right,
+.td-sticky-right {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  z-index: 2;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.06);
+  min-width: 72px;
+}
+.th-sticky-right { background: #fafaf8; }
+
+/* ── COLABORADOR CELL (dashboard Tab 1) ──────────────── */
+.col-persona { min-width: 140px; }
+.col-persona-cell {
+  padding: 3px 6px;
+}
+.persona-nombre-dash {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a1a18;
+  white-space: nowrap;
+}
+.persona-cargo-dash { display: none; }
 
 /* ── EDITAR ASISTENCIA (botón en charla card) ────────── */
 .btn-edit-asist {
@@ -901,8 +957,8 @@
 
 /* ── RESPONSIVE ──────────────────────────────────── */
 @media (min-width: 768px) {
-  .filtros-row { padding: 10px 24px; }
-  .dash-body { padding: 20px 24px; }
+  .filtros-row { padding: 4px 8px; }
+  .dash-body { padding: 4px 8px; }
 }
 @media (max-width: 600px) {
   .tab-btn { font-size: 11px; padding: 6px 10px; }

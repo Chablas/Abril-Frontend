@@ -2,9 +2,7 @@
   [badge]="'SSOMA · ' + anioActual"
   titulo="Tópico Médico"
   subtitulo="Atenciones médicas ocupacionales."
-  [tabs]="tabs"
-  [botonPrimario]="{ label: 'Nueva Atención', icono: 'ti-plus' }"
-  (primaryClick)="abrirModal()">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
@@ -107,6 +105,8 @@
   </div>
 
 </section>
+
+<app-fab label="Nueva Atención" (clicked)="abrirModal()"></app-fab>
 
 <app-topico-modal
   *ngIf="modalVisible"

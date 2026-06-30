@@ -2,9 +2,7 @@
   [badge]="'SSOMA · ' + anioActual"
   titulo="Mi Salud"
   subtitulo="Tu resumen de salud ocupacional y descansos médicos."
-  [tabs]="tabs"
-  [botonPrimario]="{ label: 'Nuevo Descanso', icono: 'ti-plus' }"
-  (primaryClick)="abrirModal()">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <section class="px-3 py-4 space-y-4 flex-1 overflow-y-auto">
@@ -146,6 +144,8 @@
   </div>
 
 </section>
+
+<app-fab label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
 
 <app-mi-salud-modal
   *ngIf="modalVisible"

@@ -24,6 +24,7 @@ import {
   estadoProgramacionStyle,
 } from '../shared/estado.utils';
 import { ProgramacionCreate } from './components/programacion-create/programacion-create';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 interface DiaCalendario {
   fecha: Date;
@@ -39,7 +40,7 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-programaciones',
   standalone: true,
-  imports: [
+  imports: [FabButton, 
     CommonModule,
     FormsModule,
     Paginator,

@@ -5,9 +5,7 @@
     titulo="Charlas y Capacitaciones"
     subtitulo="Gestión y aprobación de charlas"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    [botonPrimario]="{ label: 'Nueva charla', icono: 'ti-plus' }"
-    (secondaryClick)="load()"
-    (primaryClick)="abrirCrear()">
+    (secondaryClick)="load()">
   </app-abril-page-header>
 
   <div class="dash-body">
@@ -372,5 +370,7 @@
         </div>
       </div>
     }
-  </div>
+  
+<app-fab label="Nueva charla" (clicked)="abrirCrear()"></app-fab>
+</div>
 }

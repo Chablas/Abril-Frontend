@@ -78,13 +78,60 @@ textarea.field-input { resize: vertical; }
 .check-card--active { border-color: #64bc04; background: #f0fdf4; }
 .check-card--amber.check-card--active { border-color: #f59e0b; background: #fffbeb; }
 .check-card--red.check-card--active   { border-color: #ef4444; background: #fef2f2; }
+.check-card--blue.check-card--active  { border-color: #2563eb; background: #eff6ff; }
 .check-card input[type=checkbox] { accent-color: #64bc04; }
+
+.generated-link {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .85rem; color: #2563eb; font-weight: 600;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  border-radius: 7px; padding: .45rem .75rem;
+}
 
 .file-input {
   display: block; width: 100%; font-size: .83rem; color: #374151;
   border: 1px dashed #d6dee5; border-radius: 7px; padding: .5rem .7rem;
   cursor: pointer;
 }
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex; border-bottom: 2px solid #e5e7eb; margin: 0 0 2px;
+}
+.tab-btn {
+  padding: .55rem 1.1rem; font-size: .88rem; font-weight: 600; color: #6b7280;
+  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s;
+}
+.tab-btn:hover { color: #111827; }
+.tab-btn--active { color: #64bc04; border-bottom-color: #64bc04; }
+.ev-count { font-size: .78rem; color: #6b7280; font-weight: 400; }
+
+/* ── Timeline (evoluciones) ─────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: .1rem; }
+.timeline-item { display: flex; gap: .85rem; }
+.tl-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: #64bc04;
+  flex-shrink: 0; margin-top: .4rem;
+}
+.tl-content {
+  flex: 1; padding: .6rem .85rem;
+  background: #f9fafb; border-radius: 8px; margin-bottom: .5rem;
+}
+.tl-header { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.tl-date  { font-size: .75rem; color: #6b7280; }
+.tl-role  { font-size: .75rem; color: #9ca3af; }
+.tl-nota  { font-size: .88rem; color: #374151; margin: 0 0 .3rem; white-space: pre-wrap; }
+
+.doc-link {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .82rem; font-weight: 600; color: #2563eb; text-decoration: none;
+}
+.doc-link:hover { text-decoration: underline; }
+
+.loading-row  { padding: 1.5rem; text-align: center; color: #6b7280; font-size: .9rem; }
+.empty-row    { text-align: center; color: #9ca3af; font-size: .88rem; padding: 1.5rem 0; }
+.text-right   { text-align: right; }
+.mt-1         { margin-top: .25rem; }
 
 /* Footer */
 .modal-footer {

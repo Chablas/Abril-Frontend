@@ -92,6 +92,19 @@
 .radio-group { display: flex; gap: 20px; }
 .radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 
+/* ── Checkbox ────────────────────────────────────────── */
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; font-weight: 600; color: #1a1a18; }
+.checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: #1b3a2d; cursor: pointer; }
+
+/* ── Info hint ───────────────────────────────────────── */
+.info-hint { font-size: 11px; color: #1b3a2d; background: #e6f0eb; border-radius: 6px; padding: 4px 8px; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
+
+/* ── Alerta SUNAFIL ──────────────────────────────────── */
+.alerta-sunafil { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: 8px; }
+
+/* ── Badge opcional ──────────────────────────────────── */
+.badge-opcional { font-size: 10px; font-weight: 600; background: #fef9c3; color: #854d0e; border-radius: 12px; padding: 2px 8px; margin-left: 6px; }
+
 /* ── Descanso rows ───────────────────────────────────── */
 .descanso-row {
   display: flex;
@@ -235,3 +248,84 @@
   .flash-form { padding: 20px 24px; }
   .form-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── Trabajadores afectados ──────────────────────────────── */
+.trabajadores-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.trabajador-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f5f2;
+  border: 0.5px solid #c8ddd2;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.trabajador-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trabajador-item__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b3a2d;
+}
+
+.trabajador-item__sub {
+  font-size: 11px;
+  color: #6b7a72;
+}
+
+.btn-quitar-trabajador {
+  background: none;
+  border: none;
+  color: #991b1b;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.btn-quitar-trabajador:hover { background: #fde8e8; }
+
+.trabajador-form {
+  border: 0.5px dashed #b0c4b8;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafcfb;
+}
+
+.trabajador-form__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2d6a4f;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-agregar-trabajador {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-agregar-trabajador:hover { background: #1b3a2d; }

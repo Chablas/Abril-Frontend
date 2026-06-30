@@ -226,6 +226,36 @@
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+.alerta-vencidas {
+  background: #fff3cd;
+  border: 1.5px solid #ffc107;
+  border-left: 5px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: #856404;
+  font-size: 13px;
+}
+.alerta-vencidas i { font-size: 18px; margin-right: 6px; }
+.alerta-vencidas ul { margin: 6px 0 0 20px; }
+.alerta-vencidas li { margin-bottom: 2px; }
+
+.btn-leccion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 4px;
+}
+.btn-leccion:hover { background: #bae6fd; }
+
 @media (max-width: 640px) {
   .rm-grid, .rm-grid--3, .rm-causas-grid { grid-template-columns: 1fr; }
   .rm-field--full { grid-column: 1; }

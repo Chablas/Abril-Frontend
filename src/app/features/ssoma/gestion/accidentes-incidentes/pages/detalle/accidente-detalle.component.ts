@@ -1,6 +1,7 @@
 ﻿import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AccidenteIncidenteService } from '../../accidente-incidente.service';
 import { FlashReportDetalleDto, NIVELES_CONSECUENCIA } from '../../accidente-incidente.dtos';
@@ -10,13 +11,14 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EntregablesTabComponent } from './entregables-tab/entregables-tab.component';
 import { Rm050TabComponent } from './rm050-tab/rm050-tab.component';
+import { SeguimientoMedicoTabComponent } from './seguimiento-medico-tab/seguimiento-medico-tab.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-accidente-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent, EntregablesTabComponent, Rm050TabComponent],
+  imports: [CommonModule, RouterModule, AbrilPageHeaderComponent, EntregablesTabComponent, Rm050TabComponent, SeguimientoMedicoTabComponent],
   templateUrl: './accidente-detalle.component.html',
   styleUrl: './accidente-detalle.component.css',
 })
@@ -27,25 +29,128 @@ export class AccidenteDetalleComponent implements OnInit {
   enviando = false;
   foto1Blob: string | null = null;
   foto2Blob: string | null = null;
-  tabActiva: 'flash' | 'entregables' | 'rm050' = 'flash';
+  foto1Loading = false;
+  foto2Loading = false;
+  foto1Error = false;
+  foto2Error = false;
+  lightboxUrl: string | null = null;
+  pdfViewerUrl: string | null = null;
+  get pdfViewerSafeUrl(): SafeResourceUrl | null {
+    return this.pdfViewerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfViewerUrl) : null;
+  }
+  tabActiva: 'flash' | 'entregables' | 'rm050' | 'seguimiento' = 'flash';
 
-  setTab(tab: 'flash' | 'entregables' | 'rm050'): void {
+  setTab(tab: 'flash' | 'entregables' | 'rm050' | 'seguimiento'): void {
     this.tabActiva = tab;
     this.cdr.detectChanges();
   }
 
   readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
 
-  private cargarBlobFoto(path: string, slot: 1 | 2): void {
+  private cargarBlobFoto(slot: 1 | 2): void {
+    if (slot === 1) { this.foto1Loading = true; this.foto1Error = false; }
+    else { this.foto2Loading = true; this.foto2Error = false; }
+
     const token = localStorage.getItem('access_token');
-    const url = `${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(path)}`;
+    const url = `${environment.apiUrl}api/v1/ssoma-accidentes-incidentes/${this.id}/foto/${slot}`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.blob();
+      })
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        if (slot === 1) { this.foto1Blob = blobUrl; this.foto1Loading = false; }
+        else { this.foto2Blob = blobUrl; this.foto2Loading = false; }
+        this.cdr.detectChanges();
+      })
+      .catch(() => {
+        if (slot === 1) { this.foto1Loading = false; this.foto1Error = true; }
+        else { this.foto2Loading = false; this.foto2Error = true; }
+        this.cdr.detectChanges();
+      });
+  }
+
+  abrirLightbox(url: string | null): void {
+    if (!url) return;
+    this.lightboxUrl = url;
+    this.cdr.detectChanges();
+  }
+
+  cerrarLightbox(): void {
+    this.lightboxUrl = null;
+    this.cdr.detectChanges();
+  }
+
+  descargarFoto(blobUrl: string | null, slot: 1 | 2): void {
+    if (!blobUrl) return;
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `foto${slot}_${this.detalle?.codigo ?? this.id}`;
+    a.click();
+  }
+
+  verPdf(): void {
+    const token = localStorage.getItem('access_token');
+    const url = `${environment.apiUrl}api/v1/ssoma-accidentes-incidentes/${this.id}/pdf`;
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.blob())
       .then((blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        if (slot === 1) this.foto1Blob = blobUrl;
-        else this.foto2Blob = blobUrl;
+        if (this.pdfViewerUrl) URL.revokeObjectURL(this.pdfViewerUrl);
+        this.pdfViewerUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
         this.cdr.detectChanges();
+      });
+  }
+
+  cerrarPdfViewer(): void {
+    if (this.pdfViewerUrl) URL.revokeObjectURL(this.pdfViewerUrl);
+    this.pdfViewerUrl = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmarReclasificar(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Reclasificar como Accidente?',
+      html: `<p style="font-size:13px">Este Incidente se convertirá en <strong>Accidente</strong>.<br>
+             Se crearán los entregables y el seguimiento médico correspondientes.<br>
+             Esta acción <strong>no se puede deshacer</strong>.</p>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, reclasificar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.service.reclasificar(this.id).subscribe({
+        next: (_res: { message: string; accidenteTrabajoId?: number }) => {
+          Swal.fire({ icon: 'success', title: 'Reclasificado correctamente', timer: 1800, showConfirmButton: false });
+          this.cargar();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  verMintra(): void {
+    const token = localStorage.getItem('access_token');
+    const url = `${environment.apiUrl}api/v1/ssoma-accidentes-incidentes/${this.id}/mintra`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.blob())
+      .then((blob) => {
+        window.open(URL.createObjectURL(new Blob([blob], { type: 'application/pdf' })), '_blank');
+      });
+  }
+
+  descargarPdf(): void {
+    const token = localStorage.getItem('access_token');
+    const url = `${environment.apiUrl}api/v1/ssoma-accidentes-incidentes/${this.id}/pdf`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `FlashReport_${this.detalle?.codigo ?? this.id}.pdf`;
+        a.click();
       });
   }
 
@@ -80,6 +185,7 @@ export class AccidenteDetalleComponent implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -95,8 +201,8 @@ export class AccidenteDetalleComponent implements OnInit {
         this.detalle = res;
         this.loading = false;
         this.loaderService.hide();
-        if (res.urlFoto1) this.cargarBlobFoto(res.urlFoto1, 1);
-        if (res.urlFoto2) this.cargarBlobFoto(res.urlFoto2, 2);
+        if (res.urlFoto1) this.cargarBlobFoto(1);
+        if (res.urlFoto2) this.cargarBlobFoto(2);
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
