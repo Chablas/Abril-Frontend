@@ -219,4 +219,26 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
   metaEmpresa(emp: MetaEmpresaDto, key: string): number {
     return Number(emp[`meta${key}` as keyof MetaEmpresaDto]) ?? 0;
   }
+
+  estadoClass(estado: string): string {
+    switch (estado) {
+      case 'completado': return 'estado-completado';
+      case 'en_progreso': return 'estado-en-progreso';
+      default: return 'estado-pendiente';
+    }
+  }
+
+  estadoLabel(estado: string): string {
+    switch (estado) {
+      case 'completado': return 'Completado';
+      case 'en_progreso': return 'En progreso';
+      default: return 'Pendiente';
+    }
+  }
+
+  porcentajeColor(pct: number): string {
+    if (pct === 100) return '#16a34a';
+    if (pct >= 50) return '#d97706';
+    return '#1e3a5f';
+  }
 }

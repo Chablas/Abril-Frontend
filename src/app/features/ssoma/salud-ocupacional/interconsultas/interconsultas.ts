@@ -137,10 +137,6 @@ export class Interconsultas implements OnInit, OnDestroy {
     this.selectedId = null;
   }
 
-  onSaved(): void {
-    this.load(this.currentPage);
-  }
-
   estadoClass(estado: string): string {
     return estadoBadgeClass(estadoInterconsultaStyle(estado));
   }

@@ -29,6 +29,8 @@ export interface EmoDetalleDto extends EmoListItemDto {
   medico?: string;
   numeroInforme?: string;
   urlResultado?: string;
+  urlAptitud?: string;
+  urlEmoCompleto?: string;
   requiereInterconsulta: boolean;
   notas?: string;
   examenes?: EmoExamenDetalleDto[];
@@ -161,6 +163,14 @@ export interface EmoPorTrabajadorDto {
   aptitud?: AptitudEmo;
   estado?: EstadoEmo;
   diasRestantes?: number;
+  urlAptitud?: string;
+  urlEmoCompleto?: string;
+  urlResultado?: string;
+  requiereInterconsulta?: boolean;
+  interconsultaId?: number;
+  interconsultaEspecialidad?: string;
+  interconsultaEstado?: string;
+  interconsultaUrlInforme?: string;
   // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
   // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
   celular?: string;

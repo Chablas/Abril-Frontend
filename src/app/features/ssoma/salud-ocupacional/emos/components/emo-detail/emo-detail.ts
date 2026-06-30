@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { EmoService } from '../../../services/emo.service';
 import {
   EmoDetalleDto,
@@ -19,27 +20,32 @@ import {
 } from '../../../dtos/emo.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import Swal from 'sweetalert2';
 import { aptitudBadgeClass } from '../../../shared/aptitud.utils';
 import {
   diasVencerBadgeClass,
   diasVencerStyle,
 } from '../../../shared/dias-vencer.utils';
 
-type TabKey = 'datos' | 'examenes' | 'restricciones' | 'convalidaciones' | 'clinica' | 'historial';
+type TabKey = 'datos' | 'examenes' | 'restricciones' | 'convalidaciones' | 'clinica' | 'documentos' | 'historial';
 
 @Component({
   selector: 'app-emo-detail',
   standalone: true,
-  imports: [CommonModule, BaseModal],
+  imports: [CommonModule, BaseModal, DocumentViewer],
   templateUrl: './emo-detail.html',
   styleUrl: './emo-detail.css',
 })
 export class EmoDetail implements OnChanges, OnDestroy {
   @Input() emoId: number | null = null;
+  @Input() canUpload = false;
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   activeTab: TabKey = 'datos';
+  uploadingDoc: Record<string, boolean> = {};
+  visorUrl = '';
+  visorNombre = '';
   emo: EmoDetalleDto | null = null;
   loading = false;
 
@@ -74,6 +80,33 @@ export class EmoDetail implements OnChanges, OnDestroy {
     this.historial = null;
     this.historialLoaded = false;
     this.historialLoading = false;
+    this.uploadingDoc = {};
+    this.visorUrl = '';
+    this.visorNombre = '';
+  }
+
+  subirDocumento(event: Event, tipo: 'Aptitud' | 'EMO'): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.emo) return;
+    input.value = '';
+    this.uploadingDoc[tipo] = true;
+    this.loaderService.show();
+    this.service.subirDocumentoEmo(this.emo.id, file, tipo).subscribe({
+      next: (res) => {
+        this.uploadingDoc[tipo] = false;
+        this.loaderService.hide();
+        if (tipo === 'Aptitud') this.emo!.urlAptitud = res.url;
+        else this.emo!.urlEmoCompleto = res.url;
+        this.cdr.detectChanges();
+        Swal.fire({ icon: 'success', title: 'Documento subido', timer: 1400, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.uploadingDoc[tipo] = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   load(): void {
@@ -137,6 +170,17 @@ export class EmoDetail implements OnChanges, OnDestroy {
 
   diasLabel(dias: number): string {
     return diasVencerStyle(dias).label;
+  }
+
+  verDocumento(path: string | undefined | null, nombre = ''): void {
+    if (!path) return;
+    this.visorUrl = path;
+    this.visorNombre = nombre;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorNombre = '';
   }
 
   close(): void {

@@ -34,49 +34,39 @@
 
     <h4 class="section-title mt-6">Registro de atención</h4>
     <div class="grid-2">
-      <div>
-        <label class="field-label">Estado *</label>
-        <app-search-select
-          [options]="estadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="form.estado"
-          [showLabel]="false"
-          placeholder="Selecciona estado"
-          (valueChange)="form.estado = $event"
-        ></app-search-select>
+      <div *ngIf="data.fechaAtencion">
+        <div class="field-label">Fecha atención</div>
+        <div>{{ data.fechaAtencion | date: 'dd/MM/yyyy' }}</div>
       </div>
-      <div>
-        <label class="field-label">Fecha atención</label>
-        <input type="date" class="field-input" [(ngModel)]="form.fechaAtencion" />
+      <div *ngIf="data.cie10">
+        <div class="field-label">CIE-10</div>
+        <div>{{ data.cie10 }}</div>
       </div>
-      <div>
-        <label class="field-label">CIE-10</label>
-        <input type="text" class="field-input" placeholder="Ej. J45.9" [(ngModel)]="form.cie10" />
+      <div *ngIf="data.resultado">
+        <div class="field-label">Resultado</div>
+        <div>{{ data.resultado }}</div>
       </div>
-      <div>
-        <label class="field-label">Resultado</label>
-        <input type="text" class="field-input" [(ngModel)]="form.resultado" />
+      <div *ngIf="data.diagnostico" class="col-span-2">
+        <div class="field-label">Diagnóstico</div>
+        <div>{{ data.diagnostico }}</div>
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Diagnóstico</label>
-        <textarea rows="2" class="field-input" [(ngModel)]="form.diagnostico"></textarea>
+      <div *ngIf="data.urlInforme" class="col-span-2">
+        <div class="field-label">Informe / Levantamiento</div>
+        <a [href]="data.urlInforme" target="_blank" class="text-blue-600 underline break-all">
+          Ver documento
+        </a>
       </div>
-      <div class="col-span-2">
-        <label class="field-label">URL Informe</label>
-        <input type="url" class="field-input" placeholder="https://…" [(ngModel)]="form.urlInforme" />
+      <div *ngIf="data.notas" class="col-span-2">
+        <div class="field-label">Notas</div>
+        <div>{{ data.notas }}</div>
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <textarea rows="2" class="field-input" [(ngModel)]="form.notas"></textarea>
+      <div *ngIf="!data.fechaAtencion && !data.diagnostico && !data.urlInforme" class="col-span-2 text-gray-400 italic text-sm">
+        La clínica aún no ha registrado la atención de esta interconsulta.
       </div>
     </div>
 
     <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
-      <button type="button" class="btn-primary" [disabled]="saving" (click)="submit()">
-        {{ saving ? 'Guardando…' : 'Guardar cambios' }}
-      </button>
+      <button type="button" class="btn-ghost" (click)="close()">Cerrar</button>
     </footer>
   </ng-container>
 </app-base-modal>
