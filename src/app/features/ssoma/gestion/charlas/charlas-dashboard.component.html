@@ -62,163 +62,95 @@
 
       <!-- ═══════════════════════════════ TAB 1 ─ Dashboard -->
       @if (activeTab === 1) {
-
-        <!-- Controles superiores -->
-        <div class="dash-top-bar">
-          <!-- Toggle vista -->
-          <div class="vista-toggle">
-            <button class="vista-btn" [class.vista-btn--on]="dashVista === 'persona'" (click)="setDashVista('persona')">
-              <i class="ti ti-user"></i> Por Persona
-            </button>
-            <button class="vista-btn" [class.vista-btn--on]="dashVista === 'proyecto'" (click)="setDashVista('proyecto')">
-              <i class="ti ti-building-skyscraper"></i> Por Proyecto
-            </button>
-          </div>
-
-          <!-- Navegador de semana -->
-          <div class="semana-nav">
-            <button class="semana-nav__btn" (click)="semanaAnterior()"><i class="ti ti-chevron-left"></i></button>
-            <span class="semana-nav__label">Semana {{ dashSemana }} — {{ dashAnio }}</span>
-            <button class="semana-nav__btn" (click)="semanaSiguiente()"><i class="ti ti-chevron-right"></i></button>
-          </div>
-        </div>
+        <div class="dash-mes-label" style="text-align:right; padding-bottom:6px;">{{ mesLabel() }} {{ anio }}</div>
 
         @if (loadingDash) {
           <div class="skeleton-body"></div>
-        }
-
-        <!-- Vista Por Persona -->
-        @else if (dashVista === 'persona') {
-          @if (!proyectoId) {
-            <p class="empty-msg">Selecciona un proyecto para ver el dashboard.</p>
-          } @else if (!dashPersonalResult.staff.length) {
-            <p class="empty-msg">Sin datos para la semana seleccionada.</p>
-          } @else {
-            <div class="dash-card">
-              <div class="table-wrap">
-                <table class="dash-table dash-matrix">
-                  <thead>
+        } @else if (!proyectoId) {
+          <p class="empty-msg">Selecciona un proyecto para ver el dashboard.</p>
+        } @else if (!dashPersonalResult.staff.length) {
+          <p class="empty-msg">Sin datos para el mes seleccionado.</p>
+        } @else {
+          <div class="dash-card">
+            <div class="table-wrap">
+              <table class="dash-table dash-matrix">
+                <thead>
+                  <tr>
+                    <th class="col-persona th-sticky-left">Colaborador</th>
+                    @for (dia of dashPersonalResult.dias; track dia.numDia) {
+                      <th class="col-dia ta-c">
+                        <span class="dia-nombre">{{ dia.nombre }}</span>
+                        <span class="dia-fecha">{{ dia.fecha | date:'d/M':'UTC' }}</span>
+                      </th>
+                    }
+                    <th class="th-sticky-right ta-c">% Asist.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of dashPersonalResult.staff; track p.workerId) {
+                    @let pctP = p.charlasTotales > 0 ? (p.charlasAsistidas / p.charlasTotales * 100) : 0;
                     <tr>
-                      <th class="col-nombre">Nombre</th>
-                      <th class="col-cargo">Cargo</th>
+                      <td class="col-persona-cell td-sticky-left">
+                        <span class="persona-nombre-dash">{{ p.nombre }}</span>
+                      </td>
                       @for (dia of dashPersonalResult.dias; track dia.numDia) {
-                        <th class="col-dia ta-c">
-                          <span class="dia-nombre">{{ dia.nombre.slice(0,3) }}</span>
-                          <span class="dia-fecha">{{ dia.fecha | date:'d/M' }}</span>
-                        </th>
-                      }
-                      @if (!dashPersonalResult.dias.length) {
-                        <th class="ta-c">Días</th>
-                      }
-                      <th class="col-pct ta-c">% Mes</th>
-                      <th class="col-caps ta-c">Caps<br><small>mes/meta</small></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of dashPersonalResult.staff; track p.workerId) {
-                      @let pct = getPctPersona(p);
-                      <tr>
-                        <td class="fw-600">{{ p.nombre }}</td>
-                        <td class="td-muted">{{ p.cargo }}</td>
-                        @for (dia of dashPersonalResult.dias; track dia.numDia) {
-                          @let diaData = p.dias | findDia:dia.numDia;
-                          <td class="ta-c asist-cell">
-                            @if (diaData?.asistio === true) {
-                              <span class="asist-check">✓</span>
-                            } @else if (diaData?.asistio === false) {
-                              <span class="asist-x">✗</span>
-                            } @else {
-                              <span class="asist-none">—</span>
-                            }
-                          </td>
-                        }
-                        @if (!dashPersonalResult.dias.length) {
-                          <td class="ta-c td-muted">—</td>
-                        }
-                        <td class="ta-c">
-                          <div class="pct-pill" [class]="pctClass(pct)">{{ pct }}%</div>
+                        @let diaData = p.dias | findDia:dia.numDia;
+                        <td class="ta-c asist-cell">
+                          @if (diaData?.asistio === true) {
+                            <span class="asist-check">✓</span>
+                          } @else {
+                            <span class="asist-x">✗</span>
+                          }
                         </td>
-                        <td class="ta-c td-muted">{{ p.capsAcumMes }}/2</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              <div class="matrix-legend">
-                <span><span class="asist-check">✓</span> Asistió</span>
-                <span><span class="asist-x">✗</span> No asistió</span>
-                <span><span class="asist-none">—</span> Sin charla</span>
-              </div>
-            </div>
-          }
-        }
-
-        <!-- Vista Por Proyecto -->
-        @else {
-          @if (!dashProyectos.length) {
-            <p class="empty-msg">Sin datos de proyectos para la semana seleccionada.</p>
-          } @else {
-            <div class="dash-card">
-              <div class="table-wrap">
-                <table class="dash-table">
-                  <thead>
-                    <tr>
-                      <th>Proyecto</th>
-                      <th class="ta-c">Staff</th>
-                      <th class="ta-c">Charlas dictadas</th>
-                      <th class="ta-c">Asistencias</th>
-                      <th class="ta-c">% Asistencia</th>
-                      <th class="ta-c">Caps. semana</th>
-                      <th class="ta-c">Caps. aprobadas mes</th>
+                      }
+                      <td class="td-sticky-right ta-c">
+                        <div class="pct-pill" [class]="pctClass(Math.round(pctP))">{{ Math.round(pctP) }}%</div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    @for (pr of dashProyectos; track pr.proyectoId) {
-                      @let pct = getPctProyecto(pr);
-                      <tr>
-                        <td class="fw-600">{{ pr.nombre }}</td>
-                        <td class="ta-c td-muted">{{ pr.totalStaff }}</td>
-                        <td class="ta-c">{{ pr.charlasDictadas }}</td>
-                        <td class="ta-c">{{ pr.totalAsistencias }}/{{ pr.totalPosiblesAsistencias }}</td>
-                        <td class="ta-c">
-                          <div class="pct-wrap">
-                            <span class="pct-label" [class]="pctClass(pct)">{{ pct }}%</span>
-                            <div class="pct-bar-bg">
-                              <div class="pct-bar-fill" [class]="pctClass(pct)" [style.width.%]="pct"></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td class="ta-c"><span class="dash-pill dash-pill--azul">{{ pr.capsEnviadasSemana }}</span></td>
-                        <td class="ta-c"><span class="dash-pill dash-pill--verde">{{ pr.capsAprobMes }}</span></td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+                  }
+                </tbody>
+              </table>
             </div>
-          }
+            <div class="matrix-legend">
+              <span><span class="asist-check">✓</span> Asistió</span>
+              <span><span class="asist-x">✗</span> No asistió</span>
+            </div>
+          </div>
         }
       }
 
       <!-- ═══════════════════════════════ TAB 2 ─ Capacitaciones -->
       @if (activeTab === 2) {
 
+        @if (!proyectoId) {
+          <p class="empty-msg">Selecciona un proyecto para ver las capacitaciones.</p>
+        }
         @if (loadingTab2) { <div class="skeleton-body"></div> }
-        @else {
+        @else if (proyectoId) {
+          <!-- Filtros Tab 2 -->
+          <div class="tab2-filtros">
+            <input type="text" class="form-input" style="max-width:220px; height:32px; font-size:12px;"
+              placeholder="Buscar por nombre..." [(ngModel)]="tab2Busqueda" />
+            <select class="filtro-input filtro-input--sm" [(ngModel)]="tab2Estado">
+              <option value="">Todos los estados</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Aprobado">Aprobado</option>
+              <option value="Rechazado">Rechazado</option>
+            </select>
+            <span class="form-hint" style="margin:0">{{ capacitacionesFiltradas.length }} registros</span>
+          </div>
           <div class="dash-card cap-table-card">
-            @if (!capacitaciones.length) {
+            @if (!capacitacionesFiltradas.length) {
               <div class="cap-empty">
                 <i class="ti ti-file-certificate"></i>
-                <p>Aún no has registrado capacitaciones.</p>
-                <button class="btn-primary" type="button" (click)="abrirNuevaCapModal()">
-                  <i class="ti ti-plus"></i> Registrar primera capacitación
-                </button>
+                <p>Sin capacitaciones para los filtros seleccionados.</p>
               </div>
             } @else {
               <div class="table-wrap">
                 <table class="dash-table">
                   <thead>
                     <tr>
+                      <th>Colaborador</th>
                       <th>Fecha</th>
                       <th>Tema / Charla</th>
                       <th class="ta-c">Estado</th>
@@ -226,10 +158,11 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (c of capacitaciones; track c.id) {
+                    @for (c of capacitacionesFiltradas; track c.id) {
                       <tr>
+                        <td class="fw-600">{{ c.nombreCompleto }}</td>
                         <td class="td-muted">{{ c.fecha ? formatFecha(c.fecha) : '—' }}</td>
-                        <td class="fw-600">{{ c.tema || '—' }}</td>
+                        <td>{{ c.tema || '—' }}</td>
                         <td class="ta-c">
                           <span class="badge" [ngClass]="capEstadoClass(c.estado)">{{ c.estado }}</span>
                         </td>
@@ -252,7 +185,7 @@
                         @let archivos = (c.archivos?.length ? c.archivos : (c.evidenciaUrl ? [{id: 0, url: c.evidenciaUrl, nombre: c.evidenciaNombre || 'Archivo'}] : []));
                         @if (archivos.length) {
                           <tr class="cap-viewer-row">
-                            <td colspan="4">
+                            <td colspan="5">
                               @if (archivos.length > 1) {
                                 <div class="viewer-tabs">
                                   @for (a of archivos; track a.id; let i = $index) {
@@ -369,6 +302,7 @@
         } @else {
           <div class="charla-grid">
             @for (c of charlaGaleria; track c.id) {
+              @let pctCard = staff.length > 0 ? (c.totalAsistio / staff.length) : 0;
               <div class="charla-card">
                 <div class="charla-card__header">
                   <span class="charla-tipo" [ngClass]="tipoClass(c.tipo)">{{ c.tipo }}</span>
@@ -376,16 +310,14 @@
                 </div>
                 <div class="charla-card__titulo">{{ c.titulo }}</div>
                 <div class="charla-card__footer">
-                  <div class="asist-ring">
-                    <svg viewBox="0 0 36 36" class="asist-svg">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8e5df" stroke-width="3"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" stroke-width="3"
-                        [attr.stroke-dasharray]="(c.totalAsistentes > 0 ? (c.totalAsistio / c.totalAsistentes * 100) : 0) + ' 100'"
-                        stroke-linecap="round" transform="rotate(-90 18 18)"/>
-                    </svg>
-                    <span class="asist-num">{{ c.totalAsistio }}<small>/{{ c.totalAsistentes }}</small></span>
+                  <div class="asist-stat"
+                    [class.asist-stat--alto]="pctCard >= 0.8"
+                    [class.asist-stat--medio]="pctCard >= 0.5 && pctCard < 0.8"
+                    [class.asist-stat--bajo]="pctCard < 0.5">
+                    <span class="asist-stat__n">{{ c.totalAsistio }}</span>
+                    <span class="asist-stat__sep">/{{ staff.length }}</span>
                   </div>
-                  <span class="asist-label">asistentes</span>
+                  <span class="asist-label">asistieron</span>
                   <button class="btn-edit-asist" title="Editar asistencia" (click)="abrirEditAsistencia(c)">
                     <i class="ti ti-pencil"></i>
                   </button>
@@ -410,6 +342,13 @@
               @if (!staff.length) {
                 <p class="form-hint">Sin staff cargado.</p>
               } @else {
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <p class="form-hint" style="margin:0">{{ countEditChecked() }} de {{ staff.length }} marcados</p>
+                  <button type="button" class="btn-secondary" style="padding:4px 10px; font-size:11px;"
+                    (click)="seleccionarTodosEdit()">
+                    {{ staff.every(s => editStaffChecks[s.workerId]) ? 'Desmarcar todos' : 'Seleccionar todos' }}
+                  </button>
+                </div>
                 <div class="staff-check-grid staff-check-grid--modal">
                   @for (s of staff; track s.workerId) {
                     <label class="check-label" (click)="toggleEditStaff(s.workerId)">
@@ -423,9 +362,6 @@
                     </label>
                   }
                 </div>
-                <p class="form-hint">
-                  {{ countEditChecked() }} de {{ staff.length }} marcados como asistentes
-                </p>
               }
             </div>
             <div class="form-actions" style="padding: 12px 20px; border-top: 0.5px solid #e8e5df;">
@@ -479,7 +415,13 @@
                 <div class="charla-staff-header">
                   <span class="charla-staff-label">Asistentes <span class="req">*</span></span>
                   @if (staff.length) {
-                    <span class="form-hint" style="margin:0">{{ form.workerIds.length }} / {{ staff.length }}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="form-hint" style="margin:0">{{ form.workerIds.length }} / {{ staff.length }}</span>
+                      <button type="button" class="btn-secondary" style="padding:3px 9px; font-size:11px;"
+                        (click)="seleccionarTodosNueva()">
+                        {{ staff.every(s => staffChecks[s.workerId]) ? 'Desmarcar' : 'Todos' }}
+                      </button>
+                    </div>
                   }
                 </div>
                 @if (!staff.length) {

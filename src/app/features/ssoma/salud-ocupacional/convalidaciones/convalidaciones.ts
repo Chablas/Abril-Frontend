@@ -22,6 +22,7 @@ import {
   diasVencerStyle,
 } from '../shared/dias-vencer.utils';
 import { ConvalidacionCreate } from './components/convalidacion-create/convalidacion-create';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 interface FilterOption {
   id: string;
@@ -31,7 +32,7 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-convalidaciones',
   standalone: true,
-  imports: [
+  imports: [FabButton, 
     CommonModule,
     FormsModule,
     Paginator,

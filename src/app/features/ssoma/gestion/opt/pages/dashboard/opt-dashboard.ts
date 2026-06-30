@@ -7,12 +7,13 @@ import { AbrilPageHeaderComponent } from '../../../../../../shared/components/ab
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-opt-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, AbrilPageHeaderComponent],
   templateUrl: './opt-dashboard.html',
   styleUrl: './opt-dashboard.css',
 })

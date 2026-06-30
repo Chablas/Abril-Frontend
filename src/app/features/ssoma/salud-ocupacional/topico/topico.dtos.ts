@@ -28,6 +28,10 @@ export interface TopicoAtencionDto {
   empresaId?: number;
   empresaNombre?: string;
   observaciones?: string;
+  sctrActivado: boolean;
+  tipoCasoSctr?: string;
+  urlInforme?: string;
+  descansoGeneradoId?: number;
   registradoPorId?: number;
   createdAt: string;
   updatedAt: string;
@@ -66,6 +70,8 @@ export interface CrearTopicoAtencionDto {
   proyectoId?: number;
   empresaId?: number;
   observaciones?: string;
+  sctrActivado?: boolean;
+  tipoCasoSctr?: string;
 }
 
 export interface ActualizarTopicoAtencionDto extends Partial<CrearTopicoAtencionDto> {}
@@ -74,4 +80,19 @@ export interface TopicoTipoAtencionDto {
   id: number;
   nombre: string;
   descripcion?: string;
+}
+
+export interface TopicoEvolucionDto {
+  id: number;
+  atencionId: number;
+  fechaEvolucion: string;
+  notaEvolucion: string;
+  registradoPorId?: number;
+  registradoPorNombre?: string;
+  urlEvidencia?: string;
+  createdAt: string;
+}
+
+export interface TopicoEvolucionCreateDto {
+  notaEvolucion: string;
 }

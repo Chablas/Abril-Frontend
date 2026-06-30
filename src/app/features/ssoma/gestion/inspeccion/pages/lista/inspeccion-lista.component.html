@@ -7,9 +7,7 @@
     [tabs]="[
       { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/inspeccion/dashboard' },
       { label: 'Inspecciones', icono: 'ti-list', route: '/ssoma/gestion/inspeccion/lista' }
-    ]"
-    [botonPrimario]="{ label: 'Nueva inspección', icono: 'ti-plus' }"
-    (primaryClick)="irANueva()">
+    ]">
   </app-abril-page-header>
 
   <!-- FILTROS MOBILE TOGGLE -->
@@ -179,9 +177,6 @@
 
   </div><!-- /lista-body -->
 
-  <!-- FAB mobile -->
-  <button type="button" class="fab" (click)="irANueva()">
-    <i class="ti ti-plus"></i>
-  </button>
 
+  <app-fab label="Nueva inspección" (clicked)="irANueva()"></app-fab>
 </div>

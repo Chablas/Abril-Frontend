@@ -12,9 +12,7 @@
     { label: 'Alertas', icono: 'ti-bell', route: '/ssoma/gestion/paso/alertas' }
   ]"
   [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-  [botonPrimario]="{ label: 'Nuevo programa', icono: 'ti-plus' }"
-  (secondaryClick)="load()"
-  (primaryClick)="irANuevoPrograma()">
+  (secondaryClick)="load()">
 </app-abril-page-header>
 
 <!-- ═══════════════════  CONTENT  ═══════════════════ -->
@@ -317,4 +315,6 @@
 
   </ng-container>
 
+
+<app-fab label="Nuevo programa" (clicked)="irANuevoPrograma()"></app-fab>
 </div><!-- /dashboard-content -->

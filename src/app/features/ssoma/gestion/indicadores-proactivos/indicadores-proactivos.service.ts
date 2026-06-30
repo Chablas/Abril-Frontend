@@ -7,6 +7,7 @@ import {
   ProgInspeccionResumenDto,
   GuardarProgInspeccionRequest,
   IndicadorProactivoProyectoDto,
+  IndicadorReactivoProyectoDto,
   PuntajeMesDto,
 } from './indicadores-proactivos.dtos';
 
@@ -75,6 +76,14 @@ export class IndicadoresProactivosService {
   getPuntajeTodos(mes: number, anio: number): Observable<PuntajeMesDto[]> {
     const params = new HttpParams().set('mes', mes).set('anio', anio);
     return this.http.get<PuntajeMesDto[]>(`${this.base}/puntaje`, {
+      headers: this.authHeaders(),
+      params,
+    });
+  }
+
+  getReactivosTodos(mes: number, anio: number): Observable<IndicadorReactivoProyectoDto[]> {
+    const params = new HttpParams().set('mes', mes).set('anio', anio);
+    return this.http.get<IndicadorReactivoProyectoDto[]>(`${this.base}/reactivos`, {
       headers: this.authHeaders(),
       params,
     });

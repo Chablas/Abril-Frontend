@@ -15,9 +15,7 @@
     { label: 'Descansos',        icono: 'ti-bed',              route: '/ssoma/salud-ocupacional/descansos' },
     { label: 'Asistente Social', icono: 'ti-heart-handshake', route: '/ssoma/salud-ocupacional/asistente-social' },
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
-  ]"
-  [botonPrimario]="{ label: 'Nueva convalidación', icono: 'ti-plus' }"
-  (primaryClick)="openCreate()">
+  ]">
 </app-abril-page-header>
 
 <section class="p-6 space-y-4 flex-1 overflow-y-auto">
@@ -112,6 +110,8 @@
     </div>
   </div>
 </section>
+
+<app-fab label="Nueva convalidación" (clicked)="openCreate()"></app-fab>
 
 <app-convalidacion-create
   *ngIf="createOpen"

@@ -199,15 +199,12 @@ export class AmonestacionNueva implements OnInit, OnDestroy {
     );
   }
 
-  submit(): void {
-    if (!this.canSubmit) return;
-
+  private buildRequest(estado: 'Borrador' | 'Registrada'): AmonestacionCreateRequest {
     const fotos: AmonFotoUpload[] = this.fotosSeleccionadas.map((f) => ({
       base64: f.base64,
       nombreArchivo: f.nombre,
     }));
-
-    const req: AmonestacionCreateRequest = {
+    return {
       proyectoId: this.proyectoId!,
       fecha: this.fecha,
       workerId: this.workerSelected!.id,
@@ -228,12 +225,40 @@ export class AmonestacionNueva implements OnInit, OnDestroy {
         ? this.fechaFinSuspension
         : undefined,
       fotos,
+      estado,
     };
+  }
 
+  guardarBorrador(): void {
+    if (!this.canSubmit) return;
     this.saving = true;
     this.loaderService.show();
+    this.svc.crear(this.buildRequest('Borrador')).subscribe({
+      next: (res) => {
+        this.saving = false;
+        this.loaderService.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Borrador guardado',
+          html: `Código: <b>${res.codigo}</b><br>Puedes confirmarlo luego desde la lista.`,
+          timer: 3000,
+          showConfirmButton: false,
+        }).then(() => this.cerrar());
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
 
-    this.svc.crear(req).subscribe({
+  submit(): void {
+    if (!this.canSubmit) return;
+    this.saving = true;
+    this.loaderService.show();
+    this.svc.crear(this.buildRequest('Registrada')).subscribe({
       next: (res) => {
         this.saving = false;
         this.loaderService.hide();

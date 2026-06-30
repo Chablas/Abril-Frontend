@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -10,7 +11,11 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { SSOMA_TABS } from '../topico/topico.component';
 import { AccidentesService } from './accidentes.service';
-import { AccidenteTrabajoListItemDto, AccidenteFilterDto } from './accidentes.dtos';
+import {
+  AccidenteTrabajoListItemDto,
+  AccidenteFilterDto,
+  AccidenteTrabajoDetalleDto,
+} from './accidentes.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -19,7 +24,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-accidentes',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator],
+  imports: [CommonModule, FormsModule, RouterLink, AbrilPageHeaderComponent, Paginator],
   templateUrl: './accidentes.component.html',
   styleUrl: './accidentes.component.css',
 })
@@ -35,6 +40,11 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   currentPage = 1;
 
   filtros: AccidenteFilterDto = {};
+
+  // Panel de detalle
+  detalle: AccidenteTrabajoDetalleDto | null = null;
+  loadingDetalle = false;
+  detalleTab: 'info' | 'descansos' | 'citas' | 'equipos' | 'alta' = 'info';
 
   readonly estadoOpts = [
     { id: '', nombre: 'Todos' },
@@ -90,20 +100,74 @@ export class AccidentesComponent implements OnInit, OnDestroy {
     this.load(1);
   }
 
-  eliminar(a: AccidenteTrabajoListItemDto, ev: MouseEvent): void {
+  openDetalle(a: AccidenteTrabajoListItemDto): void {
+    this.detalle = null;
+    this.detalleTab = 'info';
+    this.loadingDetalle = true;
+    this.cdr.detectChanges();
+    this.svc.getDetalle(a.id).subscribe({
+      next: (d) => {
+        this.detalle = d;
+        this.loadingDetalle = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingDetalle = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closeDetalle(): void {
+    this.detalle = null;
+    this.loadingDetalle = false;
+    this.cdr.detectChanges();
+  }
+
+  cerrarAccidente(): void {
+    if (!this.detalle) return;
+    const id = this.detalle.id;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar accidente?',
+      html: `<p style="font-size:13px">Se cerrará el accidente #${id}. Esta acción requiere que exista un alta médica registrada y sin descansos pendientes.</p>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1b3a2d',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.svc.cerrar(id).subscribe({
+        next: () => {
+          Swal.fire({ icon: 'success', title: 'Accidente cerrado', timer: 1800, showConfirmButton: false });
+          this.closeDetalle();
+          this.load(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  marcarReinduccion(a: AccidenteTrabajoListItemDto, ev: MouseEvent): void {
     ev.stopPropagation();
     Swal.fire({
       icon: 'question',
-      title: '¿Eliminar accidente?',
-      text: `Accidente #${a.id} — ${a.workerNombre ?? ''}`,
+      title: 'Confirmar reinducción de seguridad',
+      html: `<p style="font-size:13px">¿Confirmas que <strong>${a.workerNombre ?? 'el trabajador'}</strong> completó la charla de reinducción de seguridad y está autorizado para reintegrarse?</p>`,
       showCancelButton: true,
-      confirmButtonText: 'Eliminar',
+      confirmButtonText: 'Sí, confirmar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
+      confirmButtonColor: '#1b3a2d',
     }).then(r => {
       if (!r.isConfirmed) return;
-      this.svc.delete(a.id).subscribe({
-        next: () => this.load(this.currentPage),
+      this.svc.marcarReinduccion(a.id).subscribe({
+        next: () => {
+          a.reinduccionCompletada = true;
+          a.fechaReinduccion = new Date().toISOString().split('T')[0];
+          this.cdr.detectChanges();
+          Swal.fire({ icon: 'success', title: 'Reinducción registrada', timer: 1800, showConfirmButton: false });
+        },
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
     });

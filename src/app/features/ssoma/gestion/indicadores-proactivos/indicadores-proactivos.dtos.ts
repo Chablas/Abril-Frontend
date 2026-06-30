@@ -93,6 +93,21 @@ export interface IndicadorProactivoProyectoDto {
   empresas: MetaEmpresaDto[];
 }
 
+// ─── Indicadores Reactivos ──────────────────────────────────────────────────
+
+export interface IndicadorReactivoProyectoDto {
+  proyectoId: number;
+  proyectoNombre: string;
+  mes: number;
+  anio: number;
+  horasHombreTrabajadas: number;
+  totalAccidentes: number;
+  totalDiasPerdidos: number;
+  indiceFrecuencia: number;
+  indiceGravedad: number;
+  indiceAccidentabilidad: number;
+}
+
 // ─── Puntaje del Mes ────────────────────────────────────────────────────────
 
 export interface PuntajeMesDto {

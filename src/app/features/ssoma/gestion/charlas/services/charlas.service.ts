@@ -62,8 +62,10 @@ export class CharlasService {
   }
 
   // ── Old Tab 2: Capacitaciones ────────────────────────────────────────────────
-  getCapacitaciones(proyectoId: number, mes: number, anio: number): Observable<Capacitacion[]> {
-    const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
+  getCapacitaciones(proyectoId: number, mes?: number, anio?: number): Observable<Capacitacion[]> {
+    let params = new HttpParams().set('proyectoId', proyectoId);
+    if (mes && mes > 0) params = params.set('mes', mes);
+    if (anio && anio > 0) params = params.set('anio', anio);
     return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones`, { params });
   }
 
@@ -140,8 +142,8 @@ export class CharlasService {
   }
 
   // ── NEW: Dashboard por persona y por proyecto ────────────────────────────────
-  getDashPersonal(proyectoId: number, semana: number, anio: number): Observable<DashPersonalResult> {
-    const params = new HttpParams().set('proyectoId', proyectoId).set('semana', semana).set('anio', anio);
+  getDashPersonal(proyectoId: number, mes: number, anio: number): Observable<DashPersonalResult> {
+    const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
     return this.http.get<DashPersonalResult>(`${this.base}/dashboard-personal`, { params });
   }
 
@@ -149,8 +151,8 @@ export class CharlasService {
     return this.http.put<void>(`${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`, { workerIds });
   }
 
-  getDashProyectos(semana: number, anio: number): Observable<DashProyectoItem[]> {
-    const params = new HttpParams().set('semana', semana).set('anio', anio);
+  getDashProyectos(mes: number, anio: number): Observable<DashProyectoItem[]> {
+    const params = new HttpParams().set('mes', mes).set('anio', anio);
     return this.http.get<DashProyectoItem[]>(`${this.base}/dashboard-proyectos`, { params });
   }
 

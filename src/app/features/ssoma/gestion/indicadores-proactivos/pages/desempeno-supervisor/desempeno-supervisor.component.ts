@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { environment } from '../../../../../../../environments/environment';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -41,7 +40,7 @@ export interface DesempenoSupervisorDto {
   fechaLogro100: string | null;
   esPrimeroEnProyecto: boolean;
   pctGeneralMesAnterior: number | null;
-  esSaludOcupacional: boolean;
+  esResidente: boolean;
 }
 
 interface ProyectoSimple { id: number; nombre: string; }
@@ -49,7 +48,7 @@ interface ProyectoSimple { id: number; nombre: string; }
 @Component({
   selector: 'app-desempeno-supervisor',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './desempeno-supervisor.component.html',
   styleUrls: ['./desempeno-supervisor.component.css'],
 })
@@ -92,11 +91,20 @@ export class DesempenoSupervisorComponent implements OnInit {
     return 100;
   });
 
-  esMejor(s: DesempenoSupervisorDto): boolean {
-    const sups = this.supervisores();
-    if (!sups.length) return false;
-    const max = Math.max(...sups.map(x => x.pctGeneral));
-    return s.pctGeneral === max && max >= this.metaSemanal();
+  // Posición por orden de llegada al 100% (por fechaLogro100), solo si completó
+  posicionLogro(s: DesempenoSupervisorDto): number {
+    if (!s.fechaLogro100) return 0;
+    const completados = this.supervisores()
+      .filter(x => x.proyectoId === s.proyectoId && !!x.fechaLogro100)
+      .sort((a, b) => new Date(a.fechaLogro100!).getTime() - new Date(b.fechaLogro100!).getTime());
+    return completados.findIndex(x => x.supervisorId === s.supervisorId) + 1;
+  }
+
+  trofeoClass(pos: number): string {
+    if (pos === 1) return 'trofeo--oro';
+    if (pos === 2) return 'trofeo--plata';
+    if (pos === 3) return 'trofeo--bronce';
+    return '';
   }
 
   semanaActual = computed(() => {

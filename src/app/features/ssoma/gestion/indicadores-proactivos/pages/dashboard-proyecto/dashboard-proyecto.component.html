@@ -1,14 +1,5 @@
 <div class="dp-root">
 
-  <app-abril-page-header
-    badge="SSOMA · Por Proyecto"
-    titulo="Dashboard por Proyecto"
-    subtitulo="Análisis detallado de indicadores proactivos y puntaje del mes"
-    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    [botonPrimario]="{ label: exportando() ? 'Exportando…' : 'Exportar PDF', icono: exportando() ? 'ti-loader-2' : 'ti-file-type-pdf' }"
-    (secondaryClick)="cargar()"
-    (primaryClick)="exportarPDF()">
-  </app-abril-page-header>
 
   <div class="dp-body">
 

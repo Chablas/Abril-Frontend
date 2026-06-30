@@ -1,5 +1,13 @@
 <div class="wizard-root">
 
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="NUEVA INSPECCIÓN"
+    subtitulo="Formulario de inspección de seguridad"
+    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
+    (secondaryClick)="cancelar()">
+  </app-abril-page-header>
+
   <!-- STEPPER -->
   <div class="stepper">
     @for (label of pasoLabels; track $index) {

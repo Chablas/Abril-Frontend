@@ -6,8 +6,11 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import {
   TopicoAtencionDto,
   TopicoFiltrosDto,
+  TopicoTipoAtencionDto,
   CrearTopicoAtencionDto,
   ActualizarTopicoAtencionDto,
+  TopicoEvolucionDto,
+  TopicoEvolucionCreateDto,
 } from './topico.dtos';
 
 function authHeaders(): Record<string, string> {
@@ -44,6 +47,12 @@ export class TopicoService {
     });
   }
 
+  getTiposAtencion(): Observable<TopicoTipoAtencionDto[]> {
+    return this.http.get<TopicoTipoAtencionDto[]>(`${this.base}/tipos-atencion`, {
+      headers: authHeaders(),
+    });
+  }
+
   getById(id: number): Observable<TopicoAtencionDto> {
     return this.http.get<TopicoAtencionDto>(`${this.base}/${id}`, {
       headers: authHeaders(),
@@ -74,8 +83,10 @@ export class TopicoService {
     if (dto.descansoDias != null) fd.append('descansoDias', dto.descansoDias.toString());
     if (dto.proyectoId != null) fd.append('proyectoId', dto.proyectoId.toString());
     if (dto.empresaId != null)  fd.append('empresaId', dto.empresaId.toString());
-    if (dto.observaciones)      fd.append('observaciones', dto.observaciones);
-    if (archivoInforme)         fd.append('archivoInforme', archivoInforme, archivoInforme.name);
+    if (dto.observaciones)           fd.append('observaciones', dto.observaciones);
+    if (dto.sctrActivado != null)    fd.append('sctrActivado', dto.sctrActivado.toString());
+    if (dto.tipoCasoSctr)            fd.append('tipoCasoSctr', dto.tipoCasoSctr);
+    if (archivoInforme)              fd.append('archivoInforme', archivoInforme, archivoInforme.name);
 
     return this.http.post<{ id: number; message: string }>(this.base, fd, {
       headers: authHeaders(),
@@ -101,6 +112,35 @@ export class TopicoService {
 
   delete(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/${id}`, {
+      headers: authHeaders(),
+    });
+  }
+
+  // ── Evoluciones clínicas ────────────────────────────────────────────────────
+
+  getEvoluciones(topicoId: number): Observable<TopicoEvolucionDto[]> {
+    return this.http.get<TopicoEvolucionDto[]>(`${this.base}/${topicoId}/evoluciones`, {
+      headers: authHeaders(),
+    });
+  }
+
+  createEvolucion(
+    topicoId: number,
+    dto: TopicoEvolucionCreateDto,
+    archivoEvidencia?: File | null,
+  ): Observable<{ id: number; message: string }> {
+    const fd = new FormData();
+    fd.append('notaEvolucion', dto.notaEvolucion);
+    if (archivoEvidencia) fd.append('archivoEvidencia', archivoEvidencia, archivoEvidencia.name);
+    return this.http.post<{ id: number; message: string }>(
+      `${this.base}/${topicoId}/evoluciones`,
+      fd,
+      { headers: authHeaders() },
+    );
+  }
+
+  deleteEvolucion(evId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/evoluciones/${evId}`, {
       headers: authHeaders(),
     });
   }
