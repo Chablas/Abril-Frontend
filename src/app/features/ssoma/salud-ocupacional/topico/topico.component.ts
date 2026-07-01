@@ -127,6 +127,25 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   onGuardado(): void { this.cerrarModal(); this.load(this.currentPage); }
 
+  cerrarAtencion(a: TopicoAtencionDto, ev: MouseEvent): void {
+    ev.stopPropagation();
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar atención?',
+      text: `Atención #${a.id} — ${a.workerNombre ?? ''}`,
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar atención',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1b3a2d',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      this.svc.cerrar(a.id).subscribe({
+        next: () => this.load(this.currentPage),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
   eliminar(a: TopicoAtencionDto, ev: MouseEvent): void {
     ev.stopPropagation();
     Swal.fire({
@@ -148,6 +167,7 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId  || this.filtros.tipoAtencionId);
+           || this.filtros.workerId  || this.filtros.tipoAtencionId
+           || this.filtros.estado);
   }
 }

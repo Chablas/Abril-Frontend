@@ -164,11 +164,13 @@ export class EmoDetail implements OnChanges, OnDestroy {
     return aptitudBadgeClass(aptitud);
   }
 
-  diasClass(dias: number): string {
+  diasClass(dias: number | null): string {
+    if (dias == null) return '';
     return diasVencerBadgeClass(dias);
   }
 
-  diasLabel(dias: number): string {
+  diasLabel(dias: number | null): string {
+    if (dias == null) return '—';
     return diasVencerStyle(dias).label;
   }
 

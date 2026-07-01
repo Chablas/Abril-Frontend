@@ -115,6 +115,8 @@
 .flag-red   { background: #fee2e2; color: #dc2626; }
 .flag-teal  { background: #ccfbf1; color: #0f766e; }
 
+.row-actions { display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+
 .row-action {
   display: inline-flex;
   align-items: center;
@@ -125,6 +127,8 @@
   transition: background .12s, color .12s;
 }
 .row-action:hover { background: #fee2e2; color: #dc2626; }
+.row-action-close { color: #059669; }
+.row-action-close:hover { background: #ecfdf5; color: #047857; }
 
 .empty-row { text-align: center; color: #9ca3af; padding: 2.5rem 1rem; }
 .paginator-wrapper { padding: .75rem 1rem; border-top: 1px solid #f3f4f6; }

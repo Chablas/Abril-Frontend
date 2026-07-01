@@ -70,7 +70,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of items">
+          <tr *ngFor="let item of items" class="cursor-pointer hover:bg-gray-50" (click)="openReview(item)">
             <td>
               <div class="worker-cell">
                 <span class="worker-name">{{ item.workerNombre }}</span>
@@ -87,9 +87,14 @@
             </td>
             <td>{{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
             <td class="text-right">
-              <span class="badge border" [ngClass]="diasClass(item.diasParaVencer)">
-                {{ diasLabel(item.diasParaVencer) }}
-              </span>
+              <ng-container *ngIf="item.diasParaVencer != null; else sinVencimiento">
+                <span class="badge border" [ngClass]="diasClass(item.diasParaVencer)">
+                  {{ diasLabel(item.diasParaVencer) }}
+                </span>
+              </ng-container>
+              <ng-template #sinVencimiento>
+                <span class="text-gray-400">—</span>
+              </ng-template>
             </td>
           </tr>
 
@@ -111,11 +116,10 @@
   </div>
 </section>
 
-<app-fab label="Nueva convalidación" (clicked)="openCreate()"></app-fab>
 
-<app-convalidacion-create
-  *ngIf="createOpen"
-  [open]="createOpen"
-  (closed)="closeCreate()"
-  (saved)="onCreated()"
-></app-convalidacion-create>
+<app-convalidacion-review
+  [open]="reviewOpen"
+  [item]="selectedItem"
+  (closed)="closeReview()"
+  (saved)="onReviewed()"
+></app-convalidacion-review>

@@ -117,13 +117,6 @@
 
 </section>
 
-<app-descanso-modal
-  *ngIf="modalVisible"
-  [descansoId]="descansoSeleccionadoId"
-  (closed)="cerrarModal()"
-  (saved)="onGuardado()">
-</app-descanso-modal>
-
 <app-fab label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
 
 <app-descanso-modal

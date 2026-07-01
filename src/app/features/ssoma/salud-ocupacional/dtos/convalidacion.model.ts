@@ -12,7 +12,10 @@ export interface ConvalidacionListDto {
   fechaVencimiento: string;
   resultado: ConvalidacionResultado;
   medico?: string;
-  diasParaVencer: number;
+  tipoEmo?: string;
+  fechaEmoOrigen?: string;
+  notas?: string;
+  diasParaVencer: number | null;
 }
 
 export interface ConvalidacionCreateDto {

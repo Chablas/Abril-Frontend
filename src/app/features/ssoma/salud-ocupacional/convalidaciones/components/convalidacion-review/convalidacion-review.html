@@ -1,0 +1,59 @@
+<app-base-modal *ngIf="open" title="Revisar convalidación" width="w-[640px]" (closeModal)="close()">
+  <div class="form-wrapper" *ngIf="item">
+
+    <div class="worker-banner">
+      <div class="worker-name">{{ item.workerNombre }}</div>
+      <div class="worker-meta">DNI {{ item.workerDni }}</div>
+      <div class="worker-meta">
+        <span *ngIf="item.empresaOrigen">{{ item.empresaOrigen }} →</span>
+        <strong>{{ item.empresaDestino }}</strong>
+      </div>
+      <div class="worker-meta" *ngIf="item.tipoEmo">
+        EMO: {{ item.tipoEmo }}<span *ngIf="item.fechaEmoOrigen"> · {{ item.fechaEmoOrigen | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <h4 class="section-title mt-4">Resolución del médico</h4>
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Resultado *</label>
+        <app-search-select
+          [options]="resultadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="resultado"
+          [showLabel]="false"
+          placeholder="Seleccionar resultado"
+          (valueChange)="resultado = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Fecha vencimiento{{ fechaVencimientoRequerida ? ' *' : '' }}</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
+      </div>
+      <div>
+        <label class="field-label">Médico</label>
+        <app-search-select
+          [options]="medicos"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="medicoId"
+          [showLabel]="false"
+          placeholder="Seleccionar médico"
+          (valueChange)="medicoId = $event"
+        ></app-search-select>
+      </div>
+      <div class="col-span-2">
+        <label class="field-label">Notas / Observaciones</label>
+        <textarea rows="3" class="field-input" [(ngModel)]="notas"></textarea>
+      </div>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar resolución' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>
