@@ -27,6 +27,8 @@ export interface EvContratistaAEvaluarDto {
   diasLaborados: number;
   yaEvalue: boolean;
   notaPrevia: number | null;
+  noAplica: boolean;
+  noAplicaMotivo: string | null;
 }
 
 // ─── CREATE ───────────────────────────────────────────────────────────────

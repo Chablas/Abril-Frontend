@@ -186,9 +186,22 @@ export class EvaluarContratista implements OnInit {
   }
 
   marcarNoAplica(): void {
+    this.pedirMotivoYRegistrar('No corresponde evaluar este período');
+  }
+
+  marcarNoAplicaContratista(): void {
+    if (!this.contraHistaSeleccionada) return;
+    this.pedirMotivoYRegistrar(
+      `No corresponde evaluar a ${this.contraHistaSeleccionada.contributorNombre}`,
+      this.contraHistaSeleccionada.proyectoId,
+      this.contraHistaSeleccionada.contributorId,
+    );
+  }
+
+  private pedirMotivoYRegistrar(titulo: string, proyectoId?: number, contributorId?: number): void {
     Swal.fire({
       icon: 'question',
-      title: 'No corresponde evaluar este período',
+      title: titulo,
       input: 'textarea',
       inputPlaceholder: 'Motivo (obligatorio)...',
       showCancelButton: true,
@@ -200,7 +213,7 @@ export class EvaluarContratista implements OnInit {
 
       this.marcandoNoAplica = true;
       this.loader.show();
-      this.svc.marcarNoAplica(result.value.trim()).subscribe({
+      this.svc.marcarNoAplica(result.value.trim(), proyectoId, contributorId).subscribe({
         next: () => {
           this.marcandoNoAplica = false;
           this.loader.hide();
@@ -210,6 +223,7 @@ export class EvaluarContratista implements OnInit {
             timer: 2000,
             showConfirmButton: false,
           });
+          this.cambiarContratista();
           this.cargarInicio();
         },
         error: (err) => {

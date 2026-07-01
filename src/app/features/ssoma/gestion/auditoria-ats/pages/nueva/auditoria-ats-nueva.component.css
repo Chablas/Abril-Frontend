@@ -19,7 +19,7 @@
 .page-title {
   font-size: 1.35rem;
   font-weight: 700;
-  color: var(--color-text, #1a202c);
+  color: var(--color-abril-ink, #1a202c);
   letter-spacing: .03em;
   margin: 0;
 }

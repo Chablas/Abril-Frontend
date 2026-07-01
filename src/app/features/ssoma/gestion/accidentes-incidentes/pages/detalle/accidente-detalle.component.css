@@ -224,7 +224,7 @@
 .foto-slot { display: flex; flex-direction: column; gap: 6px; }
 .foto-thumb { width: 160px; height: 120px; object-fit: cover; border-radius: 10px; border: 0.5px solid #e8e5df; }
 .foto-acciones { display: flex; gap: 12px; font-size: 0.8rem; }
-.foto-acciones a { color: var(--color-primary, #2d6a4f); text-decoration: none; font-weight: 500; }
+.foto-acciones a { color: var(--color-abril-primary, #2d6a4f); text-decoration: none; font-weight: 500; }
 .foto-acciones a:hover { text-decoration: underline; }
 
 /* ── SPIN ─────────────────────────────────────────────── */

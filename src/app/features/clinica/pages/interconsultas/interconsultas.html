@@ -54,16 +54,18 @@
       <!-- Tabla -->
       <table class="inter-table" *ngIf="!loading && items.length > 0">
         <colgroup>
-          <col style="width:26%">
+          <col style="width:22%">
           <col style="width:18%">
+          <col style="width:15%">
+          <col style="width:11%">
+          <col style="width:8%">
           <col style="width:12%">
-          <col style="width:9%">
-          <col style="width:18%">
-          <col style="width:17%">
+          <col style="width:14%">
         </colgroup>
         <thead>
           <tr>
             <th>Trabajador</th>
+            <th>Proyecto / Razón Social</th>
             <th>Especialidad</th>
             <th>F. Derivación</th>
             <th>Días pend.</th>
@@ -77,6 +79,12 @@
               <div class="worker-cell">
                 <span class="worker-name">{{ item.workerNombre }}</span>
                 <span class="worker-dni">{{ item.workerDni }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="worker-cell">
+                <span class="worker-name">{{ item.proyectoNombre || '—' }}</span>
+                <span class="worker-dni">{{ item.razonSocial || '—' }}</span>
               </div>
             </td>
             <td class="td-cell">{{ item.especialidad }}</td>

@@ -45,7 +45,11 @@ export class EvContratistaService {
     return this.http.post(this.base, dto, { headers: this.headers() });
   }
 
-  marcarNoAplica(motivo: string): Observable<any> {
-    return this.http.post(`${this.base}/no-aplica`, { motivo }, { headers: this.headers() });
+  marcarNoAplica(motivo: string, proyectoId?: number, contributorId?: number): Observable<any> {
+    return this.http.post(
+      `${this.base}/no-aplica`,
+      { motivo, proyectoId: proyectoId ?? null, contributorId: contributorId ?? null },
+      { headers: this.headers() },
+    );
   }
 }

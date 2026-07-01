@@ -95,7 +95,10 @@
           </div>
           <div class="cc-footer">
             <span class="cc-days"><i class="ti ti-calendar-event"></i> {{ c.diasLaborados }} días</span>
-            <span *ngIf="c.yaEvalue" class="cc-nota" [ngClass]="estadoClase(c.notaPrevia)">
+            <span *ngIf="c.yaEvalue && c.noAplica" class="cc-nota" [title]="c.noAplicaMotivo ?? ''">
+              <i class="ti ti-check"></i> No aplica
+            </span>
+            <span *ngIf="c.yaEvalue && !c.noAplica" class="cc-nota" [ngClass]="estadoClase(c.notaPrevia)">
               <i class="ti ti-check"></i> {{ c.notaPrevia }} — {{ estadoLabel(c.notaPrevia) }}
             </span>
             <span *ngIf="!c.yaEvalue" class="cc-pendiente">Pendiente</span>
@@ -119,9 +122,14 @@
             <div class="ef-title">{{ contraHistaSeleccionada.contributorNombre }}</div>
             <div class="ef-sub">{{ contraHistaSeleccionada.proyectoNombre }} · {{ contraHistaSeleccionada.diasLaborados }} días laborados</div>
           </div>
-          <button class="btn-cambiar" (click)="cambiarContratista()">
-            <i class="ti ti-x"></i>
-          </button>
+          <div class="ef-header-actions">
+            <button class="btn-no-aplica" (click)="marcarNoAplicaContratista()" [disabled]="marcandoNoAplica">
+              No aplica
+            </button>
+            <button class="btn-cambiar" (click)="cambiarContratista()">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Escala de referencia -->
