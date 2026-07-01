@@ -16,22 +16,31 @@
   color: #c2cdd8;
 }
 
-/* Días con cumpleaños: resaltado + subrayado (se activan cuando haya datos). */
+/* Días con cumpleaños: el número se resalta. */
 .cumple {
   font-weight: 800;
   color: #00529b;
 }
 
-.cumple::after {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 3px;
+/* Cada cumpleañero es un "rectangulito"; intercalan azul (base) y verde. */
+.rect {
+  width: 15px;
+  height: 5px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #1f74c4, #8bc53f);
+  background: #1f74c4;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.rect-verde {
+  background: #8bc53f;
+}
+
+.rect:hover {
+  transform: scale(1.25);
+  filter: brightness(1.05);
 }
 
 @keyframes cumple-fade {
@@ -39,6 +48,39 @@
   to   { opacity: 1; }
 }
 
+/* Globos: recorrido constante de 4 nodos, casi en su mismo sitio. */
+.globo {
+  will-change: transform;
+}
+
+.globo-verde {
+  transform: rotate(-12deg);
+  animation: globo-verde-flotar 7s ease-in-out infinite;
+}
+
+.globo-azul {
+  transform: rotate(12deg);
+  animation: globo-azul-flotar 8s ease-in-out infinite;
+}
+
+@keyframes globo-verde-flotar {
+  0%   { transform: translate(0, 0) rotate(-12deg); }
+  25%  { transform: translate(8px, -12px) rotate(-8deg); }
+  50%  { transform: translate(-6px, -18px) rotate(-14deg); }
+  75%  { transform: translate(-10px, -6px) rotate(-10deg); }
+  100% { transform: translate(0, 0) rotate(-12deg); }
+}
+
+@keyframes globo-azul-flotar {
+  0%   { transform: translate(0, 0) rotate(12deg); }
+  25%  { transform: translate(-9px, -10px) rotate(8deg); }
+  50%  { transform: translate(7px, -20px) rotate(15deg); }
+  75%  { transform: translate(11px, -8px) rotate(10deg); }
+  100% { transform: translate(0, 0) rotate(12deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cumple-overlay { animation: none; }
+  .globo-verde,
+  .globo-azul { animation: none; }
 }
