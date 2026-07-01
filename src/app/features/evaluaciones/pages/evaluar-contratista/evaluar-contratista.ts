@@ -18,6 +18,7 @@ interface DetalleForm {
   plantillaId: number | null;
   criterio: string;
   puntaje: number | null;
+  esNa: boolean;
 }
 
 const PUNTAJE_LABELS: Record<number, string> = {
@@ -46,15 +47,32 @@ export class EvaluarContratista implements OnInit {
   comentario = '';
   busqueda = '';
   dropdownAbierto = false;
+  proyectoFiltroId: number | null = null;
 
   readonly puntajes = [0, 1, 2, 3, 4];
   readonly puntajeLabel = PUNTAJE_LABELS;
 
+  get proyectos(): { id: number; nombre: string }[] {
+    const seen = new Set<number>();
+    const result: { id: number; nombre: string }[] = [];
+    for (const c of this.inicio?.contratistasAEvaluar ?? []) {
+      if (!seen.has(c.proyectoId)) {
+        seen.add(c.proyectoId);
+        result.push({ id: c.proyectoId, nombre: c.proyectoNombre });
+      }
+    }
+    return result.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
   get contraHistasFiltradas(): EvContratistaAEvaluarDto[] {
     if (!this.inicio?.contratistasAEvaluar) return [];
+    let lista = this.inicio.contratistasAEvaluar;
+    if (this.proyectoFiltroId !== null) {
+      lista = lista.filter((c) => c.proyectoId === this.proyectoFiltroId);
+    }
     const q = this.busqueda.trim().toLowerCase();
-    if (!q) return this.inicio.contratistasAEvaluar;
-    return this.inicio.contratistasAEvaluar.filter(
+    if (!q) return lista;
+    return lista.filter(
       (c) =>
         c.contributorNombre.toLowerCase().includes(q) ||
         c.contributorRuc.includes(q) ||
@@ -63,7 +81,7 @@ export class EvaluarContratista implements OnInit {
   }
 
   get notaCalculada(): number {
-    const validos = this.detalles.filter((d) => d.puntaje !== null);
+    const validos = this.detalles.filter((d) => !d.esNa && d.puntaje !== null);
     if (!validos.length) return 0;
     const sum = validos.reduce((s, d) => s + d.puntaje!, 0);
     const max = validos.length * 4;
@@ -73,7 +91,8 @@ export class EvaluarContratista implements OnInit {
   get puedeGuardar(): boolean {
     return (
       !!this.contraHistaSeleccionada &&
-      this.detalles.every((d) => d.puntaje !== null) &&
+      this.detalles.every((d) => d.esNa || d.puntaje !== null) &&
+      this.detalles.some((d) => !d.esNa) &&
       this.detalles.length > 0
     );
   }
@@ -130,7 +149,20 @@ export class EvaluarContratista implements OnInit {
       plantillaId: p.id,
       criterio: p.criterio,
       puntaje: null,
+      esNa: false,
     }));
+    this.cdr.markForCheck();
+  }
+
+  setPuntaje(idx: number, val: number): void {
+    this.detalles[idx].puntaje = val;
+    this.detalles[idx].esNa = false;
+    this.cdr.markForCheck();
+  }
+
+  setNa(idx: number): void {
+    this.detalles[idx].esNa = true;
+    this.detalles[idx].puntaje = null;
     this.cdr.markForCheck();
   }
 
@@ -158,7 +190,8 @@ export class EvaluarContratista implements OnInit {
     const detallesDto: EvContratistaDetalleCreateDto[] = this.detalles.map((d) => ({
       plantillaId: d.plantillaId,
       criterio: d.criterio,
-      puntaje: d.puntaje!,
+      puntaje: d.esNa ? null : d.puntaje,
+      esNa: d.esNa,
     }));
 
     this.guardando = true;

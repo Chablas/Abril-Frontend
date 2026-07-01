@@ -54,6 +54,15 @@
         {{ inicio!.periodo!.diasRestantes }} días restantes
       </div>
 
+      <!-- Filtro de proyecto (solo para jefes de área, que ven todos los proyectos) -->
+      <div class="proyecto-filtro" *ngIf="inicio?.puedeVerTodos && proyectos.length">
+        <label for="ec-proyecto-filtro">Proyecto</label>
+        <select id="ec-proyecto-filtro" [(ngModel)]="proyectoFiltroId" (ngModelChange)="markForCheck()">
+          <option [ngValue]="null">Todos los proyectos</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+        </select>
+      </div>
+
       <!-- Sin contratistas -->
       <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length">
         <i class="ti ti-building-off"></i>
@@ -63,7 +72,7 @@
       <!-- Lista de contratistas -->
       <div class="contractor-list" *ngIf="inicio?.contratistasAEvaluar?.length">
         <div class="contractor-card"
-          *ngFor="let c of inicio!.contratistasAEvaluar"
+          *ngFor="let c of contraHistasFiltradas"
           [class.active]="contraHistaSeleccionada?.contributorId === c.contributorId && contraHistaSeleccionada?.proyectoId === c.proyectoId"
           [class.evaluated]="c.yaEvalue"
           (click)="!c.yaEvalue && seleccionarContratista(c)">
@@ -115,7 +124,7 @@
 
         <!-- Criterios -->
         <div class="criteria-list">
-          <div class="criterion-row" *ngFor="let d of detalles; let i = index">
+          <div class="criterion-row" *ngFor="let d of detalles; let i = index" [class.criterion-na]="d.esNa">
             <div class="cr-num">{{ i + 1 }}</div>
             <div class="cr-text">{{ d.criterio }}</div>
             <div class="cr-puntaje">
@@ -123,8 +132,14 @@
                 class="puntaje-btn"
                 [class.selected]="d.puntaje === p"
                 [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
-                (click)="d.puntaje = p; markForCheck()">
+                (click)="setPuntaje(i, p)">
                 {{ p }}
+              </button>
+              <button
+                class="puntaje-btn puntaje-na"
+                [class.selected]="d.esNa"
+                (click)="setNa(i)">
+                N/A
               </button>
             </div>
           </div>

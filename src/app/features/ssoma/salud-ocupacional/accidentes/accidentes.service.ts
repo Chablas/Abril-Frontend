@@ -7,6 +7,7 @@ import {
   AccidenteTrabajoListItemDto,
   AccidenteFilterDto,
   AccidenteTrabajoDetalleDto,
+  AccidenteTrabajoUpdateDto,
   CitaMedicaItemDto,
   CitaMedicaCreateDto,
   EquipoPrestadoItemDto,
@@ -47,6 +48,12 @@ export class AccidentesService {
 
   getDetalle(id: number): Observable<AccidenteTrabajoDetalleDto> {
     return this.http.get<AccidenteTrabajoDetalleDto>(`${this.base}/${id}`, {
+      headers: authHeaders(),
+    });
+  }
+
+  updateAccidente(id: number, dto: AccidenteTrabajoUpdateDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/${id}`, dto, {
       headers: authHeaders(),
     });
   }

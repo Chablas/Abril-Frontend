@@ -11,6 +11,8 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { SSOMA_TABS } from '../topico/topico.component';
 import { AccidentesService } from './accidentes.service';
+import { DescansoModalComponent } from '../descansos/descanso-modal.component';
+import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import {
   AccidenteTrabajoListItemDto,
   AccidenteFilterDto,
@@ -21,16 +23,19 @@ import {
   EquipoPrestadoCreateDto,
   EquipoPrestadoDevolverDto,
   AltaMedicaCreateDto,
+  AccidenteTrabajoUpdateDto,
 } from './accidentes.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { CatalogosSaludService } from '../services/catalogos-salud.service';
+import { AgenteRiesgoDto } from '../dtos/catalogos.model';
 
 @Component({
   selector: 'app-accidentes',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, AbrilPageHeaderComponent, Paginator],
+  imports: [CommonModule, FormsModule, RouterLink, AbrilPageHeaderComponent, Paginator, DescansoModalComponent],
   templateUrl: './accidentes.component.html',
   styleUrl: './accidentes.component.css',
 })
@@ -62,6 +67,8 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   tiposCita: TipoItemDto[] = [];
   tiposEquipo: TipoItemDto[] = [];
   tiposAlta: TipoItemDto[] = [];
+  agentesRiesgo: AgenteRiesgoDto[] = [];
+  savingAgenteRiesgo = false;
 
   // --- Formularios inline ---
 
@@ -81,6 +88,9 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   showFormAlta = false;
   formAlta: AltaMedicaCreateDto = this.initAlta();
 
+  // Descansos (nuevo)
+  showDescansoModal = false;
+
   saving = false;
 
   private workerChange$ = new Subject<void>();
@@ -88,6 +98,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
 
   constructor(
     private svc: AccidentesService,
+    private catalogosSaludService: CatalogosSaludService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private cdr: ChangeDetectorRef,
@@ -97,6 +108,10 @@ export class AccidentesComponent implements OnInit, OnDestroy {
     this.workerChange$.pipe(debounceTime(400), takeUntil(this.destroy$)).subscribe(() => this.load(1));
     this.load(1);
     this.loadTipos();
+    this.catalogosSaludService.getAgentesRiesgo().subscribe({
+      next: (data) => { this.agentesRiesgo = data; this.cdr.detectChanges(); },
+      error: () => {},
+    });
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
@@ -430,6 +445,76 @@ export class AccidentesComponent implements OnInit, OnDestroy {
           error: (err: HttpErrorResponse) => this.errorService.handleError(err),
         });
       });
+  }
+
+  // ── Agente de riesgo (edición inline) ─────────────────────────────
+
+  guardarAgenteRiesgo(agenteRiesgoId: number | string | null): void {
+    if (!this.detalle) return;
+    const id = agenteRiesgoId ? Number(agenteRiesgoId) : null;
+    if (id === (this.detalle.agenteRiesgoId ?? null)) return;
+
+    const dto: AccidenteTrabajoUpdateDto = {
+      lugarAccidente: this.detalle.lugarAccidente,
+      tipoAccidente: this.detalle.tipoAccidente,
+      mecanismo: this.detalle.mecanismo,
+      parteCuerpoAfectada: this.detalle.parteCuerpoAfectada,
+      agenteRiesgoId: id,
+      descripcion: this.detalle.descripcion ?? '',
+      descripcionLesion: this.detalle.descripcionLesion,
+      diagnosticoCie10: this.detalle.diagnosticoCie10,
+      requiereHospitalizacion: this.detalle.requiereHospitalizacion,
+      hospitalNombre: this.detalle.hospitalNombre,
+      diasDescansoEstimados: this.detalle.diasDescansoEstimados,
+      diasDescansoReales: this.detalle.diasDescansoReales,
+      notificadoSunafil: this.detalle.notificadoSunafil,
+      fechaNotificacionSunafil: this.detalle.fechaNotificacionSunafil,
+      numeroNotificacionSunafil: this.detalle.numeroNotificacionSunafil,
+      restriccionesReintegro: this.detalle.restriccionesReintegro,
+    };
+
+    this.savingAgenteRiesgo = true;
+    this.svc.updateAccidente(this.detalle.id, dto).subscribe({
+      next: () => {
+        this.savingAgenteRiesgo = false;
+        this.reloadDetalle();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingAgenteRiesgo = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Descansos (nuevo, vinculado al accidente) ─────────────────────
+
+  get presetWorkerDescanso(): WorkerSearchItemDto | null {
+    if (!this.detalle) return null;
+    return {
+      id: this.detalle.workerId,
+      apellidoNombre: this.detalle.workerNombre ?? `Worker #${this.detalle.workerId}`,
+      dni: this.detalle.workerDni ?? '',
+      ocupacion: '',
+      activo: true,
+      empresaActualId: undefined,
+      empresaActual: this.detalle.empresaNombre,
+    };
+  }
+
+  abrirNuevoDescanso(): void {
+    this.showDescansoModal = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarDescansoModal(): void {
+    this.showDescansoModal = false;
+    this.cdr.detectChanges();
+  }
+
+  onDescansoGuardado(): void {
+    this.cerrarDescansoModal();
+    this.reloadDetalle();
   }
 
   // ── Helpers ──────────────────────────────────────────────────────

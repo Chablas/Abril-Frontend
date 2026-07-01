@@ -69,6 +69,13 @@ export interface RestriccionTipoDto {
   categoria?: string;
 }
 
+export interface AgenteRiesgoDto {
+  id: number;
+  nombre: string;
+  tipo: string;
+  activo: boolean;
+}
+
 export interface EmpresaSimpleDto {
   id: number;
   nombre: string;

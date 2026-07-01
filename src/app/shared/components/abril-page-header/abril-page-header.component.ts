@@ -62,8 +62,9 @@ export class AbrilPageHeaderComponent {
 
   get activeGroupIndex(): number {
     const url = this.router.url;
+    const matchesRoute = (route: string) => url === route || url.startsWith(route + '/');
     const idx = this.tabGroups.findIndex(g =>
-      g.tabs.some(t => t.route && url.startsWith(t.route))
+      g.tabs.some(t => t.route && matchesRoute(t.route))
     );
     return idx >= 0 ? idx : 0;
   }

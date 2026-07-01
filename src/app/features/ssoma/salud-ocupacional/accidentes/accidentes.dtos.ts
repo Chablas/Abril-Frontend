@@ -19,6 +19,25 @@ export interface AccidenteTrabajoListItemDto {
   createdAt: string;
 }
 
+export interface AccidenteTrabajoUpdateDto {
+  lugarAccidente?: string;
+  tipoAccidente?: string;
+  mecanismo?: string;
+  parteCuerpoAfectada?: string;
+  agenteRiesgoId?: number | null;
+  descripcion: string;
+  descripcionLesion?: string;
+  diagnosticoCie10?: string;
+  requiereHospitalizacion: boolean;
+  hospitalNombre?: string;
+  diasDescansoEstimados: number;
+  diasDescansoReales?: number;
+  notificadoSunafil: boolean;
+  fechaNotificacionSunafil?: string;
+  numeroNotificacionSunafil?: string;
+  restriccionesReintegro?: string;
+}
+
 export interface AccidenteFilterDto {
   workerId?: number;
   estado?: string;
@@ -154,11 +173,21 @@ export interface AccidenteTrabajoDetalleDto {
   horaAccidente?: string;
   tipoAccidente?: string;
   lugarAccidente?: string;
+  mecanismo?: string;
+  parteCuerpoAfectada?: string;
+  agenteRiesgoId?: number;
+  agenteRiesgoNombre?: string;
   descripcion?: string;
   descripcionLesion?: string;
   diagnosticoCie10?: string;
+  requiereHospitalizacion: boolean;
+  hospitalNombre?: string;
   estado: string;
   notificadoSunafil: boolean;
+  fechaNotificacionSunafil?: string;
+  numeroNotificacionSunafil?: string;
+  restriccionesReintegro?: string;
+  diasDescansoEstimados: number;
   diasDescansoReales?: number;
   flashReportId?: number;
   casoSocialId?: string;

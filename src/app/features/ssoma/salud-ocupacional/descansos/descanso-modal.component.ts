@@ -36,6 +36,10 @@ type TabKey = 'detalle' | 'seguimientos';
 export class DescansoModalComponent implements OnInit, OnDestroy {
   /** null = modo creación, objeto = modo detalle/gestión */
   @Input() descansoId: number | null = null;
+  /** Preselecciona el trabajador (p. ej. al crear desde el detalle de un accidente) y oculta el buscador. */
+  @Input() presetWorker: WorkerSearchItemDto | null = null;
+  /** Vincula el descanso creado a un accidente de trabajo existente. */
+  @Input() presetAccidenteId: number | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
 
@@ -100,6 +104,10 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
     } else {
       this.isNuevo = true;
       this.loading = false;
+      if (this.presetWorker) {
+        this.workerSelected = this.presetWorker;
+        this.workerQuery = this.presetWorker.apellidoNombre;
+      }
     }
 
     // Debounce worker search
@@ -259,6 +267,7 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
       establecimiento       : this.cEstablecimiento   || undefined,
       observaciones         : this.cObservaciones     || undefined,
       reportadoPorTrabajador: this.cReportadoPorTrabajador,
+      accidenteId           : this.presetAccidenteId  ?? undefined,
     };
     this.saving = true;
     this.loaderService.show();

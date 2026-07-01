@@ -197,6 +197,7 @@ export interface WorkerUpsertDto {
   condicionMedica?: string | null;
   categoria?: string | null;
   ocupacion?: string | null;
+  ocupacionId?: number | null;
   area?: string | null;
   subarea?: string | null;
   contrataCasa?: string | null;
