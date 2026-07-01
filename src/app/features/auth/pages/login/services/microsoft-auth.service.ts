@@ -171,6 +171,11 @@ export class MicrosoftAuthService {
         businessPhones: response.businessPhones,
         photoBase64: response.photoBase64
       }));
+
+      // Cada inicio de sesión debe aterrizar en la portada (INICIO) del boletín.
+      // El boletín usa esta marca para mostrar la portada una sola vez por sesión;
+      // al loguear la limpiamos para que la portada vuelva a aparecer.
+      sessionStorage.removeItem('boletin_portada_vista');
     } catch (err) {
       this.msalInstance = null;
       throw err;

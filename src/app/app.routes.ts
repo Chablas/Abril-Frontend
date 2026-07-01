@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
-import { Inicio } from './features/home/inicio';
+import { Dashboard } from './features/home/dashboard/dashboard';
+import { Boletin } from './features/home/boletin/boletin';
 import { Layout } from './shared/components/layout/layout';
 import { authGuard } from './core/guards/auth.guard';
+import { boletinGuard } from './core/guards/boletin.guard';
 
 export const routes: Routes = [
   {
@@ -16,7 +18,8 @@ export const routes: Routes = [
     component: Layout,
     canActivateChild: [authGuard],
     children: [
-      { path: '', component: Inicio },
+      { path: '', component: Dashboard },
+      { path: 'boletin', component: Boletin, canActivate: [boletinGuard] },
 
       {
         path: 'security',

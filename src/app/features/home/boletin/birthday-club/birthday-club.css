@@ -1,0 +1,44 @@
+/* El estilo estático vive como utilidades de Tailwind en la plantilla. Aquí solo
+   queda el font-family base, la animación del overlay y los estados dinámicos de
+   los días (con su pseudo-elemento de subrayado). */
+
+:host {
+  display: block;
+  font-family: 'Kumbh Sans', sans-serif;
+}
+
+.cumple-overlay {
+  animation: cumple-fade 0.25s ease;
+}
+
+/* Días de relleno (mes anterior/siguiente): atenuados. */
+.fuera {
+  color: #c2cdd8;
+}
+
+/* Días con cumpleaños: resaltado + subrayado (se activan cuando haya datos). */
+.cumple {
+  font-weight: 800;
+  color: #00529b;
+}
+
+.cumple::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #1f74c4, #8bc53f);
+}
+
+@keyframes cumple-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cumple-overlay { animation: none; }
+}

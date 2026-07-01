@@ -161,6 +161,9 @@ export interface EmoPorTrabajadorDto {
   aptitud?: AptitudEmo;
   estado?: EstadoEmo;
   diasRestantes?: number;
+  // Prellenado del modal de edición (Configuración → Trabajadores).
+  documentIdentityTypeId?: number;
+  cumpleanos?: string;
   // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
   // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
   celular?: string;
@@ -175,6 +178,22 @@ export interface EmoPorTrabajadorDto {
   sctr?: boolean;
   habilitadoObra?: boolean;
   notas?: string;
+}
+
+/** Catálogo de tipos de documento (DNI, CE, ...) para el select del modal. */
+export interface DocumentTypeDto {
+  id: number;
+  abreviatura: string;
+  descripcion: string;
+}
+
+/** Edición mínima de datos de identidad del trabajador (modal Configuración). */
+export interface WorkerDatosBasicosDto {
+  nombreCompleto: string;
+  documentIdentityTypeId?: number | null;
+  numeroDocumento?: string | null;
+  /** Formato 'YYYY-MM-DD'. */
+  cumpleanos?: string | null;
 }
 
 export interface WorkerUpsertDto {

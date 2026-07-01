@@ -1,0 +1,60 @@
+<div class="cumple-overlay fixed inset-0 z-[60] flex items-center justify-center p-6 bg-[rgba(20,40,70,0.55)] overflow-y-auto"
+     (click)="cerrarModal()">
+  <div class="relative w-full max-w-[1120px] m-auto" (click)="$event.stopPropagation()">
+
+    <!-- Banner del perro: sobre el panel, saliéndose un poco por arriba -->
+    <img class="relative z-[3] block w-[min(440px,80%)] h-auto mx-auto -mb-[48px] [filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.2))]"
+         src="/images/inicio/perro-feliz-cumpleaños.webp" alt="¡Feliz cumpleaños!" />
+
+    <!-- Panel azul (ancla de globos y del botón cerrar) -->
+    <div class="relative z-[2] bg-[#00529b] rounded-[22px] pt-16 px-[26px] pb-[30px] shadow-[0_24px_60px_rgba(0,40,90,0.35)]">
+
+      <!-- Globos decorativos -->
+      <img class="absolute top-[-50px] left-[-60px] w-[140px] h-auto z-[1] -rotate-12 pointer-events-none [filter:drop-shadow(0_10px_16px_rgba(0,0,0,0.25))] max-[820px]:w-[90px]"
+           src="/images/inicio/globo-verde.webp" alt="" aria-hidden="true" />
+      <img class="absolute bottom-[-55px] right-[-50px] w-[140px] h-auto z-[1] rotate-12 pointer-events-none [filter:drop-shadow(0_10px_16px_rgba(0,0,0,0.25))] max-[820px]:w-[90px]"
+           src="/images/inicio/globo-azul.webp" alt="" aria-hidden="true" />
+
+      <!-- Cerrar: esquina superior derecha del panel, un poco salido -->
+      <button
+        type="button"
+        class="absolute top-[-16px] right-[-16px] z-[5] flex items-center justify-center w-[42px] h-[42px] border-0 rounded-full bg-[#8bc53f] text-white cursor-pointer shadow-[0_6px_16px_rgba(0,0,0,0.25)] transition-[transform,filter] duration-200 hover:scale-[1.08] hover:brightness-105"
+        (click)="cerrarModal()"
+        aria-label="Cerrar"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
+      <!-- Calendarios del trimestre -->
+      <div class="grid grid-cols-3 gap-[22px] max-[820px]:grid-cols-1 max-[820px]:max-w-[360px] max-[820px]:mx-auto">
+        @for (mes of meses; track mes.nombre) {
+          <article class="flex flex-col bg-white rounded-2xl pt-[18px] px-4 pb-5 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
+            <h3 class="mt-0 mb-3 text-center text-[#00529b] text-[26px] font-bold tracking-[0.18em]">{{ mes.nombre }}</h3>
+
+            <div class="grid grid-cols-7 gap-x-0.5 gap-y-1">
+              @for (d of diasSemana; track $index) {
+                <span class="text-center text-[#00529b] text-[13px] font-bold pb-1">{{ d }}</span>
+              }
+              @for (semana of mes.semanas; track $index) {
+                @for (celda of semana; track $index) {
+                  <span
+                    class="relative flex items-center justify-center aspect-square text-[13px] font-semibold text-[#1f74c4]"
+                    [class.fuera]="!celda.delMes"
+                    [class.cumple]="celda.cumpleaneros.length > 0"
+                    [title]="celda.cumpleaneros.join(', ')"
+                  >
+                    {{ celda.dia }}
+                  </span>
+                }
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+
+  </div>
+</div>

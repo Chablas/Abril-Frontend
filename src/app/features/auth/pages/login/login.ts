@@ -125,7 +125,9 @@ export class Login implements OnInit {
       await this.microsoftAuthService.login();
       this.loaderService.hide();
       this.cdr.detectChanges();
-      this.router.navigate(['/']);
+      // Los trabajadores de Abril (USUARIO DE ABRIL) aterrizan en el boletín;
+      // el resto en el inicio real (panel de accesos).
+      this.router.navigate([this.authService.esUsuarioAbrilBoletin() ? '/boletin' : '/']);
     } catch (err: any) {
       this.loaderService.hide();
       this.cdr.detectChanges();
