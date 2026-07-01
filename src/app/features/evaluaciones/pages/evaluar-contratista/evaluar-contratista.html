@@ -64,9 +64,18 @@
       </div>
 
       <!-- Sin contratistas -->
-      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length">
+      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length && !inicio?.yaMarcoNoAplica">
         <i class="ti ti-building-off"></i>
         <p>No hay contratistas con tareo este mes en tus proyectos.</p>
+        <button class="btn-no-aplica" (click)="marcarNoAplica()" [disabled]="marcandoNoAplica">
+          {{ marcandoNoAplica ? 'Guardando...' : 'No corresponde evaluar este período' }}
+        </button>
+      </div>
+
+      <!-- Ya marcó que no aplica -->
+      <div class="empty-list" *ngIf="!inicio?.contratistasAEvaluar?.length && inicio?.yaMarcoNoAplica">
+        <i class="ti ti-check"></i>
+        <p>Ya registraste que no te corresponde evaluar contratistas este período.</p>
       </div>
 
       <!-- Lista de contratistas -->

@@ -41,6 +41,7 @@ export class EvaluarContratista implements OnInit {
   inicio: EvContratistaInicioDto | null = null;
   loading = true;
   guardando = false;
+  marcandoNoAplica = false;
 
   contraHistaSeleccionada: EvContratistaAEvaluarDto | null = null;
   detalles: DetalleForm[] = [];
@@ -182,6 +183,43 @@ export class EvaluarContratista implements OnInit {
       this.dropdownAbierto = false;
       this.cdr.markForCheck();
     }, 150);
+  }
+
+  marcarNoAplica(): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'No corresponde evaluar este período',
+      input: 'textarea',
+      inputPlaceholder: 'Motivo (obligatorio)...',
+      showCancelButton: true,
+      confirmButtonText: 'Registrar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => (!value?.trim() ? 'Debes indicar un motivo' : undefined),
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value) return;
+
+      this.marcandoNoAplica = true;
+      this.loader.show();
+      this.svc.marcarNoAplica(result.value.trim()).subscribe({
+        next: () => {
+          this.marcandoNoAplica = false;
+          this.loader.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Registrado',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          this.cargarInicio();
+        },
+        error: (err) => {
+          this.marcandoNoAplica = false;
+          this.loader.hide();
+          this.errorSvc.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
   }
 
   guardar(): void {

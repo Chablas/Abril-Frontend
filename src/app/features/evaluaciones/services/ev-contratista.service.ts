@@ -44,4 +44,8 @@ export class EvContratistaService {
   crear(dto: EvContratistaEvaluacionCreateDto): Observable<any> {
     return this.http.post(this.base, dto, { headers: this.headers() });
   }
+
+  marcarNoAplica(motivo: string): Observable<any> {
+    return this.http.post(`${this.base}/no-aplica`, { motivo }, { headers: this.headers() });
+  }
 }

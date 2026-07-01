@@ -9,6 +9,7 @@ export interface EvContratistaInicioDto {
   plantilla: EvContratistaCriterioDto[];
   contratistasAEvaluar: EvContratistaAEvaluarDto[];
   puedeVerTodos: boolean;
+  yaMarcoNoAplica: boolean;
 }
 
 export interface EvContratistaCriterioDto {
