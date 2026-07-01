@@ -110,6 +110,12 @@ export class TopicoService {
     });
   }
 
+  cerrar(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/${id}/cerrar`, {}, {
+      headers: authHeaders(),
+    });
+  }
+
   delete(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/${id}`, {
       headers: authHeaders(),

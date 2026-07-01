@@ -16,6 +16,7 @@ import {
   MedicoSimpleDto,
   MedicoUpsertDto,
   RestriccionTipoDto,
+  AgenteRiesgoDto,
 } from '../dtos/catalogos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +28,7 @@ export class CatalogosSaludService {
   private emoTipos$?: Observable<EmoTipoDto[]>;
   private examenTipos$?: Observable<ExamenTipoDto[]>;
   private restriccionTipos$?: Observable<RestriccionTipoDto[]>;
+  private agentesRiesgo$?: Observable<AgenteRiesgoDto[]>;
   private empresas$?: Observable<EmpresaSimpleDto[]>;
 
   constructor(private http: HttpClient) {}
@@ -66,6 +68,13 @@ export class CatalogosSaludService {
       })
       .pipe(shareReplay(1));
     return this.restriccionTipos$;
+  }
+
+  getAgentesRiesgo(): Observable<AgenteRiesgoDto[]> {
+    this.agentesRiesgo$ ??= this.http
+      .get<AgenteRiesgoDto[]>(`${this.apiUrl}/agentes-riesgo`, { headers: buildAuthHeaders() })
+      .pipe(shareReplay(1));
+    return this.agentesRiesgo$;
   }
 
   getEmpresas(): Observable<EmpresaSimpleDto[]> {

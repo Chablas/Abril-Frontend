@@ -16,4 +16,13 @@ export class InterconsultaClinicaService {
       headers: { Authorization: `Bearer ${token ?? ''}`, 'Content-Type': 'application/json' },
     });
   }
+
+  subirInformeInterconsulta(interconsultaId: number, file: File): Observable<{ url: string }> {
+    const token = localStorage.getItem('access_token');
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post<{ url: string }>(`${this.base}/${interconsultaId}/documentos`, fd, {
+      headers: { Authorization: `Bearer ${token ?? ''}` },
+    });
+  }
 }

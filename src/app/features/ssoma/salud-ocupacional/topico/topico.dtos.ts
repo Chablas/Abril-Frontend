@@ -32,6 +32,8 @@ export interface TopicoAtencionDto {
   tipoCasoSctr?: string;
   urlInforme?: string;
   descansoGeneradoId?: number;
+  estado: string;
+  fechaCierre?: string;
   registradoPorId?: number;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +45,7 @@ export interface TopicoFiltrosDto {
   workerId?: number;
   tipoAtencionId?: number;
   proyectoId?: number;
+  estado?: string;
   page?: number;
   pageSize?: number;
 }

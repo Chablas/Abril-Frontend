@@ -11,6 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChecklistService } from '../../checklist.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ProjectService } from '../../../../../../core/services/project.service';
 import {
   ChecklistPlantillaListDto,
   ChecklistProyectoCardDto,
@@ -42,6 +43,7 @@ export class ChecklistMainComponent implements OnInit {
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private projectSvc = inject(ProjectService);
 
   tab: Tab = 'resumen';
 
@@ -90,19 +92,16 @@ export class ChecklistMainComponent implements OnInit {
   }
 
   private loadProyectos(): void {
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
-    fetch(`${(window as any).__env?.apiUrl ?? ''}api/v1/configuracion/proyectos?page=1&pageSize=200`, {
-      headers: { Authorization: `Bearer ${token ?? ''}` },
-    })
-      .then((r) => r.json())
-      .then((res: any) => {
-        this.proyectos = (res.data ?? res ?? []).map((p: any) => ({
+    this.projectSvc.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
+      next: (res) => {
+        this.proyectos = (res.data ?? []).map((p: any) => ({
           projectId: p.projectId,
           projectDescription: p.projectDescription,
         }));
         this.cdr.markForCheck();
-      })
-      .catch(() => {});
+      },
+      error: () => {},
+    });
   }
 
   onProyectoChange(): void {

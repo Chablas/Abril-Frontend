@@ -3,16 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { ClinicaProgramacionService } from '../../../services/clinica-programacion.service';
-import { CatalogosSaludService } from '../../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
-import { EmoPorTrabajadorDto } from '../../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { BaseModal } from '../base-modal/base-modal';
+import { ClinicaProgramacionService } from '../../../features/clinica/services/clinica-programacion.service';
+import { CatalogosSaludService } from '../../../features/ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmoPorTrabajadorDto } from '../../../features/ssoma/salud-ocupacional/dtos/emo.model';
 import {
   ClinicaSimpleDto,
   EmoTipoDto,
   MedicoSimpleDto,
-} from '../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
-import { ErrorService } from '../../../../../core/services/error.service';
+} from '../../../features/ssoma/salud-ocupacional/dtos/catalogos.model';
+import { ErrorService } from '../../../core/services/error.service';
 
 @Component({
   selector: 'app-programar-emo-dialog',

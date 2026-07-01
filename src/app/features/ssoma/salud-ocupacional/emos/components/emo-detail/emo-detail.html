@@ -35,6 +35,9 @@
       <button type="button" [class.active]="activeTab === 'clinica'" (click)="setTab('clinica')">
         Clínica
       </button>
+      <button type="button" [class.active]="activeTab === 'documentos'" (click)="setTab('documentos')">
+        Documentos
+      </button>
       <button type="button" [class.active]="activeTab === 'historial'" (click)="setTab('historial')">
         Historial
       </button>
@@ -74,9 +77,11 @@
         <div>
           <dt>URL Resultado</dt>
           <dd>
-            <a *ngIf="emo.urlResultado" [href]="emo.urlResultado" target="_blank" rel="noopener" class="link">
-              Abrir archivo
-            </a>
+            <button *ngIf="emo.urlResultado" type="button" class="doc-btn-ver"
+              (click)="verDocumento(emo.urlResultado, 'Lectura EMO')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
             <span *ngIf="!emo.urlResultado">—</span>
           </dd>
         </div>
@@ -251,10 +256,11 @@
           <div class="col-span-2">
             <dt>Informe / Evidencia</dt>
             <dd>
-              <a *ngIf="emo.interconsulta.urlInforme" [href]="emo.interconsulta.urlInforme"
-                 target="_blank" rel="noopener" class="link">
-                Abrir documento
-              </a>
+              <button *ngIf="emo.interconsulta.urlInforme" type="button" class="doc-btn-ver"
+                (click)="verDocumento(emo.interconsulta.urlInforme, 'Informe Interconsulta')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Ver
+              </button>
               <span *ngIf="!emo.interconsulta.urlInforme">—</span>
             </dd>
           </div>
@@ -263,6 +269,115 @@
       <ng-template #sinInter>
         <p class="empty">Sin interconsulta vinculada a este EMO.</p>
       </ng-template>
+    </section>
+
+    <!-- Tab: Documentos -->
+    <section *ngIf="activeTab === 'documentos'" class="tab-panel">
+      <div class="doc-grid">
+
+        <!-- Lectura EMO (URL Resultado) -->
+        <div class="doc-card">
+          <div class="doc-card-icon resultado-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="15" y2="17"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Lectura EMO</p>
+            <p class="doc-card-sub" *ngIf="emo.urlResultado">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlResultado">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlResultado" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlResultado, 'Lectura EMO')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+          </div>
+        </div>
+
+        <!-- Certificado de Aptitud -->
+        <div class="doc-card">
+          <div class="doc-card-icon aptitud-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <polyline points="9 15 11 17 15 13"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Certificado de Aptitud</p>
+            <p class="doc-card-sub" *ngIf="emo.urlAptitud">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlAptitud">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlAptitud" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlAptitud, 'Certificado de Aptitud')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+            <label *ngIf="canUpload" class="doc-btn-subir" [class.uploading]="uploadingDoc['Aptitud']">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {{ uploadingDoc['Aptitud'] ? 'Subiendo…' : (emo.urlAptitud ? 'Reemplazar' : 'Subir') }}
+              <input type="file" accept=".pdf" hidden [disabled]="uploadingDoc['Aptitud']" (change)="subirDocumento($event, 'Aptitud')" />
+            </label>
+          </div>
+        </div>
+
+        <!-- EMO Completo -->
+        <div class="doc-card">
+          <div class="doc-card-icon emo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <rect x="8" y="12" width="8" height="6" rx="1"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">EMO Completo</p>
+            <p class="doc-card-sub" *ngIf="emo.urlEmoCompleto">Archivo cargado</p>
+            <p class="doc-card-sub missing" *ngIf="!emo.urlEmoCompleto">Sin archivo</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.urlEmoCompleto" type="button" class="doc-btn-ver" (click)="verDocumento(emo.urlEmoCompleto, 'EMO Completo')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+            <label *ngIf="canUpload" class="doc-btn-subir" [class.uploading]="uploadingDoc['EMO']">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {{ uploadingDoc['EMO'] ? 'Subiendo…' : (emo.urlEmoCompleto ? 'Reemplazar' : 'Subir') }}
+              <input type="file" accept=".pdf" hidden [disabled]="uploadingDoc['EMO']" (change)="subirDocumento($event, 'EMO')" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Informe Interconsulta -->
+        <div class="doc-card" *ngIf="emo.requiereInterconsulta || emo.interconsulta">
+          <div class="doc-card-icon inter-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 10h6M9 14h4"/>
+            </svg>
+          </div>
+          <div class="doc-card-body">
+            <p class="doc-card-title">Informe Interconsulta</p>
+            <ng-container *ngIf="emo.interconsulta">
+              <p class="doc-card-sub" *ngIf="emo.interconsulta.urlInforme">Archivo cargado · {{ emo.interconsulta.especialidad }}</p>
+              <p class="doc-card-sub missing" *ngIf="!emo.interconsulta.urlInforme">Pendiente · {{ emo.interconsulta.especialidad }}</p>
+            </ng-container>
+            <p class="doc-card-sub missing" *ngIf="!emo.interconsulta">Sin interconsulta registrada</p>
+          </div>
+          <div class="doc-card-actions">
+            <button *ngIf="emo.interconsulta?.urlInforme" type="button" class="doc-btn-ver" (click)="verDocumento(emo.interconsulta!.urlInforme, 'Informe Interconsulta')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Ver
+            </button>
+          </div>
+        </div>
+
+      </div>
     </section>
 
     <!-- Tab: Historial -->
@@ -303,4 +418,10 @@
       </ng-container>
     </section>
   </ng-container>
+
+  <app-document-viewer
+    [archivoUrl]="visorUrl"
+    [nombre]="visorNombre"
+    (closed)="onVisorClosed()">
+  </app-document-viewer>
 </app-base-modal>

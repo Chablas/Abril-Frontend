@@ -8,8 +8,6 @@
     { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
     { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
     { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
-    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' },
     { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
     { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
     { label: 'Descansos',        icono: 'ti-bed',              route: '/ssoma/salud-ocupacional/descansos' },
@@ -21,6 +19,18 @@
 </app-abril-page-header>
 
 <section class="p-6 space-y-6 flex-1 overflow-y-auto">
+  <!-- Accesos: Catálogos y Reportes -->
+  <div class="dash-shortcuts">
+    <a routerLink="/ssoma/salud-ocupacional/catalogos" class="dash-shortcut-btn">
+      <i class="ti ti-database" aria-hidden="true"></i>
+      <span>Catálogos</span>
+    </a>
+    <a routerLink="/ssoma/salud-ocupacional/reportes" class="dash-shortcut-btn">
+      <i class="ti ti-file-analytics" aria-hidden="true"></i>
+      <span>Reportes</span>
+    </a>
+  </div>
+
   <ng-container *ngIf="data; else loadingOrError">
     <!-- Fila 1: KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

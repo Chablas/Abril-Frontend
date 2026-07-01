@@ -23,8 +23,6 @@ export const SSOMA_TABS = [
   { label: 'Programaciones', icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
   { label: 'Interconsultas', icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
   { label: 'Convalidaciones',icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-  { label: 'Catálogos',      icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
-  { label: 'Reportes',       icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' },
   { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
   { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
   { label: 'Descansos',      icono: 'ti-bed',               route: '/ssoma/salud-ocupacional/descansos' },
@@ -127,6 +125,25 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   onGuardado(): void { this.cerrarModal(); this.load(this.currentPage); }
 
+  cerrarAtencion(a: TopicoAtencionDto, ev: MouseEvent): void {
+    ev.stopPropagation();
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar atención?',
+      text: `Atención #${a.id} — ${a.workerNombre ?? ''}`,
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar atención',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1b3a2d',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      this.svc.cerrar(a.id).subscribe({
+        next: () => this.load(this.currentPage),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
   eliminar(a: TopicoAtencionDto, ev: MouseEvent): void {
     ev.stopPropagation();
     Swal.fire({
@@ -148,6 +165,7 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId  || this.filtros.tipoAtencionId);
+           || this.filtros.workerId  || this.filtros.tipoAtencionId
+           || this.filtros.estado);
   }
 }

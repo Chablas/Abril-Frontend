@@ -163,8 +163,8 @@ export class DashboardContratistas implements OnInit, AfterViewInit {
     if (!canvas || !this.contraHistaActivo) return;
     this.chartRadar?.destroy();
     const c = this.contraHistaActivo;
-    const labels = ['Of. Técnica', 'SSOMA', 'Residencia', 'Calidad', 'Producción'];
-    const values = [c.notaOT, c.notaSsoma, c.notaResidencia, c.notaCalidad, c.notaProduccion]
+    const labels = ['Of. Técnica', 'SSOMA', 'Residencia', 'Calidad', 'Producción', 'Adm. de Obra'];
+    const values = [c.notaOT, c.notaSsoma, c.notaResidencia, c.notaCalidad, c.notaProduccion, c.notaAdministracion]
       .map((v) => v ?? 0);
     this.chartRadar = new Chart(canvas, {
       type: 'radar',

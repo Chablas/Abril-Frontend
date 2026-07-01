@@ -62,6 +62,18 @@ export interface MetaEmpresaDto {
   pctProactivoGeneral: number;
 }
 
+// ─── Checklists por Proyecto ─────────────────────────────────────────────────
+
+export interface ChecklistResumenDto {
+  id: number;
+  nombre: string;
+  porcentaje: number;
+  estado: 'pendiente' | 'en_progreso' | 'completado';
+  esObligatorio: boolean;
+  totalItems: number;
+  itemsCompletados: number;
+}
+
 // ─── Indicadores por Proyecto (Dashboard de Seguimiento) ───────────────────
 
 export interface IndicadorProactivoProyectoDto {
@@ -91,6 +103,7 @@ export interface IndicadorProactivoProyectoDto {
   pctProactivoGeneral: number;
 
   empresas: MetaEmpresaDto[];
+  checklists: ChecklistResumenDto[];
 }
 
 // ─── Indicadores Reactivos ──────────────────────────────────────────────────

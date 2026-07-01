@@ -31,6 +31,14 @@
         <input type="number" class="field-input" [(ngModel)]="filtros.workerId"
           placeholder="Número" (ngModelChange)="onWorkerChange()" />
       </div>
+      <div>
+        <label class="filter-label">Estado</label>
+        <select class="field-input" [(ngModel)]="filtros.estado" (ngModelChange)="onFilterChange()">
+          <option value="">Todos</option>
+          <option value="Abierta">Abierta</option>
+          <option value="Cerrada">Cerrada</option>
+        </select>
+      </div>
     </div>
     <div *ngIf="hasFilters" class="pt-2">
       <button class="btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
@@ -47,9 +55,10 @@
           <col style="width:100px"/>
           <col style="width:70px"/>
           <col style="width:130px"/>
-          <col style="width:200px"/>
+          <col style="width:180px"/>
           <col style="width:80px"/>
-          <col style="width:36px"/>
+          <col style="width:80px"/>
+          <col style="width:60px"/>
         </colgroup>
         <thead>
           <tr>
@@ -60,6 +69,7 @@
             <th>Tipo</th>
             <th>Diagnóstico</th>
             <th>Flags</th>
+            <th>Estado</th>
             <th></th>
           </tr>
         </thead>
@@ -83,16 +93,28 @@
                 <span *ngIf="a.derivadoClinica" class="flag flag-teal"  title="Derivado clínica">C</span>
               </div>
             </td>
+            <td>
+              <span class="badge" [class.badge-green]="a.estado === 'Abierta'" [class.badge-gray]="a.estado === 'Cerrada'">
+                {{ a.estado ?? 'Abierta' }}
+              </span>
+            </td>
             <td class="text-right">
-              <button class="row-action" (click)="eliminar(a, $event)" title="Eliminar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                </svg>
-              </button>
+              <div class="row-actions">
+                <button *ngIf="a.estado !== 'Cerrada'" class="row-action row-action-close" (click)="cerrarAtencion(a, $event)" title="Cerrar atención">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </button>
+                <button class="row-action" (click)="eliminar(a, $event)" title="Eliminar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                  </svg>
+                </button>
+              </div>
             </td>
           </tr>
           <tr *ngIf="!loading && atenciones.length === 0">
-            <td colspan="8" class="empty-row">Sin atenciones registradas.</td>
+            <td colspan="9" class="empty-row">Sin atenciones registradas.</td>
           </tr>
         </tbody>
       </table>

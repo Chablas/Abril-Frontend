@@ -10,7 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { DashboardSaludService } from '../services/dashboard-salud.service';
@@ -33,7 +33,7 @@ Chart.register(...registerables, ChartDataLabels);
 @Component({
   selector: 'app-salud-dashboard',
   standalone: true,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, RouterLink, AbrilPageHeaderComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })

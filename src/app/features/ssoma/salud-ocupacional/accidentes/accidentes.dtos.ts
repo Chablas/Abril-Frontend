@@ -19,6 +19,25 @@ export interface AccidenteTrabajoListItemDto {
   createdAt: string;
 }
 
+export interface AccidenteTrabajoUpdateDto {
+  lugarAccidente?: string;
+  tipoAccidente?: string;
+  mecanismo?: string;
+  parteCuerpoAfectada?: string;
+  agenteRiesgoId?: number | null;
+  descripcion: string;
+  descripcionLesion?: string;
+  diagnosticoCie10?: string;
+  requiereHospitalizacion: boolean;
+  hospitalNombre?: string;
+  diasDescansoEstimados: number;
+  diasDescansoReales?: number;
+  notificadoSunafil: boolean;
+  fechaNotificacionSunafil?: string;
+  numeroNotificacionSunafil?: string;
+  restriccionesReintegro?: string;
+}
+
 export interface AccidenteFilterDto {
   workerId?: number;
   estado?: string;
@@ -89,6 +108,59 @@ export interface AltaMedicaItemDto {
   createdAt: string;
 }
 
+// --- Catálogos ---
+
+export interface TipoItemDto {
+  id: number;
+  nombre: string;
+}
+
+export interface TiposSeguimientoDto {
+  tiposCita: TipoItemDto[];
+  tiposEquipo: TipoItemDto[];
+  tiposAlta: TipoItemDto[];
+}
+
+// --- Create / Update DTOs ---
+
+export interface CitaMedicaCreateDto {
+  tipoId: number;
+  fechaCita: string;
+  horaCita?: string;
+  clinica?: string;
+  medico?: string;
+  diagnostico?: string;
+  indicaciones?: string;
+  proximaCita?: string;
+  urlEvidencia?: string;
+  observaciones?: string;
+}
+
+export interface EquipoPrestadoCreateDto {
+  tipoEquipoId: number;
+  cantidad: number;
+  fechaPrestamo: string;
+  observaciones?: string;
+  urlEvidencia?: string;
+}
+
+export interface EquipoPrestadoDevolverDto {
+  fechaDevolucion: string;
+  observaciones?: string;
+}
+
+export interface AltaMedicaCreateDto {
+  tipoId: number;
+  fechaAlta: string;
+  medico?: string;
+  diagnosticoFinal?: string;
+  tieneRestriccion: boolean;
+  descripcionRestriccion?: string;
+  fechaFinRestriccion?: string;
+  urlCertificado?: string;
+  observaciones?: string;
+}
+
 export interface AccidenteTrabajoDetalleDto {
   id: number;
   workerId: number;
@@ -101,9 +173,21 @@ export interface AccidenteTrabajoDetalleDto {
   horaAccidente?: string;
   tipoAccidente?: string;
   lugarAccidente?: string;
+  mecanismo?: string;
+  parteCuerpoAfectada?: string;
+  agenteRiesgoId?: number;
+  agenteRiesgoNombre?: string;
   descripcion?: string;
+  descripcionLesion?: string;
+  diagnosticoCie10?: string;
+  requiereHospitalizacion: boolean;
+  hospitalNombre?: string;
   estado: string;
   notificadoSunafil: boolean;
+  fechaNotificacionSunafil?: string;
+  numeroNotificacionSunafil?: string;
+  restriccionesReintegro?: string;
+  diasDescansoEstimados: number;
   diasDescansoReales?: number;
   flashReportId?: number;
   casoSocialId?: string;

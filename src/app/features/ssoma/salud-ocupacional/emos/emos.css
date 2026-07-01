@@ -166,6 +166,19 @@
   text-overflow: unset !important;
 }
 
+.col-actions {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
 .worker-name {
   font-size: 0.78rem;
   font-weight: 600;

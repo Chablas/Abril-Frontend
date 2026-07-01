@@ -8,6 +8,7 @@ export interface EvContratistaInicioDto {
   miPuestoEvaluador: string | null;
   plantilla: EvContratistaCriterioDto[];
   contratistasAEvaluar: EvContratistaAEvaluarDto[];
+  puedeVerTodos: boolean;
 }
 
 export interface EvContratistaCriterioDto {
@@ -38,7 +39,8 @@ export interface EvContratistaEvaluacionCreateDto {
 export interface EvContratistaDetalleCreateDto {
   plantillaId: number | null;
   criterio: string;
-  puntaje: number;
+  puntaje: number | null;
+  esNa: boolean;
 }
 
 // ─── VER EVALUACIONES ─────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ export interface EvContratistaResumenDto {
   notaResidencia: number | null;
   notaCalidad: number | null;
   notaProduccion: number | null;
+  notaAdministracion: number | null;
   notaTotal: number | null;
   estado: 'Aprobado' | 'Regular' | 'Desaprobado' | 'Sin evaluar';
 }

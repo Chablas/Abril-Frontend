@@ -1,12 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ClinicaAccionDto, CreateProgramacionDto, ProgramacionClinicaDto } from '../dtos/clinica.model';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+interface PagedResponse<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
 }
 
 const PROGRAMACIONES_BASE = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`;
@@ -17,27 +25,33 @@ export class ClinicaProgramacionService {
 
   getProgramacionesHoy(clinicaId?: number): Observable<ProgramacionClinicaDto[]> {
     const fecha = new Date().toISOString().split('T')[0];
-    const params: Record<string, string | number> = { desde: fecha, hasta: fecha };
+    const params: Record<string, string | number> = { desde: fecha, hasta: fecha, pageSize: 500 };
     if (clinicaId) params['clinicaId'] = clinicaId;
-    return this.http.get<ProgramacionClinicaDto[]>(PROGRAMACIONES_BASE, {
-      headers: buildClinicaHeaders(),
-      params,
-    });
+    return this.http
+      .get<PagedResponse<ProgramacionClinicaDto>>(PROGRAMACIONES_BASE, {
+        headers: buildClinicaHeaders(),
+        params,
+      })
+      .pipe(map((res) => res?.data ?? []));
   }
 
   getProgramacionesFiltradas(params: {
     desde?: string;
     hasta?: string;
     estado?: string;
+    pageSize?: number;
   }): Observable<ProgramacionClinicaDto[]> {
     let httpParams = new HttpParams();
     if (params.desde) httpParams = httpParams.set('desde', params.desde);
     if (params.hasta) httpParams = httpParams.set('hasta', params.hasta);
     if (params.estado) httpParams = httpParams.set('estado', params.estado);
-    return this.http.get<ProgramacionClinicaDto[]>(PROGRAMACIONES_BASE, {
-      headers: buildClinicaHeaders(),
-      params: httpParams,
-    }).pipe(tap(raw => console.log('[CPS] raw HTTP response item[0]:', raw[0])));
+    httpParams = httpParams.set('pageSize', String(params.pageSize ?? 500));
+    return this.http
+      .get<PagedResponse<ProgramacionClinicaDto>>(PROGRAMACIONES_BASE, {
+        headers: buildClinicaHeaders(),
+        params: httpParams,
+      })
+      .pipe(map((res) => res?.data ?? []));
   }
 
   programarEmo(dto: CreateProgramacionDto): Observable<ProgramacionClinicaDto> {

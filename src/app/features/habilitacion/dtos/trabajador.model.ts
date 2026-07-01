@@ -81,6 +81,7 @@ export interface WorkerDetalleDto {
   fechaIngreso?: string;
   condicionMedica?: string;
   fechaNacimiento?: string;
+  sexo?: string;
   fechaRetiro?: string;
   sctr?: boolean;
   area?: string;
@@ -88,6 +89,7 @@ export interface WorkerDetalleDto {
   jefatura?: string;
   obraOficina?: string;
   aniosExperiencia?: number;
+  ocupacionId?: number;
 }
 
 export interface WorkerEditDto {

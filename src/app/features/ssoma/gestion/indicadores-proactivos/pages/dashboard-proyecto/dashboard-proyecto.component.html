@@ -192,6 +192,37 @@
         </table>
       </div>
 
+      <!-- ── CHECKLISTS ──────────────────────────────────────────────────────── -->
+      <div class="dp-section" *ngIf="indicadores()?.checklists?.length">
+        <h3 class="dp-section-title"><i class="ti ti-clipboard-check"></i> Estado de Checklists SSOMA</h3>
+        <div class="cl-cards-grid">
+          <div
+            *ngFor="let cl of indicadores()!.checklists"
+            class="cl-card"
+            [class.cl-card--completado]="cl.estado === 'completado'">
+            <div class="cl-card-header">
+              <div class="cl-card-title">{{ cl.nombre }}</div>
+              <span class="cl-badge" [ngClass]="estadoClass(cl.estado)">{{ estadoLabel(cl.estado) }}</span>
+            </div>
+            <div class="cl-card-progress">
+              <div class="cl-progress-bar">
+                <div class="cl-progress-fill"
+                  [style.width.%]="cl.porcentaje"
+                  [style.background]="porcentajeColor(cl.porcentaje)">
+                </div>
+              </div>
+              <span class="cl-progress-pct" [style.color]="porcentajeColor(cl.porcentaje)">
+                {{ cl.porcentaje | number:'1.0-0' }}%
+              </span>
+            </div>
+            <div class="cl-card-footer">
+              <span class="cl-card-items"><i class="ti ti-check"></i> {{ cl.itemsCompletados }} / {{ cl.totalItems }}</span>
+              <span *ngIf="cl.esObligatorio" class="cl-tag-obligatorio">Obligatorio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /reportContent -->
 
     <!-- EMPTY STATE -->

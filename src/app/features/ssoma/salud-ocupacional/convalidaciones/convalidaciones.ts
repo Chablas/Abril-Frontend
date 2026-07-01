@@ -21,8 +21,7 @@ import {
   diasVencerBadgeClass,
   diasVencerStyle,
 } from '../shared/dias-vencer.utils';
-import { ConvalidacionCreate } from './components/convalidacion-create/convalidacion-create';
-import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { ConvalidacionReview } from './components/convalidacion-review/convalidacion-review';
 
 interface FilterOption {
   id: string;
@@ -32,12 +31,12 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-convalidaciones',
   standalone: true,
-  imports: [FabButton, 
+  imports: [
     CommonModule,
     FormsModule,
     Paginator,
     SearchSelect,
-    ConvalidacionCreate,
+    ConvalidacionReview,
     AbrilPageHeaderComponent,
   ],
   templateUrl: './convalidaciones.html',
@@ -65,7 +64,8 @@ export class Convalidaciones implements OnInit, OnDestroy {
   currentPage = 1;
   loading = false;
 
-  createOpen = false;
+  reviewOpen = false;
+  selectedItem: ConvalidacionListDto | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -134,16 +134,19 @@ export class Convalidaciones implements OnInit, OnDestroy {
     this.load(page);
   }
 
-  openCreate(): void {
-    this.createOpen = true;
+  openReview(item: ConvalidacionListDto): void {
+    this.selectedItem = item;
+    this.reviewOpen = true;
   }
 
-  closeCreate(): void {
-    this.createOpen = false;
+  closeReview(): void {
+    this.reviewOpen = false;
+    this.selectedItem = null;
   }
 
-  onCreated(): void {
-    this.createOpen = false;
+  onReviewed(): void {
+    this.reviewOpen = false;
+    this.selectedItem = null;
     this.load(this.currentPage);
   }
 
@@ -151,11 +154,13 @@ export class Convalidaciones implements OnInit, OnDestroy {
     return estadoBadgeClass(resultadoConvalidacionStyle(r));
   }
 
-  diasClass(dias: number): string {
+  diasClass(dias: number | null): string {
+    if (dias == null) return '';
     return diasVencerBadgeClass(dias);
   }
 
-  diasLabel(dias: number): string {
+  diasLabel(dias: number | null): string {
+    if (dias == null) return '—';
     return diasVencerStyle(dias).label;
   }
 
