@@ -64,6 +64,7 @@ export interface EvContratistaResumenDto {
   notaResidencia: number | null;
   notaCalidad: number | null;
   notaProduccion: number | null;
+  notaAdministracion: number | null;
   notaTotal: number | null;
   estado: 'Aprobado' | 'Regular' | 'Desaprobado' | 'Sin evaluar';
 }
