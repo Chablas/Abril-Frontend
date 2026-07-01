@@ -66,6 +66,18 @@ export class RacLista implements OnInit {
       },
       error: () => {},
     });
+
+    // Restaurar filtros al volver de cerrar/ver un RAC (evita tener que re-filtrar cada vez).
+    const previos = this.racService.listFiltrosState;
+    if (previos) {
+      this.filtroEstado = previos.filtroEstado;
+      this.filtroSeveridad = previos.filtroSeveridad;
+      this.filtroTipo = previos.filtroTipo;
+      this.filtroSoloConPenalidad = previos.filtroSoloConPenalidad;
+      this.filtroProyectoId = previos.filtroProyectoId;
+      this.filtroEmpresaId = previos.filtroEmpresaId;
+      this.query = { ...this.query, page: previos.page };
+    }
     this.load();
   }
 
@@ -82,6 +94,15 @@ export class RacLista implements OnInit {
       empresaReportadaId: this.filtroEmpresaId ?? undefined,
     };
     this.query = q;
+    this.racService.listFiltrosState = {
+      filtroEstado: this.filtroEstado,
+      filtroSeveridad: this.filtroSeveridad,
+      filtroTipo: this.filtroTipo,
+      filtroSoloConPenalidad: this.filtroSoloConPenalidad,
+      filtroProyectoId: this.filtroProyectoId,
+      filtroEmpresaId: this.filtroEmpresaId,
+      page: q.page ?? 1,
+    };
     this.racService.getList(q).subscribe({
       next: (res) => {
         this.result = res;

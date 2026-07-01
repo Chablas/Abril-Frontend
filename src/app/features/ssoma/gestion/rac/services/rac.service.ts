@@ -22,10 +22,24 @@ import {
   PenalidadResolverRequest,
 } from '../dtos/rac.dtos';
 
+export interface RacListFiltrosState {
+  filtroEstado: string;
+  filtroSeveridad: string;
+  filtroTipo: string;
+  filtroSoloConPenalidad: boolean;
+  filtroProyectoId: number | null;
+  filtroEmpresaId: number | null;
+  page: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RacService {
   private base = `${environment.apiUrl}api/v1/ssoma-rac`;
   private basePen = `${environment.apiUrl}api/v1/ssoma-rac-penalidad`;
+
+  // Se mantiene en memoria mientras dura la sesión de la SPA para que, al volver
+  // de cerrar/ver un RAC, la lista no pierda los filtros aplicados.
+  listFiltrosState: RacListFiltrosState | null = null;
 
   constructor(private http: HttpClient) {}
 
