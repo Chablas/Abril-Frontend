@@ -82,7 +82,9 @@ export class Equipos implements OnInit, OnDestroy {
   private readonly VIGENCIA_ANTE_UPLOAD_IDS = [1, 2, 7, 8, 9, 11];
 
   get requiereVigenciaAnteUpload(): boolean {
-    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+    return !!this.selectedEntregable
+      && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId)
+      && this.panelEstado !== 'No Aplica';
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
@@ -499,7 +501,7 @@ export class Equipos implements OnInit, OnDestroy {
         obsContratista: this.panelObsAbril || undefined,
       };
     } else {
-      const vigencia = !this.selectedEntregable.requiereVigencia
+      const vigencia = (!this.selectedEntregable.requiereVigencia || this.panelEstado === 'No Aplica')
         ? '2040-12-31'
         : this.panelVigencia || undefined;
       payload = {
