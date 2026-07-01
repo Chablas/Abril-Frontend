@@ -8,9 +8,12 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EmoService } from '../../../ssoma/salud-ocupacional/services/emo.service';
 import {
+  DocumentTypeDto,
   EmoPorTrabajadorDto,
   EmoPorTrabajadorQuery,
 } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
+import { WorkerService } from '../../../ssoma/salud-ocupacional/services/worker.service';
+import { WorkerEditForm } from './components/worker-edit-form/worker-edit-form';
 import {
   aptitudBadgeClass,
   aptitudDotColor,
@@ -22,7 +25,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 @Component({
   selector: 'app-config-workers',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, AbrilPageHeaderComponent, WorkerEditForm],
   templateUrl: './workers.html',
   styleUrl: './workers.css',
 })
@@ -58,11 +61,18 @@ export class Workers implements OnInit, OnDestroy {
     { id: 'Anulado', nombre: 'Anulado' },
   ];
 
+  // Edición (modal datos básicos).
+  editOpen = false;
+  editWorker: EmoPorTrabajadorDto | null = null;
+  documentTypes: DocumentTypeDto[] = [];
+  private docTypesLoaded = false;
+
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
 
   constructor(
     private service: EmoService,
+    private workerService: WorkerService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -124,6 +134,39 @@ export class Workers implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.load(page);
+  }
+
+  /** Abre el modal de edición. Carga el catálogo de tipos de documento la 1ª vez. */
+  openEdit(item: EmoPorTrabajadorDto): void {
+    this.editWorker = item;
+    if (this.docTypesLoaded) {
+      this.editOpen = true;
+      return;
+    }
+    this.loaderService.show();
+    this.workerService.getDocumentTypes().subscribe({
+      next: (tipos) => {
+        this.documentTypes = tipos ?? [];
+        this.docTypesLoaded = true;
+        this.loaderService.hide();
+        this.editOpen = true;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  closeEdit(): void {
+    this.editOpen = false;
+    this.editWorker = null;
+  }
+
+  onEditSaved(): void {
+    this.closeEdit();
+    this.load(this.currentPage);
   }
 
   estadoEmoClass(estado?: string): string {

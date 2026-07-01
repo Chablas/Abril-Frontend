@@ -210,4 +210,25 @@ export class AuthService {
       return null;
     }
   }
+
+  /** Correo del usuario logueado (lo guarda el login de Microsoft en `user.email`). */
+  getUserEmail(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user.email ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Trabajador de Abril que ve el boletín "Vive Abril": entra por el login de
+   * Microsoft (correo `@abril.pe`) y tiene el rol `USUARIO DE ABRIL`. Se usa para
+   * redirigir al boletín tras iniciar sesión y para proteger la ruta `/boletin`.
+   */
+  esUsuarioAbrilBoletin(): boolean {
+    const email = (this.getUserEmail() ?? '').toLowerCase();
+    return email.endsWith('@abril.pe') && this.hasRole('USUARIO DE ABRIL');
+  }
 }

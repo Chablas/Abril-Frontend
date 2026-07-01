@@ -1,19 +1,19 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { NavigationService } from '../../core/navigation/navigation.service';
-import { NavGroup, NavModule } from '../../core/navigation/nav.model';
-import { AuthService } from '../../core/services/auth.service';
-import { GUIA_LECCIONES_APRENDIDAS } from '../../shared/constants/mejora-continua-guia';
+import { NavigationService } from '../../../core/navigation/navigation.service';
+import { NavGroup, NavModule } from '../../../core/navigation/nav.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { GUIA_LECCIONES_APRENDIDAS } from '../../../shared/constants/mejora-continua-guia';
 
 @Component({
-  selector: 'app-inicio',
+  selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './inicio.html',
-  styleUrl: './inicio.css',
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.css',
 })
-export class Inicio {
+export class Dashboard {
   /** Guías en video de Mejora Continua (por ahora solo Lecciones Aprendidas). */
   readonly guiasMejoraContinua = [GUIA_LECCIONES_APRENDIDAS];
 

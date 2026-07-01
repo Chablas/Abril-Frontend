@@ -11,7 +11,6 @@ import {
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { ProgramacionAlertasService } from '../../../core/services/programacion-alertas.service';
@@ -42,7 +41,6 @@ export class Sidebar implements OnInit, OnDestroy {
     public router: Router,
     public navService: NavigationService,
     public alertaSvc: ProgramacionAlertasService,
-    private authService: AuthService,
     private microsoftAuthService: MicrosoftAuthService,
     private elementRef: ElementRef,
   ) {}
@@ -127,51 +125,25 @@ export class Sidebar implements OnInit, OnDestroy {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
-  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas', 'costos', 'proyectos', 'contabilidad', 'mejora-continua']);
-
   hasAccordion(module: NavModule): boolean {
-    return this.accordionModuleKeys.has(module.key);
+    return this.navService.isExpandable(module);
   }
 
   onModuleClick(module: NavModule): void {
     this.accountMenuOpen = false;
 
-    // Módulos con accordion: toggle in-place (desktop expandido)
-    if (!this.collapsed && this.accordionModuleKeys.has(module.key)) {
+    // Módulos con accordion: toggle in-place (solo con el sidebar expandido;
+    // colapsado no hay dónde desplegar, así que se navega directamente).
+    if (!this.collapsed && this.navService.isExpandable(module)) {
       this.expandedModule = this.expandedModule === module.key ? null : module.key;
       this.expandedGroup = null;
       return;
     }
 
-    // Todos los demás: navegación directa
-    if (module.key === 'habilitacion') {
-      this.router.navigate([
-        this.authService.isContratista()
-          ? '/habilitacion/gestion/dashboard'
-          : '/habilitacion/gestion',
-      ]);
-    } else {
-      const directRoutes: Record<string, string> = {
-        'control-acceso': '/habilitacion/control-acceso',
-        clinica: '/clinica/dashboard',
-        'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-        ssoma: '/ssoma/salud-ocupacional/dashboard',
-        'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
-        'arquitectura-comercial': '/arquitectura-comercial/dashboard',
-        evaluaciones: '/evaluaciones/dashboard',
-        seguridad: '/security/users',
-        configuracion: '/configuracion/proyectos',
-        costos: '/costs/adjudicaciones',
-        contratistas: '/contractors/management',
-      };
-      const route = directRoutes[module.key];
-      if (route) {
-        this.router.navigate([route]);
-      } else {
-        const items = this.navService.filterItems(module.items);
-        if (items.length > 0) this.router.navigate([items[0].route]);
-      }
-    }
+    // Navegación directa: se resuelve a la ruta preferida (landing) si el usuario
+    // tiene acceso, o al primer item accesible del módulo como fallback.
+    const route = this.navService.resolveLanding(module);
+    if (route) this.router.navigate([route]);
     this.expandedModule = null;
   }
 
