@@ -124,7 +124,7 @@
           </div>
           <div class="ef-header-actions">
             <button class="btn-no-aplica" (click)="marcarNoAplicaContratista()" [disabled]="marcandoNoAplica">
-              No aplica
+              No corresponde este mes
             </button>
             <button class="btn-cambiar" (click)="cambiarContratista()">
               <i class="ti ti-x"></i>
@@ -162,24 +162,24 @@
           </div>
         </div>
 
-        <!-- Comentario -->
-        <div class="comentario-section">
-          <label class="cmt-label">Comentario (opcional)</label>
-          <textarea class="cmt-input" rows="3" [(ngModel)]="comentario"
-            placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
-        </div>
-
-        <!-- Nota preview + botón -->
-        <div class="ef-footer">
-          <div class="nota-preview" *ngIf="notaCalculada > 0">
-            <span class="np-label">Nota {{ inicio?.miAreaNombre }}:</span>
-            <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
-            <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+        <!-- Comentario + Guardar (misma fila para ahorrar altura) -->
+        <div class="bottom-bar">
+          <div class="bottom-comentario">
+            <label class="cmt-label">Comentario (opcional)</label>
+            <textarea class="cmt-input" rows="2" [(ngModel)]="comentario"
+              placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
           </div>
-          <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
-            <i class="ti ti-device-floppy"></i>
-            {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
-          </button>
+          <div class="bottom-actions">
+            <div class="nota-preview" *ngIf="notaCalculada > 0">
+              <span class="np-label">Nota {{ inicio?.miAreaNombre }}:</span>
+              <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+              <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+            </div>
+            <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
