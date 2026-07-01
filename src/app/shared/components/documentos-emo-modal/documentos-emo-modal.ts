@@ -10,13 +10,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
-import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
-import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
-import { InterconsultaClinicaService } from '../../../../services/interconsulta-clinica.service';
-import { EmoPorTrabajadorDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
-import { LoaderService } from '../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../core/services/error.service';
+import { BaseModal } from '../base-modal/base-modal';
+import { DocumentViewer } from '../document-viewer/document-viewer';
+import { EmoService } from '../../../features/ssoma/salud-ocupacional/services/emo.service';
+import { InterconsultaClinicaService } from '../../../features/clinica/services/interconsulta-clinica.service';
+import { EmoPorTrabajadorDto } from '../../../features/ssoma/salud-ocupacional/dtos/emo.model';
+import { LoaderService } from '../../../core/services/loader.service';
+import { ErrorService } from '../../../core/services/error.service';
 
 @Component({
   selector: 'app-documentos-emo-modal',

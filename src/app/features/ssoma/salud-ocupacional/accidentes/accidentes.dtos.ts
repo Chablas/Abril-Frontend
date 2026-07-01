@@ -155,6 +155,8 @@ export interface AccidenteTrabajoDetalleDto {
   tipoAccidente?: string;
   lugarAccidente?: string;
   descripcion?: string;
+  descripcionLesion?: string;
+  diagnosticoCie10?: string;
   estado: string;
   notificadoSunafil: boolean;
   diasDescansoReales?: number;

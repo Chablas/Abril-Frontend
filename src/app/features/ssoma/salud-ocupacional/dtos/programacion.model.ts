@@ -72,3 +72,14 @@ export interface ProgramacionQueryParams {
   page?: number;
   pageSize?: number;
 }
+
+export interface ProgramacionResumenDto {
+  programados: number;
+  aceptados: number;
+  enAtencion: number;
+  completados: number;
+  rechazados: number;
+  noPresento: number;
+  automaticos: number;
+  total: number;
+}

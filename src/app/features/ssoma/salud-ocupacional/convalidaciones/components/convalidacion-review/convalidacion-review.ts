@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { ConvalidacionService } from '../../../services/convalidacion.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
 import { MedicoSimpleDto } from '../../../dtos/catalogos.model';
@@ -23,7 +24,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 @Component({
   selector: 'app-convalidacion-review',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DocumentViewer],
   templateUrl: './convalidacion-review.html',
   styleUrl: './convalidacion-review.css',
 })
@@ -40,6 +41,9 @@ export class ConvalidacionReview implements OnChanges {
   medicoId: number | null = null;
   notas = '';
   saving = false;
+
+  visorUrl = '';
+  visorNombre = '';
 
   readonly resultadoOptions = [
     { id: 'Pendiente', nombre: 'Pendiente' },
@@ -59,7 +63,7 @@ export class ConvalidacionReview implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open && this.item) {
       this.resultado = (this.item.resultado as ConvalidacionResultado) ?? 'Pendiente';
-      this.fechaVencimiento = this.item.fechaVencimiento ?? '';
+      this.fechaVencimiento = this.item.fechaVencimiento || this.item.emoFechaVencimiento || '';
       this.medicoId = null;
       this.notas = this.item.notas ?? '';
       this.saving = false;
@@ -113,6 +117,17 @@ export class ConvalidacionReview implements OnChanges {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  verDocumento(url: string | undefined | null, nombre: string): void {
+    if (!url) return;
+    this.visorUrl = url;
+    this.visorNombre = nombre;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorNombre = '';
   }
 
   close(): void {

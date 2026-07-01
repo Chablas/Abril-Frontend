@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { InterconsultaService } from '../../../services/interconsulta.service';
 import { InterconsultaDetalleDto } from '../../../dtos/interconsulta.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -19,7 +20,7 @@ import { estadoBadgeClass, estadoInterconsultaStyle } from '../../../shared/esta
 @Component({
   selector: 'app-interconsulta-detail',
   standalone: true,
-  imports: [CommonModule, BaseModal],
+  imports: [CommonModule, BaseModal, DocumentViewer],
   templateUrl: './interconsulta-detail.html',
   styleUrl: './interconsulta-detail.css',
 })
@@ -29,6 +30,8 @@ export class InterconsultaDetail implements OnChanges {
 
   data: InterconsultaDetalleDto | null = null;
   loading = false;
+  visorUrl = '';
+  visorNombre = '';
 
   constructor(
     private service: InterconsultaService,
@@ -64,6 +67,17 @@ export class InterconsultaDetail implements OnChanges {
 
   estadoClass(estado: string): string {
     return estadoBadgeClass(estadoInterconsultaStyle(estado));
+  }
+
+  verDocumento(url: string | undefined | null, nombre: string): void {
+    if (!url) return;
+    this.visorUrl = url;
+    this.visorNombre = nombre;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorNombre = '';
   }
 
   close(): void {

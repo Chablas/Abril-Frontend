@@ -15,9 +15,9 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { aptitudBadgeClass, APTITUD_CHART_ORDER } from '../../../ssoma/salud-ocupacional/shared/aptitud.utils';
 import { diasVencerBadgeClass, diasVencerStyle } from '../../../ssoma/salud-ocupacional/shared/dias-vencer.utils';
 import { EmoDetail } from '../../../ssoma/salud-ocupacional/emos/components/emo-detail/emo-detail';
-import { ProgramarEmoDialogComponent } from './programar-emo-dialog/programar-emo-dialog';
-import { EditarEmoModal } from './components/editar-emo-modal/editar-emo-modal';
-import { DocumentosEmoModal } from './components/documentos-emo-modal/documentos-emo-modal';
+import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
+import { EditarEmoModal } from '../../../../shared/components/editar-emo-modal/editar-emo-modal';
+import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo-modal/documentos-emo-modal';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 interface FilterOption {

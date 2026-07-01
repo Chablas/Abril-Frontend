@@ -16,6 +16,15 @@ export interface ConvalidacionListDto {
   fechaEmoOrigen?: string;
   notas?: string;
   diasParaVencer: number | null;
+
+  // Datos del EMO origen, para revisión del médico antes de resolver.
+  emoFechaVencimiento?: string | null;
+  urlResultado?: string | null;
+  urlAptitud?: string | null;
+  urlEmoCompleto?: string | null;
+  interconsultaEstado?: string | null;
+  interconsultaEspecialidad?: string | null;
+  interconsultaUrlInforme?: string | null;
 }
 
 export interface ConvalidacionCreateDto {

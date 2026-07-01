@@ -23,8 +23,6 @@ export const SSOMA_TABS = [
   { label: 'Programaciones', icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
   { label: 'Interconsultas', icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
   { label: 'Convalidaciones',icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-  { label: 'Catálogos',      icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
-  { label: 'Reportes',       icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' },
   { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
   { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
   { label: 'Descansos',      icono: 'ti-bed',               route: '/ssoma/salud-ocupacional/descansos' },

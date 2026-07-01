@@ -52,9 +52,9 @@
       </div>
       <div *ngIf="data.urlInforme" class="col-span-2">
         <div class="field-label">Informe / Levantamiento</div>
-        <a [href]="data.urlInforme" target="_blank" class="text-blue-600 underline break-all">
+        <button type="button" class="doc-btn-ver" (click)="verDocumento(data.urlInforme, 'Informe Interconsulta')">
           Ver documento
-        </a>
+        </button>
       </div>
       <div *ngIf="data.notas" class="col-span-2">
         <div class="field-label">Notas</div>
@@ -70,3 +70,9 @@
     </footer>
   </ng-container>
 </app-base-modal>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>

@@ -53,6 +53,7 @@ interface WorkerFormModel {
   fechaIngreso: string;
   condicionMedica: string;
   fechaNacimiento: string;
+  sexo: string;
   aniosExperiencia: number | null;
 }
 
@@ -210,6 +211,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       fechaIngreso: '',
       condicionMedica: '',
       fechaNacimiento: '',
+      sexo: '',
       aniosExperiencia: null,
     };
   }
@@ -250,6 +252,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
+          this.model.sexo = det.sexo ?? '';
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
           this.loadingDetalle = false;
           if (this.model.area) {
@@ -595,6 +598,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
       fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
+      sexo: n(this.model.sexo),
       aniosExperiencia: this.model.aniosExperiencia ?? undefined,
     };
 

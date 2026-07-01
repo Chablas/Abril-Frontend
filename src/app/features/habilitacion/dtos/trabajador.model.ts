@@ -81,6 +81,7 @@ export interface WorkerDetalleDto {
   fechaIngreso?: string;
   condicionMedica?: string;
   fechaNacimiento?: string;
+  sexo?: string;
   fechaRetiro?: string;
   sctr?: boolean;
   area?: string;

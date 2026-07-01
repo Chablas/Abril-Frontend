@@ -209,6 +209,7 @@ export interface WorkerUpsertDto {
   empresaId?: number | null;
   proyectoId?: number | null;
   fechaNacimiento?: string | null;
+  sexo?: string | null;
   aniosExperiencia?: number | null;
 }
 

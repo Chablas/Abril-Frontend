@@ -8,8 +8,6 @@
     { label: 'Programaciones',  icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
     { label: 'Interconsultas',  icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
     { label: 'Convalidaciones', icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-    { label: 'Catálogos',       icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
-    { label: 'Reportes',        icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' },
     { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
     { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
     { label: 'Descansos',        icono: 'ti-bed',              route: '/ssoma/salud-ocupacional/descansos' },
@@ -30,31 +28,31 @@
   <!-- KPIs -->
   <div class="kpis-row">
     <div class="kpi-card">
-      <span class="kpi-value">{{ kpis.programados }}</span>
+      <span class="kpi-value">{{ resumen.programados }}</span>
       <span class="kpi-label">Programados</span>
     </div>
     <div class="kpi-card kpi-green">
-      <span class="kpi-value">{{ kpis.aceptados }}</span>
+      <span class="kpi-value">{{ resumen.aceptados }}</span>
       <span class="kpi-label">Aceptados</span>
     </div>
     <div class="kpi-card kpi-orange">
-      <span class="kpi-value">{{ kpis.enAtencion }}</span>
+      <span class="kpi-value">{{ resumen.enAtencion }}</span>
       <span class="kpi-label">En Atención</span>
     </div>
     <div class="kpi-card kpi-emerald">
-      <span class="kpi-value">{{ kpis.completados }}</span>
+      <span class="kpi-value">{{ resumen.completados }}</span>
       <span class="kpi-label">Completados</span>
     </div>
     <div class="kpi-card kpi-red">
-      <span class="kpi-value">{{ kpis.rechazados }}</span>
+      <span class="kpi-value">{{ resumen.rechazados }}</span>
       <span class="kpi-label">Rechazados</span>
     </div>
     <div class="kpi-card kpi-gray">
-      <span class="kpi-value">{{ kpis.noPresento }}</span>
+      <span class="kpi-value">{{ resumen.noPresento }}</span>
       <span class="kpi-label">No se presentó</span>
     </div>
     <div class="kpi-card kpi-violet">
-      <span class="kpi-value">{{ kpis.automaticos }}</span>
+      <span class="kpi-value">{{ resumen.automaticos }}</span>
       <span class="kpi-label">Auto</span>
     </div>
   </div>
