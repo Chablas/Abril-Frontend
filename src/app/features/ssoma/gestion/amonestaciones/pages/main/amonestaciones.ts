@@ -158,6 +158,7 @@ export class Amonestaciones implements OnInit {
   inhabModoManual = false;
   inhabDniManual = '';
   inhabNombreManual = '';
+  inhabFiltroLista = '';
   private inhabQuery$ = new Subject<string>();
 
   constructor(
@@ -195,6 +196,19 @@ export class Amonestaciones implements OnInit {
   get puedeVerInhabilitados(): boolean {
     const roles = this.authService.getRoles();
     return ROLES_INHABILITACION.some(r => roles.includes(r));
+  }
+
+  get puedeBorrarInhabilitado(): boolean {
+    return (this.authService.getUserEmail() ?? '').toLowerCase() === 'sjustiniani@abril.pe';
+  }
+
+  get inhabilitadosFiltrados(): RestringidoListItemDto[] {
+    const q = this.inhabFiltroLista.trim().toLowerCase();
+    if (!q) return this.inhabilitadosList;
+    return this.inhabilitadosList.filter(i =>
+      (i.apellidoNombre ?? '').toLowerCase().includes(q) ||
+      (i.dni ?? '').toLowerCase().includes(q)
+    );
   }
 
   get headerTabs(): AbrilPageTab[] {
