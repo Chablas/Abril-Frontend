@@ -5,7 +5,7 @@
     <!-- Cabecera -->
     <div class="flex items-center justify-between gap-3">
       <div>
-        <p class="text-lg font-semibold text-gray-800 leading-tight">{{ item.direccion }}</p>
+        <p class="text-lg font-semibold text-gray-800 leading-tight">{{ item.direccion || '—' }}</p>
         <p *ngIf="item.interiorDepartamento" class="text-sm text-gray-400">
           Int./Dpto.: {{ item.interiorDepartamento }}
         </p>
@@ -99,12 +99,12 @@
         <!-- Campos de la propiedad -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-[6px]">
-            <label class="text-sm text-[#64BC04] font-medium">Dirección <span class="text-red-500">*</span></label>
-            <input type="text" [(ngModel)]="editForm.direccion" name="ed_direccion" placeholder="Dirección"
+            <label class="text-sm text-[#64BC04] font-medium">Dirección (lote) <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="loteForm.direccion" name="ed_direccion" placeholder="Dirección del lote"
               class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
           </div>
           <div class="flex flex-col gap-[6px]">
-            <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento <span class="text-red-500">*</span></label>
+            <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento</label>
             <input type="text" [(ngModel)]="editForm.interiorDepartamento" name="ed_interior" placeholder="Interior o departamento"
               class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
           </div>
@@ -128,11 +128,11 @@
           </div>
         </div>
 
-        <!-- Observaciones -->
+        <!-- Observaciones (del lote) -->
         <div class="flex flex-col gap-[6px]">
-          <label class="text-sm text-[#64BC04] font-medium">Observaciones</label>
-          <textarea [(ngModel)]="editForm.observaciones" name="ed_observaciones" rows="3"
-            placeholder="Notas adicionales sobre la propiedad (opcional)"
+          <label class="text-sm text-[#64BC04] font-medium">Observaciones (lote)</label>
+          <textarea [(ngModel)]="loteForm.observaciones" name="ed_observaciones" rows="3"
+            placeholder="Notas adicionales sobre el lote (opcional)"
             class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
         </div>
 

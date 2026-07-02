@@ -9,6 +9,7 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { ViewToggle } from '../../../../../shared/components/view-toggle/view-toggle';
 import { ViewToggleMode } from '../../../../../shared/components/view-toggle/view-toggle.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 
@@ -18,6 +19,7 @@ import {
   InvoiceSupplierDto,
   InvoicePaymentFormDto,
   InvoiceCurrencyDto,
+  InvoiceObservationReasonDto,
   InvoiceDetailDto,
   InvoiceBlockGroupDto,
   InvoiceFilterDto,
@@ -27,11 +29,12 @@ import { FacturaImport } from './import/import';
 import { FacturaDetail } from './detail/detail';
 import { FacturaEdit } from './edit/edit';
 import { FacturaAttach } from './attach/attach';
+import { FacturaObserve } from './observe/observe';
 
 @Component({
   selector: 'app-facturas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, FacturaAttach, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, StatusBadge, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, FacturaAttach, FacturaObserve, AbrilPageHeaderComponent],
   templateUrl: './facturas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -43,6 +46,16 @@ export class Facturas implements OnInit {
   paymentForms: InvoicePaymentFormDto[] = [];
   abrilCompanies: InvoiceSupplierDto[] = [];
   currencies: InvoiceCurrencyDto[] = [];
+  observationReasons: InvoiceObservationReasonDto[] = [];
+
+  // ── Selección múltiple (vista de tabla) ────────────────────────────
+  /** IDs de facturas seleccionadas para acciones en bloque. */
+  selectedIds = new Set<number>();
+  /** Índice de la última fila clickeada (ancla para selección por rango con Shift). */
+  private lastClickedIndex: number | null = null;
+
+  // Modal de observación
+  showObserveModal = false;
 
   filters: InvoiceFilterDto = {
     search: null,
@@ -53,11 +66,14 @@ export class Facturas implements OnInit {
     abrilContributorId: null,
     abrilContributorRuc: null,
     invoicePaymentFormId: null,
+    currencyId: null,
     totalMin: null,
     totalMax: null,
     issueDateFrom: null,
     issueDateTo: null,
     page: 1,
+    sortBy: null,
+    sortDir: null,
   };
   currentPage = 1;
   totalPages = 0;
@@ -246,6 +262,7 @@ export class Facturas implements OnInit {
         this.paymentForms = res.paymentForms;
         this.abrilCompanies = res.abrilCompanies;
         this.currencies = res.currencies;
+        this.observationReasons = res.observationReasons;
         this.applyPaged(res.invoices);
         this.loaderService.hide();
         this.loadBlocks();
@@ -278,6 +295,9 @@ export class Facturas implements OnInit {
     this.currentPage = res.page;
     this.totalPages = res.totalPages;
     this.totalRecords = res.totalRecords;
+    // La selección no sobrevive a un cambio de página / filtrado.
+    this.selectedIds.clear();
+    this.lastClickedIndex = null;
   }
 
   /** Carga las facturas agrupadas por razón social de Abril (vista de bloques). */
@@ -307,6 +327,30 @@ export class Facturas implements OnInit {
 
   onPageChange(page: number): void {
     this.loadTable(page);
+  }
+
+  // ── Ordenamiento de columnas (server-side) ──────────────────────────
+  /**
+   * Cicla el orden de una columna: sin orden → ascendente → descendente → orden original.
+   * El orden se aplica en el servidor sobre todos los registros (no solo la página visible).
+   */
+  toggleSort(column: string): void {
+    if (this.filters.sortBy !== column) {
+      this.filters.sortBy = column;
+      this.filters.sortDir = 'asc';
+    } else if (this.filters.sortDir === 'asc') {
+      this.filters.sortDir = 'desc';
+    } else {
+      // Estaba en descendente → volver al orden original.
+      this.filters.sortBy = null;
+      this.filters.sortDir = null;
+    }
+    this.loadTable(1);
+  }
+
+  /** Dirección de orden activa para una columna (o null si no está ordenada por ella). */
+  sortDirOf(column: string): 'asc' | 'desc' | null {
+    return this.filters.sortBy === column ? this.filters.sortDir ?? null : null;
   }
 
   openCreate(): void {
@@ -353,5 +397,154 @@ export class Facturas implements OnInit {
   onEdited(): void {
     this.editDetail = null;
     this.loadTable(this.currentPage);
+  }
+
+  // ── Selección múltiple (estilo Outlook: clic + Shift+clic para rangos) ──
+  /**
+   * Maneja el clic sobre la casilla de selección de una fila.
+   * Con Shift presionado selecciona todo el rango entre la última fila clickeada
+   * y la actual; sin Shift alterna solo esa fila.
+   */
+  /**
+   * Clic sobre una fila de la tabla. Con Shift presionado selecciona el registro
+   * (o el rango, como en la casilla) en vez de abrir el detalle.
+   */
+  onRowClick(event: MouseEvent, index: number): void {
+    if (event.shiftKey) {
+      // Evita que Shift+clic resalte texto de la fila.
+      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+      this.onSelectClick(event, index);
+      return;
+    }
+    this.openDetail(this.invoices[index].invoiceId);
+  }
+
+  onSelectClick(event: MouseEvent, index: number): void {
+    event.stopPropagation();
+
+    if (event.shiftKey && this.lastClickedIndex !== null) {
+      const [desde, hasta] = [this.lastClickedIndex, index].sort((a, b) => a - b);
+      for (let k = desde; k <= hasta; k++) this.selectedIds.add(this.invoices[k].invoiceId);
+      return; // el ancla se mantiene
+    }
+
+    const id = this.invoices[index].invoiceId;
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else this.selectedIds.add(id);
+    this.lastClickedIndex = index;
+  }
+
+  get allSelected(): boolean {
+    return this.invoices.length > 0 && this.invoices.every((i) => this.selectedIds.has(i.invoiceId));
+  }
+
+  toggleSelectAll(): void {
+    if (this.allSelected) {
+      this.selectedIds.clear();
+    } else {
+      this.selectedIds = new Set(this.invoices.map((i) => i.invoiceId));
+    }
+    this.lastClickedIndex = null;
+  }
+
+  private get selectedIdsArray(): number[] {
+    return Array.from(this.selectedIds);
+  }
+
+  // ── Acciones en bloque: aprobar / rechazar / observar ────────────────
+  aprobarBulk(): void {
+    const ids = this.selectedIdsArray;
+    if (ids.length === 0) return;
+
+    Swal.fire({
+      icon: 'question',
+      title: `¿Aprobar ${ids.length} factura(s)?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.approve(ids).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
+          this.loadTable(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  rechazarBulk(): void {
+    const ids = this.selectedIdsArray;
+    if (ids.length === 0) return;
+
+    Swal.fire({
+      icon: 'warning',
+      title: `¿Rechazar ${ids.length} factura(s)?`,
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.reject(ids).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
+          this.loadTable(this.currentPage);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  /** Abre el modal para elegir el motivo de observación. */
+  openObserve(): void {
+    if (this.selectedIds.size === 0) return;
+    this.showObserveModal = true;
+  }
+
+  closeObserve(): void {
+    this.showObserveModal = false;
+  }
+
+  /** Confirma la observación en bloque con el motivo elegido en el modal. */
+  onObserveConfirm(reasonId: number): void {
+    const ids = this.selectedIdsArray;
+    if (ids.length === 0) return;
+
+    this.loaderService.show();
+    this.service.observe(ids, reasonId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.showObserveModal = false;
+        Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.loadTable(this.currentPage);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Colores del badge de estado ──────────────────────────────────────
+  estadoColors(estado?: string | null): { bg: string; text: string } {
+    switch (estado) {
+      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
+      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+      case 'Observado': return { bg: '#FEF3C7', text: '#92400E' };
+      default:          return { bg: '#F3F4F6', text: '#6B7280' }; // Pendiente / sin estado
+    }
   }
 }

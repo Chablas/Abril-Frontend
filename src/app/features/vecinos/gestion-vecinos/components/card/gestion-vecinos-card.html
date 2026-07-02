@@ -18,7 +18,7 @@
 
   <!-- Dirección + interior -->
   <div>
-    <p class="text-sm font-semibold text-gray-800 leading-tight">{{ item.direccion }}</p>
+    <p class="text-sm font-semibold text-gray-800 leading-tight">{{ item.direccion || '—' }}</p>
     <p *ngIf="item.interiorDepartamento" class="text-xs text-gray-400 mt-0.5">
       Int./Dpto.: {{ item.interiorDepartamento }}
     </p>

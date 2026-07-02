@@ -21,6 +21,7 @@ import {
   CatalogOptionDTO,
   VecinoRequisitoItemDTO,
   VecinoUpdateDTO,
+  VecinoLoteUpdateDTO,
 } from '../../dtos/gestion-vecinos.dto';
 
 @Component({
@@ -44,13 +45,13 @@ export class GestionVecinosDetail implements OnInit {
   editing = false;
   editForm: VecinoUpdateDTO = {
     vecinoUsoId: null,
-    direccion: '',
     interiorDepartamento: '',
     vecinoColindanciaId: null,
     vecinoTipoConstruccionId: null,
-    observaciones: '',
     personas: [],
   };
+  /** Datos a nivel de lote (dirección + observaciones). */
+  loteForm: VecinoLoteUpdateDTO = { direccion: '', observaciones: '' };
   /** Imágenes nuevas a subir al guardar. */
   newImages: SelectedFile[] = [];
 
@@ -266,11 +267,9 @@ export class GestionVecinosDetail implements OnInit {
   startEdit(): void {
     this.editForm = {
       vecinoUsoId: this.item.vecinoUsoId ?? null,
-      direccion: this.item.direccion ?? '',
       interiorDepartamento: this.item.interiorDepartamento ?? '',
       vecinoColindanciaId: this.item.vecinoColindanciaId ?? null,
       vecinoTipoConstruccionId: this.item.vecinoTipoConstruccionId ?? null,
-      observaciones: this.item.observaciones ?? '',
       personas: this.item.personas.map((p) => ({
         vecinoPersonaId: p.vecinoPersonaId,
         nombre: p.nombre,
@@ -278,6 +277,10 @@ export class GestionVecinosDetail implements OnInit {
         celular: p.celular ?? '',
         vecinoRelacionTipoId: p.vecinoRelacionTipoId,
       })),
+    };
+    this.loteForm = {
+      direccion: this.item.direccion ?? '',
+      observaciones: this.item.observaciones ?? '',
     };
     this.newImages = [];
     this.editing = true;
@@ -341,8 +344,7 @@ export class GestionVecinosDetail implements OnInit {
 
   private editErrors(): string[] {
     const e: string[] = [];
-    if (!this.editForm.direccion?.trim()) e.push('Dirección');
-    if (!this.editForm.interiorDepartamento?.trim()) e.push('Interior / Departamento');
+    if (!this.loteForm.direccion?.trim()) e.push('Dirección');
     if (!this.editForm.vecinoUsoId) e.push('Uso');
     if (!this.editForm.vecinoColindanciaId) e.push('Colindancia');
     if (!this.editForm.vecinoTipoConstruccionId) e.push('Tipo de construcción');
@@ -370,7 +372,11 @@ export class GestionVecinosDetail implements OnInit {
     }
 
     this.loaderService.show();
-    this.service.update(this.item.vecinoId, this.editForm).subscribe({
+    // Guardar en paralelo los datos del vecino/departamento y los del lote.
+    forkJoin([
+      this.service.update(this.item.vecinoId, this.editForm),
+      this.service.updateLote(this.item.vecinoLoteId, this.loteForm),
+    ]).subscribe({
       next: () => {
         const tasks: Observable<unknown>[] = [];
         if (this.newImages.length > 0)
@@ -386,7 +392,7 @@ export class GestionVecinosDetail implements OnInit {
               this.loaderService.hide();
               this.updated.emit();
               this.cdr.detectChanges();
-              Swal.fire({ icon: 'success', title: 'Propiedad actualizada', confirmButtonColor: '#64BC04' });
+              Swal.fire({ icon: 'success', title: 'Vecino actualizado', confirmButtonColor: '#64BC04' });
             },
             error: (err: HttpErrorResponse) => {
               this.loaderService.hide();

@@ -16,6 +16,10 @@ export interface InvoiceDto {
   currencyId?: number | null;
   currencyCode?: string | null;
   currencySymbol?: string | null;
+  invoiceStatusId?: number | null;
+  invoiceStatusDescription?: string | null;
+  invoiceObservationReasonId?: number | null;
+  invoiceObservationReasonDescription?: string | null;
   documentUrl?: string | null;
   signedDocumentUrl?: string | null;
   createdDateTime: string;
@@ -89,7 +93,10 @@ export interface InvoiceDetailDto {
   currencyId?: number | null;
   currencyCode?: string | null;
   currencySymbol?: string | null;
-  invoiceFolderId?: number | null;
+  invoiceStatusId?: number | null;
+  invoiceStatusDescription?: string | null;
+  invoiceObservationReasonId?: number | null;
+  invoiceObservationReasonDescription?: string | null;
   invoiceFolderName?: string | null;
   documentUrl?: string | null;
   signedDocumentUrl?: string | null;
@@ -108,6 +115,12 @@ export interface InvoicePaymentFormDto {
   invoicePaymentFormDescription: string;
 }
 
+/** Motivo de observación para el desplegable del modal "Observar". */
+export interface InvoiceObservationReasonDto {
+  invoiceObservationReasonId: number;
+  invoiceObservationReasonDescription: string;
+}
+
 export interface InvoiceFilterDto {
   search?: string | null;
   serie?: string | null;
@@ -117,11 +130,16 @@ export interface InvoiceFilterDto {
   abrilContributorId?: number | null;
   abrilContributorRuc?: string | null;
   invoicePaymentFormId?: number | null;
+  currencyId?: number | null;
   totalMin?: number | null;
   totalMax?: number | null;
   issueDateFrom?: string | null;
   issueDateTo?: string | null;
   page: number;
+  /** Columna por la que ordenar la tabla; null = orden original (más recientes primero). */
+  sortBy?: string | null;
+  /** Dirección del orden: 'asc' o 'desc'. */
+  sortDir?: 'asc' | 'desc' | null;
 }
 
 export interface PagedResponseDTO<T> {
@@ -138,6 +156,8 @@ export interface InvoiceInitDto {
   /** Razones sociales que maneja Abril (contribuyentes con es_abril = true). */
   abrilCompanies: InvoiceSupplierDto[];
   currencies: InvoiceCurrencyDto[];
+  /** Motivos de observación para el modal "Observar". */
+  observationReasons: InvoiceObservationReasonDto[];
   invoices: PagedResponseDTO<InvoiceDto>;
 }
 

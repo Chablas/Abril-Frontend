@@ -11,7 +11,7 @@ import { CroquisLoteDTO, ProjectCroquisItemDTO } from '../../dtos/croquis.dto';
 
 /** Lote en edición (con su polígono en coordenadas relativas 0–1). */
 interface EditableLote {
-  /** Id del lote existente (null si es nuevo). Se conserva para preservar el vecino asignado al guardar. */
+  /** Id del lote existente (null si es nuevo). Se conserva para preservar el lote (y sus vecinos) al guardar. */
   projectCroquisLoteId: number | null;
   numeroLote: string;
   puntos: number[][];
@@ -99,11 +99,11 @@ export class LoteEditor implements OnInit {
   async finishLote(): Promise<void> {
     if (this.currentPoints.length < 3) return;
     const { value: numero } = await Swal.fire({
-      title: 'Número / etiqueta del vecino',
+      title: 'Número / etiqueta del lote',
       input: 'text',
       inputPlaceholder: 'Ej. 14',
       showCancelButton: true,
-      confirmButtonText: 'Guardar vecino',
+      confirmButtonText: 'Guardar lote',
       confirmButtonColor: '#64BC04',
       inputValidator: (v) => (!v?.trim() ? 'Ingresa un número o etiqueta' : null),
     });
@@ -151,7 +151,7 @@ export class LoteEditor implements OnInit {
     this.service.saveLotes(this.croquis.projectCroquisId, payload).subscribe({
       next: () => {
         this.loaderService.hide();
-        Swal.fire({ title: 'Vecinos guardados exitosamente', icon: 'success', draggable: true });
+        Swal.fire({ title: 'Lotes guardados exitosamente', icon: 'success', draggable: true });
         this.closeModal.emit();
       },
       error: (err: HttpErrorResponse) => {

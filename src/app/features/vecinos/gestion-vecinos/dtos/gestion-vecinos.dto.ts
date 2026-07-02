@@ -37,12 +37,15 @@ export interface VecinoPersonaDTO {
 
 export interface VecinoListItemDTO {
   vecinoId: number;
+  /** Lote/edificio al que pertenece este vecino/departamento. */
+  vecinoLoteId: number;
   projectId: number;
   projectDescription: string;
   predio?: string | null;
   vecinoUsoId?: number | null;
   usoDescripcion?: string | null;
-  direccion: string;
+  /** Dirección del lote (puede ser nula si el lote aún no tiene dirección). */
+  direccion?: string | null;
   interiorDepartamento?: string | null;
   /** Nombre de la persona principal (propietario), para mostrar en tabla/tarjeta. */
   nombrePropietario?: string | null;
@@ -141,12 +144,26 @@ export interface VecinoSolicitudCreateDTO {
 }
 
 // ── Vista por croquis ────────────────────────────────────────────────────
+/** Un lote (polígono) con sus vecinos/departamentos y KPIs agregados. */
 export interface CroquisGestionLoteDTO {
   projectCroquisLoteId: number;
   numeroLote: string;
   puntos: number[][];
-  vecinoId?: number | null;
-  vecinoNombre?: string | null;
+  /** Lote/edificio que representa el polígono (null si aún no tiene lote registrado). */
+  vecinoLoteId?: number | null;
+  direccion?: string | null;
+  observaciones?: string | null;
+  vecinosCount: number;
+  solicitudesCount: number;
+  compromisosCount: number;
+  solicitudesAprobadas: number;
+  solicitudesEvaluables: number;
+  entregablesAprobados: number;
+  entregablesEvaluables: number;
+  requisitosSubidos: number;
+  requisitosEvaluables: number;
+  /** Vecinos/departamentos registrados en este lote. */
+  vecinos: VecinoListItemDTO[];
 }
 
 export interface CroquisGestionDTO {
@@ -168,8 +185,11 @@ export interface CroquisGestionDTO {
   entregablesEvaluables: number;
   requisitosSubidos: number;
   requisitosEvaluables: number;
+  /** Cantidad de lotes/edificios del proyecto. */
+  lotesCount: number;
+  /** Cantidad de vecinos/departamentos del proyecto. */
+  vecinosCount: number;
   lotes: CroquisGestionLoteDTO[];
-  vecinos: VecinoListItemDTO[];
 }
 
 export interface CroquisGestionResponseDTO {
@@ -208,6 +228,7 @@ export interface VecinoLimpiezaDTO {
   vecinoId?: number | null;
   vecinoNombre?: string | null;
   vecinoDireccion?: string | null;
+  vecinoInterior?: string | null;
   descripcion?: string | null;
   atencionArchivoUrl?: string | null;
   atencionOriginalFileName?: string | null;
@@ -260,24 +281,40 @@ export interface VecinoPersonaUpsertDTO {
   vecinoRelacionTipoId: number | null;
 }
 
-/** Edición de los datos de la casa/propiedad (sección Detalle) + sus personas. */
+/** Edición de un vecino/departamento (sección Detalle) + sus personas.
+ *  La dirección/observaciones se editan aparte (a nivel de lote). */
 export interface VecinoUpdateDTO {
   vecinoUsoId: number | null;
-  direccion: string;
   interiorDepartamento: string;
   vecinoColindanciaId: number | null;
   vecinoTipoConstruccionId: number | null;
-  observaciones: string;
   personas: VecinoPersonaUpsertDTO[];
 }
 
-export interface VecinoCreateDTO {
-  projectId: number | null;
-  vecinoUsoId: number | null;
+/** Edición de los datos a nivel de lote (dirección + observaciones). */
+export interface VecinoLoteUpdateDTO {
   direccion: string;
+  observaciones: string;
+}
+
+/** Un vecino/departamento del formulario de alta. */
+export interface VecinoDepartamentoCreateDTO {
+  vecinoUsoId: number | null;
   interiorDepartamento: string;
   vecinoColindanciaId: number | null;
   vecinoTipoConstruccionId: number | null;
-  observaciones: string;
   personas: VecinoPersonaCreateDTO[];
+}
+
+/** Alta de vecinos sobre un lote existente (polígono del croquis). */
+export interface VecinoLoteRegisterDTO {
+  projectCroquisLoteId: number;
+  direccion: string;
+  observaciones: string;
+  vecinos: VecinoDepartamentoCreateDTO[];
+}
+
+export interface VecinoLoteRegisterResultDTO {
+  vecinoLoteId: number;
+  vecinoIds: number[];
 }

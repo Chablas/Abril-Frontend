@@ -38,10 +38,13 @@ export class InvoiceService {
     if (filter.abrilContributorId) params = params.set('abrilContributorId', filter.abrilContributorId.toString());
     if (filter.abrilContributorRuc) params = params.set('abrilContributorRuc', filter.abrilContributorRuc);
     if (filter.invoicePaymentFormId) params = params.set('invoicePaymentFormId', filter.invoicePaymentFormId.toString());
+    if (filter.currencyId) params = params.set('currencyId', filter.currencyId.toString());
     if (filter.totalMin != null) params = params.set('totalMin', filter.totalMin.toString());
     if (filter.totalMax != null) params = params.set('totalMax', filter.totalMax.toString());
     if (filter.issueDateFrom) params = params.set('issueDateFrom', filter.issueDateFrom);
     if (filter.issueDateTo) params = params.set('issueDateTo', filter.issueDateTo);
+    if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+    if (filter.sortDir) params = params.set('sortDir', filter.sortDir);
     return params;
   }
 
@@ -116,5 +119,23 @@ export class InvoiceService {
 
   createSupplier(dto: InvoiceSupplierCreateDto): Observable<InvoiceSupplierDto> {
     return this.http.post<InvoiceSupplierDto>(`${this.apiUrl}/supplier`, dto, { headers: this.headers });
+  }
+
+  /** Aprueba en bloque las facturas indicadas. */
+  approve(invoiceIds: number[]): Observable<{ message: string; count: number }> {
+    return this.http.post<{ message: string; count: number }>(
+      `${this.apiUrl}/approve`, { invoiceIds }, { headers: this.headers });
+  }
+
+  /** Rechaza en bloque las facturas indicadas. */
+  reject(invoiceIds: number[]): Observable<{ message: string; count: number }> {
+    return this.http.post<{ message: string; count: number }>(
+      `${this.apiUrl}/reject`, { invoiceIds }, { headers: this.headers });
+  }
+
+  /** Observa en bloque las facturas indicadas con un motivo del catálogo. */
+  observe(invoiceIds: number[], invoiceObservationReasonId: number): Observable<{ message: string; count: number }> {
+    return this.http.post<{ message: string; count: number }>(
+      `${this.apiUrl}/observe`, { invoiceIds, invoiceObservationReasonId }, { headers: this.headers });
   }
 }
