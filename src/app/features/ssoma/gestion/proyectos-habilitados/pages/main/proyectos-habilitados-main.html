@@ -1,0 +1,34 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Proyectos Habilitados SSOMA"
+  subtitulo="Define qué proyectos aparecen en los filtros de todas las funcionalidades de SSOMA">
+</app-abril-page-header>
+
+<div class="ph-wrap">
+  <table class="ph-table">
+    <thead>
+      <tr>
+        <th>Proyecto</th>
+        <th class="ph-td-center">Habilitado para SSOMA</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of proyectos; track p.proyectoId) {
+        <tr>
+          <td>{{ p.proyectoDescription }}</td>
+          <td class="ph-td-center">
+            <button
+              class="ph-switch"
+              [class.ph-switch--on]="p.habilitado"
+              [disabled]="cambiandoId === p.proyectoId"
+              (click)="toggle(p)">
+              <span class="ph-switch-knob"></span>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="2" class="ph-empty">No hay proyectos activos.</td></tr>
+      }
+    </tbody>
+  </table>
+</div>

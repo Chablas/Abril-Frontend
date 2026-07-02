@@ -11,7 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChecklistService } from '../../checklist.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { ProjectService } from '../../../../../../core/services/project.service';
+import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
 import {
   ChecklistPlantillaListDto,
   ChecklistPlantillaDetalleDto,
@@ -45,7 +45,7 @@ export class ChecklistMainComponent implements OnInit {
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
-  private projectSvc = inject(ProjectService);
+  private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
   tab: Tab = 'resumen';
 
@@ -107,9 +107,9 @@ export class ChecklistMainComponent implements OnInit {
   }
 
   private loadProyectos(): void {
-    this.projectSvc.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
+    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
       next: (res) => {
-        this.proyectos = (res.data ?? []).map((p: any) => ({
+        this.proyectos = res.map((p) => ({
           projectId: p.projectId,
           projectDescription: p.projectDescription,
         }));
