@@ -154,9 +154,10 @@ export class NavigationService {
         { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista', featureKey: 'ssoma.gestion.auditoria-ats' },
         { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones', featureKey: 'ssoma.gestion.amonestaciones' },
         { label: 'Indicadores SSOMA', route: '/ssoma/gestion/indicadores-proactivos/indicadores-ssoma', featureKey: 'ssoma.gestion.indicadores-proactivos' },
-        { label: 'Puntaje del Mes', route: '/ssoma/gestion/indicadores-proactivos/puntaje', featureKey: 'ssoma.gestion.indicadores-proactivos' },
         { label: 'Checklists SSOMA', route: '/ssoma/gestion/checklist', featureKey: 'ssoma.gestion.checklist' },
+        { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
         { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
+        { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
       ],
     },
     {
@@ -301,6 +302,9 @@ export class NavigationService {
               { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
               { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
               { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
+              { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },
+              { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista' },
+              { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones' },
             ],
             groups: [],
           };

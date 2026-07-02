@@ -27,7 +27,9 @@ export class Agenda implements OnInit {
   loading = false;
   accionando: number | null = null;
 
-  selectedDate = new Date().toISOString().split('T')[0];
+  // Sin fecha por defecto: se muestran todas las programaciones. Solo se
+  // restringe cuando el usuario elige explícitamente una fecha.
+  selectedDate = '';
   filtroEstado: FiltroEstado = '';
   busqueda = '';
 
@@ -133,7 +135,7 @@ export class Agenda implements OnInit {
   loadAgenda(fecha: string): void {
     this.loading = true;
     this.loaderService.show();
-    this.svc.getProgramacionesFiltradas({ desde: fecha, hasta: fecha }).subscribe({
+    this.svc.getProgramacionesFiltradas({ desde: fecha || undefined, hasta: fecha || undefined }).subscribe({
       next: (data) => {
         this.items = data;
         console.log('[Agenda] items[0]:', data[0]);
@@ -149,6 +151,11 @@ export class Agenda implements OnInit {
   }
 
   onDateChange(): void {
+    this.loadAgenda(this.selectedDate);
+  }
+
+  limpiarFecha(): void {
+    this.selectedDate = '';
     this.loadAgenda(this.selectedDate);
   }
 

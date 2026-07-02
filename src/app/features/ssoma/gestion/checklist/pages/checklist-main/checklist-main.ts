@@ -11,9 +11,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChecklistService } from '../../checklist.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { ProjectService } from '../../../../../../core/services/project.service';
+import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
 import {
   ChecklistPlantillaListDto,
+  ChecklistPlantillaDetalleDto,
+  ChecklistPlantillaItemDto,
   ChecklistProyectoCardDto,
   ChecklistProyectoDetalleDto,
   ChecklistProyectoItemDto,
@@ -43,7 +45,7 @@ export class ChecklistMainComponent implements OnInit {
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
-  private projectSvc = inject(ProjectService);
+  private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
   tab: Tab = 'resumen';
 
@@ -67,6 +69,19 @@ export class ChecklistMainComponent implements OnInit {
   // Activar checklist opcional
   plantillas: ChecklistPlantillaListDto[] = [];
   loadingPlantillas = false;
+
+  // Ver plantilla como modelo (items) + edición cooperativa
+  plantillaDetalleVisible = false;
+  plantillaDetalle: ChecklistPlantillaDetalleDto | null = null;
+  loadingPlantillaDetalle = false;
+  editandoItemId: number | null = null;
+  itemEditTexto = '';
+  itemEditAdjunto = false;
+  itemEditActivo = true;
+  guardandoPlantillaItem = false;
+  nuevoItemTexto = '';
+  nuevoItemAdjunto = false;
+  agregandoItem = false;
   activandoId: number | null = null;
 
   get headerTabs(): AbrilPageTab[] {
@@ -92,9 +107,9 @@ export class ChecklistMainComponent implements OnInit {
   }
 
   private loadProyectos(): void {
-    this.projectSvc.getProjectsPaged({ pageSize: 200, active: true }).subscribe({
+    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
       next: (res) => {
-        this.proyectos = (res.data ?? []).map((p: any) => ({
+        this.proyectos = res.map((p) => ({
           projectId: p.projectId,
           projectDescription: p.projectDescription,
         }));
@@ -216,6 +231,105 @@ export class ChecklistMainComponent implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  // ─── Ver plantilla como modelo (con items) ─────────────────────────────────
+
+  verPlantilla(p: ChecklistPlantillaListDto): void {
+    this.plantillaDetalleVisible = true;
+    this.plantillaDetalle = null;
+    this.loadingPlantillaDetalle = true;
+    this.nuevoItemTexto = '';
+    this.nuevoItemAdjunto = false;
+    this.cdr.markForCheck();
+    this.svc.getPlantillaDetalle(p.id).subscribe({
+      next: (d) => {
+        this.plantillaDetalle = d;
+        this.loadingPlantillaDetalle = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingPlantillaDetalle = false;
+        this.plantillaDetalleVisible = false;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cerrarPlantillaDetalle(): void {
+    this.plantillaDetalleVisible = false;
+    this.plantillaDetalle = null;
+    this.editandoItemId = null;
+    this.cdr.markForCheck();
+  }
+
+  agregarItemPlantilla(): void {
+    if (!this.plantillaDetalle || !this.nuevoItemTexto.trim() || this.agregandoItem) return;
+    this.agregandoItem = true;
+    this.cdr.markForCheck();
+    this.svc
+      .addItemToPlantilla(this.plantillaDetalle.id, {
+        descripcion: this.nuevoItemTexto.trim(),
+        tieneAdjuntoRef: this.nuevoItemAdjunto,
+      })
+      .subscribe({
+        next: (item) => {
+          this.plantillaDetalle!.items.push(item);
+          this.plantillaDetalle!.totalItems = this.plantillaDetalle!.items.length;
+          const card = this.plantillas.find((pl) => pl.id === this.plantillaDetalle!.id);
+          if (card) card.totalItems = this.plantillaDetalle!.totalItems;
+          this.nuevoItemTexto = '';
+          this.nuevoItemAdjunto = false;
+          this.agregandoItem = false;
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.agregandoItem = false;
+          this.errorSvc.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  editarItemPlantilla(item: ChecklistPlantillaItemDto): void {
+    this.editandoItemId = item.id;
+    this.itemEditTexto = item.descripcion;
+    this.itemEditAdjunto = item.tieneAdjuntoRef;
+    this.itemEditActivo = item.activo;
+    this.cdr.markForCheck();
+  }
+
+  cancelarEdicionItem(): void {
+    this.editandoItemId = null;
+    this.cdr.markForCheck();
+  }
+
+  guardarItemPlantilla(item: ChecklistPlantillaItemDto): void {
+    if (!this.itemEditTexto.trim() || this.guardandoPlantillaItem) return;
+    this.guardandoPlantillaItem = true;
+    this.cdr.markForCheck();
+    this.svc
+      .updatePlantillaItem(item.id, {
+        descripcion: this.itemEditTexto.trim(),
+        tieneAdjuntoRef: this.itemEditAdjunto,
+        activo: this.itemEditActivo,
+      })
+      .subscribe({
+        next: () => {
+          item.descripcion = this.itemEditTexto.trim();
+          item.tieneAdjuntoRef = this.itemEditAdjunto;
+          item.activo = this.itemEditActivo;
+          this.guardandoPlantillaItem = false;
+          this.editandoItemId = null;
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoPlantillaItem = false;
+          this.errorSvc.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   activarChecklist(plantillaId: number): void {

@@ -286,6 +286,7 @@ export class ContratistaUsuarios implements OnInit {
         scope: u.scope,
         proyectosHtml,
         initialScope: u.scope,
+        modulos: u.modulos,
       }),
       showCancelButton: true,
       confirmButtonText: 'Guardar',
@@ -362,6 +363,7 @@ export class ContratistaUsuarios implements OnInit {
     initialScope?: string;
     showTipoAcceso?: boolean;
     isClinica?: boolean;
+    modulos?: string;
   }): string {
     const emailField = opts.email
       ? `<div style="margin-bottom:14px;">
@@ -423,9 +425,9 @@ export class ContratistaUsuarios implements OnInit {
         <div style="margin-bottom:14px;">
           <label style="${this.labelCss}">Módulos</label>
           <select id="swal-modulos" style="${this.inputCss}">
-            <option value="AMBOS">Gestión de Ingresos + SSOMA</option>
-            <option value="INGRESOS">Solo Gestión de Ingresos</option>
-            <option value="SSOMA">Solo Gestión SSOMA</option>
+            <option value="AMBOS" ${(opts.modulos ?? 'AMBOS') === 'AMBOS' ? 'selected' : ''}>Gestión de Ingresos + SSOMA</option>
+            <option value="INGRESOS" ${opts.modulos === 'INGRESOS' ? 'selected' : ''}>Solo Gestión de Ingresos</option>
+            <option value="SSOMA" ${opts.modulos === 'SSOMA' ? 'selected' : ''}>Solo Gestión SSOMA</option>
           </select>
         </div>
       </div>`;

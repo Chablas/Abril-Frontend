@@ -91,7 +91,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   get requiereVigenciaAnteUpload(): boolean {
-    return !!this.selectedEntregable && this.selectedEntregable.requiereVigencia;
+    return !!this.selectedEntregable
+      && this.selectedEntregable.requiereVigencia
+      && this.panelEstado !== 'No Aplica';
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
@@ -409,7 +411,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   closeDrawer(): void {
-    if (this.isContratista()) {
+    if (this.isContratista() && this.panelObsAbril !== (this.selectedEntregable?.obsContratista ?? '')) {
       this.guardarObservaciones();
     }
     this.drawerOpen = false;
@@ -774,7 +776,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         obsContratista: this.panelObsAbril || undefined,
       };
     } else {
-      const vigencia = !this.selectedEntregable.requiereVigencia
+      const vigencia = (!this.selectedEntregable.requiereVigencia || this.panelEstado === 'No Aplica')
         ? '2040-12-31'
         : this.panelVigencia || undefined;
       payload = {

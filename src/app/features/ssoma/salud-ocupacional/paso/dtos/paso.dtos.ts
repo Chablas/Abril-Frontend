@@ -187,6 +187,39 @@ export interface PasoCategoriaDto {
   activo: boolean;
 }
 
+// PASO Salud (lista consolidada, todos los proyectos)
+export interface PasoSaludActividadListItemDto {
+  ejecucionId: number;
+  actividadId: number;
+  pasoId: number;
+  proyectoId: number | null;
+  proyectoNombre: string;
+  categoriaId: number;
+  categoriaNombre: string;
+  categoriaIcono: string | null;
+  actividadNombre: string;
+  frecuencia: string;
+  fechaProgramada: string;
+  fechaEjecutada: string | null;
+  estado: string;
+  cumplida: boolean;
+  observaciones: string | null;
+  participantesCount: number | null;
+  evidenciaUrl: string | null;
+  evidenciaNombre: string | null;
+  responsableNombre: string | null;
+}
+
+export interface PasoSaludListQuery {
+  proyectoId?: number;
+  categoriaId?: number;
+  anio?: number;
+  mes?: number;
+  cumplida?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 // Requests
 export interface CreatePasoDto {
   proyectoId?: number;

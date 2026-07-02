@@ -1,0 +1,88 @@
+<div class="hht-root">
+
+  <app-abril-page-header
+    titulo="Horas Hombre"
+    subtitulo="Detalle diario por proyecto y empresa."
+    [tabs]="[
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/ssoma/gestion/horas-hombre/dashboard' },
+      { label: 'Tabla',     icono: 'ti-table',     route: '/ssoma/gestion/horas-hombre/tabla' }
+    ]">
+  </app-abril-page-header>
+
+  <div class="hht-filters">
+    <div class="hht-filter-ss">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Todos los proyectos"
+        [value]="filtroProyectoId"
+        [compact]="true"
+        [showLabel]="false"
+        (valueChange)="onProyectoChange($event)">
+      </app-search-select>
+    </div>
+    <div class="hht-filter-ss">
+      <app-search-select
+        [options]="empresas"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Todas las empresas"
+        [value]="filtroEmpresaId"
+        [compact]="true"
+        [showLabel]="false"
+        (valueChange)="onEmpresaChange($event)">
+      </app-search-select>
+    </div>
+    <input type="date" class="hht-input" [(ngModel)]="filtroFechaDesde" (change)="onFilter()" placeholder="Desde" />
+    <span class="hht-dash">—</span>
+    <input type="date" class="hht-input" [(ngModel)]="filtroFechaHasta" (change)="onFilter()" placeholder="Hasta" />
+    <button type="button" class="hht-btn-limpiar" (click)="limpiarFiltros()">Limpiar</button>
+    <div class="hht-total-registros">{{ totalRecords }} registro(s)</div>
+  </div>
+
+  <div class="hht-table-card">
+    <div class="hht-state" *ngIf="loading">Cargando…</div>
+    <div class="hht-state hht-empty" *ngIf="!loading && items.length === 0">
+      Sin registros de Tareo para los filtros seleccionados.
+    </div>
+
+    <table class="hht-table" *ngIf="!loading && items.length > 0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Proyecto</th>
+          <th class="hht-num">Personas Casa</th>
+          <th class="hht-num">Personas Contratista</th>
+          <th class="hht-num">Total Personas</th>
+          <th class="hht-num">Horas Hombre</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+          <td>{{ item.proyectoNombre }}</td>
+          <td class="hht-num">{{ item.personasCasa }}</td>
+          <td class="hht-num">{{ item.personasContratista }}</td>
+          <td class="hht-num hht-num--strong">{{ item.totalPersonas }}</td>
+          <td class="hht-num hht-num--strong">{{ item.horasHombre }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" class="hht-foot-label">Total Horas Hombre (página actual)</td>
+          <td class="hht-num hht-num--strong">{{ totalHHPagina }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <app-paginator
+      *ngIf="!loading && items.length > 0"
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>

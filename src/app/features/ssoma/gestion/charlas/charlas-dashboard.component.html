@@ -16,14 +16,17 @@
   <!-- FILTROS GLOBALES -->
   <div class="filtros-bar">
     <div class="filtros-bar__filters">
-      <app-generic-select
+      <app-search-select
         [options]="proyectos"
         displayField="nombre"
         valueField="id"
         placeholder="Todos los proyectos"
         [value]="proyectoId"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
         (valueChange)="proyectoId = $event ? +$event : undefined; onProyectoChange()">
-      </app-generic-select>
+      </app-search-select>
       <app-generic-select
         [options]="mesesData"
         displayField="nombre"

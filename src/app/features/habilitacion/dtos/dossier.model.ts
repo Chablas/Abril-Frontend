@@ -1,5 +1,11 @@
-export type DossierEstadoSemana = 'Borrador' | 'Enviado' | 'Aprobado' | 'Rechazado' | 'NoAplica';
-export type DossierEstadoDocumento = 'Pendiente' | 'Subido' | 'NA';
+export type DossierEstadoSemana =
+  | 'Borrador'
+  | 'Enviado'
+  | 'Aprobado'
+  | 'Rechazado'
+  | 'Observado'
+  | 'NoAplica';
+export type DossierEstadoDocumento = 'Pendiente' | 'Subido' | 'NA' | 'Aprobado' | 'Observado';
 export type DossierTipoDocumento =
   | 'Accidente'
   | 'EPP'
@@ -49,6 +55,7 @@ export interface DossierDocumentoDto {
   nombreArchivo: string | null;
   archivoPath: string | null;
   estado: DossierEstadoDocumento;
+  obsRevisor: string | null;
   createdAt: string;
   updatedAt: string | null;
   archivos: DossierArchivoDto[];
@@ -66,6 +73,11 @@ export interface EnsureSemanaRequest {
 }
 
 export interface RevisarDossierRequest {
+  estado: string;
+  obsRevisor?: string | null;
+}
+
+export interface RevisarDocumentoRequest {
   estado: string;
   obsRevisor?: string | null;
 }

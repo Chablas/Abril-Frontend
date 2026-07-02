@@ -110,7 +110,11 @@ export class Login implements OnInit {
       next: () => {
         this.loaderService.hide();
         this.cdr.detectChanges();
-        this.router.navigate(['/habilitacion']);
+        // Si el contratista solo tiene acceso a SSOMA, no debe aterrizar en el
+        // panel de Gestión de Ingresos (que no le corresponde ver).
+        const modulos = this.authService.getContratistaModulos();
+        const landing = modulos === 'SSOMA' ? '/ssoma/gestion/rac/dashboard' : '/habilitacion';
+        this.router.navigate([landing]);
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);

@@ -201,7 +201,7 @@
   @if (tab === 'plantillas') {
     @if (loadingPlantillas) {
       <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando plantillas...</div>
-    } @else {
+    } @else if (!plantillaDetalleVisible) {
       <div class="cl-plantillas-tabla">
         <table class="cl-table">
           <thead>
@@ -217,7 +217,7 @@
           </thead>
           <tbody>
             @for (p of plantillas; track p.id) {
-              <tr>
+              <tr class="cl-row-clickable" (click)="verPlantilla(p)" title="Ver modelo">
                 <td class="cl-td-num">{{ p.orden }}</td>
                 <td class="cl-td-nombre">{{ p.nombre }}</td>
                 <td>
@@ -245,6 +245,86 @@
             }
           </tbody>
         </table>
+      </div>
+    } @else {
+
+      <!-- ── Modelo de plantilla: ver + editar/agregar items ─────────────── -->
+      <div class="cl-detalle">
+        <div class="cl-detalle-header">
+          <button class="cl-btn-back" (click)="cerrarPlantillaDetalle()">
+            <i class="ti ti-arrow-left"></i> Volver
+          </button>
+          @if (plantillaDetalle) {
+            <div class="cl-detalle-title-row">
+              <h2 class="cl-detalle-title">{{ plantillaDetalle.nombre }}</h2>
+              @if (plantillaDetalle.esObligatorio) {
+                <span class="cl-tag-obligatorio">Obligatorio</span>
+              }
+            </div>
+            @if (plantillaDetalle.descripcion) {
+              <p class="cl-section-sub">{{ plantillaDetalle.descripcion }}</p>
+            }
+          }
+        </div>
+
+        @if (loadingPlantillaDetalle) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando ítems...</div>
+        } @else if (plantillaDetalle) {
+          <div class="cl-items-list">
+            @for (item of plantillaDetalle.items; track item.id) {
+              <div class="cl-item">
+                @if (editandoItemId === item.id) {
+                  <div class="cl-item-content" style="width:100%">
+                    <input class="cl-item-obs" type="text" [(ngModel)]="itemEditTexto" placeholder="Descripción del ítem" />
+                    <label class="cl-checkbox-inline">
+                      <input type="checkbox" [(ngModel)]="itemEditAdjunto" /> Requiere adjunto
+                    </label>
+                    <label class="cl-checkbox-inline">
+                      <input type="checkbox" [(ngModel)]="itemEditActivo" /> Activo
+                    </label>
+                    <div class="cl-item-edit-actions">
+                      <button class="cl-btn-activar" [disabled]="guardandoPlantillaItem" (click)="guardarItemPlantilla(item)">
+                        @if (guardandoPlantillaItem) { <i class="ti ti-loader-2 spin"></i> } Guardar
+                      </button>
+                      <button class="cl-btn-secondary" (click)="cancelarEdicionItem()">Cancelar</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="cl-item-content">
+                    <p class="cl-item-desc" [class.cl-item-desc--done]="!item.activo">{{ item.descripcion }}</p>
+                    @if (item.tieneAdjuntoRef) {
+                      <span class="cl-item-adjunto"><i class="ti ti-paperclip"></i> Requiere adjunto</span>
+                    }
+                    @if (!item.activo) {
+                      <span class="cl-item-meta">Inactivo</span>
+                    }
+                  </div>
+                  <button class="cl-btn-secondary" (click)="editarItemPlantilla(item)" title="Editar ítem">
+                    <i class="ti ti-pencil"></i>
+                  </button>
+                  <div class="cl-item-num">{{ item.orden }}</div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Agregar nuevo item (cooperativo) -->
+          <div class="cl-activar-section">
+            <h3 class="cl-section-title"><i class="ti ti-plus-circle"></i> Agregar ítem</h3>
+            <div class="cl-item-content" style="gap:8px;display:flex;flex-direction:column">
+              <input class="cl-item-obs" type="text" [(ngModel)]="nuevoItemTexto"
+                placeholder="Descripción del nuevo ítem..." />
+              <label class="cl-checkbox-inline">
+                <input type="checkbox" [(ngModel)]="nuevoItemAdjunto" /> Requiere adjunto
+              </label>
+              <button class="cl-btn-activar" style="align-self:flex-start"
+                [disabled]="!nuevoItemTexto.trim() || agregandoItem"
+                (click)="agregarItemPlantilla()">
+                @if (agregandoItem) { <i class="ti ti-loader-2 spin"></i> } <i class="ti ti-plus"></i> Agregar
+              </button>
+            </div>
+          </div>
+        }
       </div>
     }
   }

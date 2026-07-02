@@ -13,6 +13,7 @@ export interface ContratistaUsuarioDto {
   scope: string;
   activo: boolean;
   proyectoIds: number[];
+  modulos?: string;
 }
 
 export interface WorkerBusquedaDto {

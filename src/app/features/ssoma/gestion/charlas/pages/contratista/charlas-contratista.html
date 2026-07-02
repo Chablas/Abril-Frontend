@@ -1,0 +1,98 @@
+<div class="charla-contratista">
+  <div class="header">
+    <h2>Charla diaria obligatoria</h2>
+    <p class="subtitle">
+      Cuando control de acceso tarea a tu empresa en un proyecto, debes subir evidencia de la
+      charla dictada ese día.
+    </p>
+  </div>
+
+  <!-- Pendientes de hoy -->
+  <section class="card">
+    <h3>Hoy</h3>
+
+    <div *ngIf="loadingPendientes" class="loading">Cargando...</div>
+
+    <div *ngIf="!loadingPendientes && pendientes.length === 0" class="empty">
+      Tu empresa no ha sido tareada hoy en ningún proyecto.
+    </div>
+
+    <div *ngFor="let p of pendientesSinSubir" class="pendiente-row pendiente-alerta">
+      <div class="info">
+        <span class="badge badge-pendiente">Pendiente</span>
+        <strong>{{ p.proyectoNombre }}</strong>
+        <span class="meta">{{ p.cantidadPersonasTareadas }} trabajador(es) tareados</span>
+      </div>
+      <button class="btn-primary" (click)="abrirFormulario(p)">Subir charla</button>
+    </div>
+
+    <div *ngFor="let p of pendientesSubidas" class="pendiente-row">
+      <div class="info">
+        <span class="badge badge-ok">Charla subida</span>
+        <strong>{{ p.proyectoNombre }}</strong>
+        <span class="meta">{{ p.cantidadPersonasTareadas }} trabajador(es) tareados</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formulario -->
+  <section class="card form-card" *ngIf="proyectoSeleccionado">
+    <h3>Registrar charla — {{ proyectoSeleccionado.proyectoNombre }}</h3>
+    <p class="meta">Fecha: {{ proyectoSeleccionado.fecha }}</p>
+
+    <label class="field-label">Tema de la charla *</label>
+    <input type="text" class="field-input" [(ngModel)]="tema" placeholder="Ej. Trabajos en altura" />
+
+    <label class="field-label">Observaciones</label>
+    <textarea class="field-input" rows="3" [(ngModel)]="descripcion" placeholder="Opcional"></textarea>
+
+    <label class="field-label">Evidencia (foto/PDF)</label>
+    <app-file-selector
+      *ngIf="!archivo"
+      accept=".png,.jpg,.jpeg,.pdf"
+      hint="PNG, JPG o PDF"
+      (fileSelected)="onArchivoSeleccionado($event)"
+    ></app-file-selector>
+    <div *ngIf="archivo" class="archivo-preview">
+      <span>{{ archivo.file.name }}</span>
+      <button type="button" class="btn-link" (click)="quitarArchivo()">Quitar</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Guardar charla' }}
+      </button>
+    </div>
+  </section>
+
+  <!-- Historial -->
+  <section class="card">
+    <h3>Historial</h3>
+    <div *ngIf="loadingHistorial" class="loading">Cargando...</div>
+    <table class="historial-table" *ngIf="!loadingHistorial && historial.length > 0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Proyecto</th>
+          <th>Tema</th>
+          <th>Evidencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historial">
+          <td>{{ h.fecha }}</td>
+          <td>{{ h.proyectoNombre }}</td>
+          <td>{{ h.tema }}</td>
+          <td>
+            <a *ngIf="h.evidenciaUrl" [href]="h.evidenciaUrl" target="_blank">Ver</a>
+            <span *ngIf="!h.evidenciaUrl">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="!loadingHistorial && historial.length === 0" class="empty">
+      Aún no has registrado charlas.
+    </div>
+  </section>
+</div>
