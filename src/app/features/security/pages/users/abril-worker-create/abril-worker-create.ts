@@ -70,6 +70,18 @@ export class AbrilWorkerCreate implements OnInit {
     return this.workers.find((w) => w.personId === this.selectedPersonId)?.emailPersonal ?? null;
   }
 
+  /** Al elegir un trabajador Staff, se preselecciona además el rol EVALUADOR (si no estaba ya). */
+  onWorkerSelected(personId: number | null): void {
+    this.selectedPersonId = personId;
+    const worker = this.workers.find((w) => w.personId === personId);
+    if (worker?.obraOficina === 'Staff') {
+      const evaluador = this.roles.find((r) => r.roleDescription === Roles.EVALUADOR);
+      if (evaluador && !this.selectedRoleIds.includes(evaluador.roleId)) {
+        this.selectedRoleIds = [...this.selectedRoleIds, evaluador.roleId];
+      }
+    }
+  }
+
   saveUser(): void {
     const errors: string[] = [];
     if (!this.selectedPersonId) errors.push('Trabajador de Abril');

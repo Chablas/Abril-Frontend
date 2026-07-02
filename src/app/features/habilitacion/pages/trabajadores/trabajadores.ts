@@ -411,7 +411,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   closeDrawer(): void {
-    if (this.isContratista()) {
+    if (this.isContratista() && this.panelObsAbril !== (this.selectedEntregable?.obsContratista ?? '')) {
       this.guardarObservaciones();
     }
     this.drawerOpen = false;

@@ -14,7 +14,7 @@
         valueField="personId"
         displayField="label"
         [value]="selectedPersonId"
-        (valueChange)="selectedPersonId = $event"
+        (valueChange)="onWorkerSelected($event)"
         [showLabel]="false"
         [fullText]="true"
         placeholder="Busca por nombre o DNI..."
