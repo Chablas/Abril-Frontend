@@ -13,6 +13,7 @@ import { AccidentesComponent } from './accidentes/accidentes.component';
 import { DescansosComponent } from './descansos/descansos.component';
 import { AsistenteSocialComponent } from './asistente-social/asistente-social.component';
 import { MiSaludComponent } from './mi-salud/mi-salud.component';
+import { PasoSaludListaComponent } from './paso/pages/lista-salud/paso-salud-lista.component';
 
 export const SALUD_OCUPACIONAL_ROUTES: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -86,6 +87,12 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
     component: AsistenteSocialComponent,
     canActivate: [roleGuard],
     data: { titulo: 'SALUD OCUPACIONAL - ASISTENTE SOCIAL', featureKey: 'ssoma.salud-ocupacional.asistente-social' },
+  },
+  {
+    path: 'paso',
+    component: PasoSaludListaComponent,
+    canActivate: [roleGuard],
+    data: { titulo: 'SALUD OCUPACIONAL - PASO', featureKey: 'ssoma.salud-ocupacional.paso' },
   },
   {
     path: 'mi-salud',
