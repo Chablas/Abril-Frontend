@@ -20,6 +20,17 @@ export interface ChecklistPlantillaItemDto {
   activo: boolean;
 }
 
+export interface ChecklistPlantillaItemCreateDto {
+  descripcion: string;
+  tieneAdjuntoRef: boolean;
+}
+
+export interface ChecklistPlantillaItemEditDto {
+  descripcion: string;
+  tieneAdjuntoRef: boolean;
+  activo: boolean;
+}
+
 export interface ChecklistPlantillaDetalleDto extends ChecklistPlantillaListDto {
   items: ChecklistPlantillaItemDto[];
 }

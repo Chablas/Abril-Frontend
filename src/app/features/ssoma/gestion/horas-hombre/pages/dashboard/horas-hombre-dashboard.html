@@ -1,0 +1,97 @@
+<div class="hh-root">
+
+  <app-abril-page-header
+    titulo="Horas Hombre"
+    subtitulo="Horas hombre trabajadas por proyecto, a partir del Tareo diario."
+    [tabs]="[
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/ssoma/gestion/horas-hombre/dashboard' },
+      { label: 'Tabla',     icono: 'ti-table',     route: '/ssoma/gestion/horas-hombre/tabla' }
+    ]">
+  </app-abril-page-header>
+
+  <div class="hh-filters">
+    <div class="hh-filter-ss">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Todos los proyectos"
+        [value]="proyectoId"
+        [compact]="true"
+        [showLabel]="false"
+        (valueChange)="onProyectoChange($event)">
+      </app-search-select>
+    </div>
+    <select class="hh-select" [(ngModel)]="mes" (change)="onFilter()">
+      <option [ngValue]="null">Todos los meses</option>
+      <option *ngFor="let m of meses" [ngValue]="m.id">{{ m.nombre }}</option>
+    </select>
+    <select class="hh-select" [(ngModel)]="anio" (change)="onFilter()">
+      <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+    </select>
+  </div>
+
+  <ng-container *ngIf="data">
+
+    <div class="hh-kpis">
+      <div class="hh-kpi">
+        <span class="hh-kpi-label">Horas Hombre Totales</span>
+        <span class="hh-kpi-value">{{ formatNumero(data.totalHorasHombre) }}</span>
+      </div>
+      <div class="hh-kpi hh-kpi--casa">
+        <span class="hh-kpi-label">HH Casa</span>
+        <span class="hh-kpi-value">{{ formatNumero(data.totalHorasHombreCasa) }}</span>
+      </div>
+      <div class="hh-kpi hh-kpi--contratista">
+        <span class="hh-kpi-label">HH Contratistas</span>
+        <span class="hh-kpi-value">{{ formatNumero(data.totalHorasHombreContratista) }}</span>
+      </div>
+      <div class="hh-kpi">
+        <span class="hh-kpi-label">Días registrados</span>
+        <span class="hh-kpi-value">{{ data.diasRegistrados }}</span>
+      </div>
+      <div class="hh-kpi">
+        <span class="hh-kpi-label">Promedio personas/día</span>
+        <span class="hh-kpi-value">{{ data.promedioPersonasPorDia }}</span>
+      </div>
+      <div class="hh-kpi">
+        <span class="hh-kpi-label">Último registro</span>
+        <span class="hh-kpi-value hh-kpi-value--sm">{{ data.ultimaFechaRegistrada ? (data.ultimaFechaRegistrada | date:'dd/MM/yyyy') : '—' }}</span>
+      </div>
+    </div>
+
+    <div class="hh-charts">
+      <div class="hh-card hh-card--wide">
+        <h3 class="hh-card-title">Horas Hombre por día — Casa vs Contratistas</h3>
+        <div class="hh-canvas-wrap">
+          <canvas #chartSerie></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="hh-charts hh-charts--2col">
+      <div class="hh-card">
+        <h3 class="hh-card-title">Top empresas contratistas por Horas Hombre</h3>
+        <div class="hh-canvas-wrap hh-canvas-wrap--md">
+          <canvas #chartEmpresa></canvas>
+        </div>
+        <p class="hh-empty" *ngIf="!data.porEmpresa.length">Sin datos de empresas contratistas en el período.</p>
+      </div>
+      <div class="hh-card" *ngIf="!proyectoId">
+        <h3 class="hh-card-title">Horas Hombre por proyecto</h3>
+        <div class="hh-canvas-wrap hh-canvas-wrap--md">
+          <canvas #chartProyecto></canvas>
+        </div>
+      </div>
+      <div class="hh-card hh-card--hint" *ngIf="proyectoId">
+        <p>Selecciona "Todos los proyectos" para comparar Horas Hombre entre proyectos.</p>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <div class="hh-empty-state" *ngIf="!loading && data && data.diasRegistrados === 0">
+    Sin registros de Tareo para el período/proyecto seleccionado.
+  </div>
+
+</div>

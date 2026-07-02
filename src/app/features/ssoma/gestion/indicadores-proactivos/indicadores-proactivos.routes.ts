@@ -50,12 +50,6 @@ export const INDICADORES_PROACTIVOS_ROUTES: Routes = [
       },
     ],
   },
-  {
-    path: 'puntaje',
-    loadComponent: () =>
-      import('./pages/puntaje/puntaje-mes.component').then((m) => m.PuntajeMesComponent),
-    data: { titulo: 'PUNTAJE DEL MES' },
-  },
 ];
 
 export default INDICADORES_PROACTIVOS_ROUTES;

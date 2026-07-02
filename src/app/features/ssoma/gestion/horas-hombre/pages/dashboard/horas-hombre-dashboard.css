@@ -1,0 +1,121 @@
+.hh-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 4px 24px;
+}
+
+.hh-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hh-filter-ss {
+  width: 260px;
+}
+
+.hh-select {
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  background: #fff;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+}
+.hh-select:focus { border-color: var(--color-abril-primary, #64bc04); }
+
+.hh-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .hh-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .hh-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.hh-kpi {
+  background: #fff;
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+.hh-kpi--casa { border-left: 3px solid #1b3a6b; }
+.hh-kpi--contratista { border-left: 3px solid #64bc04; }
+
+.hh-kpi-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+.hh-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a18;
+}
+.hh-kpi-value--sm { font-size: 1.05rem; }
+
+.hh-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.hh-charts--2col {
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 900px) {
+  .hh-charts--2col { grid-template-columns: 1fr; }
+}
+
+.hh-card {
+  background: #fff;
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  padding: 16px;
+}
+.hh-card--wide { min-height: 320px; }
+.hh-card--hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.hh-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 12px;
+}
+
+.hh-canvas-wrap { position: relative; height: 260px; }
+.hh-canvas-wrap--md { height: 220px; }
+
+.hh-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+.hh-empty-state {
+  text-align: center;
+  color: #94a3b8;
+  padding: 40px 0;
+  font-size: 0.9rem;
+}

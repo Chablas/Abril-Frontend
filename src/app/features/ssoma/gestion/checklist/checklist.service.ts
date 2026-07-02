@@ -5,6 +5,9 @@ import { environment } from '../../../../../environments/environment';
 import {
   ChecklistPlantillaListDto,
   ChecklistPlantillaDetalleDto,
+  ChecklistPlantillaItemDto,
+  ChecklistPlantillaItemCreateDto,
+  ChecklistPlantillaItemEditDto,
   ChecklistProyectoResumenDto,
   ChecklistProyectoDetalleDto,
   ChecklistItemToggleDto,
@@ -31,6 +34,23 @@ export class ChecklistService {
 
   getPlantillaDetalle(plantillaId: number): Observable<ChecklistPlantillaDetalleDto> {
     return this.http.get<ChecklistPlantillaDetalleDto>(`${this.base}/plantillas/${plantillaId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  addItemToPlantilla(
+    plantillaId: number,
+    dto: ChecklistPlantillaItemCreateDto,
+  ): Observable<ChecklistPlantillaItemDto> {
+    return this.http.post<ChecklistPlantillaItemDto>(
+      `${this.base}/plantillas/${plantillaId}/items`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  updatePlantillaItem(itemId: number, dto: ChecklistPlantillaItemEditDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/plantillas/items/${itemId}`, dto, {
       headers: this.authHeaders(),
     });
   }

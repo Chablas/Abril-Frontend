@@ -312,3 +312,12 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Catálogo de plantillas: fila clickeable + edición cooperativa ────── */
+.cl-row-clickable { cursor: pointer; transition: background 0.12s; }
+.cl-row-clickable:hover { background: #f8fafc; }
+.cl-checkbox-inline {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #374151; cursor: pointer;
+}
+.cl-item-edit-actions { display: flex; gap: 8px; margin-top: 6px; }
