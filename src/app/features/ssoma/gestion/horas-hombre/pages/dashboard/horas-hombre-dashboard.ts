@@ -17,6 +17,12 @@ Chart.register(...registerables);
 
 interface OpcionSimple { id: number; nombre: string; }
 
+interface RankingItem {
+  nombre: string;
+  horasHombre: number;
+  pct: number;
+}
+
 @Component({
   selector: 'app-horas-hombre-dashboard',
   standalone: true,
@@ -26,17 +32,19 @@ interface OpcionSimple { id: number; nombre: string; }
 })
 export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartSerie') chartSerieRef?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('chartEmpresa') chartEmpresaRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartSplit') chartSplitRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartProyecto') chartProyectoRef?: ElementRef<HTMLCanvasElement>;
 
   private chartSerie?: Chart;
-  private chartEmpresa?: Chart;
+  private chartSplit?: Chart;
   private chartProyecto?: Chart;
+
+  rankingEmpresas: RankingItem[] = [];
 
   proyectos: OpcionSimple[] = [];
   proyectoId: number | null = null;
   mes: number | null = new Date().getMonth() + 1;
-  anio: number = new Date().getFullYear();
+  anio: number | null = new Date().getFullYear();
 
   readonly meses = [
     { id: 1, nombre: 'Enero' }, { id: 2, nombre: 'Febrero' }, { id: 3, nombre: 'Marzo' },
@@ -44,7 +52,7 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
     { id: 7, nombre: 'Julio' }, { id: 8, nombre: 'Agosto' }, { id: 9, nombre: 'Septiembre' },
     { id: 10, nombre: 'Octubre' }, { id: 11, nombre: 'Noviembre' }, { id: 12, nombre: 'Diciembre' },
   ];
-  readonly anios = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  readonly anios = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
   loading = false;
   data: HorasHombreDashboardDto | null = null;
@@ -77,7 +85,7 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.chartSerie?.destroy();
-    this.chartEmpresa?.destroy();
+    this.chartSplit?.destroy();
     this.chartProyecto?.destroy();
   }
 
@@ -100,6 +108,7 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.svc.getDashboard(this.proyectoId, this.mes, this.anio).subscribe({
       next: (res) => {
         this.data = res;
+        this.rankingEmpresas = this.buildRanking(res);
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -113,10 +122,19 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  private buildRanking(data: HorasHombreDashboardDto): RankingItem[] {
+    const total = data.porEmpresa.reduce((sum, e) => sum + e.horasHombre, 0);
+    return data.porEmpresa.slice(0, 8).map((e) => ({
+      nombre: e.empresaNombre,
+      horasHombre: e.horasHombre,
+      pct: total > 0 ? (e.horasHombre / total) * 100 : 0,
+    }));
+  }
+
   private renderCharts(): void {
     if (!this.data) return;
     this.renderSerie();
-    this.renderEmpresa();
+    this.renderSplit();
     this.renderProyecto();
   }
 
@@ -157,23 +175,25 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private renderEmpresa(): void {
-    const ctx = this.chartEmpresaRef?.nativeElement;
+  private renderSplit(): void {
+    const ctx = this.chartSplitRef?.nativeElement;
     if (!ctx || !this.data) return;
-    this.chartEmpresa?.destroy();
-    const top = [...this.data.porEmpresa].slice(0, 10);
-    this.chartEmpresa = new Chart(ctx, {
-      type: 'bar',
+    this.chartSplit?.destroy();
+    this.chartSplit = new Chart(ctx, {
+      type: 'doughnut',
       data: {
-        labels: top.map((e) => e.empresaNombre),
-        datasets: [{ label: 'Horas Hombre', data: top.map((e) => e.horasHombre), backgroundColor: '#64bc04' }],
+        labels: ['Casa', 'Contratistas'],
+        datasets: [{
+          data: [this.data.totalHorasHombreCasa, this.data.totalHorasHombreContratista],
+          backgroundColor: ['#1b3a6b', '#64bc04'],
+          borderWidth: 0,
+        }],
       },
       options: {
-        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } },
+        cutout: '72%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
       },
     });
   }

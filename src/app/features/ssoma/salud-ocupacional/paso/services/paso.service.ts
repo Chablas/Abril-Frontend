@@ -17,6 +17,8 @@ import {
   PasoResumenMesDto,
   PasoAuditoriaDto,
   PasoHistoricoAnioDto,
+  PasoSaludActividadListItemDto,
+  PasoSaludListQuery,
 } from '../dtos/paso.dtos';
 
 const BASE = `${environment.apiUrl}api/v1/ssoma-paso`;
@@ -95,6 +97,13 @@ export class PasoService {
 
   getHistorico(proyectoId: number): Observable<PasoHistoricoAnioDto[]> {
     return this.http.get<PasoHistoricoAnioDto[]>(`${BASE}/proyecto/${proyectoId}/historico`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getActividadesSalud(query: PasoSaludListQuery = {}): Observable<PagedResultDto<PasoSaludActividadListItemDto>> {
+    return this.http.get<PagedResultDto<PasoSaludActividadListItemDto>>(`${BASE}/salud/actividades`, {
+      params: buildParams(query as Record<string, unknown>),
       headers: buildAuthHeaders(),
     });
   }

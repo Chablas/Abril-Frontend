@@ -65,6 +65,13 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/checklist/checklist.routes').then((m) => m.CHECKLIST_ROUTES),
   },
   {
+    path: 'gestion/proyectos-habilitados',
+    loadChildren: () =>
+      import('./gestion/proyectos-habilitados/proyectos-habilitados.routes').then(
+        (m) => m.PROYECTOS_HABILITADOS_ROUTES,
+      ),
+  },
+  {
     path: 'gestion/horas-hombre',
     loadChildren: () =>
       import('./gestion/horas-hombre/horas-hombre.routes').then((m) => m.HORAS_HOMBRE_ROUTES),
