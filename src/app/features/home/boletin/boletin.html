@@ -1,4 +1,4 @@
-<div class="fixed inset-0 z-[1000] overflow-y-auto bg-white">
+<div class="fixed inset-0 z-[1000] overflow-y-auto bg-white flex flex-col">
 
   <!-- ===================== Shell del boletín (nav + contenido) ===================== -->
   <nav class="flex flex-wrap justify-center gap-1 my-[22px] mx-auto py-2 px-[10px] w-fit max-w-[95%] bg-[#f1f9ff] rounded-full shadow-[0_6px_20px_rgba(0,70,140,0.08)]">
@@ -14,11 +14,11 @@
     }
   </nav>
 
-  <div class="px-6 pt-4 pb-20">
+  <div class="flex-1 flex flex-col items-center justify-center px-6 pt-4 pb-20">
     @if (!mostrarPortada) {
     @switch (tabActiva) {
       @case ('somos-abril') {
-        <div class="grid grid-cols-[repeat(3,320px)] justify-center gap-10 max-w-[1120px] mt-20 mx-auto max-[900px]:grid-cols-1 max-[900px]:max-w-[420px]">
+        <div class="grid grid-cols-[repeat(3,320px)] justify-center gap-10 max-w-[1120px] mx-auto 2xl:grid-cols-[repeat(3,380px)] 2xl:gap-12 2xl:max-w-[1320px] max-[900px]:grid-cols-1 max-[900px]:max-w-[420px]">
           @for (t of tarjetas; track t.titulo; let i = $index) {
             <article
               class="relative flex flex-col rounded-2xl shadow-[0_10px_28px_rgba(0,70,140,0.1)] bg-white"
@@ -27,23 +27,23 @@
               [class.card-anim-right]="i === 2"
             >
               <!-- Perro: se sale por arriba de la tarjeta -->
-              <img class="absolute left-1/2 -translate-x-1/2 top-[-64px] h-[210px] w-auto max-w-none object-contain z-10 [filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.18))]"
+              <img class="absolute left-1/2 -translate-x-1/2 top-[-64px] h-[210px] w-auto max-w-none object-contain z-10 [filter:drop-shadow(0_10px_12px_rgba(0,0,0,0.18))] 2xl:top-[-76px] 2xl:h-[250px]"
                    [src]="t.img" [alt]="t.titulo" loading="lazy" />
 
               <!-- Franja celeste superior (alta para que el perro no toque el texto) -->
-              <div class="h-[160px] rounded-t-2xl [background:linear-gradient(180deg,#eaf1f8_0%,#dde9f4_100%)]"></div>
+              <div class="h-[160px] rounded-t-2xl [background:linear-gradient(180deg,#eaf1f8_0%,#dde9f4_100%)] 2xl:h-[190px]"></div>
 
               <!-- Cuerpo azul -->
-              <div class="flex flex-col items-center gap-3 flex-1 pt-[22px] px-6 pb-[50px] bg-[#00529b] rounded-b-2xl text-center">
-                <h3 class="m-0 text-white text-[22px] font-bold leading-[1.15]">{{ t.titulo }}</h3>
-                <p class="m-0 text-[#d8e6f4] text-sm font-normal leading-[1.4] flex-1 [&_strong]:font-bold [&_strong]:text-white"
+              <div class="flex flex-col items-center gap-3 flex-1 pt-[22px] px-6 pb-[50px] bg-[#00529b] rounded-b-2xl text-center 2xl:gap-4 2xl:pt-[26px] 2xl:px-8 2xl:pb-[60px]">
+                <h3 class="m-0 text-white text-[22px] font-bold leading-[1.15] 2xl:text-[26px]">{{ t.titulo }}</h3>
+                <p class="m-0 text-[#d8e6f4] text-sm font-normal leading-[1.4] flex-1 [&_strong]:font-bold [&_strong]:text-white 2xl:text-base"
                    [innerHTML]="t.descripcion"></p>
               </div>
 
               <!-- Botón: a caballo sobre el borde inferior -->
               <button
                 type="button"
-                class="absolute left-0 right-0 mx-auto w-fit bottom-[-20px] z-10 border-0 bg-[#8bc53f] text-[#005d9d] font-extrabold text-[13px] tracking-[0.05em] py-[11px] px-[30px] rounded-full cursor-pointer transition-transform duration-200 hover:scale-110"
+                class="absolute left-0 right-0 mx-auto w-fit bottom-[-20px] z-10 border-0 bg-[#8bc53f] text-[#005d9d] font-extrabold text-[13px] tracking-[0.05em] py-[11px] px-[30px] rounded-full cursor-pointer transition-transform duration-200 hover:scale-110 2xl:bottom-[-24px] 2xl:text-[15px] 2xl:py-[13px] 2xl:px-[38px]"
                 (click)="verMas(i)"
               >VER MÁS</button>
             </article>

@@ -3,10 +3,10 @@
   titulo="Dashboard de Lecciones"
   subtitulo="Indicadores y tendencias de lecciones aprendidas."
   [tabs]="[
-    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard' },
-    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned' },
-    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion' },
-    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders' }
+    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard',               featureKey: 'mejora-continua.dashboard' },
+    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned',         featureKey: 'mejora-continua.lessons-learned' },
+    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
+    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' }
   ]"
   [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
   (secondaryClick)="downloadPDF()">

@@ -8,13 +8,13 @@
         <img [src]="imageSrc(c.imageUrl)" class="w-full h-full object-cover group-hover:scale-105 transition-transform"
           [alt]="'Croquis de ' + c.projectDescription" />
         <span class="absolute bottom-2 right-2 text-[11px] font-medium bg-black/55 text-white px-2 py-0.5 rounded-full">
-          {{ c.lotes.length }} vecino(s)
+          {{ c.lotesCount }} lote(s)
         </span>
       </div>
       <div class="px-4 py-3">
         <h3 class="text-sm font-semibold text-gray-800 truncate">{{ c.projectDescription }}</h3>
         <p class="text-xs text-gray-400 mt-0.5">
-          {{ countAssigned(c) }} con vecino · {{ c.vecinos.length }} vecinos
+          {{ countAssigned(c) }} lote(s) con vecinos · {{ c.vecinosCount }} vecinos
         </p>
         <div class="flex items-center gap-2 mt-2">
           <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">
@@ -52,25 +52,11 @@
 
   <!-- ── Sección: Calendario de limpiezas ─────────────────────────────── -->
   <div *ngIf="activeSection === 'limpiezas'" class="flex-1 min-h-0 overflow-y-auto p-1">
-    <app-limpiezas-calendar [projectId]="selected.projectId" [vecinos]="selected.vecinos"></app-limpiezas-calendar>
+    <app-limpiezas-calendar [projectId]="selected.projectId" [vecinos]="allVecinos(selected)"></app-limpiezas-calendar>
   </div>
 
   <!-- ── Sección: Resumen del proyecto ────────────────────────────────── -->
   <div *ngIf="activeSection === 'resumen'" class="flex flex-col lg:flex-row gap-4 p-1 flex-1 min-h-0 overflow-y-auto">
-
-    <!-- Imágenes del estado de la propiedad (a la izquierda del croquis) -->
-    <ng-container *ngIf="assignedVecino() as v">
-      <div *ngIf="v.imagenes.length > 0"
-        class="w-full lg:w-[210px] shrink-0 flex flex-col gap-2 lg:max-h-full lg:overflow-y-auto">
-        <p class="text-[11px] font-bold uppercase tracking-wide text-[#509603]">Estado de la propiedad</p>
-        <div class="grid grid-cols-2 gap-2">
-          <div *ngFor="let img of v.imagenes"
-            class="h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
-            <app-draggable-image [src]="img.archivoUrl" [apiUrl]="apiBase" />
-          </div>
-        </div>
-      </div>
-    </ng-container>
 
     <!-- Lienzo -->
     <div class="flex-1 min-w-0">
@@ -100,7 +86,7 @@
           {{ lote.numeroLote }}
         </div>
       </div>
-      <p class="text-xs text-gray-400 mt-2">Haz clic en un vecino para ver su detalle.</p>
+      <p class="text-xs text-gray-400 mt-2">Haz clic en un lote para ver sus vecinos.</p>
     </div>
 
     <!-- Panel lateral (solo consulta) -->
@@ -108,76 +94,73 @@
       <ng-container *ngIf="selectedLote; else sinSeleccion">
         <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-gray-700">Vecino {{ selectedLote.numeroLote }}</span>
-            <span *ngIf="selectedLote.vecinoId"
-              class="text-[11px] bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">Asignado</span>
+            <span class="text-sm font-semibold text-gray-700">Lote {{ selectedLote.numeroLote }}</span>
+            <span class="text-[11px] bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">{{ selectedLote.vecinosCount }} vecino(s)</span>
+          </div>
+          <span *ngIf="selectedLote.direccion" class="text-xs text-gray-500 -mt-2">{{ selectedLote.direccion }}</span>
+
+          <!-- KPIs del lote (agregados de sus vecinos) -->
+          <div *ngIf="selectedLote.vecinosCount > 0" class="rounded-lg border border-[#64BC04]/30 bg-white p-3 flex flex-col gap-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-[#509603]">KPIs del lote</span>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Solicitudes aprobadas</span>
+                <span class="text-sm font-semibold text-[#509603]">{{ solicitudesAprobadasPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="solicitudesAprobadasPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.solicitudesAprobadas }} de {{ selectedLote.solicitudesEvaluables }} solicitudes</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Entregables aprobados</span>
+                <span class="text-sm font-semibold text-[#509603]">{{ aprobadosPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="aprobadosPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.entregablesAprobados }} de {{ selectedLote.entregablesEvaluables }} entregables</span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500">Requisitos subidos</span>
+                <span class="text-sm font-semibold text-[#0086A5]">{{ requisitosSubidosPct(selectedLote) }}%</span>
+              </div>
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="requisitosSubidosPct(selectedLote)"></div>
+              </div>
+              <span class="text-[11px] text-gray-400">{{ selectedLote.requisitosSubidos }} de {{ selectedLote.requisitosEvaluables }} requisitos</span>
+            </div>
           </div>
 
-          <!-- Vecino asignado -->
-          <div *ngIf="assignedVecino() as v; else sinVecino" class="flex flex-col gap-1">
-            <span class="text-xs text-gray-400">Vecino asignado</span>
-            <span class="text-sm font-medium text-gray-800">{{ v.nombrePropietario }}</span>
-            <span class="text-xs text-gray-500">DNI {{ v.dni }} · {{ v.colindanciaDescripcion }}</span>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">
-                {{ v.solicitudesCount }} solicitud(es)
+          <!-- Vecinos del lote -->
+          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Vecinos del lote</span>
+          <div *ngIf="selectedLote.vecinos.length > 0; else sinVecinos" class="flex flex-col gap-2">
+            <div *ngFor="let v of selectedLote.vecinos"
+              class="rounded-lg border border-gray-200 bg-white p-3 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-800">{{ v.nombrePropietario || '—' }}</span>
+                <span *ngIf="v.interiorDepartamento" class="text-[11px] text-gray-500">{{ v.interiorDepartamento }}</span>
+              </div>
+              <span class="text-xs text-gray-500">
+                <span *ngIf="v.dni">DNI {{ v.dni }} · </span>{{ v.colindanciaDescripcion }}
               </span>
-              <span class="text-[11px] font-medium bg-[#E0F2F7] text-[#0086A5] px-2 py-0.5 rounded-full">
-                {{ v.compromisosCount }} compromiso(s)
-              </span>
-            </div>
-
-            <!-- Englobado: Gestión de requerimientos -->
-            <div class="mt-2 rounded-lg border border-[#64BC04]/30 bg-white p-3 flex flex-col gap-2.5">
-              <span class="text-[11px] font-bold uppercase tracking-wide text-[#509603]">Gestión de requerimientos</span>
-
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-500">Solicitudes aprobadas</span>
-                  <span class="text-sm font-semibold text-[#509603]">{{ solicitudesAprobadasPct(v) }}%</span>
-                </div>
-                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="solicitudesAprobadasPct(v)"></div>
-                </div>
-                <span class="text-[11px] text-gray-400">{{ v.solicitudesAprobadas }} de {{ v.solicitudesEvaluables }} solicitudes</span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full">{{ v.solicitudesCount }} solicitud(es)</span>
+                <span class="text-[11px] font-medium bg-[#E0F2F7] text-[#0086A5] px-2 py-0.5 rounded-full">{{ v.compromisosCount }} compromiso(s)</span>
               </div>
-
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-500">Entregables aprobados</span>
-                  <span class="text-sm font-semibold text-[#509603]">{{ aprobadosPct(v) }}%</span>
-                </div>
-                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-[#64BC04] rounded-full transition-all" [style.width.%]="aprobadosPct(v)"></div>
-                </div>
-                <span class="text-[11px] text-gray-400">{{ v.entregablesAprobados }} de {{ v.entregablesEvaluables }} entregables</span>
-              </div>
+              <button type="button" (click)="verVecino(v)"
+                class="mt-1 self-start text-sm text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
+                <i class="ti ti-eye"></i> Ver detalle, requerimientos y requisitos
+              </button>
             </div>
-
-            <!-- Englobado: Gestión de requisitos -->
-            <div class="rounded-lg border border-[#0086A5]/30 bg-white p-3 flex flex-col gap-2.5">
-              <span class="text-[11px] font-bold uppercase tracking-wide text-[#0086A5]">Gestión de requisitos</span>
-
-              <div class="flex flex-col gap-1">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-500">Requisitos subidos</span>
-                  <span class="text-sm font-semibold text-[#0086A5]">{{ requisitosSubidosPct(v) }}%</span>
-                </div>
-                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-[#0086A5] rounded-full transition-all" [style.width.%]="requisitosSubidosPct(v)"></div>
-                </div>
-                <span class="text-[11px] text-gray-400">{{ v.requisitosSubidos }} de {{ v.requisitosEvaluables }} requisitos</span>
-              </div>
-            </div>
-
-            <button type="button" (click)="verVecino()"
-              class="mt-1 self-start text-sm text-[#0086A5] hover:underline cursor-pointer inline-flex items-center gap-1">
-              <i class="ti ti-eye"></i> Ver detalle y solicitudes
-            </button>
           </div>
-
-          <ng-template #sinVecino>
-            <p class="text-sm text-gray-400 italic">Aún no hay vecino asignado.</p>
+          <ng-template #sinVecinos>
+            <p class="text-sm text-gray-400 italic">Este lote aún no tiene vecinos. Agrégalos con “Añadir vecinos”.</p>
           </ng-template>
         </div>
       </ng-container>
@@ -286,7 +269,7 @@
           </div>
 
           <p class="text-xs text-gray-400 italic border-t border-gray-200 pt-2">
-            Selecciona un vecino del croquis para ver su detalle.
+            Selecciona un lote del croquis para ver sus vecinos.
           </p>
         </div>
       </ng-template>

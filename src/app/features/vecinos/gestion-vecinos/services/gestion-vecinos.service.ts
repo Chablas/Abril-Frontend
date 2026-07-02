@@ -7,8 +7,10 @@ import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import {
   VecinosPageDTO,
   VecinoListItemDTO,
-  VecinoCreateDTO,
+  VecinoLoteRegisterDTO,
+  VecinoLoteRegisterResultDTO,
   VecinoUpdateDTO,
+  VecinoLoteUpdateDTO,
   VecinoImagenDTO,
   VecinoSolicitudesResponseDTO,
   VecinoSolicitudCreateDTO,
@@ -85,37 +87,36 @@ export class GestionVecinosService {
     });
   }
 
-  /** Asigna (o quita con vecinoId = null) el vecino de un lote. */
-  assignVecinoToLote(loteId: number, vecinoId: number | null): Observable<ApiMessageDTO> {
-    return this.http.patch<ApiMessageDTO>(
-      `${this.croquisApiUrl}/lotes/${loteId}/vecino`,
-      { vecinoId },
-      { headers: this.authHeaders() },
-    );
-  }
-
   getPersonByDni(dni: string): Observable<ReniecPersonDTO> {
     return this.http.get<ReniecPersonDTO>(`${this.apiUrl}/dni/${dni}`, {
       headers: this.authHeaders(),
     });
   }
 
-  create(dto: VecinoCreateDTO): Observable<{ vecinoId: number; message: string }> {
-    return this.http.post<{ vecinoId: number; message: string }>(this.apiUrl, dto, {
+  /** Registra uno o varios vecinos/departamentos sobre un lote (polígono) del croquis. */
+  registerVecinos(dto: VecinoLoteRegisterDTO): Observable<VecinoLoteRegisterResultDTO & { message: string }> {
+    return this.http.post<VecinoLoteRegisterResultDTO & { message: string }>(this.apiUrl, dto, {
       headers: this.authHeaders(),
     });
   }
 
-  /** Una casa/propiedad con personas e imágenes frescas (para refrescar el detalle). */
+  /** Un vecino/departamento con personas e imágenes frescas (para refrescar el detalle). */
   getById(vecinoId: number): Observable<VecinoListItemDTO> {
     return this.http.get<VecinoListItemDTO>(`${this.apiUrl}/${vecinoId}`, {
       headers: this.authHeaders(),
     });
   }
 
-  /** Edita los datos de la casa/propiedad (sección Detalle) y sus personas. */
+  /** Edita los datos de un vecino/departamento (sección Detalle) y sus personas. */
   update(vecinoId: number, dto: VecinoUpdateDTO): Observable<ApiMessageDTO> {
     return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${vecinoId}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Edita los datos a nivel de lote (dirección + observaciones). */
+  updateLote(vecinoLoteId: number, dto: VecinoLoteUpdateDTO): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/lotes/${vecinoLoteId}`, dto, {
       headers: this.authHeaders(),
     });
   }

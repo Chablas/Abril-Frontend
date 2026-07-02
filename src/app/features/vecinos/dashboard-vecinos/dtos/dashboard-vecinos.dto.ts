@@ -17,6 +17,7 @@ export interface DashboardProjectDTO {
   /** 0 cuando representa el resumen general (agregado global). */
   projectId: number;
   projectDescription: string;
+  lotesCount: number;
   vecinosCount: number;
   solicitudes: DashboardEstadoDTO[];
   compromisos: DashboardEstadoDTO[];

@@ -55,6 +55,20 @@
       </app-search-select>
     </div>
 
+    <!-- Moneda (soles / dólares) -->
+    <div class="w-[170px]">
+      <app-search-select
+        label="Moneda"
+        placeholder="— Todas —"
+        [options]="currencies"
+        valueField="currencyId"
+        displayField="currencyDescription"
+        [value]="filters.currencyId"
+        (valueChange)="filters.currencyId = $event"
+        [allowClear]="true">
+      </app-search-select>
+    </div>
+
     <!-- Filtros avanzados -->
     <ng-container *ngIf="showAdvanced">
 
@@ -214,27 +228,127 @@
     </div>
   }
 
+  <!-- ── ACCIONES EN BLOQUE (vista de tabla) ───────────────────────────
+       Se activan cuando hay al menos 1 factura seleccionada. -->
+  @if (viewMode === 'table') {
+    <div class="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        (click)="aprobarBulk()"
+        [disabled]="selectedIds.size === 0"
+        class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-green-300 text-green-700 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="rechazarBulk()"
+        [disabled]="selectedIds.size === 0"
+        class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-red-200 text-red-600 hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        Rechazar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="openObserve()"
+        [disabled]="selectedIds.size === 0"
+        class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-amber-300 text-amber-700 hover:bg-amber-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="9"/>
+          <path stroke-linecap="round" d="M12 8v5m0 3h.01"/>
+        </svg>
+        Observar<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+      </button>
+
+      <span *ngIf="selectedIds.size === 0" class="text-xs text-gray-400">
+        Selecciona filas (usa Shift+clic para rangos) y aplica una acción.
+      </span>
+    </div>
+  }
+
   <!-- ── TABLA ─────────────────────────────────────────────────────── -->
   @if (viewMode === 'table') {
     <div class="overflow-x-auto rounded-lg border" style="border-color:var(--color-abril-border)">
       <table class="min-w-full divide-y text-sm" style="border-color:var(--color-abril-border)">
         <thead class="text-left text-xs uppercase" style="background:var(--color-abril-primary-light); color:var(--color-abril-primary-dark)">
           <tr>
-            <th class="px-4 py-3">Emisión</th>
-            <th class="px-4 py-3">N° Factura</th>
-            <th class="px-4 py-3">Proveedor</th>
-            <th class="px-4 py-3">RUC</th>
-            <th class="px-4 py-3">Razón social Abril</th>
-            <th class="px-4 py-3">Descripción</th>
-            <th class="px-4 py-3">Forma de pago</th>
-            <th class="px-4 py-3 text-right">Total</th>
+            <th class="px-4 py-3">
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="invoices.length === 0"
+                (change)="toggleSelectAll()"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-primary)"
+                title="Seleccionar / deseleccionar todo" />
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('issueDate')" title="Ordenar por emisión">
+              <span class="inline-flex items-center gap-1">Emisión
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('issueDate')">{{ sortDirOf('issueDate') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('invoiceNumber')" title="Ordenar por N° de factura">
+              <span class="inline-flex items-center gap-1">N° Factura
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('invoiceNumber')">{{ sortDirOf('invoiceNumber') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('contributorName')" title="Ordenar por proveedor">
+              <span class="inline-flex items-center gap-1">Proveedor
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('contributorName')">{{ sortDirOf('contributorName') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('contributorRuc')" title="Ordenar por RUC">
+              <span class="inline-flex items-center gap-1">RUC
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('contributorRuc')">{{ sortDirOf('contributorRuc') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('abrilContributorName')" title="Ordenar por razón social Abril">
+              <span class="inline-flex items-center gap-1">Razón social Abril
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('abrilContributorName')">{{ sortDirOf('abrilContributorName') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('description')" title="Ordenar por descripción">
+              <span class="inline-flex items-center gap-1">Descripción
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('description')">{{ sortDirOf('description') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('invoicePaymentFormDescription')" title="Ordenar por forma de pago">
+              <span class="inline-flex items-center gap-1">Forma de pago
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('invoicePaymentFormDescription')">{{ sortDirOf('invoicePaymentFormDescription') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 text-right cursor-pointer select-none" (click)="toggleSort('total')" title="Ordenar por total">
+              <span class="inline-flex items-center gap-1 justify-end">Total
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('total')">{{ sortDirOf('total') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" (click)="toggleSort('invoiceStatusDescription')" title="Ordenar por estado">
+              <span class="inline-flex items-center gap-1">Estado
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('invoiceStatusDescription')">{{ sortDirOf('invoiceStatusDescription') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
             <th class="px-4 py-3 text-center">Documento</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white">
-          @for (inv of invoices; track inv.invoiceId) {
-            <tr class="hover:bg-gray-50 cursor-pointer" (click)="openDetail(inv.invoiceId)"
-              (contextmenu)="onInvoiceContextMenu(inv, $event)">
+          @for (inv of invoices; track inv.invoiceId; let idx = $index) {
+            <tr class="hover:bg-gray-50 cursor-pointer" (click)="onRowClick($event, idx)"
+              (contextmenu)="onInvoiceContextMenu(inv, $event)"
+              [style.background]="selectedIds.has(inv.invoiceId) ? '#EAF6FF' : null">
+              <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+              <td class="px-4 py-3 select-none" (click)="onSelectClick($event, idx)">
+                <input
+                  type="checkbox"
+                  [checked]="selectedIds.has(inv.invoiceId)"
+                  class="cursor-pointer pointer-events-none"
+                  style="accent-color:var(--color-abril-primary)" />
+              </td>
               <td class="px-4 py-3 whitespace-nowrap">{{ inv.issueDate }}</td>
               <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-800">{{ inv.invoiceNumber }}</td>
               <td class="px-4 py-3">{{ inv.contributorName }}</td>
@@ -243,6 +357,14 @@
               <td class="px-4 py-3 max-w-[260px] truncate" [title]="inv.description">{{ inv.description }}</td>
               <td class="px-4 py-3 whitespace-nowrap">{{ inv.invoicePaymentFormDescription }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-right">{{ inv.currencySymbol || inv.currencyCode || '' }} {{ inv.total | number: '1.2-2' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap"
+                [title]="inv.invoiceStatusDescription === 'Observado' && inv.invoiceObservationReasonDescription
+                  ? 'Motivo: ' + inv.invoiceObservationReasonDescription : ''">
+                <app-status-badge
+                  [text]="inv.invoiceStatusDescription || 'Pendiente'"
+                  [bgColor]="estadoColors(inv.invoiceStatusDescription).bg"
+                  [textColor]="estadoColors(inv.invoiceStatusDescription).text" />
+              </td>
               <td class="px-4 py-3 text-center">
                 @if (inv.documentUrl) {
                   <a [href]="inv.documentUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
@@ -254,7 +376,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="9" class="px-4 py-8 text-center text-gray-400">No hay facturas registradas.</td>
+              <td colspan="11" class="px-4 py-8 text-center text-gray-400">No hay facturas registradas.</td>
             </tr>
           }
         </tbody>
@@ -411,4 +533,13 @@
     (closeModal)="closeEdit()"
     (saved)="onEdited()">
   </app-factura-edit>
+}
+
+@if (showObserveModal) {
+  <app-factura-observe
+    [reasons]="observationReasons"
+    [count]="selectedIds.size"
+    (closeModal)="closeObserve()"
+    (confirm)="onObserveConfirm($event)">
+  </app-factura-observe>
 }

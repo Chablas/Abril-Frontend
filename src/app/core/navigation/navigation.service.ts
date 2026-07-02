@@ -11,10 +11,22 @@ export class NavigationService {
       label: 'Gestión Administrativa',
       iconKey: 'briefcase',
       baseRoute: '/gestion-administrativa',
+      behavior: 'expand',
+      landing: '/gestion-administrativa/solicitud-salidas',
       items: [
-        { label: 'Gestión Administrativa', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+          ],
+        },
+      ],
     },
     {
       key: 'mejora-continua',
@@ -76,7 +88,7 @@ export class NavigationService {
     },
     {
       key: 'costos',
-      label: 'Costos y Presupuesto',
+      label: 'Costos y Presupuestos',
       iconKey: 'coins',
       baseRoute: '/costs',
       behavior: 'expand',
@@ -229,8 +241,11 @@ export class NavigationService {
       label: 'Seguridad',
       iconKey: 'shield-lock',
       baseRoute: '/security',
+      behavior: 'expand',
+      landing: '/security/users',
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
+        { label: 'Roles',    route: '/security/roles', featureKey: 'security.roles' },
       ],
     },
     {

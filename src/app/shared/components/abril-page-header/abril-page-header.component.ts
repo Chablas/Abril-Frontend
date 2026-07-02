@@ -21,6 +21,10 @@ export interface AbrilPageTab {
   route?: string;
   active?: boolean;
   featureKey?: string;
+  /** La pestaña se muestra si el usuario tiene acceso a AL MENOS UNO de estos
+   *  features. Útil para pestañas "contenedor" (p. ej. Configuración) que
+   *  agrupan varias sub-secciones con su propio featureKey. */
+  featureKeys?: string[];
 }
 
 export interface AbrilPageTabGroup {
@@ -74,9 +78,12 @@ export class AbrilPageHeaderComponent {
   }
 
   get visibleTabs(): AbrilPageTab[] {
-    return this.resolvedTabs.filter(
-      (t) => !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey),
-    );
+    return this.resolvedTabs.filter((t) => {
+      if (t.featureKeys?.length) {
+        return t.featureKeys.some((k) => this.navigationService.isFeatureAllowed(k));
+      }
+      return !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey);
+    });
   }
 
   navigateToGroup(group: AbrilPageTabGroup): void {
