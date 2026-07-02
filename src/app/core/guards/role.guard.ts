@@ -10,21 +10,23 @@ export const roleGuard: CanActivateFn = (route) => {
 
   if (!isPlatformBrowser(platformId)) return true;
 
-  const featureKey   = route.data?.['featureKey'] as string | undefined;
-  const allowedRoles = route.data?.['roles']      as string[] | undefined;
+  const featureKey    = route.data?.['featureKey']    as string | undefined;
+  const allowedRoles  = route.data?.['roles']         as string[] | undefined;
+  const tiposBloqueados = route.data?.['blockedTipos'] as string[] | undefined;
 
-  // Si la ruta exige roles/tipo de sesión explícitos, esto manda sobre el feature key:
-  // evita que un CONTRATISTA con un featureKey mal asignado (p. ej. "clinica.agenda"
-  // colado desde un user_role interno) entre a un portal que no le corresponde.
-  if (allowedRoles?.length) {
-    const userRoles = authService.getRoles();
-    const cumpleRol =
-      allowedRoles.some((r) => userRoles.includes(r)) ||
-      (allowedRoles.includes('CONTRATISTA') && authService.isContratista()) ||
-      (allowedRoles.includes('CLINICA') && authService.isClinica());
-    if (cumpleRol) return true;
-    router.navigate(['/']);
-    return false;
+  // Exclusión dura por tipo de sesión (independiente del featureKey/roles de abajo).
+  // Se usa en rutas donde un tipo de sesión específico NUNCA debe entrar aunque
+  // arrastre un featureKey mal asignado (p. ej. un CONTRATISTA con "clinica.agenda"
+  // colado desde un user_role interno no debe poder entrar al portal de clínica).
+  if (tiposBloqueados?.length) {
+    if (tiposBloqueados.includes('CONTRATISTA') && authService.isContratista()) {
+      router.navigate(['/']);
+      return false;
+    }
+    if (tiposBloqueados.includes('CLINICA') && authService.isClinica()) {
+      router.navigate(['/']);
+      return false;
+    }
   }
 
   // Verificación por feature key (sistema dinámico desde BD)
@@ -32,6 +34,15 @@ export const roleGuard: CanActivateFn = (route) => {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('allowed_features') : null;
     const allowedFeatures: string[] = raw ? JSON.parse(raw) : [];
     if (allowedFeatures.includes(featureKey)) return true;
+  }
+
+  // Fallback por rol JWT (rutas de CONTRATISTA u otros roles especiales)
+  if (allowedRoles?.length) {
+    const userRoles = authService.getRoles();
+    if (allowedRoles.some((r) => userRoles.includes(r))) return true;
+    // Contratistas usan sistema de auth propio (tipo en localStorage, no claim JWT)
+    if (allowedRoles.includes('CONTRATISTA') && authService.isContratista()) return true;
+    if (allowedRoles.includes('CLINICA') && authService.isClinica()) return true;
   }
 
   router.navigate(['/']);
