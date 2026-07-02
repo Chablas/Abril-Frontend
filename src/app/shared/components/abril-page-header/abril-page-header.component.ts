@@ -80,8 +80,16 @@ export class AbrilPageHeaderComponent {
   }
 
   navigateToGroup(group: AbrilPageTabGroup): void {
-    const firstRoute = group.tabs.find(t => t.route)?.route;
-    if (firstRoute) this.router.navigateByUrl(firstRoute);
+    // Navega a la primera pestaña que el usuario realmente puede ver, no a la
+    // primera del arreglo a secas — si la primera pestaña (ej. un Dashboard
+    // restringido) no le corresponde, lo mandaría a "/" vía roleGuard aunque sí
+    // tenga acceso a otras pestañas del mismo grupo (ej. "Evaluar").
+    const primeraPermitida = group.tabs.find(
+      (t) => t.route && (!t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey)),
+    );
+    const fallback = group.tabs.find((t) => t.route)?.route;
+    const ruta = primeraPermitida?.route ?? fallback;
+    if (ruta) this.router.navigateByUrl(ruta);
   }
 
   onHamburgerClick(): void {
