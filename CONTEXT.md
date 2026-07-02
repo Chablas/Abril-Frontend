@@ -3915,3 +3915,67 @@ ON CONFLICT DO NOTHING;
 - El endpoint de debug GET /api/v1/debug/cronograma-dashboard-feature fue creado temporalmente y eliminado antes del merge.
 - El SQL de producción (Aiven) está pendiente de aplicar cuando la conexión esté disponible.
 - El diseño fue prototipado en Claude Design antes de implementar en Angular.
+
+## Sesión 2026-06-24
+
+### 1. Fix importación MPP — preservar actividades manuales
+
+Columna nueva: is_manual boolean NOT NULL DEFAULT false en project_activity.
+- Actividades creadas desde POST /{proyectoId}/actividades → is_manual = true
+- Actividades importadas desde MPP → is_manual = false
+
+Cambios en ImportarMppAsync:
+- Solo borra actividades con is_manual = false
+- Actividades manuales huérfanas (parentId ya no existe) → parentId = null, hierarchyLevel = 0
+- Predecesoras de manuales que apunten a IDs borrados → se limpian
+- Manuales van al final con order continuando desde el último del MPP
+
+ImportarMppResultDto extendido: ActividadesManualesConservadas: int
+
+Frontend Swal diferenciado:
+- Si hay manuales: "Se reemplazarán las actividades importadas. Las X actividades manuales se conservarán al final."
+- Sin manuales: mensaje original simplificado
+
+SQL aplicado en VPS Abril Prod:
+ALTER TABLE project_activity ADD COLUMN IF NOT EXISTS is_manual boolean NOT NULL DEFAULT false;
+
+### 2. Fix PercentageComplete en ImportarMppAsync
+
+- Leer PercentageComplete de MPXJ y asignar a ProgressPercentage (cast a int, null → 0)
+- Si pct >= 100 → marcar como culminada con ActualEndDate
+- Si pct < 100 → ActualEndDate = null
+- Math.Min(pct, 100) para valores > 100
+
+### 3. Cronograma de Actividades — mejoras de UX
+
+- Línea base visible por defecto: lineaBaseVisible = true al iniciar
+- Botón invertido: resaltado cuando línea base está OCULTA (no cuando visible)
+- Eliminar doble click Gantt: onRowDblClick eliminado, rowClickTimer eliminado, click abre modal instantáneamente sin delay
+- Drag & drop libre de jerarquía: dos zonas por fila (centro 60% = anidar, bordes 20% = reordenar). Hijos se mueven con el padre. Límite nivel 3.
+- Drag desde cualquier parte de la fila: draggable="true" movido del td al tr
+- Botones ↑↓ en tabla: mover actividad entre hermanos sin drag
+- Drop SOBRE fila: convierte fila destino en padre de la actividad arrastrada
+- Fix scroll: ambas vistas (lista proyectos y detalle actividades) ahora permiten scroll vertical correctamente
+
+### 4. Cronograma de Adjudicaciones — paleta BCS
+
+En features/costs/features/adjudicaciones/components/detail/cronograma/cronograma-modal.html:
+- Paleta BCS aplicada al panel derecho:
+  · depth 0: bg #0D1B2A, text #E0E1DD
+  · depth 1: bg #1B263B, text #E0E1DD
+  · depth 2: bg #415A77, text #E0E1DD
+  · depth >= 3: bg #ffffff, border-left 3px solid #415A77, text #1E3A5F
+- Encabezado tabla: bg #1B263B, text #E0E1DD
+- Drop target highlight: outline 2px solid #2E6DB4
+
+### 5. Fix SharePoint CostosYPresupuestos
+
+En appsettings.Development.json agregar bajo SharePoint.Sites:
+"CostosYPresupuestos": { "Hostname": "abrilinmob.sharepoint.com", "SitePath": "/sites/CostosYPresupuestos" }
+Resuelve error al cargar /costs/adjudicaciones.
+
+### 6. Deploy
+
+- npm install @microsoft/signalr @tabler/icons-webfont — dependencias faltantes
+- Build exitoso con warnings (no errores)
+- Frontend desplegado en VPS /var/www/abril vía scp

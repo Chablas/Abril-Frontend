@@ -17,6 +17,7 @@ import {
   EditarActividadResultDto,
   ReordenarItem,
   CascadaResultDto,
+  ImportarMppResultDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -63,14 +64,11 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
   private avanceMap = new Map<number, number>();
 
-  // Timer para distinguir click simple de doble click en filas
-  private rowClickTimer: ReturnType<typeof setTimeout> | null = null;
-
   // Drag & Drop
   dragSrc: ActividadDto | null = null;   // actividad siendo arrastrada
   dragActId: number | null = null;       // id para clase CSS row-dragging
   dropTargetId: number | null = null;
-  dropAbove = true;
+  dropPosition: 'before' | 'after' | 'inside' | null = null;
   guardandoOrden = false;
 
   // Crear: nivel y padre
@@ -105,7 +103,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   aplicandoCascada = false;
 
   // Línea base
-  lineaBaseVisible = false;
+  lineaBaseVisible = true;
 
   // Duración en modal crear
   nuevaDuracionDias: number | null = null;
@@ -302,25 +300,8 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     }
   }
 
-  // ── Click simple / doble click en fila ────────────────────────────────────
-
   onRowClick(act: ActividadDto): void {
-    if (this.rowClickTimer !== null) {
-      clearTimeout(this.rowClickTimer);
-      this.rowClickTimer = null;
-    }
-    this.rowClickTimer = setTimeout(() => {
-      this.rowClickTimer = null;
-      this.abrirModalEditar(act);
-    }, 250);
-  }
-
-  onRowDblClick(act: ActividadDto): void {
-    if (this.rowClickTimer !== null) {
-      clearTimeout(this.rowClickTimer);
-      this.rowClickTimer = null;
-    }
-    this.abrirGanttModal(act);
+    this.abrirModalEditar(act);
   }
 
   // ── Modal Gantt (nivel 1) ──────────────────────────────────────────────────
@@ -471,14 +452,28 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   }
 
   onDragOver(act: ActividadDto, event: DragEvent): void {
-    // Sin preventDefault → el navegador muestra cursor "prohibido" y no disparará drop
-    if (!this.canDropOn(act)) return;
-    event.preventDefault();
-    event.dataTransfer!.dropEffect = 'move';
+    if (!this.dragSrc || this.dragSrc.projectActivityId === act.projectActivityId) return;
+    if (!this.isVisible(act)) return;
+
     const row = event.currentTarget as HTMLElement;
     const rect = row.getBoundingClientRect();
+    const relPct = (event.clientY - rect.top) / rect.height;
+
+    let zone: 'before' | 'after' | 'inside';
+    if (relPct < 0.2) zone = 'before';
+    else if (relPct > 0.8) zone = 'after';
+    else zone = 'inside';
+
+    if (zone === 'before' || zone === 'after') {
+      if (!this.mismoParentId(act)) return;
+    } else {
+      if (!this.canDropInside(act)) return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
     this.dropTargetId = act.projectActivityId;
-    this.dropAbove = event.clientY < rect.top + rect.height / 2;
+    this.dropPosition = zone;
   }
 
   onDragLeave(act: ActividadDto, event: DragEvent): void {
@@ -486,6 +481,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     const related = event.relatedTarget as Node | null;
     if (!(event.currentTarget as HTMLElement).contains(related)) {
       this.dropTargetId = null;
+      this.dropPosition = null;
     }
   }
 
@@ -493,6 +489,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.dragSrc = null;
     this.dragActId = null;
     this.dropTargetId = null;
+    this.dropPosition = null;
   }
 
   /**
@@ -515,49 +512,79 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     return slice;
   }
 
+  private getSubtreeMaxLevel(actId: number): number {
+    const act = this.actividades.find((a) => a.projectActivityId === actId);
+    if (!act) return 0;
+    const children = this.actividades.filter((a) => a.parentId === actId);
+    if (!children.length) return act.hierarchyLevel;
+    return Math.max(act.hierarchyLevel, ...children.map((c) => this.getSubtreeMaxLevel(c.projectActivityId)));
+  }
+
+  private isDescendant(actId: number, ancestorId: number): boolean {
+    const act = this.actividades.find((a) => a.projectActivityId === actId);
+    if (!act || act.parentId === null) return false;
+    if (act.parentId === ancestorId) return true;
+    return this.isDescendant(act.parentId, ancestorId);
+  }
+
+  private canDropInside(target: ActividadDto): boolean {
+    if (!this.dragSrc) return false;
+    if (this.isDescendant(target.projectActivityId, this.dragSrc.projectActivityId)) return false;
+    const newSrcLevel = target.hierarchyLevel + 1;
+    if (newSrcLevel > 3) return false;
+    const levelDiff = newSrcLevel - this.dragSrc.hierarchyLevel;
+    return this.getSubtreeMaxLevel(this.dragSrc.projectActivityId) + levelDiff <= 3;
+  }
+
   onDrop(act: ActividadDto, event: DragEvent): void {
     event.preventDefault();
 
-    // Limpiar estado de drag de inmediato
     const src = this.dragSrc;
+    const dropPos = this.dropPosition;
     this.dragSrc = null;
     this.dragActId = null;
     this.dropTargetId = null;
+    this.dropPosition = null;
 
-    if (!src) return;
+    if (!src || !dropPos) return;
 
-    // ── Verificación final: mismo parentId ───────────────────────────────────
+    // ── Zona central: anidar bajo la fila destino ────────────────────────────
+    if (dropPos === 'inside') {
+      this.loaderService.show();
+      this.service.bajarNivel(this.selectedProyectoId!, src.projectActivityId, act.projectActivityId).subscribe({
+        next: () => { this.loaderService.hide(); this.recargarConEstado(); },
+        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
+      });
+      return;
+    }
+
+    // ── Zona borde: reordenar entre hermanos ─────────────────────────────────
     const srcPid = src.parentId;
     const tgtPid = act.parentId;
     const mismoParent = srcPid === null ? tgtPid === null : tgtPid === srcPid;
     if (!mismoParent || src.projectActivityId === act.projectActivityId) return;
 
-    // ── Opción A: order global único ─────────────────────────────────────────
-    // 1. Obtener el subárbol de src (src + todos sus hijos recursivos)
-    const srcIdx = this.actividades.findIndex(
-      (a) => a.projectActivityId === src.projectActivityId,
-    );
+    this.reordenarEnLista(src, act, dropPos as 'before' | 'after');
+  }
+
+  private reordenarEnLista(src: ActividadDto, dest: ActividadDto, position: 'before' | 'after'): void {
+    const srcIdx = this.actividades.findIndex((a) => a.projectActivityId === src.projectActivityId);
     if (srcIdx === -1) return;
     const subtree = this.getSubtreeSlice(srcIdx);
     const subtreeIds = new Set(subtree.map((a) => a.projectActivityId));
 
-    // 2. Lista plana sin el subárbol
     const listaPlana = this.actividades.filter((a) => !subtreeIds.has(a.projectActivityId));
 
-    // 3. Posición del destino en la lista plana
-    const tgtIdx = listaPlana.findIndex((a) => a.projectActivityId === act.projectActivityId);
+    const tgtIdx = listaPlana.findIndex((a) => a.projectActivityId === dest.projectActivityId);
     if (tgtIdx === -1) return;
 
-    // 4. Insertar el subárbol antes o después del destino
-    listaPlana.splice(this.dropAbove ? tgtIdx : tgtIdx + 1, 0, ...subtree);
+    listaPlana.splice(position === 'before' ? tgtIdx : tgtIdx + 1, 0, ...subtree);
 
-    // 5. Sin cambio real → no llamar al backend
     const sinCambio = listaPlana.every(
       (a, i) => a.projectActivityId === this.actividades[i].projectActivityId,
     );
     if (sinCambio) return;
 
-    // 6. Payload: TODAS las actividades con order global 1, 2, 3…
     const items: ReordenarItem[] = listaPlana.map((a, i) => ({
       projectActivityId: a.projectActivityId,
       order: i + 1,
@@ -567,7 +594,6 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.loaderService.show();
     this.service.reordenarActividades(this.selectedProyectoId!, items).subscribe({
       next: () => {
-        // Actualizar el array local directamente — no hay reload, no hay parpadeo ni reset de scroll
         this.actividades = listaPlana;
         this.buildParentIds();
         this.buildColorMap();
@@ -577,7 +603,6 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        // this.actividades nunca se modificó → ya tiene el orden original, sin necesidad de recargar
         this.guardandoOrden = false;
         this.loaderService.hide();
         const msg = typeof err.error === 'string'
@@ -631,6 +656,38 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       next: () => { this.loaderService.hide(); this.recargar(); },
       error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
     });
+  }
+
+  // ── Mover entre hermanos ──────────────────────────────────────────────────
+
+  private getSiblings(act: ActividadDto): ActividadDto[] {
+    return this.actividades.filter((a) => a.parentId === act.parentId);
+  }
+
+  canMoveUp(act: ActividadDto): boolean {
+    const sibs = this.getSiblings(act);
+    return sibs.length > 1 && sibs[0].projectActivityId !== act.projectActivityId;
+  }
+
+  canMoveDown(act: ActividadDto): boolean {
+    const sibs = this.getSiblings(act);
+    return sibs.length > 1 && sibs[sibs.length - 1].projectActivityId !== act.projectActivityId;
+  }
+
+  moveUp(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    const sibs = this.getSiblings(act);
+    const idx = sibs.findIndex((s) => s.projectActivityId === act.projectActivityId);
+    if (idx <= 0) return;
+    this.reordenarEnLista(act, sibs[idx - 1], 'before');
+  }
+
+  moveDown(act: ActividadDto, event: MouseEvent): void {
+    event.stopPropagation();
+    const sibs = this.getSiblings(act);
+    const idx = sibs.findIndex((s) => s.projectActivityId === act.projectActivityId);
+    if (idx >= sibs.length - 1) return;
+    this.reordenarEnLista(act, sibs[idx + 1], 'after');
   }
 
   // ── Crear con nivel ────────────────────────────────────────────────────────
@@ -1591,16 +1648,15 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     const doImport = () => {
       this.importando = true;
       this.service.importarMpp(this.selectedProyectoId!, this.mppFile!).subscribe({
-        next: () => {
+        next: (r: ImportarMppResultDto) => {
           this.importando = false;
           this.cerrarModalMpp();
           this.recargar();
-          Swal.fire({
-            icon: 'success',
-            title: 'Importación exitosa',
-            text: 'Las actividades han sido importadas correctamente.',
-            confirmButtonColor: '#2596be',
-          });
+          const texto =
+            r.actividadesManualesConservadas > 0
+              ? `Se importaron ${r.actividadesImportadas} actividades. ${r.actividadesManualesConservadas} actividades manuales fueron conservadas al final del cronograma.`
+              : `Se importaron ${r.actividadesImportadas} actividades correctamente.`;
+          Swal.fire({ icon: 'success', title: 'Importación exitosa', text: texto, confirmButtonColor: '#2596be' });
         },
         error: (err: HttpErrorResponse) => {
           this.importando = false;
@@ -1610,10 +1666,15 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     };
 
     if (this.actividades.length > 0) {
+      const manualesCount = this.actividades.filter((a) => a.isManual).length;
+      const texto =
+        manualesCount > 0
+          ? `Se reemplazarán las actividades importadas desde MS Project. Las ${manualesCount} actividades creadas manualmente se conservarán al final del cronograma.`
+          : `Se reemplazarán todas las actividades del cronograma con las del archivo MPP.`;
       Swal.fire({
         icon: 'warning',
         title: '¿Estás seguro?',
-        text: 'Esto reemplazará todas las actividades actuales del proyecto.',
+        text: texto,
         showCancelButton: true,
         confirmButtonText: 'Sí, importar',
         cancelButtonText: 'Cancelar',

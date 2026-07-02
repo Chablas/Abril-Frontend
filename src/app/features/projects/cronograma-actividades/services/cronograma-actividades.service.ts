@@ -11,6 +11,7 @@ import {
   ReordenarItem,
   EditarActividadRequest,
   EditarActividadResultDto,
+  ImportarMppResultDto,
 } from '../dtos/cronograma-actividades.dtos';
 
 function buildAuthHeaders(): Record<string, string> {
@@ -119,11 +120,11 @@ export class CronogramaActividadesService {
     });
   }
 
-  importarMpp(proyectoId: number, file: File): Observable<any> {
+  importarMpp(proyectoId: number, file: File): Observable<ImportarMppResultDto> {
     const formData = new FormData();
     formData.append('archivo', file);
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
     const headers = new HttpHeaders({ Authorization: `Bearer ${token ?? ''}` });
-    return this.http.post(`${this.base}/${proyectoId}/importar-mpp`, formData, { headers });
+    return this.http.post<ImportarMppResultDto>(`${this.base}/${proyectoId}/importar-mpp`, formData, { headers });
   }
 }
