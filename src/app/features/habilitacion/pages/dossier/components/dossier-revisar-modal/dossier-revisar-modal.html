@@ -41,8 +41,9 @@
         @for (tipo of tipos; track tipo) {
           @let doc = getDoc(tipo);
           <div class="doc-row"
-            [class.doc-row--subido]="doc?.estado === 'Subido'"
+            [class.doc-row--subido]="doc?.estado === 'Subido' || doc?.estado === 'Aprobado'"
             [class.doc-row--na]="doc?.estado === 'NA'"
+            [class.doc-row--observado]="doc?.estado === 'Observado'"
             [class.doc-row--pendiente]="!doc || doc.estado === 'Pendiente'">
             <div class="doc-info">
               <span class="doc-tipo">{{ tipo }}</span>
@@ -66,7 +67,34 @@
                   <i class="ti ti-eye"></i> Ver
                 </button>
               }
+              @if (puedeRevisarDoc(doc)) {
+                <button type="button" class="btn-outline-warning btn-sm" (click)="observarDoc(doc!)">
+                  <i class="ti ti-message-circle"></i> Observar
+                </button>
+                <button type="button" class="btn-primary btn-sm" [disabled]="guardandoDoc" (click)="aprobarDoc(doc!)">
+                  <i class="ti ti-circle-check"></i> Aprobar
+                </button>
+              }
             </div>
+            @if (doc && doc.id === docObservarId) {
+              <div class="observar-panel observar-panel--doc">
+                <label class="form-label">Observación para {{ tipo }}</label>
+                <textarea class="field-input" rows="2" [(ngModel)]="comentarioDoc"
+                  placeholder="Detalla qué debe corregir el contratista…"></textarea>
+                <div class="observar-actions">
+                  <button type="button" class="btn-ghost-sm" (click)="cancelarObservarDoc()">Cancelar</button>
+                  <button type="button" class="btn-primary" [disabled]="guardandoDoc" (click)="confirmarObservacionDoc(doc.id)">
+                    <i class="ti ti-message-circle"></i> Enviar observación
+                  </button>
+                </div>
+              </div>
+            }
+            @if (doc && doc.estado === 'Observado' && doc.obsRevisor) {
+              <div class="obs-rechazado obs-rechazado--doc">
+                <i class="ti ti-alert-circle"></i>
+                <span><strong>Observación:</strong> {{ doc.obsRevisor }}</span>
+              </div>
+            }
           </div>
         }
       </div>
@@ -89,32 +117,8 @@
 
     </div>
 
-    @if (modoObservar) {
-      <div class="observar-panel">
-        <label class="form-label">Observación para el contratista</label>
-        <textarea class="field-input" rows="3" [(ngModel)]="comentario"
-          placeholder="Detalla qué debe corregir el contratista…"></textarea>
-        <div class="observar-actions">
-          <button type="button" class="btn-ghost-sm" (click)="modoObservar = false">Cancelar</button>
-          <button type="button" class="btn-primary" [disabled]="guardando" (click)="confirmarObservacion()">
-            <i class="ti ti-message-circle"></i> Enviar observación
-          </button>
-        </div>
-      </div>
-    }
-
     <div class="modal-footer">
       <button type="button" class="btn-ghost-sm" (click)="cerrar()">Cerrar</button>
-      @if (!modoObservar && detalle.estado === 'Enviado') {
-        <div class="modal-actions">
-          <button type="button" class="btn-outline-warning" (click)="observar()">
-            <i class="ti ti-message-circle"></i> Observar
-          </button>
-          <button type="button" class="btn-primary" [disabled]="guardando" (click)="aprobar()">
-            <i class="ti ti-circle-check"></i> Aprobar
-          </button>
-        </div>
-      }
     </div>
   }
 </div>

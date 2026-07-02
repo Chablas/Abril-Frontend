@@ -286,6 +286,9 @@ export class NavigationService {
               { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
               { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
               { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
+              { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },
+              { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista' },
+              { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones' },
             ],
             groups: [],
           };

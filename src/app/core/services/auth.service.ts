@@ -201,6 +201,16 @@ export class AuthService {
     }
   }
 
+  isClinica(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user.tipo === 'CLINICA';
+    } catch {
+      return false;
+    }
+  }
+
   getEmpresaId(): number | null {
     if (typeof localStorage === 'undefined') return null;
     try {
