@@ -56,6 +56,7 @@ export interface ActividadesQueryParams {
   etapaId?: number | null;
   search?: string | null;
   soloActivas?: boolean | null;
+  filtroUserId?: number | null;
   pagina?: number;
   porPagina?: number;
 }
@@ -88,6 +89,7 @@ export interface GenerarActividadesResultDTO {
 export interface GanttActividadDTO {
   id: number;
   projectId: number;
+  projectNombre?: string | null;
   orden: number | null;
   nombre: string;
   tipo: string | null;
@@ -105,6 +107,7 @@ export interface GanttQueryParams {
   tipo?: string | null;
   etapa?: string | null;
   soloActivas?: boolean | null;
+  filtroUserId?: number | null;
 }
 
 export interface PlantillaActividadDTO {

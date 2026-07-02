@@ -106,6 +106,11 @@ export class ContractorManagementEdit implements OnInit {
           Swal.fire({ icon: 'error', title: 'RUC no encontrado', text: 'No se encontró información para el RUC ingresado.', confirmButtonColor: '#64BC04' });
           return;
         }
+        const backendMsg = err.error?.message as string | undefined;
+        if (backendMsg) {
+          Swal.fire({ icon: 'warning', title: 'No se pudo consultar', text: backendMsg, confirmButtonColor: '#64BC04' });
+          return;
+        }
         this.errorService.handleError(err);
       },
     });
@@ -136,6 +141,11 @@ export class ContractorManagementEdit implements OnInit {
         this.loaderService.hide();
         if (err.status === 404) {
           Swal.fire({ icon: 'error', title: 'DNI no encontrado', text: 'No se encontró información para el DNI ingresado.', confirmButtonColor: '#64BC04' });
+          return;
+        }
+        const backendMsg = err.error?.message as string | undefined;
+        if (backendMsg) {
+          Swal.fire({ icon: 'warning', title: 'No se pudo consultar', text: backendMsg, confirmButtonColor: '#64BC04' });
           return;
         }
         this.errorService.handleError(err);

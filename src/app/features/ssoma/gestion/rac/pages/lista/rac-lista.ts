@@ -11,12 +11,13 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-rac-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './rac-lista.html',
   styleUrl: './rac-lista.css',
 })
@@ -65,6 +66,18 @@ export class RacLista implements OnInit {
       },
       error: () => {},
     });
+
+    // Restaurar filtros al volver de cerrar/ver un RAC (evita tener que re-filtrar cada vez).
+    const previos = this.racService.listFiltrosState;
+    if (previos) {
+      this.filtroEstado = previos.filtroEstado;
+      this.filtroSeveridad = previos.filtroSeveridad;
+      this.filtroTipo = previos.filtroTipo;
+      this.filtroSoloConPenalidad = previos.filtroSoloConPenalidad;
+      this.filtroProyectoId = previos.filtroProyectoId;
+      this.filtroEmpresaId = previos.filtroEmpresaId;
+      this.query = { ...this.query, page: previos.page };
+    }
     this.load();
   }
 
@@ -79,9 +92,17 @@ export class RacLista implements OnInit {
       soloConPenalidad: this.filtroSoloConPenalidad || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
       empresaReportadaId: this.filtroEmpresaId ?? undefined,
-      page: 1,
     };
     this.query = q;
+    this.racService.listFiltrosState = {
+      filtroEstado: this.filtroEstado,
+      filtroSeveridad: this.filtroSeveridad,
+      filtroTipo: this.filtroTipo,
+      filtroSoloConPenalidad: this.filtroSoloConPenalidad,
+      filtroProyectoId: this.filtroProyectoId,
+      filtroEmpresaId: this.filtroEmpresaId,
+      page: q.page ?? 1,
+    };
     this.racService.getList(q).subscribe({
       next: (res) => {
         this.result = res;
@@ -98,6 +119,11 @@ export class RacLista implements OnInit {
     });
   }
 
+  buscar(): void {
+    this.query = { ...this.query, page: 1 };
+    this.load();
+  }
+
   cambiarPagina(p: number): void {
     if (p < 1 || (this.result && p > this.result.totalPages)) return;
     this.query = { ...this.query, page: p };
@@ -111,6 +137,7 @@ export class RacLista implements OnInit {
     this.filtroSoloConPenalidad = false;
     this.filtroProyectoId = null;
     this.filtroEmpresaId = null;
+    this.query = { ...this.query, page: 1 };
     this.load();
   }
 

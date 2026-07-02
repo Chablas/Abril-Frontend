@@ -11,12 +11,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of }   from 'rxjs';
 import { catchError }     from 'rxjs/operators';
 import { Router }        from '@angular/router';
+import Swal              from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import { ErrorService }   from '../../../core/services/error.service';
 import {
   ArqComercialDashboardDTO,
   ArqComercialKpiDTO,
   ArqComercialAlertDTO,
+  ChartItemDTO,
   SupervisorProgresoDTO,
   HitoCriticoDTO,
   TareasPorArquitectoDTO,
@@ -25,6 +27,9 @@ import {
   CategoriaItemDTO,
   CategoriaDashboardItemDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
+import {
+  ActividadListItemDTO,
+} from '../../../core/dtos/arquitectura-comercial/actividades.model';
 import {
   ActividadAlertaDTO,
   DashboardFiltroDTO,
@@ -96,16 +101,102 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalAlertaLoading    = false;
   seleccionados         = new Set<number>();
 
+  // ─── modal actividades trabajador ──────────────────────────────
+  modalCargaVisible            = false;
+  modalCargaNombre             = '';
+  modalCargaLoading            = false;
+  modalCargaActividades        : ActividadListItemDTO[] = [];
+  modalCargaExcluirCulminadas  = true;
+  modalCargaFiltroEstado       = '';
+  modalCargaStats              = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
+
+  private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
+  private pd(iso: string): Date { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+
+  estadoGantt(a: ActividadListItemDTO): 'CULMINADO'|'EN_PROCESO'|'VENCIDO'|'EN_RIESGO'|'PENDIENTE' {
+    const hoy = this.hoy();
+    if (a.finEfectivo)  return 'CULMINADO';
+    if (a.inicioEfectivo) return 'EN_PROCESO';
+    if (a.finProgramado && this.pd(a.finProgramado) < hoy) return 'VENCIDO';
+    if (a.inicioProgramado && this.pd(a.inicioProgramado) <= hoy) return 'EN_RIESGO';
+    return 'PENDIENTE';
+  }
+
+  estadoGanttLabel(a: ActividadListItemDTO): string {
+    const map = { CULMINADO:'✓ Culminado', EN_PROCESO:'▶ En proceso', VENCIDO:'⚠ Vencido', EN_RIESGO:'● En riesgo', PENDIENTE:'○ Pendiente' };
+    return map[this.estadoGantt(a)];
+  }
+
+  estadoGanttColor(a: ActividadListItemDTO): string {
+    const map = { CULMINADO:'#9CA3AF', EN_PROCESO:'#3B82F6', VENCIDO:'#EF4444', EN_RIESGO:'#F59E0B', PENDIENTE:'#93C5FD' };
+    return map[this.estadoGantt(a)];
+  }
+
+  get modalCargaFiltradas(): ActividadListItemDTO[] {
+    return this.modalCargaActividades.filter(a => {
+      if (this.estadoGantt(a) === 'PENDIENTE') return false;
+      if (this.modalCargaExcluirCulminadas && a.finEfectivo) return false;
+      if (this.modalCargaFiltroEstado && this.estadoGantt(a) !== this.modalCargaFiltroEstado) return false;
+      return true;
+    });
+  }
+
+  abrirModalCarga(sup: TareasPorArquitectoDTO): void {
+    this.modalCargaVisible           = true;
+    this.modalCargaNombre            = sup.nombre;
+    this.modalCargaLoading           = true;
+    this.modalCargaActividades       = [];
+    this.modalCargaExcluirCulminadas = true;
+    this.modalCargaFiltroEstado      = '';
+    this.service.getActividades({ filtroUserId: sup.userId, soloActivas: true, porPagina: 500 }).subscribe({
+      next: res => {
+        this.modalCargaActividades = res.items ?? [];
+        const items = this.modalCargaActividades;
+        this.modalCargaStats = {
+          hitos:       items.filter(a => a.partidaDeControl === 'HITO').length,
+          entregables: items.filter(a => a.partidaDeControl === 'ENTREGABLE').length,
+          consultas:   items.filter(a => a.partidaDeControl === 'CONSULTA').length,
+          culminadas:  items.filter(a => !!a.finEfectivo).length,
+          vencidas:    items.filter(a => !a.finEfectivo && a.finProgramado
+                         && new Date(a.finProgramado) < new Date()).length,
+        };
+        this.modalCargaLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.modalCargaLoading = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  cerrarModalCarga(): void { this.modalCargaVisible = false; }
+
+  estadoCargaColor(a: ActividadListItemDTO): string {
+    if (a.finEfectivo) return '#1B6B3A';
+    if (a.inicioEfectivo) return '#2E6DB4';
+    if (a.finProgramado && new Date(a.finProgramado) < new Date()) return '#C0392B';
+    return '#D4A017';
+  }
+
+  estadoCargaLabel(a: ActividadListItemDTO): string {
+    if (a.finEfectivo) return 'Culminado';
+    if (a.inicioEfectivo) return 'En proceso';
+    if (a.finProgramado && new Date(a.finProgramado) < new Date()) return 'Vencido';
+    return 'Pendiente';
+  }
+
   // ─── modal hitos ───────────────────────────────────────────────
   modalHitosVisible = false;
   tabHito           : TabHito = 'VENCER';
 
+  distribucionTipos: ChartItemDTO[] = [];
+
   // ─── charts ───────────────────────────────────────────────────
   private avanceChart    ?: Chart;
   private eficienciaChart?: Chart;
+  private tiposChart     ?: Chart;
 
   @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
   @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('tiposCanvas')      tiposRef     !: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private service     : ArquitecturaComercialService,
@@ -167,6 +258,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.avanceSemanal           = d.avanceSemanal            ?? [];
     this.eficienciaSpi           = d.eficienciaSpi            ?? [];
     this.distribucionPorCategoria= d.distribucionPorCategoria ?? [];
+    this.distribucionTipos       = d.distribucionTipos        ?? [];
     this.cdr.detectChanges();
     this.destruirCharts();
     setTimeout(() => { this.renderCharts(); this.cdr.detectChanges(); }, 50);
@@ -176,11 +268,13 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   private destruirCharts() {
     this.avanceChart?.destroy();
     this.eficienciaChart?.destroy();
+    this.tiposChart?.destroy();
   }
 
   private renderCharts() {
     this.renderAvanceChart();
     this.renderEficienciaChart();
+    this.renderTiposChart();
   }
 
   private renderAvanceChart() {
@@ -194,23 +288,24 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           {
             label: 'Programado',
             data: data.map(s => s.programado),
-            borderColor: '#B0BAD0',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderDash: [4, 3],
+            borderColor: '#D6E4F0',
+            backgroundColor: 'rgba(214,228,240,0.25)',
+            borderWidth: 2,
+            borderDash: [5, 4],
             pointRadius: 0,
             tension: 0.3,
+            fill: true,
           },
           {
             label: 'Real',
             data: data.map(s => s.real),
-            borderColor: '#4A7FD4',
-            backgroundColor: 'rgba(74,127,212,0.08)',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#4A7FD4',
+            borderColor: '#1B3A6B',
+            backgroundColor: 'rgba(27,58,107,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#1B3A6B',
             pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
+            pointBorderWidth: 2,
             fill: true,
             tension: 0.4,
           },
@@ -243,11 +338,11 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         datasets: [{
           label: 'SPI %',
           data: vals,
-          borderColor: '#2D9E5F',
-          backgroundColor: 'rgba(45,158,95,0.08)',
+          borderColor: '#27AE60',
+          backgroundColor: 'rgba(39,174,96,0.08)',
           borderWidth: 2,
           pointRadius: 4,
-          pointBackgroundColor: vals.map(v => v >= 95 ? '#2D9E5F' : v >= 80 ? '#C4860A' : '#C94040'),
+          pointBackgroundColor: vals.map(v => v >= 95 ? '#1B6B3A' : v >= 80 ? '#D4A017' : '#C0392B'),
           pointBorderColor: '#fff',
           pointBorderWidth: 1.5,
           fill: true,
@@ -267,6 +362,65 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         },
       },
     });
+  }
+
+  private renderTiposChart() {
+    if (!this.tiposRef?.nativeElement) return;
+    const sinProg = Math.max(0,
+      this.kpis.totalActividades - this.kpis.culminadas - this.kpis.enProceso
+      - this.kpis.vencidas - this.kpis.pendientes);
+    const labels = ['Culminadas', 'En proceso', 'Vencidas', 'Pendientes', 'Sin prog.'];
+    const vals   = [this.kpis.culminadas, this.kpis.enProceso, this.kpis.vencidas, this.kpis.pendientes, sinProg];
+    const colors = ['#1B6B3A', '#2E6DB4', '#C0392B', '#4A5568', '#CBD5E1'];
+    this.tiposChart = new Chart(this.tiposRef.nativeElement, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: vals, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 5 }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          datalabels: { display: false },
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E293B',
+            callbacks: {
+              label: (ctx) => {
+                const total = (ctx.dataset.data as number[]).reduce((a:number,b:number)=>a+b,0);
+                const pct   = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                return ` ${ctx.label}: ${ctx.parsed} – ${pct}%`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  get estadoDonutItems() {
+    const total   = this.kpis.totalActividades || 1;
+    const sinProg = Math.max(0, total - this.kpis.culminadas - this.kpis.enProceso
+                                      - this.kpis.vencidas   - this.kpis.pendientes);
+    return [
+      { label: 'Culminadas', value: this.kpis.culminadas, color: '#1B6B3A',
+        pct: Math.round(this.kpis.culminadas / total * 100) },
+      { label: 'En proceso', value: this.kpis.enProceso,  color: '#2E6DB4',
+        pct: Math.round(this.kpis.enProceso  / total * 100) },
+      { label: 'Vencidas',   value: this.kpis.vencidas,   color: '#C0392B',
+        pct: Math.round(this.kpis.vencidas   / total * 100) },
+      { label: 'Pendientes', value: this.kpis.pendientes, color: '#4A5568',
+        pct: Math.round(this.kpis.pendientes / total * 100) },
+      { label: 'Sin prog.',  value: sinProg,               color: '#CBD5E1',
+        pct: Math.round(sinProg              / total * 100) },
+    ];
+  }
+
+  // getter para usar IES en el ranking (supervisores ya tiene el índice compuesto)
+  get rankingIES() {
+    return [...this.supervisores].sort((a, b) => b.progreso - a.progreso);
   }
 
   // ─── supervisor / carga helpers ──────────────────────────────
@@ -306,17 +460,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   cargaTagStyle(total: number): { bg: string; color: string } {
     const s = this.cargaStats;
     if (!s) return { bg: '#F1F5F9', color: '#64748B' };
-    if (total > s.avg * 1.3) return { bg: '#FEE2E2', color: '#DC2626' };
-    if (total < s.avg * 0.7) return { bg: '#D1FAE5', color: '#059669' };
-    return { bg: '#DBEAFE', color: '#2563EB' };
+    if (total > s.avg * 1.3) return { bg: '#FDF2F2', color: '#C0392B' };
+    if (total < s.avg * 0.7) return { bg: '#EAF3DE', color: '#1B6B3A' };
+    return { bg: '#EDF4FB', color: '#2E6DB4' };
   }
 
   cargaBarGradient(total: number): string {
     const s = this.cargaStats;
-    if (!s) return '#CBD5E1';
-    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#F87171,#DC2626)';
-    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#4ADE80,#16A34A)';
-    return 'linear-gradient(90deg,#60A5FA,#2563EB)';
+    if (!s) return '#D6E4F0';
+    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#E74C3C,#C0392B)';
+    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#27AE60,#1B6B3A)';
+    return 'linear-gradient(90deg,#2E6DB4,#1B3A6B)';
   }
 
   get cargaInsights(): string[] {
@@ -426,6 +580,23 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     });
   }
 
+  enviandoAlertaHitos = false;
+  enviarAlertaHitos(): void {
+    const ids = this.hitosCriticos.map(h => h.id).filter((id): id is number => !!id);
+    if (!ids.length) return;
+    this.enviandoAlertaHitos = true;
+    this.service.enviarAlertasActividades({ actividadIds: ids, tipoAlerta: 'HITO_PROXIMO' }).subscribe({
+      next: () => {
+        this.enviandoAlertaHitos = false;
+        Swal.fire({ icon: 'success', title: 'Alerta enviada', text: `Se notificó a los responsables de ${ids.length} hitos críticos.`, timer: 3000, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoAlertaHitos = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ─── helpers UI ──────────────────────────────────────────────
   get promedioEficiencia(): number {
     if (!this.supervisores.length) return 0;
@@ -465,17 +636,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   getAvatarBg(p: number): string {
-    if (p >= 75) return '#EAF5EF';
-    if (p >= 60) return '#EAF0FB';
-    if (p >= 45) return '#FBF3E4';
-    return '#FAE9E9';
+    if (p >= 75) return '#EAF3DE';
+    if (p >= 60) return '#EDF4FB';
+    if (p >= 45) return '#FEF9E7';
+    return '#FDF2F2';
   }
 
   getAvatarColor(p: number): string {
-    if (p >= 75) return '#2D9E5F';
-    if (p >= 60) return '#4A7FD4';
-    if (p >= 45) return '#C4860A';
-    return '#C94040';
+    if (p >= 75) return '#1B6B3A';
+    if (p >= 60) return '#2E6DB4';
+    if (p >= 45) return '#D4A017';
+    return '#C0392B';
   }
 
   getComentario(sup: SupervisorProgresoDTO): string {
@@ -487,17 +658,17 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   getComentarioBg(sup: SupervisorProgresoDTO): string {
-    if (sup.progreso >= 75) return '#EAF5EF';
-    if (sup.progreso >= 60) return '#EAF0FB';
-    if (sup.progreso >= 45) return '#FBF3E4';
-    return '#FAE9E9';
+    if (sup.progreso >= 75) return '#EAF3DE';
+    if (sup.progreso >= 60) return '#EDF4FB';
+    if (sup.progreso >= 45) return '#FEF9E7';
+    return '#FDF2F2';
   }
 
   getComentarioColor(sup: SupervisorProgresoDTO): string {
-    if (sup.progreso >= 75) return '#2D9E5F';
-    if (sup.progreso >= 60) return '#4A7FD4';
-    if (sup.progreso >= 45) return '#C4860A';
-    return '#C94040';
+    if (sup.progreso >= 75) return '#1B6B3A';
+    if (sup.progreso >= 60) return '#2E6DB4';
+    if (sup.progreso >= 45) return '#D4A017';
+    return '#C0392B';
   }
   getProyectada(p: number)     { return Math.min(100, Math.round(p * 1.12)); }
 

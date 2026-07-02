@@ -13,6 +13,8 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { ArquitecturaComercialService } from '../../../../../core/services/arquitectura-comercial.service';
 import {
+  AcCategoriaDTO,
+  AcEspecialidadDTO,
   AcEtapaDTO,
   ActividadListItemDTO,
   CreateActividadBody,
@@ -23,6 +25,8 @@ interface NuevaConsultaForm {
   etapaNombre: string;
   rfiNumero: number | null;
   ubicacion: string;
+  categoriaId: number | null;
+  especialidadId: number | null;
   etapaId: number | null;
   inicioProgramado: string;
   finProgramado: string;
@@ -46,6 +50,8 @@ export class NuevaConsulta implements OnChanges {
   readonly etapasNombre = ['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4'];
 
   etapas: AcEtapaDTO[] = [];
+  categorias: AcCategoriaDTO[] = [];
+  especialidades: AcEspecialidadDTO[] = [];
   loadingEtapas = false;
   saving = false;
 
@@ -68,6 +74,8 @@ export class NuevaConsulta implements OnChanges {
       etapaNombre: '',
       rfiNumero: null,
       ubicacion: '',
+      categoriaId: null,
+      especialidadId: null,
       etapaId: null,
       inicioProgramado: '',
       finProgramado: '',
@@ -76,19 +84,19 @@ export class NuevaConsulta implements OnChanges {
   }
 
   private loadEtapas(): void {
-    if (this.etapas.length > 0) return;
-    this.loadingEtapas = true;
-    this.service.getEtapas().subscribe({
-      next: data => {
-        this.etapas = data;
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-    });
+    if (this.etapas.length === 0) {
+      this.loadingEtapas = true;
+      this.service.getEtapas().subscribe({
+        next: data => { this.etapas = data; this.loadingEtapas = false; this.cdr.detectChanges(); },
+        error: () => { this.loadingEtapas = false; this.cdr.detectChanges(); },
+      });
+    }
+    if (this.categorias.length === 0) {
+      this.service.getCategorias().subscribe({ next: d => { this.categorias = d; this.cdr.detectChanges(); } });
+    }
+    if (this.especialidades.length === 0) {
+      this.service.getEspecialidades().subscribe({ next: d => { this.especialidades = d; this.cdr.detectChanges(); } });
+    }
   }
 
   get nombreCalculado(): string {
@@ -100,7 +108,9 @@ export class NuevaConsulta implements OnChanges {
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.projectId && !!this.nombreCalculado;
+    if (this.saving || !this.projectId || !this.nombreCalculado) return false;
+    const { etapaId, categoriaId, especialidadId, inicioProgramado, userId } = this.model;
+    return !!etapaId && !!categoriaId && !!especialidadId && !!inicioProgramado && !!userId;
   }
 
   submit(): void {
@@ -111,8 +121,8 @@ export class NuevaConsulta implements OnChanges {
       tipo: 'CONSULTA',
       projectId: this.projectId,
       etapaId: this.model.etapaId,
-      categoriaId: 2,
-      especialidadId: 2,
+      categoriaId: this.model.categoriaId,
+      especialidadId: this.model.especialidadId,
       userId: this.model.userId,
       inicioProgramado: this.model.inicioProgramado || null,
       finProgramado: this.model.finProgramado || null,

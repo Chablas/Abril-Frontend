@@ -4,15 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { CostosPresupuestosEmailList } from './list/list';
 import { CostosPresupuestosEmailCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { CostosPresupuestosEmailFilterDto } from '../dtos/costos-presupuestos-email-filter.dto';
 import { CostosPresupuestosEmailDto } from '../dtos/costos-presupuestos-email.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-costos-presupuestos-email',
   standalone: true,
-  imports: [CommonModule, FormsModule, CostosPresupuestosEmailList, CostosPresupuestosEmailCreate, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, CostosPresupuestosEmailList, CostosPresupuestosEmailCreate, Paginator, SearchInput],
   templateUrl: './costos-presupuestos-email.html',
   styleUrl: './costos-presupuestos-email.css',
 })
@@ -28,6 +28,11 @@ export class CostosPresupuestosEmail implements OnInit {
   showCreateModal = false;
 
   ngOnInit(): void {}
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
+  }
 
   onSearch(): void {
     this.list.load(1);

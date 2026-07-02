@@ -15,6 +15,18 @@ export class Paginator {
 
   @Output() pageChange = new EventEmitter<number>();
 
+  firstPage() {
+    if (this.currentPage > 1) {
+      this.pageChange.emit(1);
+    }
+  }
+
+  lastPage() {
+    if (this.currentPage < this.totalPages) {
+      this.pageChange.emit(this.totalPages);
+    }
+  }
+
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.pageChange.emit(this.currentPage + 1);

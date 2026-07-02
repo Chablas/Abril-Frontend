@@ -3,9 +3,7 @@
   <app-abril-page-header
     badge="SSOMA"
     titulo="Flash Reports — Accidentes e Incidentes"
-    subtitulo="Registro, seguimiento y envío de Flash Reports"
-    [botonPrimario]="{ label: 'Nuevo Flash Report', icono: 'ti-plus' }"
-    (primaryClick)="irANuevo()">
+    subtitulo="Registro, seguimiento y envío de Flash Reports">
   </app-abril-page-header>
 
   <!-- FILTROS MOBILE TOGGLE -->
@@ -166,8 +164,7 @@
 
   </div>
 
-  <button type="button" class="fab" (click)="irANuevo()">
-    <i class="ti ti-plus"></i>
-  </button>
 
+
+  <app-fab label="Nuevo Flash Report" (clicked)="irANuevo()"></app-fab>
 </div>

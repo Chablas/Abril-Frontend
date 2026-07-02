@@ -13,15 +13,38 @@ export class BaseModal {
   @Input() title: string = '';
   @Input() width: string = 'w-[1000px]';
   @Input() height: string = '';
+  /**
+   * Si es true, una vez que el usuario MODIFICA el modal (llena un campo, elige una opción de un
+   * desplegable, suelta un archivo, etc.) el modal ya NO se cierra al hacer clic fuera: solo se
+   * cierra con la X. Esto evita perder por accidente la información en proceso. Mientras el modal
+   * siga igual que cuando se abrió, el clic fuera lo cierra normalmente.
+   */
+  @Input() preventCloseWhenDirty: boolean = false;
   @Output() closeModal = new EventEmitter();
+
+  /** El contenido del modal fue modificado respecto a su estado inicial. */
+  dirty = false;
+
+  /**
+   * Marca el modal como modificado. Lo disparan los eventos que burbujean desde el contenido
+   * proyectado: `input`/`change` nativos y el evento `modalfieldchange` que emiten los componentes
+   * custom (search-select, file-selector) al cambiar su valor.
+   */
+  markDirty() {
+    if (this.preventCloseWhenDirty) this.dirty = true;
+  }
 
   onBackdropMousedown() {
     this.mousedownOnBackdrop = true;
   }
 
   onBackdropClick() {
-    if (this.mousedownOnBackdrop) this.closeModal.emit();
+    const startedOnBackdrop = this.mousedownOnBackdrop;
     this.mousedownOnBackdrop = false;
+    if (!startedOnBackdrop) return;
+    // Si está activado el bloqueo y el modal ya se modificó, ignorar el clic fuera.
+    if (this.preventCloseWhenDirty && this.dirty) return;
+    this.closeModal.emit();
   }
 
   close() {

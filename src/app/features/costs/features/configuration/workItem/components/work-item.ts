@@ -6,25 +6,34 @@ import { WorkItemList } from './list/list';
 import { WorkItemCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { WorkItemFilterDto } from '../dtos/work-item-filter.dto';
-import { WorkItemDto } from '../dtos/work-item.dto';
+import { WorkItemDto, WorkItemCategoryOptionDto } from '../dtos/work-item.dto';
 import { WorkItemService } from '../services/work-item.service';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-work-item',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkItemList, WorkItemCreate, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, WorkItemList, WorkItemCreate, Paginator, SearchSelect, SearchInput],
   templateUrl: './work-item.html',
   styleUrl: './work-item.css',
 })
 export class WorkItem implements OnInit {
   @ViewChild(WorkItemList) list!: WorkItemList;
 
-  filters: WorkItemFilterDto = { description: null, page: 1 };
+  filters: WorkItemFilterDto = { description: null, hasValorizationForm: null, workItemCategoryId: null, page: 1 };
+
+  readonly valorizationOptions = [
+    { value: true, label: 'Con forma de valorización' },
+    { value: false, label: 'Sin forma de valorización' },
+  ];
+
+  /** Partidas de control para el desplegable de filtro. */
+  categories: WorkItemCategoryOptionDto[] = [];
 
   currentPage = 1;
   totalPages = 0;
@@ -39,7 +48,17 @@ export class WorkItem implements OnInit {
     private errorService: ErrorService,
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.service.getCategories().subscribe({
+      next: (res) => (this.categories = res),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
+  }
 
   sync(): void {
     this.syncing = true;

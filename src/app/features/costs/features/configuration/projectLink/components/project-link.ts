@@ -12,12 +12,11 @@ import { ProjectLinkFilterDto } from '../dtos/project-link-filter.dto';
 import { ProjectLinkDto } from '../dtos/project-link.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-project-link',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProjectLinkList, ProjectLinkCreate, Paginator, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, ProjectLinkList, ProjectLinkCreate, Paginator, SearchSelect],
   templateUrl: './project-link.html',
   styleUrl: './project-link.css',
 })
@@ -51,6 +50,11 @@ export class ProjectLink implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
   }
 
   onSearch(): void {

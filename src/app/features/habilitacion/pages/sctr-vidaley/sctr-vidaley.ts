@@ -62,7 +62,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
   filtroAnio: number = new Date().getFullYear();
   filtroEmpresaId: number | null = null;
   filtroObraOficina = '';
-  filtroProyecto = '';
+  filtroProyectoId: number | null = null;
+  proyectosPolizas: ProjectGetDTO[] = [];
 
   modalSubirOpen = false;
   modalAprobarOpen = false;
@@ -172,6 +173,16 @@ export class SctrVidaley implements OnInit, OnDestroy {
       }
     });
 
+    this.projectService.getProjectPaged(1).subscribe({
+      next: (res) => {
+        this.proyectosPolizas = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.proyectosPolizas = [];
+      },
+    });
+
     this.loadDocumentos(1);
   }
 
@@ -248,6 +259,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       anio: this.filtroAnio || undefined,
       empresaId: this.filtroEmpresaId ?? undefined,
       obraOficina: this.filtroObraOficina || undefined,
+      proyectoId: this.filtroProyectoId ?? undefined,
     };
     this.sctrService.getList(params).subscribe({
       next: (res) => {
@@ -554,16 +566,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   // ── Tab Pólizas — filtro + selección panel derecho ────────
 
-  get proyectosDisponibles(): string[] {
-    const set = new Set(
-      this.documentos.map((d) => d.proyectoNombre).filter(Boolean) as string[],
-    );
-    return [...set].sort((a, b) => a.localeCompare(b, 'es'));
-  }
-
   get filteredDocumentos(): SctrVidaLeyDto[] {
-    if (!this.filtroProyecto) return this.documentos;
-    return this.documentos.filter((d) => d.proyectoNombre === this.filtroProyecto);
+    return this.documentos;
   }
 
   get filteredDocWorkers(): SctrWorkerDto[] {

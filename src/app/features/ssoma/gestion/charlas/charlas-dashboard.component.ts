@@ -23,7 +23,7 @@ import { SharedFiltersService } from '../../../../shared/services/shared-filters
 import {
   DashSupervisoresRow, Capacitacion, NuevaCharlaCreateDto,
   CharlaListItem, CharlaDetalle, UsuarioDto, Staff, CharlaGaleriaItem,
-  DashPersonalResult, DashPersonalItem, DashDiaSemana, DashProyectoItem,
+  DashPersonalResult, DashPersonalItem, DashDiaSemana,
 } from './dtos/charlas.dtos';
 
 Chart.register(...registerables);
@@ -53,12 +53,8 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   tab1Rows: DashSupervisoresRow[] = [];
   loadingTab1 = false;
 
-  // Dashboard nuevo
-  dashVista: 'persona' | 'proyecto' = 'persona';
-  dashSemana = this.isoWeek(new Date());
-  dashAnio = new Date().getFullYear();
+  // Dashboard
   dashPersonalResult: DashPersonalResult = { dias: [], staff: [] };
-  dashProyectos: DashProyectoItem[] = [];
   loadingDash = false;
 
   // Editar asistencia (Tab 3)
@@ -77,6 +73,9 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   subirFiles: File[] = [];
   subirLoading = false;
   dragOver = false;
+  // filtros tab 2
+  tab2Estado = '';
+  tab2Busqueda = '';
   // inline viewer
   viewerCapId: number | null = null;
   viewerArchivoIdx: Record<number, number> = {};
@@ -108,6 +107,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   motivoRechazo = '';
   showRechazarForm = false;
 
+  readonly Math = Math;
   private chartInstance: Chart | null = null;
 
   constructor(
@@ -181,55 +181,13 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   loadDash(): void {
+    if (!this.proyectoId) return;
     this.loadingDash = true;
     this.cdr.markForCheck();
-    if (this.dashVista === 'persona') {
-      if (!this.proyectoId) { this.loadingDash = false; this.cdr.markForCheck(); return; }
-      this.svc.getDashPersonal(this.proyectoId, this.dashSemana, this.dashAnio).subscribe({
-        next: (d) => { this.dashPersonalResult = d; this.loadingDash = false; this.cdr.markForCheck(); },
-        error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
-      });
-    } else {
-      this.svc.getDashProyectos(this.dashSemana, this.dashAnio).subscribe({
-        next: (d) => { this.dashProyectos = d; this.loadingDash = false; this.cdr.markForCheck(); },
-        error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
-      });
-    }
-  }
-
-  setDashVista(v: 'persona' | 'proyecto'): void {
-    this.dashVista = v;
-    this.loadDash();
-  }
-
-  semanaAnterior(): void {
-    if (this.dashSemana === 1) { this.dashSemana = 52; this.dashAnio--; }
-    else this.dashSemana--;
-    this.loadDash();
-  }
-
-  semanaSiguiente(): void {
-    const maxSemana = this.isoWeeksInYear(this.dashAnio);
-    if (this.dashSemana >= maxSemana) { this.dashSemana = 1; this.dashAnio++; }
-    else this.dashSemana++;
-    this.loadDash();
-  }
-
-  private isoWeek(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  }
-
-  private isoWeeksInYear(year: number): number {
-    const dec28 = new Date(Date.UTC(year, 11, 28));
-    return this.isoWeek(dec28);
-  }
-
-  getPctPersona(item: DashPersonalItem): number {
-    return item.charlasTotales > 0 ? Math.round(item.charlasAsistidas / item.charlasTotales * 100) : 0;
+    this.svc.getDashPersonal(this.proyectoId, this.mes, this.anio).subscribe({
+      next: (d) => { this.dashPersonalResult = d; this.loadingDash = false; this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
   }
 
   abrirEditAsistencia(charla: CharlaGaleriaItem): void {
@@ -261,6 +219,12 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     return Object.values(this.editStaffChecks).filter(Boolean).length;
   }
 
+  seleccionarTodosEdit(): void {
+    const allChecked = this.staff.every(s => this.editStaffChecks[s.workerId]);
+    this.staff.forEach(s => { this.editStaffChecks[s.workerId] = !allChecked; });
+    this.cdr.markForCheck();
+  }
+
   guardarEditAsistencia(): void {
     if (!this.editCharlaId) return;
     const workerIds = Object.entries(this.editStaffChecks).filter(([, v]) => v).map(([k]) => Number(k));
@@ -283,21 +247,29 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     return 'pct-bajo';
   }
 
-  getPctProyecto(item: DashProyectoItem): number {
-    return item.totalPosiblesAsistencias > 0
-      ? Math.round(item.totalAsistencias / item.totalPosiblesAsistencias * 100) : 0;
-  }
-
   getPct(r: DashSupervisoresRow): number {
     return r.totalAsistentes > 0 ? Math.round(r.totalAsistio / r.totalAsistentes * 100) : 0;
   }
 
   // ── Tab 2 ──────────────────────────────────────────────────────────────────────
   loadTab2(): void {
+    if (!this.proyectoId) return;
     this.loadingTab2 = true;
-    this.svc.getMisCapacitaciones().subscribe({
-      next: (data) => { this.capacitaciones = data; this.loadingTab2 = false; this.cdr.markForCheck(); },
+    this.svc.getCapacitaciones(this.proyectoId, this.mes || undefined, this.anio || undefined).subscribe({
+      next: (data) => {
+        this.capacitaciones = data.filter(c => c.estado !== 'Falta');
+        this.loadingTab2 = false;
+        this.cdr.markForCheck();
+      },
       error: (err: HttpErrorResponse) => { this.loadingTab2 = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get capacitacionesFiltradas() {
+    return this.capacitaciones.filter(c => {
+      const porEstado = !this.tab2Estado || c.estado === this.tab2Estado;
+      const porNombre = !this.tab2Busqueda || c.nombreCompleto.toLowerCase().includes(this.tab2Busqueda.toLowerCase());
+      return porEstado && porNombre;
     });
   }
 
@@ -425,6 +397,12 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   toggleStaff(workerId: number): void {
     this.staffChecks[workerId] = !this.staffChecks[workerId];
     this.form.workerIds = Object.entries(this.staffChecks).filter(([, v]) => v).map(([k]) => Number(k));
+  }
+
+  seleccionarTodosNueva(): void {
+    const allChecked = this.staff.every(s => this.staffChecks[s.workerId]);
+    this.staff.forEach(s => { this.staffChecks[s.workerId] = !allChecked; });
+    this.form.workerIds = allChecked ? [] : this.staff.map(s => s.workerId);
   }
 
   submitCrear(): void {

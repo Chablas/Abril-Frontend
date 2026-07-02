@@ -6,25 +6,39 @@ import { WorkItemCategoryList } from './list/list';
 import { WorkItemCategoryCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { WorkItemCategoryFilterDto } from '../dtos/work-item-category-filter.dto';
-import { WorkItemCategoryDto } from '../dtos/work-item-category.dto';
+import { WorkItemCategoryDto, WorkSpecialtyOptionDto } from '../dtos/work-item-category.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { WorkItemCategoryService } from '../services/work-item-category.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 
 @Component({
   selector: 'app-work-item-category',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkItemCategoryList, WorkItemCategoryCreate, Paginator, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, WorkItemCategoryList, WorkItemCategoryCreate, Paginator, SearchSelect, SearchInput],
   templateUrl: './work-item-category.html',
   styleUrl: './work-item-category.css',
 })
 export class WorkItemCategory implements OnInit {
   @ViewChild(WorkItemCategoryList) list!: WorkItemCategoryList;
 
-  filters: WorkItemCategoryFilterDto = { description: null, page: 1 };
+  filters: WorkItemCategoryFilterDto = { description: null, hasInstructivo: null, hasClause: null, workSpecialtyId: null, page: 1 };
+
+  /** Especialidades para el desplegable de filtro. */
+  specialties: WorkSpecialtyOptionDto[] = [];
+
+  readonly instructivoOptions = [
+    { value: true, label: 'Con instructivo' },
+    { value: false, label: 'Sin instructivo' },
+  ];
+
+  readonly clauseOptions = [
+    { value: true, label: 'Con cláusula' },
+    { value: false, label: 'Sin cláusula' },
+  ];
 
   currentPage = 1;
   totalPages = 0;
@@ -39,7 +53,17 @@ export class WorkItemCategory implements OnInit {
     private errorService: ErrorService,
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.service.getSpecialties().subscribe({
+      next: (res) => (this.specialties = res),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
+  }
 
   onSearch(): void {
     this.list.load(1);

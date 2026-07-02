@@ -46,6 +46,30 @@ export interface FlashReportInicializarDto {
   proyectoContratistas: ProyectoContratistaDto[];
 }
 
+// ── Trabajadores afectados ────────────────────────────────────────────────────
+
+export interface TrabajadorAfectadoDto {
+  id: number;
+  workerId?: number;
+  trabajadorNombre: string;
+  puestoTrabajo?: string;
+  edad?: number;
+  aniosExperiencia?: number;
+  celularTrabajador?: string;
+  parteAfectadaId?: number;
+  parteAfectadaNombre?: string;
+}
+
+export interface TrabajadorAfectadoRequest {
+  workerId?: number;
+  trabajadorNombre: string;
+  puestoTrabajo?: string;
+  edad?: number;
+  aniosExperiencia?: number;
+  celularTrabajador?: string;
+  parteAfectadaId?: number;
+}
+
 // ── Lista ─────────────────────────────────────────────────────────────────────
 
 export interface FlashReportListItemDto {
@@ -107,6 +131,12 @@ export interface FlashReportDetalleDto {
   parteAfectadaId?: number;
   parteAfectadaNombre?: string;
 
+  turno?: string;
+  tipoContacto?: string;
+  danioProcesFlag?: boolean;
+  atencionMedica?: string;
+  centroAtencion?: string;
+
   danoProceso?: string;
   consecuenciaRealPersonal?: number;
   consecuenciaPotencialPersonal?: number;
@@ -124,8 +154,10 @@ export interface FlashReportDetalleDto {
   enviado: boolean;
   fechaEnvio?: string;
   urlPdfSharepoint?: string;
+  accidenteTrabajoId?: number;
 
   descansos: DescansoDto[];
+  trabajadores: TrabajadorAfectadoDto[];
   createdAt: string;
 }
 
@@ -160,6 +192,12 @@ export interface CrearFlashReportRequest {
   celularTrabajador?: string;
   parteAfectadaId?: number;
 
+  turno?: string;
+  tipoContacto?: string;
+  danioProcesFlag?: boolean;
+  atencionMedica?: string;
+  centroAtencion?: string;
+
   danoProceso?: string;
   consecuenciaRealPersonal?: number;
   consecuenciaPotencialPersonal?: number;
@@ -174,6 +212,7 @@ export interface CrearFlashReportRequest {
   foto2Base64?: string;
 
   descansos: DescansoRequest[];
+  trabajadores: TrabajadorAfectadoRequest[];
 }
 
 export type ActualizarFlashReportRequest = CrearFlashReportRequest;
@@ -257,6 +296,7 @@ export interface Rm050Dto {
 }
 
 export interface GuardarAccionCorrectivaRequest {
+  id?: number;
   descripcion: string;
   tipo?: string;
   responsableNombre?: string;
@@ -300,6 +340,27 @@ export const GRAVEDADES_ACCIDENTE = [
 export const ESTADOS_ACCION = ['Pendiente', 'En proceso', 'Cumplido', 'No aplica'];
 
 export const NIVELES_CONSECUENCIA = [
-  '', '1 - Sin daño', '2 - Lesión leve', '3 - Lesión con tiempo perdido',
-  '4 - Lesión grave', '5 - Fatalidad simple', '6 - Fatalidad múltiple'
+  '',
+  'N1 — Sin daño / Near Miss',
+  'N2 — Primeros auxilios (FAC)',          // Techo del Incidente
+  'N3 — Lesión leve (Accidente leve)',
+  'N4 — Lesión grave / Tiempo perdido (LTI)',
+  'N5 — Fatalidad / Incapacidad permanente',
+  'N6 — Fatalidades múltiples',
 ];
+
+export const TURNOS = ['Mañana', 'Tarde', 'Noche'];
+
+export const TIPOS_CONTACTO = [
+  'Golpe por objeto',
+  'Caída al mismo nivel',
+  'Caída a distinto nivel',
+  'Contacto con energía eléctrica',
+  'Atrapamiento',
+  'Contacto con sustancia química',
+  'Sobreesfuerzo',
+  'Colisión vehicular',
+  'Otro',
+];
+
+export const NIVELES_CONSECUENCIA_INCIDENTE = [1, 2]; // Solo N1 y N2 para incidentes

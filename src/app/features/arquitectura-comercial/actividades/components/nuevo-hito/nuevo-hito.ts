@@ -45,6 +45,7 @@ export class NuevoHito implements OnChanges {
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<ActividadListItemDTO>();
 
+  readonly POST_VENTA_NOMBRE = 'POST VENTA Y EXPERIENCIA';
   readonly etapasNombre = ['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4'];
   readonly actividades = [
     'RUTEO DE SALA',
@@ -117,8 +118,25 @@ export class NuevoHito implements OnChanges {
   }
 
   private applyDefaultEtapa(): void {
-    const postVenta = this.etapas.find(e => e.nombre === 'POST VENTA Y EXPERIENCIA');
-    if (postVenta) this.model.etapaId = postVenta.id;
+    const postVenta = this.etapas.find(e => e.nombre === this.POST_VENTA_NOMBRE);
+    if (postVenta) {
+      this.model.etapaId = postVenta.id;
+      this.nombrePersonalizado = false;
+    }
+  }
+
+  get isPostVenta(): boolean {
+    if (!this.model.etapaId) return false;
+    return this.etapas.find(e => e.id === this.model.etapaId)?.nombre === this.POST_VENTA_NOMBRE;
+  }
+
+  onEtapaChange(): void {
+    if (!this.isPostVenta) {
+      this.model.actividad = '';
+      this.model.mes = '';
+      this.model.correlativo = null;
+      this.nombrePersonalizado = false;
+    }
   }
 
   get nombreCalculado(): string {
@@ -129,16 +147,25 @@ export class NuevoHito implements OnChanges {
 
   get canSubmit(): boolean {
     if (!this.projectId || this.saving) return false;
-    if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
-    const { etapaNombre, actividad, mes, correlativo } = this.model;
-    return !!etapaNombre && !!actividad && !!mes && correlativo != null;
+    const { etapaNombre, etapaId, especialidadId, inicioProgramado, userId } = this.model;
+    if (!etapaNombre || !etapaId || !especialidadId || !inicioProgramado || !userId) return false;
+    if (this.isPostVenta) {
+      if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
+      const { actividad, mes, correlativo } = this.model;
+      return !!actividad && !!mes && correlativo != null;
+    }
+    return !!this.nombreLibre.trim();
   }
 
   submit(): void {
     if (!this.canSubmit || !this.projectId) return;
 
+    const nombre = this.isPostVenta && !this.nombrePersonalizado
+      ? this.nombreCalculado
+      : this.nombreLibre.trim();
+
     const body: CreateActividadBody = {
-      nombre: this.nombrePersonalizado ? this.nombreLibre.trim() : this.nombreCalculado,
+      nombre,
       tipo: 'HITO',
       projectId: this.projectId,
       etapaId: this.model.etapaId,

@@ -17,12 +17,13 @@ import { TrabajadorHabService } from '../../../../../habilitacion/services/traba
 import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-auditoria-ats-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
   templateUrl: './auditoria-ats-lista.component.html',
   styleUrl: './auditoria-ats-lista.component.css',
 })

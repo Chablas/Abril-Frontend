@@ -23,7 +23,7 @@ export class WorkItemList implements OnInit {
 
   items: WorkItemDto[] = [];
   showEditModal = false;
-  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', active: true, valorizationForms: [] };
+  editDto: WorkItemEditDto = { workItemId: 0, workItemDescription: '', workItemCategoryId: null, active: true, valorizationForms: [] };
   editingForms: WorkItemValorizationFormDto[] = [];
 
   constructor(
@@ -53,6 +53,7 @@ export class WorkItemList implements OnInit {
     this.editDto = {
       workItemId: item.workItemId,
       workItemDescription: item.workItemDescription,
+      workItemCategoryId: item.workItemCategoryId ?? null,
       active: item.active,
       valorizationForms: [],
     };

@@ -27,7 +27,7 @@
       <div class="rm-grid">
         <div class="rm-field">
           <label>Fecha y hora</label>
-          <div class="rm-valor-ro">{{ detalle?.fecha | date:'dd/MM/yyyy' }} {{ detalle?.hora ?? '' }}</div>
+          <div class="rm-valor-ro">{{ detalle?.fecha | date:'dd/MM/yyyy':'UTC' }} {{ detalle?.hora ?? '' }}</div>
         </div>
         <div class="rm-field">
           <label>Proyecto</label>
@@ -149,6 +149,19 @@
       </div>
     </section>
 
+    <!-- ALERTA ACCIONES VENCIDAS -->
+    @if (accionesVencidas.length > 0) {
+      <div class="alerta-vencidas">
+        <i class="ti ti-alarm"></i>
+        <strong>{{ accionesVencidas.length }} acción(es) correctiva(s) vencida(s)</strong>
+        <ul>
+          @for (a of accionesVencidas; track a.accionId) {
+            <li>{{ a.descripcion }} — vencida hace {{ a.diasVencida }} días</li>
+          }
+        </ul>
+      </div>
+    }
+
     <!-- SECCIÓN 5: Medidas correctivas -->
     <section class="rm-section">
       <h3 class="rm-section-title">
@@ -199,6 +212,11 @@
                     </select>
                   </td>
                   <td>
+                    @if (a.estado === 'Cumplido') {
+                      <button type="button" class="btn-leccion" (click)="crearLeccion(a)" title="Crear lección aprendida">
+                        <i class="ti ti-bulb"></i> Lección
+                      </button>
+                    }
                     <button class="btn-del-accion" title="Eliminar" (click)="eliminarAccion(i)">
                       <i class="ti ti-trash"></i>
                     </button>

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -123,6 +124,7 @@ export class GestionSalidas implements OnInit {
   load(): void {
     this.loaderService.show();
     this.selectedIds.clear();
+    this.lastClickedIndex = null;
     this.service.getAll(
       this.filters.workerId,
       this.filters.lugarProyectoId,
@@ -175,11 +177,16 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  async aprobar(salida: GestionSalidaListItemDto): Promise<void> {
+  // ── Acciones bulk: aprobar / rechazar ────────────────────────────────
+  /** Aprueba en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
+  async aprobarBulk(): Promise<void> {
+    const items = this.selectedPendientes;
+    if (items.length === 0) return;
+
     const result = await Swal.fire({
       icon: 'question',
-      title: '¿Aprobar solicitud?',
-      html: `Se aprobará la solicitud de <b>${salida.trabajador}</b>.`,
+      title: `¿Aprobar ${items.length} solicitud(es)?`,
+      text: 'Se aprobarán todas las solicitudes pendientes seleccionadas.',
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
@@ -188,10 +195,11 @@ export class GestionSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.aprobar(salida.id).subscribe({
+    forkJoin(items.map((s) => this.service.aprobar(s.id))).subscribe({
       next: () => {
-        salida.estadoAprobacion = 'Aprobado';
         this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) aprobada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -200,11 +208,15 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  async rechazar(salida: GestionSalidaListItemDto): Promise<void> {
+  /** Rechaza en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
+  async rechazarBulk(): Promise<void> {
+    const items = this.selectedPendientes;
+    if (items.length === 0) return;
+
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Rechazar solicitud',
-      html: `¿Rechazar la solicitud de <b>${salida.trabajador}</b>?`,
+      title: `¿Rechazar ${items.length} solicitud(es)?`,
+      text: 'Se rechazarán todas las solicitudes pendientes seleccionadas.',
       showCancelButton: true,
       confirmButtonText: 'Rechazar',
       cancelButtonText: 'Cancelar',
@@ -213,10 +225,11 @@ export class GestionSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.rechazar(salida.id).subscribe({
+    forkJoin(items.map((s) => this.service.rechazar(s.id))).subscribe({
       next: () => {
-        salida.estadoAprobacion = 'Rechazado';
         this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) rechazada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -225,7 +238,10 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  // ── Selección bulk para rendición ────────────────────────────────────
+  // ── Selección de filas (estilo Outlook: click + shift+click rango) ────
+
+  /** Índice de la última fila clickeada (ancla para la selección por rango con Shift). */
+  private lastClickedIndex: number | null = null;
 
   /** Solo se pueden rendir Aprobadas + No rendidas + con TODOS los trayectos teniendo capturas. */
   esSeleccionable(s: GestionSalidaListItemDto): boolean {
@@ -234,31 +250,56 @@ export class GestionSalidas implements OnInit {
       && s.puedeRendirse;
   }
 
-  toggleSelection(s: GestionSalidaListItemDto): void {
-    if (!this.esSeleccionable(s)) return;
-    if (this.selectedIds.has(s.id)) this.selectedIds.delete(s.id);
-    else                            this.selectedIds.add(s.id);
-  }
+  /**
+   * Maneja el click sobre la casilla de selección de una fila.
+   * Con Shift presionado selecciona todo el rango entre la última fila clickeada
+   * y la actual (como en Outlook); sin Shift alterna solo esa fila.
+   */
+  onSelectClick(event: MouseEvent, index: number): void {
+    event.stopPropagation();
 
-  get seleccionables(): GestionSalidaListItemDto[] {
-    return this.salidas.filter((s) => this.esSeleccionable(s));
+    if (event.shiftKey && this.lastClickedIndex !== null) {
+      const [desde, hasta] = [this.lastClickedIndex, index].sort((a, b) => a - b);
+      for (let k = desde; k <= hasta; k++) this.selectedIds.add(this.salidas[k].id);
+      return; // el ancla se mantiene
+    }
+
+    const id = this.salidas[index].id;
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else                          this.selectedIds.add(id);
+    this.lastClickedIndex = index;
   }
 
   get allSelected(): boolean {
-    const seleccionables = this.seleccionables;
-    return seleccionables.length > 0 && seleccionables.every((s) => this.selectedIds.has(s.id));
+    return this.salidas.length > 0 && this.salidas.every((s) => this.selectedIds.has(s.id));
   }
 
   toggleSelectAll(): void {
     if (this.allSelected) {
       this.selectedIds.clear();
     } else {
-      this.selectedIds = new Set(this.seleccionables.map((s) => s.id));
+      this.selectedIds = new Set(this.salidas.map((s) => s.id));
     }
+    this.lastClickedIndex = null;
+  }
+
+  // ── Subconjuntos válidos de la selección por acción ──────────────────
+  get selectedSalidas(): GestionSalidaListItemDto[] {
+    return this.salidas.filter((s) => this.selectedIds.has(s.id));
+  }
+
+  /** Seleccionadas en estado Pendiente (aplican a Aprobar / Rechazar). */
+  get selectedPendientes(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => s.estadoAprobacion === 'Pendiente');
+  }
+
+  /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */
+  get selectedRendibles(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => this.esSeleccionable(s));
   }
 
   async marcarRendidasBulk(): Promise<void> {
-    const ids = Array.from(this.selectedIds);
+    const ids = this.selectedRendibles.map((s) => s.id);
     if (ids.length === 0) return;
 
     const result = await Swal.fire({

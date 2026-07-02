@@ -2,9 +2,7 @@
   [badge]="'SSOMA · ' + anioActual"
   titulo="Asistente Social"
   subtitulo="Gestión de casos sociales de trabajadores."
-  [tabs]="tabs"
-  [botonPrimario]="{ label: 'Nuevo Caso', icono: 'ti-plus' }"
-  (primaryClick)="abrirModal()">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
@@ -109,4 +107,14 @@
     </div>
   </div>
 
+
+<app-fab label="Nuevo Caso" (clicked)="abrirModal()"></app-fab>
 </section>
+
+@if (modalVisible) {
+  <app-caso-social-modal
+    [casoId]="modalCasoId"
+    (closed)="onModalClosed()"
+    (saved)="onModalSaved()">
+  </app-caso-social-modal>
+}

@@ -15,6 +15,7 @@ import { TopicoAtencionDto, TopicoFiltrosDto } from './topico.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 export const SSOMA_TABS = [
   { label: 'Dashboard',      icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
@@ -22,12 +23,11 @@ export const SSOMA_TABS = [
   { label: 'Programaciones', icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
   { label: 'Interconsultas', icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
   { label: 'Convalidaciones',icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-  { label: 'Catálogos',      icono: 'ti-database',          route: '/ssoma/salud-ocupacional/catalogos' },
-  { label: 'Reportes',       icono: 'ti-file-analytics',    route: '/ssoma/salud-ocupacional/reportes' },
   { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
   { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
   { label: 'Descansos',      icono: 'ti-bed',               route: '/ssoma/salud-ocupacional/descansos' },
   { label: 'Asistente Social', icono: 'ti-heart-handshake', route: '/ssoma/salud-ocupacional/asistente-social' },
+  { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
   { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' },
 ];
 
@@ -35,7 +35,7 @@ export const SSOMA_TABS = [
   selector: 'app-salud-topico',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, TopicoModalComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, TopicoModalComponent],
   templateUrl: './topico.component.html',
   styleUrl: './topico.component.css',
 })
@@ -126,6 +126,25 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   onGuardado(): void { this.cerrarModal(); this.load(this.currentPage); }
 
+  cerrarAtencion(a: TopicoAtencionDto, ev: MouseEvent): void {
+    ev.stopPropagation();
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar atención?',
+      text: `Atención #${a.id} — ${a.workerNombre ?? ''}`,
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar atención',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1b3a2d',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      this.svc.cerrar(a.id).subscribe({
+        next: () => this.load(this.currentPage),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
   eliminar(a: TopicoAtencionDto, ev: MouseEvent): void {
     ev.stopPropagation();
     Swal.fire({
@@ -147,6 +166,7 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId  || this.filtros.tipoAtencionId);
+           || this.filtros.workerId  || this.filtros.tipoAtencionId
+           || this.filtros.estado);
   }
 }

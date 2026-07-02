@@ -188,6 +188,22 @@
           Solo activas
         </label>
 
+        <!-- Excluir culminadas -->
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="excluirCulminadas" (change)="onEtapaFiltroChange()"
+                 class="rounded border-gray-300" />
+          Excluir culminadas
+        </label>
+
+        <!-- Filtro supervisor -->
+        <select [(ngModel)]="filtroSupervisorId" (change)="onFiltroChange()"
+                class="text-sm border border-[#D1D5DB] rounded-lg px-3 py-1.5 bg-white">
+          <option [ngValue]="null">Todos los supervisores</option>
+          <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">
+            {{ s.apellidoNombre }}
+          </option>
+        </select>
+
         <button
           *ngIf="tipoFiltro === 'CONSULTA'"
           (click)="mostrarNuevaConsulta = true"

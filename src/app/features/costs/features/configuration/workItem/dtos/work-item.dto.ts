@@ -1,6 +1,8 @@
 export interface WorkItemDto {
   workItemId: number;
   workItemDescription: string;
+  workItemCategoryId?: number | null;
+  workItemCategoryDescription?: string | null;
   createdDateTime: string;
   createdUserId: number;
   updatedDateTime?: string;
@@ -15,6 +17,12 @@ export interface WorkItemValorizationFormDto {
   concept: string;
   percentage: number;
   sortOrder: number;
+}
+
+/** Opción para el desplegable de partidas de control. */
+export interface WorkItemCategoryOptionDto {
+  workItemCategoryId: number;
+  workItemCategoryDescription: string;
 }
 
 export interface WorkItemSyncResultDto {

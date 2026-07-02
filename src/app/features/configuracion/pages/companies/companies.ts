@@ -4,17 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { CompanyEditForm } from './components/company-edit-form/company-edit-form';
+import { CompanyCreateForm } from './components/company-create-form/company-create-form';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-config-companies',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, CompanyEditForm, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchInput, SearchSelect, CompanyEditForm, CompanyCreateForm, AbrilPageHeaderComponent],
   templateUrl: './companies.html',
   styleUrl: './companies.css',
 })
@@ -22,6 +25,12 @@ export class Companies implements OnInit, OnDestroy {
   readonly pageSize = 15;
 
   filters = { search: '', estado: '' as '' | 'activo' | 'inactivo' };
+
+  readonly estadoOptions = [
+    { value: '', label: 'Todos' },
+    { value: 'activo', label: 'Activos' },
+    { value: 'inactivo', label: 'Inactivos' },
+  ];
 
   all: EmpresaSimpleDto[] = [];
   filtered: EmpresaSimpleDto[] = [];
@@ -34,6 +43,7 @@ export class Companies implements OnInit, OnDestroy {
 
   editModalOpen = false;
   editCompany: EmpresaSimpleDto | null = null;
+  createModalOpen = false;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -47,8 +57,13 @@ export class Companies implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.searchChange$
-      .pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters(1));
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
+      .subscribe(() => {
+        // El loader aparece solo tras ~0.5 s de inactividad (no en cada tecla).
+        this.loaderService.show();
+        this.applyFilters(1);
+        setTimeout(() => this.loaderService.hide(), 300);
+      });
     this.load();
   }
 
@@ -85,13 +100,7 @@ export class Companies implements OnInit, OnDestroy {
       if (estado === 'activo' && !activo) return false;
       if (estado === 'inactivo' && activo) return false;
       if (!q) return true;
-      return (
-        e.nombre.toLowerCase().includes(q) ||
-        (e.ruc ?? '').toLowerCase().includes(q) ||
-        (e.direccion ?? '').toLowerCase().includes(q) ||
-        (e.partidaRegistral ?? '').toLowerCase().includes(q) ||
-        (e.tipoActividad ?? '').toLowerCase().includes(q)
-      );
+      return SearchInput.matches(e.nombre ?? '', q);
     });
     this.totalRecords = this.filtered.length;
     this.totalPages = Math.max(Math.ceil(this.totalRecords / this.pageSize), 1);
@@ -106,6 +115,11 @@ export class Companies implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
+    this.applyFilters(1);
+  }
+
+  onEstadoChange(value: string | null): void {
+    this.filters.estado = (value ?? '') as '' | 'activo' | 'inactivo';
     this.applyFilters(1);
   }
 
@@ -130,6 +144,19 @@ export class Companies implements OnInit, OnDestroy {
 
   onEditSaved(): void {
     this.closeEditModal();
+  }
+
+  openCreateModal(): void {
+    this.createModalOpen = true;
+  }
+
+  closeCreateModal(): void {
+    this.createModalOpen = false;
+  }
+
+  onCreated(): void {
+    this.createModalOpen = false;
+    this.load();
   }
 
   get hasActiveFilters(): boolean {

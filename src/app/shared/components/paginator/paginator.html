@@ -1,34 +1,65 @@
-<div class="flex gap-2 mt-4 justify-around w-full bg-white border border-[rgb(214,222,229)] rounded-lg h-[30px]">
-  <span class="flex-shrink-0 whitespace-nowrap"># Registros: {{ totalRecords }}</span>
+<div
+  class="mt-4 flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-1 shadow-sm">
+  <span class="text-sm font-medium text-gray-500">
+    <span class="font-semibold text-gray-700">{{ totalRecords }}</span>
+    {{ totalRecords === 1 ? 'registro' : 'registros' }}
+  </span>
 
-  <div class="flex gap-[10px] items-center">
-
+  <div class="flex items-center gap-1.5">
     <button
-      class="cursor-pointer text-[#0086A5]"
-      (click)="prevPage()"
-      [disabled]="currentPage === 1">
-      «
+      type="button"
+      (click)="firstPage()"
+      [disabled]="currentPage === 1"
+      title="Primera página"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18 19l-7-7 7-7M11 19l-7-7 7-7" />
+      </svg>
     </button>
 
     <button
-      class="cursor-pointer py-1 px-2 rounded transition-colors"
+      type="button"
+      (click)="prevPage()"
+      [disabled]="currentPage === 1"
+      title="Anterior"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+
+    <button
+      type="button"
       *ngFor="let page of pages"
       (click)="goToPage(page)"
       [ngClass]="{
-        'bg-[#0086A5] text-white': page === currentPage,
-        'text-black hover:bg-gray-100': page !== currentPage
-      }">
-
+        'bg-[#0086A5] text-white shadow-sm': page === currentPage,
+        'text-gray-600 hover:bg-gray-100': page !== currentPage
+      }"
+      class="flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-sm font-medium transition-colors">
       {{ page }}
-
     </button>
 
     <button
-      class="cursor-pointer text-[#0086A5]"
+      type="button"
       (click)="nextPage()"
-      [disabled]="currentPage === totalPages">
-      »
+      [disabled]="currentPage === totalPages"
+      title="Siguiente"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
     </button>
 
+    <button
+      type="button"
+      (click)="lastPage()"
+      [disabled]="currentPage === totalPages"
+      title="Última página"
+      class="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 5l7 7-7 7M13 5l7 7-7 7" />
+      </svg>
+    </button>
   </div>
 </div>

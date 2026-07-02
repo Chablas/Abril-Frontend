@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
-import { WorkItemDto, WorkItemSyncResultDto } from '../dtos/work-item.dto';
+import { WorkItemCategoryOptionDto, WorkItemDto, WorkItemSyncResultDto } from '../dtos/work-item.dto';
 import { WorkItemCreateDto } from '../dtos/work-item-create.dto';
 import { WorkItemEditDto } from '../dtos/work-item-edit.dto';
 import { WorkItemFilterDto } from '../dtos/work-item-filter.dto';
@@ -23,11 +23,19 @@ export class WorkItemService {
   getPaged(filters: WorkItemFilterDto): Observable<PagedResponseDTO<WorkItemDto>> {
     let params = new HttpParams().set('page', filters.page.toString());
     if (filters.description) params = params.set('description', filters.description);
+    if (filters.hasValorizationForm !== null && filters.hasValorizationForm !== undefined)
+      params = params.set('hasValorizationForm', filters.hasValorizationForm.toString());
+    if (filters.workItemCategoryId !== null && filters.workItemCategoryId !== undefined)
+      params = params.set('workItemCategoryId', filters.workItemCategoryId.toString());
 
     return this.http.get<PagedResponseDTO<WorkItemDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,
       params,
     });
+  }
+
+  getCategories(): Observable<WorkItemCategoryOptionDto[]> {
+    return this.http.get<WorkItemCategoryOptionDto[]>(`${this.apiUrl}/categories`, { headers: this.headers });
   }
 
   sync(): Observable<WorkItemSyncResultDto> {

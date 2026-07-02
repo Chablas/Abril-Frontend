@@ -17,12 +17,13 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { SSOMA_TABS } from '../topico/topico.component';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 @Component({
   selector: 'app-mi-salud',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent, Paginator, MiSaludModalComponent],
+  imports: [FabButton, CommonModule, AbrilPageHeaderComponent, Paginator, MiSaludModalComponent],
   templateUrl: './mi-salud.component.html',
   styleUrl: './mi-salud.component.css',
 })

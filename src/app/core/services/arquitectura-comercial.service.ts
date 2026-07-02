@@ -86,6 +86,7 @@ export class ArquitecturaComercialService {
     if (q.etapaId != null) params = params.set('etapaId', q.etapaId);
     if (q.search) params = params.set('search', q.search);
     if (q.soloActivas != null) params = params.set('soloActivas', q.soloActivas);
+    if (q.filtroUserId != null) params = params.set('filtroUserId', q.filtroUserId);
     if (q.pagina != null) params = params.set('pagina', q.pagina);
     if (q.porPagina != null) params = params.set('porPagina', q.porPagina);
     return this.http.get<ActividadListResponseDTO>(`${this.apiUrl}/actividades`, {
@@ -182,6 +183,7 @@ export class ArquitecturaComercialService {
     if (q.tipo) params = params.set('tipo', q.tipo);
     if (q.etapa) params = params.set('etapa', q.etapa);
     if (q.soloActivas != null) params = params.set('soloActivas', q.soloActivas);
+    if (q.filtroUserId != null) params = params.set('filtroUserId', q.filtroUserId);
     return this.http.get<GanttActividadDTO[]>(`${this.apiUrl}/gantt`, {
       params,
       headers: this.authHeaders(),

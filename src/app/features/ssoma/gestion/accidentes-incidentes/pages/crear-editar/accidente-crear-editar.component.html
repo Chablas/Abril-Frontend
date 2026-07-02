@@ -57,6 +57,44 @@
           <input type="time" class="campo-input" [(ngModel)]="form.hora" name="hora" />
         </div>
 
+        <div class="form-field">
+          <label>Turno</label>
+          <select class="campo-input" [(ngModel)]="form.turno" name="turno">
+            <option [ngValue]="undefined">— Sin especificar —</option>
+            @for (t of turnos; track t) {
+              <option [ngValue]="t">{{ t }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>Tipo de contacto / mecanismo</label>
+          <select class="campo-input" [(ngModel)]="form.tipoContacto" name="tipoContacto">
+            <option [ngValue]="undefined">— Sin especificar —</option>
+            <optgroup label="Contacto con persona">
+              <option>Golpe por objeto en movimiento</option>
+              <option>Golpe contra objeto fijo</option>
+              <option>Caída al mismo nivel</option>
+              <option>Caída a distinto nivel</option>
+              <option>Atrapamiento entre objetos</option>
+              <option>Sobreesfuerzo / esfuerzo ergonómico</option>
+              <option>Contacto con energía eléctrica</option>
+              <option>Contacto con sustancia química o caliente</option>
+              <option>Colisión vehicular</option>
+            </optgroup>
+            <optgroup label="Daño patrimonial (sin lesión personal)">
+              <option>Daño a equipo / maquinaria</option>
+              <option>Daño a material o producto</option>
+              <option>Daño a infraestructura</option>
+              <option>Derrame de sustancias</option>
+              <option>Incendio / conato de incendio</option>
+            </optgroup>
+            <optgroup label="Otro">
+              <option>Otro</option>
+            </optgroup>
+          </select>
+        </div>
+
         <div class="form-field form-field--full">
           <label>Lugar exacto *</label>
           <input type="text" class="campo-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
@@ -158,61 +196,113 @@
       </div>
     </section>
 
-    <!-- ══════════════════════ TRABAJADOR AFECTADO ══════════════════════ -->
+    <!-- ══════════════════════ TRABAJADORES AFECTADOS ══════════════════════ -->
     <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-user"></i> Trabajador afectado</h3>
-      <div class="form-grid">
+      <h3 class="flash-section__title"><i class="ti ti-users"></i> Trabajadores afectados</h3>
 
-        <div class="form-field form-field--full">
-          <label>Buscar trabajador</label>
-          <app-search-select
-            [options]="trabajadoresOpts()"
-            valueField="id"
-            displayField="label"
-            placeholder="Buscar por nombre"
-            [allowClear]="true"
-            [value]="form.workerId"
-            (valueChange)="onTrabajadorSelect($event)"
-          />
-        </div>
+      @if (esIncidente) {
+        @if (form.consecuenciaRealPersonal === 2) {
+          <p class="info-hint" style="margin-bottom:8px">
+            <i class="ti ti-alert-circle"></i>
+            Primeros auxilios (N2) requiere registrar al trabajador atendido.
+          </p>
+        } @else {
+          <label class="checkbox-label" style="margin-bottom:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" [(ngModel)]="sinTrabajadorAfectado" name="sinTrabajadorAfectado" />
+            No aplica — incidente patrimonial / ambiental sin trabajador afectado
+          </label>
+        }
+      }
 
-        <div class="form-field form-field--full">
-          <label>Nombre del trabajador</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.trabajadorNombre" name="trabajadorNombre"
-            placeholder="Nombre completo" />
-        </div>
+      @if (!sinTrabajadorAfectado || !esIncidente) {
 
-        <div class="form-field">
-          <label>Puesto de trabajo</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.puestoTrabajo" name="puestoTrabajo" />
-        </div>
-
-        <div class="form-field">
-          <label>Edad</label>
-          <input type="number" class="campo-input" [(ngModel)]="form.edad" name="edad" min="18" max="70" />
-        </div>
-
-        <div class="form-field">
-          <label>Años de experiencia</label>
-          <input type="number" class="campo-input" [(ngModel)]="form.aniosExperiencia" name="aniosExp" min="0" />
-        </div>
-
-        <div class="form-field">
-          <label>Celular</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.celularTrabajador" name="celular" placeholder="9XXXXXXXX" />
-        </div>
-
-        <div class="form-field">
-          <label>Parte del cuerpo afectada</label>
-          <select class="campo-input" [(ngModel)]="form.parteAfectadaId" name="parteAfectadaId">
-            <option [ngValue]="undefined">— Sin especificar —</option>
-            @for (p of partes; track p.id) {
-              <option [ngValue]="p.id">{{ p.nombre }}</option>
+        <!-- Lista de trabajadores añadidos -->
+        @if (form.trabajadores.length > 0) {
+          <div class="trabajadores-lista">
+            @for (t of form.trabajadores; track $index) {
+              <div class="trabajador-item">
+                <div class="trabajador-item__info">
+                  <span class="trabajador-item__nombre">{{ t.trabajadorNombre }}</span>
+                  @if (t.puestoTrabajo) { <span class="trabajador-item__sub">{{ t.puestoTrabajo }}</span> }
+                </div>
+                <button type="button" class="btn-quitar-trabajador" (click)="quitarTrabajador($index)" title="Quitar">
+                  <i class="ti ti-x"></i>
+                </button>
+              </div>
             }
-          </select>
+          </div>
+        }
+
+        <!-- Formulario para añadir nuevo trabajador -->
+        <div class="trabajador-form">
+          <h4 class="trabajador-form__title">
+            <i class="ti ti-user-plus"></i>
+            {{ form.trabajadores.length === 0 ? 'Trabajador afectado' : 'Añadir otro trabajador' }}
+          </h4>
+          <div class="form-grid">
+
+            <div class="form-field form-field--full">
+              <label>Buscar trabajador</label>
+              <app-search-select
+                [options]="trabajadoresOpts()"
+                valueField="id"
+                displayField="label"
+                placeholder="Buscar por nombre"
+                [allowClear]="true"
+                [value]="trabajadorNuevo.workerId"
+                (valueChange)="onTrabajadorSelect($event)"
+              />
+            </div>
+
+            <div class="form-field form-field--full">
+              <label>Nombre completo</label>
+              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.trabajadorNombre" name="tnNombre"
+                placeholder="Nombre completo" />
+            </div>
+
+            <div class="form-field">
+              <label>Puesto de trabajo</label>
+              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.puestoTrabajo" name="tnPuesto" />
+            </div>
+
+            <div class="form-field">
+              <label>Edad</label>
+              <input type="number" class="campo-input" [(ngModel)]="trabajadorNuevo.edad" name="tnEdad" min="18" max="80" />
+            </div>
+
+            <div class="form-field">
+              <label>Años experiencia</label>
+              <input type="number" class="campo-input" [(ngModel)]="trabajadorNuevo.aniosExperiencia" name="tnAnios" min="0" />
+            </div>
+
+            <div class="form-field">
+              <label>Celular</label>
+              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.celularTrabajador" name="tnCelular" placeholder="9XXXXXXXX" />
+            </div>
+
+            <div class="form-field">
+              <label>Parte del cuerpo afectada</label>
+              <select class="campo-input" [(ngModel)]="trabajadorNuevo.parteAfectadaId" name="tnParte">
+                <option [ngValue]="undefined">— Sin especificar —</option>
+                @for (p of partes; track p.id) {
+                  <option [ngValue]="p.id">{{ p.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-field form-field--full">
+              <button type="button" class="btn-agregar-trabajador" (click)="agregarTrabajador()">
+                <i class="ti ti-plus"></i> Agregar trabajador
+              </button>
+            </div>
+
+          </div>
         </div>
 
-      </div>
+        @if (errores['trabajadores']) {
+          <span class="campo-error">{{ errores['trabajadores'] }}</span>
+        }
+      }
     </section>
 
     <!-- ══════════════════════ DAÑOS Y CONSECUENCIAS ══════════════════════ -->
@@ -221,16 +311,28 @@
       <div class="form-grid">
 
         <div class="form-field form-field--full">
-          <label>Daño al proceso / equipo / material</label>
-          <textarea class="campo-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
-            placeholder="Describa el daño a proceso, equipo o material"></textarea>
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="form.danioProcesFlag" name="danioProcesFlag" />
+            ¿Se produjo daño al proceso / equipo / material?
+          </label>
         </div>
+
+        @if (form.danioProcesFlag) {
+          <div class="form-field form-field--full">
+            <label>Descripción del daño al proceso / equipo / material</label>
+            <textarea class="campo-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
+              placeholder="Describa el daño a proceso, equipo o material"></textarea>
+          </div>
+        }
 
         <div class="form-field">
           <label>Consecuencia real — Personal</label>
+          @if (esIncidente) {
+            <p class="info-hint"><i class="ti ti-info-circle"></i> Incidente: máximo N2 — Primeros auxilios. N3 en adelante es Accidente.</p>
+          }
           <select class="campo-input" [(ngModel)]="form.consecuenciaRealPersonal" name="consecReal">
-            <option [ngValue]="undefined">— Sin consecuencia —</option>
-            @for (n of nivelesOpciones; track n) {
+            <option [ngValue]="undefined">— No aplica —</option>
+            @for (n of nivelesReal; track n) {
               <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
             }
           </select>
@@ -238,13 +340,21 @@
 
         <div class="form-field">
           <label>Consecuencia potencial — Personal</label>
+          <p class="info-hint"><i class="ti ti-info-circle"></i> ¿Qué podría haber pasado en otras circunstancias?</p>
           <select class="campo-input" [(ngModel)]="form.consecuenciaPotencialPersonal" name="consecPot">
-            <option [ngValue]="undefined">— Sin consecuencia —</option>
-            @for (n of nivelesOpciones; track n) {
+            <option [ngValue]="undefined">— No aplica —</option>
+            @for (n of nivelesPotencial; track n) {
               <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
             }
           </select>
         </div>
+
+        @if ((form.consecuenciaRealPersonal ?? 0) >= 5) {
+          <div class="form-field form-field--full alerta-sunafil">
+            <i class="ti ti-alert-triangle"></i>
+            Consecuencia N{{ form.consecuenciaRealPersonal }} — Este evento requiere notificación a SUNAFIL en menos de 24 horas (D.S. 023-2017-EM).
+          </div>
+        }
 
       </div>
     </section>
@@ -268,42 +378,36 @@
         <div class="form-field form-field--full">
           <textarea class="campo-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
             placeholder="Liste las acciones tomadas inmediatamente después del evento..."></textarea>
+          @if (errores['accionesInmediatas']) { <span class="campo-error">{{ errores['accionesInmediatas'] }}</span> }
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════ PERÍODOS DE DESCANSO ══════════════════════ -->
+    <!-- ══════════════════════ ATENCIÓN MÉDICA ══════════════════════ -->
     <section class="flash-section">
-      <h3 class="flash-section__title">
-        <i class="ti ti-bed"></i> Períodos de descanso médico
-        <button type="button" class="btn-add-small" (click)="agregarDescanso()">
-          <i class="ti ti-plus"></i> Agregar
-        </button>
-      </h3>
+      <h3 class="flash-section__title"><i class="ti ti-medical-cross"></i> Atención médica</h3>
+      <div class="form-grid">
 
-      @if (!form.descansos.length) {
-        <p class="empty-hint">Sin períodos de descanso. Haga clic en Agregar para añadir uno.</p>
-      }
-
-      @for (d of form.descansos; track $index; let i = $index) {
-        <div class="descanso-row">
-          <div class="form-field">
-            <label>Fecha inicio</label>
-            <input type="date" class="campo-input" [(ngModel)]="d.fechaInicio" [name]="'descIni' + i" />
-          </div>
-          <div class="form-field">
-            <label>Fecha fin</label>
-            <input type="date" class="campo-input" [(ngModel)]="d.fechaFin" [name]="'descFin' + i" />
-          </div>
-          <div class="form-field form-field--flex">
-            <label>Observación</label>
-            <input type="text" class="campo-input" [(ngModel)]="d.observacion" [name]="'descObs' + i" placeholder="Opcional" />
-          </div>
-          <button type="button" class="btn-del-row" (click)="quitarDescanso(i)" title="Quitar">
-            <i class="ti ti-trash"></i>
-          </button>
+        <div class="form-field">
+          <label>Tipo de atención</label>
+          <select class="campo-input" [(ngModel)]="form.atencionMedica" name="atencionMedica">
+            <option [ngValue]="undefined">— No aplica —</option>
+            <option>Tópico de obra</option>
+            <option>Tópico de oficina</option>
+            <option>Clínica</option>
+            <option>Hospital</option>
+          </select>
         </div>
-      }
+
+        @if (form.atencionMedica && form.atencionMedica !== 'Ninguna') {
+          <div class="form-field">
+            <label>Centro de atención</label>
+            <input type="text" class="campo-input" [(ngModel)]="form.centroAtencion" name="centroAtencion"
+              placeholder="Nombre del centro de atención" />
+          </div>
+        }
+
+      </div>
     </section>
 
     <!-- ══════════════════════ FOTOGRAFÍAS ══════════════════════ -->

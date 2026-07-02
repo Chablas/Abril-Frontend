@@ -15,6 +15,7 @@ import {
   WorkItemCategoryClauseDto,
   WorkItemCategoryAnexo3ClauseDto,
   WorkItemCategoryAnexo4ClauseDto,
+  WorkSpecialtyOptionDto,
 } from '../../../dtos/work-item-category.dto';
 import { LoaderService } from '../../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../../core/services/error.service';
@@ -42,11 +43,15 @@ export class WorkItemCategoryEdit implements OnInit {
   @Input() dto: WorkItemCategoryEditDto = {
     workItemCategoryId: 0,
     workItemCategoryDescription: '',
+    workSpecialtyId: null,
     active: true,
     clauses: [],
     anexo3Clauses: [],
     anexo4Clauses: [],
   };
+
+  /** Especialidades disponibles para el desplegable. */
+  specialties: WorkSpecialtyOptionDto[] = [];
   /** Cláusulas 9.x/7.x ya guardadas (con flags por tipo de contrato) */
   @Input() existingClauses: WorkItemCategoryClauseDto[] = [];
   /** Cláusulas Anexo 3 ya guardadas (solo suministro) */
@@ -95,6 +100,17 @@ export class WorkItemCategoryEdit implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loaderService.show();
+    this.service.getSpecialties().subscribe({
+      next: (res) => {
+        this.specialties = res;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
     this.clauses = this.existingClauses.map((c) => ({
       workItemCategoryClauseId: c.workItemCategoryClauseId,
       clauseText: c.clauseText,
@@ -233,6 +249,10 @@ export class WorkItemCategoryEdit implements OnInit {
   save(): void {
     if (!this.dto.workItemCategoryDescription.trim()) {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingresa una descripción.' });
+      return;
+    }
+    if (!this.dto.workSpecialtyId) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Selecciona la especialidad.' });
       return;
     }
 

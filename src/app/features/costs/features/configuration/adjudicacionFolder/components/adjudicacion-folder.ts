@@ -12,12 +12,11 @@ import { AdjudicacionFolderFilterDto } from '../dtos/adjudicacion-folder-filter.
 import { AdjudicacionFolderDto } from '../dtos/adjudicacion-folder.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-adjudicacion-folder',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdjudicacionFolderList, AdjudicacionFolderCreate, Paginator, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AdjudicacionFolderList, AdjudicacionFolderCreate, Paginator, SearchSelect],
   templateUrl: './adjudicacion-folder.html',
   styleUrl: './adjudicacion-folder.css',
 })
@@ -51,6 +50,11 @@ export class AdjudicacionFolder implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
   }
 
   onSearch(): void {

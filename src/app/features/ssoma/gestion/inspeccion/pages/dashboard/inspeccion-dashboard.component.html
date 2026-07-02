@@ -9,9 +9,7 @@
       { label: 'Inspecciones', icono: 'ti-list', route: '/ssoma/gestion/inspeccion/lista' }
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
-    [botonPrimario]="{ label: 'Nueva inspección', icono: 'ti-plus' }"
-    (secondaryClick)="load()"
-    (primaryClick)="irANueva()">
+    (secondaryClick)="load()">
   </app-abril-page-header>
 
   <div class="dash-body">
@@ -159,4 +157,6 @@
 
   </div><!-- /dash-body -->
 
+
+  <app-fab label="Nueva inspección" (clicked)="irANueva()"></app-fab>
 </div>

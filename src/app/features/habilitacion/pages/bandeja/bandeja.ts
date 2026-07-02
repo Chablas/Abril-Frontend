@@ -519,6 +519,10 @@ export class Bandeja implements OnInit, OnDestroy {
 
   aprobar(item: BandejaItemDto): void {
     if (!this.puedeAprobarItemActual) return;
+    if (item.requiereVigencia && !this.vigenciaEditable) {
+      Swal.fire({ icon: 'warning', title: 'Fecha de vigencia requerida', text: 'Este documento requiere fecha de vigencia. Ingresa la fecha antes de aprobar.' });
+      return;
+    }
     const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
     this.executeAction({ ...item, id }, { estado: 'Aprobado', vigencia: this.vigenciaEditable || undefined }, 'Aprobado');
   }
@@ -546,6 +550,10 @@ export class Bandeja implements OnInit, OnDestroy {
   guardarEstado(item: BandejaItemDto): void {
     if (!this.puedeAprobarItemActual || !this.estadoEditable) return;
     if (this.estadoEditable === 'Rechazado') { this.rechazar(item); return; }
+    if (this.estadoEditable === 'Aprobado' && item.requiereVigencia && !this.vigenciaEditable) {
+      Swal.fire({ icon: 'warning', title: 'Fecha de vigencia requerida', text: 'Este documento requiere fecha de vigencia. Ingresa la fecha antes de aprobar.' });
+      return;
+    }
     const id = (item.esMensual && this.mesSeleccionadoBandeja) ? this.mesSeleccionadoBandeja.id : item.id;
     this.executeAction({ ...item, id }, { estado: this.estadoEditable, vigencia: this.vigenciaEditable || undefined }, this.estadoEditable);
   }

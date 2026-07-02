@@ -6,7 +6,8 @@
     { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
     { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
     { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
-    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' },
+    { label: 'Control de EMOs', icono: 'ti-heart-rate-monitor', route: '/clinica/emos' }
   ]">
 </app-abril-page-header>
 
@@ -163,40 +164,6 @@
           </div>
         </div>
 
-        <div class="nav-cards">
-          <a class="nav-card" routerLink="/clinica/agenda">
-            <span class="nav-icon" style="color:#3b82f6;">📋</span>
-            <div class="nav-text">
-              <div class="nav-label">Agenda del Día</div>
-              <div class="nav-sub">Programaciones de hoy</div>
-            </div>
-            <span class="nav-arrow">→</span>
-          </a>
-          <a class="nav-card" routerLink="/clinica/programaciones">
-            <span class="nav-icon" style="color:#10b981;">📅</span>
-            <div class="nav-text">
-              <div class="nav-label">Programaciones</div>
-              <div class="nav-sub">Historial y seguimiento</div>
-            </div>
-            <span class="nav-arrow">→</span>
-          </a>
-          <a class="nav-card" routerLink="/clinica/interconsultas">
-            <span class="nav-icon" style="color:#f59e0b;">🔬</span>
-            <div class="nav-text">
-              <div class="nav-label">Interconsultas</div>
-              <div class="nav-sub">Derivaciones pendientes</div>
-            </div>
-            <span class="nav-arrow">→</span>
-          </a>
-          <a class="nav-card" routerLink="/clinica/emos">
-            <span class="nav-icon" style="color:#8b5cf6;">🩺</span>
-            <div class="nav-text">
-              <div class="nav-label">Control de EMOs</div>
-              <div class="nav-sub">Estado y aptitud</div>
-            </div>
-            <span class="nav-arrow">→</span>
-          </a>
-        </div>
 
       </div>
     </div>

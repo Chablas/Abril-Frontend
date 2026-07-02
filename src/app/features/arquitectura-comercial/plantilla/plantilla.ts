@@ -188,6 +188,7 @@ export class Plantilla implements OnInit {
       case 'OBRA': return 'bg-[#DBEAFE] text-[#1E3A8A] border-[#BFDBFE]';
       case 'EDIFICIO ENTREGADO': return 'bg-[#CCFBF1] text-[#115E59] border-[#99F6E4]';
       case 'POST VENTA Y EXPERIENCIA': return 'bg-[#FCE7F3] text-[#9D174D] border-[#FBCFE8]';
+      case 'ALMACEN': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
       default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
   }

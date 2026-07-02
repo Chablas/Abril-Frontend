@@ -8,6 +8,7 @@ import { LessonFiltersDTO } from '../dtos/lessonFilters.model';
 import { ScopeItemDTO } from '../dtos/scope-item.model';
 import { LessonAreaConfigItemDto } from '../../configuration/lesson-areas/dtos/lesson-area.dto';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
+import { LessonUploadWindowDTO } from '../dtos/lessonUploadWindow.model';
 
 @Injectable({
   providedIn: 'root',
@@ -109,6 +110,17 @@ export class LeccionesAprendidasService {
   // endpoints específicos de la página /mejora-continua/lessons-learned
   // (lectura, borrado y exportación a Excel de una lección).
   // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Estado de la ventana de subida de hoy. Durante la ventana de revisión de la
+   * jefatura (últimos 2 días hábiles del mes + fines de semana/feriados
+   * intermedios) `canUpload` es false y el botón "Nuevo registro" se deshabilita.
+   */
+  getUploadWindow(): Observable<LessonUploadWindowDTO> {
+    return this.http.get<LessonUploadWindowDTO>(`${this.apiUrl}/upload-window`, {
+      headers: this.authHeaders(),
+    });
+  }
 
   getById(id: number | null): Observable<LessonDetailDTO> {
     return this.http.get<LessonDetailDTO>(`${this.apiUrl}/${id}`, {

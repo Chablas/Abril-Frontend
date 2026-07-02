@@ -21,16 +21,34 @@ export class NavigationService {
       label: 'Mejora Continua',
       iconKey: 'trending-up',
       baseRoute: '/mejora-continua',
+      behavior: 'expand',
+      landing: '/mejora-continua/dashboard',
       items: [
-        { label: 'Mejora Continua', route: '/mejora-continua/dashboard', featureKey: 'mejora-continua.dashboard' },
+        { label: 'Dashboard',            route: '/mejora-continua/dashboard',        featureKey: 'mejora-continua.dashboard' },
+        { label: 'Lecciones aprendidas', route: '/mejora-continua/lessons-learned',  featureKey: 'mejora-continua.lessons-learned' },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Configuración de lecciones', route: '/mejora-continua/lecciones-configuracion',     featureKey: 'mejora-continua.config.lecciones-configuracion' },
+            { label: 'Áreas',                       route: '/mejora-continua/configuration/areas',          featureKey: 'mejora-continua.config.areas' },
+            { label: 'Relaciones por área',         route: '/mejora-continua/configuration/area-relations', featureKey: 'mejora-continua.config.area-relations' },
+            { label: 'Plantillas',                  route: '/mejora-continua/configuration/templates',      featureKey: 'mejora-continua.config.templates' },
+            { label: 'Tipos de catálogo',           route: '/mejora-continua/configuration/catalog-types',  featureKey: 'mejora-continua.config.catalog-types' },
+            { label: 'Ítems de catálogo',           route: '/mejora-continua/configuration/catalog-items',  featureKey: 'mejora-continua.config.catalog-items' },
+            { label: 'Recordatorios',               route: '/mejora-continua/configuration/reminders',      featureKey: 'mejora-continua.config.reminders' },
+          ],
+        },
+      ],
     },
     {
       key: 'proyectos',
       label: 'Proyectos',
       iconKey: 'building-estate',
       baseRoute: '/projects',
+      behavior: 'expand',
+      landing: '/projects/projects-dashboard',
       items: [
         { label: 'Dashboard de Proyectos',                  route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
         { label: 'Cronograma de Actividades',               route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
@@ -49,6 +67,8 @@ export class NavigationService {
       label: 'Contratistas',
       iconKey: 'file-certificate',
       baseRoute: '/contractors',
+      behavior: 'expand',
+      landing: '/contractors/management',
       items: [
         { label: 'Registro de contratistas',    route: '/contractors/registro', featureKey: 'contractors.registro' },
         { label: 'Homologación de contratistas', route: '/contractors/management', featureKey: 'contractors.management' },
@@ -59,6 +79,8 @@ export class NavigationService {
       label: 'Costos y Presupuesto',
       iconKey: 'coins',
       baseRoute: '/costs',
+      behavior: 'expand',
+      landing: '/costs/adjudicaciones',
       items: [
         { label: 'Dashboard', route: '/costs/dashboard', featureKey: 'costs.dashboard' },
         { label: 'Adjudicaciones', route: '/costs/adjudicaciones', featureKey: 'costs.adjudicaciones' },
@@ -67,10 +89,10 @@ export class NavigationService {
         {
           label: 'Configuración',
           items: [
-            { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email', featureKey: 'costs.config.staff-project-email' },
-            { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Partidas',             route: '/costs/configuration/work-item',            featureKey: 'costs.config.work-item' },
+            { label: 'Partidas de control',  route: '/costs/configuration/work-item-category',  featureKey: 'costs.config.work-item-category' },
             { label: 'Especialidades',       route: '/costs/configuration/work-specialty',       featureKey: 'costs.config.work-specialty' },
+            { label: 'Correos por Proyecto', route: '/costs/configuration/staff-project-email', featureKey: 'costs.config.staff-project-email' },
             { label: 'Planos por proyecto',  route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
             { label: 'Carpeta adjudicaciones', route: '/costs/configuration/adjudicacion-folder', featureKey: 'costs.config.adjudicacion-folder' },
             { label: 'Correos C. y Ppto.',   route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },
@@ -83,6 +105,8 @@ export class NavigationService {
       label: 'Arquitectura Comercial',
       iconKey: 'building',
       baseRoute: '/arquitectura-comercial',
+      behavior: 'redirect',
+      landing: '/arquitectura-comercial/dashboard',
       items: [
         { label: 'Dashboard',   route: '/arquitectura-comercial/dashboard',  featureKey: 'arquitectura-comercial.dashboard' },
         { label: 'Actividades', route: '/arquitectura-comercial/actividades', featureKey: 'arquitectura-comercial.actividades' },
@@ -106,6 +130,8 @@ export class NavigationService {
       label: 'Gestión SSOMA',
       iconKey: 'shield',
       baseRoute: '/ssoma/gestion',
+      behavior: 'expand',
+      landing: '/ssoma/gestion/paso/dashboard',
       items: [
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
@@ -115,6 +141,11 @@ export class NavigationService {
         { label: 'Accidentes e Incidentes', route: '/ssoma/gestion/accidentes-incidentes/lista', featureKey: 'ssoma.gestion.accidentes-incidentes' },
         { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista', featureKey: 'ssoma.gestion.auditoria-ats' },
         { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones', featureKey: 'ssoma.gestion.amonestaciones' },
+        { label: 'Indicadores SSOMA', route: '/ssoma/gestion/indicadores-proactivos/indicadores-ssoma', featureKey: 'ssoma.gestion.indicadores-proactivos' },
+        { label: 'Checklists SSOMA', route: '/ssoma/gestion/checklist', featureKey: 'ssoma.gestion.checklist' },
+        { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
+        { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
+        { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
       ],
     },
     {
@@ -150,12 +181,17 @@ export class NavigationService {
       label: 'Evaluaciones',
       iconKey: 'clipboard-check',
       baseRoute: '/evaluaciones',
+      behavior: 'redirect',
+      landing: '/evaluaciones/dashboard',
       items: [
         { label: 'Dashboard',          route: '/evaluaciones/dashboard',     featureKey: 'evaluaciones.dashboard' },
         { label: 'Evaluar residente',  route: '/evaluaciones/evaluar',       featureKey: 'evaluaciones.evaluar' },
         { label: 'Historial',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
         { label: 'Configuración',      route: '/evaluaciones/configuracion', featureKey: 'evaluaciones.configuracion' },
-        { label: 'Asignaciones',       route: '/evaluaciones/asignaciones',  featureKey: 'evaluaciones.asignaciones' },
+        { label: 'Asignaciones',           route: '/evaluaciones/asignaciones',          featureKey: 'evaluaciones.asignaciones' },
+        { label: 'Ver eval. contratistas', route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' },
+        { label: 'Evaluar contratista',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+        { label: 'Dashboard contratistas', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
       ],
       groups: [],
     },
@@ -166,6 +202,26 @@ export class NavigationService {
       baseRoute: '/vecinos',
       items: [
         { label: 'Vecinos', route: '/vecinos/dashboard', featureKey: 'vecinos.dashboard' },
+      ],
+    },
+    {
+      key: 'contabilidad',
+      label: 'Contabilidad',
+      iconKey: 'receipt',
+      baseRoute: '/contabilidad',
+      behavior: 'expand',
+      landing: '/contabilidad/dashboard',
+      items: [
+        { label: 'Dashboard', route: '/contabilidad/dashboard', featureKey: 'accounting.dashboard' },
+        { label: 'Facturas', route: '/contabilidad/facturas', featureKey: 'accounting.invoices' },
+      ],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Configuración', route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' },
+          ],
+        },
       ],
     },
     {
@@ -254,6 +310,36 @@ export class NavigationService {
         const hasGroupItems = (m.groups ?? []).some((g) => g.items.length > 0);
         return hasItems || hasGroupItems;
       });
+  }
+
+  /**
+   * Indica si el módulo debe autodesplegarse (accordion) en vez de redirigir.
+   * Controlado por `behavior: 'expand'` en la config del módulo.
+   */
+  isExpandable(module: NavModule): boolean {
+    return module.behavior === 'expand';
+  }
+
+  /**
+   * Resuelve la ruta a la que se debe navegar al hacer clic en un módulo de
+   * navegación directa. Prioriza `module.landing` SOLO si el usuario tiene
+   * acceso a esa ruta; en caso contrario cae al primer item/grupo accesible.
+   * Devuelve null si el usuario no tiene acceso a ninguna funcionalidad del
+   * módulo (caso en que el módulo ni siquiera debería mostrarse).
+   *
+   * El `module` recibido normalmente ya viene filtrado por `getModules()`, pero
+   * se vuelve a filtrar por robustez (la operación es idempotente).
+   */
+  resolveLanding(module: NavModule): string | null {
+    const items = this.filterItems(module.items);
+    const groupItems = this.filterGroups(module.groups).flatMap((g) => g.items);
+    const accessible = [...items, ...groupItems];
+    if (accessible.length === 0) return null;
+
+    if (module.landing && accessible.some((i) => i.route === module.landing)) {
+      return module.landing;
+    }
+    return accessible[0].route;
   }
 
   filterItems(items: NavItem[]): NavItem[] {

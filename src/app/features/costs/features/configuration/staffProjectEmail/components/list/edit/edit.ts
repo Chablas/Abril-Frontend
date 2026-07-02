@@ -20,6 +20,12 @@ import Swal from 'sweetalert2';
 export class StaffProjectEmailEdit {
   @Input() dto: StaffProjectEmailEditDto = { staffProjectEmailId: 0, email: '', staffProjectEmailTypeId: 0, active: true };
   @Input() formData: StaffProjectEmailFormDataDto = { projects: [], types: [] };
+
+  readonly statusOptions = [
+    { value: true, label: 'ACTIVO' },
+    { value: false, label: 'INACTIVO' },
+  ];
+
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 

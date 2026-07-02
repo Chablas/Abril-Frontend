@@ -31,12 +31,26 @@
     <button *ngIf="botonPrimario"
             type="button"
             class="ssoma-hero__btn ssoma-hero__btn--primary"
+            [disabled]="botonPrimarioDeshabilitado"
+            [title]="botonPrimarioTooltip || ''"
             (click)="primaryClick.emit()">
       <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
       <span>{{ botonPrimario.label }}</span>
     </button>
     <div class="ssoma-hero__avatar-gap"></div>
   </div>
+</div>
+
+<!-- Group selector — solo aparece cuando hay múltiples grupos -->
+<div class="abril-tab-groups" *ngIf="hasGroups">
+  <button
+    *ngFor="let g of tabGroups; let i = index"
+    class="atg-btn"
+    [class.atg-btn--active]="i === activeGroupIndex"
+    (click)="navigateToGroup(g)">
+    <i *ngIf="g.icono" class="ti {{ g.icono }}"></i>
+    {{ g.label }}
+  </button>
 </div>
 
 <div class="abril-tabs" *ngIf="visibleTabs.length">

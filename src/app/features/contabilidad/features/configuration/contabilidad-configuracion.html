@@ -1,0 +1,28 @@
+<app-abril-page-header
+  [badge]="'CONTABILIDAD · ' + anioActual"
+  titulo="Configuración"
+  subtitulo="Carpetas de OneDrive y demás ajustes del módulo de Contabilidad."
+  [tabs]="[
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/contabilidad/dashboard',     featureKey: 'accounting.dashboard' },
+    { label: 'Facturas',      icono: 'ti-file-invoice',     route: '/contabilidad/facturas',      featureKey: 'accounting.invoices' },
+    { label: 'Configuración', icono: 'ti-settings',         route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
+  ]">
+</app-abril-page-header>
+
+<div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [value]="activeSection"
+    (valueChange)="onSectionChange($event)"
+  ></app-section-tabs>
+
+  <!-- SECCIÓN: Carpeta facturas -->
+  <div *ngIf="activeSection === 'carpeta-facturas'">
+    <app-invoice-folder></app-invoice-folder>
+  </div>
+
+  <!-- SECCIÓN: Firma de Gerente General -->
+  <div *ngIf="activeSection === 'firma-gg'">
+    <app-manager-signature></app-manager-signature>
+  </div>
+</div>

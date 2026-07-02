@@ -11,6 +11,7 @@ import {
   EstadoProgramacion,
   ProgramacionListDto,
   ProgramacionQueryParams,
+  ProgramacionResumenDto,
 } from '../dtos/programacion.model';
 import { ClinicaSimpleDto } from '../dtos/catalogos.model';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -24,6 +25,7 @@ import {
   estadoProgramacionStyle,
 } from '../shared/estado.utils';
 import { ProgramacionCreate } from './components/programacion-create/programacion-create';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 
 interface DiaCalendario {
   fecha: Date;
@@ -39,7 +41,7 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-programaciones',
   standalone: true,
-  imports: [
+  imports: [FabButton, 
     CommonModule,
     FormsModule,
     Paginator,
@@ -100,6 +102,17 @@ export class Programaciones implements OnInit, OnDestroy {
   currentPage = 1;
   loading = false;
 
+  resumen: ProgramacionResumenDto = {
+    programados: 0,
+    aceptados: 0,
+    enAtencion: 0,
+    completados: 0,
+    rechazados: 0,
+    noPresento: 0,
+    automaticos: 0,
+    total: 0,
+  };
+
   createOpen = false;
   rechazandoId: number | null = null;
   motivoRechazo = '';
@@ -125,9 +138,30 @@ export class Programaciones implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
-      .subscribe(() => this.load(1));
+      .subscribe(() => {
+        this.load(1);
+        this.loadResumen();
+      });
     this.catalogosSvc.getClinicas().subscribe((data) => (this.clinicas = data));
     this.load(1);
+    this.loadResumen();
+  }
+
+  loadResumen(): void {
+    this.service
+      .getResumen({
+        search: this.filters.search?.trim() || undefined,
+        desde: this.filters.desde || undefined,
+        hasta: this.filters.hasta || undefined,
+        clinicaId: this.filtroClinicaId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.resumen = res;
+          this.cdr.detectChanges();
+        },
+        error: () => {},
+      });
   }
 
   ngOnDestroy(): void {
@@ -202,8 +236,8 @@ export class Programaciones implements OnInit, OnDestroy {
         fecha,
         key,
         items: this.calendarioItems
-          .filter((p) => (p.fecha || '').substring(0, 10) === key)
-          .sort((a, b) => (a.hora || '').localeCompare(b.hora || '')),
+          .filter((p) => (p.fechaProgramada || '').substring(0, 10) === key)
+          .sort((a, b) => (a.horaProgramada || '').localeCompare(b.horaProgramada || '')),
       });
     }
     this.calendarioDias = dias;
@@ -240,12 +274,14 @@ export class Programaciones implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.load(1);
+    this.loadResumen();
   }
 
   clearFilters(): void {
     this.filters = { search: '', estado: '', desde: '', hasta: '' };
     this.filtroClinicaId = null;
     this.load(1);
+    this.loadResumen();
   }
 
   onPageChange(page: number): void {
@@ -264,6 +300,7 @@ export class Programaciones implements OnInit, OnDestroy {
     this.createOpen = false;
     if (this.viewMode === 'calendar') this.loadSemana();
     else this.load(this.currentPage);
+    this.loadResumen();
   }
 
   cambiarEstado(item: ProgramacionListDto, estado: EstadoProgramacion): void {
@@ -282,6 +319,7 @@ export class Programaciones implements OnInit, OnDestroy {
           this.loaderService.hide();
           Object.assign(item, updated);
           if (this.viewMode === 'calendar') this.loadSemana();
+          this.loadResumen();
           this.cdr.detectChanges();
         },
         error: (err: HttpErrorResponse) => {
@@ -342,7 +380,10 @@ export class Programaciones implements OnInit, OnDestroy {
     this.service
       .accionClinica(item.id, { id: item.id, accion: 'Rechazar', motivoRechazo: this.motivoRechazo })
       .subscribe({
-        next: () => this.load(this.currentPage),
+        next: () => {
+          this.load(this.currentPage);
+          this.loadResumen();
+        },
         error: (err) => this.errorService.handleError(err),
       });
   }
@@ -360,18 +401,6 @@ export class Programaciones implements OnInit, OnDestroy {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
-  }
-
-  get kpis() {
-    return {
-      programados: this.items.filter((i) => i.estado === 'Programado').length,
-      aceptados: this.items.filter((i) => i.estado === 'Aceptado por Clínica').length,
-      enAtencion: this.items.filter((i) => i.estado === 'En Atención').length,
-      completados: this.items.filter((i) => i.estado === 'Completado').length,
-      rechazados: this.items.filter((i) => i.estado === 'Rechazado por Clínica').length,
-      noPresento: this.items.filter((i) => i.estado === 'No se presentó').length,
-      automaticos: this.items.filter((i) => i.origen === 'Automatico').length,
-    };
   }
 
   get hasActiveFilters(): boolean {

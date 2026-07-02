@@ -35,7 +35,7 @@ interface EtapaGroup {
 })
 export class Actividades implements OnInit {
   anioActual = new Date().getFullYear();
-  readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA'];
+  readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA', 'ALMACEN'];
 
   proyectos: ProyectoConActividadesDTO[] = [];
   supervisores: SupervisorAcDTO[] = [];
@@ -60,6 +60,8 @@ export class Actividades implements OnInit {
   etapaNombreFiltro: string | null = null;
   searchQuery = '';
   soloActivas = false;
+  excluirCulminadas = false;
+  filtroSupervisorId: number | null = null;
 
   mostrarSinActividades = false;
 
@@ -116,6 +118,8 @@ export class Actividades implements OnInit {
     this.etapaNombreFiltro = null;
     this.searchQuery = '';
     this.soloActivas = false;
+    this.excluirCulminadas = false;
+    this.filtroSupervisorId = null;
   }
 
   loadActividades(): void {
@@ -128,6 +132,7 @@ export class Actividades implements OnInit {
         etapaId: null,
         search: this.searchQuery || null,
         soloActivas: this.soloActivas || null,
+        filtroUserId: this.filtroSupervisorId,
         pagina: 1,
         porPagina: 500,
       })
@@ -148,9 +153,10 @@ export class Actividades implements OnInit {
   }
 
   private rebuildGroups(): void {
-    const filtered = this.etapaNombreFiltro
+    let filtered = this.etapaNombreFiltro
       ? this.actividades.filter(a => a.etapaNombre === this.etapaNombreFiltro)
       : this.actividades;
+    if (this.excluirCulminadas) filtered = filtered.filter(a => !a.finEfectivo);
     const groups = new Map<string, ActividadListItemDTO[]>();
     for (const a of filtered) {
       const key = a.etapaNombre || 'SIN ETAPA';
@@ -389,6 +395,7 @@ export class Actividades implements OnInit {
       case 'OBRA': return 'bg-[#DBEAFE] text-[#1E3A8A] border-[#BFDBFE]';
       case 'EDIFICIO ENTREGADO': return 'bg-[#CCFBF1] text-[#115E59] border-[#99F6E4]';
       case 'POST VENTA Y EXPERIENCIA': return 'bg-[#FCE7F3] text-[#9D174D] border-[#FBCFE8]';
+      case 'ALMACEN': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
       default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
   }

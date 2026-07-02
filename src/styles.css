@@ -173,7 +173,19 @@
   text-transform: uppercase; letter-spacing: 0.04em;
 }
 
-/* ── Page container ─────────────────────────────────────────── */
+/* ── Page layout ────────────────────────────────────────────── */
+/* Uso: <div class="page-wrapper"> + <app-abril-page-header> + <div class="page-body"> */
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.page-body {
+  padding: 20px;
+  box-sizing: border-box;
+}
+/* Alias legado */
 .page-container { padding: 16px; }
 @media (min-width: 640px) {
   .page-container { padding: 24px; }

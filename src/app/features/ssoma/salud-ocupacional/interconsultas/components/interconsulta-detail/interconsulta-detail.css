@@ -146,6 +146,25 @@
   color: #111827;
 }
 
+.doc-btn-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+
+.doc-btn-ver:hover {
+  background: #dbeafe;
+}
+
 .text-red-700 {
   color: #b91c1c;
 }

@@ -6,18 +6,18 @@ import { StaffProjectEmailList } from './list/list';
 import { StaffProjectEmailCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { StaffProjectEmailService } from '../services/staff-project-email.service';
 import { StaffProjectEmailFormDataDto } from '../dtos/staff-project-email-form-data.dto';
 import { StaffProjectEmailFilterDto } from '../dtos/staff-project-email-filter.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { StaffProjectEmailDto } from '../dtos/staff-project-email.dto';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-staff-project-email',
   standalone: true,
-  imports: [CommonModule, FormsModule, StaffProjectEmailList, StaffProjectEmailCreate, Paginator, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, StaffProjectEmailList, StaffProjectEmailCreate, Paginator, SearchSelect, SearchInput],
   templateUrl: './staff-project-email.html',
   styleUrl: './staff-project-email.css',
 })
@@ -56,6 +56,11 @@ export class StaffProjectEmail implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
   }
 
   onSearch(): void {

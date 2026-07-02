@@ -6,6 +6,8 @@ export interface InterconsultaListDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
+  proyectoNombre?: string;
+  razonSocial?: string;
   especialidad: string;
   fechaDerivacion: string;
   fechaAtencion?: string;

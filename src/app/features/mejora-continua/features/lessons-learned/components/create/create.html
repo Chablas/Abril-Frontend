@@ -1,4 +1,4 @@
-<app-base-modal [title]="'AGREGAR LECCION'" width="w-[1000px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'AGREGAR LECCION'" width="w-[calc(100%-2.5rem)] max-w-[1000px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-6 mt-5">
 
     <!-- Seccion 1: Ubicacion -->
@@ -10,13 +10,14 @@
         <label class="text-sm text-[#64BC04] font-medium">Área</label>
         <div class="flex flex-wrap gap-4">
           <ng-container *ngFor="let level of areaLevels; let i = index">
-            <div class="w-[220px]">
+            <div class="w-full sm:w-[220px]">
               <app-search-select
                 [showLabel]="false"
                 [options]="level"
                 valueField="id"
                 displayField="name"
                 [value]="selectedAreaNodes[i]?.id"
+                [fullText]="true"
                 (valueChange)="onAreaNodeChange(i, $event)" />
             </div>
           </ng-container>
@@ -24,9 +25,9 @@
       </div>
 
       <!-- Proyecto: debajo de Área -->
-      <div class="w-[220px] mt-4">
+      <div class="w-full sm:w-[220px] mt-4">
         <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
-          displayField="projectDescription" [(value)]="projectId" />
+          displayField="projectDescription" [fullText]="true" [(value)]="projectId" />
       </div>
     </div>
 
@@ -38,13 +39,14 @@
       <div class="flex flex-wrap gap-4">
 
         <ng-container *ngFor="let level of scopeLevels; let i = index">
-          <div class="w-[220px]">
+          <div class="w-full sm:w-[220px]">
             <app-search-select
               [label]="getLevelLabel(i)"
               [options]="level"
               valueField="scopeItemId"
               displayField="catalogItemDescription"
               [value]="selectedScopeItems[i]?.scopeItemId"
+              [fullText]="true"
               (valueChange)="onScopeItemChange(i, $event)">
             </app-search-select>
           </div>

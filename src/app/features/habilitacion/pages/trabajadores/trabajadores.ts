@@ -43,6 +43,8 @@ import { ProgramarInduccion } from './components/programar-induccion/programar-i
 import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
 import { CatalogosModal } from './components/catalogos-modal/catalogos-modal';
+import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
+import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 
 @Component({
   selector: 'app-hab-trabajadores',
@@ -89,7 +91,9 @@ export class Trabajadores implements OnInit, OnDestroy {
   get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   get requiereVigenciaAnteUpload(): boolean {
-    return !!this.selectedEntregable && this.selectedEntregable.requiereVigencia;
+    return !!this.selectedEntregable
+      && this.selectedEntregable.requiereVigencia
+      && this.panelEstado !== 'No Aplica';
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
@@ -120,6 +124,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   drawerOpen = false;
   visorArchivoUrl = '';
   visorNombre = '';
+  sctrPolizasWorker: SctrVidaLeyDto[] = [];
+  loadingSctrPolizas = false;
   selectedIds: number[] = [];
   todosSeleccionados = false;
   modalCambiarObraOpen = false;
@@ -152,6 +158,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private empresaContratistaService: EmpresaContratistaService,
+    private sctrVidaLeyService: SctrVidaLeyService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -261,6 +268,18 @@ export class Trabajadores implements OnInit, OnDestroy {
     });
   }
 
+  private recargarWorkerEnLista(): void {
+    const workerId = this.selectedWorker?.workerId ?? null;
+    if (workerId === null) return;
+    this.loadWorkers(this.currentPage, () => {
+      const fresh = this.workers.find((w) => w.workerId === workerId);
+      if (fresh) {
+        this.selectedWorker = fresh;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   actualizar(): void {
     const workerId = this.selectedWorker?.workerId ?? null;
     const entregableId = this.selectedEntregable?.id ?? null;
@@ -270,7 +289,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         const fresh = this.workers.find((w) => w.workerId === workerId);
         if (fresh) {
           this.selectedWorker = fresh;
-          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         }
       }
     });
@@ -368,10 +387,31 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
+    if ((e.itemId === 11 || e.itemId === 13) && this.selectedWorker) {
+      this.cargarPolizasSctr(this.selectedWorker.workerId);
+    } else {
+      this.sctrPolizasWorker = [];
+    }
+  }
+
+  private cargarPolizasSctr(workerId: number): void {
+    this.loadingSctrPolizas = true;
+    this.sctrPolizasWorker = [];
+    this.sctrVidaLeyService.getPorTrabajador(workerId).subscribe({
+      next: (res) => {
+        this.sctrPolizasWorker = (res ?? []).slice(0, 3);
+        this.loadingSctrPolizas = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingSctrPolizas = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   closeDrawer(): void {
-    if (this.isContratista()) {
+    if (this.isContratista() && this.panelObsAbril !== (this.selectedEntregable?.obsContratista ?? '')) {
       this.guardarObservaciones();
     }
     this.drawerOpen = false;
@@ -379,11 +419,6 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.resetPanel();
   }
 
-  onEstadoChange(): void {
-    if (!this.selectedEntregable) return;
-    if (this.isContratista() && this.panelEstado === 'En Plazo' && !this.panelVigencia) return;
-    this.guardarEntregable();
-  }
 
   private extractFileName(url: string): string {
     try {
@@ -741,7 +776,7 @@ export class Trabajadores implements OnInit, OnDestroy {
         obsContratista: this.panelObsAbril || undefined,
       };
     } else {
-      const vigencia = !this.selectedEntregable.requiereVigencia
+      const vigencia = (!this.selectedEntregable.requiereVigencia || this.panelEstado === 'No Aplica')
         ? '2040-12-31'
         : this.panelVigencia || undefined;
       payload = {
@@ -762,15 +797,9 @@ export class Trabajadores implements OnInit, OnDestroy {
             obsContratista: this.panelObsAbril || undefined,
           });
         } else {
-          const vigencia = !this.selectedEntregable?.requiereVigencia
-            ? '2040-12-31'
-            : this.panelVigencia || undefined;
-          this.actualizarEntregableLocal({
-            estado: this.panelEstado,
-            vigencia,
-            obsAbril: this.panelObsAbril || undefined,
-          });
+          if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
         }
+        this.recargarWorkerEnLista();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -809,6 +838,7 @@ export class Trabajadores implements OnInit, OnDestroy {
               showConfirmButton: false,
             });
             if (this.selectedWorker) this.loadEntregables(this.selectedWorker.workerId);
+            this.recargarWorkerEnLista();
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
