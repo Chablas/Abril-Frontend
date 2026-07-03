@@ -3979,3 +3979,32 @@ Resuelve error al cargar /costs/adjudicaciones.
 - npm install @microsoft/signalr @tabler/icons-webfont — dependencias faltantes
 - Build exitoso con warnings (no errores)
 - Frontend desplegado en VPS /var/www/abril vía scp
+
+## Sesión 2026-06-29
+
+### 1. SPI (Índice de Rendimiento del Cronograma) en Dashboard UDP
+
+**Frontend — `features/projects/cronograma-dashboard/`:**
+- `CronogramaDashboardProyectoDto` extendido con `spi: number`
+- Propiedad `spiPromedio = 1.0` calculada en `loadDashboard()` promediando proyectos con actividades
+- Métodos `spiColor(spi, estado)` y `spiLabel(spi, estado)` para color y texto del badge
+- KPI card "SPI PROMEDIO" agregada (9na card, skeleton actualizado a 9)
+- Columna SPI en tabla con badge coloreado: verde ≥1, naranja ≥0.9, rojo <0.9, gris SIN_ACTIVIDADES
+- Estilos `.col-spi` y `.spi-badge` en `cronograma-dashboard.css`
+
+### 2. Bugs identificados (pendientes)
+
+- **Responsables vacíos en filtro**: el select solo muestra "Responsable: Todos", nunca carga nombres. Query 3 del dashboard trae los IDs correctos pero hay que verificar por qué no devuelve nombres.
+- **Avance 0% en dashboard**: `CalcularAvanceNivel0` mezcla los 3 tipos de cronograma (ANTEPROYECTO/PROYECTO/ACTUALIZACION). El dashboard debe mostrar 3 barras separadas por tipo igual que `proyectos-cronograma-list`. Requiere cambiar `CronogramaDashboardProyectoDto` para devolver `avanceAnteproyecto`, `avanceProyecto`, `avanceProyectoActualizacion` en lugar de `porcentajeAvance`.
+
+### 3. Setup de herramientas por PC
+
+**PC Personal — CON headroom:**
+- `headroom` v0.28.0 instalado via `py -m pip install "headroom-ai[all]"`
+- Al abrir Claude Code: `headroom wrap claude` desde la carpeta del repo correspondiente
+- Si el proxy se cae: `headroom proxy` en cualquier terminal, luego reabrir Claude Code
+- Modelo: `claude config set model claude-sonnet-4-5`
+
+**PC Trabajo — SIN headroom:**
+- Claude Code se abre directamente con `claude` como siempre
+- Sin cambios en el flujo de trabajo habitual
