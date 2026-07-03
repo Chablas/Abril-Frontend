@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { ContractorEmailItemDTO, ContractorManagementDTO } from '../../dtos/contractor-management.dto';
 import { isValidContractorEmail } from '../../../shared/email-validation';
 import { SunatContributorDTO } from '../../../shared/sunatCompany.model';
+import { ContractorPersonTypeDTO } from '../../../shared/contractorPersonType.model';
 import { ReniecPersonDTO } from '../../../shared/reniecPerson.model';
 import { ContractorManagementService } from '../../services/contractor-management.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -15,7 +17,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-contractor-management-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './contractor-management-edit.html',
 })
 export class ContractorManagementEdit implements OnInit {
@@ -48,6 +50,10 @@ export class ContractorManagementEdit implements OnInit {
   // Correos (con id y estado active; id null = correo nuevo)
   emails: ContractorEmailItemDTO[] = [];
   newEmail = '';
+  newEmailPersonTypeId: number | null = null;
+
+  // Catálogo de clasificaciones de correo (Gerente General, etc.)
+  personTypes: ContractorPersonTypeDTO[] = [];
 
   // Archivos nuevos (null = no cambiar)
   logoFile: File | null = null;
@@ -77,6 +83,14 @@ export class ContractorManagementEdit implements OnInit {
     this.legalRepresentativeFullName            = this.item.legalRepresentativeFullName ?? '';
     // Se clona cada correo para no mutar el item original mientras se edita.
     this.emails = (this.item.emailDetails ?? []).map(e => ({ ...e }));
+
+    this.service.getPersonTypes().subscribe({
+      next: (types) => {
+        this.personTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
   }
 
   // ── Consulta RUC (SUNAT) ─────────────────────────────────────────────────────
@@ -182,8 +196,9 @@ export class ContractorManagementEdit implements OnInit {
       this.newEmail = '';
       return;
     }
-    this.emails.push({ contractorEmailId: null, email, active: true });
+    this.emails.push({ contractorEmailId: null, email, active: true, contractorPersonTypeId: this.newEmailPersonTypeId });
     this.newEmail = '';
+    this.newEmailPersonTypeId = null;
   }
 
   removeEmail(index: number): void {
@@ -274,7 +289,12 @@ export class ContractorManagementEdit implements OnInit {
     // Se envían los correos como JSON: cada uno con su id (null = nuevo) y su flag active.
     // Los correos existentes que ya no se envíen serán eliminados (soft-delete) en el backend.
     const emailsPayload = this.emails
-      .map(e => ({ contractorEmailId: e.contractorEmailId, email: e.email.trim(), active: e.active }))
+      .map(e => ({
+        contractorEmailId: e.contractorEmailId,
+        email: e.email.trim(),
+        active: e.active,
+        contractorPersonTypeId: e.contractorPersonTypeId,
+      }))
       .filter(e => e.email.length > 0);
     form.append('emailsJson', JSON.stringify(emailsPayload));
 

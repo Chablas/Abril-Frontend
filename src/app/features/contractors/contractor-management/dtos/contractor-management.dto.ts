@@ -8,6 +8,9 @@ export interface ContractorEmailItemDTO {
   contractorEmailId: number | null;
   email: string;
   active: boolean;
+  contractorPersonTypeId: number | null;
+  /** Solo lectura: descripción de la clasificación (el backend la ignora al editar). */
+  contractorPersonTypeDescription?: string | null;
 }
 
 export interface ContractorPendingUpdateDTO {

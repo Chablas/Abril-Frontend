@@ -27,6 +27,7 @@ export class ControlVencimientosService {
     formData.append('fechaVencimiento', dto.fechaVencimiento);
     formData.append('fechaRecordatorio', dto.fechaRecordatorio);
     formData.append('diasAntes', dto.diasAntes.toString());
+    dto.emails.forEach((e) => formData.append('emails', e));
     return this.http.post<{ licencia: VecinoLicenciaDTO; message: string }>(this.apiUrl, formData, {
       headers: this.authHeaders(),
     });

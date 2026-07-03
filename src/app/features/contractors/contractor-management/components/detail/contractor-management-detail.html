@@ -149,6 +149,10 @@
                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
             <span [ngClass]="{ 'line-through': !email.active }">{{ email.email }}</span>
+            <span *ngIf="email.contractorPersonTypeDescription"
+              class="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium bg-[#EBF3FE] text-[#1D5FBF]">
+              {{ email.contractorPersonTypeDescription }}
+            </span>
             <span
               class="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
               [ngClass]="email.active ? 'bg-[#E5F7D1] text-[#3a7a00]' : 'bg-gray-100 text-gray-500'">

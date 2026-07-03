@@ -104,14 +104,13 @@
               class="flex-1 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
             <button type="button" (click)="searchReniec()" [disabled]="legalRepresentativeDni.length !== 8 || dniLookupLoading"
               title="Consultar DNI en RENIEC"
-              class="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors"
+              class="shrink-0 flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors"
               [ngClass]="legalRepresentativeDni.length === 8 && !dniLookupLoading
                 ? 'bg-[#64BC04] text-white hover:bg-[#57a803] cursor-pointer'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
               </svg>
-              Consultar
             </button>
           </div>
         </div>
@@ -139,7 +138,21 @@
           <input type="email" [(ngModel)]="email.email"
             autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
             [ngClass]="{ 'text-gray-400 line-through': !email.active }"
-            class="flex-1 bg-transparent text-sm focus:outline-none" />
+            class="flex-1 min-w-0 bg-transparent text-sm focus:outline-none" />
+
+          <!-- Clasificación del contacto -->
+          <div class="w-44 shrink-0">
+            <app-search-select
+              [options]="personTypes"
+              valueField="contractorPersonTypeId"
+              displayField="description"
+              [value]="email.contractorPersonTypeId"
+              (valueChange)="email.contractorPersonTypeId = $event"
+              [showLabel]="false"
+              [compact]="true"
+              placeholder="— Clasificación —">
+            </app-search-select>
+          </div>
 
           <!-- Toggle activar/desactivar -->
           <button type="button" (click)="toggleActive(i)"
@@ -172,7 +185,18 @@
         <input type="email" [(ngModel)]="newEmail" (keydown.enter)="addEmail()"
           placeholder="nuevo@correo.com"
           autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
-          class="flex-1 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+          class="flex-1 min-w-0 border border-[#D6DEE5] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+        <div class="w-44 shrink-0">
+          <app-search-select
+            [options]="personTypes"
+            valueField="contractorPersonTypeId"
+            displayField="description"
+            [value]="newEmailPersonTypeId"
+            (valueChange)="newEmailPersonTypeId = $event"
+            [showLabel]="false"
+            placeholder="— Clasificación —">
+          </app-search-select>
+        </div>
         <button type="button" (click)="addEmail()"
           class="px-4 py-2.5 bg-[#64BC04] text-white text-sm font-medium rounded-lg hover:bg-[#57a803] transition-colors cursor-pointer shrink-0">
           Agregar

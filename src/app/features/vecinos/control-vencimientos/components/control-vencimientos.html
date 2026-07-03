@@ -30,24 +30,40 @@
           <th class="px-4 py-3 font-medium">Fecha de vencimiento</th>
           <th class="px-4 py-3 font-medium">Fecha de recordatorio</th>
           <th class="px-4 py-3 font-medium text-center">Días de antelación</th>
+          <th class="px-4 py-3 font-medium text-center">Correos</th>
+          <th class="px-4 py-3 font-medium text-center">Recordatorio</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let l of licencias" class="border-t border-[#E5EAF0] hover:bg-gray-50">
+        <tr *ngFor="let l of licencias" (click)="openDetail(l)"
+          class="border-t border-[#E5EAF0] hover:bg-gray-50 cursor-pointer">
           <td class="px-4 py-3">
             <a [href]="fileUrl(l.archivoUrl)" target="_blank" rel="noopener"
+              (click)="$event.stopPropagation()"
               class="text-[#0086A5] hover:underline flex items-center gap-1.5">
               <span class="ti ti-file-text"></span>
               {{ l.originalFileName || 'Ver archivo' }}
             </a>
           </td>
-          <td class="px-4 py-3 text-gray-700">{{ l.fechaVencimiento }}</td>
-          <td class="px-4 py-3 text-gray-700">{{ l.fechaRecordatorio }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ l.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ l.fechaRecordatorio | date:'dd/MM/yyyy' }}</td>
           <td class="px-4 py-3 text-center text-gray-700">{{ l.diasAntes }}</td>
+          <td class="px-4 py-3 text-center text-gray-700">{{ l.emails.length }}</td>
+          <td class="px-4 py-3 text-center">
+            <span *ngIf="l.recordatorioEnviadoDateTime; else pendienteBadge"
+              class="text-[11px] font-medium bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary-dark)] px-2 py-0.5 rounded-full">
+              Enviado
+            </span>
+            <ng-template #pendienteBadge>
+              <span class="text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
+                Pendiente
+              </span>
+            </ng-template>
+          </td>
         </tr>
 
         <tr *ngIf="licencias.length === 0">
-          <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+          <td colspan="6" class="px-4 py-8 text-center text-gray-400">
             No hay licencias registradas.
           </td>
         </tr>
@@ -63,3 +79,10 @@
   (closeModal)="closeAddModal()"
   (created)="onCreated()">
 </app-licencia-add>
+
+<!-- ── Modal de detalle ──────────────────────────────────────────────────── -->
+<app-licencia-detail
+  *ngIf="selectedLicencia"
+  [item]="selectedLicencia"
+  (closeModal)="closeDetail()">
+</app-licencia-detail>
