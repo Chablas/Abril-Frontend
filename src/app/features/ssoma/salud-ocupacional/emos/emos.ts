@@ -63,6 +63,8 @@ export class Emos implements OnInit, OnDestroy {
     estado: '',
     empresaId: 0,
     proyectoId: 0,
+    fechaEmoDesde: '',
+    fechaEmoHasta: '',
     sinLectura: false,
     sinCertificado: false,
     sinEmoCompleto: false,
@@ -172,6 +174,8 @@ export class Emos implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
       proyectoId: this.filters.proyectoId || undefined,
+      fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
+      fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
       sinLectura: this.filters.sinLectura || undefined,
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
@@ -232,6 +236,8 @@ export class Emos implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
       proyectoId: this.filters.proyectoId || undefined,
+      fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
+      fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
       sinLectura: this.filters.sinLectura || undefined,
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
@@ -258,6 +264,7 @@ export class Emos implements OnInit, OnDestroy {
   clearFilters(): void {
     this.filters = {
       search: '', aptitud: '', estado: '', empresaId: 0, proyectoId: 0,
+      fechaEmoDesde: '', fechaEmoHasta: '',
       sinLectura: false, sinCertificado: false, sinEmoCompleto: false,
       sortBy: '', sortDesc: false,
     };
@@ -377,6 +384,8 @@ export class Emos implements OnInit, OnDestroy {
       this.filters.estado ||
       this.filters.empresaId ||
       this.filters.proyectoId ||
+      this.filters.fechaEmoDesde ||
+      this.filters.fechaEmoHasta ||
       this.filters.sinLectura ||
       this.filters.sinCertificado ||
       this.filters.sinEmoCompleto ||

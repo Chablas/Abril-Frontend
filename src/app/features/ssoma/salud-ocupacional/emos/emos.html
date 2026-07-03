@@ -94,6 +94,20 @@
       </div>
 
       <div>
+        <label class="filter-label">Fecha EMO desde</label>
+        <input type="date" class="filter-date"
+               [(ngModel)]="filters.fechaEmoDesde"
+               (ngModelChange)="onFilterChange()" />
+      </div>
+
+      <div>
+        <label class="filter-label">Fecha EMO hasta</label>
+        <input type="date" class="filter-date"
+               [(ngModel)]="filters.fechaEmoHasta"
+               (ngModelChange)="onFilterChange()" />
+      </div>
+
+      <div>
         <label class="filter-label">Ordenar por</label>
         <app-search-select
           [options]="sortOptions"

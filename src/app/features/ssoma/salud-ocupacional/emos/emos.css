@@ -93,6 +93,18 @@
 }
 .btn-excel:hover { background: #166a2b; }
 
+.filter-date {
+  height: 32px;
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
 .th-sortable {
   cursor: pointer;
   user-select: none;
