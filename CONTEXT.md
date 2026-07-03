@@ -4018,6 +4018,15 @@ Creados `.claude/skills/guardar-rama/SKILL.md` y `.claude/skills/guardar-master/
 - **guardar-master**: mismo flujo pero para `master` — pide confirmación explícita antes del push (muestra `git log`/`git diff` contra `origin/master`) por ser la rama de producción. Se detiene si la rama activa no es `master`.
 - Ambas skills recién creadas no quedan registradas en el harness hasta la próxima sesión (se ejecutaron manualmente siguiendo el contenido del SKILL.md en esta misma sesión).
 
-### 2. Pendiente
+### 2. `.claude/skills/` ahora se versiona en el repo
+
+`.gitignore` cambió de `.claude/` a:
+```
+.claude/*
+!.claude/skills/
+```
+Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero permite que `guardar-rama/SKILL.md` y `guardar-master/SKILL.md` viajen con el repo a cualquier PC/sesión — antes quedaban solo locales.
+
+### 3. Pendiente
 
 - No existe todavía en este archivo una sección `REGLAS DE PROGRAMACIÓN > DEPLOY` con reglas numeradas P1-P5 (la skill `guardar-master` referencia una "regla P5" de no usar `--force" que aún no está documentada aquí). Si se formaliza, agregarla junto a `## REGLAS DE CODIFICACIÓN` (línea 49).
