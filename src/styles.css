@@ -390,6 +390,11 @@ app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
 }
 .gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2563eb !important; }
 .gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #16a34a !important; }
+.gantt_tree_content {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
 .emo-prog-label {
   display: inline-flex !important;
   align-items: center;

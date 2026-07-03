@@ -29,6 +29,7 @@ export class CronogramaDashboard implements OnInit {
 
   selectedResponsableId: number | null = null;
   selectedEstado = '';
+  spiPromedio = 1.0;
 
   readonly fechaActual = new Date();
 
@@ -69,6 +70,18 @@ export class CronogramaDashboard implements OnInit {
     return '#C0392B';
   }
 
+  spiColor(spi: number, estado: string): string {
+    if (estado === 'SIN_ACTIVIDADES') return '#94A3B8';
+    if (spi >= 1) return '#1B6B3A';
+    if (spi >= 0.9) return '#D97706';
+    return '#C0392B';
+  }
+
+  spiLabel(spi: number, estado: string): string {
+    if (estado === 'SIN_ACTIVIDADES') return '—';
+    return spi.toFixed(2);
+  }
+
   private loadDashboard(): void {
     this.loading = true;
     this.errorMsg = '';
@@ -81,6 +94,10 @@ export class CronogramaDashboard implements OnInit {
       next: (res) => {
         this.kpis = res.kpis;
         this.proyectos = res.proyectos;
+        const conActs = res.proyectos.filter(p => p.estado !== 'SIN_ACTIVIDADES');
+        this.spiPromedio = conActs.length > 0
+          ? Math.round((conActs.reduce((sum, p) => sum + p.spi, 0) / conActs.length) * 100) / 100
+          : 1.0;
         this.responsables = res.responsables;
         this.loading = false;
         this.loaderService.hide();

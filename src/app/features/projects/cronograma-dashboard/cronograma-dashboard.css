@@ -439,3 +439,18 @@
     padding: 1rem;
   }
 }
+
+/* ── SPI ─────────────────────────────────────────────────────────────────── */
+.col-spi {
+  width: 70px;
+  text-align: center;
+}
+
+.spi-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}

@@ -71,15 +71,28 @@
           <span class="pc-name">{{ p.projectDescription }}</span>
           <span class="pc-resp">{{ p.responsableUdp || '—' }}</span>
           <div class="pc-avance">
-            <div class="avance-wrap">
-              <div class="avance-bar-bg">
-                <div
-                  class="avance-bar-fill"
-                  [style.width.%]="p.avance"
-                  [style.background]="getProjectColor(i)"
-                ></div>
+            <div class="avance-multi">
+              <div class="avance-row-mini">
+                <span class="avance-label-mini">Anteproyecto</span>
+                <div class="avance-bar-bg">
+                  <div class="avance-bar-fill" [style.width.%]="p.avanceAnteproyecto" [style.background]="getProjectColor(i)"></div>
+                </div>
+                <span class="avance-pct-mini">{{ p.avanceAnteproyecto }}%</span>
               </div>
-              <span class="avance-pct">{{ p.avance }}%</span>
+              <div class="avance-row-mini">
+                <span class="avance-label-mini">Proyecto</span>
+                <div class="avance-bar-bg">
+                  <div class="avance-bar-fill" [style.width.%]="p.avanceProyecto" [style.background]="getProjectColor(i)"></div>
+                </div>
+                <span class="avance-pct-mini">{{ p.avanceProyecto }}%</span>
+              </div>
+              <div class="avance-row-mini">
+                <span class="avance-label-mini">Actualización</span>
+                <div class="avance-bar-bg">
+                  <div class="avance-bar-fill" [style.width.%]="p.avanceProyectoActualizacion" [style.background]="getProjectColor(i)"></div>
+                </div>
+                <span class="avance-pct-mini">{{ p.avanceProyectoActualizacion }}%</span>
+              </div>
             </div>
           </div>
         </div>
