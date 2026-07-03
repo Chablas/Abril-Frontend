@@ -4030,3 +4030,7 @@ Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero pe
 ### 3. Pendiente
 
 - No existe todavía en este archivo una sección `REGLAS DE PROGRAMACIÓN > DEPLOY` con reglas numeradas P1-P5 (la skill `guardar-master` referencia una "regla P5" de no usar `--force" que aún no está documentada aquí). Si se formaliza, agregarla junto a `## REGLAS DE CODIFICACIÓN` (línea 49).
+
+### 4. Merge a master vía "guardar master"
+
+`feature/milestone-schedule-improvements` (SPI en dashboard UDP, mejoras UX cronograma de actividades, drag&drop de jerarquía, skills guardar-rama/guardar-master) se mergeó a `master` con `ddf419c`. Build de producción (`ng build`) verificado OK antes del push. Sin cambios de código nuevos en esta sesión — solo consolidación y push.
