@@ -24,6 +24,8 @@ export class NavigationService {
             { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+            { label: 'Revisor de Salidas', route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
+            { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
           ],
         },
       ],

@@ -25,19 +25,19 @@ export class GestionSalidasService {
     lugarProyectoId: number | null,
     estadoRendicion: string | null = null,
     estadoAprobacion: string | null = null,
-    onlyMyPendingReview = false,
     page = 1,
     sortBy: string | null = null,
     sortDir: 'asc' | 'desc' | null = null,
+    areaScopeIds: number[] | null = null,
   ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
     let params = new HttpParams().set('page', page);
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
-    if (onlyMyPendingReview)     params = params.set('onlyMyPendingReview', true);
     if (sortBy)                  params = params.set('sortBy', sortBy);
     if (sortDir)                 params = params.set('sortDir', sortDir);
+    if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
     return this.http.get<PagedResponseDto<GestionSalidaListItemDto>>(this.apiUrl, { headers: this.headers, params });
   }
 
@@ -95,12 +95,14 @@ export class GestionSalidasService {
     lugarProyectoId: number | null,
     estadoRendicion: string | null = null,
     estadoAprobacion: string | null = null,
+    areaScopeIds: number[] | null = null,
   ): Observable<Blob> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
+    if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
     return this.http.get(`${this.apiUrl}/exportar-excel`, {
       headers: this.headers,
       params,

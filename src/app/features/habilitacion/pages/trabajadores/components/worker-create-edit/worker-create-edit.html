@@ -121,7 +121,7 @@
               [showLabel]="false"
               placeholder="Seleccionar categoría"
               [allowClear]="true"
-              (valueChange)="model.categoria = $event"
+              (valueChange)="onCategoriaChange($event)"
             />
           </div>
           <div>
@@ -134,7 +134,16 @@
               [showLabel]="false"
               placeholder="Seleccionar ocupación"
               [allowClear]="true"
-              (valueChange)="model.ocupacion = $event"
+              (valueChange)="onOcupacionChange($event)"
+            />
+          </div>
+          <div class="col-span-2">
+            <label class="field-label">Puesto</label>
+            <input
+              type="text"
+              class="field-input"
+              [(ngModel)]="model.puesto"
+              placeholder="Se autocompleta con Categoría + Ocupación"
             />
           </div>
           <div>
@@ -201,7 +210,7 @@
                 [showLabel]="false"
                 placeholder="Seleccionar categoría"
                 [allowClear]="true"
-                (valueChange)="model.categoria = $event"
+                (valueChange)="onCategoriaChange($event)"
               />
             </div>
             <div>
@@ -215,6 +224,15 @@
                 placeholder="Seleccionar ocupación"
                 [allowClear]="true"
                 (valueChange)="onOcupacionChange($event)"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Puesto</label>
+              <input
+                type="text"
+                class="field-input"
+                [(ngModel)]="model.puesto"
+                placeholder="Se autocompleta con Categoría + Ocupación"
               />
             </div>
             <div>
@@ -265,7 +283,7 @@
                 [showLabel]="false"
                 placeholder="Seleccionar categoría"
                 [allowClear]="true"
-                (valueChange)="model.categoria = $event"
+                (valueChange)="onCategoriaChange($event)"
               />
             </div>
             <div>
@@ -279,6 +297,15 @@
                 placeholder="Seleccionar ocupación"
                 [allowClear]="true"
                 (valueChange)="onOcupacionChange($event)"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Puesto</label>
+              <input
+                type="text"
+                class="field-input"
+                [(ngModel)]="model.puesto"
+                placeholder="Se autocompleta con Categoría + Ocupación"
               />
             </div>
             <div class="col-span-2">

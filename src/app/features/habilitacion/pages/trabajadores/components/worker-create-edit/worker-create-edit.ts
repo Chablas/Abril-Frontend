@@ -40,6 +40,7 @@ interface WorkerFormModel {
   categoria: string;
   ocupacion: string;
   ocupacionId: number | null;
+  puesto: string;
   area: string;
   subarea: string;
   contrataCasa: string;
@@ -199,6 +200,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       categoria: '',
       ocupacion: '',
       ocupacionId: null,
+      puesto: '',
       area: '',
       subarea: '',
       contrataCasa: '',
@@ -256,6 +258,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
           this.model.sexo = det.sexo ?? '';
           this.model.ocupacionId = det.ocupacionId ?? null;
+          this.model.puesto = det.puesto ?? '';
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
           this.loadingDetalle = false;
           if (this.model.area) {
@@ -359,9 +362,27 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
+  onCategoriaChange(nombre: string): void {
+    this.model.categoria = nombre;
+    this.syncPuesto();
+  }
+
   onOcupacionChange(nombre: string): void {
     this.model.ocupacion = nombre;
     this.model.ocupacionId = this.ocupaciones.find((o) => o.nombre === nombre)?.id ?? null;
+    this.syncPuesto();
+  }
+
+  /**
+   * Autocompleta el puesto final concatenando categoría y ocupación
+   * (ej. "Operario" + "Abogado" → "Operario Abogado"). El campo sigue siendo
+   * editable: cualquier cambio posterior en un desplegable lo vuelve a calcular.
+   */
+  private syncPuesto(): void {
+    this.model.puesto = [this.model.categoria, this.model.ocupacion]
+      .map((v) => (v ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
   }
 
   onAreaChange(): void {
@@ -596,6 +617,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       categoria: n(this.model.categoria),
       ocupacion: n(this.model.ocupacion),
       ocupacionId: this.model.ocupacionId ?? undefined,
+      puesto: n(this.model.puesto),
       area: n(this.model.area),
       subarea: n(this.model.subarea),
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),

@@ -7,18 +7,40 @@
     { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
     { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
     { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
-    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' }
+    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+    { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
+    { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
   ]">
 </app-abril-page-header>
 
-<div class="page-container flex flex-col gap-[20px] bg-white flex-1 overflow-y-auto">
+<div class="page-container flex flex-col gap-[20px] bg-white flex-1 min-h-0 overflow-y-auto">
 
   <!-- ── Filtros ──────────────────────────────────────────────────────── -->
   <!-- Layout: una primera columna fija (primer filtro) y, al costado, un
        contenedor flex que envuelve en varias líneas el resto de filtros. -->
   <div class="flex items-start gap-x-4 gap-y-3">
 
-    <!-- Columna fija: primer filtro -->
+    <!-- Área en cascada (primer filtro): al elegir un área con subáreas aparece otro desplegable.
+         Un solo label "Área" (el primero); los siguientes van sin label. -->
+    <div class="bg-[var(--color-abril-lime-light)] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3 shrink-0">
+      <ng-container *ngFor="let level of areaLevels; let i = index">
+        <div class="w-[220px]">
+          <app-search-select
+            label="Área"
+            [showLabel]="i === 0"
+            [options]="level"
+            valueField="areaScopeId"
+            displayField="name"
+            [value]="selectedAreaNodes[i]?.areaScopeId"
+            (valueChange)="onAreaNodeChange(i, $event)"
+            [fullText]="true"
+            [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+          ></app-search-select>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Columna fija: segundo filtro -->
     <div class="flex flex-col gap-3 shrink-0 w-[220px]">
       <app-search-select
         label="Trabajador"
@@ -71,14 +93,6 @@
           <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
         </svg>
         Buscar
-      </button>
-
-      <button type="button" (click)="toggleMyPendingReview()"
-        class="h-[38px] px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 border"
-        [ngClass]="onlyMyPendingReview
-          ? 'bg-[var(--color-abril-lime)] text-white border-[var(--color-abril-lime)]'
-          : 'bg-white text-[var(--color-abril-lime)] border-[var(--color-abril-lime)] hover:bg-[var(--color-abril-lime-light)]'">
-        Pendientes de mi revisión
       </button>
 
       <button class="group flex items-center cursor-pointer gap-1.5 h-[38px] ml-auto" (click)="exportarExcel()">
@@ -137,9 +151,12 @@
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="table-scroll">
+  <!-- shrink-0: evita que flexbox encoja la tabla (que es scroll container por
+       el overflow-x) y le meta scroll vertical propio. Así crece a su alto real
+       y es la tarjeta (min-h-0 + overflow-y-auto) la que scrollea. -->
+  <div class="table-scroll shrink-0">
     <table class="w-full text-sm">
-      <thead style="background:var(--color-abril-primary-light)">
+      <thead class="sticky top-0 z-10" style="background:var(--color-abril-primary-light)">
         <tr style="color:var(--color-abril-primary-dark)">
           <th class="text-left px-[16px] py-[10px] font-semibold">
             <input

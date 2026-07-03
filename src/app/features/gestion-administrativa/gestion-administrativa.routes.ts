@@ -62,4 +62,28 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKey: 'gestion-administrativa.config.trayectos',
     },
   },
+  {
+    path: 'configuracion/revisor-salidas',
+    loadComponent: () =>
+      import('./features/configuracion/revisor-salidas/pages/revisor-salidas').then(
+        (m) => m.RevisorSalidas,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'REVISOR DE SALIDAS',
+      featureKey: 'gestion-administrativa.config.revisor-salidas',
+    },
+  },
+  {
+    path: 'configuracion/visibilidad-salidas',
+    loadComponent: () =>
+      import('./features/configuracion/visibilidad-salidas/pages/visibilidad-salidas').then(
+        (m) => m.VisibilidadSalidas,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'VISIBILIDAD DE SALIDAS',
+      featureKey: 'gestion-administrativa.config.visibilidad-salidas',
+    },
+  },
 ];

@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" title="Editar trabajador" width="w-[560px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="'Editar trabajador'" width="w-[560px]" (closeModal)="close()">
   <div class="form-wrapper">
     <div class="grid-2">
       <div class="col-span-2">
@@ -24,6 +24,44 @@
       <div class="col-span-2">
         <label class="field-label">Cumpleaños</label>
         <input type="date" class="field-input" [(ngModel)]="model.cumpleanos" />
+      </div>
+
+      <div>
+        <label class="field-label">Categoría</label>
+        <app-search-select
+          [options]="categorias"
+          valueField="nombre"
+          displayField="nombre"
+          [value]="model.categoria"
+          [showLabel]="false"
+          placeholder="Seleccionar categoría"
+          [allowClear]="true"
+          (valueChange)="onCategoriaChange($event)"
+        />
+      </div>
+
+      <div>
+        <label class="field-label">Ocupación</label>
+        <app-search-select
+          [options]="ocupaciones"
+          valueField="nombre"
+          displayField="nombre"
+          [value]="model.ocupacion"
+          [showLabel]="false"
+          placeholder="Seleccionar ocupación"
+          [allowClear]="true"
+          (valueChange)="onOcupacionChange($event)"
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Puesto</label>
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.puesto"
+          placeholder="Se autocompleta con Categoría + Ocupación"
+        />
       </div>
     </div>
 

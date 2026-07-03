@@ -1,0 +1,129 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Revisor de Salidas"
+  subtitulo="Asigna el jefe que aprueba/rechaza las solicitudes de salida de cada trabajador. Sin asignación, el aprobador se resuelve automáticamente por la jerarquía de áreas."
+  [tabs]="[
+    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
+    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
+    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+    { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
+    { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
+  ]">
+</app-abril-page-header>
+
+<div class="flex flex-col gap-[20px] bg-white p-[20px] flex-1 overflow-y-auto">
+
+  <!-- ── Filtros ───────────────────────────────────────────────────────── -->
+  <div class="flex items-end justify-start gap-3 flex-wrap">
+    <div class="w-[260px]">
+      <app-search-select
+        label="Categoría del trabajador"
+        [options]="categoriaTrabajadorFilterOptions"
+        valueField="id"
+        displayField="name"
+        [value]="categoriaTrabajadorFilter"
+        (valueChange)="categoriaTrabajadorFilter = $event; onFilterChange()"
+        placeholder="Todas las categorías"
+      ></app-search-select>
+    </div>
+
+    <div class="w-[260px]">
+      <app-search-select
+        label="Revisor"
+        [options]="jefeFilterOptions"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="jefeFilter"
+        (valueChange)="jefeFilter = $event; onFilterChange()"
+        placeholder="Todos los revisores"
+      ></app-search-select>
+    </div>
+
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="280px"
+    ></app-search-input>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full rounded-lg overflow-visible border border-[#D6DEE5] bg-white">
+    <table class="w-full text-sm">
+      <thead class="bg-[#E5F7D1]">
+        <tr class="text-[#64BC04]">
+          <th class="text-left px-[16px] py-[10px] font-semibold">Trabajador</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold">Correo</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold w-[320px]">Revisor</th>
+          <th class="text-center px-[16px] py-[10px] font-semibold w-[160px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of pagedRows" class="border-b border-[#D6DEE5] hover:bg-gray-50">
+          <td class="px-[16px] py-[8px] text-gray-700">{{ r.fullName }}</td>
+          <td class="px-[16px] py-[8px] text-gray-700">{{ r.email }}</td>
+          <td class="px-[16px] py-[8px] text-gray-700">
+            <ng-container *ngIf="editingWorkerId !== r.workerId; else editJefe">
+              <span *ngIf="r.jefeFullName; else sinJefe">{{ r.jefeFullName }}</span>
+              <ng-template #sinJefe>
+                <span class="text-gray-400 italic">Automático (jerarquía de áreas)</span>
+              </ng-template>
+            </ng-container>
+            <ng-template #editJefe>
+              <app-search-select
+                [options]="options"
+                valueField="workerId"
+                displayField="fullName"
+                [value]="selectedJefeId"
+                (valueChange)="selectedJefeId = $event"
+                placeholder="Automático (jerarquía de áreas)"
+              ></app-search-select>
+            </ng-template>
+          </td>
+          <td class="px-[16px] py-[8px] text-center">
+            <ng-container *ngIf="editingWorkerId !== r.workerId; else editActions">
+              <button
+                (click)="startEdit(r)"
+                class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] transition-colors cursor-pointer"
+              >
+                Editar
+              </button>
+            </ng-container>
+            <ng-template #editActions>
+              <div class="flex items-center justify-center gap-2">
+                <button
+                  (click)="save(r)"
+                  class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border border-green-300 text-green-700 hover:bg-green-50 transition-colors cursor-pointer"
+                >
+                  Guardar
+                </button>
+                <button
+                  (click)="cancelEdit()"
+                  class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </ng-template>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="4" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
+            {{ searchText.trim() || jefeFilter != null || categoriaTrabajadorFilter != null ? 'Sin resultados.' : 'No hay trabajadores con correo @abril.pe.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator
+    [totalRecords]="filteredRows.length"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="changePage($event)"
+  ></app-paginator>
+
+</div>

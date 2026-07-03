@@ -9,6 +9,7 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { FormsModule } from '@angular/forms';
 import {
+  AreaNodeDto,
   GestionSalidaDetalleDto,
   GestionSalidaListItemDto,
 } from '../dtos/gestion-salida.dto';
@@ -17,6 +18,13 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+
+/** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
+interface AreaCascadeNode {
+  areaScopeId: number;
+  name: string;
+  children: AreaCascadeNode[];
+}
 
 @Component({
   standalone: true,
@@ -50,8 +58,11 @@ export class GestionSalidas implements OnInit {
     estadoAprobacion:  null as string | null,
   };
 
-  /** Solo solicitudes pendientes cuyo aprobador soy yo. Activo por defecto. */
-  onlyMyPendingReview = true;
+  // ── Filtro de área en cascada (igual al de Visibilidad de Salidas) ──
+  /** Niveles visibles del desplegable en cascada: [0] = raíces, [1] = hijos del nodo elegido, … */
+  areaLevels: AreaCascadeNode[][] = [];
+  /** Nodo elegido por nivel (undefined = "Todas" en ese nivel). */
+  selectedAreaNodes: (AreaCascadeNode | undefined)[] = [];
 
   // ── Paginación (server-side) ────────────────────────────────────────
   readonly pageSize = 10;
@@ -127,9 +138,65 @@ export class GestionSalidas implements OnInit {
           { gaLugarId: null, nombreDisplay: 'Todos los proyectos' },
           ...data.lugaresProyecto,
         ];
+        this.buildAreaCascade(data.areaTree);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Filtro de área en cascada ────────────────────────────────────────────
+
+  /** Arma el árbol a partir de la lista plana de nodos area_scope y deja listo el 1er nivel. */
+  private buildAreaCascade(nodes: AreaNodeDto[]): void {
+    const byId = new Map<number, AreaCascadeNode>();
+    for (const n of nodes) {
+      byId.set(n.areaScopeId, { areaScopeId: n.areaScopeId, name: n.areaItemName, children: [] });
+    }
+    const roots: AreaCascadeNode[] = [];
+    const sorted = [...nodes].sort(
+      (a, b) => a.displayOrder - b.displayOrder || a.areaItemName.localeCompare(b.areaItemName),
+    );
+    for (const n of sorted) {
+      const node = byId.get(n.areaScopeId)!;
+      const parent = n.areaScopeParentId != null ? byId.get(n.areaScopeParentId) : undefined;
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    }
+    this.areaLevels = roots.length ? [roots] : [];
+    this.selectedAreaNodes = roots.length ? [undefined] : [];
+  }
+
+  /** Al elegir un nodo: recorta los niveles inferiores y, si tiene hijos, agrega el siguiente desplegable. */
+  onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
+    const selected =
+      selectedId != null ? this.areaLevels[levelIndex]?.find((n) => n.areaScopeId === selectedId) : undefined;
+
+    this.selectedAreaNodes[levelIndex] = selected;
+    this.areaLevels = this.areaLevels.slice(0, levelIndex + 1);
+    this.selectedAreaNodes = this.selectedAreaNodes.slice(0, levelIndex + 1);
+
+    if (selected?.children?.length) {
+      this.areaLevels.push(selected.children);
+      this.selectedAreaNodes.push(undefined);
+    }
+  }
+
+  /** area_scope_id del nodo seleccionado más profundo + todos sus descendientes (o null si "Todas"). */
+  private currentAreaScopeIds(): number[] | null {
+    let deepest: AreaCascadeNode | undefined;
+    for (let i = this.selectedAreaNodes.length - 1; i >= 0; i--) {
+      if (this.selectedAreaNodes[i]) {
+        deepest = this.selectedAreaNodes[i];
+        break;
+      }
+    }
+    return deepest ? this.collectScopeIds(deepest) : null;
+  }
+
+  private collectScopeIds(node: AreaCascadeNode): number[] {
+    const ids = [node.areaScopeId];
+    for (const c of node.children) ids.push(...this.collectScopeIds(c));
+    return ids;
   }
 
   load(page: number = 1): void {
@@ -141,10 +208,10 @@ export class GestionSalidas implements OnInit {
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
-      this.onlyMyPendingReview,
       page,
       this.sortBy,
       this.sortDir,
+      this.currentAreaScopeIds(),
     ).subscribe({
       next: (res) => {
         this.salidas      = res.data;
@@ -166,12 +233,6 @@ export class GestionSalidas implements OnInit {
 
   onPageChange(page: number): void {
     this.load(page);
-  }
-
-  /** Alterna "pendientes de mi revisión" y recarga. */
-  toggleMyPendingReview(): void {
-    this.onlyMyPendingReview = !this.onlyMyPendingReview;
-    this.load(1);
   }
 
   // ── Ordenamiento de columnas (server-side) ──────────────────────────
@@ -204,6 +265,7 @@ export class GestionSalidas implements OnInit {
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
+      this.currentAreaScopeIds(),
     ).subscribe({
       next: (blob) => {
         const url  = URL.createObjectURL(blob);

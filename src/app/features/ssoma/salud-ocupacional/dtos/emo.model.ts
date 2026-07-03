@@ -180,6 +180,9 @@ export interface EmoPorTrabajadorDto {
   emailPersonal?: string;
   categoria?: string;
   ocupacion?: string;
+  ocupacionId?: number;
+  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
+  puesto?: string;
   area?: string;
   subarea?: string;
   contrataCasa?: string;
@@ -204,6 +207,11 @@ export interface WorkerDatosBasicosDto {
   numeroDocumento?: string | null;
   /** Formato 'YYYY-MM-DD'. */
   cumpleanos?: string | null;
+  categoria?: string | null;
+  ocupacion?: string | null;
+  ocupacionId?: number | null;
+  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
+  puesto?: string | null;
 }
 
 export interface WorkerUpsertDto {
@@ -217,6 +225,8 @@ export interface WorkerUpsertDto {
   categoria?: string | null;
   ocupacion?: string | null;
   ocupacionId?: number | null;
+  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
+  puesto?: string | null;
   area?: string | null;
   subarea?: string | null;
   contrataCasa?: string | null;

@@ -29,6 +29,19 @@ export interface PagedResponseDto<T> {
 export interface GestionSalidaFilterDataDto {
   trabajadores: TrabajadorOptionDto[];
   lugaresProyecto: LugarProyectoOptionDto[];
+  /** Árbol area_scope (lista plana) para el filtro de área en cascada. */
+  areaTree: AreaNodeDto[];
+}
+
+/** Nodo del árbol area_scope; el frontend arma la jerarquía a partir de la lista plana. */
+export interface AreaNodeDto {
+  areaScopeId: number;
+  areaItemId: number;
+  areaItemName: string;
+  areaTypeId: number;
+  areaTypeName: string;
+  areaScopeParentId?: number | null;
+  displayOrder: number;
 }
 
 export interface TrabajadorOptionDto {
