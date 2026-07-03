@@ -4008,3 +4008,16 @@ Resuelve error al cargar /costs/adjudicaciones.
 **PC Trabajo — SIN headroom:**
 - Claude Code se abre directamente con `claude` como siempre
 - Sin cambios en el flujo de trabajo habitual
+
+## Sesión 2026-07-03
+
+### 1. Skills de cierre de sesión
+
+Creados `.claude/skills/guardar-rama/SKILL.md` y `.claude/skills/guardar-master/SKILL.md`:
+- **guardar-rama**: commitea cambios pendientes (mensaje Conventional Commits autogenerado), corre `ng build` obligatorio, actualiza `CONTEXT.md` con el resumen de sesión, hace `git fetch` + `merge` de `origin/<rama>`, y pushea sin `--force`. Se detiene si la rama es `master`, si el build falla, o si hay conflictos de merge.
+- **guardar-master**: mismo flujo pero para `master` — pide confirmación explícita antes del push (muestra `git log`/`git diff` contra `origin/master`) por ser la rama de producción. Se detiene si la rama activa no es `master`.
+- Ambas skills recién creadas no quedan registradas en el harness hasta la próxima sesión (se ejecutaron manualmente siguiendo el contenido del SKILL.md en esta misma sesión).
+
+### 2. Pendiente
+
+- No existe todavía en este archivo una sección `REGLAS DE PROGRAMACIÓN > DEPLOY` con reglas numeradas P1-P5 (la skill `guardar-master` referencia una "regla P5" de no usar `--force" que aún no está documentada aquí). Si se formaliza, agregarla junto a `## REGLAS DE CODIFICACIÓN` (línea 49).
