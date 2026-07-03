@@ -4,18 +4,34 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IndicadoresProactivosService } from '../../indicadores-proactivos.service';
+import { HorasHombreService } from '../../../horas-hombre/services/horas-hombre.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { IndicadorProactivoProyectoDto, MetaEmpresaDto, PuntajeMesDto } from '../../indicadores-proactivos.dtos';
-import { HttpClient } from '@angular/common/http';
+import { IndicadorProactivoProyectoDto, IndicadorReactivoProyectoDto, PuntajeMesDto } from '../../indicadores-proactivos.dtos';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { SelectOption } from '../../../../../../shared/services/shared-filters.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../../../../environments/environment';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Chart, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-Chart.register(...registerables);
+Chart.register(...registerables, ChartDataLabels);
+
+interface DesempenoSupervisorDto {
+  pctGeneral: number;
+  proyectoId: number;
+}
+
+interface MesSerieDto {
+  mes: number;
+  anio: number;
+  totalAccidentes: number;
+  totalDiasPerdidos: number;
+  trabajadores: number;
+}
 
 @Component({
   selector: 'app-dashboard-proyecto',
@@ -25,15 +41,22 @@ Chart.register(...registerables);
   styleUrls: ['./dashboard-proyecto.component.css'],
 })
 export class DashboardProyectoComponent implements OnInit, AfterViewInit {
-  private svc      = inject(IndicadoresProactivosService);
-  private loader   = inject(LoaderService);
-  private errorSvc = inject(ErrorService);
-  private http     = inject(HttpClient);
+  private svc         = inject(IndicadoresProactivosService);
+  private horasHombreSvc = inject(HorasHombreService);
+  private loader      = inject(LoaderService);
+  private errorSvc    = inject(ErrorService);
+  private http        = inject(HttpClient);
 
-  @ViewChild('chartCanvas') chartCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('reportContent') reportContentRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('accCanvas') accCanvasRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('diasCanvas') diasCanvasRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('trabCanvas') trabCanvasRef?: ElementRef<HTMLCanvasElement>;
 
-  private chart: Chart | null = null;
+  private accChart: Chart | null = null;
+  private diasChart: Chart | null = null;
+  private trabChart: Chart | null = null;
+
+  private baseSupervisor = `${environment.apiUrl}api/v1/ssoma-desempeno-supervisor`;
 
   proyectos = signal<SelectOption[]>([]);
   proyectoId = signal<number | null>(null);
@@ -43,7 +66,11 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
   indicadores = signal<IndicadorProactivoProyectoDto | null>(null);
   puntaje     = signal<PuntajeMesDto | null>(null);
   exportando  = signal(false);
-  empresaExpandida = signal<string | null>(null);
+
+  reactivoActual   = signal<IndicadorReactivoProyectoDto | null>(null);
+  reactivoAcumulado = signal<{ accidentes: number; diasPerdidos: number; hht: number } | null>(null);
+  serieMensual     = signal<MesSerieDto[]>([]);
+  pctSupervisor    = signal<number>(0);
 
   meses = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
@@ -71,70 +98,185 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {}
 
+  private authHeaders(): HttpHeaders {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return new HttpHeaders({ Authorization: `Bearer ${token ?? ''}` });
+  }
+
+  private getReactivosMes(mes: number, anio: number) {
+    return this.svc.getReactivosTodos(mes, anio).pipe(catchError(() => of([] as IndicadorReactivoProyectoDto[])));
+  }
+
+  private getHorasHombreMes(proyectoId: number, mes: number, anio: number) {
+    return this.horasHombreSvc.getDashboard(proyectoId, mes, anio).pipe(catchError(() => of(null)));
+  }
+
+  private getSupervisorProyecto(proyectoId: number, mes: number, anio: number) {
+    const params = new HttpParams().set('mes', mes).set('anio', anio).set('proyectoId', proyectoId);
+    return this.http.get<DesempenoSupervisorDto[]>(this.baseSupervisor, { headers: this.authHeaders(), params })
+      .pipe(catchError(() => of([] as DesempenoSupervisorDto[])));
+  }
+
   cargar(): void {
     if (!this.proyectoId()) return;
+    const pid = this.proyectoId()!;
+    const mesSel = this.mes();
+    const anioSel = this.anio();
+
     this.loader.show();
     this.indicadores.set(null);
     this.puntaje.set(null);
 
     forkJoin({
-      ind: this.svc.getIndicadoresProyecto(this.proyectoId()!, this.mes(), this.anio()),
-      pts: this.svc.getPuntaje(this.proyectoId()!, this.mes(), this.anio()),
+      ind: this.svc.getIndicadoresProyecto(pid, mesSel, anioSel),
+      pts: this.svc.getPuntaje(pid, mesSel, anioSel),
+      supervisor: this.getSupervisorProyecto(pid, mesSel, anioSel),
     }).subscribe({
-      next: ({ ind, pts }) => {
+      next: ({ ind, pts, supervisor }) => {
         this.indicadores.set(ind);
         this.puntaje.set(pts);
+        this.pctSupervisor.set(
+          supervisor.length ? supervisor.reduce((a, s) => a + s.pctGeneral, 0) / supervisor.length : 0
+        );
         this.loader.hide();
-        setTimeout(() => this.renderChart(ind), 50);
+        this.cargarSerieMensual(pid, mesSel, anioSel);
       },
       error: err => { this.loader.hide(); this.errorSvc.handleError(err); },
     });
   }
 
-  private renderChart(ind: IndicadorProactivoProyectoDto): void {
-    const canvas = this.chartCanvasRef?.nativeElement;
-    if (!canvas) return;
-    if (this.chart) { this.chart.destroy(); this.chart = null; }
+  private cargarSerieMensual(proyectoId: number, mesHasta: number, anio: number): void {
+    const mesesRango = Array.from({ length: mesHasta }, (_, i) => i + 1);
+    forkJoin(
+      mesesRango.map(m => forkJoin({
+        reactivos: this.getReactivosMes(m, anio),
+        horasHombre: this.getHorasHombreMes(proyectoId, m, anio),
+      }))
+    ).subscribe(resultados => {
+      const serie: MesSerieDto[] = resultados.map((r, idx) => {
+        const m = mesesRango[idx];
+        const reactivoProyecto = r.reactivos.find(x => x.proyectoId === proyectoId);
+        return {
+          mes: m,
+          anio,
+          totalAccidentes: reactivoProyecto?.totalAccidentes ?? 0,
+          totalDiasPerdidos: reactivoProyecto?.totalDiasPerdidos ?? 0,
+          trabajadores: Math.round(r.horasHombre?.promedioPersonasPorDia ?? 0),
+        };
+      });
+      this.serieMensual.set(serie);
 
-    const labels = ind.empresas.filter(e => e.esActiva).map(e => e.empresaNombre);
-    const datasets = this.INDICADORES.map(ind_ => ({
-      label: ind_.label,
-      data: ind.empresas.filter(e => e.esActiva).map(e => {
-        const key = `pct${ind_.key}` as keyof MetaEmpresaDto;
-        return Number(e[key]) ?? 0;
-      }),
-      backgroundColor: ind_.color + 'cc',
-      borderColor: ind_.color,
-      borderWidth: 1,
-      borderRadius: 4,
-    }));
+      const acumAccidentes = serie.reduce((acc, s) => acc + s.totalAccidentes, 0);
+      const acumDias = serie.reduce((acc, s) => acc + s.totalDiasPerdidos, 0);
+      const hhtAcum = resultados.reduce((acc, r) => acc + (r.horasHombre?.totalHorasHombre ?? 0), 0);
 
-    this.chart = new Chart(canvas, {
-      type: 'bar',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
-          tooltip: {
-            callbacks: { label: ctx => ` ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toFixed(0)}%` }
-          },
-        },
-        scales: {
-          y: {
-            min: 0, max: 130,
-            ticks: { callback: v => `${v}%`, stepSize: 25 },
-            grid: { color: '#e2e8f0' },
-          },
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        },
-      },
+      this.reactivoAcumulado.set({ accidentes: acumAccidentes, diasPerdidos: acumDias, hht: hhtAcum });
+
+      const ultimoResultado = resultados[resultados.length - 1];
+      this.reactivoActual.set(ultimoResultado.reactivos.find(x => x.proyectoId === proyectoId) ?? null);
+
+      setTimeout(() => this.renderMiniCharts(serie), 50);
     });
   }
 
-  toggleEmpresa(nombre: string): void {
-    this.empresaExpandida.set(this.empresaExpandida() === nombre ? null : nombre);
+  indiceFrecuencia(): number {
+    const acc = this.reactivoAcumulado();
+    if (!acc || !acc.hht) return 0;
+    return (acc.accidentes * 1_000_000) / acc.hht;
+  }
+
+  indiceGravedad(): number {
+    const acc = this.reactivoAcumulado();
+    if (!acc || !acc.hht) return 0;
+    return (acc.diasPerdidos * 1_000_000) / acc.hht;
+  }
+
+  indiceAccidentabilidad(): number {
+    return (this.indiceFrecuencia() * this.indiceGravedad()) / 1000;
+  }
+
+  trabajadoresMes(): number {
+    const serie = this.serieMensual();
+    return serie.length ? serie[serie.length - 1].trabajadores : 0;
+  }
+
+  private lineDataset(label: string, data: number[], color: string): any {
+    return {
+      label,
+      data,
+      borderColor: color,
+      backgroundColor: color + '26',
+      pointBackgroundColor: color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2,
+      tension: 0.35,
+      fill: true,
+    };
+  }
+
+  private renderMiniCharts(serie: MesSerieDto[]): void {
+    const labels = serie.map(s => `${s.mes}-${s.anio}`);
+
+    if (this.accCanvasRef?.nativeElement) {
+      if (this.accChart) this.accChart.destroy();
+      this.accChart = new Chart(this.accCanvasRef.nativeElement, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [this.lineDataset('N° de Accidentes', serie.map(s => s.totalAccidentes), '#dc2626')],
+        },
+        options: this.miniChartOptions('#dc2626'),
+      });
+    }
+
+    if (this.diasCanvasRef?.nativeElement) {
+      if (this.diasChart) this.diasChart.destroy();
+      this.diasChart = new Chart(this.diasCanvasRef.nativeElement, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [this.lineDataset('N° de Días Perdidos', serie.map(s => s.totalDiasPerdidos), '#ea580c')],
+        },
+        options: this.miniChartOptions('#ea580c'),
+      });
+    }
+
+    if (this.trabCanvasRef?.nativeElement) {
+      if (this.trabChart) this.trabChart.destroy();
+      this.trabChart = new Chart(this.trabCanvasRef.nativeElement, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [this.lineDataset('N° de Trabajadores', serie.map(s => s.trabajadores), '#0f4c75')],
+        },
+        options: this.miniChartOptions('#0f4c75'),
+      });
+    }
+  }
+
+  private miniChartOptions(color: string): any {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } },
+        datalabels: {
+          align: 'top',
+          anchor: 'end',
+          color,
+          font: { size: 10, weight: 'bold' },
+          formatter: (v: number) => Math.round(v),
+        },
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 }, grid: { color: '#eef2f7' } },
+        x: { ticks: { font: { size: 9 } }, grid: { display: false } },
+      },
+    };
   }
 
   async exportarPDF(): Promise<void> {
@@ -154,7 +296,6 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
       if (imgH <= pageH - 20) {
         pdf.addImage(img, 'PNG', 10, 10, imgW, imgH);
       } else {
-        // Multi-page
         let yPos = 0;
         while (yPos < canvas.height) {
           const sliceH = Math.min((pageH - 20) / (imgW / canvas.width), canvas.height - yPos);
@@ -193,8 +334,8 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     return 'score--rojo';
   }
 
-  gaugeOffset(score: number): number {
-    return 251.2 * (1 - Math.min(score / 110, 1));
+  gaugeOffset(score: number, max: number = 110): number {
+    return 251.2 * (1 - Math.min(score / max, 1));
   }
 
   gaugeColor(score: number): string {
@@ -202,22 +343,6 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     if (score >= 70) return '#ca8a04';
     if (score >= 50) return '#ea580c';
     return '#dc2626';
-  }
-
-  barWidth(val: number): string {
-    return `${Math.min(100, val)}%`;
-  }
-
-  pctEmpresa(emp: MetaEmpresaDto, key: string): number {
-    return Number(emp[`pct${key}` as keyof MetaEmpresaDto]) ?? 0;
-  }
-
-  actualEmpresa(emp: MetaEmpresaDto, key: string): number {
-    return Number(emp[`actual${key}` as keyof MetaEmpresaDto]) ?? 0;
-  }
-
-  metaEmpresa(emp: MetaEmpresaDto, key: string): number {
-    return Number(emp[`meta${key}` as keyof MetaEmpresaDto]) ?? 0;
   }
 
   estadoClass(estado: string): string {
