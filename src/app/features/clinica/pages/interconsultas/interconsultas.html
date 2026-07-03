@@ -54,19 +54,21 @@
       <!-- Tabla -->
       <table class="inter-table" *ngIf="!loading && items.length > 0">
         <colgroup>
-          <col style="width:22%">
-          <col style="width:18%">
-          <col style="width:15%">
+          <col style="width:16%">
+          <col style="width:13%">
           <col style="width:11%">
-          <col style="width:8%">
-          <col style="width:12%">
-          <col style="width:14%">
+          <col style="width:17%">
+          <col style="width:9%">
+          <col style="width:7%">
+          <col style="width:9%">
+          <col style="width:18%">
         </colgroup>
         <thead>
           <tr>
             <th>Trabajador</th>
             <th>Proyecto / Razón Social</th>
             <th>Especialidad</th>
+            <th>Diagnóstico</th>
             <th>F. Derivación</th>
             <th>Días pend.</th>
             <th>Estado</th>
@@ -88,6 +90,7 @@
               </div>
             </td>
             <td class="td-cell">{{ item.especialidad }}</td>
+            <td class="td-cell td-muted" [title]="item.diagnostico">{{ item.diagnostico || '—' }}</td>
             <td class="td-cell td-muted">{{ item.fechaDerivacion | date:'dd/MM/yyyy' }}</td>
             <td>
               <span class="dias-badge" [ngClass]="diasClass(item.diasPendiente, item.estado)">
@@ -98,9 +101,12 @@
               <span class="estado-badge" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
             </td>
             <td class="td-action">
+              <button class="btn-editar" (click)="abrirEditar(item)" title="Editar especialidad y diagnóstico">
+                ✎ Editar
+              </button>
               <button class="btn-resolver" *ngIf="item.estado === 'Pendiente'"
                 (click)="abrirResolver(item)">
-                Resolver
+                Gestionar
               </button>
               <button class="btn-ver" *ngIf="item.estado !== 'Pendiente'"
                 (click)="abrirVer(item)">
@@ -117,18 +123,18 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PASO 1 — Modal evidencia interconsulta
+     Modal — Levantar interconsulta
      ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" *ngIf="pasoActivo === 1" (click)="cancelarResolucion()"></div>
-<div class="dark-modal" *ngIf="pasoActivo === 1" (click)="$event.stopPropagation()">
+<div class="modal-backdrop" *ngIf="interconsultaActiva" (click)="cancelarResolucion()"></div>
+<div class="dark-modal" *ngIf="interconsultaActiva" (click)="$event.stopPropagation()">
 
   <div class="dm-header">
     <div>
-      <div class="dm-step-badge">Paso 1 de 2</div>
-      <h3 class="dm-title">Evidencia de Interconsulta</h3>
-      <p class="dm-worker" *ngIf="interconsultaActiva">
-        {{ interconsultaActiva.workerNombre }}
-        <span class="dm-dni">· {{ interconsultaActiva.workerDni }}</span>
+      <div class="dm-step-badge">Levantar interconsulta</div>
+      <h3 class="dm-title">{{ interconsultaActiva.workerNombre }}</h3>
+      <p class="dm-worker">
+        {{ interconsultaActiva.workerDni }}
+        <span class="dm-dni">· {{ interconsultaActiva.especialidad }} · {{ interconsultaActiva.fechaDerivacion | date:'dd/MM/yyyy' }}</span>
       </p>
     </div>
     <button class="dm-close" (click)="cancelarResolucion()">✕</button>
@@ -138,49 +144,43 @@
     <div class="dm-field-grid">
 
       <div class="dm-field">
-        <label class="dm-label">Resultado *</label>
-        <select class="dm-input" [(ngModel)]="paso1.resultado">
-          <option value="">Seleccionar...</option>
-          <option *ngFor="let r of resultadoOpts" [value]="r">{{ r }}</option>
-        </select>
+        <label class="dm-label">Fecha de atención *</label>
+        <input type="date" class="dm-input"
+          [(ngModel)]="levantamiento.fechaAtencion"
+          (ngModelChange)="levantamiento.fechaError = ''" />
+        <p class="dm-error" *ngIf="levantamiento.fechaError">{{ levantamiento.fechaError }}</p>
       </div>
 
       <div class="dm-field">
-        <label class="dm-label">Especialidad confirmada *</label>
-        <input type="text" class="dm-input" [(ngModel)]="paso1.especialidad"
-          placeholder="Cardiología, Traumatología..." />
+        <label class="dm-label">Resultado</label>
+        <input type="text" class="dm-input" [(ngModel)]="levantamiento.resultado"
+          placeholder="Alta médica, Continúa tratamiento..." />
       </div>
 
       <div class="dm-field dm-full">
         <label class="dm-label">Diagnóstico</label>
-        <textarea class="dm-input dm-textarea" rows="3" [(ngModel)]="paso1.diagnostico"
-          placeholder="Descripción del diagnóstico del especialista..."></textarea>
+        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="levantamiento.diagnostico"
+          placeholder="Descripción del diagnóstico..."></textarea>
       </div>
 
       <div class="dm-field dm-full">
-        <label class="dm-label">Adjuntar informe (PDF / JPG / PNG — máx. 10 MB)</label>
-        <label class="file-drop-zone" [class.has-file]="!!paso1.archivo">
+        <label class="dm-label">Evidencia — informe de interconsulta *</label>
+        <label class="file-drop-zone" [class.has-file]="!!levantamiento.archivo">
           <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-hidden"
-            (change)="onArchivoPaso1($event)" />
-          <ng-container *ngIf="!paso1.archivo">
+            (change)="onArchivoLevantamiento($event)" />
+          <ng-container *ngIf="!levantamiento.archivo">
             <span class="file-icon">📎</span>
-            <span class="file-hint">Haz click para seleccionar archivo</span>
+            <span class="file-hint">Adjuntar informe de interconsulta</span>
           </ng-container>
-          <ng-container *ngIf="paso1.archivo">
+          <ng-container *ngIf="levantamiento.archivo">
             <span class="file-icon">✅</span>
             <div class="file-info">
-              <span class="file-name">{{ paso1.archivoNombre }}</span>
-              <span class="file-size">{{ paso1.archivoTamano }}</span>
+              <span class="file-name">{{ levantamiento.archivoNombre }}</span>
+              <span class="file-size">{{ levantamiento.archivoTamano }}</span>
             </div>
           </ng-container>
         </label>
-        <p class="dm-error" *ngIf="paso1.archivoError">{{ paso1.archivoError }}</p>
-      </div>
-
-      <div class="dm-field dm-full">
-        <label class="dm-label">Notas adicionales <span class="dm-opt">(opcional)</span></label>
-        <textarea class="dm-input dm-textarea" rows="2" [(ngModel)]="paso1.notas"
-          placeholder="Observaciones adicionales..."></textarea>
+        <p class="dm-error" *ngIf="levantamiento.archivoError">{{ levantamiento.archivoError }}</p>
       </div>
 
     </div>
@@ -188,26 +188,58 @@
 
   <div class="dm-footer">
     <button class="btn-ghost-dark" (click)="cancelarResolucion()">Cancelar</button>
-    <button class="btn-continuar" [disabled]="!paso1Valido" (click)="continuarPaso2()">
-      Continuar →
+    <button class="btn-guardar" [disabled]="levantarDeshabilitado" (click)="confirmarLevantamiento()">
+      {{ levantamiento.cargando ? 'Guardando...' : 'Levantar interconsulta' }}
     </button>
   </div>
 
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PASO 2 — CompletarEmo
+     Modal — Editar especialidad / diagnóstico de derivación
      ═══════════════════════════════════════════════════════════ -->
-<app-completar-emo
-  [open]="pasoActivo === 2"
-  [programacion]="programacionSintetica"
-  [interconsultaId]="interconsultaActiva?.id"
-  (closed)="cancelarResolucion()"
-  (completado)="onEmoCompletado()"
-></app-completar-emo>
+<div class="modal-backdrop" *ngIf="editando" (click)="cerrarEditar()"></div>
+<div class="dark-modal" *ngIf="editando" (click)="$event.stopPropagation()">
+
+  <div class="dm-header">
+    <div>
+      <div class="dm-step-badge">Editar derivación</div>
+      <h3 class="dm-title">Especialidad y diagnóstico</h3>
+    </div>
+    <button class="dm-close" (click)="cerrarEditar()">✕</button>
+  </div>
+
+  <div class="dm-body">
+    <div class="dm-field-grid">
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Especialidad *</label>
+        <input type="text" class="dm-input" [(ngModel)]="editando.especialidad"
+          (ngModelChange)="editando.especialidadError = ''"
+          placeholder="Cardiología, Traumatología..." />
+        <p class="dm-error" *ngIf="editando.especialidadError">{{ editando.especialidadError }}</p>
+      </div>
+
+      <div class="dm-field dm-full">
+        <label class="dm-label">Diagnóstico</label>
+        <textarea class="dm-input dm-textarea" rows="3" [(ngModel)]="editando.diagnostico"
+          placeholder="Descripción del diagnóstico..."></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="dm-footer">
+    <button class="btn-ghost-dark" (click)="cerrarEditar()">Cancelar</button>
+    <button class="btn-guardar" [disabled]="editando.cargando" (click)="guardarEdicion()">
+      {{ editando.cargando ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </div>
+
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     Modal Ver / Editar
+     Modal Ver / Editar (interconsultas ya resueltas)
      ═══════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" *ngIf="viendo" (click)="cerrarVer()"></div>
 <div class="dark-modal dm-ver" *ngIf="viendo" (click)="$event.stopPropagation()">

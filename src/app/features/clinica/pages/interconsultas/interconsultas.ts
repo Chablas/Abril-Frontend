@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { lastValueFrom } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { InterconsultaService } from '../../../ssoma/salud-ocupacional/services/interconsulta.service';
 import {
@@ -8,26 +9,33 @@ import {
   InterconsultaDetalleDto,
   InterconsultaUpdateDto,
 } from '../../../ssoma/salud-ocupacional/dtos/interconsulta.model';
-import { ProgramacionClinicaDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-import { CompletarEmo } from '../agenda/components/completar-emo/completar-emo';
 
-interface Paso1Data {
+interface LevantamientoData {
+  fechaAtencion: string;
   resultado: string;
-  especialidad: string;
   diagnostico: string;
-  notas: string;
   archivo: File | null;
   archivoNombre: string;
   archivoTamano: string;
   archivoError: string;
+  fechaError: string;
+  cargando: boolean;
+}
+
+interface EditandoData {
+  id: number;
+  especialidad: string;
+  diagnostico: string;
+  especialidadError: string;
+  cargando: boolean;
 }
 
 @Component({
   selector: 'app-interconsultas-clinica',
   standalone: true,
-  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './interconsultas.html',
   styleUrls: ['./interconsultas.css'],
 })
@@ -37,18 +45,18 @@ export class InterconsultasClinica implements OnInit {
   filtroEstado = 'Pendiente';
   filtroSearch = '';
 
+  // Levantar interconsulta pendiente
+  interconsultaActiva: InterconsultaListDto | null = null;
+  levantamiento: LevantamientoData = this.emptyLevantamiento();
+
+  // Editar especialidad / diagnóstico de la derivación
+  editando: EditandoData | null = null;
+
   // Ver / editar interconsulta existente (no pendiente)
   viendo: InterconsultaDetalleDto | null = null;
   form: InterconsultaUpdateDto = {};
   saving = false;
 
-  // Flujo "Resolver" en 2 pasos
-  interconsultaActiva: InterconsultaListDto | null = null;
-  pasoActivo: 1 | 2 | null = null;
-  paso1: Paso1Data = this.emptyPaso1();
-  programacionSintetica: ProgramacionClinicaDto | null = null;
-
-  readonly resultadoOpts = ['Apto', 'No Apto', 'Observado', 'En seguimiento'];
   readonly estados = ['', 'Pendiente', 'Atendida', 'Cancelada'];
 
   constructor(
@@ -86,83 +94,111 @@ export class InterconsultasClinica implements OnInit {
       });
   }
 
-  // ── Flujo Resolver ───────────────────────────────────────
+  // ── Levantar interconsulta ────────────────────────────────
   abrirResolver(item: InterconsultaListDto): void {
     this.interconsultaActiva = item;
-    this.paso1 = this.emptyPaso1();
-    this.paso1.especialidad = item.especialidad;
-    this.pasoActivo = 1;
-  }
-
-  onArchivoPaso1(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
-    this.paso1.archivoError = '';
-    if (!file) {
-      this.paso1.archivo = null;
-      this.paso1.archivoNombre = '';
-      this.paso1.archivoTamano = '';
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      this.paso1.archivoError = 'El archivo no debe superar 10 MB.';
-      (event.target as HTMLInputElement).value = '';
-      return;
-    }
-    this.paso1.archivo = file;
-    this.paso1.archivoNombre = file.name;
-    this.paso1.archivoTamano = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-  }
-
-  get paso1Valido(): boolean {
-    return !!this.paso1.resultado && !!this.paso1.especialidad.trim();
-  }
-
-  continuarPaso2(): void {
-    if (!this.interconsultaActiva || !this.paso1Valido) return;
-    this.programacionSintetica = {
-      id: this.interconsultaActiva.emoId,
-      workerId: this.interconsultaActiva.workerId,
-      workerNombre: this.interconsultaActiva.workerNombre,
-      workerDni: this.interconsultaActiva.workerDni,
-      tipoEmo: this.interconsultaActiva.especialidad,
-      tipoEmoId: 0,
-      empresa: '',
-      empresaId: undefined,
-      fechaProgramada: new Date().toISOString().split('T')[0],
-      horaProgramada: null,
-      clinica: null,
-      medico: null,
-      estado: 'En Atención',
-      motivo: null,
-      checkInHora: null,
-      motivoRechazo: null,
-      emoResultadoId: null,
-    };
-    this.pasoActivo = 2;
-  }
-
-  onEmoCompletado(): void {
-    if (!this.interconsultaActiva) return;
-    this.svc
-      .updateInterconsulta(this.interconsultaActiva.id, {
-        estado: 'Atendida',
-        diagnostico: this.paso1.diagnostico || undefined,
-        notas: this.paso1.notas || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.cancelarResolucion();
-          this.load();
-        },
-        error: (err) => this.errorService.handleError(err),
-      });
+    this.levantamiento = this.emptyLevantamiento();
   }
 
   cancelarResolucion(): void {
     this.interconsultaActiva = null;
-    this.pasoActivo = null;
-    this.programacionSintetica = null;
-    this.paso1 = this.emptyPaso1();
+    this.levantamiento = this.emptyLevantamiento();
+  }
+
+  onArchivoLevantamiento(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.levantamiento.archivoError = '';
+    if (!file) {
+      this.levantamiento.archivo = null;
+      this.levantamiento.archivoNombre = '';
+      this.levantamiento.archivoTamano = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.levantamiento.archivoError = 'El archivo no debe superar 10 MB.';
+      input.value = '';
+      return;
+    }
+    this.levantamiento.archivo = file;
+    this.levantamiento.archivoNombre = file.name;
+    this.levantamiento.archivoTamano = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  get levantarDeshabilitado(): boolean {
+    const lev = this.levantamiento;
+    return !lev.fechaAtencion || !lev.archivo || lev.cargando;
+  }
+
+  async confirmarLevantamiento(): Promise<void> {
+    const lev = this.levantamiento;
+    if (!this.interconsultaActiva) return;
+    lev.fechaError = '';
+    lev.archivoError = '';
+
+    if (!lev.fechaAtencion) { lev.fechaError = 'La fecha de atención es obligatoria'; return; }
+    if (!lev.archivo) { lev.archivoError = 'Debes adjuntar el informe de interconsulta'; return; }
+
+    lev.cargando = true;
+    const id = this.interconsultaActiva.id;
+    try {
+      const uploadResp = await lastValueFrom(this.svc.subirInforme(id, lev.archivo));
+      await lastValueFrom(
+        this.svc.updateResultado(id, {
+          estado: 'Atendida',
+          fechaAtencion: lev.fechaAtencion,
+          diagnostico: lev.diagnostico || undefined,
+          resultado: lev.resultado || undefined,
+          urlInforme: uploadResp?.url || undefined,
+        }),
+      );
+      this.cancelarResolucion();
+      this.load();
+    } catch (err: any) {
+      this.errorService.handleError(err);
+    } finally {
+      lev.cargando = false;
+    }
+  }
+
+  // ── Editar especialidad / diagnóstico de la derivación ────
+  abrirEditar(item: InterconsultaListDto): void {
+    this.editando = {
+      id: item.id,
+      especialidad: item.especialidad,
+      diagnostico: item.diagnostico ?? '',
+      especialidadError: '',
+      cargando: false,
+    };
+  }
+
+  cerrarEditar(): void {
+    this.editando = null;
+  }
+
+  guardarEdicion(): void {
+    const ed = this.editando;
+    if (!ed) return;
+    ed.especialidadError = '';
+    if (!ed.especialidad.trim()) {
+      ed.especialidadError = 'La especialidad es obligatoria';
+      return;
+    }
+    ed.cargando = true;
+    this.svc.updateDerivacion(ed.id, {
+      especialidad: ed.especialidad.trim(),
+      diagnostico: ed.diagnostico.trim() || undefined,
+    }).subscribe({
+      next: () => {
+        ed.cargando = false;
+        this.cerrarEditar();
+        this.load();
+      },
+      error: (err) => {
+        ed.cargando = false;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── Ver / Editar (no pendiente) ──────────────────────────
@@ -232,16 +268,17 @@ export class InterconsultasClinica implements OnInit {
     return 'chip-green';
   }
 
-  private emptyPaso1(): Paso1Data {
+  private emptyLevantamiento(): LevantamientoData {
     return {
+      fechaAtencion: '',
       resultado: '',
-      especialidad: '',
       diagnostico: '',
-      notas: '',
       archivo: null,
       archivoNombre: '',
       archivoTamano: '',
       archivoError: '',
+      fechaError: '',
+      cargando: false,
     };
   }
 }

@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { lastValueFrom } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ClinicaProgramacionService } from '../../services/clinica-programacion.service';
 import { InterconsultaClinicaService } from '../../services/interconsulta-clinica.service';
 import { ProgramacionClinicaDto, ClinicaAccionDto, ClinicaInterconsultaCreateDto } from '../../dtos/clinica.model';
@@ -76,24 +75,6 @@ export class Agenda implements OnInit {
     itemId: number | null;
   } = { open: false, workerNombre: '', fechaNueva: '', horaNueva: '', body: null, itemId: null };
 
-  activeTab: 'agenda' | 'interconsultas' = 'agenda';
-  interconsultas: any[] = [];
-  interconsultasLoading = false;
-  interconsultasFiltroEstado = 'Pendiente';
-  interconsultasBusqueda = '';
-
-  icDetalle: any = null;
-  icPaso: 1 | 2 = 1;
-  icLevantamiento = {
-    fechaAtencion: '',
-    diagnostico: '',
-    resultado: '',
-    archivoFile: null as File | null,
-    archivoError: '',
-    fechaError: '',
-    cargando: false,
-  };
-
   modalInterconsulta = {
     visible: false,
     progId: 0,
@@ -129,7 +110,6 @@ export class Agenda implements OnInit {
 
   ngOnInit(): void {
     this.loadAgenda(this.selectedDate);
-    this.cargarInterconsultas();
   }
 
   loadAgenda(fecha: string): void {
@@ -437,132 +417,6 @@ export class Agenda implements OnInit {
     });
   }
 
-  // ── Tabs ─────────────────────────────────────────────────
-  cambiarTab(tab: 'agenda' | 'interconsultas'): void {
-    this.activeTab = tab;
-    if (tab === 'interconsultas' && this.interconsultas.length === 0) {
-      this.cargarInterconsultas();
-    }
-    this.cdr.detectChanges();
-  }
-
-  cargarInterconsultas(): void {
-    this.interconsultasLoading = true;
-    const token = localStorage.getItem('access_token');
-    const headers = new HttpHeaders(
-      token ? { Authorization: `Bearer ${token}` } : {}
-    );
-    const params = new HttpParams()
-      .set('estado', this.interconsultasFiltroEstado)
-      .set('pageSize', '100');
-
-    this.http.get<any[]>(
-      `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/interconsultas`,
-      { headers, params }
-    ).subscribe({
-      next: (res: any) => {
-        this.interconsultas = Array.isArray(res) ? res : (res.data ?? res.items ?? []);
-        this.interconsultasLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.interconsultas = [];
-        this.interconsultasLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  calcularDiasPendientes(fechaDerivacion: string): number {
-    const hoy = new Date();
-    const fecha = new Date(fechaDerivacion);
-    return Math.floor((hoy.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  // ── Panel lateral interconsultas ─────────────────────────
-  seleccionarInterconsulta(item: any): void {
-    this.icDetalle = item;
-    this.icPaso = item.estado === 'Completado' ? 2 : 1;
-    this.icLevantamiento = {
-      fechaAtencion: '',
-      diagnostico: '',
-      resultado: '',
-      archivoFile: null,
-      archivoError: '',
-      fechaError: '',
-      cargando: false,
-    };
-    this.cdr.detectChanges();
-  }
-
-  onArchivoLevantamiento(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.icLevantamiento.archivoFile = input.files?.[0] ?? null;
-    this.icLevantamiento.archivoError = '';
-  }
-
-  async confirmarLevantamiento(): Promise<void> {
-    const lev = this.icLevantamiento;
-    lev.fechaError = '';
-    lev.archivoError = '';
-
-    if (!lev.fechaAtencion) { lev.fechaError = 'La fecha de atención es obligatoria'; return; }
-    if (!lev.archivoFile)   { lev.archivoError = 'Debes adjuntar el informe de interconsulta'; return; }
-
-    lev.cargando = true;
-    const base = `${environment.apiUrl}api/v1/ssoma/salud-ocupacional`;
-    const token = localStorage.getItem('access_token');
-    const headers = new HttpHeaders(token ? { Authorization: `Bearer ${token}` } : {});
-
-    try {
-      const fd = new FormData();
-      fd.append('file', lev.archivoFile);
-      const uploadResp: any = await lastValueFrom(
-        this.http.post(`${base}/interconsultas/${this.icDetalle.id}/documentos`, fd, { headers }),
-      );
-      const urlInforme = uploadResp?.url ?? uploadResp?.path ?? '';
-
-      await lastValueFrom(
-        this.http.patch(`${base}/interconsultas/${this.icDetalle.id}/resultado`, {
-          estado: 'Atendida',
-          fechaAtencion: lev.fechaAtencion,
-          diagnostico: lev.diagnostico || undefined,
-          resultado: lev.resultado || undefined,
-          urlInforme: urlInforme || undefined,
-        }, { headers }),
-      );
-
-      this.icPaso = 2;
-      this.cdr.detectChanges();
-      this.cargarInterconsultas();
-    } catch (err: any) {
-      const mensaje = err?.error?.message ?? err?.message ?? 'Error al levantar la interconsulta';
-      Swal.fire('Error', mensaje, 'error');
-    } finally {
-      lev.cargando = false;
-    }
-  }
-
-  get levantarDeshabilitado(): boolean {
-    const lev = this.icLevantamiento;
-    return !lev.fechaAtencion || !lev.resultado?.trim() || !lev.diagnostico?.trim() || !lev.archivoFile;
-  }
-
-  icEstadoClass(estado: string): string {
-    const map: Record<string, string> = {
-      'Pendiente': 'ic-chip-orange',
-      'Atendida':  'ic-chip-green',
-      'Cancelada': 'ic-chip-gray',
-    };
-    return map[estado] ?? 'ic-chip-gray';
-  }
-
-  icDiasClass(dias: number): string {
-    if (dias > 15) return 'ic-chip-red';
-    if (dias >= 8)  return 'ic-chip-orange';
-    return 'ic-chip-green';
-  }
-
   // ── Interconsulta (nueva desde card) ─────────────────────
   abrirInterconsulta(item: any): void {
     this.modalInterconsulta = {
@@ -606,7 +460,6 @@ export class Agenda implements OnInit {
       next: () => {
         this.cancelarInterconsulta();
         this.loadAgenda(this.selectedDate);
-        this.cargarInterconsultas();
         Swal.fire('Interconsulta registrada', '', 'success');
       },
       error: (err) => {

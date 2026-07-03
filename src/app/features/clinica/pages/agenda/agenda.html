@@ -16,7 +16,7 @@
   <!-- ── Header ──────────────────────────────────────── -->
   <div class="agenda-header">
     <div class="header-main-row">
-      <div class="header-right" *ngIf="activeTab === 'agenda'">
+      <div class="header-right">
         <div class="date-picker-wrap">
           <span class="date-icon">📅</span>
           <input type="date" class="date-input" [(ngModel)]="selectedDate"
@@ -26,24 +26,7 @@
         <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
       </div>
     </div>
-    <div class="agenda-tabs">
-      <button class="agenda-tab"
-        [class.tab-active]="activeTab === 'agenda'"
-        (click)="cambiarTab('agenda')">
-        📋 Agenda del Día
-      </button>
-      <button class="agenda-tab"
-        [class.tab-active]="activeTab === 'interconsultas'"
-        (click)="cambiarTab('interconsultas')">
-        🔗 Interconsultas
-      </button>
-    </div>
   </div>
-
-  <!-- ═══════════════════════════════════════════════════
-       TAB: AGENDA
-       ═══════════════════════════════════════════════════ -->
-  <ng-container *ngIf="activeTab === 'agenda'">
 
     <!-- Stats bar -->
     <div class="stats-bar" *ngIf="!loading && totalHoy > 0">
@@ -238,109 +221,6 @@
       </div>
 
     </div><!-- /cards-zone -->
-
-  </ng-container>
-
-  <!-- ═══════════════════════════════════════════════════
-       TAB: INTERCONSULTAS
-       ═══════════════════════════════════════════════════ -->
-  <ng-container *ngIf="activeTab === 'interconsultas'">
-
-    <!-- Controls -->
-    <div class="controls-row">
-      <div class="ic-ctrl-field">
-        <label class="ic-ctrl-label">Estado</label>
-        <select class="ic-ctrl-input ic-ctrl-select" [(ngModel)]="interconsultasFiltroEstado">
-          <option value="">Todos</option>
-          <option value="Pendiente">Pendiente</option>
-          <option value="Atendida">Atendida</option>
-          <option value="Cancelada">Cancelada</option>
-        </select>
-      </div>
-      <div class="ic-ctrl-field">
-        <label class="ic-ctrl-label">Buscar trabajador</label>
-        <input type="text" class="ic-ctrl-input" [(ngModel)]="interconsultasBusqueda"
-          placeholder="Nombre o DNI..." (keyup.enter)="cargarInterconsultas()" />
-      </div>
-      <button class="btn-buscar-ic" (click)="cargarInterconsultas()" [disabled]="interconsultasLoading">
-        {{ interconsultasLoading ? 'Cargando…' : 'Buscar' }}
-      </button>
-    </div>
-
-    <!-- Table zone (ancho completo) -->
-    <div class="ic-table-zone">
-      <div class="ic-table-card">
-
-        <div class="ic-state-row" *ngIf="interconsultasLoading">
-          <div class="ic-loading-dots">
-            <span></span><span></span><span></span>
-          </div>
-        </div>
-
-        <div class="ic-state-row ic-empty-state"
-          *ngIf="!interconsultasLoading && interconsultas.length === 0">
-          <span class="ic-empty-icon">🔗</span>
-          <p class="ic-empty-text">Sin interconsultas en este estado</p>
-        </div>
-
-        <table class="ic-list-table"
-          *ngIf="!interconsultasLoading && interconsultas.length > 0">
-          <colgroup>
-            <col style="width:26%">
-            <col style="width:18%">
-            <col style="width:12%">
-            <col style="width:10%">
-            <col style="width:20%">
-            <col style="width:14%">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Trabajador</th>
-              <th>Especialidad</th>
-              <th>F. Derivación</th>
-              <th>Días</th>
-              <th>Estado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of interconsultas">
-              <td>
-                <div class="worker-cell">
-                  <span class="worker-name">{{ item.workerNombre }}</span>
-                  <span class="worker-dni">{{ item.workerDni }}</span>
-                </div>
-              </td>
-              <td class="td-cell">{{ item.especialidad }}</td>
-              <td class="td-cell td-muted">{{ item.fechaDerivacion | date:'dd/MM/yyyy' }}</td>
-              <td>
-                <span class="ic-dias-badge"
-                  [ngClass]="item.estado === 'Pendiente'
-                    ? icDiasClass(calcularDiasPendientes(item.fechaDerivacion))
-                    : 'ic-chip-muted'">
-                  {{ item.estado === 'Pendiente'
-                    ? calcularDiasPendientes(item.fechaDerivacion) + 'd'
-                    : '—' }}
-                </span>
-              </td>
-              <td>
-                <span class="ic-estado-badge" [ngClass]="icEstadoClass(item.estado)">
-                  {{ item.estado }}
-                </span>
-              </td>
-              <td class="td-action">
-                <button class="ic-btn-accion" (click)="seleccionarInterconsulta(item)">
-                  {{ item.estado === 'Completado' ? '📋 Ver detalle' : '🔧 Gestionar' }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-      </div>
-    </div>
-
-  </ng-container>
 
 </div>
 
@@ -577,98 +457,3 @@
   (closed)="completandoItem = null"
   (completado)="onCompletado()"
 ></app-completar-emo>
-
-<!-- ═══════════════════════════════════════════════════
-     Modal — Levantar / Ver interconsulta
-     ═══════════════════════════════════════════════════ -->
-<div class="modal-overlay" *ngIf="icDetalle" (click)="icDetalle = null">
-  <div class="ic-modal-box" (click)="$event.stopPropagation()">
-
-    <!-- Header -->
-    <div class="ic-modal-header">
-      <div>
-        <div class="ic-modal-nombre">{{ icDetalle.workerNombre }}</div>
-        <div class="ic-modal-sub">
-          {{ icDetalle.workerDni }} ·
-          {{ icDetalle.especialidad }} ·
-          {{ icDetalle.fechaDerivacion | date:'dd/MM/yyyy' }}
-        </div>
-      </div>
-      <button class="ic-modal-close" (click)="icDetalle = null">✕</button>
-    </div>
-
-    <!-- Paso 1: Levantar -->
-    <div *ngIf="icPaso === 1" class="ic-modal-body">
-      <div class="ic-modal-step-title">
-        <span class="ic-step-num">1</span>
-        Levantar interconsulta
-      </div>
-
-      <div class="ic-modal-grid">
-        <div class="ic-field">
-          <label class="ic-label">FECHA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
-          <input type="date" class="ic-input"
-            [(ngModel)]="icLevantamiento.fechaAtencion"
-            (ngModelChange)="icLevantamiento.fechaError=''">
-          <p class="ic-error" *ngIf="icLevantamiento.fechaError">
-            {{ icLevantamiento.fechaError }}</p>
-        </div>
-        <div class="ic-field">
-          <label class="ic-label">RESULTADO</label>
-          <input type="text" class="ic-input"
-            [(ngModel)]="icLevantamiento.resultado"
-            placeholder="Alta médica, Continúa tratamiento...">
-        </div>
-      </div>
-
-      <div class="ic-field">
-        <label class="ic-label">DIAGNÓSTICO</label>
-        <textarea class="ic-input ic-textarea" rows="2"
-          [(ngModel)]="icLevantamiento.diagnostico"
-          placeholder="Descripción del diagnóstico..."></textarea>
-      </div>
-
-      <div class="ic-field">
-        <label class="ic-label">EVIDENCIA — INFORME DE INTERCONSULTA <span style="color:#dc2626">*</span></label>
-        <label class="ic-file-zone" [class.ic-has-file]="icLevantamiento.archivoFile">
-          <input type="file" class="file-hidden"
-            accept=".pdf,.jpg,.jpeg,.png"
-            (change)="onArchivoLevantamiento($event)">
-          <ng-container *ngIf="!icLevantamiento.archivoFile">
-            <span>📎 Adjuntar informe de interconsulta</span>
-          </ng-container>
-          <ng-container *ngIf="icLevantamiento.archivoFile">
-            <span class="ic-file-name">✓ {{ icLevantamiento.archivoFile.name }}</span>
-          </ng-container>
-        </label>
-        <p class="ic-error" *ngIf="icLevantamiento.archivoError">
-          {{ icLevantamiento.archivoError }}</p>
-      </div>
-
-      <div class="ic-modal-footer">
-        <button class="ic-btn-cancel" (click)="icDetalle = null">Cancelar</button>
-        <button class="ic-btn-confirmar"
-          (click)="confirmarLevantamiento()"
-          [disabled]="levantarDeshabilitado || icLevantamiento.cargando">
-          {{ icLevantamiento.cargando ? 'Guardando...' : 'Levantar interconsulta' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Paso 2: Completado -->
-    <div *ngIf="icPaso === 2" class="ic-modal-body">
-      <div class="ic-modal-step-title">
-        <span class="ic-step-num ic-step-done">✓</span>
-        Interconsulta levantada
-      </div>
-      <p class="ic-paso-desc">
-        La interconsulta fue registrada correctamente.
-        El trabajador puede proceder con su EMO cuando corresponda.
-      </p>
-      <div class="ic-modal-footer">
-        <button class="ic-btn-cancel" (click)="icDetalle = null">Cerrar</button>
-      </div>
-    </div>
-
-  </div>
-</div>

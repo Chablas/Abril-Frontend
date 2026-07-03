@@ -286,6 +286,21 @@
 }
 .btn-ver:hover { background: #f1f5f9; color: #475569; }
 
+.btn-editar {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  margin-right: 6px;
+}
+.btn-editar:hover { background: #dbeafe; border-color: #93c5fd; }
+
 /* ─────────────────────────────────────────────────────────
    MODALES — overlays independientes
    ───────────────────────────────────────────────────────── */

@@ -9,6 +9,7 @@ export interface InterconsultaListDto {
   proyectoNombre?: string;
   razonSocial?: string;
   especialidad: string;
+  diagnostico?: string;
   fechaDerivacion: string;
   fechaAtencion?: string;
   estado: EstadoInterconsulta;
@@ -33,6 +34,21 @@ export interface InterconsultaUpdateDto {
   urlInforme?: string;
   estado?: EstadoInterconsulta;
   notas?: string;
+}
+
+export interface InterconsultaResultadoPatchDto {
+  estado: EstadoInterconsulta;
+  fechaAtencion?: string;
+  diagnostico?: string;
+  cie10?: string;
+  resultado?: string;
+  urlInforme?: string;
+  requiereSeguimiento?: boolean;
+}
+
+export interface InterconsultaDerivacionPatchDto {
+  especialidad: string;
+  diagnostico?: string;
 }
 
 export interface InterconsultaQueryParams {

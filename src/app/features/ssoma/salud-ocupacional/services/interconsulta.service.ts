@@ -4,9 +4,11 @@ import { Observable } from 'rxjs';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders, buildParams } from './http-base';
 import {
+  InterconsultaDerivacionPatchDto,
   InterconsultaDetalleDto,
   InterconsultaListDto,
   InterconsultaQueryParams,
+  InterconsultaResultadoPatchDto,
   InterconsultaUpdateDto,
 } from '../dtos/interconsulta.model';
 
@@ -36,6 +38,26 @@ export class InterconsultaService {
     dto: InterconsultaUpdateDto,
   ): Observable<InterconsultaDetalleDto> {
     return this.http.put<InterconsultaDetalleDto>(`${this.apiUrl}/${id}`, dto, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  updateResultado(id: number, dto: InterconsultaResultadoPatchDto): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/resultado`, dto, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  updateDerivacion(id: number, dto: InterconsultaDerivacionPatchDto): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/derivacion`, dto, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  subirInforme(id: number, file: File): Observable<{ url: string }> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/${id}/documentos`, fd, {
       headers: buildAuthHeaders(),
     });
   }
