@@ -136,6 +136,14 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       !!this.model.apellidoNombre.trim() &&
       (this.mode === 'edit' || !!this.model.dni.trim());
 
+    // En edición se permite guardar cambios parciales: muchos trabajadores
+    // legados tienen campos obligatorios de alta (email, celular, años de
+    // experiencia, etc.) incompletos, y no deben bloquear correcciones puntuales
+    // como Área/Subárea. La validación completa de obligatorios solo aplica al crear.
+    if (this.mode === 'edit') {
+      return base;
+    }
+
     if (this.esContratista) {
       return (
         base &&
