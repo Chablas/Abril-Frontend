@@ -12,6 +12,8 @@ import {
   EditarActividadRequest,
   EditarActividadResultDto,
   ImportarMppResultDto,
+  CrearActividadMasivoItem,
+  CrearActividadesMasivoResultDto,
 } from '../dtos/cronograma-actividades.dtos';
 
 function buildAuthHeaders(): Record<string, string> {
@@ -31,10 +33,11 @@ export class CronogramaActividadesService {
     });
   }
 
-  getActividades(proyectoId: number): Observable<ActividadesProyectoResponseDto> {
-    return this.http.get<ActividadesProyectoResponseDto>(`${this.base}/${proyectoId}/actividades`, {
-      headers: buildAuthHeaders(),
-    });
+  getActividades(proyectoId: number, tipoCronograma: string): Observable<ActividadesProyectoResponseDto> {
+    return this.http.get<ActividadesProyectoResponseDto>(
+      `${this.base}/${proyectoId}/actividades?tipoCronograma=${encodeURIComponent(tipoCronograma)}`,
+      { headers: buildAuthHeaders() },
+    );
   }
 
   crearActividad(proyectoId: number, body: CrearActividadRequest): Observable<EditarActividadResultDto> {
@@ -120,11 +123,26 @@ export class CronogramaActividadesService {
     });
   }
 
-  importarMpp(proyectoId: number, file: File): Observable<ImportarMppResultDto> {
+  importarMpp(proyectoId: number, file: File, tipoCronograma: string): Observable<ImportarMppResultDto> {
     const formData = new FormData();
     formData.append('archivo', file);
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
     const headers = new HttpHeaders({ Authorization: `Bearer ${token ?? ''}` });
-    return this.http.post<ImportarMppResultDto>(`${this.base}/${proyectoId}/importar-mpp`, formData, { headers });
+    return this.http.post<ImportarMppResultDto>(
+      `${this.base}/${proyectoId}/importar-mpp?tipoCronograma=${encodeURIComponent(tipoCronograma)}`,
+      formData,
+      { headers },
+    );
+  }
+
+  crearActividadesMasivo(
+    proyectoId: number,
+    body: { actividades: CrearActividadMasivoItem[] },
+  ): Observable<CrearActividadesMasivoResultDto> {
+    return this.http.post<CrearActividadesMasivoResultDto>(
+      `${this.base}/${proyectoId}/actividades-masivo`,
+      body,
+      { headers: buildAuthHeaders() },
+    );
   }
 }

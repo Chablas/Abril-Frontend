@@ -22,6 +22,7 @@ export interface CronogramaDashboardProyectoDto {
   diasRetraso: number;
   semaforo: 'VERDE' | 'AMARILLO' | 'ROJO';
   estado: 'AL_DIA' | 'CON_RETRASO' | 'SIN_ACTIVIDADES';
+  spi: number;
 }
 
 export interface CronogramaDashboardResponsableDto {
