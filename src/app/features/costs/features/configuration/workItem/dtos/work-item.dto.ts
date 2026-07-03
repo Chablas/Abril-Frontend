@@ -3,6 +3,8 @@ export interface WorkItemDto {
   workItemDescription: string;
   workItemCategoryId?: number | null;
   workItemCategoryDescription?: string | null;
+  /** Especialidad a la que pertenece la partida de control. */
+  workSpecialtyDescription?: string | null;
   createdDateTime: string;
   createdUserId: number;
   updatedDateTime?: string;

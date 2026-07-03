@@ -5,6 +5,7 @@
         <th class="py-2 px-2 w-[64px]"></th>
         <th class="py-2 px-3 text-left font-semibold">Descripción</th>
         <th class="py-2 px-3 text-left font-semibold whitespace-nowrap">Partida de control</th>
+        <th class="py-2 px-3 text-left font-semibold whitespace-nowrap">Especialidad</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Formas de valorización</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Fecha creación</th>
@@ -48,6 +49,15 @@
           <ng-template #noCategory><span class="text-sm text-gray-400">—</span></ng-template>
         </td>
 
+        <!-- Especialidad (de la partida de control) -->
+        <td class="px-3 py-2">
+          <span *ngIf="item.workSpecialtyDescription; else noSpecialty"
+            [title]="item.workSpecialtyDescription" class="block line-clamp-1 text-sm text-gray-700">
+            {{ item.workSpecialtyDescription }}
+          </span>
+          <ng-template #noSpecialty><span class="text-sm text-gray-400">—</span></ng-template>
+        </td>
+
         <!-- Formas de valorización (cláusula 5.1): indicador de si tiene o no -->
         <td class="px-3 py-2 text-center">
           <span *ngIf="item.valorizationForms?.length"
@@ -83,7 +93,7 @@
       </tr>
 
       <tr *ngIf="items.length === 0">
-        <td colspan="6" class="text-center text-sm text-gray-400 italic py-8">
+        <td colspan="7" class="text-center text-sm text-gray-400 italic py-8">
           No hay registros.
         </td>
       </tr>

@@ -1,8 +1,3 @@
-export interface ContractorPersonTypeDTO {
-  contractorPersonTypeId: number;
-  description: string;
-}
-
 export interface EmailContactItem {
   email: string;
   personTypeId: number | null;

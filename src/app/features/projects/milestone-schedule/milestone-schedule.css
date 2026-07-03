@@ -195,3 +195,51 @@
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
 .badge-sin-fecha { background: #f1f5f9; color: #94a3b8; }
 .badge-con-fecha { background: #E6F1FB; color: #185FA5; }
+
+/* ── Modal "Ver historial de cronograma de hitos" ───────────────────────── */
+
+.historial-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 20px;
+  background: #1E3A5F;
+  color: #ffffff;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background .15s ease;
+}
+.historial-btn-primary:hover { background: #17304A; }
+
+.historial-table thead tr { border-bottom: 1px solid #E2E8F0; }
+
+.historial-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #64748B;
+  padding-bottom: 8px;
+}
+
+.historial-table tbody tr:hover { background: #F8FAFC; }
+
+/* BaseModal es compartido — se sobrescribe con ::ng-deep solo dentro de esta
+   instancia (host de MilestoneSchedule) para no afectar otros usos del modal. */
+:host ::ng-deep app-base-modal .bg-white.rounded-lg.shadow-xl {
+  box-shadow: none;
+  border-radius: 10px;
+  border: 0.5px solid #E2E8F0;
+}
+
+:host ::ng-deep app-base-modal h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E3A5F;
+  font-family: var(--font-sans);
+}
+
+:host ::ng-deep app-base-modal button.absolute svg path {
+  stroke: #64748B;
+}

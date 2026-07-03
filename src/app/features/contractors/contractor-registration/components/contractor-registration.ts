@@ -9,7 +9,8 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { SunatContributorDTO } from '../../shared/sunatCompany.model';
 import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
-import { ContributorRegisterDTO, ContractorPersonTypeDTO, EmailContactItem } from '../dtos/companyRegister.model';
+import { ContributorRegisterDTO, EmailContactItem } from '../dtos/companyRegister.model';
+import { ContractorPersonTypeDTO } from '../../shared/contractorPersonType.model';
 import { isValidContractorEmail } from '../../shared/email-validation';
 import Swal from 'sweetalert2';
 

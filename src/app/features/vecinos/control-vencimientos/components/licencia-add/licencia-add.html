@@ -30,9 +30,11 @@
       <label class="text-sm text-[var(--color-abril-primary)] font-medium">
         Fecha de vencimiento <span class="text-red-500">*</span>
       </label>
-      <input type="date" name="fechaVencimiento" [(ngModel)]="fechaVencimiento"
-        (ngModelChange)="onVencimientoChange()"
-        class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+      <app-date-picker
+        [showLabel]="false"
+        [value]="fechaVencimiento"
+        (valueChange)="fechaVencimiento = $event ?? ''; onVencimientoChange()"
+        color="var(--color-abril-primary)" />
     </div>
 
     <!-- ── Recordatorio (bidireccional) ────────────────────────────────── -->
@@ -41,9 +43,11 @@
         <label class="text-sm text-[var(--color-abril-primary)] font-medium">
           Fecha de recordatorio <span class="text-red-500">*</span>
         </label>
-        <input type="date" name="fechaRecordatorio" [(ngModel)]="fechaRecordatorio"
-          (ngModelChange)="onRecordatorioChange()" [max]="fechaVencimiento || null"
-          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+        <app-date-picker
+          [showLabel]="false"
+          [value]="fechaRecordatorio"
+          (valueChange)="fechaRecordatorio = $event ?? ''; onRecordatorioChange()"
+          color="var(--color-abril-primary)" />
       </div>
 
       <div class="flex flex-col gap-[6px]">
@@ -59,6 +63,44 @@
     <p class="text-xs text-gray-500 -mt-2">
       Completa cualquiera de los dos campos: el otro se calcula automáticamente en base a la fecha de vencimiento.
     </p>
+
+    <!-- ── Correos del recordatorio ────────────────────────────────────── -->
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-sm text-[var(--color-abril-primary)] font-medium">
+        Correos del recordatorio <span class="text-red-500">*</span>
+      </label>
+
+      <div class="flex gap-2">
+        <input type="text" name="emailInput" [(ngModel)]="emailInput"
+          (keydown.enter)="$event.preventDefault(); addEmail()"
+          placeholder="correo@abril.pe o grupo@abril.pe"
+          class="flex-1 border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-abril-primary)]/30" />
+        <button type="button" (click)="addEmail()"
+          class="h-[42px] px-4 bg-[var(--color-abril-primary-light)] rounded-lg text-[var(--color-abril-primary)] text-sm font-medium cursor-pointer hover:bg-[#d4ecd5] transition-colors shrink-0">
+          Agregar
+        </button>
+      </div>
+
+      <!-- Chips de correos agregados -->
+      <div *ngIf="emails.length > 0" class="flex flex-wrap gap-2 mt-1">
+        <span *ngFor="let e of emails; let i = index"
+          class="inline-flex items-center gap-1.5 bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary-dark)] text-xs font-medium px-2.5 py-1 rounded-full">
+          <span class="ti ti-mail"></span>
+          {{ e }}
+          <button type="button" (click)="removeEmail(i)" title="Quitar"
+            class="text-[var(--color-abril-primary-dark)]/60 hover:text-red-500 cursor-pointer leading-none">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </span>
+      </div>
+
+      <p class="text-xs text-gray-500">
+        Puedes ingresar correos individuales o grupos de correo: los grupos se desglosan
+        automáticamente en sus miembros al momento de enviar el recordatorio.
+      </p>
+    </div>
 
     <!-- ── Acciones ────────────────────────────────────────────────────── -->
     <div class="flex justify-end gap-3 pt-1">

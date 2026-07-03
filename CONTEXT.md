@@ -3979,3 +3979,58 @@ Resuelve error al cargar /costs/adjudicaciones.
 - npm install @microsoft/signalr @tabler/icons-webfont — dependencias faltantes
 - Build exitoso con warnings (no errores)
 - Frontend desplegado en VPS /var/www/abril vía scp
+
+## Sesión 2026-06-29
+
+### 1. SPI (Índice de Rendimiento del Cronograma) en Dashboard UDP
+
+**Frontend — `features/projects/cronograma-dashboard/`:**
+- `CronogramaDashboardProyectoDto` extendido con `spi: number`
+- Propiedad `spiPromedio = 1.0` calculada en `loadDashboard()` promediando proyectos con actividades
+- Métodos `spiColor(spi, estado)` y `spiLabel(spi, estado)` para color y texto del badge
+- KPI card "SPI PROMEDIO" agregada (9na card, skeleton actualizado a 9)
+- Columna SPI en tabla con badge coloreado: verde ≥1, naranja ≥0.9, rojo <0.9, gris SIN_ACTIVIDADES
+- Estilos `.col-spi` y `.spi-badge` en `cronograma-dashboard.css`
+
+### 2. Bugs identificados (pendientes)
+
+- **Responsables vacíos en filtro**: el select solo muestra "Responsable: Todos", nunca carga nombres. Query 3 del dashboard trae los IDs correctos pero hay que verificar por qué no devuelve nombres.
+- **Avance 0% en dashboard**: `CalcularAvanceNivel0` mezcla los 3 tipos de cronograma (ANTEPROYECTO/PROYECTO/ACTUALIZACION). El dashboard debe mostrar 3 barras separadas por tipo igual que `proyectos-cronograma-list`. Requiere cambiar `CronogramaDashboardProyectoDto` para devolver `avanceAnteproyecto`, `avanceProyecto`, `avanceProyectoActualizacion` en lugar de `porcentajeAvance`.
+
+### 3. Setup de herramientas por PC
+
+**PC Personal — CON headroom:**
+- `headroom` v0.28.0 instalado via `py -m pip install "headroom-ai[all]"`
+- Al abrir Claude Code: `headroom wrap claude` desde la carpeta del repo correspondiente
+- Si el proxy se cae: `headroom proxy` en cualquier terminal, luego reabrir Claude Code
+- Modelo: `claude config set model claude-sonnet-4-5`
+
+**PC Trabajo — SIN headroom:**
+- Claude Code se abre directamente con `claude` como siempre
+- Sin cambios en el flujo de trabajo habitual
+
+## Sesión 2026-07-03
+
+### 1. Skills de cierre de sesión
+
+Creados `.claude/skills/guardar-rama/SKILL.md` y `.claude/skills/guardar-master/SKILL.md`:
+- **guardar-rama**: commitea cambios pendientes (mensaje Conventional Commits autogenerado), corre `ng build` obligatorio, actualiza `CONTEXT.md` con el resumen de sesión, hace `git fetch` + `merge` de `origin/<rama>`, y pushea sin `--force`. Se detiene si la rama es `master`, si el build falla, o si hay conflictos de merge.
+- **guardar-master**: mismo flujo pero para `master` — pide confirmación explícita antes del push (muestra `git log`/`git diff` contra `origin/master`) por ser la rama de producción. Se detiene si la rama activa no es `master`.
+- Ambas skills recién creadas no quedan registradas en el harness hasta la próxima sesión (se ejecutaron manualmente siguiendo el contenido del SKILL.md en esta misma sesión).
+
+### 2. `.claude/skills/` ahora se versiona en el repo
+
+`.gitignore` cambió de `.claude/` a:
+```
+.claude/*
+!.claude/skills/
+```
+Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero permite que `guardar-rama/SKILL.md` y `guardar-master/SKILL.md` viajen con el repo a cualquier PC/sesión — antes quedaban solo locales.
+
+### 3. Pendiente
+
+- No existe todavía en este archivo una sección `REGLAS DE PROGRAMACIÓN > DEPLOY` con reglas numeradas P1-P5 (la skill `guardar-master` referencia una "regla P5" de no usar `--force" que aún no está documentada aquí). Si se formaliza, agregarla junto a `## REGLAS DE CODIFICACIÓN` (línea 49).
+
+### 4. Merge a master vía "guardar master"
+
+`feature/milestone-schedule-improvements` (SPI en dashboard UDP, mejoras UX cronograma de actividades, drag&drop de jerarquía, skills guardar-rama/guardar-master) se mergeó a `master` con `ddf419c`. Build de producción (`ng build`) verificado OK antes del push. Sin cambios de código nuevos en esta sesión — solo consolidación y push.

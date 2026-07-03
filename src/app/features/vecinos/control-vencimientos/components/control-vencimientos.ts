@@ -6,18 +6,20 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LicenciaAdd } from './licencia-add/licencia-add';
+import { LicenciaDetail } from './licencia-detail/licencia-detail';
 import { ControlVencimientosService } from '../services/control-vencimientos.service';
 import { VecinoLicenciaDTO } from '../dtos/control-vencimientos.dto';
 
 @Component({
   selector: 'app-control-vencimientos',
   standalone: true,
-  imports: [CommonModule, AbrilPageHeaderComponent, LicenciaAdd],
+  imports: [CommonModule, AbrilPageHeaderComponent, LicenciaAdd, LicenciaDetail],
   templateUrl: './control-vencimientos.html',
 })
 export class ControlVencimientos implements OnInit {
   licencias: VecinoLicenciaDTO[] = [];
   showAddModal = false;
+  selectedLicencia: VecinoLicenciaDTO | null = null;
 
   constructor(
     private service: ControlVencimientosService,
@@ -58,5 +60,13 @@ export class ControlVencimientos implements OnInit {
 
   fileUrl(url: string): string {
     return url.startsWith('http') ? url : environment.apiUrl.replace(/\/$/, '') + url;
+  }
+
+  openDetail(item: VecinoLicenciaDTO): void {
+    this.selectedLicencia = item;
+  }
+
+  closeDetail(): void {
+    this.selectedLicencia = null;
   }
 }

@@ -7,6 +7,7 @@ import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { ContractorManagementDTO } from '../dtos/contractor-management.dto';
 import { SunatContributorDTO } from '../../shared/sunatCompany.model';
 import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
+import { ContractorPersonTypeDTO } from '../../shared/contractorPersonType.model';
 
 @Injectable({
   providedIn: 'root',
@@ -24,6 +25,10 @@ export class ContractorManagementService {
       `${this.registrationApiUrl}/ruc/${ruc}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
+  }
+
+  getPersonTypes(): Observable<ContractorPersonTypeDTO[]> {
+    return this.http.get<ContractorPersonTypeDTO[]>(`${this.registrationApiUrl}/person-types`);
   }
 
   getPersonByDni(dni: string): Observable<ReniecPersonDTO> {

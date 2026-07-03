@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SunatContributorDTO } from '../../shared/sunatCompany.model';
 import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
-import { ContractorPersonTypeDTO } from '../dtos/companyRegister.model';
+import { ContractorPersonTypeDTO } from '../../shared/contractorPersonType.model';
 import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { environment } from '../../../../../environments/environment';
 

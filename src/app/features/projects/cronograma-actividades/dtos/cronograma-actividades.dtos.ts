@@ -2,7 +2,9 @@ export interface ProyectoSimpleDto {
   projectId: number;
   projectDescription: string;
   responsableUdp: string | null;
-  avance: number;
+  avanceAnteproyecto: number;
+  avanceProyecto: number;
+  avanceProyectoActualizacion: number;
 }
 
 // FIX-A: header del proyecto incluido en la respuesta de actividades
@@ -34,6 +36,7 @@ export interface ActividadDto {
   baselineStartDate?: string | null;
   baselineEndDate?: string | null;
   isManual: boolean;
+  tipoCronograma: string;
 }
 
 export interface CascadaCambioDto {
@@ -63,6 +66,7 @@ export interface CrearActividadRequest {
   progressPercentage: number;
   hierarchyLevel: number;
   parentId: number | null;
+  tipoCronograma: string;
 }
 
 export interface ReordenarItem {
@@ -95,4 +99,15 @@ export interface ImportarMppResultDto {
   actividadesImportadas: number;
   actividadesEliminadas: number;
   actividadesManualesConservadas: number;
+}
+
+export interface CrearActividadMasivoItem {
+  nombre: string;
+  inicioProgramado: string | null;
+  finProgramado: string | null;
+  tipoCronograma: string;
+}
+
+export interface CrearActividadesMasivoResultDto {
+  actividadesCreadas: number;
 }
