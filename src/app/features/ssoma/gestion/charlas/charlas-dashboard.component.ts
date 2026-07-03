@@ -20,6 +20,7 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { AppGenericSelectComponent } from '../../../../shared/components/app-generic-select/app-generic-select.component';
 import { AppGenericSearchComponent } from '../../../../shared/components/app-generic-search/app-generic-search.component';
 import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
+import { SecureImgDirective } from '../../../../shared/directives/secure-img.directive';
 import {
   DashSupervisoresRow, Capacitacion, NuevaCharlaCreateDto,
   CharlaListItem, CharlaDetalle, UsuarioDto, Staff, CharlaGaleriaItem,
@@ -32,7 +33,7 @@ Chart.register(...registerables);
   selector: 'app-charlas-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, AppGenericSelectComponent, AppGenericSearchComponent, FindDiaPipe],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, AppGenericSelectComponent, AppGenericSearchComponent, FindDiaPipe, SecureImgDirective],
   templateUrl: './charlas-dashboard.component.html',
   styleUrl: './charlas-dashboard.component.css',
 })

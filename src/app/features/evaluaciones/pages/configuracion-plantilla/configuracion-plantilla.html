@@ -4,15 +4,15 @@
   subtitulo="Plantilla de criterios y áreas evaluadoras."
     [tabGroups]="[
     { label: 'Residentes',   icono: 'ti-user-check', tabs: [
-      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard' },
-      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar' },
-      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial' },
-      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion' }
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' }
     ]},
     { label: 'Contratistas', icono: 'ti-building', tabs: [
-      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas' },
-      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista' },
-      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas' }
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
     ]}
   ]">
 </app-abril-page-header>

@@ -168,7 +168,7 @@ export class NavigationService {
       iconKey: 'users-group',
       baseRoute: '/habilitacion/gestion',
       items: [
-        { label: 'Gestión de Ingresos', route: '/habilitacion/gestion' },
+        { label: 'Gestión de Ingresos', route: '/habilitacion/gestion', featureKey: 'habilitacion.trabajadores' },
       ],
       groups: [],
     },
@@ -187,7 +187,7 @@ export class NavigationService {
       iconKey: 'heart-rate-monitor',
       baseRoute: '/clinica',
       items: [
-        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
+        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda', roles: ['CLINICA'] },
       ],
     },
     {
@@ -275,9 +275,10 @@ export class NavigationService {
   }
 
   private isItemAllowed(item: NavItem): boolean {
-    if (item.featureKey) return this.getAllowedFeatures().includes(item.featureKey);
-    if (item.roles?.length) return item.roles.some((r) => this.authService.hasRole(r));
-    return true;
+    if (!item.featureKey && !item.roles?.length) return true;
+    if (item.featureKey && this.getAllowedFeatures().includes(item.featureKey)) return true;
+    if (item.roles?.length && item.roles.some((r) => this.authService.hasRole(r))) return true;
+    return false;
   }
 
   getModules(): NavModule[] {

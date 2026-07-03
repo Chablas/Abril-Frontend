@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { EmoService } from '../services/emo.service';
 import { CatalogosSaludService } from '../services/catalogos-salud.service';
+import { SharedFiltersService, SelectOption } from '../../../../shared/services/shared-filters.service';
 import { EmoPorTrabajadorDto, EmoPorTrabajadorQuery } from '../dtos/emo.model';
 import { EmpresaSimpleDto } from '../dtos/catalogos.model';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -61,7 +62,23 @@ export class Emos implements OnInit, OnDestroy {
     aptitud: '',
     estado: '',
     empresaId: 0,
+    proyectoId: 0,
+    fechaEmoDesde: '',
+    fechaEmoHasta: '',
+    sinLectura: false,
+    sinCertificado: false,
+    sinEmoCompleto: false,
+    sortBy: '',
+    sortDesc: false,
   };
+
+  sortOptions: FilterOption[] = [
+    { id: '', nombre: 'Nombre (A-Z)' },
+    { id: 'fechaEmo', nombre: 'Fecha de EMO' },
+    { id: 'fechaVencimiento', nombre: 'Fecha de vencimiento' },
+  ];
+
+  proyectoOptions: SelectOption[] = [];
 
   aptitudOptions: FilterOption[] = [
     { id: '', nombre: 'Todas las aptitudes' },
@@ -99,6 +116,7 @@ export class Emos implements OnInit, OnDestroy {
   constructor(
     private service: EmoService,
     private catalogos: CatalogosSaludService,
+    private sharedFilters: SharedFiltersService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -111,7 +129,18 @@ export class Emos implements OnInit, OnDestroy {
       .subscribe(() => this.load(1));
 
     this.loadEmpresas();
+    this.loadProyectos();
     this.load(1);
+  }
+
+  private loadProyectos(): void {
+    this.sharedFilters.getProyectos().subscribe({
+      next: (list) => {
+        this.proyectoOptions = list;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.proyectoOptions = []; },
+    });
   }
 
   ngOnDestroy(): void {
@@ -144,6 +173,14 @@ export class Emos implements OnInit, OnDestroy {
       aptitud: this.filters.aptitud || undefined,
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
+      proyectoId: this.filters.proyectoId || undefined,
+      fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
+      fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
+      sinLectura: this.filters.sinLectura || undefined,
+      sinCertificado: this.filters.sinCertificado || undefined,
+      sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
+      sortBy: this.filters.sortBy || undefined,
+      sortDesc: this.filters.sortDesc || undefined,
     };
     this.service.getEmosPorTrabajador(query).subscribe({
       next: (res) => {
@@ -172,8 +209,65 @@ export class Emos implements OnInit, OnDestroy {
     this.load(1);
   }
 
+  /** Alterna el orden de una columna: primero ascendente, luego descendente, luego sin orden. */
+  toggleSort(column: 'fechaEmo' | 'fechaVencimiento'): void {
+    if (this.filters.sortBy !== column) {
+      this.filters.sortBy = column;
+      this.filters.sortDesc = false;
+    } else if (!this.filters.sortDesc) {
+      this.filters.sortDesc = true;
+    } else {
+      this.filters.sortBy = '';
+      this.filters.sortDesc = false;
+    }
+    this.load(1);
+  }
+
+  sortIcon(column: 'fechaEmo' | 'fechaVencimiento'): string {
+    if (this.filters.sortBy !== column) return '↕';
+    return this.filters.sortDesc ? '▼' : '▲';
+  }
+
+  descargarExcel(): void {
+    this.loaderService.show();
+    const query: EmoPorTrabajadorQuery = {
+      search: this.filters.search?.trim() || undefined,
+      aptitud: this.filters.aptitud || undefined,
+      estado: this.filters.estado || undefined,
+      empresaId: this.filters.empresaId || undefined,
+      proyectoId: this.filters.proyectoId || undefined,
+      fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
+      fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
+      sinLectura: this.filters.sinLectura || undefined,
+      sinCertificado: this.filters.sinCertificado || undefined,
+      sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
+      sortBy: this.filters.sortBy || undefined,
+      sortDesc: this.filters.sortDesc || undefined,
+    };
+    this.service.exportarPorTrabajadorExcel(query).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EMOs_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   clearFilters(): void {
-    this.filters = { search: '', aptitud: '', estado: '', empresaId: 0 };
+    this.filters = {
+      search: '', aptitud: '', estado: '', empresaId: 0, proyectoId: 0,
+      fechaEmoDesde: '', fechaEmoHasta: '',
+      sinLectura: false, sinCertificado: false, sinEmoCompleto: false,
+      sortBy: '', sortDesc: false,
+    };
     this.load(1);
   }
 
@@ -288,7 +382,14 @@ export class Emos implements OnInit, OnDestroy {
       this.filters.search ||
       this.filters.aptitud ||
       this.filters.estado ||
-      this.filters.empresaId
+      this.filters.empresaId ||
+      this.filters.proyectoId ||
+      this.filters.fechaEmoDesde ||
+      this.filters.fechaEmoHasta ||
+      this.filters.sinLectura ||
+      this.filters.sinCertificado ||
+      this.filters.sinEmoCompleto ||
+      this.filters.sortBy
     );
   }
 }

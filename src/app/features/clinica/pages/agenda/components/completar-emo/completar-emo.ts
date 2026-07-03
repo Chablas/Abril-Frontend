@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Observable, forkJoin, of } from 'rxjs';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
 import { EmoCreateDto, InterconsultaInlineCreateDto, EmoRestriccionCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
@@ -118,21 +119,26 @@ export class CompletarEmo implements OnChanges {
 
   close(): void { this.closed.emit(); }
 
-  private subirDocumentos(emoId: number): void {
+  /** Sube Aptitud/EMO Completo y espera a que AMBAS terminen antes de dar por completado el flujo. */
+  private subirDocumentos(emoId: number): Observable<unknown> {
     const url = `${SALUD_OCUPACIONAL_BASE}/emos/${emoId}/documentos`;
     const headers = buildAuthHeaders();
+    const requests: Observable<unknown>[] = [];
+
     if (this.archivoAptitud) {
       const fd = new FormData();
       fd.append('file', this.archivoAptitud);
       fd.append('tipo', 'Aptitud');
-      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
+      requests.push(this.http.post(url, fd, { headers }));
     }
     if (this.archivoEmo) {
       const fd = new FormData();
       fd.append('file', this.archivoEmo);
       fd.append('tipo', 'EMO');
-      this.http.post(url, fd, { headers }).subscribe({ error: () => {} });
+      requests.push(this.http.post(url, fd, { headers }));
     }
+
+    return requests.length ? forkJoin(requests) : of(null);
   }
 
   submit(): void {
@@ -175,10 +181,18 @@ export class CompletarEmo implements OnChanges {
         const emoId = res.id;
         if (this.interconsultaId != null) {
           // Contexto interconsultas: no hay programación real, omitir accionClinica
-          this.subirDocumentos(emoId);
-          this.saving = false;
-          this.loaderService.hide();
-          this.completado.emit();
+          this.subirDocumentos(emoId).subscribe({
+            next: () => {
+              this.saving = false;
+              this.loaderService.hide();
+              this.completado.emit();
+            },
+            error: (err) => {
+              this.saving = false;
+              this.loaderService.hide();
+              this.errorService.handleError(err);
+            },
+          });
         } else {
           // Contexto agenda: flujo original con accionClinica
           this.progSvc.accionClinica(this.programacion!.id, {
@@ -187,10 +201,18 @@ export class CompletarEmo implements OnChanges {
             emoResultadoId: emoId,
           }).subscribe({
             next: () => {
-              this.subirDocumentos(emoId);
-              this.saving = false;
-              this.loaderService.hide();
-              this.completado.emit();
+              this.subirDocumentos(emoId).subscribe({
+                next: () => {
+                  this.saving = false;
+                  this.loaderService.hide();
+                  this.completado.emit();
+                },
+                error: (err) => {
+                  this.saving = false;
+                  this.loaderService.hide();
+                  this.errorService.handleError(err);
+                },
+              });
             },
             error: (err) => { this.saving = false; this.loaderService.hide(); this.errorService.handleError(err); },
           });

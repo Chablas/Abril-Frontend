@@ -257,6 +257,15 @@ export interface EmoPorTrabajadorQuery {
   aptitud?: string;
   estado?: string;
   empresaId?: number;
+  proyectoId?: number;
+  fechaEmoDesde?: string;
+  fechaEmoHasta?: string;
+  sinLectura?: boolean;
+  sinCertificado?: boolean;
+  sinEmoCompleto?: boolean;
+  /** 'fechaEmo' | 'fechaVencimiento' */
+  sortBy?: string;
+  sortDesc?: boolean;
   page?: number;
   pageSize?: number;
 }

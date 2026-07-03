@@ -2,18 +2,18 @@
 .dp-root { display: flex; flex-direction: column; gap: 0; min-height: 100%; }
 
 .dp-body {
-  padding: 1.25rem 1.5rem;
+  padding: 0.6rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.5rem;
 }
 
 /* ── Filtros ────────────────────────────────────────────────────────────────── */
 .filtros-card {
   background: #fff;
-  border-radius: 0.75rem;
+  border-radius: 0.6rem;
   border: 1px solid #e2e8f0;
-  padding: 1rem 1.25rem;
+  padding: 0.6rem 0.9rem;
 }
 
 .filtros-grid {
@@ -56,9 +56,9 @@
 /* ── Cabecera del reporte ───────────────────────────────────────────────────── */
 .reporte-header {
   background: #fff;
-  border-radius: 0.75rem;
+  border-radius: 0.6rem;
   border: 1px solid #e2e8f0;
-  padding: 1.25rem 1.5rem;
+  padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -66,69 +66,105 @@
 }
 
 .rh-info { display: flex; flex-direction: column; gap: 0.25rem; }
-.rh-proyecto { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; }
+.rh-proyecto { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0; }
 .rh-periodo { font-size: 0.875rem; color: #64748b; display: flex; align-items: center; gap: 0.35rem; }
 
 /* Gauge */
 .rh-gauge { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
-.gauge-svg { width: 110px; height: 110px; }
+.gauge-svg { width: 76px; height: 76px; }
 .gauge-arc { transition: stroke-dashoffset .6s ease; }
-.gauge-num { font-size: 18px; font-weight: 700; }
+.gauge-num { font-size: 15px; font-weight: 700; }
 .gauge-sub { font-size: 10px; fill: #94a3b8; }
 .gauge-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+
+.reporte-header { flex-wrap: wrap; }
+
+/* ── Badges KPI (reactivos) ─────────────────────────────────────────────────── */
+.rh-kpi-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.kpi-badge {
+  display: flex; align-items: center; gap: 0.4rem;
+  border: 1px solid #cfe0ef; border-radius: 0.5rem;
+  padding: 0.3rem 0.55rem;
+  background: #fff;
+  min-width: 92px;
+}
+.kpi-badge__icon { font-size: 0.95rem; color: #0f4c75; }
+.kpi-badge__body { display: flex; flex-direction: column; gap: 1px; }
+.kpi-badge__label { font-size: 0.58rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+.kpi-badge__val { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
+.kpi-badge__val--sec { color: #64748b; }
+.kpi-badge__vals-row { display: flex; gap: 0.5rem; }
+.kpi-badge__sub { font-size: 0.56rem; color: #94a3b8; }
+.kpi-badge__sub-row { display: flex; gap: 0.8rem; font-size: 0.56rem; color: #94a3b8; }
+
+/* ── Tendencia mensual: 3 mini gráficos ────────────────────────────────────── */
+.mini-charts-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.mini-chart-card {
+  flex: 1; min-width: 240px;
+  background: #fff; border: 1px solid #cfe0ef; border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+}
+.mini-chart-title { font-size: 0.72rem; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 0.2rem; }
+.mini-chart-wrap { height: 110px; position: relative; }
+
+/* ── Resumen de gestión: 5 gauges ───────────────────────────────────────────── */
+.gauges-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.gauge-mini-card {
+  flex: 1; min-width: 130px;
+  background: #fff; border: 1px solid #cfe0ef; border-radius: 0.5rem;
+  padding: 0.4rem 0.4rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+}
+.gauge-mini-label { font-size: 0.66rem; font-weight: 600; color: #1e3a5f; text-align: center; }
+.gauge-svg--sm { width: 62px; height: 62px; }
+
+.gauge-safe {
+  width: 62px; height: 62px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;
+  border-radius: 50%; background: #f0fdf4; border: 2px solid #16a34a;
+}
+.gauge-safe__icon { font-size: 1.05rem; color: #16a34a; }
+.gauge-safe__text { font-size: 0.55rem; font-weight: 700; color: #16a34a; text-align: center; line-height: 1.1; }
 
 /* ── KPI strip ──────────────────────────────────────────────────────────────── */
 .kpi-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .kpi-chip {
-  flex: 1; min-width: 130px;
+  flex: 1; min-width: 110px;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 0.875rem 1rem;
-  display: flex; flex-direction: column; gap: 0.15rem;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  display: flex; flex-direction: column; gap: 0.05rem;
 }
-.kpi-chip__label { font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-.kpi-chip__pct { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-.kpi-chip__vals { font-size: 0.78rem; color: #94a3b8; }
-
-/* ── Gráfico ────────────────────────────────────────────────────────────────── */
-.chart-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-}
-.chart-card__title {
-  font-size: 0.875rem; font-weight: 700; color: #0f172a;
-  display: flex; align-items: center; gap: 0.4rem;
-  margin-bottom: 1rem;
-}
-.chart-wrap { height: 280px; position: relative; }
+.kpi-chip__label { font-size: 0.66rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.kpi-chip__pct { font-size: 1rem; font-weight: 700; line-height: 1; }
+.kpi-chip__vals { font-size: 0.7rem; color: #94a3b8; }
 
 /* ── Puntaje strip ──────────────────────────────────────────────────────────── */
 .puntaje-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .ps-card {
-  flex: 1; min-width: 120px;
+  flex: 1; min-width: 100px;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 0.875rem 1rem;
-  display: flex; flex-direction: column; gap: 0.1rem;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  display: flex; flex-direction: column; gap: 0.05rem;
 }
-.ps-label { font-size: 0.7rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-.ps-pct { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-.ps-pts { font-size: 0.8rem; color: #64748b; }
-.ps-pct-total { font-size: 1.6rem; font-weight: 800; color: inherit; }
+.ps-label { font-size: 0.64rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.ps-pct { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+.ps-pct--safe { font-size: 0.72rem; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 4px; }
+.ps-pts { font-size: 0.72rem; color: #64748b; }
+.ps-pct-total { font-size: 1.3rem; font-weight: 800; color: inherit; }
 
 .ps-card--proactivos { border-top: 3px solid #0f4c75; }
 .ps-card--passo      { border-top: 3px solid #7c3aed; }
@@ -138,97 +174,16 @@
 .ps-card--bonus-activo { border-top-color: #16a34a; }
 .ps-card--total      { border-top: 3px solid #64748b; }
 
-/* ── Tabla de empresas ──────────────────────────────────────────────────────── */
-.tabla-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  overflow-x: auto;
-}
-.tabla-title {
-  font-size: 0.875rem; font-weight: 700; color: #0f172a;
-  display: flex; align-items: center; gap: 0.4rem;
-  margin-bottom: 1rem;
-}
-.tabla-emp { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-.tabla-emp th {
-  padding: 0.55rem 0.75rem;
-  background: #f1f5f9; color: #475569;
-  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-  border-bottom: 2px solid #e2e8f0;
-}
-.th-empresa { text-align: left; min-width: 180px; }
-.th-center  { text-align: center; min-width: 90px; }
-
-.tr-emp { cursor: pointer; transition: background .1s; }
-.tr-emp:hover { background: #f8fafc; }
-.tr-emp--inactiva { opacity: .55; }
-
-.td-nombre {
-  padding: 0.55rem 0.75rem;
-  color: #1e293b; font-weight: 600;
-  display: flex; align-items: center; gap: 0.4rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-.td-center {
-  padding: 0.55rem 0.75rem;
-  text-align: center;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-.chip-inact {
-  font-size: 0.65rem; background: #f1f5f9; color: #94a3b8;
-  border-radius: 9999px; padding: 1px 6px; font-weight: 600;
-}
-.expand-icon { margin-left: auto; color: #94a3b8; font-size: 0.85rem; }
-
-.cell-ind { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.mini-bar-wrap { width: 60px; height: 5px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
-.mini-bar { height: 100%; border-radius: 9999px; transition: width .4s; }
-.cell-pct { font-size: 0.8rem; font-weight: 700; }
-.cell-vals { font-size: 0.7rem; color: #94a3b8; }
-.na { color: #cbd5e1; }
-
-/* Detalle expandido */
-.tr-detalle td { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-.td-detalle { padding: 0.5rem 0.75rem; }
-.detalle-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.d-chip {
-  display: flex; align-items: center; gap: 0.3rem;
-  font-size: 0.78rem; color: #475569;
-  background: #fff; border: 1px solid #e2e8f0;
-  border-radius: 0.4rem; padding: 0.25rem 0.6rem;
-}
-
 /* ── Color helpers ──────────────────────────────────────────────────────────── */
 .pct--verde    { color: #16a34a; }
 .pct--amarillo { color: #ca8a04; }
 .pct--naranja  { color: #ea580c; }
 .pct--rojo     { color: #dc2626; }
 
-.mini-bar.pct--verde    { background: #16a34a; }
-.mini-bar.pct--amarillo { background: #ca8a04; }
-.mini-bar.pct--naranja  { background: #ea580c; }
-.mini-bar.pct--rojo     { background: #dc2626; }
-
 .score--verde    { color: #16a34a; border-top-color: #16a34a !important; }
 .score--amarillo { color: #ca8a04; border-top-color: #ca8a04 !important; }
 .score--naranja  { color: #ea580c; border-top-color: #ea580c !important; }
 .score--rojo     { color: #dc2626; border-top-color: #dc2626 !important; }
-
-/* ── Badge general empresa ──────────────────────────────────────────────────── */
-.badge-gen {
-  display: inline-block;
-  font-size: 0.8rem; font-weight: 700;
-  padding: 2px 8px; border-radius: 9999px;
-  background: #f1f5f9;
-}
-.badge-gen.pct--verde    { background: #dcfce7; }
-.badge-gen.pct--amarillo { background: #fef9c3; }
-.badge-gen.pct--naranja  { background: #ffedd5; }
-.badge-gen.pct--rojo     { background: #fee2e2; }
 
 /* ── Empty state ────────────────────────────────────────────────────────────── */
 .empty-state {
@@ -241,33 +196,33 @@
 .empty-state__text { font-size: 0.9rem; text-align: center; }
 
 /* ── Section title ──────────────────────────────────────────────────────────── */
-.dp-section { display: flex; flex-direction: column; gap: 12px; }
+.dp-section { display: flex; flex-direction: column; gap: 8px; }
 .dp-section-title {
-  font-size: 15px; font-weight: 700; color: #1e3a5f;
-  margin: 0; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: #1e3a5f;
+  margin: 0; display: flex; align-items: center; gap: 6px;
 }
 
 /* ── Checklist cards (reutiliza clases cl-* del módulo checklist) ──────────── */
 .cl-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
 }
 .cl-card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-  padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 8px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .cl-card--completado { border-color: #16a34a; background: #f0fdf4; }
-.cl-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
-.cl-card-title { font-size: 13px; font-weight: 600; color: #111827; line-height: 1.3; }
-.cl-card-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.cl-progress-bar { flex: 1; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+.cl-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+.cl-card-title { font-size: 12px; font-weight: 600; color: #111827; line-height: 1.25; }
+.cl-card-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.cl-progress-bar { flex: 1; height: 5px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
 .cl-progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
-.cl-progress-pct { font-size: 12px; font-weight: 700; min-width: 34px; text-align: right; }
+.cl-progress-pct { font-size: 11px; font-weight: 700; min-width: 30px; text-align: right; }
 .cl-card-footer { display: flex; justify-content: space-between; align-items: center; }
-.cl-card-items { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px; }
-.cl-tag-obligatorio { font-size: 11px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 999px; padding: 1px 8px; font-weight: 500; }
-.cl-badge { font-size: 11px; border-radius: 999px; padding: 2px 10px; font-weight: 600; white-space: nowrap; }
+.cl-card-items { font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 3px; }
+.cl-tag-obligatorio { font-size: 10px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 999px; padding: 1px 6px; font-weight: 500; }
+.cl-badge { font-size: 10px; border-radius: 999px; padding: 1px 8px; font-weight: 600; white-space: nowrap; }
 .estado-completado { background: #dcfce7; color: #15803d; }
 .estado-en-progreso { background: #fef3c7; color: #92400e; }
 .estado-pendiente { background: #f3f4f6; color: #6b7280; }
