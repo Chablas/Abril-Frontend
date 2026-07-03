@@ -3,8 +3,8 @@
   titulo="Usuarios"
   subtitulo="Administración de usuarios y accesos al sistema."
   [tabs]="[
-    { label: 'Usuarios', icono: 'ti-users', route: '/security/users' },
-    { label: 'Roles', icono: 'ti-shield', route: '/security/roles' }
+    { label: 'Usuarios', icono: 'ti-users', route: '/security/users', featureKey: 'security.users' },
+    { label: 'Roles', icono: 'ti-shield', route: '/security/roles', featureKey: 'security.roles' }
   ]"
   [botonSecundario]="{ label: 'Crear usuario para trabajador de Abril', icono: 'ti-id-badge-2' }"
   [botonPrimario]="{ label: 'Crear usuario para persona externa', icono: 'ti-plus' }"

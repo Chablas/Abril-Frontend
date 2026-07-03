@@ -69,6 +69,13 @@ export interface RestriccionTipoDto {
   categoria?: string;
 }
 
+export interface AgenteRiesgoDto {
+  id: number;
+  nombre: string;
+  tipo: string;
+  activo: boolean;
+}
+
 export interface EmpresaSimpleDto {
   id: number;
   nombre: string;
@@ -87,6 +94,29 @@ export interface EmpresaUpsertDto {
   partidaRegistral?: string | null;
   tipoActividad?: string | null;
   activo?: boolean;
+}
+
+/** Alta de una razón social (todos obligatorios salvo partida registral). */
+export interface EmpresaCreateDto {
+  ruc: string;
+  nombre: string;
+  direccion: string;
+  tipoActividad: string;
+  distrito: string;
+  provincia: string;
+  departamento: string;
+  partidaRegistral?: string | null;
+}
+
+/** Respuesta de la consulta RUC a SUNAT. */
+export interface SunatContributorDTO {
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress: string;
+  contributorEconomicActivityDescription: string;
+  contributorDistrict?: string | null;
+  contributorProvince?: string | null;
+  contributorDepartment?: string | null;
 }
 
 export interface ClinicaEmailDto {

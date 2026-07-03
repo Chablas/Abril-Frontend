@@ -548,7 +548,23 @@
                   {{ mesesNombres[m.mes - 1] }} {{ m.anio }}
                 </td>
                 <td style="padding:7px 8px">
-                  <span [class]="'btn-chip ' + getChipEstado(m.estado)">{{ m.estado }}</span>
+                  <ng-container *ngIf="puedeAprobarEntregableActual; else estadoMesReadonly">
+                    <select
+                      class="field-input"
+                      style="padding:3px 6px;font-size:12px;height:auto;min-width:100px"
+                      [ngModel]="m.estado"
+                      (change)="cambiarEstadoMes(m, $any($event.target).value)">
+                      <option value="Aprobado">Aprobado</option>
+                      <option value="Enviado">Enviado</option>
+                      <option value="Rechazado">Rechazado</option>
+                      <option value="Falta">Falta</option>
+                      <option value="En Plazo">En Plazo</option>
+                      <option value="No Aplica">No Aplica</option>
+                    </select>
+                  </ng-container>
+                  <ng-template #estadoMesReadonly>
+                    <span [class]="'btn-chip ' + getChipEstado(m.estado)">{{ m.estado }}</span>
+                  </ng-template>
                 </td>
                 <td style="padding:7px 8px;white-space:nowrap;vertical-align:top">
                   <ng-container *ngIf="m.archivos?.length; else archivoFallback">
@@ -561,14 +577,6 @@
                     <button type="button" class="ufc-btn" *ngIf="m.archivoUrl"
                       (click)="abrirVisor(m.archivoUrl!)">👁 Ver</button>
                   </ng-template>
-                  <button type="button" class="btn-approve"
-                    style="padding:3px 8px;font-size:11px;margin-left:4px"
-                    *ngIf="m.estado === 'Enviado' && puedeAprobarEntregableActual"
-                    (click)="aprobarMesEspecifico(m)">✓</button>
-                  <button type="button" class="btn-reject-act"
-                    style="padding:3px 8px;font-size:11px;margin-left:4px"
-                    *ngIf="m.estado === 'Enviado' && puedeAprobarEntregableActual"
-                    (click)="rechazarMesEspecifico(m)">✕</button>
                   <span *ngIf="m.estado === 'Rechazado' && m.motivoRechazo"
                     style="font-size:11px;color:#dc2626;margin-left:4px"
                     [title]="m.motivoRechazo">⚠ {{ m.motivoRechazo | slice:0:20 }}…</span>

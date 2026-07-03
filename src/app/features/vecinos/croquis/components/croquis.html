@@ -1,7 +1,7 @@
 <app-abril-page-header
   badge="ADMINISTRACIÓN DE OBRA"
   titulo="Croquis"
-  subtitulo="Asigna el croquis (plano de vecinos) de cada proyecto."
+  subtitulo="Asigna el croquis (plano de lotes) de cada proyecto."
   [tabs]="[
     { label: 'Dashboard',          icono: 'ti-layout-dashboard', route: '/vecinos/dashboard', featureKey: 'vecinos.dashboard' },
     { label: 'Gestión de Vecinos', icono: 'ti-users',            route: '/vecinos/gestion',   featureKey: 'vecinos.gestion' },
@@ -67,7 +67,7 @@
             <div class="flex items-center justify-end gap-2">
               <button *ngIf="item.imageUrl" type="button" (click)="openEditor(item)"
                 class="px-3 py-2 rounded-lg border border-[#64BC04] bg-white text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#E5F7D1] transition-colors inline-flex items-center gap-1.5">
-                <i class="ti ti-vector"></i> Editar vecinos
+                <i class="ti ti-vector"></i> Editar lotes
               </button>
               <button type="button" (click)="openUpload(item)"
                 class="px-3 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors inline-flex items-center gap-1.5"

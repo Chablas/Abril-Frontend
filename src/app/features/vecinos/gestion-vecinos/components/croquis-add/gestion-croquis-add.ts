@@ -17,8 +17,19 @@ import {
   CroquisGestionDTO,
   CroquisGestionLoteDTO,
   ProjectOptionDTO,
-  VecinoCreateDTO,
+  VecinoLoteRegisterDTO,
+  VecinoPersonaCreateDTO,
 } from '../../dtos/gestion-vecinos.dto';
+
+/** Un vecino/departamento del formulario de alta (interior + uso/colindancia/tipo + personas + imágenes). */
+interface VecinoBlock {
+  vecinoUsoId: number | null;
+  interiorDepartamento: string;
+  vecinoColindanciaId: number | null;
+  vecinoTipoConstruccionId: number | null;
+  personas: VecinoPersonaCreateDTO[];
+  imagenes: SelectedFile[];
+}
 
 @Component({
   selector: 'app-gestion-croquis-add',
@@ -29,7 +40,7 @@ import {
 export class GestionCroquisAdd {
   /** Todos los proyectos (con o sin croquis). */
   @Input() projects: ProjectOptionDTO[] = [];
-  /** Croquis registrados (proyecto + lotes) para la sección de ubicación. */
+  /** Croquis registrados (proyecto + lotes) para seleccionar el lote. */
   @Input() croquis: CroquisGestionDTO[] = [];
   @Input() colindancias: CatalogOptionDTO[] = [];
   @Input() tiposConstruccion: CatalogOptionDTO[] = [];
@@ -39,54 +50,27 @@ export class GestionCroquisAdd {
   @Output() created = new EventEmitter<void>();
 
   readonly tabs: SectionTab[] = [
-    { id: 'generales', label: 'Datos generales' },
-    { id: 'ubicacion', label: 'Ubicación en croquis' },
+    { id: 'lote', label: 'Lote' },
+    { id: 'vecinos', label: 'Vecinos' },
   ];
-  activeTab = 'generales';
+  activeTab = 'lote';
 
-  form: VecinoCreateDTO = {
-    projectId: null,
-    vecinoUsoId: null,
+  /** Datos a nivel de lote. */
+  lote = {
+    projectId: null as number | null,
+    projectCroquisLoteId: null as number | null,
     direccion: '',
-    interiorDepartamento: '',
-    vecinoColindanciaId: null,
-    vecinoTipoConstruccionId: null,
     observaciones: '',
-    personas: [{ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null }],
   };
+
+  /** Vecinos/departamentos a registrar en el lote. */
+  vecinos: VecinoBlock[] = [this.emptyVecino()];
 
   selectedCroquis: CroquisGestionDTO | null = null;
   selectedLote: CroquisGestionLoteDTO | null = null;
 
-  /** Índice de la persona cuya consulta RENIEC está en curso (-1 = ninguna). */
-  dniLookupIndex = -1;
-
-  /** Imágenes del estado de la propiedad seleccionadas (aún no subidas). */
-  selectedImages: SelectedFile[] = [];
-
-  trackByIndex(index: number): number {
-    return index;
-  }
-
-  // ── Imágenes (estado de la propiedad) ──────────────────────────────────
-  onImageSelected(file: SelectedFile): void {
-    if (!file.file.type.startsWith('image/')) return;
-    this.selectedImages.push(file);
-  }
-
-  removeImage(index: number): void {
-    this.selectedImages.splice(index, 1);
-  }
-
-  // ── Personas ───────────────────────────────────────────────────────────
-  addPersona(): void {
-    this.form.personas.push({ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null });
-  }
-
-  removePersona(index: number): void {
-    if (this.form.personas.length <= 1) return;
-    this.form.personas.splice(index, 1);
-  }
+  /** Clave "{vi}-{pi}" de la persona cuya consulta RENIEC está en curso (null = ninguna). */
+  dniLookupKey: string | null = null;
 
   constructor(
     private service: GestionVecinosService,
@@ -95,61 +79,40 @@ export class GestionCroquisAdd {
     private cdr: ChangeDetectorRef,
   ) {}
 
+  private emptyVecino(): VecinoBlock {
+    return {
+      vecinoUsoId: null,
+      interiorDepartamento: '',
+      vecinoColindanciaId: null,
+      vecinoTipoConstruccionId: null,
+      personas: [{ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null }],
+      imagenes: [],
+    };
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   imageSrc(url: string): string {
     return url.startsWith('http') ? url : environment.apiUrl.replace(/\/$/, '') + url;
   }
 
+  // ── Lote / croquis ─────────────────────────────────────────────────────
   onProjectChange(projectId: number | null): void {
-    this.form.projectId = projectId;
+    this.lote.projectId = projectId;
     this.selectedCroquis = this.croquis.find((c) => c.projectId === projectId) ?? null;
     this.selectedLote = null;
+    this.lote.projectCroquisLoteId = null;
+    this.lote.direccion = '';
+    this.lote.observaciones = '';
   }
 
-  // ── DNI / RENIEC (por persona) ─────────────────────────────────────────
-  searchReniec(index: number): void {
-    const persona = this.form.personas[index];
-    if (!persona || persona.dni.length !== 8) return;
-    this.dniLookupIndex = index;
-    this.loaderService.show();
-    this.service.getPersonByDni(persona.dni).subscribe({
-      next: (data) => {
-        persona.nombre = data.full_name?.trim()
-          || `${data.first_name} ${data.first_last_name} ${data.second_last_name}`.trim();
-        this.dniLookupIndex = -1;
-        this.loaderService.hide();
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.dniLookupIndex = -1;
-        this.loaderService.hide();
-        Swal.fire({
-          icon: err.status === 404 ? 'warning' : 'info',
-          title: err.status === 404 ? 'DNI no encontrado' : 'No se pudo consultar RENIEC',
-          text: 'Ingresa el nombre de la persona manualmente.',
-        });
-      },
-    });
-  }
-
-  onDniKeydown(event: KeyboardEvent, index: number): void {
-    if (event.key === 'Enter') { event.preventDefault(); this.searchReniec(index); return; }
-    this.blockNonDigits(event);
-  }
-
-  onNumericKeydown(event: KeyboardEvent): void {
-    this.blockNonDigits(event);
-  }
-
-  private blockNonDigits(event: KeyboardEvent): void {
-    const isControl = event.ctrlKey || event.metaKey || event.altKey;
-    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
-    if (isControl || allowed.includes(event.key)) return;
-    if (!/^\d$/.test(event.key)) event.preventDefault();
-  }
-
-  // ── Lotes (sección ubicación) ──────────────────────────────────────────
   selectLote(lote: CroquisGestionLoteDTO): void {
     this.selectedLote = lote;
+    this.lote.projectCroquisLoteId = lote.projectCroquisLoteId;
+    this.lote.direccion = lote.direccion ?? '';
+    this.lote.observaciones = lote.observaciones ?? '';
   }
 
   pointsToSvg(puntos: number[][]): string {
@@ -166,41 +129,115 @@ export class GestionCroquisAdd {
 
   loteFill(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return 'rgba(0,134,165,0.45)';
-    return lote.vecinoId ? 'rgba(100,188,4,0.35)' : 'rgba(156,163,175,0.25)';
+    return lote.vecinosCount > 0 ? 'rgba(100,188,4,0.35)' : 'rgba(156,163,175,0.25)';
   }
 
   loteStroke(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return '#0086A5';
-    return lote.vecinoId ? '#64BC04' : '#9CA3AF';
+    return lote.vecinosCount > 0 ? '#64BC04' : '#9CA3AF';
+  }
+
+  // ── Vecinos / personas / imágenes ──────────────────────────────────────
+  addVecino(): void {
+    this.vecinos.push(this.emptyVecino());
+  }
+
+  removeVecino(index: number): void {
+    if (this.vecinos.length <= 1) return;
+    this.vecinos.splice(index, 1);
+  }
+
+  addPersona(vi: number): void {
+    this.vecinos[vi].personas.push({ nombre: '', dni: '', celular: '', vecinoRelacionTipoId: null });
+  }
+
+  removePersona(vi: number, pi: number): void {
+    if (this.vecinos[vi].personas.length <= 1) return;
+    this.vecinos[vi].personas.splice(pi, 1);
+  }
+
+  onImageSelected(vi: number, file: SelectedFile): void {
+    if (!file.file.type.startsWith('image/')) return;
+    this.vecinos[vi].imagenes.push(file);
+  }
+
+  removeImage(vi: number, index: number): void {
+    this.vecinos[vi].imagenes.splice(index, 1);
+  }
+
+  // ── DNI / RENIEC (por persona de un vecino) ────────────────────────────
+  searchReniec(vi: number, pi: number): void {
+    const persona = this.vecinos[vi]?.personas[pi];
+    if (!persona || persona.dni.length !== 8) return;
+    this.dniLookupKey = `${vi}-${pi}`;
+    this.loaderService.show();
+    this.service.getPersonByDni(persona.dni).subscribe({
+      next: (data) => {
+        persona.nombre = data.full_name?.trim()
+          || `${data.first_name} ${data.first_last_name} ${data.second_last_name}`.trim();
+        this.dniLookupKey = null;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.dniLookupKey = null;
+        this.loaderService.hide();
+        Swal.fire({
+          icon: err.status === 404 ? 'warning' : 'info',
+          title: err.status === 404 ? 'DNI no encontrado' : 'No se pudo consultar RENIEC',
+          text: 'Ingresa el nombre de la persona manualmente.',
+        });
+      },
+    });
+  }
+
+  onDniKeydown(event: KeyboardEvent, vi: number, pi: number): void {
+    if (event.key === 'Enter') { event.preventDefault(); this.searchReniec(vi, pi); return; }
+    this.blockNonDigits(event);
+  }
+
+  onNumericKeydown(event: KeyboardEvent): void {
+    this.blockNonDigits(event);
+  }
+
+  private blockNonDigits(event: KeyboardEvent): void {
+    const isControl = event.ctrlKey || event.metaKey || event.altKey;
+    const allowed = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (isControl || allowed.includes(event.key)) return;
+    if (!/^\d$/.test(event.key)) event.preventDefault();
   }
 
   // ── Validación + submit ────────────────────────────────────────────────
   private getValidationErrors(): { tab: string; campo: string }[] {
     const errors: { tab: string; campo: string }[] = [];
-    if (!this.form.direccion?.trim()) errors.push({ tab: 'generales', campo: 'Dirección' });
-    if (!this.form.interiorDepartamento?.trim()) errors.push({ tab: 'generales', campo: 'Interior / Departamento' });
-    if (!this.form.vecinoUsoId) errors.push({ tab: 'generales', campo: 'Uso' });
-    if (!this.form.vecinoColindanciaId) errors.push({ tab: 'generales', campo: 'Colindante / No colindante' });
-    if (!this.form.vecinoTipoConstruccionId) errors.push({ tab: 'generales', campo: 'Tipo de construcción' });
+    if (!this.lote.projectId) errors.push({ tab: 'lote', campo: 'Proyecto' });
+    if (!this.lote.projectCroquisLoteId) errors.push({ tab: 'lote', campo: 'Lote en el croquis' });
+    if (!this.lote.direccion?.trim()) errors.push({ tab: 'lote', campo: 'Dirección del lote' });
 
-    // Personas: al menos una; cada una con nombre, celular y relación. DNI opcional (8 díg. si se ingresa).
-    this.form.personas.forEach((p, i) => {
-      const n = i + 1;
-      if (!p.nombre?.trim()) errors.push({ tab: 'generales', campo: `Persona ${n}: nombre` });
-      if (!p.celular?.trim()) errors.push({ tab: 'generales', campo: `Persona ${n}: celular` });
-      if (!p.vecinoRelacionTipoId) errors.push({ tab: 'generales', campo: `Persona ${n}: relación` });
-      if (p.dni?.trim() && !/^\d{8}$/.test(p.dni.trim()))
-        errors.push({ tab: 'generales', campo: `Persona ${n}: DNI (8 dígitos)` });
+    if (this.vecinos.length === 0) errors.push({ tab: 'vecinos', campo: 'Al menos un vecino' });
+
+    this.vecinos.forEach((v, vi) => {
+      const n = vi + 1;
+      if (!v.vecinoUsoId) errors.push({ tab: 'vecinos', campo: `Vecino ${n}: Uso` });
+      if (!v.vecinoColindanciaId) errors.push({ tab: 'vecinos', campo: `Vecino ${n}: Colindante / No colindante` });
+      if (!v.vecinoTipoConstruccionId) errors.push({ tab: 'vecinos', campo: `Vecino ${n}: Tipo de construcción` });
+      if (v.personas.length === 0) errors.push({ tab: 'vecinos', campo: `Vecino ${n}: al menos una persona` });
+      v.personas.forEach((p, pi) => {
+        const pn = pi + 1;
+        if (!p.nombre?.trim()) errors.push({ tab: 'vecinos', campo: `Vecino ${n} · Persona ${pn}: nombre` });
+        if (!p.celular?.trim()) errors.push({ tab: 'vecinos', campo: `Vecino ${n} · Persona ${pn}: celular` });
+        if (!p.vecinoRelacionTipoId) errors.push({ tab: 'vecinos', campo: `Vecino ${n} · Persona ${pn}: relación` });
+        if (p.dni?.trim() && !/^\d{8}$/.test(p.dni.trim()))
+          errors.push({ tab: 'vecinos', campo: `Vecino ${n} · Persona ${pn}: DNI (8 dígitos)` });
+      });
     });
 
-    if (!this.form.projectId) errors.push({ tab: 'ubicacion', campo: 'Proyecto' });
     return errors;
   }
 
   submit(): void {
     const errors = this.getValidationErrors();
     if (errors.length > 0) {
-      // Salta a la primera sección con error.
       this.activeTab = errors[0].tab;
       const listHtml = errors.map((e) => `<li>${e.campo}</li>`).join('');
       Swal.fire({
@@ -213,17 +250,31 @@ export class GestionCroquisAdd {
       return;
     }
 
-    this.loaderService.show();
-    this.service.create(this.form).subscribe({
-      next: (res) => {
-        const vecinoId = res.vecinoId;
+    const dto: VecinoLoteRegisterDTO = {
+      projectCroquisLoteId: this.lote.projectCroquisLoteId!,
+      direccion: this.lote.direccion.trim(),
+      observaciones: this.lote.observaciones?.trim() ?? '',
+      vecinos: this.vecinos.map((v) => ({
+        vecinoUsoId: v.vecinoUsoId,
+        interiorDepartamento: v.interiorDepartamento?.trim() ?? '',
+        vecinoColindanciaId: v.vecinoColindanciaId,
+        vecinoTipoConstruccionId: v.vecinoTipoConstruccionId,
+        personas: v.personas,
+      })),
+    };
 
-        // Pasos posteriores (independientes): vincular lote y subir imágenes.
+    this.loaderService.show();
+    this.service.registerVecinos(dto).subscribe({
+      next: (res) => {
+        const vecinoIds = res.vecinoIds ?? [];
+
+        // Subir las imágenes de cada vecino a su id recién creado (en orden).
         const tasks: Observable<unknown>[] = [];
-        if (this.selectedLote && vecinoId)
-          tasks.push(this.service.assignVecinoToLote(this.selectedLote.projectCroquisLoteId, vecinoId));
-        if (this.selectedImages.length > 0)
-          tasks.push(this.service.uploadImagenes(vecinoId, this.selectedImages.map((i) => i.file)));
+        this.vecinos.forEach((v, i) => {
+          const vid = vecinoIds[i];
+          if (vid && v.imagenes.length > 0)
+            tasks.push(this.service.uploadImagenes(vid, v.imagenes.map((im) => im.file)));
+        });
 
         if (tasks.length === 0) {
           this.loaderService.hide();
@@ -238,7 +289,7 @@ export class GestionCroquisAdd {
           },
           error: (err: HttpErrorResponse) => {
             this.loaderService.hide();
-            // La propiedad sí se creó; avisamos que algún paso posterior falló.
+            // Los vecinos sí se crearon; avisamos que la subida de imágenes falló.
             this.errorService.handleError(err);
             this.created.emit();
           },
@@ -254,8 +305,8 @@ export class GestionCroquisAdd {
   private successAndClose(): void {
     Swal.fire({
       icon: 'success',
-      title: '¡Propiedad registrada!',
-      text: 'La propiedad y sus vecinos fueron registrados correctamente.',
+      title: '¡Vecinos registrados!',
+      text: 'Los vecinos se registraron correctamente en el lote.',
       confirmButtonColor: 'var(--color-abril-primary)',
     });
     this.created.emit();

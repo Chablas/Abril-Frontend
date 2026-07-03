@@ -10,7 +10,15 @@ import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.mode
 export class MicrosoftAuthService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
-  private readonly scopes: PopupRequest = { scopes: ['User.Read', 'Files.ReadWrite', 'Mail.Send'] };
+  private readonly scopes: PopupRequest = {
+    scopes: ['User.Read', 'Files.ReadWrite', 'Mail.Send'],
+    // Fuerza el selector de cuenta en cada inicio de sesión. Sin esto, Azure AD
+    // hace SSO silencioso reutilizando la sesión activa de Microsoft (la cookie de
+    // login.microsoftonline.com que sobrevive a nuestro logout, ya que solo limpiamos
+    // el cache local de MSAL y no cerramos sesión del lado de Microsoft). Así el
+    // usuario siempre puede escoger otra cuenta de Abril tras cerrar sesión.
+    prompt: 'select_account',
+  };
   private readonly apiUrl = `${environment.apiUrl}api/v1/microsoft`;
 
   private msalInstance: PublicClientApplication | null = null;
@@ -145,6 +153,10 @@ export class MicrosoftAuthService {
         })
       );
 
+      ['access_token', 'session_token', 'token_expires_at', 'user', 'allowed_features',
+       'contratista_scope', 'contratista_proyectos', 'contratista_modulos']
+        .forEach(key => localStorage.removeItem(key));
+
       localStorage.setItem('access_token', response.accessToken);
       localStorage.setItem('session_token', response.sessionToken);
       localStorage.setItem('token_expires_at', response.expiresAt);
@@ -163,6 +175,11 @@ export class MicrosoftAuthService {
         businessPhones: response.businessPhones,
         photoBase64: response.photoBase64
       }));
+
+      // Cada inicio de sesión debe aterrizar en la portada (INICIO) del boletín.
+      // El boletín usa esta marca para mostrar la portada una sola vez por sesión;
+      // al loguear la limpiamos para que la portada vuelva a aparecer.
+      sessionStorage.removeItem('boletin_portada_vista');
     } catch (err) {
       this.msalInstance = null;
       throw err;

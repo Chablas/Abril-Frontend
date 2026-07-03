@@ -50,8 +50,11 @@ export class MultiSearchSelect {
 
   get filteredOptions(): any[] {
     if (!this.searchText.trim()) return this.options;
-    const q = this.normalize(this.searchText.trim());
-    return this.options.filter((opt) => this.normalize(String(opt[this.displayField])).includes(q));
+    const words = this.searchText.trim().split(/\s+/).map(w => this.normalize(w));
+    return this.options.filter(opt => {
+      const label = this.normalize(String(opt[this.displayField]));
+      return words.every(w => label.includes(w));
+    });
   }
 
   get hasValue(): boolean {

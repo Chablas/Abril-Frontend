@@ -13,6 +13,8 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { ArquitecturaComercialService } from '../../../../../core/services/arquitectura-comercial.service';
 import {
+  AcCategoriaDTO,
+  AcEspecialidadDTO,
   AcEtapaDTO,
   ActividadListItemDTO,
   SupervisorAcDTO,
@@ -23,6 +25,8 @@ interface EditarActividadForm {
   nombre: string;
   tipo: string;
   etapaId: number | null;
+  categoriaId: number | null;
+  especialidadId: number | null;
   userId: number | null;
   userId2: number | null;
   inicioProgramado: string;
@@ -51,6 +55,8 @@ export class EditarActividad implements OnChanges {
   readonly tipoOpciones = ['ENTREGABLE', 'HITO', 'CONSULTA'];
 
   etapas: AcEtapaDTO[] = [];
+  categorias: AcCategoriaDTO[] = [];
+  especialidades: AcEspecialidadDTO[] = [];
   loadingEtapas = false;
   saving = false;
 
@@ -73,6 +79,8 @@ export class EditarActividad implements OnChanges {
       nombre: '',
       tipo: '',
       etapaId: null,
+      categoriaId: null,
+      especialidadId: null,
       userId: null,
       userId2: null,
       inicioProgramado: '',
@@ -95,6 +103,8 @@ export class EditarActividad implements OnChanges {
       nombre: this.actividad.nombre,
       tipo: this.actividad.partidaDeControl ?? '',
       etapaId: this.actividad.etapaId,
+      categoriaId: this.actividad.categoriaId,
+      especialidadId: this.actividad.especialidadId,
       userId: this.actividad.userId,
       userId2: this.actividad.userId2,
       inicioProgramado: ini,
@@ -208,19 +218,19 @@ export class EditarActividad implements OnChanges {
   }
 
   private loadEtapas(): void {
-    if (this.etapas.length > 0) return;
-    this.loadingEtapas = true;
-    this.service.getEtapas().subscribe({
-      next: data => {
-        this.etapas = data;
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-    });
+    if (this.etapas.length === 0) {
+      this.loadingEtapas = true;
+      this.service.getEtapas().subscribe({
+        next: data => { this.etapas = data; this.loadingEtapas = false; this.cdr.detectChanges(); },
+        error: () => { this.loadingEtapas = false; this.cdr.detectChanges(); },
+      });
+    }
+    if (this.categorias.length === 0) {
+      this.service.getCategorias().subscribe({ next: d => { this.categorias = d; this.cdr.detectChanges(); } });
+    }
+    if (this.especialidades.length === 0) {
+      this.service.getEspecialidades().subscribe({ next: d => { this.especialidades = d; this.cdr.detectChanges(); } });
+    }
   }
 
   get canSubmit(): boolean {
@@ -234,6 +244,8 @@ export class EditarActividad implements OnChanges {
       nombre: this.model.nombre.trim(),
       tipo: this.model.tipo || null,
       etapaId: this.model.etapaId,
+      categoriaId: this.model.categoriaId,
+      especialidadId: this.model.especialidadId,
       userId: this.model.userId,
       userId2: this.model.userId2,
       inicioProgramado: this.model.inicioProgramado || null,

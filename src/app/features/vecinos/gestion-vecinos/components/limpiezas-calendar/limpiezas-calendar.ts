@@ -259,7 +259,7 @@ export class LimpiezasCalendar implements OnChanges {
       .filter((v) => (v.personas?.length ?? 0) > 0)
       .map((v) => ({
         id: v.vecinoId,
-        label: `${v.direccion}${v.interiorDepartamento ? ' · ' + v.interiorDepartamento : ''}${v.nombrePropietario ? ' — ' + v.nombrePropietario : ''}`,
+        label: `${v.direccion ?? 'Sin dirección'}${v.interiorDepartamento ? ' · ' + v.interiorDepartamento : ''}${v.nombrePropietario ? ' — ' + v.nombrePropietario : ''}`,
       }));
   }
 

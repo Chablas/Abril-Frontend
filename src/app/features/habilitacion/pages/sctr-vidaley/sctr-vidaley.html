@@ -71,9 +71,9 @@
           min="2020"
           max="2100"
         />
-        <select class="field-input filter-sel" [(ngModel)]="filtroProyecto">
-          <option value="">Todos los proyectos</option>
-          <option *ngFor="let p of proyectosDisponibles" [value]="p">{{ p }}</option>
+        <select class="field-input filter-sel" [(ngModel)]="filtroProyectoId" (change)="onFilter()">
+          <option [ngValue]="null">Todos los proyectos</option>
+          <option *ngFor="let p of proyectosPolizas" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
         </select>
       </div>
     </div>

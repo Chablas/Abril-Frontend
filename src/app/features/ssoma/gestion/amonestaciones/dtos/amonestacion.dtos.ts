@@ -51,6 +51,7 @@ export interface AmonestacionCreateRequest {
   fechaInicioSuspension?: string;
   fechaFinSuspension?: string;
   fotos: AmonFotoUpload[];
+  estado?: 'Borrador' | 'Registrada';
 }
 
 export interface AmonestacionCreadaDto {
@@ -64,6 +65,9 @@ export interface AmonestacionListQuery {
   tipoSancionId?: number;
   fechaDesde?: string;
   fechaHasta?: string;
+  workerSearch?: string;
+  empresaNombre?: string;
+  estado?: string;
   page?: number;
   pageSize?: number;
 }
@@ -78,9 +82,11 @@ export interface AmonestacionListItemDto {
   empresaNombre: string;
   tipoSancionNombre: string;
   nivelGravedad: string;
+  infraccionTipoNombre: string;
   puntosInfraccion: number;
   aplicaPenalizacion: boolean;
   montoCalculado: number;
+  estado: string;
 }
 
 export interface AmonestacionPagedResult<T> {
@@ -96,6 +102,7 @@ export interface AmonFotoDto {
   url: string;
   nombreArchivo?: string;
   orden: number;
+  base64Data?: string;
 }
 
 export interface AmonestacionDetalleDto {
@@ -134,8 +141,16 @@ export interface AmonestacionDetalleDto {
   fechaFinSuspension?: string;
   personaReportaNombre?: string;
   pdfUrl?: string;
+  estado: string;
+  documentoFirmadoUrl?: string;
+  fechaCierre?: string;
   createdAt: string;
   fotos: AmonFotoDto[];
+}
+
+export interface AmonestacionCerrarRequest {
+  documentoFirmadoBase64: string;
+  nombreArchivo: string;
 }
 
 export interface AmonPorTipoDto {
@@ -143,15 +158,36 @@ export interface AmonPorTipoDto {
   total: number;
 }
 
-export interface AmonPorProyectoDto {
-  proyectoNombre: string;
+export interface AmonCeldaTipoDto {
+  tipoNombre: string;
   total: number;
 }
 
-export interface AmonTendenciaDto {
-  anio: number;
+export interface AmonMatrizProyectoDto {
+  proyectoNombre: string;
+  total: number;
+  porTipo: AmonCeldaTipoDto[];
+}
+
+export interface AmonTendenciaMesDto {
   mes: number;
   total: number;
+  porTipo: AmonCeldaTipoDto[];
+  porProyecto: AmonCeldaTipoDto[];
+}
+
+export interface AmonUltimoSancionadoDto {
+  id: number;
+  codigo: string;
+  workerNombre: string;
+  workerDni: string;
+  empresaNombre: string;
+  proyectoNombre: string;
+  tipoSancionNombre: string;
+  nivelGravedad: string;
+  puntosInfraccion: number;
+  fecha: string;
+  estado: string;
 }
 
 export interface AmonestacionDashboardDto {
@@ -159,9 +195,14 @@ export interface AmonestacionDashboardDto {
   trabajadoresConMas5Puntos: number;
   trabajadoresInhabilitados: number;
   amonestacionesMesActual: number;
+  borradorPendientes: number;
+  pendientesCierre: number;
+  amonestacionesRegistradas: number;
+  amonestacionesCerradas: number;
   porTipoSancion: AmonPorTipoDto[];
-  porProyecto: AmonPorProyectoDto[];
-  tendencia: AmonTendenciaDto[];
+  matrizProyecto: AmonMatrizProyectoDto[];
+  tendenciaMeses: AmonTendenciaMesDto[];
+  ultimosSancionados: AmonUltimoSancionadoDto[];
 }
 
 export interface WorkerPuntajeDto {

@@ -43,7 +43,7 @@
             </td>
           } @else {
             <td><span [class]="estadoClass(e.estado)">{{ e.estado }}</span></td>
-            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy') : '—' }}</td>
+            <td class="ent-fecha">{{ e.fechaLimite ? (e.fechaLimite | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
             <td class="ent-resp">
               @if (e.responsables.length) {
                 @for (r of e.responsables; track r.id) { <span class="ent-tag">{{ r.nombre }}</span> }
@@ -78,3 +78,70 @@
     </tbody>
   </table>
 }
+
+<!-- ══ MEDIDAS DE CONTROL ══════════════════════════════════════════════════ -->
+<div class="medidas-section">
+  <div class="medidas-header">
+    <h4 class="medidas-title"><i class="ti ti-shield-check"></i> Medidas de control</h4>
+    <span class="medidas-hint">Bidireccional con Investigación RM-050</span>
+  </div>
+
+  <table class="ent-table">
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Tipo</th>
+        <th>Responsable</th>
+        <th>F. Compromiso</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of medidas; track m.id) {
+        @if (editandoMedidaId === m.id) {
+          <tr class="ent-editing">
+            <td><input class="ent-input" [(ngModel)]="medidaForm.descripcion" placeholder="Descripción" /></td>
+            <td>
+              <select class="ent-input" [(ngModel)]="medidaForm.tipo">
+                <option>Correctiva</option><option>Preventiva</option>
+              </select>
+            </td>
+            <td><input class="ent-input" [(ngModel)]="medidaForm.responsableNombre" placeholder="Responsable" /></td>
+            <td><input type="date" class="ent-input" [(ngModel)]="medidaForm.fechaCompromiso" /></td>
+            <td>
+              <select class="ent-input" [(ngModel)]="medidaForm.estado">
+                <option>Pendiente</option><option>En proceso</option><option>Cumplido</option><option>No aplica</option>
+              </select>
+            </td>
+            <td class="ent-acciones">
+              <button class="btn-ent btn-ent--save" (click)="guardarMedida(m)" [disabled]="guardandoMedida">Guardar</button>
+              <button class="btn-ent btn-ent--cancel" (click)="cancelarMedida()">Cancelar</button>
+            </td>
+          </tr>
+        } @else {
+          <tr>
+            <td>{{ m.descripcion }}</td>
+            <td>{{ m.tipo ?? '—' }}</td>
+            <td>{{ m.responsableNombre ?? '—' }}</td>
+            <td>{{ m.fechaCompromiso ? (m.fechaCompromiso | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
+            <td><span [class]="estadoClass(m.estado)">{{ m.estado }}</span></td>
+            <td class="ent-acciones">
+              <button class="btn-ent" (click)="editarMedida(m)" title="Editar"><i class="ti ti-edit"></i></button>
+              <button class="btn-ent btn-ent--danger" (click)="eliminarMedida(m.id)" title="Eliminar"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+
+  <!-- Añadir nueva medida -->
+  <div class="medida-add">
+    <input class="ent-input medida-add__input" [(ngModel)]="nuevaMedida"
+      placeholder="Nueva medida de control..." (keydown.enter)="agregarMedida()" />
+    <button class="btn-ent btn-ent--save" (click)="agregarMedida()">
+      <i class="ti ti-plus"></i> Añadir
+    </button>
+  </div>
+</div>

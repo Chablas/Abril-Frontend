@@ -3,4 +3,5 @@ export interface AbrilWorkerOptionDto {
   fullName: string;
   documentIdentityCode?: string | null;
   emailPersonal: string;
+  obraOficina?: string | null;
 }

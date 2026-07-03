@@ -39,6 +39,7 @@ interface WorkerFormModel {
   emailPersonal: string;
   categoria: string;
   ocupacion: string;
+  ocupacionId: number | null;
   area: string;
   subarea: string;
   contrataCasa: string;
@@ -53,6 +54,7 @@ interface WorkerFormModel {
   fechaIngreso: string;
   condicionMedica: string;
   fechaNacimiento: string;
+  sexo: string;
   aniosExperiencia: number | null;
 }
 
@@ -196,6 +198,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       emailPersonal: '',
       categoria: '',
       ocupacion: '',
+      ocupacionId: null,
       area: '',
       subarea: '',
       contrataCasa: '',
@@ -210,6 +213,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       fechaIngreso: '',
       condicionMedica: '',
       fechaNacimiento: '',
+      sexo: '',
       aniosExperiencia: null,
     };
   }
@@ -250,6 +254,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
+          this.model.sexo = det.sexo ?? '';
+          this.model.ocupacionId = det.ocupacionId ?? null;
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
           this.loadingDetalle = false;
           if (this.model.area) {
@@ -351,6 +357,11 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
         },
         error: () => {},
       });
+  }
+
+  onOcupacionChange(nombre: string): void {
+    this.model.ocupacion = nombre;
+    this.model.ocupacionId = this.ocupaciones.find((o) => o.nombre === nombre)?.id ?? null;
   }
 
   onAreaChange(): void {
@@ -584,6 +595,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       condicionMedica: n(this.model.condicionMedica),
       categoria: n(this.model.categoria),
       ocupacion: n(this.model.ocupacion),
+      ocupacionId: this.model.ocupacionId ?? undefined,
       area: n(this.model.area),
       subarea: n(this.model.subarea),
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),
@@ -595,6 +607,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
       fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
+      sexo: n(this.model.sexo),
       aniosExperiencia: this.model.aniosExperiencia ?? undefined,
     };
 

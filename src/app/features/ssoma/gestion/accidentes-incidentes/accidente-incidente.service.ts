@@ -93,4 +93,52 @@ export class AccidenteIncidenteService {
   guardarRm050(accidenteId: number, req: GuardarRm050Request): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/${accidenteId}/rm050`, req, { headers: this.authHeaders() });
   }
+
+  getPdfUrl(id: number): string {
+    return `${this.base}/${id}/pdf`;
+  }
+
+  getFotoUrl(id: number, slot: 1 | 2): string {
+    return `${this.base}/${id}/foto/${slot}`;
+  }
+
+  getMedidas(accidenteId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/${accidenteId}/medidas`, { headers: this.authHeaders() });
+  }
+
+  addMedida(accidenteId: number, req: any): Observable<{ id: number; message: string }> {
+    return this.http.post<any>(`${this.base}/${accidenteId}/medidas`, req, { headers: this.authHeaders() });
+  }
+
+  updateMedida(accionId: number, req: any): Observable<{ message: string }> {
+    return this.http.patch<any>(`${this.base}/medidas/${accionId}`, req, { headers: this.authHeaders() });
+  }
+
+  deleteMedida(accionId: number): Observable<{ message: string }> {
+    return this.http.delete<any>(`${this.base}/medidas/${accionId}`, { headers: this.authHeaders() });
+  }
+
+  descargarPdfBlob(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/pdf`, {
+      headers: this.authHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  getAccionesVencidas(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/acciones-correctivas/vencidas`, { headers: this.authHeaders() });
+  }
+
+  crearLeccionDesdeAccion(accionId: number, req: { proyectoId: number; areaId: number; impactDescription?: string }): Observable<{ message: string; lessonId: number }> {
+    return this.http.post<any>(`${this.base}/acciones-correctivas/${accionId}/leccion`, req, { headers: this.authHeaders() });
+  }
+
+  getMintraUrl(id: number): string {
+    return `${this.base}/${id}/mintra`;
+  }
+
+  reclasificar(id: number): Observable<{ message: string; accidenteTrabajoId?: number }> {
+    return this.http.post<{ message: string; accidenteTrabajoId?: number }>(
+      `${this.base}/${id}/reclasificar`, {}, { headers: this.authHeaders() });
+  }
 }

@@ -13,6 +13,8 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { ArquitecturaComercialService } from '../../../../../core/services/arquitectura-comercial.service';
 import {
+  AcCategoriaDTO,
+  AcEspecialidadDTO,
   AcEtapaDTO,
   ActividadListItemDTO,
   CreateActividadBody,
@@ -23,6 +25,7 @@ interface NuevoEntregableForm {
   etapaNombre: string;
   reporte: string;
   categoriaId: number | null;
+  especialidadId: number | null;
   etapaId: number | null;
   inicioProgramado: string;
   finProgramado: string;
@@ -43,6 +46,7 @@ export class NuevoEntregable implements OnChanges {
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<ActividadListItemDTO>();
 
+  readonly POST_VENTA_NOMBRE = 'POST VENTA Y EXPERIENCIA';
   readonly etapasNombre = ['ETAPA 1', 'ETAPA 2', 'ETAPA 3', 'ETAPA 4'];
   readonly reportes = [
     'REPORTE DE LEVANTAMIENTO DE OBS MENSUAL',
@@ -51,12 +55,10 @@ export class NuevoEntregable implements OnChanges {
     'REPORTE DE ALMACENES MENSUAL',
     'REPORTE DE RECICLAJE MENSUAL',
   ];
-  readonly categorias = [
-    { id: 3, nombre: 'POST VENTA' },
-    { id: 4, nombre: 'ALMACENES' },
-  ];
 
   etapas: AcEtapaDTO[] = [];
+  categorias: AcCategoriaDTO[] = [];
+  especialidades: AcEspecialidadDTO[] = [];
   loadingEtapas = false;
   saving = false;
   nombrePersonalizado = false;
@@ -74,7 +76,7 @@ export class NuevoEntregable implements OnChanges {
       this.model = this.empty();
       this.nombrePersonalizado = false;
       this.nombreLibre = '';
-      this.loadEtapas();
+      this.loadCatalogos();
     }
   }
 
@@ -83,6 +85,7 @@ export class NuevoEntregable implements OnChanges {
       etapaNombre: '',
       reporte: '',
       categoriaId: null,
+      especialidadId: null,
       etapaId: null,
       inicioProgramado: '',
       finProgramado: '',
@@ -90,29 +93,47 @@ export class NuevoEntregable implements OnChanges {
     };
   }
 
-  private loadEtapas(): void {
-    if (this.etapas.length > 0) {
+  private loadCatalogos(): void {
+    if (this.etapas.length === 0) {
+      this.loadingEtapas = true;
+      this.service.getEtapas().subscribe({
+        next: data => {
+          this.etapas = data;
+          this.applyDefaultEtapa();
+          this.loadingEtapas = false;
+          this.cdr.detectChanges();
+        },
+        error: () => { this.loadingEtapas = false; this.cdr.detectChanges(); },
+      });
+    } else {
       this.applyDefaultEtapa();
-      return;
     }
-    this.loadingEtapas = true;
-    this.service.getEtapas().subscribe({
-      next: data => {
-        this.etapas = data;
-        this.applyDefaultEtapa();
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loadingEtapas = false;
-        this.cdr.detectChanges();
-      },
-    });
+    if (this.categorias.length === 0) {
+      this.service.getCategorias().subscribe({ next: d => { this.categorias = d; this.cdr.detectChanges(); } });
+    }
+    if (this.especialidades.length === 0) {
+      this.service.getEspecialidades().subscribe({ next: d => { this.especialidades = d; this.cdr.detectChanges(); } });
+    }
   }
 
   private applyDefaultEtapa(): void {
-    const postVenta = this.etapas.find(e => e.nombre === 'POST VENTA Y EXPERIENCIA');
-    if (postVenta) this.model.etapaId = postVenta.id;
+    const postVenta = this.etapas.find(e => e.nombre === this.POST_VENTA_NOMBRE);
+    if (postVenta) {
+      this.model.etapaId = postVenta.id;
+      this.nombrePersonalizado = false;
+    }
+  }
+
+  get isPostVenta(): boolean {
+    if (!this.model.etapaId) return false;
+    return this.etapas.find(e => e.id === this.model.etapaId)?.nombre === this.POST_VENTA_NOMBRE;
+  }
+
+  onEtapaChange(): void {
+    if (!this.isPostVenta) {
+      this.model.reporte = '';
+      this.nombrePersonalizado = false;
+    }
   }
 
   get nombreCalculado(): string {
@@ -123,20 +144,29 @@ export class NuevoEntregable implements OnChanges {
 
   get canSubmit(): boolean {
     if (!this.projectId || this.saving) return false;
-    if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
-    return !!this.model.etapaNombre && !!this.model.reporte;
+    const { etapaNombre, etapaId, categoriaId, especialidadId, inicioProgramado, userId } = this.model;
+    if (!etapaNombre || !etapaId || !categoriaId || !especialidadId || !inicioProgramado || !userId) return false;
+    if (this.isPostVenta) {
+      if (this.nombrePersonalizado) return !!this.nombreLibre.trim();
+      return !!this.model.reporte;
+    }
+    return !!this.nombreLibre.trim();
   }
 
   submit(): void {
     if (!this.canSubmit || !this.projectId) return;
 
+    const nombre = this.isPostVenta && !this.nombrePersonalizado
+      ? this.nombreCalculado
+      : this.nombreLibre.trim();
+
     const body: CreateActividadBody = {
-      nombre: this.nombrePersonalizado ? this.nombreLibre.trim() : this.nombreCalculado,
+      nombre,
       tipo: 'ENTREGABLE',
       projectId: this.projectId,
       etapaId: this.model.etapaId,
       categoriaId: this.model.categoriaId,
-      especialidadId: 2,
+      especialidadId: this.model.especialidadId,
       userId: this.model.userId,
       inicioProgramado: this.model.inicioProgramado || null,
       finProgramado: this.model.finProgramado || null,

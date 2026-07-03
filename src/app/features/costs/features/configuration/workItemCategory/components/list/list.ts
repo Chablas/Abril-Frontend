@@ -25,7 +25,7 @@ export class WorkItemCategoryList implements OnInit {
 
   items: WorkItemCategoryDto[] = [];
   showEditModal = false;
-  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', active: true, clauses: [], anexo3Clauses: [], anexo4Clauses: [] };
+  editDto: WorkItemCategoryEditDto = { workItemCategoryId: 0, workItemCategoryDescription: '', workSpecialtyId: null, active: true, clauses: [], anexo3Clauses: [], anexo4Clauses: [] };
   editingClauses: WorkItemCategoryClauseDto[] = [];
   editingAnexo3Clauses: WorkItemCategoryAnexo3ClauseDto[] = [];
   editingAnexo4Clauses: WorkItemCategoryAnexo4ClauseDto[] = [];
@@ -60,6 +60,7 @@ export class WorkItemCategoryList implements OnInit {
     this.editDto = {
       workItemCategoryId: item.workItemCategoryId,
       workItemCategoryDescription: item.workItemCategoryDescription,
+      workSpecialtyId: item.workSpecialtyId ?? null,
       active: item.active,
       clauses: [],
       anexo3Clauses: [],

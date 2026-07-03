@@ -23,6 +23,10 @@ import {
 } from '../shared/dias-vencer.utils';
 import { EmoCreate } from './components/emo-create/emo-create';
 import { EmoDetail } from './components/emo-detail/emo-detail';
+import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
+import { EditarEmoModal } from '../../../../shared/components/editar-emo-modal/editar-emo-modal';
+import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo-modal/documentos-emo-modal';
 
 interface FilterOption {
   id: string;
@@ -32,7 +36,19 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoCreate, EmoDetail, AbrilPageHeaderComponent],
+  imports: [
+    FabButton,
+    CommonModule,
+    FormsModule,
+    Paginator,
+    SearchSelect,
+    EmoCreate,
+    EmoDetail,
+    ProgramarEmoDialogComponent,
+    EditarEmoModal,
+    DocumentosEmoModal,
+    AbrilPageHeaderComponent,
+  ],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })
@@ -72,6 +88,10 @@ export class Emos implements OnInit, OnDestroy {
 
   selectedEmoId: number | null = null;
   createOpen = false;
+
+  selectedWorkerForProgramar: EmoPorTrabajadorDto | null = null;
+  emoSeleccionado: EmoPorTrabajadorDto | null = null;
+  emoDocumentos: EmoPorTrabajadorDto | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -196,6 +216,35 @@ export class Emos implements OnInit, OnDestroy {
   verHistorial(item: EmoPorTrabajadorDto, event: MouseEvent): void {
     event.stopPropagation();
     this.router.navigate(['/ssoma/salud-ocupacional/emos', item.workerId, 'historial']);
+  }
+
+  abrirProgramarEmo(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedWorkerForProgramar = item;
+  }
+
+  onProgramarEmoCerrado(reload: boolean): void {
+    this.selectedWorkerForProgramar = null;
+    if (reload) this.load(this.currentPage);
+  }
+
+  abrirDocumentos(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.emoDocumentos = item;
+  }
+
+  abrirEditar(item: EmoPorTrabajadorDto, event: MouseEvent): void {
+    event.stopPropagation();
+    this.emoSeleccionado = item;
+  }
+
+  onEditarClosed(): void {
+    this.emoSeleccionado = null;
+  }
+
+  onEditarSaved(): void {
+    this.emoSeleccionado = null;
+    this.load(this.currentPage);
   }
 
   aptitudClass(aptitud?: string): string {

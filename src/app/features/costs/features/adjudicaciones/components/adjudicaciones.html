@@ -3,30 +3,20 @@
   titulo="Adjudicaciones"
   subtitulo="Gestión de subcontratos y adjudicaciones por proyecto."
   [tabs]="[
-    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/costs/dashboard' },
-    { label: 'Adjudicaciones', icono: 'ti-list',            route: '/costs/adjudicaciones' }
-  ]">
+    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/costs/dashboard',      featureKey: 'costs.dashboard' },
+    { label: 'Adjudicaciones', icono: 'ti-list',            route: '/costs/adjudicaciones', featureKey: 'costs.adjudicaciones' },
+    { label: 'Configuración',  icono: 'ti-settings',        route: '/costs/configuration',  featureKeys: ['costs.config.work-item','costs.config.work-item-category','costs.config.work-specialty','costs.config.staff-project-email','costs.config.project-link','costs.config.adjudicacion-folder','costs.config.costos-presupuestos-email'] }
+  ]"
+  [botonPrimario]="{ label: 'Nueva adjudicación', icono: 'ti-plus' }"
+  [botonPrimarioDeshabilitado]="!canCreate"
+  [botonPrimarioTooltip]="canCreate ? 'Crear nueva adjudicación' : 'Solo Oficina Central puede crear adjudicaciones'"
+  (primaryClick)="openCreateModal()">
 </app-abril-page-header>
 
 <div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">
 
   <!-- ── FILTROS ───────────────────────────────────────────────────── -->
   <div class="flex flex-wrap gap-4 py-1 items-end">
-
-    <!-- Nueva adjudicación (solo Oficina Central) -->
-    <button type="button" (click)="openCreateModal($event)"
-      [disabled]="!canCreate"
-      [title]="canCreate ? 'Crear nueva adjudicación' : 'Solo Oficina Central puede crear adjudicaciones'"
-      class="h-[42px] px-4 rounded-lg border text-sm font-medium flex items-center gap-2 transition-colors self-end"
-      [ngClass]="canCreate
-        ? 'bg-[var(--color-abril-primary-light)] border-[var(--color-abril-primary)] text-[var(--color-abril-primary)] cursor-pointer'
-        : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-        <path d="M10 0C4.486 0 0 4.486 0 10s4.486 10 10 10 10-4.486 10-10S15.514 0 10 0Zm0 1.538c4.682 0 8.462 3.78 8.462 8.462S14.682 18.462 10 18.462 1.538 14.682 1.538 10 5.318 1.538 10 1.538ZM9.231 5.385v3.846H5.385v1.538h3.846v3.846h1.538v-3.846h3.846V9.231h-3.846V5.385H9.231Z"
-          [attr.fill]="canCreate ? '#64BC04' : '#9ca3af'"/>
-      </svg>
-      Nueva adjudicación
-    </button>
 
     <!-- Razón social -->
     <div class="w-[220px] flex flex-col gap-[6px]">

@@ -2,7 +2,6 @@ import { Component, Input, Output, EventEmitter, OnInit, PLATFORM_ID, inject } f
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
 import { MicrosoftAuthService } from '../../../features/auth/pages/login/services/microsoft-auth.service';
@@ -31,7 +30,6 @@ export class SidebarMobile implements OnInit {
   constructor(
     public router: Router,
     public navService: NavigationService,
-    private authService: AuthService,
     private microsoftAuthService: MicrosoftAuthService,
   ) {}
 
@@ -80,10 +78,8 @@ export class SidebarMobile implements OnInit {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
-  private readonly accordionModuleKeys = new Set(['gestion-ssoma', 'contratistas']);
-
   hasAccordion(module: NavModule): boolean {
-    return this.accordionModuleKeys.has(module.key);
+    return this.navService.isExpandable(module);
   }
 
   toggleGroup(label: string, event: MouseEvent): void {
@@ -93,43 +89,16 @@ export class SidebarMobile implements OnInit {
 
   onModuleClick(module: NavModule): void {
     // Módulos con accordion: toggle in-place, no cierra el drawer
-    if (this.accordionModuleKeys.has(module.key)) {
+    if (this.navService.isExpandable(module)) {
       this.expandedModule = this.expandedModule === module.key ? null : module.key;
       this.expandedGroup = null;
       return;
     }
 
-    // Todos los demás: navegación directa y cierra drawer
-    if (module.key === 'habilitacion') {
-      this.router.navigate([
-        this.authService.isContratista()
-          ? '/habilitacion/dashboard-contratista'
-          : '/habilitacion/gestion',
-      ]);
-    } else {
-      const directRoutes: Record<string, string> = {
-        'control-acceso': '/habilitacion/control-acceso',
-        clinica: '/clinica/dashboard',
-        'mejora-continua': '/mejora-continua/dashboard',
-        'gestion-administrativa': '/gestion-administrativa/solicitud-salidas',
-        proyectos: '/projects/projects-dashboard',
-        ssoma: '/ssoma/salud-ocupacional/dashboard',
-        'gestion-ssoma': '/ssoma/gestion/paso/dashboard',
-        'arquitectura-comercial': '/arquitectura-comercial/dashboard',
-        evaluaciones: '/evaluaciones/dashboard',
-        seguridad: '/security/users',
-        configuracion: '/configuracion/proyectos',
-        costos: '/costs/adjudicaciones',
-        contratistas: '/contractors/management',
-      };
-      const route = directRoutes[module.key];
-      if (route) {
-        this.router.navigate([route]);
-      } else {
-        const items = this.navService.filterItems(module.items);
-        if (items.length > 0) this.router.navigate([items[0].route]);
-      }
-    }
+    // Navegación directa: se resuelve a la ruta preferida (landing) si el usuario
+    // tiene acceso, o al primer item accesible del módulo como fallback.
+    const route = this.navService.resolveLanding(module);
+    if (route) this.router.navigate([route]);
     this.close();
   }
 

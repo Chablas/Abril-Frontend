@@ -91,6 +91,7 @@
 .doc-row--subido  { border-color: #bbf7d0; background: #f0fdf4; }
 .doc-row--na      { opacity: 0.55; }
 .doc-row--pendiente { background: #fff; }
+.doc-row--observado { border-color: #fed7aa; background: #fffbeb; }
 
 .doc-info { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .doc-tipo { font-size: 12px; font-weight: 600; }
@@ -156,3 +157,16 @@
   cursor: pointer; border: 1px solid #d97706; color: #d97706; background: #fff;
 }
 .btn-outline-warning:hover { background: #fffbeb; }
+
+/* ── Revisión por documento ── */
+.btn-sm { padding: 3px 9px; font-size: 11px; border-radius: 5px; gap: 3px; }
+
+.observar-panel--doc {
+  margin: 0; padding: 8px; border-top: none;
+  border-radius: 6px; background: #fffbeb; border: 1px solid #fde68a;
+}
+.observar-panel--doc textarea { font-size: 12px; }
+
+.obs-rechazado--doc {
+  margin: 0; padding: 6px 10px; font-size: 12px;
+}

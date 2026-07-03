@@ -56,6 +56,7 @@ export class RacNuevo implements OnInit, OnDestroy {
 
   // Trabajador(es) observado(s)
   esAnonimoObservado = false;
+  esAnonimaEmpresaReportada = false;
   observadoQuery = '';
   observadoResults: WorkerSearchItemDto[] = [];
   observadosSeleccionados: WorkerSearchItemDto[] = [];
@@ -245,6 +246,8 @@ export class RacNuevo implements OnInit, OnDestroy {
       this.categoriaId &&
       this.severidad &&
       this.descripcion.trim() &&
+      this.planAccion.trim() &&
+      this.plazoLevantamiento &&
       !this.saving
     );
   }
@@ -269,7 +272,7 @@ export class RacNuevo implements OnInit, OnDestroy {
       empresaReportanteId: this.empresaReportanteId ?? undefined,
       esAnonimoObservado: this.esAnonimoObservado,
       observadoWorkerIds: this.observadosSeleccionados.map((w) => w.id),
-      empresaReportadaId: this.empresaReportadaId ?? undefined,
+      empresaReportadaId: this.esAnonimaEmpresaReportada ? undefined : (this.empresaReportadaId ?? undefined),
       proyectoPiso: this.proyectoPiso || undefined,
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,

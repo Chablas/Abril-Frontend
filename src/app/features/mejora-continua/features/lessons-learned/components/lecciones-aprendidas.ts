@@ -20,6 +20,7 @@ import { ViewToggleMode } from '../../../../../shared/components/view-toggle/vie
 import { environment } from '../../../../../../environments/environment';
 import { formatPeriodLabel as periodMonthYear } from '../../../../../shared/pipes/period-label.pipe';
 import { jwtDecode } from 'jwt-decode';
+import Swal from 'sweetalert2';
 import { GUIA_LECCIONES_APRENDIDAS } from '../../../../../shared/constants/mejora-continua-guia';
 import {
   LessonAreaConfigItemDto,
@@ -66,12 +67,13 @@ export class LeccionesAprendidas implements OnInit {
 
   // Filters raw
   filtersData: LessonFiltersDTO = {
-    projects: [], areas: [], periods: [], users: [], categories: [],
+    projects: [], areas: [], periods: [], users: [], reviewers: [], categories: [],
   };
 
   // Computed SearchSelect options (with null "Todos" prepended)
   projectOptions: any[] = [];
   userOptions: any[] = [];
+  reviewerOptions: any[] = [];
   periodOptions: any[] = [];
   /**
    * Por cada catalog_type, las opciones del dropdown (con el "Todos" inicial).
@@ -83,6 +85,8 @@ export class LeccionesAprendidas implements OnInit {
     projectId: null as number | null,
     periodDate: null as string | null,
     userId: null as number | null,
+    /** Revisor (jefe asignado al autor) — workerId o null = todos. */
+    reviewerWorkerId: null as number | null,
     /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
     catalogSelections: {} as Record<number, number | null>,
     /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. */
@@ -116,6 +120,11 @@ export class LeccionesAprendidas implements OnInit {
     },
   ];
 
+  // Ventana de subida: durante la revisión de la jefatura (últimos 2 días hábiles
+  // del mes + fines de semana/feriados intermedios) no se permite registrar.
+  canUpload = true;
+  uploadBlockedMessage = '';
+
   // Modals
   showCreateModal = false;
   selectedLessonId: number | null = null;
@@ -136,6 +145,22 @@ export class LeccionesAprendidas implements OnInit {
     }
     this.loadInitial();
     this.loadAreaTree();
+    this.loadUploadWindow();
+  }
+
+  /** Consulta si hoy se pueden registrar lecciones (ventana de revisión de jefatura). */
+  private loadUploadWindow(): void {
+    this.leccionesAprendidasService.getUploadWindow().subscribe({
+      next: (w) => {
+        this.canUpload = w.canUpload;
+        this.uploadBlockedMessage = w.message ?? '';
+      },
+      // Si falla la consulta, no bloqueamos: el backend igual valida al crear.
+      error: () => {
+        this.canUpload = true;
+        this.uploadBlockedMessage = '';
+      },
+    });
   }
 
   // ── Selector de área en cascada (filtro de la lista) ─────────────────────────
@@ -268,6 +293,7 @@ export class LeccionesAprendidas implements OnInit {
   private buildFilterOptions(fd: LessonFiltersDTO): void {
     this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
     this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
+    this.reviewerOptions = [{ workerId: null, fullName: 'Todos los revisores' }, ...(fd.reviewers ?? [])];
     this.periodOptions = [
       { periodDate: null, periodLabel: 'Todos los periodos' },
       ...fd.periods.map(p => ({
@@ -311,6 +337,7 @@ export class LeccionesAprendidas implements OnInit {
       lessonAreaIds: this.selectedAreaIds.length ? this.selectedAreaIds.join(',') : null,
       periodDate: this.filtersTable.periodDate,
       userId: this.filtersTable.userId,
+      reviewerWorkerId: this.filtersTable.reviewerWorkerId,
       catalogItemIds: selected.length > 0 ? selected.join(',') : null,
       approvalStatus: this.filtersTable.approvalStatus,
       onlyMyPendingReview: this.filtersTable.onlyMyPendingReview ? true : null,
@@ -367,6 +394,23 @@ export class LeccionesAprendidas implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  /**
+   * Abre el modal de creación. Durante la ventana de revisión de la jefatura el
+   * botón está deshabilitado; como defensa extra, si llegara a invocarse muestra
+   * el motivo y no abre el modal.
+   */
+  onNuevoRegistro(): void {
+    if (!this.canUpload) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Ventana de revisión',
+        text: this.uploadBlockedMessage,
+      });
+      return;
+    }
+    this.showCreateModal = true;
   }
 
   openCreateModal(event: MouseEvent): void {

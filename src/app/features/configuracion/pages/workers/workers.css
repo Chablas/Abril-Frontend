@@ -230,6 +230,25 @@
   border-color: #bfdbfe;
 }
 
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1e40af;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.btn-edit:hover {
+  background: #dbeafe;
+}
+
 .empty-row {
   text-align: center;
   color: #9ca3af;

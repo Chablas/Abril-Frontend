@@ -104,7 +104,9 @@ export class Empresa implements OnInit {
   }
 
   get requiereVigenciaAnteUpload(): boolean {
-    return !!this.selectedEntregable && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId);
+    return !!this.selectedEntregable
+      && this.VIGENCIA_ANTE_UPLOAD_IDS.includes(this.selectedEntregable.itemId)
+      && this.panelEstado !== 'No Aplica';
   }
 
   get uploadBloqueadoPorVigencia(): boolean {
@@ -744,9 +746,10 @@ export class Empresa implements OnInit {
         obsContratista: this.panelObsContratista || undefined,
       };
     } else {
+      const estado = this.panelEstado || this.selectedEntregable.estado;
       payload = {
-        estado: this.panelEstado || this.selectedEntregable.estado,
-        vigencia: this.panelVigencia || undefined,
+        estado,
+        vigencia: estado === 'No Aplica' ? '2040-12-31' : this.panelVigencia || undefined,
         archivoUrl: this.panelArchivoUrl || undefined,
         obsAbril: this.panelObsAbril || undefined,
       };
@@ -913,6 +916,28 @@ export class Empresa implements OnInit {
 
   onProyectosChanged(): void {
     this.loadProyectos();
+  }
+
+  cambiarEstadoMes(mes: EntregableMesDto, nuevoEstado: string): void {
+    if (!this.selectedEntregable || !this.empresaId || nuevoEstado === mes.estado) return;
+
+    if (nuevoEstado === 'Rechazado') {
+      this.rechazarMesEspecifico(mes);
+      return;
+    }
+
+    this.loaderService.show();
+    this.habEmpresaService.aprobarMes(this.empresaId, mes.id, { estado: nuevoEstado }).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: 'Estado actualizado', timer: 1200, showConfirmButton: false });
+        this.recargarEntregables();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   aprobarMesEspecifico(mes: EntregableMesDto): void {

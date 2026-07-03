@@ -29,6 +29,13 @@ export class EntregablesTabComponent implements OnInit {
 
   readonly estadosEntregable = ESTADOS_ENTREGABLE;
 
+  // ── Medidas de control ─────────────────────────────────────────────────────
+  medidas: any[] = [];
+  editandoMedidaId?: number;
+  medidaForm: any = {};
+  guardandoMedida = false;
+  nuevaMedida = '';
+
   constructor(
     private service: AccidenteIncidenteService,
     private cdr: ChangeDetectorRef,
@@ -36,6 +43,7 @@ export class EntregablesTabComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarMedidas();
   }
 
   cargar(): void {
@@ -127,5 +135,50 @@ export class EntregablesTabComponent implements OnInit {
       Aprobado: 'chip chip--aprobado',
       'No aplica': 'chip chip--noaplica',
     }[estado] ?? 'chip';
+  }
+
+  // ── Métodos medidas de control ─────────────────────────────────────────────
+
+  cargarMedidas(): void {
+    this.service.getMedidas(this.accidenteId).subscribe({
+      next: (m) => { this.medidas = m; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+  }
+
+  editarMedida(m: any): void {
+    this.editandoMedidaId = m.id;
+    this.medidaForm = { ...m };
+    this.cdr.detectChanges();
+  }
+
+  cancelarMedida(): void {
+    this.editandoMedidaId = undefined;
+    this.medidaForm = {};
+    this.cdr.detectChanges();
+  }
+
+  guardarMedida(m: any): void {
+    this.guardandoMedida = true;
+    this.service.updateMedida(m.id, this.medidaForm).subscribe({
+      next: () => {
+        this.guardandoMedida = false;
+        this.editandoMedidaId = undefined;
+        this.cargarMedidas();
+      },
+      error: () => { this.guardandoMedida = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  eliminarMedida(id: number): void {
+    if (!confirm('¿Eliminar esta medida de control?')) return;
+    this.service.deleteMedida(id).subscribe({ next: () => this.cargarMedidas() });
+  }
+
+  agregarMedida(): void {
+    if (!this.nuevaMedida.trim()) return;
+    this.service.addMedida(this.accidenteId, { descripcion: this.nuevaMedida, estado: 'Pendiente' }).subscribe({
+      next: () => { this.nuevaMedida = ''; this.cargarMedidas(); },
+    });
   }
 }

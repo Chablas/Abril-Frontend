@@ -8,6 +8,7 @@ export interface Staff {
   workerId: number;
   nombreCompleto: string;
   cargo: string;
+  categoria?: string;
 }
 
 export interface CharlaResumen {

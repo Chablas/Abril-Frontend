@@ -1,0 +1,235 @@
+<div class="dp-root">
+
+
+  <div class="dp-body">
+
+    <!-- FILTROS -->
+    <div class="filtros-card">
+      <div class="filtros-grid">
+        <div class="filtro-group filtro-group--wide">
+          <label class="filtro-label">Proyecto</label>
+          <select class="filtro-select"
+                  [ngModel]="proyectoId()"
+                  (ngModelChange)="proyectoId.set($event ? +$event : null)">
+            <option [ngValue]="null">— Seleccione proyecto —</option>
+            <option *ngFor="let p of proyectos()" [value]="p.id">{{ p.nombre }}</option>
+          </select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Mes</label>
+          <select class="filtro-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
+            <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
+          </select>
+        </div>
+        <div class="filtro-group">
+          <label class="filtro-label">Año</label>
+          <select class="filtro-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
+            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+        <div class="filtro-action">
+          <button type="button" class="btn-cargar" (click)="cargar()" [disabled]="!proyectoId()">
+            <i class="ti ti-search"></i> Cargar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENIDO EXPORTABLE -->
+    <div #reportContent *ngIf="indicadores() as ind">
+
+      <!-- CABECERA DEL REPORTE -->
+      <div class="reporte-header">
+        <div class="rh-info">
+          <h2 class="rh-proyecto">{{ ind.proyectoNombre }}</h2>
+          <span class="rh-periodo">
+            <i class="ti ti-calendar"></i>
+            {{ nombreMes(mes()) }} {{ anio() }} · {{ ind.totalEmpresasActivas }} empresa(s) activa(s)
+          </span>
+        </div>
+
+        <!-- Gauge puntaje -->
+        <div class="rh-gauge" *ngIf="puntaje() as pts">
+          <svg viewBox="0 0 100 100" class="gauge-svg">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10"
+              stroke-dasharray="251.2" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="40" fill="none"
+              [attr.stroke]="gaugeColor(pts.puntajeTotal)" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="251.2"
+              [attr.stroke-dashoffset]="gaugeOffset(pts.puntajeTotal)"
+              transform="rotate(-90 50 50)" class="gauge-arc"/>
+            <text x="50" y="46" text-anchor="middle" class="gauge-num"
+                  [attr.fill]="gaugeColor(pts.puntajeTotal)">
+              {{ pts.puntajeTotal | number:'1.1-1' }}
+            </text>
+            <text x="50" y="60" text-anchor="middle" class="gauge-sub">/ 110 pts</text>
+          </svg>
+          <span class="gauge-label">Puntaje del Mes</span>
+        </div>
+      </div>
+
+      <!-- KPI PROACTIVOS TOTALES -->
+      <div class="kpi-strip">
+        <div *ngFor="let ind_ of INDICADORES" class="kpi-chip">
+          <span class="kpi-chip__label">{{ ind_.label }}</span>
+          <span class="kpi-chip__pct" [ngClass]="pctClass($any(ind)['pct' + ind_.key])"
+                [style.color]="ind_.color">
+            {{ $any(ind)['pct' + ind_.key] | number:'1.0-0' }}%
+          </span>
+          <span class="kpi-chip__vals">
+            {{ $any(ind)['actual' + ind_.key + 'Total'] ?? $any(ind)['actual' + ind_.key] }}
+            / {{ $any(ind)['meta' + ind_.key + 'Total'] ?? $any(ind)['meta' + ind_.key] }}
+          </span>
+        </div>
+      </div>
+
+      <!-- GRÁFICO -->
+      <div class="chart-card">
+        <div class="chart-card__title">
+          <i class="ti ti-chart-bar"></i>
+          Avance por empresa — todos los indicadores (%)
+        </div>
+        <div class="chart-wrap">
+          <canvas #chartCanvas></canvas>
+        </div>
+      </div>
+
+      <!-- PUNTAJE DESGLOSADO -->
+      <div class="puntaje-strip" *ngIf="puntaje() as pts">
+        <div class="ps-card ps-card--proactivos">
+          <span class="ps-label">Proactivos (40%)</span>
+          <span class="ps-pct">{{ pts.pctProactivos | number:'1.0-0' }}%</span>
+          <span class="ps-pts">{{ pts.puntajeProactivos | number:'1.1-1' }} pts</span>
+        </div>
+        <div class="ps-card ps-card--passo">
+          <span class="ps-label">PASSO (25%)</span>
+          <span class="ps-pct">{{ pts.pctPasso | number:'1.0-0' }}%</span>
+          <span class="ps-pts">{{ pts.puntajePasso | number:'1.1-1' }} pts</span>
+        </div>
+        <div class="ps-card ps-card--accidentes">
+          <span class="ps-label">Cierre Acc. (20%)</span>
+          <span class="ps-pct">{{ pts.pctCierreAccidentes | number:'1.0-0' }}%</span>
+          <span class="ps-pts">{{ pts.puntajeCierreAccidentes | number:'1.1-1' }} pts</span>
+        </div>
+        <div class="ps-card ps-card--hallazgos">
+          <span class="ps-label">Cierre Hall. (15%)</span>
+          <span class="ps-pct">{{ pts.pctCierreHallazgos | number:'1.0-0' }}%</span>
+          <span class="ps-pts">{{ pts.puntajeCierreHallazgos | number:'1.1-1' }} pts</span>
+        </div>
+        <div class="ps-card ps-card--bonus" [class.ps-card--bonus-activo]="pts.bonusProactivos > 0">
+          <span class="ps-label">Bonus</span>
+          <span class="ps-pct">—</span>
+          <span class="ps-pts">+{{ pts.bonusProactivos | number:'1.1-1' }} pts</span>
+        </div>
+        <div class="ps-card ps-card--total" [ngClass]="scoreClass(pts.puntajeTotal)">
+          <span class="ps-label">TOTAL</span>
+          <span class="ps-pct-total">{{ pts.puntajeTotal | number:'1.1-1' }}</span>
+          <span class="ps-pts">/ 110 pts</span>
+        </div>
+      </div>
+
+      <!-- TABLA DETALLADA POR EMPRESA -->
+      <div class="tabla-card">
+        <div class="tabla-title">
+          <i class="ti ti-table"></i> Detalle por empresa
+        </div>
+        <table class="tabla-emp">
+          <thead>
+            <tr>
+              <th class="th-empresa">Empresa</th>
+              <th class="th-center" *ngFor="let i of INDICADORES">
+                {{ i.label }}
+              </th>
+              <th class="th-center">General</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let emp of ind.empresas">
+              <tr class="tr-emp" (click)="toggleEmpresa(emp.empresaNombre)"
+                  [class.tr-emp--inactiva]="!emp.esActiva">
+                <td class="td-nombre">
+                  <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo !== 'Casa'"></i>
+                  {{ emp.empresaNombre }}
+                  <span class="chip-inact" *ngIf="!emp.esActiva">Inactiva</span>
+                  <i class="ti ti-chevron-down expand-icon"
+                     [class.ti-chevron-up]="empresaExpandida() === emp.empresaNombre"></i>
+                </td>
+                <td class="td-center" *ngFor="let i of INDICADORES">
+                  <div class="cell-ind" *ngIf="emp.esActiva; else naCell">
+                    <div class="mini-bar-wrap">
+                      <div class="mini-bar"
+                           [ngClass]="pctClass(pctEmpresa(emp, i.key))"
+                           [style.width]="barWidth(pctEmpresa(emp, i.key))"></div>
+                    </div>
+                    <span [ngClass]="pctClass(pctEmpresa(emp, i.key))" class="cell-pct">
+                      {{ pctEmpresa(emp, i.key) | number:'1.0-0' }}%
+                    </span>
+                    <span class="cell-vals">{{ actualEmpresa(emp, i.key) }}/{{ metaEmpresa(emp, i.key) }}</span>
+                  </div>
+                  <ng-template #naCell><span class="na">—</span></ng-template>
+                </td>
+                <td class="td-center">
+                  <span *ngIf="emp.esActiva" class="badge-gen" [ngClass]="pctClass(emp.pctProactivoGeneral)">
+                    {{ emp.pctProactivoGeneral | number:'1.0-0' }}%
+                  </span>
+                  <span *ngIf="!emp.esActiva" class="na">—</span>
+                </td>
+              </tr>
+
+              <!-- DETALLE EXPANDIDO: promedio trabajadores + días laborados -->
+              <tr *ngIf="empresaExpandida() === emp.empresaNombre && emp.esActiva" class="tr-detalle">
+                <td colspan="8" class="td-detalle">
+                  <div class="detalle-chips">
+                    <span class="d-chip"><i class="ti ti-users"></i> Prom. trabajadores: <strong>{{ emp.promedioTrabajadores | number:'1.0-0' }}</strong></span>
+                    <span class="d-chip"><i class="ti ti-calendar-check"></i> Días laborados: <strong>{{ emp.diasLaborados }}</strong></span>
+                    <span class="d-chip"><i class="ti ti-file-alert"></i> RAC Generados: <strong>{{ emp.actualRacs }}</strong> / {{ emp.metaRacs }}</span>
+                    <span class="d-chip"><i class="ti ti-lock"></i> RAC Cerrados: <strong>{{ emp.actualRacsCerrados }}</strong></span>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── CHECKLISTS ──────────────────────────────────────────────────────── -->
+      <div class="dp-section" *ngIf="indicadores()?.checklists?.length">
+        <h3 class="dp-section-title"><i class="ti ti-clipboard-check"></i> Estado de Checklists SSOMA</h3>
+        <div class="cl-cards-grid">
+          <div
+            *ngFor="let cl of indicadores()!.checklists"
+            class="cl-card"
+            [class.cl-card--completado]="cl.estado === 'completado'">
+            <div class="cl-card-header">
+              <div class="cl-card-title">{{ cl.nombre }}</div>
+              <span class="cl-badge" [ngClass]="estadoClass(cl.estado)">{{ estadoLabel(cl.estado) }}</span>
+            </div>
+            <div class="cl-card-progress">
+              <div class="cl-progress-bar">
+                <div class="cl-progress-fill"
+                  [style.width.%]="cl.porcentaje"
+                  [style.background]="porcentajeColor(cl.porcentaje)">
+                </div>
+              </div>
+              <span class="cl-progress-pct" [style.color]="porcentajeColor(cl.porcentaje)">
+                {{ cl.porcentaje | number:'1.0-0' }}%
+              </span>
+            </div>
+            <div class="cl-card-footer">
+              <span class="cl-card-items"><i class="ti ti-check"></i> {{ cl.itemsCompletados }} / {{ cl.totalItems }}</span>
+              <span *ngIf="cl.esObligatorio" class="cl-tag-obligatorio">Obligatorio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /reportContent -->
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="!indicadores()">
+      <i class="ti ti-chart-dots empty-state__icon"></i>
+      <p class="empty-state__text">Seleccione un proyecto, mes y año, luego presione <strong>Cargar</strong>.</p>
+    </div>
+
+  </div>
+</div>

@@ -59,6 +59,14 @@
           <label class="field-label">Fecha de nacimiento *</label>
           <input type="date" class="field-input" [(ngModel)]="model.fechaNacimiento" />
         </div>
+        <div>
+          <label class="field-label">Sexo</label>
+          <select class="field-input" [(ngModel)]="model.sexo">
+            <option value="">Sin especificar</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+        </div>
         <div class="col-span-2" *ngIf="esObrero">
           <label class="field-label">Email personal</label>
           <input type="email" class="field-input" [(ngModel)]="model.emailPersonal" />
@@ -206,7 +214,7 @@
                 [showLabel]="false"
                 placeholder="Seleccionar ocupación"
                 [allowClear]="true"
-                (valueChange)="model.ocupacion = $event"
+                (valueChange)="onOcupacionChange($event)"
               />
             </div>
             <div>
@@ -270,7 +278,7 @@
                 [showLabel]="false"
                 placeholder="Seleccionar ocupación"
                 [allowClear]="true"
-                (valueChange)="model.ocupacion = $event"
+                (valueChange)="onOcupacionChange($event)"
               />
             </div>
             <div class="col-span-2">

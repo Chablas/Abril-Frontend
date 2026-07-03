@@ -76,6 +76,16 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     this.barChart('chart-top-contratistas', this.data.topContratistas, '#64BC04', '#E5F7D1', true);
   }
 
+  /** Aclara un color hex mezclándolo con blanco para obtener un relleno pastel. */
+  private pastel(hex: string, amount = 0.6): string {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    const mix = (c: number) => Math.round(c + (255 - c) * amount);
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  }
+
   /** Formato de monto compacto para etiquetas (1.2K, 3.4M). */
   private formatMoney(v: number): string {
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -177,6 +187,7 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
     if (!canvas) return;
     const total = items.reduce((s, i) => s + i.value, 0);
+    const palette = colors ?? this.doughnutColors;
     Chart.getChart(canvas)?.destroy();
     new Chart(canvas, {
       type: 'doughnut',
@@ -185,8 +196,13 @@ export class AdjudicacionesDashboard implements AfterViewInit {
         datasets: [
           {
             data: total ? items.map((i) => i.value) : [1],
-            backgroundColor: total ? (colors ?? this.doughnutColors) : ['#EEF1F4'],
-            borderColor: '#ffffff',
+            // Relleno pastel + borde fuerte del mismo color (igual que las barras).
+            backgroundColor: total
+              ? items.map((_, idx) => this.pastel(palette[idx % palette.length]))
+              : ['#F1F3F7'],
+            borderColor: total
+              ? items.map((_, idx) => palette[idx % palette.length])
+              : ['#D9DEE8'],
             borderWidth: 2,
           },
         ],
@@ -204,7 +220,7 @@ export class AdjudicacionesDashboard implements AfterViewInit {
           tooltip: { enabled: total > 0 },
           datalabels: {
             display: total > 0,
-            color: '#ffffff',
+            color: '#475569',
             font: { weight: 'bold', size: 11 },
             formatter: (v: number) => (v > 0 ? v : ''),
           },

@@ -39,5 +39,30 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - ASIGNACIONES', featureKey: 'evaluaciones.asignaciones' },
   },
+  {
+    path: 'evaluar-contratista',
+    loadComponent: () =>
+      import('./pages/evaluar-contratista/evaluar-contratista').then(m => m.EvaluarContratista),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - EVALUAR CONTRATISTA', featureKey: 'evaluaciones.evaluar-contratista' },
+  },
+  {
+    path: 'ver-contratistas',
+    loadComponent: () =>
+      import('./pages/ver-evaluacion-contratistas/ver-evaluacion-contratistas').then(
+        m => m.VerEvaluacionContratistas,
+      ),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - VER EVALUACIÓN CONTRATISTAS', featureKey: 'evaluaciones.ver-contratistas' },
+  },
+  {
+    path: 'dashboard-contratistas',
+    loadComponent: () =>
+      import('./pages/dashboard-contratistas/dashboard-contratistas').then(
+        m => m.DashboardContratistas,
+      ),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - DASHBOARD CONTRATISTAS', featureKey: 'evaluaciones.dashboard-contratistas' },
+  },
   { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];

@@ -8,6 +8,7 @@ import {
   ProgramacionEstadoPatchDto,
   ProgramacionListDto,
   ProgramacionQueryParams,
+  ProgramacionResumenDto,
   ProgramacionUpdateDto,
 } from '../dtos/programacion.model';
 import { ProgramacionHabilitacionDto } from '../dtos/programacion-habilitacion.dto';
@@ -22,6 +23,15 @@ export class ProgramacionService {
     query: ProgramacionQueryParams = {},
   ): Observable<PagedResponseDTO<ProgramacionListDto>> {
     return this.http.get<PagedResponseDTO<ProgramacionListDto>>(this.apiUrl, {
+      params: buildParams(query as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  getResumen(
+    query: Omit<ProgramacionQueryParams, 'page' | 'pageSize' | 'estado'> = {},
+  ): Observable<ProgramacionResumenDto> {
+    return this.http.get<ProgramacionResumenDto>(`${this.apiUrl}/resumen`, {
       params: buildParams(query as Record<string, unknown>),
       headers: buildAuthHeaders(),
     });

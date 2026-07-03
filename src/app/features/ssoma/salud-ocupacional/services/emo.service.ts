@@ -87,4 +87,13 @@ export class EmoService {
       { headers: buildAuthHeaders() },
     );
   }
+
+  subirDocumentoEmo(emoId: number, file: File, tipo: 'Aptitud' | 'EMO' | 'Lectura'): Observable<{ url: string }> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('tipo', tipo);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/${emoId}/documentos`, fd, {
+      headers: buildAuthHeaders(),
+    });
+  }
 }

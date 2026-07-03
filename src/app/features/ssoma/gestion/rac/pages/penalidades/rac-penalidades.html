@@ -101,12 +101,6 @@
 
   </div><!-- /penalidades-body -->
 
-  <!-- FAB -->
-  <button type="button" class="fab" (click)="irANuevo()" title="Nuevo RAC">
-    <i class="ti ti-plus"></i>
-    <span class="fab__label">Nuevo RAC</span>
-  </button>
-
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -282,4 +276,6 @@
 
     </ng-container>
   </div>
+
+<app-fab label="Nuevo RAC" (clicked)="irANuevo()"></app-fab>
 </div>

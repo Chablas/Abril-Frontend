@@ -1,0 +1,160 @@
+<app-base-modal *ngIf="open" title="Revisar convalidación" width="w-[760px]" (closeModal)="close()">
+  <div class="form-wrapper" *ngIf="item">
+
+    <div class="worker-banner">
+      <div class="worker-name">{{ item.workerNombre }}</div>
+      <div class="worker-meta">DNI {{ item.workerDni }}</div>
+      <div class="worker-meta">
+        <span *ngIf="item.empresaOrigen">{{ item.empresaOrigen }} →</span>
+        <strong>{{ item.empresaDestino }}</strong>
+      </div>
+      <div class="worker-meta" *ngIf="item.tipoEmo">
+        EMO: {{ item.tipoEmo }}<span *ngIf="item.fechaEmoOrigen"> · {{ item.fechaEmoOrigen | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <h4 class="section-title mt-6">Documentos del EMO</h4>
+    <div class="doc-grid">
+      <div class="doc-card">
+        <div class="doc-card-icon resultado-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Lectura EMO</p>
+          <p class="doc-card-sub" *ngIf="item.urlResultado">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlResultado">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlResultado" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlResultado, 'Lectura EMO')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-card-icon aptitud-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <polyline points="9 15 11 17 15 13"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Certificado de Aptitud</p>
+          <p class="doc-card-sub" *ngIf="item.urlAptitud">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlAptitud">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlAptitud" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlAptitud, 'Certificado de Aptitud')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-card-icon emo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <rect x="8" y="12" width="8" height="6" rx="1"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">EMO Completo</p>
+          <p class="doc-card-sub" *ngIf="item.urlEmoCompleto">Archivo disponible</p>
+          <p class="doc-card-sub missing" *ngIf="!item.urlEmoCompleto">Sin archivo</p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.urlEmoCompleto" type="button" class="doc-btn-ver" (click)="verDocumento(item.urlEmoCompleto, 'EMO Completo')">
+            Ver
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-card" *ngIf="item.interconsultaEstado">
+        <div class="doc-card-icon inter-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M9 10h6M9 14h4"/>
+          </svg>
+        </div>
+        <div class="doc-card-body">
+          <p class="doc-card-title">Interconsulta</p>
+          <p class="doc-card-sub" *ngIf="item.interconsultaUrlInforme">
+            Archivo disponible · {{ item.interconsultaEspecialidad }}
+          </p>
+          <p class="doc-card-sub missing" *ngIf="!item.interconsultaUrlInforme">
+            Pendiente · {{ item.interconsultaEspecialidad }}
+          </p>
+        </div>
+        <div class="doc-card-actions">
+          <button *ngIf="item.interconsultaUrlInforme" type="button" class="doc-btn-ver"
+            (click)="verDocumento(item.interconsultaUrlInforme, 'Informe Interconsulta')">
+            Ver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="section-title mt-6">Resolución del médico</h4>
+    <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Resultado *</label>
+        <app-search-select
+          [options]="resultadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="resultado"
+          [showLabel]="false"
+          placeholder="Seleccionar resultado"
+          (valueChange)="resultado = $event"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="field-label">Fecha vencimiento{{ fechaVencimientoRequerida ? ' *' : '' }}</label>
+        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
+      </div>
+      <div>
+        <label class="field-label">Médico</label>
+        <app-search-select
+          [options]="medicos"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="medicoId"
+          [showLabel]="false"
+          placeholder="Seleccionar médico"
+          (valueChange)="medicoId = $event"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="notes-section">
+      <label class="field-label">Notas / Observaciones</label>
+      <textarea
+        rows="4"
+        class="field-input notes-textarea"
+        placeholder="Motivo de la decisión, observaciones clínicas, condiciones de la convalidación…"
+        [(ngModel)]="notas"
+      ></textarea>
+    </div>
+
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+        {{ saving ? 'Guardando…' : 'Guardar resolución' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>

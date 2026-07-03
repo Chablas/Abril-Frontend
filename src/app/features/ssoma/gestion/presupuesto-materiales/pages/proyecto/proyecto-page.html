@@ -1,0 +1,86 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    [titulo]="proyectNombre"
+    subtitulo="Versiones de presupuesto de materiales"
+    [tabs]="[
+      { label: 'Importación S10', icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
+      { label: 'Drivers',         icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' }
+    ]"
+    [botonPrimario]="{ label: 'Generar presupuesto', icono: 'ti-plus' }"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (primaryClick)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+
+    <!-- Formulario generar -->
+    <div *ngIf="mostrarFormGenerar" class="form-generar">
+      <h3 class="form-titulo">Generar nuevo presupuesto</h3>
+      <p class="form-desc">Deja los campos vacíos para usar los drivers configurados del proyecto.</p>
+      <div class="form-fields">
+        <label>HH Total (override)
+          <input type="number" [(ngModel)]="formGenerar.hhTotalCasa" placeholder="Usar valor del proyecto" />
+        </label>
+        <label>Área Techada m² (override)
+          <input type="number" [(ngModel)]="formGenerar.areaTechadaM2" placeholder="Usar valor del proyecto" />
+        </label>
+        <label>Trabajadores (override)
+          <input type="number" [(ngModel)]="formGenerar.trabajadores" placeholder="Usar valor del proyecto" />
+        </label>
+        <label class="full-width">Notas
+          <textarea [(ngModel)]="formGenerar.notas" rows="2" placeholder="Versión inicial, ajuste Q2..."></textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" (click)="generar()" [disabled]="generando">
+          <i class="ti ti-calculator"></i>
+          {{ generando ? 'Generando...' : 'Generar presupuesto' }}
+        </button>
+        <button class="btn-secondary" (click)="mostrarFormGenerar = false; cdr.markForCheck()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Lista de versiones -->
+    <div *ngIf="loading" class="loading-msg">Cargando presupuestos...</div>
+
+    <div *ngIf="!loading && presupuestos.length === 0 && !mostrarFormGenerar" class="empty-state">
+      <i class="ti ti-file-off" style="font-size: 2.5rem; color: #d1d5db;"></i>
+      <p>No hay presupuestos para este proyecto.</p>
+      <button class="btn-primary" (click)="mostrarFormGenerar = true; cdr.markForCheck()">
+        <i class="ti ti-plus"></i> Generar primer presupuesto
+      </button>
+    </div>
+
+    <div *ngIf="!loading && presupuestos.length > 0" class="versiones-grid">
+      <div *ngFor="let p of presupuestos" class="version-card">
+        <div class="version-header">
+          <span class="version-num">v{{ p.version }}</span>
+          <span class="badge" [ngClass]="estadoClass(p.estado)">{{ p.estado }}</span>
+        </div>
+        <div class="version-total">S/ {{ p.totalEstimado | number:'1.2-2' }}</div>
+        <div class="version-meta">
+          <span>{{ p.totalFamilias }} familias</span>
+          <span *ngIf="p.familiasSinHistoria > 0" class="sin-historia">
+            · {{ p.familiasSinHistoria }} sin histórico
+          </span>
+        </div>
+        <div class="version-drivers">
+          <span>HH: {{ p.hhUsado | number:'1.0-0' }}</span>
+          <span>Área: {{ p.areaUsada | number:'1.0-0' }} m²</span>
+          <span>Trab: {{ p.trabajadoresUsados }}</span>
+        </div>
+        <div class="version-fecha">{{ p.generadoEn | date:'dd/MM/yyyy HH:mm' }}</div>
+        <div class="version-actions">
+          <button class="btn-sm btn-outline" (click)="irADetalle(p.id)">
+            <i class="ti ti-list-details"></i> Detalle
+          </button>
+          <button *ngIf="p.estado === 'APROBADO'" class="btn-sm btn-primary-sm" (click)="irAControl(p.id)">
+            <i class="ti ti-chart-bar"></i> Control
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

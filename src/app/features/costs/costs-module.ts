@@ -3,13 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Adjudicaciones } from './features/adjudicaciones/components/adjudicaciones';
 import { AdjudicacionesDashboard } from './features/adjudicaciones-dashboard/components/adjudicaciones-dashboard';
-import { StaffProjectEmail } from './features/configuration/staffProjectEmail/components/staff-project-email';
-import { WorkItemCategory } from './features/configuration/workItemCategory/components/work-item-category';
-import { WorkItem } from './features/configuration/workItem/components/work-item';
-import { WorkSpecialty } from './features/configuration/workSpecialty/components/work-specialty';
-import { ProjectLink } from './features/configuration/projectLink/components/project-link';
-import { AdjudicacionFolder } from './features/configuration/adjudicacionFolder/components/adjudicacion-folder';
-import { CostosPresupuestosEmail } from './features/configuration/costosPresupuestosEmail/components/costos-presupuestos-email';
+import { CostsConfiguration } from './features/configuration/costs-configuration';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -37,47 +31,54 @@ const routes: Routes = [
       {
         path: 'configuration',
         children: [
+          // Ruta contenedora: redirige a la primera sección permitida (lógica en el componente).
+          {
+            path: '',
+            component: CostsConfiguration,
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS' },
+          },
+          // Cada sección reutiliza el contenedor pero conserva su featureKey + roleGuard.
           {
             path: 'staff-project-email',
-            component: StaffProjectEmail,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'CORREOS POR PROYECTO', featureKey: 'costs.config.staff-project-email' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.staff-project-email', seccion: 'staff-project-email' },
           },
           {
             path: 'work-item-category',
-            component: WorkItemCategory,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'PARTIDAS DE CONTROL', featureKey: 'costs.config.work-item-category' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.work-item-category', seccion: 'work-item-category' },
           },
           {
             path: 'work-item',
-            component: WorkItem,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'PARTIDAS', featureKey: 'costs.config.work-item' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.work-item', seccion: 'work-item' },
           },
           {
             path: 'work-specialty',
-            component: WorkSpecialty,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'ESPECIALIDADES', featureKey: 'costs.config.work-specialty' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.work-specialty', seccion: 'work-specialty' },
           },
           {
             path: 'project-link',
-            component: ProjectLink,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'PLANOS POR PROYECTO', featureKey: 'costs.config.project-link' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.project-link', seccion: 'project-link' },
           },
           {
             path: 'adjudicacion-folder',
-            component: AdjudicacionFolder,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'CARPETAS DE ADJUDICACIONES', featureKey: 'costs.config.adjudicacion-folder' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.adjudicacion-folder', seccion: 'adjudicacion-folder' },
           },
           {
             path: 'costos-presupuestos-email',
-            component: CostosPresupuestosEmail,
+            component: CostsConfiguration,
             canActivate: [roleGuard],
-            data: { titulo: 'CORREOS C. Y PRESUPUESTOS', featureKey: 'costs.config.costos-presupuestos-email' },
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.costos-presupuestos-email', seccion: 'costos-presupuestos-email' },
           },
         ],
       },

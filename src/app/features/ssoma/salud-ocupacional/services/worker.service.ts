@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
-import { WorkerUpsertDto } from '../dtos/emo.model';
+import { DocumentTypeDto, WorkerDatosBasicosDto, WorkerUpsertDto } from '../dtos/emo.model';
 
 @Injectable({ providedIn: 'root' })
 export class WorkerService {
@@ -16,6 +16,20 @@ export class WorkerService {
 
   updateWorker(id: number, dto: WorkerUpsertDto): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${id}`, dto, { headers: buildAuthHeaders() });
+  }
+
+  /** Catálogo de tipos de documento para el select del modal de edición. */
+  getDocumentTypes(): Observable<DocumentTypeDto[]> {
+    return this.http.get<DocumentTypeDto[]>(`${this.apiUrl}/document-types`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Edición mínima: nombre, tipo/número de documento y cumpleaños (solo Person). */
+  updateDatosBasicos(id: number, dto: WorkerDatosBasicosDto): Observable<unknown> {
+    return this.http.put(`${this.apiUrl}/${id}/datos-basicos`, dto, {
+      headers: buildAuthHeaders(),
+    });
   }
 
   retirarWorker(id: number): Observable<unknown> {

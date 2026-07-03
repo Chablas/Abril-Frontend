@@ -114,8 +114,7 @@ export class Adjudicaciones implements OnInit {
     this.load(1);
   }
 
-  openCreateModal(event: MouseEvent) {
-    event.stopPropagation();
+  openCreateModal() {
     if (!this.canCreate) return;
     this.showCreateModal = true;
   }

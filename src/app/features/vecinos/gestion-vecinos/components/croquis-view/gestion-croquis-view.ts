@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../../../../environments/environment';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
 import { LimpiezasCalendar } from '../limpiezas-calendar/limpiezas-calendar';
 import {
@@ -14,7 +13,7 @@ import {
 @Component({
   selector: 'app-gestion-croquis-view',
   standalone: true,
-  imports: [CommonModule, BaseModal, DraggableImage, SectionTabs, LimpiezasCalendar],
+  imports: [CommonModule, BaseModal, SectionTabs, LimpiezasCalendar],
   templateUrl: './gestion-croquis-view.html',
 })
 export class GestionCroquisView {
@@ -50,9 +49,14 @@ export class GestionCroquisView {
     return this.croquis.filter((c) => c.projectId === this.filterProjectId);
   }
 
-  /** Cuántos lotes del croquis tienen vecino asignado. */
+  /** Cuántos lotes del croquis tienen al menos un vecino registrado. */
   countAssigned(c: CroquisGestionDTO): number {
-    return c.lotes.filter((l) => l.vecinoId).length;
+    return c.lotes.filter((l) => l.vecinosCount > 0).length;
+  }
+
+  /** Todos los vecinos/departamentos del proyecto (aplanando los lotes). */
+  allVecinos(c: CroquisGestionDTO): VecinoListItemDTO[] {
+    return c.lotes.reduce<VecinoListItemDTO[]>((acc, l) => acc.concat(l.vecinos), []);
   }
 
   /** % de entregables aprobados sobre los evaluables (Falta + Enviado + Aprobado). */
@@ -127,21 +131,16 @@ export class GestionCroquisView {
 
   loteFill(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return 'rgba(0,134,165,0.45)';
-    return lote.vecinoId ? 'rgba(100,188,4,0.35)' : 'rgba(156,163,175,0.25)';
+    return lote.vecinosCount > 0 ? 'rgba(100,188,4,0.35)' : 'rgba(156,163,175,0.25)';
   }
 
   loteStroke(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return '#0086A5';
-    return lote.vecinoId ? '#64BC04' : '#9CA3AF';
+    return lote.vecinosCount > 0 ? '#64BC04' : '#9CA3AF';
   }
 
-  assignedVecino(): VecinoListItemDTO | null {
-    if (!this.selected || !this.selectedLote?.vecinoId) return null;
-    return this.selected.vecinos.find((v) => v.vecinoId === this.selectedLote!.vecinoId) ?? null;
-  }
-
-  verVecino(): void {
-    const v = this.assignedVecino();
-    if (v) this.viewVecino.emit(v);
+  /** Abre el detalle de un vecino/departamento del lote seleccionado. */
+  verVecino(v: VecinoListItemDTO): void {
+    this.viewVecino.emit(v);
   }
 }

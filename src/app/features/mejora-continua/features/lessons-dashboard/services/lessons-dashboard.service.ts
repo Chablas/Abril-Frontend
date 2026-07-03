@@ -24,6 +24,7 @@ export class LessonsDashboardService {
     let params = new HttpParams();
     if (filters.periodDate) params = params.set('periodDate', filters.periodDate);
     if (filters.userId) params = params.set('userId', String(filters.userId));
+    if (filters.approvalStatus) params = params.set('approvalStatus', filters.approvalStatus);
     (filters.lessonAreaIds ?? []).forEach((id) => {
       params = params.append('lessonAreaIds', String(id));
     });

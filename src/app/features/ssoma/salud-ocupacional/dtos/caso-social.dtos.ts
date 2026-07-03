@@ -91,3 +91,41 @@ export interface SeguimientoCreateDto {
   proximaAccion?: string | null;
   accionTomada?: string | null;
 }
+
+// ── SCTR ──────────────────────────────────────────────────────────────────────
+
+export interface SctrGestionDto {
+  id: number;
+  casoSocialId: string;
+  numeroSiniestro?: string | null;
+  fechaReporteSctr?: string | null;
+  fechaAtencionSctr?: string | null;
+  aseguradora?: string | null;
+  montoCubierto?: number | null;
+  urlHojaAtencion?: string | null;
+  urlDocumentosAdicionales?: string | null;
+  estadoId: number;
+  estadoNombre: string;
+  observaciones?: string | null;
+  createdAt: string;
+}
+
+export interface SctrGestionCreateDto {
+  numeroSiniestro?: string | null;
+  fechaReporteSctr?: string | null;
+  fechaAtencionSctr?: string | null;
+  aseguradora?: string | null;
+  montoCubierto?: number | null;
+  estadoId: number;
+  observaciones?: string | null;
+}
+
+export interface SctrGestionUpdateDto {
+  numeroSiniestro?: string | null;
+  fechaReporteSctr?: string | null;
+  fechaAtencionSctr?: string | null;
+  aseguradora?: string | null;
+  montoCubierto?: number | null;
+  estadoId: number;
+  observaciones?: string | null;
+}

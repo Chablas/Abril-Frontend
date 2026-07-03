@@ -16,10 +16,24 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerService } from '../../../../../ssoma/salud-ocupacional/services/worker.service';
 import {
+  DocumentTypeDto,
   EmoPorTrabajadorDto,
-  WorkerUpsertDto,
+  WorkerDatosBasicosDto,
 } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 
+interface EditModel {
+  nombreCompleto: string;
+  documentIdentityTypeId: number | null;
+  numeroDocumento: string;
+  cumpleanos: string; // 'YYYY-MM-DD'
+}
+
+/**
+ * Edición mínima de un trabajador (Configuración → Trabajadores). Por ahora solo
+ * permite cambiar nombre completo, tipo y número de documento y cumpleaños; todos
+ * viven en la tabla `person`, por eso se usa el endpoint dedicado `datos-basicos`
+ * que no toca el resto de campos del worker.
+ */
 @Component({
   selector: 'app-worker-edit-form',
   standalone: true,
@@ -29,12 +43,12 @@ import {
 })
 export class WorkerEditForm implements OnChanges {
   @Input() open = false;
-  @Input() mode: 'create' | 'edit' = 'edit';
   @Input() worker: EmoPorTrabajadorDto | null = null;
+  @Input() documentTypes: DocumentTypeDto[] = [];
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  model: WorkerUpsertDto = this.empty();
+  model: EditModel = this.empty();
   saving = false;
 
   constructor(
@@ -50,108 +64,50 @@ export class WorkerEditForm implements OnChanges {
     }
   }
 
-  private empty(): WorkerUpsertDto {
-    return {
-      apellidoNombre: '',
-      dni: '',
-      celular: '',
-      emailPersonal: '',
-      categoria: '',
-      ocupacion: '',
-      area: '',
-      subarea: '',
-      contrataCasa: '',
-      obraOficina: '',
-      jefatura: '',
-      sctr: false,
-      habilitadoObra: false,
-      notas: '',
-    };
+  private empty(): EditModel {
+    return { nombreCompleto: '', documentIdentityTypeId: null, numeroDocumento: '', cumpleanos: '' };
   }
 
   private reset(): void {
-    if (this.mode === 'create' || !this.worker) {
+    if (!this.worker) {
       this.model = this.empty();
       return;
     }
     this.model = {
-      apellidoNombre: this.worker.nombreCompleto ?? '',
-      dni: this.worker.dni ?? '',
-      celular: this.worker.celular ?? '',
-      emailPersonal: this.worker.emailPersonal ?? '',
-      categoria: this.worker.categoria ?? '',
-      ocupacion: this.worker.ocupacion ?? '',
-      area: this.worker.area ?? '',
-      subarea: this.worker.subarea ?? '',
-      contrataCasa: this.worker.contrataCasa ?? this.worker.tipoContrata ?? '',
-      obraOficina: this.worker.obraOficina ?? '',
-      jefatura: this.worker.jefatura ?? '',
-      sctr: this.worker.sctr ?? false,
-      habilitadoObra: this.worker.habilitadoObra ?? false,
-      notas: this.worker.notas ?? '',
+      nombreCompleto: this.worker.nombreCompleto ?? '',
+      documentIdentityTypeId: this.worker.documentIdentityTypeId ?? null,
+      numeroDocumento: this.worker.dni ?? '',
+      cumpleanos: (this.worker.cumpleanos ?? '').slice(0, 10),
     };
   }
 
-  get title(): string {
-    return this.mode === 'create' ? 'Nuevo trabajador' : 'Editar trabajador';
-  }
-
-  get dniReadonly(): boolean {
-    return this.mode === 'edit';
-  }
-
   get canSubmit(): boolean {
-    if (this.saving) return false;
-    if (!this.model.apellidoNombre?.trim()) return false;
-    if (this.mode === 'create' && !this.model.dni?.toString().trim()) return false;
-    return true;
+    return !this.saving && !!this.model.nombreCompleto?.trim();
   }
 
   submit(): void {
-    if (!this.canSubmit) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Datos incompletos',
-        text:
-          this.mode === 'create'
-            ? 'Apellido/Nombre y DNI son obligatorios.'
-            : 'Falta el nombre del trabajador.',
-      });
+    if (!this.canSubmit || !this.worker) {
+      Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'El nombre completo es obligatorio.' });
       return;
     }
 
-    const payload: WorkerUpsertDto = {
-      apellidoNombre: this.model.apellidoNombre.trim(),
-      dni: this.model.dni?.toString().trim() || undefined,
-      celular: this.normalize(this.model.celular),
-      emailPersonal: this.normalize(this.model.emailPersonal),
-      categoria: this.normalize(this.model.categoria),
-      ocupacion: this.normalize(this.model.ocupacion),
-      area: this.normalize(this.model.area),
-      subarea: this.normalize(this.model.subarea),
-      contrataCasa: this.normalize(this.model.contrataCasa),
-      obraOficina: this.normalize(this.model.obraOficina),
-      jefatura: this.normalize(this.model.jefatura),
-      sctr: !!this.model.sctr,
-      habilitadoObra: !!this.model.habilitadoObra,
-      notas: this.normalize(this.model.notas),
+    const payload: WorkerDatosBasicosDto = {
+      nombreCompleto: this.model.nombreCompleto.trim(),
+      documentIdentityTypeId: this.model.documentIdentityTypeId || null,
+      numeroDocumento: this.model.numeroDocumento?.trim() || null,
+      cumpleanos: this.model.cumpleanos || null,
     };
 
     this.saving = true;
     this.loaderService.show();
 
-    const req$ =
-      this.mode === 'edit' && this.worker
-        ? this.workerService.updateWorker(this.worker.workerId, payload)
-        : this.workerService.createWorker(payload);
-
-    req$.subscribe({
+    this.workerService.updateDatosBasicos(this.worker.workerId, payload).subscribe({
       next: () => {
         this.saving = false;
         this.loaderService.hide();
         Swal.fire({
           icon: 'success',
-          title: this.mode === 'create' ? 'Trabajador creado' : 'Trabajador actualizado',
+          title: 'Trabajador actualizado',
           timer: 1500,
           showConfirmButton: false,
         });
@@ -164,11 +120,6 @@ export class WorkerEditForm implements OnChanges {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  private normalize(value: string | null | undefined): string | null {
-    const v = (value ?? '').toString().trim();
-    return v.length ? v : null;
   }
 
   close(): void {

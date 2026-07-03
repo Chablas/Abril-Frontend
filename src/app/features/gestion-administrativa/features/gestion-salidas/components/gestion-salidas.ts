@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -13,13 +14,14 @@ import {
 } from '../dtos/gestion-salida.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
   templateUrl: './gestion-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -50,6 +52,16 @@ export class GestionSalidas implements OnInit {
 
   /** Solo solicitudes pendientes cuyo aprobador soy yo. Activo por defecto. */
   onlyMyPendingReview = true;
+
+  // ── Paginación (server-side) ────────────────────────────────────────
+  readonly pageSize = 10;
+  currentPage = 1;
+  totalPages = 0;
+  totalRecords = 0;
+
+  // ── Ordenamiento (server-side) ──────────────────────────────────────
+  sortBy: string | null = null;
+  sortDir: 'asc' | 'desc' | null = null;
 
   /** IDs seleccionados para acción bulk. */
   selectedIds = new Set<number>();
@@ -120,18 +132,25 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  load(): void {
+  load(page: number = 1): void {
     this.loaderService.show();
     this.selectedIds.clear();
+    this.lastClickedIndex = null;
     this.service.getAll(
       this.filters.workerId,
       this.filters.lugarProyectoId,
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
       this.onlyMyPendingReview,
+      page,
+      this.sortBy,
+      this.sortDir,
     ).subscribe({
-      next: (data) => {
-        this.salidas = data;
+      next: (res) => {
+        this.salidas      = res.data;
+        this.currentPage  = res.page;
+        this.totalPages   = res.totalPages;
+        this.totalRecords = res.totalRecords;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -142,13 +161,40 @@ export class GestionSalidas implements OnInit {
   }
 
   onSearch(): void {
-    this.load();
+    this.load(1);
+  }
+
+  onPageChange(page: number): void {
+    this.load(page);
   }
 
   /** Alterna "pendientes de mi revisión" y recarga. */
   toggleMyPendingReview(): void {
     this.onlyMyPendingReview = !this.onlyMyPendingReview;
-    this.load();
+    this.load(1);
+  }
+
+  // ── Ordenamiento de columnas (server-side) ──────────────────────────
+  /**
+   * Cicla el orden de una columna: sin orden → ascendente → descendente → orden original.
+   * El orden se aplica en el servidor sobre todos los registros (no solo la página visible).
+   */
+  toggleSort(column: string): void {
+    if (this.sortBy !== column) {
+      this.sortBy = column;
+      this.sortDir = 'asc';
+    } else if (this.sortDir === 'asc') {
+      this.sortDir = 'desc';
+    } else {
+      this.sortBy = null;
+      this.sortDir = null;
+    }
+    this.load(1);
+  }
+
+  /** Dirección de orden activa para una columna (o null si no está ordenada por ella). */
+  sortDirOf(column: string): 'asc' | 'desc' | null {
+    return this.sortBy === column ? this.sortDir : null;
   }
 
   exportarExcel(): void {
@@ -175,11 +221,16 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  async aprobar(salida: GestionSalidaListItemDto): Promise<void> {
+  // ── Acciones bulk: aprobar / rechazar ────────────────────────────────
+  /** Aprueba en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
+  async aprobarBulk(): Promise<void> {
+    const items = this.selectedPendientes;
+    if (items.length === 0) return;
+
     const result = await Swal.fire({
       icon: 'question',
-      title: '¿Aprobar solicitud?',
-      html: `Se aprobará la solicitud de <b>${salida.trabajador}</b>.`,
+      title: `¿Aprobar ${items.length} solicitud(es)?`,
+      text: 'Se aprobarán todas las solicitudes pendientes seleccionadas.',
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
@@ -188,10 +239,11 @@ export class GestionSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.aprobar(salida.id).subscribe({
+    forkJoin(items.map((s) => this.service.aprobar(s.id))).subscribe({
       next: () => {
-        salida.estadoAprobacion = 'Aprobado';
         this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) aprobada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -200,11 +252,15 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  async rechazar(salida: GestionSalidaListItemDto): Promise<void> {
+  /** Rechaza en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
+  async rechazarBulk(): Promise<void> {
+    const items = this.selectedPendientes;
+    if (items.length === 0) return;
+
     const result = await Swal.fire({
       icon: 'warning',
-      title: 'Rechazar solicitud',
-      html: `¿Rechazar la solicitud de <b>${salida.trabajador}</b>?`,
+      title: `¿Rechazar ${items.length} solicitud(es)?`,
+      text: 'Se rechazarán todas las solicitudes pendientes seleccionadas.',
       showCancelButton: true,
       confirmButtonText: 'Rechazar',
       cancelButtonText: 'Cancelar',
@@ -213,10 +269,11 @@ export class GestionSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.rechazar(salida.id).subscribe({
+    forkJoin(items.map((s) => this.service.rechazar(s.id))).subscribe({
       next: () => {
-        salida.estadoAprobacion = 'Rechazado';
         this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) rechazada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -225,7 +282,10 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  // ── Selección bulk para rendición ────────────────────────────────────
+  // ── Selección de filas (estilo Outlook: click + shift+click rango) ────
+
+  /** Índice de la última fila clickeada (ancla para la selección por rango con Shift). */
+  private lastClickedIndex: number | null = null;
 
   /** Solo se pueden rendir Aprobadas + No rendidas + con TODOS los trayectos teniendo capturas. */
   esSeleccionable(s: GestionSalidaListItemDto): boolean {
@@ -234,31 +294,70 @@ export class GestionSalidas implements OnInit {
       && s.puedeRendirse;
   }
 
-  toggleSelection(s: GestionSalidaListItemDto): void {
-    if (!this.esSeleccionable(s)) return;
-    if (this.selectedIds.has(s.id)) this.selectedIds.delete(s.id);
-    else                            this.selectedIds.add(s.id);
+  /**
+   * Click sobre una fila de la tabla. Con Shift presionado selecciona el registro
+   * (o el rango, como en la casilla) en vez de abrir el detalle.
+   */
+  onRowClick(event: MouseEvent, index: number): void {
+    if (event.shiftKey) {
+      // Evita que Shift+clic resalte texto de la fila.
+      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+      this.onSelectClick(event, index);
+      return;
+    }
+    this.abrirDetalle(this.salidas[index]);
   }
 
-  get seleccionables(): GestionSalidaListItemDto[] {
-    return this.salidas.filter((s) => this.esSeleccionable(s));
+  /**
+   * Maneja el click sobre la casilla de selección de una fila.
+   * Con Shift presionado selecciona todo el rango entre la última fila clickeada
+   * y la actual (como en Outlook); sin Shift alterna solo esa fila.
+   */
+  onSelectClick(event: MouseEvent, index: number): void {
+    event.stopPropagation();
+
+    if (event.shiftKey && this.lastClickedIndex !== null) {
+      const [desde, hasta] = [this.lastClickedIndex, index].sort((a, b) => a - b);
+      for (let k = desde; k <= hasta; k++) this.selectedIds.add(this.salidas[k].id);
+      return; // el ancla se mantiene
+    }
+
+    const id = this.salidas[index].id;
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else                          this.selectedIds.add(id);
+    this.lastClickedIndex = index;
   }
 
   get allSelected(): boolean {
-    const seleccionables = this.seleccionables;
-    return seleccionables.length > 0 && seleccionables.every((s) => this.selectedIds.has(s.id));
+    return this.salidas.length > 0 && this.salidas.every((s) => this.selectedIds.has(s.id));
   }
 
   toggleSelectAll(): void {
     if (this.allSelected) {
       this.selectedIds.clear();
     } else {
-      this.selectedIds = new Set(this.seleccionables.map((s) => s.id));
+      this.selectedIds = new Set(this.salidas.map((s) => s.id));
     }
+    this.lastClickedIndex = null;
+  }
+
+  // ── Subconjuntos válidos de la selección por acción ──────────────────
+  get selectedSalidas(): GestionSalidaListItemDto[] {
+    return this.salidas.filter((s) => this.selectedIds.has(s.id));
+  }
+
+  /** Seleccionadas en estado Pendiente (aplican a Aprobar / Rechazar). */
+  get selectedPendientes(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => s.estadoAprobacion === 'Pendiente');
+  }
+
+  /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */
+  get selectedRendibles(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => this.esSeleccionable(s));
   }
 
   async marcarRendidasBulk(): Promise<void> {
-    const ids = Array.from(this.selectedIds);
+    const ids = this.selectedRendibles.map((s) => s.id);
     if (ids.length === 0) return;
 
     const result = await Swal.fire({
@@ -294,7 +393,7 @@ export class GestionSalidas implements OnInit {
           text: 'Se descargó la planilla de gasto por movilidad.',
           icon: 'success',
         });
-        this.load();
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

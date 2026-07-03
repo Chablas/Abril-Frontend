@@ -1,87 +1,29 @@
-<app-base-modal *ngIf="open" [title]="title" width="w-[820px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" title="Editar trabajador" width="w-[560px]" (closeModal)="close()">
   <div class="form-wrapper">
-    <h4 class="section-title">Datos personales</h4>
     <div class="grid-2">
       <div class="col-span-2">
-        <label class="field-label">Apellido / Nombre *</label>
-        <input type="text" class="field-input" [(ngModel)]="model.apellidoNombre" />
+        <label class="field-label">Nombre completo *</label>
+        <input type="text" class="field-input" [(ngModel)]="model.nombreCompleto" />
       </div>
-      <div>
-        <label class="field-label">
-          DNI {{ dniReadonly ? '(solo lectura)' : '*' }}
-        </label>
-        <input
-          type="text"
-          class="field-input"
-          [class.field-readonly]="dniReadonly"
-          [(ngModel)]="model.dni"
-          [readonly]="dniReadonly"
-          maxlength="15"
-        />
-      </div>
-      <div>
-        <label class="field-label">Celular</label>
-        <input type="text" class="field-input" [(ngModel)]="model.celular" />
-      </div>
-      <div class="col-span-2">
-        <label class="field-label">Email personal</label>
-        <input type="email" class="field-input" [(ngModel)]="model.emailPersonal" />
-      </div>
-    </div>
 
-    <h4 class="section-title mt-6">Asignación</h4>
-    <div class="grid-2">
       <div>
-        <label class="field-label">Categoría</label>
-        <input type="text" class="field-input" [(ngModel)]="model.categoria" />
-      </div>
-      <div>
-        <label class="field-label">Ocupación</label>
-        <input type="text" class="field-input" [(ngModel)]="model.ocupacion" />
-      </div>
-      <div>
-        <label class="field-label">Área</label>
-        <input type="text" class="field-input" [(ngModel)]="model.area" />
-      </div>
-      <div>
-        <label class="field-label">Subárea</label>
-        <input type="text" class="field-input" [(ngModel)]="model.subarea" />
-      </div>
-      <div>
-        <label class="field-label">Contrata / Casa</label>
-        <select class="field-input" [(ngModel)]="model.contrataCasa">
-          <option value="">—</option>
-          <option value="Casa">Casa</option>
-          <option value="Contratista">Contratista</option>
+        <label class="field-label">Tipo de documento</label>
+        <select class="field-input" [(ngModel)]="model.documentIdentityTypeId">
+          <option [ngValue]="null">—</option>
+          <option *ngFor="let t of documentTypes" [ngValue]="t.id">
+            {{ t.abreviatura }}{{ t.descripcion ? ' — ' + t.descripcion : '' }}
+          </option>
         </select>
       </div>
-      <div>
-        <label class="field-label">Obra / Oficina</label>
-        <select class="field-input" [(ngModel)]="model.obraOficina">
-          <option value="">—</option>
-          <option value="Obra">Obra</option>
-          <option value="Oficina">Oficina</option>
-        </select>
-      </div>
-      <div class="col-span-2">
-        <label class="field-label">Jefatura</label>
-        <input type="text" class="field-input" [(ngModel)]="model.jefatura" />
-      </div>
-    </div>
 
-    <h4 class="section-title mt-6">Estado y notas</h4>
-    <div class="grid-2">
-      <label class="check-row">
-        <input type="checkbox" [(ngModel)]="model.sctr" />
-        <span>SCTR vigente</span>
-      </label>
-      <label class="check-row">
-        <input type="checkbox" [(ngModel)]="model.habilitadoObra" />
-        <span>Habilitado para obra</span>
-      </label>
+      <div>
+        <label class="field-label">Número de documento</label>
+        <input type="text" class="field-input" [(ngModel)]="model.numeroDocumento" maxlength="15" />
+      </div>
+
       <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <textarea rows="3" class="field-input" [(ngModel)]="model.notas"></textarea>
+        <label class="field-label">Cumpleaños</label>
+        <input type="date" class="field-input" [(ngModel)]="model.cumpleanos" />
       </div>
     </div>
 

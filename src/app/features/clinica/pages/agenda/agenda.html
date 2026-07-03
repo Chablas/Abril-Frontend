@@ -6,7 +6,8 @@
     { label: 'Dashboard',      icono: 'ti-layout-dashboard', route: '/clinica/dashboard' },
     { label: 'Agenda',         icono: 'ti-calendar',         route: '/clinica/agenda' },
     { label: 'Programaciones', icono: 'ti-clock',            route: '/clinica/programaciones' },
-    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' }
+    { label: 'Interconsultas', icono: 'ti-stethoscope',      route: '/clinica/interconsultas' },
+    { label: 'Control de EMOs', icono: 'ti-heart-rate-monitor', route: '/clinica/emos' }
   ]">
 </app-abril-page-header>
 
@@ -21,6 +22,7 @@
           <input type="date" class="date-input" [(ngModel)]="selectedDate"
             (change)="onDateChange()" />
         </div>
+        <button class="btn-refresh" *ngIf="selectedDate" (click)="limpiarFecha()" title="Ver todas las fechas">Ver todos</button>
         <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
       </div>
     </div>

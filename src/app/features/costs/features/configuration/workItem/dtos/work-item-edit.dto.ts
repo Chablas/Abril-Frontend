@@ -8,6 +8,7 @@ export interface WorkItemValorizationFormUpsertDto {
 export interface WorkItemEditDto {
   workItemId: number;
   workItemDescription: string;
+  workItemCategoryId: number | null;
   active: boolean;
   valorizationForms: WorkItemValorizationFormUpsertDto[];
 }

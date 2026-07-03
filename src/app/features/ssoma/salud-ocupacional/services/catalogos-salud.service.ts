@@ -10,10 +10,13 @@ import {
   EmoTipoDto,
   EmoTipoUpsertDto,
   EmpresaSimpleDto,
+  EmpresaCreateDto,
+  SunatContributorDTO,
   ExamenTipoDto,
   MedicoSimpleDto,
   MedicoUpsertDto,
   RestriccionTipoDto,
+  AgenteRiesgoDto,
 } from '../dtos/catalogos.model';
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +28,7 @@ export class CatalogosSaludService {
   private emoTipos$?: Observable<EmoTipoDto[]>;
   private examenTipos$?: Observable<ExamenTipoDto[]>;
   private restriccionTipos$?: Observable<RestriccionTipoDto[]>;
+  private agentesRiesgo$?: Observable<AgenteRiesgoDto[]>;
   private empresas$?: Observable<EmpresaSimpleDto[]>;
 
   constructor(private http: HttpClient) {}
@@ -66,6 +70,13 @@ export class CatalogosSaludService {
     return this.restriccionTipos$;
   }
 
+  getAgentesRiesgo(): Observable<AgenteRiesgoDto[]> {
+    this.agentesRiesgo$ ??= this.http
+      .get<AgenteRiesgoDto[]>(`${this.apiUrl}/agentes-riesgo`, { headers: buildAuthHeaders() })
+      .pipe(shareReplay(1));
+    return this.agentesRiesgo$;
+  }
+
   getEmpresas(): Observable<EmpresaSimpleDto[]> {
     this.empresas$ ??= this.http
       .get<EmpresaSimpleDto[]>(`${this.apiUrl}/empresas`, { headers: buildAuthHeaders() })
@@ -74,6 +85,20 @@ export class CatalogosSaludService {
         catchError((err) => { this.empresas$ = undefined; throw err; }),
       );
     return this.empresas$;
+  }
+
+  /** Consulta RUC a SUNAT para el alta de una razón social. */
+  getEmpresaByRuc(ruc: string): Observable<SunatContributorDTO> {
+    return this.http.get<SunatContributorDTO>(`${this.apiUrl}/empresas/ruc/${ruc}`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Crea una razón social (contribuyente). */
+  createEmpresa(dto: EmpresaCreateDto): Observable<EmpresaSimpleDto> {
+    return this.http.post<EmpresaSimpleDto>(`${this.apiUrl}/empresas`, dto, {
+      headers: buildAuthHeaders(),
+    });
   }
 
   invalidateCache(): void {

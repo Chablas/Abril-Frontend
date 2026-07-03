@@ -12,6 +12,7 @@ import {
 } from '../../inspeccion.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 
 interface GrupoRespuesta {
@@ -24,7 +25,7 @@ interface GrupoRespuesta {
   selector: 'app-inspeccion-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './inspeccion-detalle.component.html',
   styleUrl: './inspeccion-detalle.component.css',
 })

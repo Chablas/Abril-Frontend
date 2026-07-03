@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
@@ -13,7 +14,7 @@ import { WorkerRevisorItemDTO, WorkerRevisorOptionDTO } from '../../dtos/workerR
 @Component({
   selector: 'app-worker-revisor-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, Paginator],
+  imports: [CommonModule, FormsModule, SearchSelect, SearchInput, Paginator],
   templateUrl: './worker-revisor-list.html',
 })
 export class WorkerRevisorList implements OnInit {
@@ -22,6 +23,10 @@ export class WorkerRevisorList implements OnInit {
   searchText = '';
   /** Filtro por jefe asignado: workerId del jefe o null = todos. */
   jefeFilter: number | null = null;
+  /** Filtro por categoría del revisor: workersCategoryId o null = todas. */
+  categoriaFilter: number | null = null;
+  /** Filtro por categoría del trabajador: workersCategoryId o null = todas. */
+  categoriaTrabajadorFilter: number | null = null;
   currentPage = 1;
   readonly pageSize = 10;
 
@@ -72,6 +77,22 @@ export class WorkerRevisorList implements OnInit {
     this.selectedJefeId = null;
   }
 
+  toggleAutoApprove(item: WorkerRevisorItemDTO): void {
+    if (item.jefeWorkerId != null) return;
+
+    this.loaderService.show();
+    this.service.toggleAutoApproveLesson(item.workerId).subscribe({
+      next: (result) => {
+        item.autoApproveLesson = result.autoApproveLesson;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   save(item: WorkerRevisorItemDTO): void {
     if (this.selectedJefeId === item.workerId) {
       Swal.fire({
@@ -90,6 +111,8 @@ export class WorkerRevisorList implements OnInit {
         item.jefeWorkerId = this.selectedJefeId;
         item.jefeFullName = jefe?.fullName;
         item.jefeEmail = jefe?.email;
+        // Asignar un revisor desactiva la auto-aprobación (regla del backend).
+        if (this.selectedJefeId != null) item.autoApproveLesson = false;
         this.cancelEdit();
         this.loaderService.hide();
       },
@@ -101,15 +124,44 @@ export class WorkerRevisorList implements OnInit {
   }
 
   get filteredRows(): WorkerRevisorItemDTO[] {
-    const term = this.searchText.trim().toLowerCase();
     return this.rows.filter((r) => {
       const matchesName =
-        !term ||
-        (r.fullName ?? '').toLowerCase().includes(term) ||
-        (r.jefeFullName ?? '').toLowerCase().includes(term);
+        !this.searchText.trim() ||
+        SearchInput.matches(r.fullName ?? '', this.searchText) ||
+        SearchInput.matches(r.jefeFullName ?? '', this.searchText);
       const matchesJefe = this.jefeFilter == null || r.jefeWorkerId === this.jefeFilter;
-      return matchesName && matchesJefe;
+      const matchesCategoria =
+        this.categoriaFilter == null || r.jefeCategoryId === this.categoriaFilter;
+      const matchesCategoriaTrabajador =
+        this.categoriaTrabajadorFilter == null || r.categoryId === this.categoriaTrabajadorFilter;
+      return matchesName && matchesJefe && matchesCategoria && matchesCategoriaTrabajador;
     });
+  }
+
+  /** Categorías de los trabajadores que actualmente son revisores (opciones del filtro). */
+  get categoriaFilterOptions(): { id: number; name: string }[] {
+    const seen = new Map<number, string>();
+    for (const r of this.rows) {
+      if (r.jefeCategoryId != null && r.jefeCategory && !seen.has(r.jefeCategoryId)) {
+        seen.set(r.jefeCategoryId, r.jefeCategory);
+      }
+    }
+    return [...seen.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Categorías de los trabajadores listados (opciones del filtro). */
+  get categoriaTrabajadorFilterOptions(): { id: number; name: string }[] {
+    const seen = new Map<number, string>();
+    for (const r of this.rows) {
+      if (r.categoryId != null && r.category && !seen.has(r.categoryId)) {
+        seen.set(r.categoryId, r.category);
+      }
+    }
+    return [...seen.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /** Jefes que aparecen asignados en la lista (opciones del filtro). */
