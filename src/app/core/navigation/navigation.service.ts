@@ -214,8 +214,13 @@ export class NavigationService {
       label: 'Administración de Obra',
       iconKey: 'users-group',
       baseRoute: '/vecinos',
+      behavior: 'expand',
+      landing: '/vecinos/dashboard',
       items: [
-        { label: 'Vecinos', route: '/vecinos/dashboard', featureKey: 'vecinos.dashboard' },
+        { label: 'Dashboard',               route: '/vecinos/dashboard',            featureKey: 'vecinos.dashboard' },
+        { label: 'Gestión de Vecinos',      route: '/vecinos/gestion',              featureKey: 'vecinos.gestion' },
+        { label: 'Croquis',                 route: '/vecinos/croquis',              featureKey: 'vecinos.croquis' },
+        { label: 'Control de Vencimientos', route: '/vecinos/control-vencimientos', featureKey: 'vecinos.control-vencimientos' },
       ],
     },
     {

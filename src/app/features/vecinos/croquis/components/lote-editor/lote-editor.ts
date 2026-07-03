@@ -117,6 +117,27 @@ export class LoteEditor implements OnInit {
     this.currentPoints = [];
   }
 
+  /** Renombra un lote (nuevo o ya registrado); el cambio se persiste al Guardar. */
+  async renameLote(i: number): Promise<void> {
+    const lote = this.lotes[i];
+    if (!lote) return;
+    const { value: numero } = await Swal.fire({
+      title: 'Número / etiqueta del lote',
+      input: 'text',
+      inputValue: lote.numeroLote,
+      inputPlaceholder: 'Ej. 14',
+      showCancelButton: true,
+      confirmButtonText: 'Renombrar',
+      confirmButtonColor: '#64BC04',
+      inputValidator: (v) => (!v?.trim() ? 'Ingresa un número o etiqueta' : null),
+    });
+    if (!numero) return;
+
+    this.lotes = this.lotes.map((l, idx) =>
+      idx === i ? { ...l, numeroLote: numero.trim() } : l,
+    );
+  }
+
   removeLote(i: number): void {
     this.lotes = this.lotes.filter((_, idx) => idx !== i);
     if (this.selectedIndex === i) this.selectedIndex = null;

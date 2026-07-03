@@ -10,6 +10,7 @@ import { ViewToggle } from '../../../../../shared/components/view-toggle/view-to
 import { ViewToggleMode } from '../../../../../shared/components/view-toggle/view-toggle.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 
@@ -34,7 +35,7 @@ import { FacturaObserve } from './observe/observe';
 @Component({
   selector: 'app-facturas',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, StatusBadge, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, FacturaAttach, FacturaObserve, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, ViewToggle, StatusBadge, DatePicker, FacturaCreate, FacturaImport, FacturaDetail, FacturaEdit, FacturaAttach, FacturaObserve, AbrilPageHeaderComponent],
   templateUrl: './facturas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -56,6 +57,8 @@ export class Facturas implements OnInit {
 
   // Modal de observación
   showObserveModal = false;
+  /** IDs objetivo de la observación: la selección de la tabla o la factura del menú contextual. */
+  observeIds: number[] = [];
 
   filters: InvoiceFilterDto = {
     search: null,
@@ -149,7 +152,7 @@ export class Facturas implements OnInit {
     this.hoveredInvoice = null;
     this.ctxInvoice = inv;
     // Posición junto al cursor, sin salir del viewport.
-    const w = 230, h = 110, margin = 8;
+    const w = 230, h = 250, margin = 8;
     let x = event.clientX;
     let y = event.clientY;
     if (typeof window !== 'undefined') {
@@ -451,9 +454,27 @@ export class Facturas implements OnInit {
     return Array.from(this.selectedIds);
   }
 
-  // ── Acciones en bloque: aprobar / rechazar / observar ────────────────
+  // ── Acciones: aprobar / rechazar / observar ──────────────────────────
+  // Operan sobre la selección de la tabla (bulk) o sobre una sola factura
+  // desde el menú contextual (disponible en bloques, tabla y tarjetas).
+
+  /** Recarga la vista activa tras aplicar una acción. */
+  private reloadCurrentView(): void {
+    if (this.viewMode === 'blocks') this.loadBlocks();
+    else this.loadTable(this.currentPage);
+  }
+
   aprobarBulk(): void {
-    const ids = this.selectedIdsArray;
+    this.aprobar(this.selectedIdsArray);
+  }
+
+  /** Aprueba la factura del menú contextual. */
+  aprobarCtx(inv: InvoiceDto): void {
+    this.ctxInvoice = null;
+    this.aprobar([inv.invoiceId]);
+  }
+
+  private aprobar(ids: number[]): void {
     if (ids.length === 0) return;
 
     Swal.fire({
@@ -470,7 +491,7 @@ export class Facturas implements OnInit {
         next: (res) => {
           this.loaderService.hide();
           Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
-          this.loadTable(this.currentPage);
+          this.reloadCurrentView();
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
@@ -481,7 +502,16 @@ export class Facturas implements OnInit {
   }
 
   rechazarBulk(): void {
-    const ids = this.selectedIdsArray;
+    this.rechazar(this.selectedIdsArray);
+  }
+
+  /** Rechaza la factura del menú contextual. */
+  rechazarCtx(inv: InvoiceDto): void {
+    this.ctxInvoice = null;
+    this.rechazar([inv.invoiceId]);
+  }
+
+  private rechazar(ids: number[]): void {
     if (ids.length === 0) return;
 
     Swal.fire({
@@ -498,7 +528,7 @@ export class Facturas implements OnInit {
         next: (res) => {
           this.loaderService.hide();
           Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
-          this.loadTable(this.currentPage);
+          this.reloadCurrentView();
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
@@ -508,9 +538,17 @@ export class Facturas implements OnInit {
     });
   }
 
-  /** Abre el modal para elegir el motivo de observación. */
+  /** Abre el modal de motivo de observación para la selección de la tabla. */
   openObserve(): void {
     if (this.selectedIds.size === 0) return;
+    this.observeIds = this.selectedIdsArray;
+    this.showObserveModal = true;
+  }
+
+  /** Abre el modal de motivo de observación para la factura del menú contextual. */
+  observarCtx(inv: InvoiceDto): void {
+    this.ctxInvoice = null;
+    this.observeIds = [inv.invoiceId];
     this.showObserveModal = true;
   }
 
@@ -518,9 +556,9 @@ export class Facturas implements OnInit {
     this.showObserveModal = false;
   }
 
-  /** Confirma la observación en bloque con el motivo elegido en el modal. */
+  /** Confirma la observación con el motivo elegido en el modal. */
   onObserveConfirm(reasonId: number): void {
-    const ids = this.selectedIdsArray;
+    const ids = this.observeIds;
     if (ids.length === 0) return;
 
     this.loaderService.show();
@@ -529,7 +567,7 @@ export class Facturas implements OnInit {
         this.loaderService.hide();
         this.showObserveModal = false;
         Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.loadTable(this.currentPage);
+        this.reloadCurrentView();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

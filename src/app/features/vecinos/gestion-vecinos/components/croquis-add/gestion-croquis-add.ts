@@ -129,12 +129,12 @@ export class GestionCroquisAdd {
 
   loteFill(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return 'rgba(0,134,165,0.45)';
-    return lote.vecinosCount > 0 ? 'rgba(100,188,4,0.35)' : 'rgba(156,163,175,0.25)';
+    return lote.vecinosCount > 0 ? 'rgba(76,175,80,0.35)' : 'rgba(156,163,175,0.25)';
   }
 
   loteStroke(lote: CroquisGestionLoteDTO): string {
     if (this.selectedLote === lote) return '#0086A5';
-    return lote.vecinosCount > 0 ? '#64BC04' : '#9CA3AF';
+    return lote.vecinosCount > 0 ? '#4CAF50' : '#9CA3AF';
   }
 
   // ── Vecinos / personas / imágenes ──────────────────────────────────────

@@ -527,14 +527,22 @@
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de firma</label>
-            <input type="date" [(ngModel)]="step2Form.signingDate" [disabled]="!canEditStep2"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.signingDate"
+              (valueChange)="step2Form.signingDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
           </div>
 
           <div class="flex flex-col">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de inicio</label>
-            <input type="date" [(ngModel)]="step2Form.startDate" [disabled]="!canEditStep2"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.startDate"
+              (valueChange)="step2Form.startDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
 
             <!-- Plazo calculado automáticamente -->
             <div *ngIf="plazoEnDias !== null" class="mt-[6px]">
@@ -551,8 +559,12 @@
 
           <div class="flex flex-col">
             <label class="text-xs mb-[4px]" style="color:var(--color-abril-primary)">Fecha de fin</label>
-            <input type="date" [(ngModel)]="step2Form.endDate" [disabled]="!canEditStep2"
-              class="border border-[#E2E2E2] rounded-lg p-[8px] text-sm focus:outline-none" />
+            <app-date-picker
+              [showLabel]="false"
+              [value]="step2Form.endDate"
+              (valueChange)="step2Form.endDate = $event ?? ''"
+              [disabled]="!canEditStep2"
+              color="var(--color-abril-primary)" />
           </div>
 
           <div class="flex flex-col sm:col-span-2 sm:w-1/2">

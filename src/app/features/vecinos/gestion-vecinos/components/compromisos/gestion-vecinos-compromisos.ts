@@ -78,11 +78,11 @@ export class GestionVecinosCompromisos implements OnInit {
 
   addCompromiso(): void {
     if (!this.nuevo.descripcion.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Descripción requerida', text: 'Ingresa la descripción del compromiso.', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Descripción requerida', text: 'Ingresa la descripción del compromiso.', confirmButtonColor: '#4CAF50' });
       return;
     }
     if (this.nuevo.fechaInicio && this.nuevo.fechaFin && this.nuevo.fechaFin < this.nuevo.fechaInicio) {
-      Swal.fire({ icon: 'warning', title: 'Fechas inválidas', text: 'La fecha fin no puede ser anterior a la fecha de inicio.', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Fechas inválidas', text: 'La fecha fin no puede ser anterior a la fecha de inicio.', confirmButtonColor: '#4CAF50' });
       return;
     }
 
@@ -224,11 +224,11 @@ export class GestionVecinosCompromisos implements OnInit {
 
   saveFechaMuni(c: VecinoCompromisoItemDTO): void {
     if (!this.fechaMuniDraft) {
-      Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Ingresa la fecha límite por municipalidad/fiscalización.', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Ingresa la fecha límite por municipalidad/fiscalización.', confirmButtonColor: '#4CAF50' });
       return;
     }
     if (c.fechaFin && this.fechaMuniDraft > c.fechaFin.substring(0, 10)) {
-      Swal.fire({ icon: 'warning', title: 'Fecha inválida', text: 'La fecha límite por municipalidad/fiscalización no puede ser posterior a la fecha fin del compromiso.', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Fecha inválida', text: 'La fecha límite por municipalidad/fiscalización no puede ser posterior a la fecha fin del compromiso.', confirmButtonColor: '#4CAF50' });
       return;
     }
     this.loaderService.show();

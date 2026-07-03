@@ -98,10 +98,18 @@
             Lote {{ lote.numeroLote }}
             <span class="text-xs text-gray-400">({{ lote.puntos.length }} pts)</span>
           </span>
-          <button type="button" (click)="removeLote(i); $event.stopPropagation()"
-            class="text-gray-400 hover:text-[#D30000] text-sm cursor-pointer">
-            <i class="ti ti-trash"></i>
-          </button>
+          <span class="flex items-center gap-1">
+            <button type="button" (click)="renameLote(i); $event.stopPropagation()"
+              title="Renombrar lote"
+              class="text-gray-400 hover:text-[#509603] text-sm cursor-pointer">
+              <i class="ti ti-pencil"></i>
+            </button>
+            <button type="button" (click)="removeLote(i); $event.stopPropagation()"
+              title="Quitar lote"
+              class="text-gray-400 hover:text-[#D30000] text-sm cursor-pointer">
+              <i class="ti ti-trash"></i>
+            </button>
+          </span>
         </div>
         <p *ngIf="lotes.length === 0" class="text-center text-xs text-gray-400 italic py-6">
           Aún no hay lotes dibujados.

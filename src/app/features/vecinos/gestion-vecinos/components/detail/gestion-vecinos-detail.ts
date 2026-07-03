@@ -155,7 +155,7 @@ export class GestionVecinosDetail implements OnInit {
         icon: 'warning',
         title: 'Descripción requerida',
         text: 'Ingresa la descripción de la solicitud.',
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: '#4CAF50',
       });
       return;
     }
@@ -366,7 +366,7 @@ export class GestionVecinosDetail implements OnInit {
         icon: 'warning',
         title: 'Campos incompletos',
         html: `<ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: '#4CAF50',
       });
       return;
     }
@@ -392,7 +392,7 @@ export class GestionVecinosDetail implements OnInit {
               this.loaderService.hide();
               this.updated.emit();
               this.cdr.detectChanges();
-              Swal.fire({ icon: 'success', title: 'Vecino actualizado', confirmButtonColor: '#64BC04' });
+              Swal.fire({ icon: 'success', title: 'Vecino actualizado', confirmButtonColor: '#4CAF50' });
             },
             error: (err: HttpErrorResponse) => {
               this.loaderService.hide();

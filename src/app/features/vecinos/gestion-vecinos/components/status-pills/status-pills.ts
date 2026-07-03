@@ -42,6 +42,6 @@ export class StatusPills {
     if (d.includes('env')) return 'bg-[#DBEAFE] text-[#1D4ED8] border-[#1D4ED8]/30';
     if (/(aprob|conform|atend|respond|complet|finaliz|cerr)/.test(d))
       return 'bg-[#D7FAF4] text-[#009C87] border-[#009C87]/40';
-    return 'bg-[#E5F7D1] text-[#64BC04] border-[#64BC04]/40';
+    return 'bg-[#E8F5E9] text-[#4CAF50] border-[#4CAF50]/40';
   }
 }

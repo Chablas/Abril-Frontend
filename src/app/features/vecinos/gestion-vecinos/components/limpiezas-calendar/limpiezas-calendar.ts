@@ -222,7 +222,7 @@ export class LimpiezasCalendar implements OnChanges {
         icon: 'warning',
         title: 'Selecciona un compromiso',
         text: 'La atención de una limpieza de departamento debe relacionarse con un compromiso de una solicitud.',
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: '#4CAF50',
       });
       return;
     }
@@ -280,11 +280,11 @@ export class LimpiezasCalendar implements OnChanges {
 
   guardar(): void {
     if (!this.nuevo.vecinoLimpiezaTipoId) {
-      Swal.fire({ icon: 'warning', title: 'Selecciona el tipo de limpieza', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Selecciona el tipo de limpieza', confirmButtonColor: '#4CAF50' });
       return;
     }
     if (this.tipoSeleccionadoEsDepartamento && !this.nuevo.vecinoId) {
-      Swal.fire({ icon: 'warning', title: 'Selecciona el vecino del departamento', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'warning', title: 'Selecciona el vecino del departamento', confirmButtonColor: '#4CAF50' });
       return;
     }
 

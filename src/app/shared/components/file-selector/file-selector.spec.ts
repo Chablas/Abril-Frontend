@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ImageSelector } from './image-selector';
+import { FileSelector } from './file-selector';
 
-describe('ImageSelector', () => {
-  let component: ImageSelector;
-  let fixture: ComponentFixture<ImageSelector>;
+describe('FileSelector', () => {
+  let component: FileSelector;
+  let fixture: ComponentFixture<FileSelector>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImageSelector]
+      imports: [FileSelector]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ImageSelector);
+    fixture = TestBed.createComponent(FileSelector);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

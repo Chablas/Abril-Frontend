@@ -28,7 +28,7 @@
       <!-- Barra de acciones -->
       <div class="flex justify-end">
         <button *ngIf="!editing" type="button" (click)="startEdit()"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#64BC04] text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#E5F7D1] transition-colors">
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#4CAF50] text-[#4CAF50] text-sm font-medium cursor-pointer hover:bg-[#E8F5E9] transition-colors">
           <i class="ti ti-edit"></i> Editar
         </button>
       </div>
@@ -37,26 +37,26 @@
       <ng-container *ngIf="!editing">
         <div class="grid grid-cols-2 gap-x-6 gap-y-3">
           <div>
-            <p class="text-xs text-[#64BC04] font-medium">Proyecto</p>
+            <p class="text-xs text-[#4CAF50] font-medium">Proyecto</p>
             <p class="text-sm text-gray-700">{{ item.projectDescription }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64BC04] font-medium">Uso</p>
+            <p class="text-xs text-[#4CAF50] font-medium">Uso</p>
             <p class="text-sm text-gray-700">{{ item.usoDescripcion || '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64BC04] font-medium">Tipo de construcción</p>
+            <p class="text-xs text-[#4CAF50] font-medium">Tipo de construcción</p>
             <p class="text-sm text-gray-700">{{ item.tipoConstruccionDescripcion }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64BC04] font-medium">Fecha de registro</p>
+            <p class="text-xs text-[#4CAF50] font-medium">Fecha de registro</p>
             <p class="text-sm text-gray-700">{{ item.createdDateTime | date:'dd/MM/yyyy' }}</p>
           </div>
         </div>
 
         <!-- Personas -->
         <div class="flex flex-col gap-2">
-          <p class="text-xs text-[#64BC04] font-medium">Personas ({{ item.personas.length }})</p>
+          <p class="text-xs text-[#4CAF50] font-medium">Personas ({{ item.personas.length }})</p>
           <div class="flex flex-col gap-2">
             <div *ngFor="let p of item.personas"
               class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
@@ -66,7 +66,7 @@
                   DNI {{ p.dni || '—' }} · Cel. {{ p.celular || '—' }}
                 </p>
               </div>
-              <span class="text-[11px] font-medium bg-[#E5F7D1] text-[#509603] px-2 py-0.5 rounded-full shrink-0">
+              <span class="text-[11px] font-medium bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full shrink-0">
                 {{ p.relacionDescripcion }}
               </span>
             </div>
@@ -78,13 +78,13 @@
 
         <!-- Observaciones -->
         <div *ngIf="item.observaciones" class="flex flex-col gap-1">
-          <p class="text-xs text-[#64BC04] font-medium">Observaciones</p>
+          <p class="text-xs text-[#4CAF50] font-medium">Observaciones</p>
           <p class="text-sm text-gray-700 whitespace-pre-line">{{ item.observaciones }}</p>
         </div>
 
         <!-- Estado de la propiedad (imágenes) -->
         <div *ngIf="item.imagenes.length > 0" class="flex flex-col gap-2">
-          <p class="text-xs text-[#64BC04] font-medium">Estado de la propiedad</p>
+          <p class="text-xs text-[#4CAF50] font-medium">Estado de la propiedad</p>
           <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
             <div *ngFor="let img of item.imagenes"
               class="h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
@@ -99,14 +99,14 @@
         <!-- Campos de la propiedad -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="flex flex-col gap-[6px]">
-            <label class="text-sm text-[#64BC04] font-medium">Dirección (lote) <span class="text-red-500">*</span></label>
+            <label class="text-sm text-[#4CAF50] font-medium">Dirección (lote) <span class="text-red-500">*</span></label>
             <input type="text" [(ngModel)]="loteForm.direccion" name="ed_direccion" placeholder="Dirección del lote"
-              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
           </div>
           <div class="flex flex-col gap-[6px]">
-            <label class="text-sm text-[#64BC04] font-medium">Interior / Departamento</label>
+            <label class="text-sm text-[#4CAF50] font-medium">Interior / Departamento</label>
             <input type="text" [(ngModel)]="editForm.interiorDepartamento" name="ed_interior" placeholder="Interior o departamento"
-              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+              class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
           </div>
           <div>
             <app-search-select label="Uso *" placeholder="Selecciona" [options]="usos"
@@ -130,10 +130,10 @@
 
         <!-- Observaciones (del lote) -->
         <div class="flex flex-col gap-[6px]">
-          <label class="text-sm text-[#64BC04] font-medium">Observaciones (lote)</label>
+          <label class="text-sm text-[#4CAF50] font-medium">Observaciones (lote)</label>
           <textarea [(ngModel)]="loteForm.observaciones" name="ed_observaciones" rows="3"
             placeholder="Notas adicionales sobre el lote (opcional)"
-            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+            class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
         </div>
 
         <!-- Personas (editar/añadir/quitar) -->
@@ -143,7 +143,7 @@
               Personas <span class="text-red-400 normal-case font-normal text-[11px]">* mín. 1</span>
             </p>
             <button type="button" (click)="addPersonaEdit()"
-              class="flex items-center gap-1.5 text-xs text-[#64BC04] font-medium hover:text-[#57a803] cursor-pointer transition-colors">
+              class="flex items-center gap-1.5 text-xs text-[#4CAF50] font-medium hover:text-[#43A047] cursor-pointer transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
               </svg>
@@ -165,21 +165,21 @@
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="flex flex-col gap-[6px]">
-                  <label class="text-sm text-[#64BC04] font-medium">DNI</label>
+                  <label class="text-sm text-[#4CAF50] font-medium">DNI</label>
                   <input type="text" maxlength="8" inputmode="numeric"
                     [(ngModel)]="p.dni" [name]="'ed_dni_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de DNI"
-                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
                 </div>
                 <div class="flex flex-col gap-[6px]">
-                  <label class="text-sm text-[#64BC04] font-medium">Nombre completo <span class="text-red-500">*</span></label>
+                  <label class="text-sm text-[#4CAF50] font-medium">Nombre completo <span class="text-red-500">*</span></label>
                   <input type="text" [(ngModel)]="p.nombre" [name]="'ed_nombre_' + i" placeholder="Nombre completo"
-                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
                 </div>
                 <div class="flex flex-col gap-[6px]">
-                  <label class="text-sm text-[#64BC04] font-medium">Celular <span class="text-red-500">*</span></label>
+                  <label class="text-sm text-[#4CAF50] font-medium">Celular <span class="text-red-500">*</span></label>
                   <input type="text" maxlength="20" inputmode="numeric"
                     [(ngModel)]="p.celular" [name]="'ed_celular_' + i" (keydown)="onNumericKeydown($event)" placeholder="N° de celular"
-                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30" />
+                    class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30" />
                 </div>
                 <div>
                   <app-search-select label="Relación *" placeholder="Propietario, inquilino u otro"
@@ -194,7 +194,7 @@
 
         <!-- Estado de la propiedad (imágenes existentes + nuevas) -->
         <div class="flex flex-col gap-2">
-          <label class="text-sm text-[#64BC04] font-medium">Estado de la propiedad (imágenes)</label>
+          <label class="text-sm text-[#4CAF50] font-medium">Estado de la propiedad (imágenes)</label>
 
           <div *ngIf="item.imagenes.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
             <div *ngFor="let img of item.imagenes"
@@ -218,9 +218,9 @@
 
           <div *ngIf="newImages.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
             <div *ngFor="let img of newImages; let i = index; trackBy: trackByIndex"
-              class="relative rounded-lg overflow-hidden border border-[#64BC04]/40">
+              class="relative rounded-lg overflow-hidden border border-[#4CAF50]/40">
               <img [src]="img.preview" class="h-24 w-full object-cover" [alt]="'Nueva imagen ' + (i + 1)" />
-              <span class="absolute bottom-1 left-1 text-[10px] bg-[#64BC04] text-white px-1.5 rounded">nueva</span>
+              <span class="absolute bottom-1 left-1 text-[10px] bg-[#4CAF50] text-white px-1.5 rounded">nueva</span>
               <button type="button" (click)="removeNewImage(i)"
                 class="absolute top-1 right-1 bg-black/55 text-white rounded-full p-1 cursor-pointer hover:bg-black/75 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
@@ -238,7 +238,7 @@
             Cancelar
           </button>
           <button type="button" (click)="saveEdit()"
-            class="px-6 py-[10px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+            class="px-6 py-[10px] rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
             Guardar cambios
           </button>
         </div>
@@ -250,12 +250,12 @@
 
       <!-- Formulario nueva solicitud -->
       <div class="border border-[#D6DEE5] rounded-lg p-4 flex flex-col gap-3 bg-[#FAFCF7]">
-        <label class="text-sm text-[#64BC04] font-medium">Nueva solicitud</label>
+        <label class="text-sm text-[#4CAF50] font-medium">Nueva solicitud</label>
         <textarea
           [(ngModel)]="nuevaDescripcion"
           rows="3"
           placeholder="Describe la solicitud del vecino…"
-          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 resize-none"></textarea>
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 resize-none"></textarea>
 
         <div class="flex items-center justify-between gap-3">
           <!-- Toggle crítica -->
@@ -270,7 +270,7 @@
           </label>
 
           <button type="button" (click)="addSolicitud()"
-            class="px-5 py-[9px] rounded-lg bg-[#64BC04] text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors">
+            class="px-5 py-[9px] rounded-lg bg-[#4CAF50] text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors">
             Añadir solicitud
           </button>
         </div>
@@ -306,7 +306,7 @@
               </div>
 
               <button type="button" (click)="toggleCompromisos(s)"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E5F7D1] text-[#64BC04] text-xs font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors shrink-0">
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E8F5E9] text-[#4CAF50] text-xs font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors shrink-0">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                 </svg>
@@ -362,7 +362,7 @@
           <!-- Estado -->
           <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
             [ngClass]="{
-              'bg-[#E5F7D1] text-[#509603] border-[#509603]/30': r.estadoDescripcion === 'Subido',
+              'bg-[#E8F5E9] text-[#2E7D32] border-[#2E7D32]/30': r.estadoDescripcion === 'Subido',
               'bg-gray-100 text-gray-500 border-gray-300': r.estadoDescripcion === 'No subido',
               'bg-[#FEF3C7] text-[#92400E] border-[#92400E]/30': r.estadoDescripcion === 'No aplica'
             }">
@@ -371,7 +371,7 @@
 
           <!-- Subir / Reemplazar (deshabilitado si No aplica) -->
           <label *ngIf="!esNoAplica(r)"
-            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#E5F7D1] text-[#64BC04] cursor-pointer hover:bg-[#d4f0b8] transition-colors inline-flex items-center gap-1">
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#E8F5E9] text-[#4CAF50] cursor-pointer hover:bg-[#d4f0b8] transition-colors inline-flex items-center gap-1">
             <i class="ti ti-upload"></i> {{ r.archivoUrl ? 'Reemplazar' : 'Subir' }}
             <input type="file" class="hidden"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp"

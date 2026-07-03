@@ -7,6 +7,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 
@@ -25,7 +26,7 @@ Chart.register(...registerables, ChartDataLabels);
 @Component({
   selector: 'app-facturas-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SearchSelect, DatePicker, AbrilPageHeaderComponent],
   templateUrl: './dashboard.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })

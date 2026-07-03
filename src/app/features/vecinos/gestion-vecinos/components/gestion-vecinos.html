@@ -36,7 +36,7 @@
 
       <!-- Botón buscar -->
       <button type="button" (click)="searchCroquis()"
-        class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+        class="h-[42px] px-5 bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center gap-2 self-end">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
         </svg>
@@ -74,18 +74,18 @@
 
       <!-- Búsqueda libre -->
       <div class="w-[240px] flex flex-col gap-[6px]">
-        <label class="text-sm text-[#64BC04] font-medium">Buscar</label>
+        <label class="text-sm text-[#4CAF50] font-medium">Buscar</label>
         <input
           type="text"
           [(ngModel)]="searchText"
           (keyup.enter)="search()"
           placeholder="Dirección, propietario o DNI…"
-          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#64BC04]/30 transition-colors" />
+          class="border border-[#D6DEE5] rounded-lg bg-white px-[12px] py-[10px] text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4CAF50]/30 transition-colors" />
       </div>
 
       <!-- Botón buscar -->
       <button type="button" (click)="search()"
-        class="h-[42px] px-5 bg-[#64BC04] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#57a803] transition-colors flex items-center gap-2 self-end">
+        class="h-[42px] px-5 bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center gap-2 self-end">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
         </svg>
@@ -95,7 +95,7 @@
 
     <!-- Botones de acción: a la derecha de los filtros -->
     <button type="button" (click)="openCroquisAdd()"
-      class="h-[42px] px-4 bg-[#E5F7D1] rounded-lg text-[#64BC04] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
+      class="h-[42px] px-4 bg-[#E8F5E9] rounded-lg text-[#4CAF50] text-sm font-medium cursor-pointer hover:bg-[#d4f0b8] transition-colors flex items-center gap-2 self-end">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M12 5v14M5 12h14"/>
       </svg>

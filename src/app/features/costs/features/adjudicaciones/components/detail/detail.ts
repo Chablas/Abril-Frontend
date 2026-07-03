@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { CronogramaModal } from './cronograma/cronograma-modal';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
 import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
@@ -19,7 +20,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, CronogramaModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker, CronogramaModal],
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })

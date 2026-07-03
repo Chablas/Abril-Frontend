@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { UserFeatureService } from '../services/user-feature.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { UserListItemDto } from '../../../../../core/dtos/user/userListItem.model';
@@ -14,7 +15,7 @@ import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-user-list',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchInput],
   templateUrl: './list.html',
   styleUrl: './list.css',
 })
