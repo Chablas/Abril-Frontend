@@ -20,7 +20,7 @@ export interface WorkerBusquedaDto {
   id: number;
   dni: string | null;
   nombreCompleto: string | null;
-  emailPersonal: string | null;
+  emailCorporativo: string | null;
 }
 
 export interface InvitarUsuarioDto {

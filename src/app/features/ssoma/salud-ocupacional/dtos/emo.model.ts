@@ -177,7 +177,7 @@ export interface EmoPorTrabajadorDto {
   // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
   // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
   celular?: string;
-  emailPersonal?: string;
+  emailCorporativo?: string;
   categoria?: string;
   ocupacion?: string;
   ocupacionId?: number;
@@ -218,7 +218,6 @@ export interface WorkerUpsertDto {
   apellidoNombre: string;
   dni?: string;
   celular?: string | null;
-  emailPersonal?: string | null;
   emailCorporativo?: string | null;
   fechaIngreso?: string | null;
   condicionMedica?: string | null;

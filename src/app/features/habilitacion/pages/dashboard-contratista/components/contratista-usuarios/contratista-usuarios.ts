@@ -224,10 +224,10 @@ export class ContratistaUsuarios implements OnInit {
             .buscarWorkers(this.contractorId, q)
             .toPromise();
           resultsEl.innerHTML = (workers ?? []).map((w) => `
-            <div data-id="${w.id}" data-nombre="${w.nombreCompleto ?? ''}" data-email="${w.emailPersonal ?? ''}"
+            <div data-id="${w.id}" data-nombre="${w.nombreCompleto ?? ''}" data-email="${w.emailCorporativo ?? ''}"
               style="padding:8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:0.83rem;">
               <strong>${w.nombreCompleto ?? '—'}</strong> · ${w.dni ?? ''}
-              ${w.emailPersonal ? `<span style="color:#64748b"> · ${w.emailPersonal}</span>` : '<span style="color:#f59e0b"> · Sin email</span>'}
+              ${w.emailCorporativo ? `<span style="color:#64748b"> · ${w.emailCorporativo}</span>` : '<span style="color:#f59e0b"> · Sin email</span>'}
             </div>`).join('');
 
           resultsEl.querySelectorAll('[data-id]').forEach((el) => {

@@ -36,7 +36,6 @@ interface WorkerFormModel {
   apellidoNombre: string;
   dni: string;
   celular: string;
-  emailPersonal: string;
   categoria: string;
   ocupacion: string;
   ocupacionId: number | null;
@@ -196,7 +195,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       apellidoNombre: '',
       dni: '',
       celular: '',
-      emailPersonal: '',
       categoria: '',
       ocupacion: '',
       ocupacionId: null,
@@ -610,7 +608,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       dni: this.model.dni?.trim() || undefined,
       tipoDocumento: this.model.tipoDocumento,
       celular: n(this.model.celular),
-      emailPersonal: n(this.model.emailPersonal),
       emailCorporativo: n(this.model.emailCorporativo),
       fechaIngreso: n(this.model.fechaIngreso) || undefined,
       condicionMedica: n(this.model.condicionMedica),

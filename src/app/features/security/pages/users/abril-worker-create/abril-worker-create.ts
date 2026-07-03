@@ -67,7 +67,7 @@ export class AbrilWorkerCreate implements OnInit {
   }
 
   get selectedWorkerEmail(): string | null {
-    return this.workers.find((w) => w.personId === this.selectedPersonId)?.emailPersonal ?? null;
+    return this.workers.find((w) => w.personId === this.selectedPersonId)?.emailCorporativo ?? null;
   }
 
   /** Al elegir un trabajador Staff, se preselecciona además el rol EVALUADOR (si no estaba ya). */
