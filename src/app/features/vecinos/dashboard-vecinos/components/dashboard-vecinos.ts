@@ -86,6 +86,7 @@ export class DashboardVecinos implements AfterViewInit {
   /** Un proyecto se muestra solo si tiene algún dato (vecinos, solicitudes, compromisos o limpiezas). */
   hasData(p: DashboardProjectDTO): boolean {
     return (
+      p.lotesCount > 0 ||
       p.vecinosCount > 0 ||
       this.total(p.solicitudes) > 0 ||
       this.total(p.compromisos) > 0 ||
@@ -161,7 +162,7 @@ export class DashboardVecinos implements AfterViewInit {
     pdf.setTextColor(31, 41, 55);
     pdf.text(isResumen ? 'RESUMEN GENERAL' : block.projectDescription, marginX, y);
     pdf.setTextColor(100, 188, 4);
-    pdf.text(`${block.vecinosCount} vecinos`, marginX + usableW, y, { align: 'right' });
+    pdf.text(`${block.lotesCount} lotes · ${block.vecinosCount} vecinos`, marginX + usableW, y, { align: 'right' });
     pdf.setTextColor(0);
     y += 2.5;
     pdf.setDrawColor(226, 232, 240);

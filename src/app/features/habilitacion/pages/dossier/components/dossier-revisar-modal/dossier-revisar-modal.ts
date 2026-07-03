@@ -37,9 +37,10 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
 
   detalle: DossierSemanaDetalleDto | null = null;
   loading = true;
-  guardando = false;
-  comentario = '';
-  modoObservar = false;
+
+  docObservarId: number | null = null;
+  comentarioDoc = '';
+  guardandoDoc = false;
 
   docSafeUrl: SafeResourceUrl | null = null;
   loadingDoc = false;
@@ -58,6 +59,10 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.cargarDetalle();
+  }
+
+  private cargarDetalle(): void {
     this.dossierService.getDetalle(this.semanaId).subscribe({
       next: (d) => {
         this.detalle = d;
@@ -82,13 +87,15 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
 
   chipDoc(estado: DossierEstadoDocumento): string {
     if (estado === 'Subido') return 'chip-green';
+    if (estado === 'Aprobado') return 'chip-green';
+    if (estado === 'Observado') return 'chip-orange';
     if (estado === 'NA') return 'chip-gray';
     return 'chip-blue';
   }
 
   chipSemana(estado: string): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Rechazado' || estado === 'Enviado') return 'chip-orange';
+    if (estado === 'Rechazado' || estado === 'Enviado' || estado === 'Observado') return 'chip-orange';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }
@@ -138,45 +145,56 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
     }
   }
 
-  aprobar(): void {
+  puedeRevisarDoc(doc: DossierDocumentoDto | undefined): boolean {
+    return !!doc && doc.estado === 'Subido';
+  }
+
+  aprobarDoc(doc: DossierDocumentoDto): void {
     Swal.fire({
       icon: 'question',
-      title: '¿Aprobar dossier?',
+      title: `¿Aprobar ${doc.tipoDoc}?`,
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#64bc04',
     }).then((res) => {
       if (!res.isConfirmed) return;
-      this.guardar('Aprobado');
+      this.guardarDoc(doc.id, 'Aprobado');
     });
   }
 
-  observar(): void {
-    this.modoObservar = true;
+  observarDoc(doc: DossierDocumentoDto): void {
+    this.docObservarId = doc.id;
+    this.comentarioDoc = '';
     this.cdr.detectChanges();
   }
 
-  confirmarObservacion(): void {
-    if (!this.comentario.trim()) {
+  cancelarObservarDoc(): void {
+    this.docObservarId = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmarObservacionDoc(docId: number): void {
+    if (!this.comentarioDoc.trim()) {
       Swal.fire({ icon: 'warning', title: 'Ingresa la observación', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
       return;
     }
-    this.guardar('Rechazado', this.comentario.trim());
+    this.guardarDoc(docId, 'Observado', this.comentarioDoc.trim());
   }
 
-  private guardar(estado: string, obsRevisor?: string): void {
-    this.guardando = true;
+  private guardarDoc(docId: number, estado: string, obsRevisor?: string): void {
+    this.guardandoDoc = true;
     this.loaderService.show();
-    this.dossierService.revisar(this.semanaId, { estado, obsRevisor: obsRevisor ?? null }).subscribe({
+    this.dossierService.revisarDocumento(docId, { estado, obsRevisor: obsRevisor ?? null }).subscribe({
       next: () => {
-        this.guardando = false;
+        this.guardandoDoc = false;
+        this.docObservarId = null;
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada', timer: 1500, showConfirmButton: false });
-        this.closed.emit(true);
+        this.cargarDetalle();
       },
       error: (err: HttpErrorResponse) => {
-        this.guardando = false;
+        this.guardandoDoc = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
       },

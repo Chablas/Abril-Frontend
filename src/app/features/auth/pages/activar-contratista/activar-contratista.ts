@@ -110,7 +110,11 @@ export class ActivarContratista implements OnInit {
             text: 'Bienvenido a Habilitación SSOMA.',
             timer: 1800,
             showConfirmButton: false,
-          }).then(() => this.router.navigate(['/habilitacion/trabajadores']));
+          }).then(() => {
+            const modulos = this.authService.getContratistaModulos();
+            const landing = modulos === 'SSOMA' ? '/ssoma/gestion/rac/dashboard' : '/habilitacion/trabajadores';
+            this.router.navigate([landing]);
+          });
         },
         error: (err: HttpErrorResponse) => {
           this.saving = false;

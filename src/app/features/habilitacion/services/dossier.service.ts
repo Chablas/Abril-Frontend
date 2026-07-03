@@ -7,6 +7,7 @@ import {
   DossierSemanaDetalleDto,
   EnsureSemanaRequest,
   RevisarDossierRequest,
+  RevisarDocumentoRequest,
   DossierTipoDocumento,
 } from '../dtos/dossier.model';
 
@@ -83,6 +84,15 @@ export class DossierService {
     return this.http.post<{ message: string }>(`${this.base}/${dossierId}/revisar`, req, {
       headers: buildHabHeaders(),
     });
+  }
+
+  // PATCH /dossier/documento/{docId}/revisar
+  revisarDocumento(docId: number, req: RevisarDocumentoRequest): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.base}/documento/${docId}/revisar`,
+      req,
+      { headers: buildHabHeaders() },
+    );
   }
 
   // GET /dossier/archivo/{archivoId}/url

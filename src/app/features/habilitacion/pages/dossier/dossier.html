@@ -61,7 +61,7 @@
   @if (isContratista() && !loadingSemanas && semanas.length > 0) {
     <div class="semanas-grid">
       @for (s of semanas; track s.id) {
-        <div class="semana-card" [class.semana-card--aprobado]="s.estado === 'Aprobado'" [class.semana-card--rechazado]="s.estado === 'Rechazado'">
+        <div class="semana-card" [class.semana-card--aprobado]="s.estado === 'Aprobado'" [class.semana-card--rechazado]="s.estado === 'Rechazado' || s.estado === 'Observado'">
           <div class="semana-card__header">
             <span class="semana-num">Sem {{ s.numeroSemana }}</span>
             <span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span>
@@ -97,7 +97,7 @@
         </thead>
         <tbody>
           @for (s of semanas; track s.id) {
-            <tr [class.row-rechazado]="s.estado === 'Rechazado'" [class.row-aprobado]="s.estado === 'Aprobado'">
+            <tr [class.row-rechazado]="s.estado === 'Rechazado' || s.estado === 'Observado'" [class.row-aprobado]="s.estado === 'Aprobado'">
               <td><strong>Semana {{ s.numeroSemana }}</strong></td>
               <td>{{ s.fechaInicio | date:'dd/MM/yy' }} — {{ s.fechaFin | date:'dd/MM/yy' }}</td>
               <td><span class="chip" [ngClass]="chipSemana(s.estado)">{{ labelSemana(s.estado) }}</span></td>

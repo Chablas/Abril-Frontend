@@ -3,11 +3,11 @@
   titulo="Gestión de Salidas"
   subtitulo="Aprobación y rendición de solicitudes de salida."
   [tabs]="[
-    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas' },
-    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas' },
-    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares' },
-    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos' },
-    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos' }
+    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
+    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
+    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' }
   ]">
 </app-abril-page-header>
 
@@ -152,16 +152,56 @@
               title="Seleccionar / deseleccionar todo" />
           </th>
           <th class="text-left px-[16px] py-[10px] font-semibold">#</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Trabajador</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Fecha</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Salida</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Retorno</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Motivo</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Aprobación</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Rendición</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Registrada</th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
+            <span class="inline-flex items-center gap-1">Trabajador
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('fechaSalida')" title="Ordenar por fecha">
+            <span class="inline-flex items-center gap-1">Fecha
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('fechaSalida')">{{ sortDirOf('fechaSalida') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('horaSalida')" title="Ordenar por hora de salida">
+            <span class="inline-flex items-center gap-1">Salida
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaSalida')">{{ sortDirOf('horaSalida') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('horaRetorno')" title="Ordenar por hora de retorno">
+            <span class="inline-flex items-center gap-1">Retorno
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaRetorno')">{{ sortDirOf('horaRetorno') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('motivo')" title="Ordenar por motivo">
+            <span class="inline-flex items-center gap-1">Motivo
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('motivo')">{{ sortDirOf('motivo') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('lugarOrigen')" title="Ordenar por origen">
+            <span class="inline-flex items-center gap-1">Origen
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarOrigen')">{{ sortDirOf('lugarOrigen') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('lugarDestino')" title="Ordenar por destino">
+            <span class="inline-flex items-center gap-1">Destino
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarDestino')">{{ sortDirOf('lugarDestino') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por aprobación">
+            <span class="inline-flex items-center gap-1">Aprobación
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoAprobacion')">{{ sortDirOf('estadoAprobacion') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('estadoRendicion')" title="Ordenar por rendición">
+            <span class="inline-flex items-center gap-1">Rendición
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoRendicion')">{{ sortDirOf('estadoRendicion') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de registro">
+            <span class="inline-flex items-center gap-1">Registrada
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('createdAt')">{{ sortDirOf('createdAt') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
           <th *ngIf="esRecepcion" class="text-left px-[16px] py-[10px] font-semibold"
               title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
             Hora real
@@ -178,8 +218,8 @@
 
         <tr
           *ngFor="let s of salidas; let i = index"
-          (click)="abrirDetalle(s)"
-          title="Ver detalle"
+          (click)="onRowClick($event, i)"
+          title="Ver detalle (Shift+clic para seleccionar)"
           class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
           [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
           style="border-color:var(--color-abril-border)">
@@ -193,7 +233,7 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-500">{{ i + 1 }}</td>
+          <td class="px-[16px] py-[10px] text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
 
           <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.trabajador }}</td>
 
@@ -308,6 +348,14 @@
       </tbody>
     </table>
   </div>
+
+  <!-- ── Paginador ─────────────────────────────────────────────────────── -->
+  <app-paginator
+    [totalRecords]="totalRecords"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="onPageChange($event)">
+  </app-paginator>
 
 </div>
 

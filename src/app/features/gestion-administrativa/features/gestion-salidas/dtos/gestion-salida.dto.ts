@@ -17,6 +17,15 @@ export interface GestionSalidaListItemDto {
   horaSalidaReal: string | null;
 }
 
+/** Respuesta paginada genérica del backend (PagedResult<T>). */
+export interface PagedResponseDto<T> {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+  data: T[];
+}
+
 export interface GestionSalidaFilterDataDto {
   trabajadores: TrabajadorOptionDto[];
   lugaresProyecto: LugarProyectoOptionDto[];

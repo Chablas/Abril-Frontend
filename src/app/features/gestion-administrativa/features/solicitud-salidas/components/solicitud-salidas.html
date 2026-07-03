@@ -3,11 +3,11 @@
   titulo="Solicitud de Salidas"
   subtitulo="Mis solicitudes de viáticos y movilidad."
   [tabs]="[
-    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas' },
-    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas' },
-    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares' },
-    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos' },
-    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos' }
+    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
+    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
+    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' }
   ]"
   [botonPrimario]="{ label: 'Solicitar salida', icono: 'ti-plus' }"
   (primaryClick)="showModal = true">

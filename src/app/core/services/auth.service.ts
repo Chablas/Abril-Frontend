@@ -22,7 +22,26 @@ export class AuthService {
     );
   }
 
+  /**
+   * Limpia toda llave de sesión previa antes de persistir un login nuevo.
+   * Evita que datos de un tipo de sesión (CONTRATISTA, staff) se queden
+   * pegados en localStorage y contaminen el guard de otro tipo de sesión
+   * (p. ej. allowed_features de un login anterior "autorizando" rutas que
+   * no le corresponden al usuario actual).
+   */
+  private limpiarSesionAnterior(): void {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('session_token');
+    localStorage.removeItem('token_expires_at');
+    localStorage.removeItem('user');
+    localStorage.removeItem('allowed_features');
+    localStorage.removeItem('contratista_scope');
+    localStorage.removeItem('contratista_proyectos');
+    localStorage.removeItem('contratista_modulos');
+  }
+
   persistClinicaToken(data: ClinicaTokenDto): void {
+    this.limpiarSesionAnterior();
     localStorage.setItem('access_token', data.token);
     localStorage.setItem(
       'user',
@@ -55,6 +74,7 @@ export class AuthService {
   }
 
   private persistContratistaToken(res: ContratistaTokenDto): void {
+    this.limpiarSesionAnterior();
     localStorage.setItem('access_token', res.token);
     localStorage.setItem(
       'user',
@@ -95,6 +115,7 @@ export class AuthService {
   login(data: LoginRequestDTO) {
     return this.http.post<LoginResponseDTO>(`${this.apiUrl}/login`, data).pipe(
       tap((res) => {
+        this.limpiarSesionAnterior();
         localStorage.setItem('access_token', res.accessToken);
         if (res.sessionToken) localStorage.setItem('session_token', res.sessionToken);
         if (res.expiresAt) localStorage.setItem('token_expires_at', res.expiresAt);
@@ -196,6 +217,16 @@ export class AuthService {
     try {
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       return user.tipo === 'CONTRATISTA';
+    } catch {
+      return false;
+    }
+  }
+
+  isClinica(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user.tipo === 'CLINICA';
     } catch {
       return false;
     }

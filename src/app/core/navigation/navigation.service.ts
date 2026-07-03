@@ -11,10 +11,22 @@ export class NavigationService {
       label: 'Gestión Administrativa',
       iconKey: 'briefcase',
       baseRoute: '/gestion-administrativa',
+      behavior: 'expand',
+      landing: '/gestion-administrativa/solicitud-salidas',
       items: [
-        { label: 'Gestión Administrativa', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
+            { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
+            { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+          ],
+        },
+      ],
     },
     {
       key: 'mejora-continua',
@@ -76,7 +88,7 @@ export class NavigationService {
     },
     {
       key: 'costos',
-      label: 'Costos y Presupuesto',
+      label: 'Costos y Presupuestos',
       iconKey: 'coins',
       baseRoute: '/costs',
       behavior: 'expand',
@@ -154,7 +166,7 @@ export class NavigationService {
       iconKey: 'users-group',
       baseRoute: '/habilitacion/gestion',
       items: [
-        { label: 'Gestión de Ingresos', route: '/habilitacion/gestion' },
+        { label: 'Gestión de Ingresos', route: '/habilitacion/gestion', featureKey: 'habilitacion.trabajadores' },
       ],
       groups: [],
     },
@@ -173,7 +185,7 @@ export class NavigationService {
       iconKey: 'heart-rate-monitor',
       baseRoute: '/clinica',
       items: [
-        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda' },
+        { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda', roles: ['CLINICA'] },
       ],
     },
     {
@@ -229,8 +241,11 @@ export class NavigationService {
       label: 'Seguridad',
       iconKey: 'shield-lock',
       baseRoute: '/security',
+      behavior: 'expand',
+      landing: '/security/users',
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
+        { label: 'Roles',    route: '/security/roles', featureKey: 'security.roles' },
       ],
     },
     {
@@ -258,9 +273,10 @@ export class NavigationService {
   }
 
   private isItemAllowed(item: NavItem): boolean {
-    if (item.featureKey) return this.getAllowedFeatures().includes(item.featureKey);
-    if (item.roles?.length) return item.roles.some((r) => this.authService.hasRole(r));
-    return true;
+    if (!item.featureKey && !item.roles?.length) return true;
+    if (item.featureKey && this.getAllowedFeatures().includes(item.featureKey)) return true;
+    if (item.roles?.length && item.roles.some((r) => this.authService.hasRole(r))) return true;
+    return false;
   }
 
   getModules(): NavModule[] {
@@ -287,6 +303,9 @@ export class NavigationService {
               { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
               { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
               { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
+              { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },
+              { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista' },
+              { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones' },
             ],
             groups: [],
           };

@@ -14,13 +14,14 @@ import {
 } from '../dtos/gestion-salida.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
   templateUrl: './gestion-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -51,6 +52,16 @@ export class GestionSalidas implements OnInit {
 
   /** Solo solicitudes pendientes cuyo aprobador soy yo. Activo por defecto. */
   onlyMyPendingReview = true;
+
+  // ── Paginación (server-side) ────────────────────────────────────────
+  readonly pageSize = 10;
+  currentPage = 1;
+  totalPages = 0;
+  totalRecords = 0;
+
+  // ── Ordenamiento (server-side) ──────────────────────────────────────
+  sortBy: string | null = null;
+  sortDir: 'asc' | 'desc' | null = null;
 
   /** IDs seleccionados para acción bulk. */
   selectedIds = new Set<number>();
@@ -121,7 +132,7 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  load(): void {
+  load(page: number = 1): void {
     this.loaderService.show();
     this.selectedIds.clear();
     this.lastClickedIndex = null;
@@ -131,9 +142,15 @@ export class GestionSalidas implements OnInit {
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
       this.onlyMyPendingReview,
+      page,
+      this.sortBy,
+      this.sortDir,
     ).subscribe({
-      next: (data) => {
-        this.salidas = data;
+      next: (res) => {
+        this.salidas      = res.data;
+        this.currentPage  = res.page;
+        this.totalPages   = res.totalPages;
+        this.totalRecords = res.totalRecords;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -144,13 +161,40 @@ export class GestionSalidas implements OnInit {
   }
 
   onSearch(): void {
-    this.load();
+    this.load(1);
+  }
+
+  onPageChange(page: number): void {
+    this.load(page);
   }
 
   /** Alterna "pendientes de mi revisión" y recarga. */
   toggleMyPendingReview(): void {
     this.onlyMyPendingReview = !this.onlyMyPendingReview;
-    this.load();
+    this.load(1);
+  }
+
+  // ── Ordenamiento de columnas (server-side) ──────────────────────────
+  /**
+   * Cicla el orden de una columna: sin orden → ascendente → descendente → orden original.
+   * El orden se aplica en el servidor sobre todos los registros (no solo la página visible).
+   */
+  toggleSort(column: string): void {
+    if (this.sortBy !== column) {
+      this.sortBy = column;
+      this.sortDir = 'asc';
+    } else if (this.sortDir === 'asc') {
+      this.sortDir = 'desc';
+    } else {
+      this.sortBy = null;
+      this.sortDir = null;
+    }
+    this.load(1);
+  }
+
+  /** Dirección de orden activa para una columna (o null si no está ordenada por ella). */
+  sortDirOf(column: string): 'asc' | 'desc' | null {
+    return this.sortBy === column ? this.sortDir : null;
   }
 
   exportarExcel(): void {
@@ -199,7 +243,7 @@ export class GestionSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) aprobada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load();
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -229,7 +273,7 @@ export class GestionSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) rechazada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load();
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -248,6 +292,20 @@ export class GestionSalidas implements OnInit {
     return s.estadoAprobacion === 'Aprobado'
       && s.estadoRendicion === 'No rendido'
       && s.puedeRendirse;
+  }
+
+  /**
+   * Click sobre una fila de la tabla. Con Shift presionado selecciona el registro
+   * (o el rango, como en la casilla) en vez de abrir el detalle.
+   */
+  onRowClick(event: MouseEvent, index: number): void {
+    if (event.shiftKey) {
+      // Evita que Shift+clic resalte texto de la fila.
+      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+      this.onSelectClick(event, index);
+      return;
+    }
+    this.abrirDetalle(this.salidas[index]);
   }
 
   /**
@@ -335,7 +393,7 @@ export class GestionSalidas implements OnInit {
           text: 'Se descargó la planilla de gasto por movilidad.',
           icon: 'success',
         });
-        this.load();
+        this.load(this.currentPage);
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

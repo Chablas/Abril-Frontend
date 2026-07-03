@@ -129,7 +129,7 @@
               {{ l.tipoDescripcion }}
             </span>
             <span *ngIf="esDepartamento(l)" class="text-xs text-gray-600 truncate">
-              {{ l.vecinoDireccion }}<span *ngIf="l.vecinoNombre"> — {{ l.vecinoNombre }}</span>
+              {{ l.vecinoDireccion || 'Sin dirección' }}<span *ngIf="l.vecinoInterior"> · {{ l.vecinoInterior }}</span><span *ngIf="l.vecinoNombre"> — {{ l.vecinoNombre }}</span>
             </span>
             <span *ngIf="l.descripcion" class="text-xs text-gray-500 whitespace-pre-line">{{ l.descripcion }}</span>
           </div>

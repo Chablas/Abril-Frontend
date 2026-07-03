@@ -22,4 +22,9 @@ export const CHARLAS_ROUTES: Routes = [
     loadComponent: () => import('./charlas-dashboard.component').then((m) => m.CharlasDashboardComponent),
     data: { titulo: 'CHARLAS Y CAPACITACIONES', tab: 4 },
   },
+  {
+    path: 'contratista',
+    loadComponent: () => import('./pages/contratista/charlas-contratista').then((m) => m.CharlasContratista),
+    data: { titulo: 'CHARLA DIARIA — CONTRATISTA' },
+  },
 ];

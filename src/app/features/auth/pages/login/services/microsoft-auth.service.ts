@@ -153,6 +153,10 @@ export class MicrosoftAuthService {
         })
       );
 
+      ['access_token', 'session_token', 'token_expires_at', 'user', 'allowed_features',
+       'contratista_scope', 'contratista_proyectos', 'contratista_modulos']
+        .forEach(key => localStorage.removeItem(key));
+
       localStorage.setItem('access_token', response.accessToken);
       localStorage.setItem('session_token', response.sessionToken);
       localStorage.setItem('token_expires_at', response.expiresAt);

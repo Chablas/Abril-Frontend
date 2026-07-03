@@ -6,6 +6,7 @@ import {
   GestionSalidaDetalleDto,
   GestionSalidaFilterDataDto,
   GestionSalidaListItemDto,
+  PagedResponseDto,
 } from '../dtos/gestion-salida.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -25,14 +26,19 @@ export class GestionSalidasService {
     estadoRendicion: string | null = null,
     estadoAprobacion: string | null = null,
     onlyMyPendingReview = false,
-  ): Observable<GestionSalidaListItemDto[]> {
-    let params = new HttpParams();
+    page = 1,
+    sortBy: string | null = null,
+    sortDir: 'asc' | 'desc' | null = null,
+  ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
+    let params = new HttpParams().set('page', page);
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
     if (onlyMyPendingReview)     params = params.set('onlyMyPendingReview', true);
-    return this.http.get<GestionSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
+    if (sortBy)                  params = params.set('sortBy', sortBy);
+    if (sortDir)                 params = params.set('sortDir', sortDir);
+    return this.http.get<PagedResponseDto<GestionSalidaListItemDto>>(this.apiUrl, { headers: this.headers, params });
   }
 
   getDetalle(id: number): Observable<GestionSalidaDetalleDto> {

@@ -21,44 +21,61 @@ export class CharlasService {
     return this.auth.getCurrentUserId();
   }
 
+  private authHeaders(): Record<string, string> {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   // ── Proyectos / Staff ────────────────────────────────────────────────────────
   getTodosProyectos(): Observable<ProyectoInfo[]> {
-    return this.http.get<ProyectoInfo[]>(`${this.base}/proyectos`);
+    return this.http.get<ProyectoInfo[]>(`${this.base}/proyectos`, { headers: this.authHeaders() });
   }
 
   getMiProyecto(): Observable<ProyectoInfo | null> {
-    return this.http.get<ProyectoInfo | null>(`${this.base}/mi-proyecto?userId=${this.getUserId()}`);
+    return this.http.get<ProyectoInfo | null>(`${this.base}/mi-proyecto?userId=${this.getUserId()}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   getStaff(proyectoId: number): Observable<Staff[]> {
-    return this.http.get<Staff[]>(`${this.base}/staff?proyectoId=${proyectoId}`);
+    return this.http.get<Staff[]>(`${this.base}/staff?proyectoId=${proyectoId}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   getResumen(proyectoId: number, mes: number, anio: number): Observable<Resumen> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
-    return this.http.get<Resumen>(`${this.base}/resumen`, { params });
+    return this.http.get<Resumen>(`${this.base}/resumen`, { params, headers: this.authHeaders() });
   }
 
   // ── Old Tab 1: Asistencia (kept for compatibility) ──────────────────────────
   getCharlas(proyectoId: number, mes: number, anio: number): Observable<CharlaResumen[]> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
-    return this.http.get<CharlaResumen[]>(`${this.base}/charlas`, { params });
+    return this.http.get<CharlaResumen[]>(`${this.base}/charlas`, { params, headers: this.authHeaders() });
   }
 
   crearCharla(dto: CrearCharlaDto): Observable<CharlaResumen> {
-    return this.http.post<CharlaResumen>(`${this.base}/charlas?userId=${this.getUserId()}`, dto);
+    return this.http.post<CharlaResumen>(`${this.base}/charlas?userId=${this.getUserId()}`, dto, {
+      headers: this.authHeaders(),
+    });
   }
 
   eliminarCharla(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/charlas/${id}`);
+    return this.http.delete<void>(`${this.base}/charlas/${id}`, { headers: this.authHeaders() });
   }
 
   getAsistencia(charlaId: number): Observable<AsistenciaDetail[]> {
-    return this.http.get<AsistenciaDetail[]>(`${this.base}/charlas/${charlaId}/asistencia`);
+    return this.http.get<AsistenciaDetail[]>(`${this.base}/charlas/${charlaId}/asistencia`, {
+      headers: this.authHeaders(),
+    });
   }
 
   guardarAsistencia(charlaId: number, dto: GuardarAsistenciaDto): Observable<void> {
-    return this.http.post<void>(`${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`, dto);
+    return this.http.post<void>(
+      `${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`,
+      dto,
+      { headers: this.authHeaders() },
+    );
   }
 
   // ── Old Tab 2: Capacitaciones ────────────────────────────────────────────────
@@ -66,11 +83,16 @@ export class CharlasService {
     let params = new HttpParams().set('proyectoId', proyectoId);
     if (mes && mes > 0) params = params.set('mes', mes);
     if (anio && anio > 0) params = params.set('anio', anio);
-    return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones`, { params });
+    return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   getMisCapacitaciones(): Observable<Capacitacion[]> {
-    return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones/mis?userId=${this.getUserId()}`);
+    return this.http.get<Capacitacion[]>(`${this.base}/capacitaciones/mis?userId=${this.getUserId()}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   subirCapacitacion(fecha: string, tema: string, file: File): Observable<Capacitacion> {
@@ -79,7 +101,9 @@ export class CharlasService {
     formData.append('fecha', fecha);
     formData.append('tema', tema);
     formData.append('file', file);
-    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia?userId=${userId}`, formData);
+    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia?userId=${userId}`, formData, {
+      headers: this.authHeaders(),
+    });
   }
 
   subirCapacitacionMulti(fecha: string, tema: string, files: File[]): Observable<Capacitacion> {
@@ -88,37 +112,56 @@ export class CharlasService {
     formData.append('fecha', fecha);
     formData.append('tema', tema);
     files.forEach(f => formData.append('files', f, f.name));
-    return this.http.post<Capacitacion>(`${this.base}/capacitaciones/mi-evidencia-multi?userId=${userId}`, formData);
+    return this.http.post<Capacitacion>(
+      `${this.base}/capacitaciones/mi-evidencia-multi?userId=${userId}`,
+      formData,
+      { headers: this.authHeaders() },
+    );
   }
 
   cambiarEstado(id: number, estado: string): Observable<Capacitacion> {
-    return this.http.put<Capacitacion>(`${this.base}/capacitaciones/${id}/estado?userId=${this.getUserId()}`, { estado });
+    return this.http.put<Capacitacion>(
+      `${this.base}/capacitaciones/${id}/estado?userId=${this.getUserId()}`,
+      { estado },
+      { headers: this.authHeaders() },
+    );
   }
 
   eliminarCapacitacion(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/capacitaciones/${id}`);
+    return this.http.delete<void>(`${this.base}/capacitaciones/${id}`, { headers: this.authHeaders() });
   }
 
   // ── NEW: Tab 1 — Dashboard Asistencia Supervisores ──────────────────────────
   getDashboardSupervisores(proyectoId: number, mes: number, anio: number): Observable<DashSupervisoresRow[]> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
-    return this.http.get<DashSupervisoresRow[]>(`${this.base}/dashboard-supervisores`, { params });
+    return this.http.get<DashSupervisoresRow[]>(`${this.base}/dashboard-supervisores`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   // ── NEW: Tab 2 — Comparativo ─────────────────────────────────────────────────
   getComparativo(proyectoId: number, anio: number): Observable<ComparativoMes[]> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('anio', anio);
-    return this.http.get<ComparativoMes[]>(`${this.base}/comparativo`, { params });
+    return this.http.get<ComparativoMes[]>(`${this.base}/comparativo`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   // ── NEW: Tab 3 — Crear nueva charla ─────────────────────────────────────────
   crearNuevaCharla(dto: NuevaCharlaCreateDto): Observable<any> {
-    return this.http.post<any>(`${this.base}/nueva?userId=${this.getUserId()}`, dto);
+    return this.http.post<any>(`${this.base}/nueva?userId=${this.getUserId()}`, dto, {
+      headers: this.authHeaders(),
+    });
   }
 
   getCharlasProyecto(proyectoId: number, mes: number, anio: number): Observable<CharlaGaleriaItem[]> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
-    return this.http.get<CharlaGaleriaItem[]>(`${this.base}/charlas-proyecto`, { params });
+    return this.http.get<CharlaGaleriaItem[]>(`${this.base}/charlas-proyecto`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   // ── NEW: Tab 4 — Evidencia / Aprobación ─────────────────────────────────────
@@ -126,40 +169,58 @@ export class CharlasService {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (proyectoId) params = params.set('proyectoId', proyectoId);
     if (estado) params = params.set('estado', estado);
-    return this.http.get<CharlaListResult>(`${this.base}/lista`, { params });
+    return this.http.get<CharlaListResult>(`${this.base}/lista`, { params, headers: this.authHeaders() });
   }
 
   getDetalle(id: number): Observable<CharlaDetalle> {
-    return this.http.get<CharlaDetalle>(`${this.base}/${id}/detalle`);
+    return this.http.get<CharlaDetalle>(`${this.base}/${id}/detalle`, { headers: this.authHeaders() });
   }
 
   aprobar(id: number): Observable<any> {
-    return this.http.put<any>(`${this.base}/${id}/aprobar?userId=${this.getUserId()}`, {});
+    return this.http.put<any>(
+      `${this.base}/${id}/aprobar?userId=${this.getUserId()}`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   rechazar(id: number, motivo: string): Observable<any> {
-    return this.http.put<any>(`${this.base}/${id}/rechazar?userId=${this.getUserId()}`, { motivo });
+    return this.http.put<any>(
+      `${this.base}/${id}/rechazar?userId=${this.getUserId()}`,
+      { motivo },
+      { headers: this.authHeaders() },
+    );
   }
 
   // ── NEW: Dashboard por persona y por proyecto ────────────────────────────────
   getDashPersonal(proyectoId: number, mes: number, anio: number): Observable<DashPersonalResult> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
-    return this.http.get<DashPersonalResult>(`${this.base}/dashboard-personal`, { params });
+    return this.http.get<DashPersonalResult>(`${this.base}/dashboard-personal`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   editarAsistencia(charlaId: number, workerIds: number[]): Observable<void> {
-    return this.http.put<void>(`${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`, { workerIds });
+    return this.http.put<void>(
+      `${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`,
+      { workerIds },
+      { headers: this.authHeaders() },
+    );
   }
 
   getDashProyectos(mes: number, anio: number): Observable<DashProyectoItem[]> {
     const params = new HttpParams().set('mes', mes).set('anio', anio);
-    return this.http.get<DashProyectoItem[]>(`${this.base}/dashboard-proyectos`, { params });
+    return this.http.get<DashProyectoItem[]>(`${this.base}/dashboard-proyectos`, {
+      params,
+      headers: this.authHeaders(),
+    });
   }
 
   // ── NEW: Supervisor (app_user) search ────────────────────────────────────────
   getSupervisores(search?: string): Observable<UsuarioDto[]> {
     let params = new HttpParams();
     if (search) params = params.set('search', search);
-    return this.http.get<UsuarioDto[]>(`${this.base}/supervisores`, { params });
+    return this.http.get<UsuarioDto[]>(`${this.base}/supervisores`, { params, headers: this.authHeaders() });
   }
 }
