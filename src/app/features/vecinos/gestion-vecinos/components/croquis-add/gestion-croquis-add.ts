@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -37,7 +37,7 @@ interface VecinoBlock {
   imports: [CommonModule, FormsModule, BaseModal, SearchSelect, SectionTabs, FileSelector],
   templateUrl: './gestion-croquis-add.html',
 })
-export class GestionCroquisAdd {
+export class GestionCroquisAdd implements OnInit {
   /** Todos los proyectos (con o sin croquis). */
   @Input() projects: ProjectOptionDTO[] = [];
   /** Croquis registrados (proyecto + lotes) para seleccionar el lote. */
@@ -46,6 +46,10 @@ export class GestionCroquisAdd {
   @Input() tiposConstruccion: CatalogOptionDTO[] = [];
   @Input() usos: CatalogOptionDTO[] = [];
   @Input() relacionTipos: CatalogOptionDTO[] = [];
+  /** Proyecto pre-seleccionado al abrir (ej. desde el modal del croquis). */
+  @Input() initialProjectId: number | null = null;
+  /** Lote (polígono) pre-seleccionado al abrir (ej. al añadir vecinos a un lote). */
+  @Input() initialLoteId: number | null = null;
   @Output() closeModal = new EventEmitter<void>();
   @Output() created = new EventEmitter<void>();
 
@@ -78,6 +82,19 @@ export class GestionCroquisAdd {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  ngOnInit(): void {
+    // Preselección de proyecto/lote cuando se abre desde el croquis agrandado.
+    if (this.initialProjectId != null) {
+      this.onProjectChange(this.initialProjectId);
+      if (this.initialLoteId != null && this.selectedCroquis) {
+        const lote = this.selectedCroquis.lotes.find(
+          (l) => l.projectCroquisLoteId === this.initialLoteId,
+        );
+        if (lote) this.selectLote(lote);
+      }
+    }
+  }
 
   private emptyVecino(): VecinoBlock {
     return {

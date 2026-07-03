@@ -70,6 +70,9 @@ export class GestionVecinos implements OnInit {
   croquisUsos: CatalogOptionDTO[] = [];
   croquisRelacionTipos: CatalogOptionDTO[] = [];
   showCroquisAdd = false;
+  /** Preselección del alta cuando se abre desde el croquis agrandado. */
+  addInitialProjectId: number | null = null;
+  addInitialLoteId: number | null = null;
   private croquisLoaded = false;
   private vecinosLoaded = false;
 
@@ -185,12 +188,24 @@ export class GestionVecinos implements OnInit {
 
   openCroquisAdd(): void {
     // El form de alta usa los datos de croquis (proyectos, catálogos, lotes).
+    this.addInitialProjectId = null;
+    this.addInitialLoteId = null;
+    this.loadCroquis();
+    this.showCroquisAdd = true;
+  }
+
+  /** Alta desde el croquis agrandado: proyecto (y lote, si hay) precargados. */
+  openCroquisAddFrom(evt: { projectId: number; loteId: number | null }): void {
+    this.addInitialProjectId = evt.projectId;
+    this.addInitialLoteId = evt.loteId;
     this.loadCroquis();
     this.showCroquisAdd = true;
   }
 
   closeCroquisAdd(): void {
     this.showCroquisAdd = false;
+    this.addInitialProjectId = null;
+    this.addInitialLoteId = null;
   }
 
   onCroquisCreated(): void {

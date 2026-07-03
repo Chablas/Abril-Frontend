@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../../../../environments/environment';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
@@ -16,8 +16,27 @@ import {
   imports: [CommonModule, BaseModal, SectionTabs, LimpiezasCalendar],
   templateUrl: './gestion-croquis-view.html',
 })
-export class GestionCroquisView {
+export class GestionCroquisView implements OnChanges {
   @Input() croquis: CroquisGestionDTO[] = [];
+
+  /**
+   * Al recargar los croquis (ej. tras añadir vecinos con este modal abierto),
+   * re-apunta el croquis/lote seleccionados a los objetos frescos para no
+   * mostrar contadores/vecinos desactualizados.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['croquis'] || !this.selected) return;
+    const fresh = this.croquis.find((c) => c.projectId === this.selected!.projectId) ?? null;
+    this.selected = fresh;
+    if (fresh && this.selectedLote) {
+      this.selectedLote =
+        fresh.lotes.find(
+          (l) => l.projectCroquisLoteId === this.selectedLote!.projectCroquisLoteId,
+        ) ?? null;
+    } else {
+      this.selectedLote = null;
+    }
+  }
 
   // ── Secciones del modal del croquis ──────────────────────────────────────
   readonly sectionTabs: SectionTab[] = [
@@ -35,6 +54,8 @@ export class GestionCroquisView {
   @Input() filterProjectId: number | null = null;
   /** Pide al padre abrir el detalle del vecino. */
   @Output() viewVecino = new EventEmitter<VecinoListItemDTO>();
+  /** Pide al padre abrir el alta de vecinos, preseleccionando proyecto y (opcionalmente) lote. */
+  @Output() addVecino = new EventEmitter<{ projectId: number; loteId: number | null }>();
 
   selected: CroquisGestionDTO | null = null;
   selectedLote: CroquisGestionLoteDTO | null = null;
@@ -142,5 +163,14 @@ export class GestionCroquisView {
   /** Abre el detalle de un vecino/departamento del lote seleccionado. */
   verVecino(v: VecinoListItemDTO): void {
     this.viewVecino.emit(v);
+  }
+
+  /** Abre el alta de vecinos con el proyecto (y el lote seleccionado, si hay) precargados. */
+  agregarVecinos(): void {
+    if (!this.selected) return;
+    this.addVecino.emit({
+      projectId: this.selected.projectId,
+      loteId: this.selectedLote?.projectCroquisLoteId ?? null,
+    });
   }
 }

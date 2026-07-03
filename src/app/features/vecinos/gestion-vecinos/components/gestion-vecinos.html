@@ -119,6 +119,7 @@
     [croquis]="croquis"
     [filterProjectId]="croquisAppliedProjectId"
     (viewVecino)="openDetail($event)"
+    (addVecino)="openCroquisAddFrom($event)"
     class="flex flex-1 min-h-0 flex-col">
   </app-gestion-croquis-view>
 
@@ -178,6 +179,8 @@
   [tiposConstruccion]="croquisTipos"
   [usos]="croquisUsos"
   [relacionTipos]="croquisRelacionTipos"
+  [initialProjectId]="addInitialProjectId"
+  [initialLoteId]="addInitialLoteId"
   (closeModal)="closeCroquisAdd()"
   (created)="onCroquisCreated()">
 </app-gestion-croquis-add>

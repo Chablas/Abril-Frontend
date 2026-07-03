@@ -160,8 +160,17 @@
             </div>
           </div>
           <ng-template #sinVecinos>
-            <p class="text-sm text-gray-400 italic">Este lote aún no tiene vecinos. Agrégalos con “Añadir vecinos”.</p>
+            <p class="text-sm text-gray-400 italic">Este lote aún no tiene vecinos.</p>
           </ng-template>
+
+          <!-- Añadir vecinos al lote seleccionado -->
+          <button type="button" (click)="agregarVecinos()"
+            class="w-full h-[40px] bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Añadir vecinos a este lote
+          </button>
         </div>
       </ng-container>
 
@@ -271,6 +280,15 @@
           <p class="text-xs text-gray-400 italic border-t border-gray-200 pt-2">
             Selecciona un lote del croquis para ver sus vecinos.
           </p>
+
+          <!-- Añadir vecinos al proyecto (sin lote preseleccionado) -->
+          <button type="button" (click)="agregarVecinos()"
+            class="w-full h-[40px] bg-[#4CAF50] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[#43A047] transition-colors flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Añadir vecinos
+          </button>
         </div>
       </ng-template>
     </div>
