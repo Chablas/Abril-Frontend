@@ -33,6 +33,7 @@ export interface ActividadDto {
   esPadre: boolean;
   baselineStartDate?: string | null;
   baselineEndDate?: string | null;
+  isManual: boolean;
 }
 
 export interface CascadaCambioDto {
@@ -88,4 +89,10 @@ export interface EditarActividadResultDto {
   actividad: ActividadDto;
   cascada: CascadaResultDto | null;
   padresActualizados?: ActividadDto[];
+}
+
+export interface ImportarMppResultDto {
+  actividadesImportadas: number;
+  actividadesEliminadas: number;
+  actividadesManualesConservadas: number;
 }
