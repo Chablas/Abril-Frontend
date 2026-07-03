@@ -206,7 +206,7 @@
                                   @if (isPdf(activeArchivo.url)) {
                                     <iframe [src]="safeUrl(activeArchivo.url)" class="cap-viewer-pdf"></iframe>
                                   } @else {
-                                    <img [src]="activeArchivo.url" class="cap-viewer-img" alt="Evidencia" />
+                                    <img [secureImg]="activeArchivo.url" class="cap-viewer-img" alt="Evidencia" />
                                   }
                                   <a class="viewer-download" [href]="activeArchivo.url" target="_blank" download title="Descargar">
                                     <i class="ti ti-download"></i> Descargar
@@ -590,7 +590,7 @@
               @if (isPdf(charlaDetalle.evidenciaUrl)) {
                 <iframe [src]="safeUrl(charlaDetalle.evidenciaUrl!)" class="pdf-viewer" title="Evidencia PDF"></iframe>
               } @else {
-                <img [src]="charlaDetalle.evidenciaUrl" class="img-viewer" alt="Evidencia" />
+                <img [secureImg]="charlaDetalle.evidenciaUrl" class="img-viewer" alt="Evidencia" />
               }
             </div>
           } @else {

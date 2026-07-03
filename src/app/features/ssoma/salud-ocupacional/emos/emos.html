@@ -78,10 +78,56 @@
           (valueChange)="filters.empresaId = $event; onFilterChange()"
         ></app-search-select>
       </div>
+
+      <div>
+        <label class="filter-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.proyectoId"
+          [showLabel]="false"
+          [compact]="true"
+          placeholder="Todos"
+          (valueChange)="filters.proyectoId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Ordenar por</label>
+        <app-search-select
+          [options]="sortOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.sortBy"
+          [showLabel]="false"
+          [compact]="true"
+          placeholder="Nombre (A-Z)"
+          (valueChange)="filters.sortBy = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
     </div>
 
-    <div *ngIf="hasActiveFilters" class="pt-2">
-      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    <div class="filters-grid-evidencia">
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
+        Sin Lectura EMO (evidencia)
+      </label>
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
+        Sin Certificado de Aptitud (evidencia)
+      </label>
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
+        Sin EMO Completo (evidencia)
+      </label>
+    </div>
+
+    <div class="pt-2 filters-actions">
+      <button *ngIf="hasActiveFilters" type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+      <button type="button" class="btn-excel" (click)="descargarExcel()">
+        <i class="ti ti-file-spreadsheet"></i> Descargar Excel
+      </button>
     </div>
   </div>
 
@@ -111,8 +157,8 @@
             <th>Emp. Origen</th>
             <th>Proyecto</th>
             <th>Tipo</th>
-            <th>Fecha</th>
-            <th>Vence</th>
+            <th class="th-sortable" (click)="toggleSort('fechaEmo')">Fecha <span class="sort-icon">{{ sortIcon('fechaEmo') }}</span></th>
+            <th class="th-sortable" (click)="toggleSort('fechaVencimiento')">Vence <span class="sort-icon">{{ sortIcon('fechaVencimiento') }}</span></th>
             <th>Aptitud</th>
             <th>Estado</th>
             <th class="text-right">Días</th>

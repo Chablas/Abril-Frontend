@@ -47,6 +47,65 @@
   margin-bottom: 3px;
 }
 
+.filters-grid-evidencia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 8px;
+}
+
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-check input[type="checkbox"] {
+  accent-color: #64bc04;
+  cursor: pointer;
+}
+
+.filters-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e7e34;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.15s;
+}
+.btn-excel:hover { background: #166a2b; }
+
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.th-sortable:hover { color: #1e293b; }
+
+.sort-icon {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
 .search-input {
   display: flex;
   align-items: center;

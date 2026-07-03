@@ -34,6 +34,14 @@ export class EmoService {
     });
   }
 
+  exportarPorTrabajadorExcel(query: EmoPorTrabajadorQuery = {}): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/por-trabajador/excel`, {
+      params: buildParams(query as Record<string, unknown>),
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
   getEmoDetalle(id: number): Observable<EmoDetalleDto> {
     return this.http.get<EmoDetalleDto>(`${this.apiUrl}/${id}`, {
       headers: buildAuthHeaders(),
