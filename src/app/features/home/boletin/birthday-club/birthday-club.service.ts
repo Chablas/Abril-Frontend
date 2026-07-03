@@ -7,7 +7,8 @@ import { environment } from '../../../../../environments/environment';
 export interface CumpleaneroDto {
   workerId: number;
   nombreCompleto: string;
-  ocupacion?: string | null;
+  /** Puesto del trabajador; el backend hace fallback a ocupación si puesto es null. */
+  puesto?: string | null;
   email: string;
   /** Mes del cumpleaños (1-12). */
   mes: number;
