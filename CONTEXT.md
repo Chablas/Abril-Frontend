@@ -4034,3 +4034,19 @@ Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero pe
 ### 4. Merge a master vía "guardar master"
 
 `feature/milestone-schedule-improvements` (SPI en dashboard UDP, mejoras UX cronograma de actividades, drag&drop de jerarquía, skills guardar-rama/guardar-master) se mergeó a `master` con `ddf419c`. Build de producción (`ng build`) verificado OK antes del push. Sin cambios de código nuevos en esta sesión — solo consolidación y push.
+
+## Sesión 2026-07-04
+
+### 1. Scroll propio en tabla de `cronograma-actividades`
+
+**Problema**: en `/projects/cronograma-actividades/{id}` la tabla de actividades (275+ filas) scrolleaba junto con toda la página — la barra de scroll horizontal quedaba al fondo, fuera de vista, obligando a bajar todo el scroll vertical primero para poder scrollear horizontalmente.
+
+**Fix — `features/projects/cronograma-actividades/cronograma-actividades.css`:**
+- `.table-wrapper`: agregado `overflow-y: auto` + `max-height: calc(100vh - 260px)` (mismo patrón que `.gantt-full-container`, que ya usaba `calc(100vh - 220px)`; +40px porque este contenedor tiene además el toolbar de botones encima).
+- `.data-table th`: agregado `position: sticky; top: 0; z-index: 2; background: #e2e8f0` para que el encabezado de columnas no se pierda al hacer scroll vertical.
+- No se tocó lógica, HTML, services ni DTOs. No hizo falta ajustar el budget de `anyComponentStyle` en `angular.json` (30kB/40kB) — el CSS minificado del componente sigue dentro del límite.
+- Verificado por el usuario en navegador con las 275 filas reales: scroll horizontal visible sin bajar el vertical, header sticky, drag-select de filas y triangulitos de colapsar/expandir siguen funcionando.
+
+### 2. `.tokensave/` agregado a `.gitignore`
+
+Directorio local generado por el MCP server `tokensave` (contiene `tokensave.db`, ~38MB) apareció como untracked. Se agregó `.tokensave/` a `.gitignore` — no debe versionarse, es cache/estado local de la herramienta.
