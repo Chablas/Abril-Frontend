@@ -90,6 +90,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   empresaContratistaNombre = '';
 
   private destroy$ = new Subject<void>();
+  private loadToken = 0;
 
   constructor(
     private workerService: WorkerService,
@@ -237,6 +238,11 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.subareas = [];
     this.cargandoSubareas = false;
 
+    // Token de carga: si el usuario cambia de trabajador antes de que responda
+    // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
+    // del trabajador que se está editando ahora.
+    const loadToken = ++this.loadToken;
+
     if (this.mode === 'edit' && this.worker) {
       this.model = {
         ...this.emptyModel(),
@@ -253,6 +259,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       this.loadingDetalle = true;
       this.trabajadorHabService.getWorker(this.worker.workerId).subscribe({
         next: (det) => {
+          if (loadToken !== this.loadToken) return;
           this.model.celular = det.celular ?? '';
           this.model.sctr = det.sctr ?? true;
           this.model.area = det.area ?? '';
@@ -269,13 +276,18 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.loadingDetalle = false;
           if (this.model.area) {
             this.catalogosHabService.getSubareas(this.model.area).subscribe({
-              next: (data) => { this.subareas = data; this.cdr.detectChanges(); },
+              next: (data) => {
+                if (loadToken !== this.loadToken) return;
+                this.subareas = data;
+                this.cdr.detectChanges();
+              },
               error: () => {},
             });
           }
           this.cdr.detectChanges();
         },
         error: () => {
+          if (loadToken !== this.loadToken) return;
           this.loadingDetalle = false;
           this.cdr.detectChanges();
         },
