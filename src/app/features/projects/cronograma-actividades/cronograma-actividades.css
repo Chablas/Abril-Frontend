@@ -251,7 +251,11 @@
   padding: 0.75rem 0;
 }
 
-.table-wrapper { overflow-x: auto; }
+.table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+}
 
 .data-table {
   width: 100%;
@@ -271,6 +275,10 @@
   letter-spacing: 0.05em;
   color: #4a6580;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #e2e8f0;
 }
 
 /* ── TDs base ─────────────────────────────────────────────────────────────── */
