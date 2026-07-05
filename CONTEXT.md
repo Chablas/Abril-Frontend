@@ -4050,3 +4050,46 @@ Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero pe
 ### 2. `.tokensave/` agregado a `.gitignore`
 
 Directorio local generado por el MCP server `tokensave` (contiene `tokensave.db`, ~38MB) apareció como untracked. Se agregó `.tokensave/` a `.gitignore` — no debe versionarse, es cache/estado local de la herramienta.
+
+## Sesión 2026-07-05
+
+### 1. "Recordar última pestaña" en Cronograma de Actividades
+
+En `/projects/cronograma-actividades/:id` la pestaña de tipo de cronograma (Anteproyecto/Proyecto/Proyecto de Actualización) ya no vuelve siempre a Anteproyecto al reingresar:
+
+- **`services/cronograma-actividades.service.ts`**: `getUltimaPestana(proyectoId)` (`GET .../ultima-pestana`) y `actualizarUltimaPestana(proyectoId, tipoCronograma)` (`PATCH .../ultima-pestana`).
+- **`dtos/cronograma-actividades.dtos.ts`**: `UltimaPestanaDto { tipoCronograma: string | null }`.
+- **`cronograma-actividades.ts`**: `ngOnInit` llama `cargarUltimaPestana()` antes de cargar actividades — si el backend devuelve `null` o falla, cae a `'ANTEPROYECTO'` por defecto, sin error visible. `onTabChange()` dispara `guardarUltimaPestana()` en segundo plano (sin loader, sin bloquear UI, sin alertar si falla — es una preferencia, no algo crítico). Confirmado que `SectionTabs.valueChange` solo emite en click del usuario, no en el binding inicial, así que no hay un PATCH espurio al entrar a la página.
+
+### 2. Bug de cascada: la tabla no reflejaba fechas tras asignar predecesora de mismo nivel
+
+**Causa raíz (confirmada leyendo `Abril_Backend`)**: el `PUT .../actividades/{id}` ya aplica y persiste la cascada en la misma llamada (`EditarActividadAsync` → `AplicarCascadaAsync`, ver `CronogramaActividadesService.cs`/`CronogramaSchedulingService.cs` del backend) — no es un preview. El botón "Aplicar cambios" del modal disparaba una segunda llamada (`recalcular-cascada/aplicar`) que recalculaba sobre datos ya aplicados y por lo tanto siempre devolvía `cambios: []`; como ninguna otra ruta de parcheo tocaba las filas hermanas/sucesoras, la tabla se quedaba con las fechas viejas en memoria.
+
+**Fix — `cronograma-actividades.ts`**:
+- Nuevo método `patchCascadaCambios(cambios: CascadaCambioDto[])`, usado tanto en `guardar()` (parcheando directo desde `res.cascada.cambios` del PUT, que ya trae las fechas post-cascada reales) como en `aplicarCascada()` (ahora redundante pero inofensivo, se dejó sin tocar su comportamiento de red a pedido explícito).
+- El backend agregó `baselineStartDate`/`baselineEndDate` a `CascadaCambioDto` — se agregó al DTO frontend y a `patchCascadaCambios` para que Línea Base también se actualice en vivo. Desfase y semáforo no necesitaron cambios: son getters (`getDesfaseDias`/`getSemaforoClass`) que leen `planned`/`baseline` en vivo desde la fila en cada render.
+- `patchActividadLocal()` (compartido por `guardar()` y `commitInlineEdit()`) tampoco parcheaba `baselineStartDate`/`baselineEndDate` cuando el backend hacía auto-fill de LB al editar el fin programado manualmente — corregido.
+- El botón "Cancelar" del modal de cascada **no revierte nada hoy** (el cambio ya se guardó en BD antes de que el modal aparezca) — queda pendiente como decisión de producto, no se tocó en esta sesión.
+
+### 3. Rediseño del PDF exportado (`exportarPdf()` en `cronograma-actividades.ts`)
+
+Con jsPDF/jspdf-autotable (sin librerías nuevas):
+- **Jerarquía visual**: borde izquierdo de ~1.1mm por fila usando la paleta BCS (`#0D1B2A` nivel 0; `#1B263B`/`#415A77`/`#778DA9`/`#E0E1DD` cíclico por rama de nivel 1; derivados `#2C3E56`/`#557090`/`#8FA3B8`/`#CACBC7` para nivel 2+, heredado del ancestro de nivel 1) vía `buildPdfNivelColorMap()` + `didDrawCell`.
+- **KPIs** antes de la tabla: Total actividades, Avance general, conteo Verde/Amarillo/Rojo — cards estilo dashboard (`drawPdfKpiCard`: fondo blanco, `roundedRect`, borde sutil `#E2E8F0`, sin sombra, franja superior de acento).
+- **Barra de progreso** en la columna Avance% (riel gris + relleno según regla ≥75 verde/≥50 azul/≥25 naranja/<25 rojo/sin datos gris).
+- **Semáforo** pasó de texto coloreado a círculo (`doc.circle`), igual que en pantalla.
+- KPIs y colores de jerarquía usan una paleta y helpers propios del PDF (`PDF_NIVEL0_RGB`, `PDF_NIVEL1_RGB`, `PDF_NIVEL2_RGB`, `getPdfAvanceRgb`, `getPdfSemaforoRgb`) — independientes del `rowStyleMap` que se usa en pantalla.
+
+### 4. Semáforo "sin datos" ahora se muestra en gris (`#94A3B8`) en vez de ocultarse
+
+Antes, cuando una actividad no tenía baseline o fin programado (ej. "Envio de obs"), `getSemaforoClass()` devolvía `''` y el punto de semáforo se ocultaba (`*ngIf`) tanto en pantalla como en el PDF (ahí quedaba en blanco).
+
+- **`getSemaforoClass()`**: ahora devuelve `'semaforo-gris'` en vez de `''` (tanto para hojas sin desfase calculable como para padres cuyos hijos tampoco tienen dato). Se quitó el `.filter((s) => s !== '')` en la agregación de padres, ya innecesario.
+- **CSS**: nueva clase `.semaforo-gris { background: #94A3B8; ... }` junto a verde/amarillo/rojo.
+- **HTML**: se quitó el `*ngIf` en el punto de semáforo (ya no hace falta, la clase nunca vuelve vacía).
+- **PDF**: `getPdfSemaforoRgb()` ya no devuelve `null` — devuelve `#94A3B8` para el caso sin datos, así el círculo siempre se dibuja.
+- `getSemaforoTexto()` no cambió: sigue devolviendo `'—'` para el caso gris, correcto para vistas de texto (Excel/Gantt).
+
+### Pendiente para otra sesión
+
+- Decisión de producto sobre el botón "Cancelar" del modal de cascada (hoy no revierte nada, ver punto 2).
