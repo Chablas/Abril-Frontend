@@ -17,9 +17,11 @@ import {
   EditarActividadResultDto,
   ReordenarItem,
   CascadaResultDto,
+  CascadaCambioDto,
   ImportarMppResultDto,
   CrearActividadMasivoItem,
   CrearActividadesMasivoResultDto,
+  UltimaPestanaDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -166,6 +168,20 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       return;
     }
     this.selectedProyectoId = id;
+    this.cargarUltimaPestana(id);
+  }
+
+  private cargarUltimaPestana(proyectoId: number): void {
+    this.service.getUltimaPestana(proyectoId).subscribe({
+      next: (res: UltimaPestanaDto) => {
+        this.tipoCronogramaActivo = res.tipoCronograma ?? 'ANTEPROYECTO';
+        this.loadActividades(proyectoId);
+      },
+      error: () => {
+        this.tipoCronogramaActivo = 'ANTEPROYECTO';
+        this.loadActividades(proyectoId);
+      },
+    });
   }
 
   onTabChange(id: string): void {
@@ -177,6 +193,16 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       this.vistaGantt = false;
     }
     this.loadActividades(this.selectedProyectoId!);
+    this.guardarUltimaPestana(id);
+  }
+
+  /** Preferencia de UI, no crítica: se guarda en segundo plano sin loading ni error visible. */
+  private guardarUltimaPestana(tipoCronograma: string): void {
+    if (!this.selectedProyectoId) return;
+    this.service.actualizarUltimaPestana(this.selectedProyectoId, tipoCronograma).subscribe({
+      next: () => {},
+      error: () => {},
+    });
   }
 
   ngOnDestroy(): void {
@@ -950,6 +976,8 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.actividades[idx].actualEndDate       = res.actualEndDate;
     this.actividades[idx].progressPercentage  = res.progressPercentage;
     this.actividades[idx].predecesoras        = res.predecesoras;
+    this.actividades[idx].baselineStartDate   = res.baselineStartDate;
+    this.actividades[idx].baselineEndDate     = res.baselineEndDate;
   }
 
   private patchPadresActualizados(padres: ActividadDto[]): void {
@@ -960,6 +988,29 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         this.actividades[idx].plannedEndDate   = padre.plannedEndDate;
       }
     }
+    this.buildAvanceMap();
+    this.buildColorMap();
+  }
+
+  /**
+   * El PUT de editar actividad ya aplica y persiste la cascada en backend
+   * (ver EditarActividadAsync); res.cascada.cambios trae las fechas post-cascada
+   * reales. Se parchea la tabla local desde ahí — no depender de la llamada
+   * a recalcular-cascada/aplicar, que recalcula sobre datos ya aplicados y
+   * por lo tanto siempre devuelve cambios vacíos.
+   */
+  private patchCascadaCambios(cambios: CascadaCambioDto[]): void {
+    for (const c of cambios) {
+      const idx = this.actividades.findIndex((a) => a.projectActivityId === c.projectActivityId);
+      if (idx !== -1) {
+        this.actividades[idx].plannedStartDate  = c.inicioNuevo;
+        this.actividades[idx].plannedEndDate    = c.finNuevo;
+        this.actividades[idx].baselineStartDate = c.baselineStartDate;
+        this.actividades[idx].baselineEndDate   = c.baselineEndDate;
+      }
+    }
+    // Desfase y semáforo (getDesfaseDias / getSemaforoClass) leen planned/baseline
+    // directo de la fila en cada render — no requieren recálculo aparte.
     this.buildAvanceMap();
     this.buildColorMap();
   }
@@ -976,15 +1027,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.loaderService.show();
     this.service.aplicarCascada(this.selectedProyectoId!).subscribe({
       next: (result) => {
-        for (const c of result.cambios) {
-          const idx = this.actividades.findIndex((a) => a.projectActivityId === c.projectActivityId);
-          if (idx !== -1) {
-            this.actividades[idx].plannedStartDate = c.inicioNuevo;
-            this.actividades[idx].plannedEndDate   = c.finNuevo;
-          }
-        }
-        this.buildAvanceMap();
-        this.buildColorMap();
+        this.patchCascadaCambios(result.cambios);
         this.aplicandoCascada = false;
         this.cascadaModalOpen = false;
         this.cascadaPreview = null;
@@ -1238,6 +1281,9 @@ export class CronogramaActividades implements OnInit, OnDestroy {
             this.patchPadresActualizados(res.padresActualizados);
           } else {
             this.buildAvanceMap();
+          }
+          if (res.cascada?.cambios?.length) {
+            this.patchCascadaCambios(res.cascada.cambios);
           }
           this.guardando = false;
           this.cerrarModal();
@@ -1520,14 +1566,14 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   getSemaforoClass(act: ActividadDto): string {
     if (act.esPadre) {
       const hijos  = this.actividades.filter((a) => a.parentId === act.projectActivityId);
-      const clases = hijos.map((h) => this.getSemaforoClass(h)).filter((s) => s !== '');
+      const clases = hijos.map((h) => this.getSemaforoClass(h));
       if (clases.includes('semaforo-rojo'))     return 'semaforo-rojo';
       if (clases.includes('semaforo-amarillo')) return 'semaforo-amarillo';
       if (clases.length && clases.every((s) => s === 'semaforo-verde')) return 'semaforo-verde';
-      return '';
+      return 'semaforo-gris';
     }
     const d = this.getDesfaseDias(act, 'end');
-    if (d === null) return '';
+    if (d === null) return 'semaforo-gris';
     if (d <= 0)  return 'semaforo-verde';
     if (d <= 7)  return 'semaforo-amarillo';
     return 'semaforo-rojo';
@@ -1812,9 +1858,102 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     }
   }
 
+  /** Paleta BCS para el borde de jerarquía del PDF: nivel 0, nivel 1 (una por rama) y su derivado (nivel 2+). */
+  private readonly PDF_NIVEL0_RGB: [number, number, number] = [13, 27, 42]; // #0D1B2A
+  private readonly PDF_NIVEL1_RGB: [number, number, number][] = [
+    [27, 38, 59],    // #1B263B
+    [65, 90, 119],   // #415A77
+    [119, 141, 169], // #778DA9
+    [224, 225, 221], // #E0E1DD
+  ];
+  private readonly PDF_NIVEL2_RGB: [number, number, number][] = [
+    [44, 62, 86],    // #2C3E56 — deriva de #1B263B
+    [85, 112, 144],  // #557090 — deriva de #415A77
+    [143, 163, 184], // #8FA3B8 — deriva de #778DA9
+    [202, 203, 199], // #CACBC7 — deriva de #E0E1DD
+  ];
+
+  /** Un color de borde por actividad, según su nivel de jerarquía (paleta BCS). */
+  private buildPdfNivelColorMap(): Map<number, [number, number, number]> {
+    const map = new Map<number, [number, number, number]>();
+    const nivel1Idx = new Map<number, number>();
+    let cursor = 0;
+
+    for (const act of this.actividades) {
+      const level = act.hierarchyLevel ?? 0;
+      if (level <= 0 && act.parentId == null) {
+        map.set(act.projectActivityId, this.PDF_NIVEL0_RGB);
+      } else if (level === 1) {
+        const idx = cursor % this.PDF_NIVEL1_RGB.length;
+        cursor++;
+        nivel1Idx.set(act.projectActivityId, idx);
+        map.set(act.projectActivityId, this.PDF_NIVEL1_RGB[idx]);
+      } else {
+        const idx = this.findPdfNivel1AncestorIdx(act, nivel1Idx);
+        map.set(act.projectActivityId, idx !== null ? this.PDF_NIVEL2_RGB[idx] : this.PDF_NIVEL0_RGB);
+      }
+    }
+    return map;
+  }
+
+  private findPdfNivel1AncestorIdx(act: ActividadDto, nivel1Idx: Map<number, number>): number | null {
+    let current: ActividadDto | undefined = act;
+    while (current && current.parentId !== null) {
+      const parent = this.actividades.find((a) => a.projectActivityId === current!.parentId);
+      if (!parent) return null;
+      if (nivel1Idx.has(parent.projectActivityId)) return nivel1Idx.get(parent.projectActivityId)!;
+      current = parent;
+    }
+    return null;
+  }
+
+  /** Regla de color por avance en el PDF: ≥75 verde, ≥50 azul, ≥25 naranja, <25 rojo. */
+  private getPdfAvanceRgb(pct: number): [number, number, number] {
+    if (pct >= 75) return [27, 107, 58];  // #1B6B3A
+    if (pct >= 50) return [46, 109, 180]; // #2E6DB4
+    if (pct >= 25) return [217, 119, 6];  // #D97706
+    return [192, 57, 43];                 // #C0392B
+  }
+
+  private getPdfSemaforoRgb(cls: string): [number, number, number] {
+    if (cls === 'semaforo-verde')    return [22, 163, 74];
+    if (cls === 'semaforo-amarillo') return [245, 158, 11];
+    if (cls === 'semaforo-rojo')     return [239, 68, 68];
+    return [148, 163, 184]; // #94A3B8 — sin datos (sin predecesora/línea base)
+  }
+
+  /** Card de KPI estilo dashboard: fondo blanco, sin sombra, borde superior de acento. */
+  private drawPdfKpiCard(
+    doc: jsPDF,
+    x: number, y: number, w: number, h: number,
+    accent: [number, number, number],
+    value: string,
+    label: string,
+  ): void {
+    const radius = 2;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240); // #E2E8F0
+    doc.setLineWidth(0.2);
+    doc.roundedRect(x, y, w, h, radius, radius, 'FD');
+
+    doc.setFillColor(...accent);
+    doc.rect(x + radius, y, w - radius * 2, 1.3, 'F');
+
+    doc.setTextColor(30, 58, 95); // #1E3A5F
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(value, x + w / 2, y + h / 2 + 2, { align: 'center' });
+
+    doc.setTextColor(100, 116, 139); // #64748B
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(label, x + w / 2, y + h - 3.5, { align: 'center' });
+  }
+
   exportarPdf(): void {
     const doc = new jsPDF('l', 'mm', 'a4');
     const pageW = doc.internal.pageSize.getWidth();
+    const marginX = 10;
     const today = new Date();
     const dd    = String(today.getDate()).padStart(2, '0');
     const mm    = String(today.getMonth() + 1).padStart(2, '0');
@@ -1828,11 +1967,47 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     const titulo = this.proyectoHeader?.projectDescription ?? 'Cronograma de Actividades';
-    doc.text(titulo, 10, 11);
+    doc.text(titulo, marginX, 11);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Exportado: ${fechaLabel}`, pageW - 10, 11, { align: 'right' });
+    doc.text(`Exportado: ${fechaLabel}`, pageW - marginX, 11, { align: 'right' });
 
+    // ── KPIs ─────────────────────────────────────────────────────────────────
+    const totalActividades = this.actividades.length;
+    const raices = this.actividades.filter((a) => a.parentId === null);
+    const avanceGeneral = raices.length
+      ? Math.round(raices.reduce((s, a) => s + this.getAvance(a), 0) / raices.length)
+      : 0;
+
+    let countVerde = 0, countAmarillo = 0, countRojo = 0;
+    for (const act of this.actividades) {
+      const cls = this.getSemaforoClass(act);
+      if (cls === 'semaforo-verde') countVerde++;
+      else if (cls === 'semaforo-amarillo') countAmarillo++;
+      else if (cls === 'semaforo-rojo') countRojo++;
+    }
+
+    const kpis: { value: string; label: string; accent: [number, number, number] }[] = [
+      { value: String(totalActividades), label: 'Total actividades',    accent: [30, 58, 95] },
+      { value: `${avanceGeneral}%`,       label: 'Avance general',       accent: this.getPdfAvanceRgb(avanceGeneral) },
+      { value: String(countVerde),        label: 'En tiempo (verde)',    accent: [22, 163, 74] },
+      { value: String(countAmarillo),     label: 'En riesgo (amarillo)', accent: [245, 158, 11] },
+      { value: String(countRojo),         label: 'Atrasadas (rojo)',     accent: [239, 68, 68] },
+    ];
+
+    const kpiY     = 23;
+    const kpiH     = 18;
+    const kpiGap   = 4;
+    const kpiAreaW = pageW - marginX * 2;
+    const kpiW     = (kpiAreaW - kpiGap * (kpis.length - 1)) / kpis.length;
+    kpis.forEach((kpi, i) => {
+      const x = marginX + i * (kpiW + kpiGap);
+      this.drawPdfKpiCard(doc, x, kpiY, kpiW, kpiH, kpi.accent, kpi.value, kpi.label);
+    });
+
+    const tableStartY = kpiY + kpiH + 6;
+
+    // ── Tabla ────────────────────────────────────────────────────────────────
     const colsBase = [
       { header: '#',            dataKey: 'num'     },
       { header: 'Actividad',    dataKey: 'act'     },
@@ -1867,17 +2042,19 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         row['lbFin']    = this.formatDate(act.baselineEndDate);
         row['dsfIni']   = this.formatDesfase(this.getDesfaseDias(act, 'start'));
         row['dsfFin']   = this.formatDesfase(this.getDesfaseDias(act, 'end'));
-        row['semaforo'] = this.getSemaforoTexto(act);
+        row['semaforo'] = '';
       }
       return row;
     });
 
+    const nivelColorMap = this.buildPdfNivelColorMap();
+
     autoTable(doc, {
-      startY: 22,
+      startY: tableStartY,
       columns,
       body: rows,
       theme: 'grid',
-      styles:             { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+      styles:             { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak', minCellHeight: 7 },
       headStyles:         { fillColor: [27, 38, 59], textColor: [224, 225, 221], fontStyle: 'bold', fontSize: 8 },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       columnStyles: {
@@ -1886,7 +2063,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         ini:      { cellWidth: 22,   halign: 'center' },
         fin:      { cellWidth: 22,   halign: 'center' },
         dur:      { cellWidth: 18,   halign: 'center' },
-        avance:   { cellWidth: 18,   halign: 'center' },
+        avance:   { cellWidth: 22,   halign: 'center' },
         estado:   { cellWidth: 22,   halign: 'center' },
         lbIni:    { cellWidth: 22,   halign: 'center' },
         lbFin:    { cellWidth: 22,   halign: 'center' },
@@ -1901,11 +2078,44 @@ export class CronogramaActividades implements OnInit, OnDestroy {
           if (v === 'VENCIDO')     { data.cell.styles.textColor = [127, 29, 29];  data.cell.styles.fontStyle = 'bold'; }
           if (v === 'EN PROGRESO') { data.cell.styles.textColor = [30, 58, 95]; }
         }
-        if (data.section === 'body' && data.column.dataKey === 'semaforo') {
-          const v = data.cell.raw as string;
-          if (v === 'Verde')    { data.cell.styles.textColor = [20, 83, 45];  data.cell.styles.fontStyle = 'bold'; }
-          if (v === 'Amarillo') { data.cell.styles.textColor = [120, 80, 0];  data.cell.styles.fontStyle = 'bold'; }
-          if (v === 'Rojo')     { data.cell.styles.textColor = [127, 29, 29]; data.cell.styles.fontStyle = 'bold'; }
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body') return;
+        const act = this.actividades[data.row.index];
+        if (!act) return;
+
+        // Jerarquía visual: borde izquierdo de 3-4px con la paleta BCS (solo primera columna)
+        if (data.column.index === 0) {
+          const color = nivelColorMap.get(act.projectActivityId) ?? this.PDF_NIVEL0_RGB;
+          doc.setFillColor(...color);
+          doc.rect(data.cell.x, data.cell.y, 1.1, data.cell.height, 'F');
+        }
+
+        // Barra de progreso visual en Avance%
+        if (data.column.dataKey === 'avance') {
+          const pct      = this.getAvance(act);
+          const sinDatos = !act.plannedStartDate && !act.plannedEndDate;
+          const barX = data.cell.x + 2;
+          const barW = data.cell.width - 4;
+          const barY = data.cell.y + data.cell.height - 3;
+          const barH = 1.6;
+
+          doc.setFillColor(226, 232, 240); // #E2E8F0 — riel
+          doc.roundedRect(barX, barY, barW, barH, 0.8, 0.8, 'F');
+
+          if (!sinDatos && pct > 0) {
+            const fillColor = this.getPdfAvanceRgb(pct);
+            const fillW = Math.max((barW * Math.min(pct, 100)) / 100, 1.6);
+            doc.setFillColor(...fillColor);
+            doc.roundedRect(barX, barY, fillW, barH, 0.8, 0.8, 'F');
+          }
+        }
+
+        // Semáforo como círculo de color (igual que en pantalla)
+        if (data.column.dataKey === 'semaforo') {
+          const rgb = this.getPdfSemaforoRgb(this.getSemaforoClass(act));
+          doc.setFillColor(...rgb);
+          doc.circle(data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, 1.4, 'F');
         }
       },
     });

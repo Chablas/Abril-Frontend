@@ -46,6 +46,8 @@ export interface CascadaCambioDto {
   inicioNuevo: string;
   finAnterior: string;
   finNuevo: string;
+  baselineStartDate: string | null;
+  baselineEndDate: string | null;
 }
 
 export interface CascadaResultDto {
@@ -110,4 +112,8 @@ export interface CrearActividadMasivoItem {
 
 export interface CrearActividadesMasivoResultDto {
   actividadesCreadas: number;
+}
+
+export interface UltimaPestanaDto {
+  tipoCronograma: string | null;
 }

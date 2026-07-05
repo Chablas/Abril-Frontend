@@ -369,9 +369,7 @@
                   </span>
                 </td>
                 <td class="td-sema">
-                  <span *ngIf="getSemaforoClass(act)"
-                        class="semaforo-dot"
-                        [ngClass]="getSemaforoClass(act)"></span>
+                  <span class="semaforo-dot" [ngClass]="getSemaforoClass(act)"></span>
                 </td>
               </ng-container>
               <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">
