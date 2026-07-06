@@ -4093,3 +4093,14 @@ Antes, cuando una actividad no tenía baseline o fin programado (ej. "Envio de o
 ### Pendiente para otra sesión
 
 - Decisión de producto sobre el botón "Cancelar" del modal de cascada (hoy no revierte nada, ver punto 2).
+
+## Sesión 2026-07-05 (parte 2)
+
+### Botón "Usar plantilla" en Cronograma de Actividades
+
+En la pestaña **Proyecto** (`tipoCronogramaActivo === 'PROYECTO'`), cuando la tabla está vacía (0 actividades), aparece un botón "Usar plantilla" junto a "Nueva Actividad" en el estado vacío.
+
+- **`cronograma-actividades.html`**: nuevo wrapper `.empty-actions` (flex row) dentro de `.table-empty-state` con el botón condicionado por pestaña.
+- **`cronograma-actividades.ts`**: `usarPlantilla()` — confirma con SweetAlert2 ("¿Cargar la plantilla estándar de Proyecto? Se crearán 61 actividades."), y si el usuario confirma, activa `loadingActividades`/`loaderService.show()` (reutiliza el skeleton existente, F8) y llama `service.aplicarPlantilla()`. Éxito → `recargar()` + toast con el conteo real de `actividadesCreadas`. Error → apaga loading y usa `errorService.handleError()` (F9).
+- **`services/cronograma-actividades.service.ts`**: `aplicarPlantilla(proyectoId, body)` → `POST .../{proyectoId}/aplicar-plantilla`.
+- **`dtos/cronograma-actividades.dtos.ts`**: `AplicarPlantillaRequest { tipoCronograma }` / `AplicarPlantillaResultDto { actividadesCreadas }`, verificados 1:1 contra los DTOs reales del backend (`Abril_Backend/.../CronogramaActividadesDtos.cs`) — el endpoint ya estaba implementado del lado del backend (lee `Seeds/plantilla_proyecto_seed.json`, 61 actividades).
