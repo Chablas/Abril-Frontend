@@ -25,11 +25,16 @@ import Swal from 'sweetalert2';
 export class WorkItem implements OnInit {
   @ViewChild(WorkItemList) list!: WorkItemList;
 
-  filters: WorkItemFilterDto = { description: null, hasValorizationForm: null, workItemCategoryId: null, page: 1 };
+  filters: WorkItemFilterDto = { description: null, hasValorizationForm: null, workItemCategoryId: null, active: null, page: 1 };
 
   readonly valorizationOptions = [
     { value: true, label: 'Con forma de valorización' },
     { value: false, label: 'Sin forma de valorización' },
+  ];
+
+  readonly estadoOptions = [
+    { value: true, label: 'Activo' },
+    { value: false, label: 'Inactivo' },
   ];
 
   /** Partidas de control para el desplegable de filtro. */

@@ -27,6 +27,8 @@ export class WorkItemService {
       params = params.set('hasValorizationForm', filters.hasValorizationForm.toString());
     if (filters.workItemCategoryId !== null && filters.workItemCategoryId !== undefined)
       params = params.set('workItemCategoryId', filters.workItemCategoryId.toString());
+    if (filters.active !== null && filters.active !== undefined)
+      params = params.set('active', filters.active.toString());
 
     return this.http.get<PagedResponseDTO<WorkItemDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,

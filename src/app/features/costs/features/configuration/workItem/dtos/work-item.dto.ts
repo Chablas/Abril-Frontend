@@ -5,6 +5,8 @@ export interface WorkItemDto {
   workItemCategoryDescription?: string | null;
   /** Especialidad a la que pertenece la partida de control. */
   workSpecialtyDescription?: string | null;
+  /** true/false: la partida de control tiene o no instructivo. null: sin partida de control. */
+  categoryHasInstructivo?: boolean | null;
   createdDateTime: string;
   createdUserId: number;
   updatedDateTime?: string;

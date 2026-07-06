@@ -6,5 +6,7 @@ export interface WorkItemCategoryFilterDto {
   hasClause?: boolean | null;
   /** Filtra por la especialidad a la que pertenece la partida de control. null: todas. */
   workSpecialtyId?: number | null;
+  /** true: solo activas · false: solo inactivas · null: todas. */
+  active?: boolean | null;
   page: number;
 }

@@ -23,6 +23,8 @@ export class WorkSpecialtyService {
   getPaged(filters: WorkSpecialtyFilterDto): Observable<PagedResponseDTO<WorkSpecialtyDto>> {
     let params = new HttpParams().set('page', filters.page.toString());
     if (filters.description) params = params.set('description', filters.description);
+    if (filters.active !== null && filters.active !== undefined)
+      params = params.set('active', filters.active.toString());
 
     return this.http.get<PagedResponseDTO<WorkSpecialtyDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,
