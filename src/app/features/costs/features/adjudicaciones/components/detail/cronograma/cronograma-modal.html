@@ -153,16 +153,20 @@
               </span>
 
               <!-- Fechas -->
-              <input type="date"
-                [(ngModel)]="row.node.item.fechaInicio"
-                (click)="$event.stopPropagation()"
-                class="w-[124px] flex-shrink-0 text-[0.7rem] text-gray-600 border border-gray-200 rounded px-1 py-0.5 outline-none
-                       focus:border-[#2596be] focus:shadow-[0_0_0_2px_rgba(37,150,190,0.15)]" />
-              <input type="date"
-                [(ngModel)]="row.node.item.fechaFin"
-                (click)="$event.stopPropagation()"
-                class="w-[124px] flex-shrink-0 text-[0.7rem] text-gray-600 border border-gray-200 rounded px-1 py-0.5 outline-none
-                       focus:border-[#2596be] focus:shadow-[0_0_0_2px_rgba(37,150,190,0.15)]" />
+              <div class="w-[124px] flex-shrink-0" (click)="$event.stopPropagation()">
+                <app-date-picker
+                  [showLabel]="false"
+                  color="#2596be"
+                  [value]="row.node.item.fechaInicio"
+                  (valueChange)="row.node.item.fechaInicio = $event" />
+              </div>
+              <div class="w-[124px] flex-shrink-0" (click)="$event.stopPropagation()">
+                <app-date-picker
+                  [showLabel]="false"
+                  color="#2596be"
+                  [value]="row.node.item.fechaFin"
+                  (valueChange)="row.node.item.fechaFin = $event" />
+              </div>
 
               <div class="flex items-center gap-0 flex-shrink-0">
                 <button type="button"

@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../../shared/components/base-modal/base-modal';
+import { DatePicker } from '../../../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
 import { CronogramaService } from '../../../services/cronograma.service';
@@ -54,7 +55,7 @@ interface TreeRow {
 @Component({
   selector: 'app-cronograma-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker],
   templateUrl: './cronograma-modal.html',
 })
 export class CronogramaModal implements OnInit, OnDestroy {

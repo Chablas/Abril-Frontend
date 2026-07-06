@@ -9,6 +9,7 @@ import { ProjectDto } from '../../dtos/project.dto';
 import { ProjectEditDto } from '../../dtos/project-edit.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 
 interface ProjectFormModel {
@@ -30,10 +31,10 @@ interface ProjectFormModel {
   responsableArqCom: string;
   responsableArqComId: number | null;
 
-  fechaInicio: string;
-  fechaFin: string;
-  inicioObra: string;
-  finObra: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  inicioObra: string | null;
+  finObra: string | null;
 
   numNiveles: string;
   numSotanos: string;
@@ -51,7 +52,7 @@ interface ProjectFormModel {
 @Component({
   selector: 'app-proyecto-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker],
   templateUrl: './proyecto-edit.html',
 })
 export class ProyectoEdit implements OnInit {

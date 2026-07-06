@@ -13,10 +13,11 @@ import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
 import { ProyectoEmails } from './emails/proyecto-emails';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 
 @Component({
   selector: 'app-proyectos-config',
-  imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails, AbrilPageHeaderComponent, SearchInput],
   templateUrl: './proyectos.html',
   styleUrl: './proyectos.css',
 })

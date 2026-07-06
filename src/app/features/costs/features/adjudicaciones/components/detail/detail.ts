@@ -14,6 +14,7 @@ import { MicrosoftAuthService } from '../../../../../auth/pages/login/services/m
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { Roles } from '../../../../../../core/constants/roles';
 import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { buildContractPartidaName } from '../../utils/contract-partida-name';
 import Swal from 'sweetalert2';
 
@@ -954,6 +955,48 @@ export class Detail implements OnInit {
   }
 
   private async sendNotification(): Promise<void> {
+    // Traer los destinatarios reales (Para + CC, sin copia oculta) para mostrarlos en la confirmación.
+    this.loaderService.show();
+    let to: string[] = [];
+    let cc: string[] = [];
+    try {
+      const recipients = await firstValueFrom(
+        this.adjudicacionesService.getNotificationRecipients(this.item.projectSubContractorId),
+      );
+      to = recipients.to ?? [];
+      cc = recipients.cc ?? [];
+    } catch (err) {
+      this.loaderService.hide();
+      this.errorService.handleError(err as HttpErrorResponse);
+      return;
+    }
+    this.loaderService.hide();
+
+    const listHtml = (emails: string[]) =>
+      emails.length
+        ? `<ul style="text-align:left; margin:4px 0 0; padding-left:18px; list-style:disc; color:#374151;">
+            ${emails.map(e => `<li style="margin:2px 0; word-break:break-all;">${e}</li>`).join('')}
+          </ul>`
+        : `<p style="color:#9ca3af; font-style:italic; margin:4px 0 0;">Sin correos registrados.</p>`;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar correos?',
+      html: `
+        <div style="text-align:left;">
+          <p style="color:#111827; font-weight:600; margin:0 0 2px;">Para:</p>
+          ${listHtml(to)}
+          <p style="color:#111827; font-weight:600; margin:12px 0 2px;">En copia (CC):</p>
+          ${listHtml(cc)}
+        </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+      draggable: true,
+    });
+    if (!confirm.isConfirmed) return;
+
     this.loaderService.show();
 
     let graphToken: string;
