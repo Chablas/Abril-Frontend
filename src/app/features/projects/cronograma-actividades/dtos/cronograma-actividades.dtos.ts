@@ -117,3 +117,11 @@ export interface CrearActividadesMasivoResultDto {
 export interface UltimaPestanaDto {
   tipoCronograma: string | null;
 }
+
+export interface AplicarPlantillaRequest {
+  tipoCronograma: string;
+}
+
+export interface AplicarPlantillaResultDto {
+  actividadesCreadas: number;
+}

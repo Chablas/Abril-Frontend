@@ -15,6 +15,8 @@ import {
   CrearActividadMasivoItem,
   CrearActividadesMasivoResultDto,
   UltimaPestanaDto,
+  AplicarPlantillaRequest,
+  AplicarPlantillaResultDto,
 } from '../dtos/cronograma-actividades.dtos';
 
 function buildAuthHeaders(): Record<string, string> {
@@ -157,6 +159,14 @@ export class CronogramaActividadesService {
     return this.http.patch<void>(
       `${this.base}/${proyectoId}/ultima-pestana`,
       { tipoCronograma },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  aplicarPlantilla(proyectoId: number, body: AplicarPlantillaRequest): Observable<AplicarPlantillaResultDto> {
+    return this.http.post<AplicarPlantillaResultDto>(
+      `${this.base}/${proyectoId}/aplicar-plantilla`,
+      body,
       { headers: buildAuthHeaders() },
     );
   }

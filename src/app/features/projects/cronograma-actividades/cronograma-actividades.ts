@@ -22,6 +22,7 @@ import {
   CrearActividadMasivoItem,
   CrearActividadesMasivoResultDto,
   UltimaPestanaDto,
+  AplicarPlantillaResultDto,
 } from './dtos/cronograma-actividades.dtos';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -929,6 +930,45 @@ export class CronogramaActividades implements OnInit, OnDestroy {
           this.errorService.handleError(err);
         },
       });
+  }
+
+  // ── Plantilla estándar ─────────────────────────────────────────────────────
+
+  usarPlantilla(): void {
+    if (!this.selectedProyectoId || !this.tipoCronogramaActivo) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cargar la plantilla estándar de Proyecto?',
+      text: 'Se crearán 61 actividades.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cargar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#2596be',
+      cancelButtonColor: '#9ca3af',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      this.loadingActividades = true;
+      this.loaderService.show();
+      this.service
+        .aplicarPlantilla(this.selectedProyectoId!, { tipoCronograma: this.tipoCronogramaActivo! })
+        .subscribe({
+          next: (res: AplicarPlantillaResultDto) => {
+            this.recargar();
+            const n = res.actividadesCreadas;
+            Swal.fire({
+              icon: 'success',
+              title: `${n} actividad${n !== 1 ? 'es' : ''} creada${n !== 1 ? 's' : ''}`,
+              confirmButtonColor: '#1E3A5F',
+            });
+          },
+          error: (err: HttpErrorResponse) => {
+            this.loadingActividades = false;
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+    });
   }
 
   abrirModalEditar(act: ActividadDto): void {

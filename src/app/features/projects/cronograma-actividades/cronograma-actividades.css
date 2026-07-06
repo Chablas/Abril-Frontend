@@ -139,6 +139,8 @@
 
 .empty-icon { opacity: 0.45; line-height: 0; }
 
+.empty-actions { display: flex; gap: 0.6rem; }
+
 .empty-title {
   font-size: 0.95rem;
   font-weight: 600;
