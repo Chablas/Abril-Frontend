@@ -163,7 +163,7 @@
 .criterios-scroll { flex:1; display:grid; grid-template-columns:1fr 1fr; align-content:stretch; gap:0; overflow-y:auto; }
 .cs-sublabel { grid-column:1/-1; padding:5px 12px; font-size:11px; color:#475569; border-bottom:1px solid #e2e8f0; position:sticky; top:0; background:#fff; z-index:1; }
 .criterios-grid { display:contents; }
-.criterio-row { flex:1; min-height:0; display:flex; flex-direction:column; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #e2e8f0; border-right:0.5px solid #e2e8f0; }
+.criterio-row { min-height:0; display:flex; flex-direction:column; justify-content:space-between; padding:8px 12px; border-bottom:1px solid #e2e8f0; border-right:0.5px solid #e2e8f0; }
 .criterio-row:nth-child(even) { border-right:none; }
 .cr-text { font-size:clamp(11px,1.1vw,13px); font-weight:500; color:#1e293b; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .cr-puntajes { display:flex; gap:3px; margin-top:5px; }

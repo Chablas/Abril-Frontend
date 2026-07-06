@@ -1,6 +1,6 @@
 export interface MilestoneScheduleGetDTO {
     milestoneScheduleId: number;
-    milestoneId: number;
+    milestoneId: number | null;
     milestoneDescription: string;
     milestoneScheduleHistoryId: number;
     order: number;
@@ -11,4 +11,5 @@ export interface MilestoneScheduleGetDTO {
     updatedDateTime?: string;
     updatedUserId?: number;
     active: boolean;
+    esHitoCritico: boolean;
 }

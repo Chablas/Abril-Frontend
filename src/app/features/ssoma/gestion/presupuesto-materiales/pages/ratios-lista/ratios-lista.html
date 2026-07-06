@@ -1,0 +1,110 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Ratios por Familia"
+    subtitulo="Compara el ratio y precio unitario de cada familia entre proyectos históricos"
+    [tabs]="[
+      { label: 'Cargas S10',             icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
+      { label: 'Drivers',                icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' },
+      { label: 'Ratios',                 icono: 'ti-chart-bar',        route: '/ssoma/gestion/presupuesto-materiales/ratios' }
+    ]"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div class="filtro-row">
+      <input
+        type="text"
+        class="filtro-input"
+        placeholder="Buscar familia o tipo de material..."
+        [value]="filtro"
+        (input)="onFiltroChange($any($event.target).value)"
+      />
+      <select class="filtro-select" [value]="tipoSeleccionado" (change)="onTipoChange($any($event.target).value)">
+        <option value="">Todos los tipos</option>
+        <option *ngFor="let t of tiposDisponibles" [value]="t">{{ t }}</option>
+      </select>
+      <select class="filtro-select" [value]="variableBaseSeleccionada" (change)="onVariableBaseChange($any($event.target).value)">
+        <option value="">Se calcula por: todos</option>
+        <option *ngFor="let vb of variableBasesDisponibles" [value]="vb">{{ driverLabel(vb) }}</option>
+      </select>
+    </div>
+
+    <div *ngIf="loading" class="loading-msg">Cargando familias...</div>
+
+    <div *ngIf="!loading" class="familias-lista">
+      <div *ngFor="let f of familiasFiltradas" class="familia-panel">
+        <div class="familia-panel__header">
+          <span class="familia-panel__nombre">{{ f.nombreFamilia }}</span>
+          <span class="familia-panel__tipo">{{ f.tipoMaterial }}</span>
+          <span class="familia-panel__driver">Se calcula por: {{ driverLabel(f.variableBase) }}</span>
+
+          <ng-container *ngIf="detalles.get(f.familiaId) as d">
+            <span class="resumen-inline">
+              <strong>Mediana:</strong> {{ d.medianaRatio * escalaRatio(f.variableBase) | number:'1.2-4' }}
+              &nbsp;·&nbsp;
+              <strong>Precio prom.:</strong> S/ {{ d.promedioPrecioUnitario | number:'1.2-2' }}
+            </span>
+          </ng-container>
+
+          <span
+            class="badge"
+            [ngClass]="confianzaClass(f.nProyectos)"
+            title="Confianza según cantidad de proyectos que respaldan esta mediana: Baja (menos de 3), Media (3 a 5), Alta (6 o más)."
+          >
+            Confianza: {{ confianzaLabel(f.nProyectos) }} ({{ f.nProyectos }})
+          </span>
+
+          <span *ngIf="f.nOutliers > 0" class="badge badge-warn">{{ f.nOutliers }} outlier(s)</span>
+        </div>
+
+        <div class="familia-panel__body">
+          <div *ngIf="cargandoDetalleIds.has(f.familiaId)" class="loading-msg-small">Cargando proyectos...</div>
+
+          <ng-container *ngIf="detalles.get(f.familiaId) as d">
+            <div class="tabla-cols">
+              <div class="tabla-cols__header">
+                <div>Proyecto</div>
+                <div>Ratio<span *ngIf="escalaRatio(d.variableBase) === 1000" class="unidad-nota"> (x1000 HH)</span></div>
+                <div>Precio</div>
+              </div>
+              <div
+                *ngFor="let p of d.proyectos"
+                class="tabla-cols__row"
+                [class.tabla-cols__row--outlier]="p.esOutlier"
+              >
+                <div class="tabla-cols__proyecto">
+                  {{ p.projectDescription }}
+                  <span *ngIf="p.esOutlier" class="badge badge-warn badge-xs" title="Outlier: fuera de rango normal (IQR) comparado con otros proyectos">outlier</span>
+                </div>
+                <div class="tabla-cols__dato" [class.tabla-cols__dato--excluido]="!p.incluidoManualRatio">
+                  <input
+                    type="checkbox"
+                    [checked]="p.incluidoManualRatio"
+                    [disabled]="actualizandoProjectId === p.projectId"
+                    (change)="toggleIncluidoRatio(f.familiaId, p)"
+                  />
+                  <strong>{{ p.ratioCantidad * escalaRatio(d.variableBase) | number:'1.2-4' }}</strong>
+                </div>
+                <div class="tabla-cols__dato" [class.tabla-cols__dato--excluido]="!p.incluidoManualPrecio">
+                  <input
+                    type="checkbox"
+                    [checked]="p.incluidoManualPrecio"
+                    [disabled]="actualizandoProjectId === p.projectId"
+                    (change)="toggleIncluidoPrecio(f.familiaId, p)"
+                  />
+                  <strong>S/ {{ p.precioUnitario | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <div *ngIf="familiasFiltradas.length === 0" class="empty-cell">
+        No hay familias que coincidan con la búsqueda.
+      </div>
+    </div>
+  </div>
+</div>

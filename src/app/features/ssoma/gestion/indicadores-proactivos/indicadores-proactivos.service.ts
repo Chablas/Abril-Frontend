@@ -9,6 +9,8 @@ import {
   IndicadorProactivoProyectoDto,
   IndicadorReactivoProyectoDto,
   PuntajeMesDto,
+  MetaAnualDto,
+  GuardarMetaAnualRequest,
 } from './indicadores-proactivos.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -86,6 +88,18 @@ export class IndicadoresProactivosService {
     return this.http.get<IndicadorReactivoProyectoDto[]>(`${this.base}/reactivos`, {
       headers: this.authHeaders(),
       params,
+    });
+  }
+
+  getMetaAnual(anio: number): Observable<MetaAnualDto> {
+    return this.http.get<MetaAnualDto>(`${this.base}/meta-anual/${anio}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  guardarMetaAnual(request: GuardarMetaAnualRequest): Observable<MetaAnualDto> {
+    return this.http.put<MetaAnualDto>(`${this.base}/meta-anual`, request, {
+      headers: this.authHeaders(),
     });
   }
 }

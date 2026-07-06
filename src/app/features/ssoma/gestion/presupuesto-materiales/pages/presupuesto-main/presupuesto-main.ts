@@ -11,6 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
 import {
   ConsumoCargaResumenDto,
   ImportConsumoResultDto,
@@ -42,6 +43,7 @@ export class PresupuestoMainComponent implements OnInit {
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
   tab: Tab = 'cargas';
   proyectos: ProyectoSimple[] = [];
@@ -65,12 +67,14 @@ export class PresupuestoMainComponent implements OnInit {
     return [
       { label: 'Cargas S10', icono: 'ti-file-spreadsheet', active: this.tab === 'cargas' },
       { label: 'Revisión de Materiales', icono: 'ti-clipboard-check', active: this.tab === 'revision' },
+      { label: 'Drivers', icono: 'ti-settings', route: '/ssoma/gestion/presupuesto-materiales/drivers' },
+      { label: 'Ratios', icono: 'ti-chart-bar', route: '/ssoma/gestion/presupuesto-materiales/ratios' },
     ];
   }
 
   onTabClick(t: AbrilPageTab): void {
     if (t.label === 'Cargas S10') this.setTab('cargas');
-    else this.setTab('revision');
+    else if (t.label === 'Revisión de Materiales') this.setTab('revision');
   }
 
   setTab(t: Tab): void {
@@ -86,19 +90,16 @@ export class PresupuestoMainComponent implements OnInit {
   }
 
   private loadProyectos(): void {
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
-    fetch(`${(window as any).__env?.apiUrl ?? ''}api/v1/configuracion/proyectos?page=1&pageSize=200`, {
-      headers: { Authorization: `Bearer ${token ?? ''}` },
-    })
-      .then((r) => r.json())
-      .then((res: any) => {
-        this.proyectos = (res.data ?? res ?? []).map((p: any) => ({
+    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
+      next: (res) => {
+        this.proyectos = res.map((p) => ({
           projectId: p.projectId,
           projectDescription: p.projectDescription,
         }));
         this.cdr.markForCheck();
-      })
-      .catch(() => {});
+      },
+      error: () => {},
+    });
   }
 
   onProyectoChange(): void {

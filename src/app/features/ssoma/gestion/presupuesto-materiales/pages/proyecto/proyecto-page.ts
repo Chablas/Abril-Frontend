@@ -92,6 +92,10 @@ export class ProyectoPage implements OnInit {
     this.router.navigate(['/ssoma/gestion/presupuesto-materiales/drivers']);
   }
 
+  irAPersonalHitos(): void {
+    this.router.navigate(['/ssoma/gestion/presupuesto-materiales/proyecto', this.projectId, 'personal-hitos']);
+  }
+
   estadoClass(estado: string): string {
     return estado === 'APROBADO' ? 'badge-ok' : 'badge-warn';
   }

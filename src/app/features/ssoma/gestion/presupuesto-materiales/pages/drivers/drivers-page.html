@@ -4,8 +4,9 @@
     titulo="Drivers por Proyecto"
     subtitulo="HH, Área Techada y Trabajadores usados para calcular ratios"
     [tabs]="[
-      { label: 'Importación S10', icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
-      { label: 'Drivers',         icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' }
+      { label: 'Cargas S10',               icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
+      { label: 'Drivers',                  icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' },
+      { label: 'Ratios',                   icono: 'ti-chart-bar',        route: '/ssoma/gestion/presupuesto-materiales/ratios' }
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
@@ -38,8 +39,8 @@
                 </button>
               </td>
               <td>
-                <span class="badge" [class.badge-ok]="d.estado === 'Finalizado'" [class.badge-warn]="d.estado !== 'Finalizado'">
-                  {{ d.estado }}
+                <span class="badge" [class.badge-ok]="d.habilitadoSsoma" [class.badge-neutral]="!d.habilitadoSsoma">
+                  {{ d.habilitadoSsoma ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
               <td class="num-col">{{ d.hhTotalCasa | number:'1.0-0' }}</td>
@@ -56,7 +57,7 @@
 
             <!-- Fila de edición inline -->
             <tr *ngIf="editandoId === d.projectId" class="edit-row">
-              <td colspan="8" class="edit-cell">
+              <td colspan="9" class="edit-cell">
                 <div class="edit-form">
                   <strong>{{ d.projectDescription }}</strong>
 

@@ -1,0 +1,66 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Dotación de personal por hito"
+    subtitulo="Prevencionista, Monitor y Vigía asignados manualmente a cada corte de etapa crítico del cronograma real."
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div *ngIf="loading" class="loading-msg">Cargando hitos críticos del proyecto...</div>
+
+    <div *ngIf="!loading && hitosCriticos.length === 0" class="empty-state">
+      <i class="ti ti-flag-off" style="font-size: 2.5rem; color: #d1d5db;"></i>
+      <p>Este proyecto todavía no tiene hitos marcados como "críticos" en su cronograma.</p>
+      <p class="text-xs text-gray-400">
+        Marca al menos un hito como crítico en /projects/milestone-schedule para poder planificar personal por fase.
+      </p>
+    </div>
+
+    <ng-container *ngIf="!loading && hitosCriticos.length > 0">
+      <div class="nota-metodologia">
+        <i class="ti ti-info-circle"></i>
+        Esta es una decisión <b>manual tuya</b>: el sistema solo suma el total. Ingresa cuántas personas de cada
+        rol se necesitan a partir de cada hito y por cuántas semanas — hasta el siguiente corte de etapa.
+      </div>
+
+      <div class="hito-card" *ngFor="let grupo of hitosAgrupados">
+        <div class="hito-card-header">
+          <span class="hito-nombre">{{ grupo.hitoDescripcion }}</span>
+          <span class="hito-fecha" *ngIf="grupo.hitoFecha">{{ grupo.hitoFecha | date:'dd/MM/yyyy' }}</span>
+          <span class="hito-fecha sin-fecha" *ngIf="!grupo.hitoFecha">Sin fecha</span>
+        </div>
+        <table class="tabla-roles">
+          <thead>
+            <tr>
+              <th>Rol</th>
+              <th>Cantidad</th>
+              <th>Semanas</th>
+              <th>Costo mensual (S/)</th>
+              <th>Total (S/)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fila of grupo.filas">
+              <td class="rol-label">{{ fila.rol }}</td>
+              <td><input type="number" min="0" [(ngModel)]="fila.cantidad" (change)="recalcularTotal(fila)" /></td>
+              <td><input type="number" min="0" step="0.5" [(ngModel)]="fila.semanas" (change)="recalcularTotal(fila)" /></td>
+              <td><input type="number" min="0" step="50" [(ngModel)]="fila.costoMensual" (change)="recalcularTotal(fila)" /></td>
+              <td class="total-cell">{{ fila.total | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer-total">
+        <span>Total general</span>
+        <span class="total-general">S/ {{ totalGeneral | number:'1.2-2' }}</span>
+        <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardando ? 'Guardando...' : 'Guardar dotación' }}
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>

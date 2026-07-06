@@ -202,29 +202,39 @@
         <span class="stat-pct">{{ pctConFecha }}%</span>
     </div>
 
-    <!-- KPI cards -->
-    <div *ngIf="!noMilestones" class="kpi-cards">
-        <div class="kpi-card" style="border-top: 3px solid var(--color-abril-primary)">
-            <span class="kpi-label">Total</span>
-            <span class="kpi-value" style="color:var(--color-abril-primary)">{{ kpis.total }}</span>
-            <span class="kpi-sub">hitos</span>
+    <!-- KPI cards + zoom del Gantt -->
+    <div *ngIf="!noMilestones" class="flex items-center justify-between gap-[10px] flex-wrap">
+        <div class="kpi-cards">
+            <div class="kpi-card" style="border-top: 3px solid var(--color-abril-primary)">
+                <span class="kpi-label">Total</span>
+                <span class="kpi-value" style="color:var(--color-abril-primary)">{{ kpis.total }}</span>
+                <span class="kpi-sub">hitos</span>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #16a34a">
+                <span class="kpi-label">Culminados</span>
+                <span class="kpi-value" style="color: #16a34a">{{ kpis.culminados }}</span>
+                <span class="kpi-sub">hitos completados</span>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #2563eb">
+                <span class="kpi-label">En proceso</span>
+                <span class="kpi-value" style="color: #2563eb">{{ kpis.enProceso }}</span>
+                <span class="kpi-sub">en curso</span>
+            </div>
         </div>
-        <div class="kpi-card" style="border-top: 3px solid #16a34a">
-            <span class="kpi-label">Culminados</span>
-            <span class="kpi-value" style="color: #16a34a">{{ kpis.culminados }}</span>
-            <span class="kpi-sub">hitos completados</span>
-        </div>
-        <div class="kpi-card" style="border-top: 3px solid #2563eb">
-            <span class="kpi-label">En proceso</span>
-            <span class="kpi-value" style="color: #2563eb">{{ kpis.enProceso }}</span>
-            <span class="kpi-sub">en curso</span>
+        <div class="flex items-center gap-[4px] bg-white rounded-lg border p-[4px]" style="border-color:var(--color-abril-border)">
+            <button type="button" class="filtro-btn" [ngClass]="{'filtro-active-todos': escalaGantt === 'dia'}"
+                (click)="cambiarEscala('dia')">Día</button>
+            <button type="button" class="filtro-btn" [ngClass]="{'filtro-active-todos': escalaGantt === 'semana'}"
+                (click)="cambiarEscala('semana')">Semana</button>
+            <button type="button" class="filtro-btn" [ngClass]="{'filtro-active-todos': escalaGantt === 'mes'}"
+                (click)="cambiarEscala('mes')">Mes</button>
         </div>
     </div>
 
     <!-- Plantilla de hitos — tabla compacta -->
     <div *ngIf="noMilestones && undatedTasks.length > 0" class="bg-white rounded-lg overflow-hidden border" style="border-color:var(--color-abril-border)">
 
-        <!-- Toolbar: búsqueda + filtros -->
+        <!-- Toolbar: búsqueda + filtros + agregar hito personalizado -->
         <div class="plantilla-toolbar">
             <input type="text" [(ngModel)]="busqueda" placeholder="Buscar hito..."
                 class="plantilla-search" />
@@ -237,6 +247,14 @@
                     (click)="filtroActivo = 'con-fecha'">Con fecha</button>
             </div>
         </div>
+        <div class="plantilla-toolbar" style="border-top: 1px solid var(--color-abril-border)">
+            <input type="text" [(ngModel)]="nuevoHitoPersonalizadoTexto"
+                placeholder="Ej. Instalación de torre grúa 3era..." class="plantilla-search"
+                (keydown.enter)="agregarHitoPersonalizado()" />
+            <button type="button" class="filtro-btn" style="color:var(--color-abril-primary)"
+                [disabled]="!nuevoHitoPersonalizadoTexto.trim()"
+                (click)="agregarHitoPersonalizado()">+ Agregar hito personalizado</button>
+        </div>
 
         <!-- Tabla de hitos -->
         <table class="hitos-tabla">
@@ -244,29 +262,45 @@
                 <tr>
                     <th>#</th>
                     <th>Hito</th>
+                    <th title="Corta una etapa constructiva real: SSOMA usa estos hitos para segmentar consumo/dotación por fase">Crítico ⭐</th>
+                    <th title="Evento de 2+ días independiente (ej. montaje de grúa), no depende de otros hitos">Rango</th>
                     <th>Inicio</th>
                     <th>Fin</th>
                     <th>Estado</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let hito of hitosFiltrados; let i = index">
                     <td class="td-num">{{ i + 1 }}</td>
                     <td class="td-nombre">{{ hito.text }}</td>
-                    <td class="td-fecha">
-                        <input type="date" [(ngModel)]="hito.startDate" (change)="onFechaChange(hito)" />
+                    <td class="td-badge">
+                        <input type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" />
+                    </td>
+                    <td class="td-badge">
+                        <input type="checkbox" [checked]="hito.esRango" (change)="toggleRango(hito)" [disabled]="hito.esCritico" />
                     </td>
                     <td class="td-fecha">
-                        <input type="date" [(ngModel)]="hito.endDate" (change)="onFechaChange(hito)" />
+                        <input type="date" [(ngModel)]="hito.startDate" (change)="onFechaChange(hito)"
+                            [title]="hito.esCritico ? 'Fecha real de este corte de etapa (ej. Fin de casco, Entrega final).' : ''" />
+                    </td>
+                    <td class="td-fecha">
+                        <input *ngIf="hito.esRango" type="date"
+                            [(ngModel)]="hito.endDate" (change)="onFechaChange(hito)" />
+                        <span *ngIf="!hito.esRango" class="text-gray-300">—</span>
                     </td>
                     <td class="td-badge">
                         <span class="badge" [ngClass]="tieneFecha(hito) ? 'badge-con-fecha' : 'badge-sin-fecha'">
                             {{ tieneFecha(hito) ? 'Con fecha' : 'Sin fecha' }}
                         </span>
                     </td>
+                    <td class="td-badge">
+                        <button type="button" class="text-gray-400 hover:text-red-500 cursor-pointer" title="Quitar hito"
+                            (click)="eliminarHitoPlantilla(hito)">✕</button>
+                    </td>
                 </tr>
                 <tr *ngIf="hitosFiltrados.length === 0">
-                    <td colspan="5" class="td-empty">Sin hitos para los filtros seleccionados.</td>
+                    <td colspan="8" class="td-empty">Sin hitos para los filtros seleccionados.</td>
                 </tr>
             </tbody>
         </table>
@@ -372,6 +406,19 @@
                 Eliminar
             </button>
         </div>
+        <div *ngIf="selectedTask?.milestoneScheduleId != null" class="flex gap-[10px] justify-center mt-2">
+            <button
+                (click)="toggleCriticoGuardado(selectedTask.id)"
+                [class]="selectedTask['esHitoCritico']
+                    ? 'px-5 py-2 rounded-lg border border-[#d97706] text-[#d97706] cursor-pointer hover:bg-[#fef3c7]'
+                    : 'px-5 py-2 rounded-lg bg-[#d97706] text-white cursor-pointer hover:bg-[#b45309]'">
+                {{ selectedTask['esHitoCritico'] ? 'Quitar hito crítico ⭐' : 'Marcar como hito crítico ⭐' }}
+            </button>
+        </div>
+        <p *ngIf="selectedTask?.milestoneScheduleId != null" class="text-xs text-center text-gray-500">
+            Los hitos críticos son los que cortan una etapa constructiva real: SSOMA los usa para
+            segmentar el consumo de materiales y la dotación de personal por fase.
+        </p>
         <button class="absolute top-3 right-3 cursor-pointer" (click)="showDetailModal = false">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
                 <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />

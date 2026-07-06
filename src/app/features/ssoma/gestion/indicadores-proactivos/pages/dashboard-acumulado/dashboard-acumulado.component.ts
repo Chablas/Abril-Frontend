@@ -8,6 +8,7 @@ import {
   PuntajeMesDto,
   IndicadorProactivoProyectoDto,
   IndicadorReactivoProyectoDto,
+  MetaAnualDto,
 } from '../../indicadores-proactivos.dtos';
 import { forkJoin } from 'rxjs';
 
@@ -28,6 +29,39 @@ export class DashboardAcumuladoComponent implements OnInit {
   puntajes = signal<PuntajeMesDto[]>([]);
   seguimiento = signal<IndicadorProactivoProyectoDto[]>([]);
   reactivos = signal<IndicadorReactivoProyectoDto[]>([]);
+  metaAnual = signal<MetaAnualDto | null>(null);
+
+  // ── Edición de meta anual ────────────────────────────────────────────────
+  editandoMeta = false;
+  metaForm = { metaIndiceFrecuencia: null as number | null, metaIndiceGravedad: null as number | null, metaIndiceAccidentabilidad: null as number | null };
+
+  abrirEditarMeta(): void {
+    const m = this.metaAnual();
+    this.metaForm = {
+      metaIndiceFrecuencia: m?.metaIndiceFrecuencia ?? null,
+      metaIndiceGravedad: m?.metaIndiceGravedad ?? null,
+      metaIndiceAccidentabilidad: m?.metaIndiceAccidentabilidad ?? null,
+    };
+    this.editandoMeta = true;
+  }
+
+  guardarMeta(): void {
+    this.svc.guardarMetaAnual({ anio: this.anio(), ...this.metaForm }).subscribe({
+      next: (meta) => { this.metaAnual.set(meta); this.editandoMeta = false; },
+      error: (err) => this.errorSvc.handleError(err),
+    });
+  }
+
+  cumpleMeta(actual: number, meta: number | null | undefined): boolean | null {
+    if (meta == null) return null;
+    return actual <= meta;
+  }
+
+  metaClass(actual: number, meta: number | null | undefined): string {
+    const cumple = this.cumpleMeta(actual, meta);
+    if (cumple === null) return 'meta-chip--sin-meta';
+    return cumple ? 'meta-chip--ok' : 'meta-chip--alert';
+  }
 
   meses = [
     { valor: 1, nombre: 'Enero' },   { valor: 2, nombre: 'Febrero' },
@@ -54,22 +88,42 @@ export class DashboardAcumuladoComponent implements OnInit {
           ranking: i + 1,
           pctProactivoGeneral: s?.pctProactivoGeneral ?? 0,
           nombreCorto: this.nombreCorto(p.proyectoNombre),
+
+          // Mes consultado
           if: +(r?.indiceFrecuencia ?? 0),
           ig: +(r?.indiceGravedad ?? 0),
           ia: +(r?.indiceAccidentabilidad ?? 0),
           hht: r?.horasHombreTrabajadas ?? 0,
           accidentes: r?.totalAccidentes ?? 0,
           diasPerdidos: r?.totalDiasPerdidos ?? 0,
+
+          // Año consultado
+          ifAnio: +(r?.indiceFrecuenciaAnio ?? 0),
+          igAnio: +(r?.indiceGravedadAnio ?? 0),
+          iaAnio: +(r?.indiceAccidentabilidadAnio ?? 0),
+          hhtAnio: r?.horasHombreTrabajadasAnio ?? 0,
+          accidentesAnio: r?.totalAccidentesAnio ?? 0,
+          diasPerdidosAnio: r?.totalDiasPerdidosAnio ?? 0,
+
+          // Histórico total del proyecto
+          ifTotal: +(r?.indiceFrecuenciaTotal ?? 0),
+          igTotal: +(r?.indiceGravedadTotal ?? 0),
+          iaTotal: +(r?.indiceAccidentabilidadTotal ?? 0),
+          hhtTotal: r?.horasHombreTrabajadasTotal ?? 0,
+          accidentesTotal: r?.totalAccidentesTotal ?? 0,
+          diasPerdidosTotal: r?.totalDiasPerdidosTotal ?? 0,
         };
       });
   });
 
+  // Base ANUAL (no mensual): con HHT de un solo mes, un único accidente dispara
+  // el índice de forma irreal — el año da un denominador representativo.
   reactivosTotales = computed(() => {
     const rx = this.reactivos();
     if (!rx.length) return null;
-    const totalHHT = rx.reduce((s, r) => s + r.horasHombreTrabajadas, 0);
-    const totalAcc = rx.reduce((s, r) => s + r.totalAccidentes, 0);
-    const totalDias = rx.reduce((s, r) => s + r.totalDiasPerdidos, 0);
+    const totalHHT = rx.reduce((s, r) => s + r.horasHombreTrabajadasAnio, 0);
+    const totalAcc = rx.reduce((s, r) => s + r.totalAccidentesAnio, 0);
+    const totalDias = rx.reduce((s, r) => s + r.totalDiasPerdidosAnio, 0);
     const IF = totalHHT > 0 ? +((totalAcc * 1_000_000) / totalHHT).toFixed(1) : 0;
     const IG = totalHHT > 0 ? +((totalDias * 1_000_000) / totalHHT).toFixed(1) : 0;
     const IA = +(IF * IG / 1000).toFixed(2);
@@ -96,11 +150,13 @@ export class DashboardAcumuladoComponent implements OnInit {
       puntajes: this.svc.getPuntajeTodos(this.mes(), this.anio()),
       seguimiento: this.svc.getSeguimiento(this.mes(), this.anio()),
       reactivos: this.svc.getReactivosTodos(this.mes(), this.anio()),
+      metaAnual: this.svc.getMetaAnual(this.anio()),
     }).subscribe({
-      next: ({ puntajes, seguimiento, reactivos }) => {
+      next: ({ puntajes, seguimiento, reactivos, metaAnual }) => {
         this.puntajes.set(puntajes);
         this.seguimiento.set(seguimiento);
         this.reactivos.set(reactivos);
+        this.metaAnual.set(metaAnual);
         this.loader.hide();
       },
       error: err => { this.loader.hide(); this.errorSvc.handleError(err); },

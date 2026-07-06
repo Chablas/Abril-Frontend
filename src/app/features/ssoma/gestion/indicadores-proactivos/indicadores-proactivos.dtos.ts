@@ -113,12 +113,46 @@ export interface IndicadorReactivoProyectoDto {
   proyectoNombre: string;
   mes: number;
   anio: number;
+
+  // Mes consultado
   horasHombreTrabajadas: number;
   totalAccidentes: number;
   totalDiasPerdidos: number;
   indiceFrecuencia: number;
   indiceGravedad: number;
   indiceAccidentabilidad: number;
+
+  // Año consultado (enero-diciembre)
+  horasHombreTrabajadasAnio: number;
+  totalAccidentesAnio: number;
+  totalDiasPerdidosAnio: number;
+  indiceFrecuenciaAnio: number;
+  indiceGravedadAnio: number;
+  indiceAccidentabilidadAnio: number;
+
+  // Histórico completo del proyecto
+  horasHombreTrabajadasTotal: number;
+  totalAccidentesTotal: number;
+  totalDiasPerdidosTotal: number;
+  indiceFrecuenciaTotal: number;
+  indiceGravedadTotal: number;
+  indiceAccidentabilidadTotal: number;
+}
+
+// ─── Meta Anual de Reactivos ────────────────────────────────────────────────
+
+export interface MetaAnualDto {
+  anio: number;
+  metaIndiceFrecuencia: number | null;
+  metaIndiceGravedad: number | null;
+  metaIndiceAccidentabilidad: number | null;
+}
+
+export interface GuardarMetaAnualRequest {
+  anio: number;
+  metaIndiceFrecuencia: number | null;
+  metaIndiceGravedad: number | null;
+  metaIndiceAccidentabilidad: number | null;
 }
 
 // ─── Puntaje del Mes ────────────────────────────────────────────────────────

@@ -1,6 +1,8 @@
 export interface MilestoneScheduleCreateDTO {
-    milestoneId: number;
+    milestoneId: number | null;
+    customDescription?: string | null;
     plannedStartDate: string;
     plannedEndDate: string | null | undefined;
     order: number;
+    esHitoCritico: boolean;
 }

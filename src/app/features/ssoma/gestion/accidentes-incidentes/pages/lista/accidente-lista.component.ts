@@ -193,4 +193,14 @@ export class AccidenteListaComponent implements OnInit {
     if (estado === 'Borrador') return 'estado-borrador';
     return 'estado-abierto';
   }
+
+  altaMedicaLabel(cerrado: boolean | null): string {
+    if (cerrado === null) return '—';
+    return cerrado ? 'Cerrado' : 'Abierto';
+  }
+
+  altaMedicaClass(cerrado: boolean | null): string {
+    if (cerrado === null) return 'estado-borrador';
+    return cerrado ? 'estado-enviado' : 'estado-abierto';
+  }
 }

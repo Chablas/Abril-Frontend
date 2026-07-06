@@ -42,6 +42,34 @@ import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-
 export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   anioActual = new Date().getFullYear();
 
+  escalaGantt: 'dia' | 'semana' | 'mes' = 'semana';
+
+  private readonly escalasGantt: Record<'dia' | 'semana' | 'mes', any[]> = {
+    dia: [
+      { unit: 'month', step: 1, format: '%F %Y' },
+      { unit: 'day', step: 1, format: '%d %D' },
+    ],
+    semana: [
+      { unit: 'month', step: 1, format: '%F %Y' },
+      { unit: 'week', step: 1, format: 'Sem %W' },
+      { unit: 'day', step: 1, format: '%d' },
+    ],
+    mes: [
+      { unit: 'year', step: 1, format: '%Y' },
+      { unit: 'month', step: 1, format: '%M' },
+    ],
+  };
+
+  cambiarEscala(escala: 'dia' | 'semana' | 'mes'): void {
+    this.escalaGantt = escala;
+    this.aplicarEscala(escala);
+  }
+
+  private aplicarEscala(escala: 'dia' | 'semana' | 'mes'): void {
+    gantt.config.scales = this.escalasGantt[escala] as any;
+    if (this.ganttContainer) gantt.render();
+  }
+
   currentPage = 1;
   totalPages = 0;
   pageSize = 10;
@@ -149,6 +177,71 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return !!(hito.startDate || hito.endDate);
   }
 
+  /**
+   * "Crítico" es solo una etiqueta: marca que la fecha única de este hito es un corte real de
+   * etapa constructiva (para segmentar consumo/dotación por fase). No encadena ni deriva ninguna
+   * otra fecha — el backend (AsignarHitosPorFechaAsync) ordena los críticos por su propia fecha,
+   * así que cada hito guarda siempre SU fecha real, nunca la de otro. Encadenar "Inicio = Fin del
+   * anterior" quedó descartado: en obras reales hay frentes de trabajo en paralelo (ej. la
+   * superestructura arranca antes de que termine la cimentación en otra zona), y forzar una sola
+   * secuencia producía fechas incorrectas.
+   */
+  toggleCritico(hito: any): void {
+    hito.esCritico = !hito.esCritico;
+    if (hito.esCritico) hito.esRango = false;
+    this.sincronizarDTODesdeUndatedTasks();
+  }
+
+  /** Rango independiente: para eventos de 2+ días que no dependen de ningún otro hito (ej. montaje de grúa). */
+  toggleRango(hito: any): void {
+    hito.esRango = !hito.esRango;
+    if (hito.esRango) hito.esCritico = false;
+    if (!hito.esRango) { hito.endDate = ''; hito.end_date = null; }
+    this.sincronizarDTODesdeUndatedTasks();
+  }
+
+  /** Agrega un hito personalizado (ej. una 2da/3ra grúa) que no existe en el catálogo global de hitos. */
+  agregarHitoPersonalizado(): void {
+    const descripcion = (this.nuevoHitoPersonalizadoTexto || '').trim();
+    if (!descripcion) return;
+    this.undatedTasks.push({
+      id: `custom-${Date.now()}`,
+      milestoneId: null,
+      customDescription: descripcion,
+      esCritico: false,
+      esRango: false,
+      text: descripcion,
+      order: this.undatedTasks.length + 1,
+      start_date: null,
+      end_date: null,
+      type: 'milestone',
+      duration: 0,
+      startDate: '',
+      endDate: '',
+    });
+    this.nuevoHitoPersonalizadoTexto = '';
+    this.sincronizarDTODesdeUndatedTasks();
+    this.cdr.detectChanges();
+  }
+
+  eliminarHitoPlantilla(hito: any): void {
+    Swal.fire({
+      title: '¿Quitar este hito del cronograma?',
+      text: hito.text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, quitar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.undatedTasks = this.undatedTasks.filter((t: any) => t !== hito);
+      this.undatedTasks.forEach((t: any, i: number) => (t.order = i + 1));
+      this.sincronizarDTODesdeUndatedTasks();
+      this.cdr.detectChanges();
+    });
+  }
+
+  nuevoHitoPersonalizadoTexto = '';
+
   get hitosFiltrados(): any[] {
     let result = this.undatedTasks;
     if (this.busqueda.trim()) {
@@ -173,12 +266,20 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     hito.endDate    = endClean   ?? '';
     hito.start_date = startClean ? this.parseStringToDate(startClean) : null;
     hito.end_date   = endClean   ? this.parseStringToDate(endClean)   : null;
-    const idx = this.milestoneScheduleHistoryCreateDTO.milestoneSchedules
-      .findIndex((s: any) => s.milestoneId === hito.milestoneId);
-    if (idx !== -1) {
-      this.milestoneScheduleHistoryCreateDTO.milestoneSchedules[idx].plannedStartDate = startClean ?? '';
-      this.milestoneScheduleHistoryCreateDTO.milestoneSchedules[idx].plannedEndDate   = endClean;
-    }
+
+    this.sincronizarDTODesdeUndatedTasks();
+  }
+
+  /** Reconstruye el DTO de guardado completo a partir de undatedTasks (fuente de verdad de la plantilla). */
+  private sincronizarDTODesdeUndatedTasks(): void {
+    this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = this.undatedTasks.map((t: any, i: number) => ({
+      milestoneId: t.milestoneId,
+      customDescription: t.milestoneId == null ? t.customDescription : undefined,
+      plannedStartDate: t.startDate?.substring(0, 10) || '',
+      plannedEndDate: t.endDate?.substring(0, 10) || null,
+      order: i + 1,
+      esHitoCritico: !!t.esCritico,
+    }));
   }
 
   getEstado(task: any): string {
@@ -352,18 +453,42 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.milestoneScheduleService
       .getByMilestoneScheduleHistoryId(this.filtersMilestoneScheduleHistoryId)
       .pipe(
-        map((items) =>
-          items
-            .filter((m) => m.active)
-            .map((m) => ({
+        map((items) => {
+          // Un hito sin fecha (ej. "2da instalación de bandera" aún sin coordinar) no se puede
+          // dibujar en el Gantt — se omite aquí, no rompe el render de los que sí tienen fecha.
+          const activos = items.filter((m) => m.active && !!m.plannedStartDate);
+
+          // Solo para VISUALIZAR duración de fase en el Gantt: a los críticos se les deriva un
+          // "inicio visual" = fecha del crítico cronológicamente anterior (NO por orden de ítem,
+          // que no es cronológico). Esto no se guarda ni se envía al backend — la fecha real de
+          // cada hito (usada para repartir consumo/personal por fase) sigue siendo la propia.
+          const criticosOrdenados = activos
+            .filter((m) => m.esHitoCritico)
+            .slice()
+            .sort((a, b) => (a.plannedStartDate < b.plannedStartDate ? -1 : a.plannedStartDate > b.plannedStartDate ? 1 : 0));
+          const inicioVisualPorHito = new Map<number, string>();
+          criticosOrdenados.forEach((m, i) => {
+            inicioVisualPorHito.set(m.milestoneScheduleId, i === 0 ? m.plannedStartDate : criticosOrdenados[i - 1].plannedStartDate);
+          });
+
+          return activos.map((m) => {
+            const inicioVisual = inicioVisualPorHito.get(m.milestoneScheduleId);
+            const esBarraCritica = m.esHitoCritico && !!inicioVisual && inicioVisual !== m.plannedStartDate;
+
+            return {
               id: m.milestoneScheduleId,
+              milestoneScheduleId: m.milestoneScheduleId,
+              esHitoCritico: m.esHitoCritico,
               text: m.milestoneDescription,
-              start_date: this.parseStringToDate(m.plannedStartDate),
-              ...(m.plannedEndDate
-                ? { end_date: this.parseStringToDate(m.plannedEndDate) }
-                : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) }),
-            })),
-        ),
+              start_date: this.parseStringToDate(esBarraCritica ? inicioVisual! : m.plannedStartDate),
+              ...(esBarraCritica
+                ? { end_date: this.parseStringToDate(m.plannedStartDate) }
+                : (m.plannedEndDate && m.plannedEndDate !== m.plannedStartDate
+                    ? { end_date: this.parseStringToDate(m.plannedEndDate) }
+                    : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) })),
+            };
+          });
+        }),
       )
       .subscribe({
         next: (data) => {
@@ -372,12 +497,17 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           this.showMilestoneSchedule = true;
           this.cdr.detectChanges();
 
-          if (!this.noMilestones) {
-            this.initGantt(true);
-            gantt.parse({ data, links: [] });
-            gantt.showDate(new Date());
-            this.ganttTasks = gantt.getTaskByTime();
-            setTimeout(() => this.drawTodayLine(), 50);
+          try {
+            if (!this.noMilestones) {
+              this.initGantt(true);
+              gantt.parse({ data, links: [] });
+              gantt.showDate(new Date());
+              this.ganttTasks = gantt.getTaskByTime();
+              setTimeout(() => this.drawTodayLine(), 50);
+            }
+          } catch (e) {
+            console.error('Error dibujando el cronograma en el Gantt:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo dibujar el cronograma. Revisa que las fechas de los hitos sean válidas.' });
           }
 
           this.loader = false;
@@ -400,14 +530,19 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         .pipe(
           map((items) =>
             items
-              .filter((m) => m.active)
+              // Un hito sin fecha (ej. pendiente de coordinar) no se puede dibujar en el Gantt;
+              // se omite aquí — sigue existiendo en BD, se puede re-agregar cuando tenga fecha.
+              .filter((m) => m.active && !!m.plannedStartDate)
               .map((m) => ({
-                id: m.milestoneId,
+                // id único para el Gantt: si es personalizado (milestoneId null) se usa el milestoneScheduleId real
+                id: m.milestoneId ?? m.milestoneScheduleId,
                 milestoneId: m.milestoneId,
+                customDescription: m.milestoneId == null ? m.milestoneDescription : undefined,
+                esHitoCritico: m.esHitoCritico,
                 text: m.milestoneDescription,
                 start_date: this.parseStringToDate(m.plannedStartDate),
                 order: m.order,
-                ...(m.plannedEndDate
+                ...(m.plannedEndDate && m.plannedEndDate !== m.plannedStartDate
                   ? { end_date: this.parseStringToDate(m.plannedEndDate) }
                   : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) }),
               })),
@@ -425,22 +560,29 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               if (task.type === 'milestone') task.end_date = null;
               this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
                 milestoneId: task.milestoneId,
+                customDescription: task.customDescription,
                 plannedStartDate: this.parseDateToString(task.start_date),
                 plannedEndDate:
                   task.end_date != null ? this.parseDateToString(task.end_date) : null,
                 order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
+                esHitoCritico: !!task.esHitoCritico,
               });
             });
             this.milestoneScheduleHistoryCreateDTO.projectId =
               this.filtersScheduleId.projectId ?? 0;
             this.cdr.detectChanges();
 
-            if (!this.noMilestones) {
-              this.initGantt(false);
-              gantt.parse({ data, links: [] });
-              gantt.showDate(new Date());
-              this.ganttTasks = gantt.getTaskByTime();
-              setTimeout(() => this.drawTodayLine(), 50);
+            try {
+              if (!this.noMilestones) {
+                this.initGantt(false);
+                gantt.parse({ data, links: [] });
+                gantt.showDate(new Date());
+                this.ganttTasks = gantt.getTaskByTime();
+                setTimeout(() => this.drawTodayLine(), 50);
+              }
+            } catch (e) {
+              console.error('Error dibujando el cronograma en el Gantt:', e);
+              Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo dibujar el cronograma. Revisa que las fechas de los hitos sean válidas.' });
             }
 
             this.loader = false;
@@ -458,7 +600,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           map((items) =>
             items.map((m) => ({
               id: m.milestoneId,
-              milestoneId: m.milestoneId,
+              milestoneId: m.milestoneId as number | null,
+              customDescription: undefined as string | undefined,
+              esCritico: false,
+              esRango: false,
               text: m.milestoneDescription,
               order: m.order,
               start_date: null as Date | null,
@@ -478,15 +623,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             this.showMilestoneScheduleHistory = false;
             this.showMilestoneSchedule = true;
 
-            this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = [];
-            data.forEach((task) => {
-              this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.push({
-                milestoneId: task.milestoneId,
-                plannedStartDate: '',
-                plannedEndDate: null,
-                order: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.length + 1,
-              });
-            });
+            this.sincronizarDTODesdeUndatedTasks();
             this.milestoneScheduleHistoryCreateDTO.projectId =
               this.filtersScheduleId.projectId ?? 0;
 
@@ -561,6 +698,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       plannedStartDate: this.addMilestoneScheduleItem.plannedStartDate,
       plannedEndDate: endDate ? this.addMilestoneScheduleItem.plannedEndDate : null,
       order: newOrder,
+      esHitoCritico: false,
     });
 
     const taskData = {
@@ -728,12 +866,6 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     gantt.i18n.setLocale('es');
 
-    gantt.config.scales = [
-      { unit: 'month', step: 1, format: '%F %Y' },
-      { unit: 'week', step: 1, format: 'Sem %W' },
-      { unit: 'day', step: 1, format: '%d' },
-    ];
-
     gantt.attachEvent('onTaskClick', (id, e) => {
       const target = (e?.target as HTMLElement) || null;
 
@@ -765,7 +897,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       });
 
       this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.forEach((item) => {
-        const newOrder = orderedIds.indexOf(item.milestoneId) + 1;
+        const newOrder = item.milestoneId != null ? orderedIds.indexOf(item.milestoneId) + 1 : 0;
 
         if (newOrder > 0) {
           item.order = newOrder;
@@ -799,14 +931,17 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         name: 'text',
         label: 'Hito',
         tree: true,
-        width: '*',
+        width: 220,
         min_width: 150,
+        resize: true,
       },
       {
         name: 'start_date',
         label: 'Inicio',
         align: 'center',
         width: 90,
+        min_width: 70,
+        resize: true,
         template: (task: any) => gantt.date.date_to_str('%d-%m-%y')(task.start_date),
       },
       {
@@ -814,6 +949,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         label: 'Fin',
         align: 'center',
         width: 90,
+        min_width: 70,
+        resize: true,
         template: (task: any) => {
           if (task.type === 'milestone') return '-';
           if (!task.end_date) return '-';
@@ -825,17 +962,33 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         label: 'Estado',
         align: 'center',
         width: 100,
+        min_width: 70,
+        resize: true,
         template: (task: any) => {
           const estado = this.getEstado(task);
           return `<span class="estado-badge ${this.getEstadoClass(estado)}">${this.getEstadoLabel(estado)}</span>`;
+        },
+      },
+      {
+        name: 'critico',
+        label: 'Crítico',
+        align: 'center',
+        width: 70,
+        min_width: 60,
+        resize: true,
+        template: (task: any) => {
+          if (task['milestoneScheduleId'] == null) return '';
+          return task['esHitoCritico'] ? '<span title="Corta etapa constructiva">⭐</span>' : '';
         },
       },
     );
 
     gantt.config.columns = columns;
     gantt.config.grid_width = 420;
+    (gantt.config as any)['grid_resize'] = true;
     gantt.config.scroll_size = 20;
     gantt.config.min_column_width = 16;
+    this.aplicarEscala(this.escalaGantt);
 
     gantt.templates.task_class = (_start: any, _end: any, task: any) => {
       const estadoClass = this.getGanttClass(task);
@@ -904,7 +1057,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.forEach((item) => {
-      const newOrder = orderedMilestoneIds.indexOf(item.milestoneId) + 1;
+      const newOrder = item.milestoneId != null ? orderedMilestoneIds.indexOf(item.milestoneId) + 1 : 0;
       if (newOrder > 0) item.order = newOrder;
     });
   }
@@ -994,6 +1147,30 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     if (dtoItem) {
       (dtoItem as any).fechaRealFin = task['fechaRealFin'] ?? null;
     }
+  }
+
+  /**
+   * Marca/desmarca un hito ya guardado (milestoneScheduleId real) como crítico. Solo aplica en
+   * modo "ver cronograma" — en modo edición/creación los ids del Gantt son milestoneId de
+   * plantilla, sin milestoneScheduleId real todavía.
+   */
+  toggleCriticoGuardado(taskId: number): void {
+    const task = gantt.getTask(taskId);
+    const nuevoValor = !task['esHitoCritico'];
+
+    this.milestoneScheduleService.marcarCritico(taskId, nuevoValor).subscribe({
+      next: () => {
+        task['esHitoCritico'] = nuevoValor;
+        gantt.updateTask(taskId);
+        gantt.render();
+        this.ganttTasks = gantt.getTaskByTime();
+        if (this.selectedTask && this.selectedTask.id == taskId) {
+          this.selectedTask['esHitoCritico'] = nuevoValor;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.error(err),
+    });
   }
 
   saveEditTask() {

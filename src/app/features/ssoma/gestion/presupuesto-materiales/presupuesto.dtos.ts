@@ -76,6 +76,7 @@ export interface DriverProyectoDto {
   hhFuente: string;
   familiasConRatio: number;
   tieneConsumos: boolean;
+  habilitadoSsoma: boolean;
 }
 
 export interface ActualizarDriversDto {
@@ -90,6 +91,40 @@ export interface ActualizarDriversResultDto {
   projectId: number;
   ratiosCalculados: number;
   outliersMarcados: number;
+}
+
+export interface FamiliaConRatioDto {
+  familiaId: number;
+  nombreFamilia: string;
+  tipoMaterial: string;
+  variableBase: string;
+  nProyectos: number;
+  nOutliers: number;
+}
+
+export interface RatioProyectoItemDto {
+  projectId: number;
+  projectDescription: string;
+  ratioCantidad: number;
+  precioUnitario: number;
+  cantidadTotal: number;
+  valorDriver: number;
+  esOutlier: boolean;
+  incluidoManualRatio: boolean;
+  incluidoManualPrecio: boolean;
+}
+
+export interface RatioFamiliaComparacionDto {
+  familiaId: number;
+  nombreFamilia: string;
+  tipoMaterial: string;
+  variableBase: string;
+  proyectos: RatioProyectoItemDto[];
+  promedioRatio: number;
+  medianaRatio: number;
+  minRatio: number;
+  maxRatio: number;
+  promedioPrecioUnitario: number;
 }
 
 // ─── Presupuesto ──────────────────────────────────────────────────────────────
@@ -240,4 +275,37 @@ export interface DashboardPresupuestoDto {
   familiasEnAlerta: number;
   familiasEnAdvertencia: number;
   tipos: DashboardTipoDto[];
+}
+
+// ─── Dotación de personal SSOMA por hito crítico ──────────────────────────────
+
+export interface HitoCriticoDisponibleDto {
+  hitoId: number;
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+}
+
+export interface PersonalHitoDto {
+  id: number;
+  hitoId: number;
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+  esHitoCritico: boolean;
+  rol: 'PREVENCIONISTA' | 'MONITOR' | 'VIGIA';
+  cantidad: number;
+  semanas: number;
+  costoMensual: number;
+  total: number;
+}
+
+export interface PersonalHitoItemInputDto {
+  hitoId: number;
+  rol: 'PREVENCIONISTA' | 'MONITOR' | 'VIGIA';
+  cantidad: number;
+  semanas: number;
+  costoMensual: number;
+}
+
+export interface PersonalHitoGuardarDto {
+  items: PersonalHitoItemInputDto[];
 }

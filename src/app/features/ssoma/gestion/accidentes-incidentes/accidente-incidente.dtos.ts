@@ -81,9 +81,14 @@ export interface FlashReportListItemDto {
   tipoCodigo: string;
   trabajadorNombre?: string;
   estado: string;
+  accidenteTrabajoId?: number;
   enviado: boolean;
   fechaEnvio?: string;
   consecuenciaRealPersonal?: number;
+  descripcion: string;
+  diasPerdidos: number;
+  /** null = no aplica (no es accidente con seguimiento médico); false = abierto; true = cerrado con alta médica */
+  cerradoConAltaMedica: boolean | null;
 }
 
 // ── Detalle ───────────────────────────────────────────────────────────────────

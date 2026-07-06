@@ -14,6 +14,12 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     data: { titulo: 'PRESUPUESTO MATERIALES · DRIVERS', roles: [] },
   },
   {
+    path: 'ratios',
+    loadComponent: () =>
+      import('./pages/ratios-lista/ratios-lista').then((m) => m.RatiosListaPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · RATIOS', roles: [] },
+  },
+  {
     path: 'proyecto/:projectId',
     loadComponent: () =>
       import('./pages/proyecto/proyecto-page').then((m) => m.ProyectoPage),
@@ -30,6 +36,12 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/control-semana/control-semana').then((m) => m.ControlSemanaPage),
     data: { titulo: 'PRESUPUESTO MATERIALES · CONTROL SEMANAL', roles: [] },
+  },
+  {
+    path: 'proyecto/:projectId/personal-hitos',
+    loadComponent: () =>
+      import('./pages/personal-hitos/personal-hitos-page').then((m) => m.PersonalHitosPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · PERSONAL POR HITO', roles: [] },
   },
 ];
 

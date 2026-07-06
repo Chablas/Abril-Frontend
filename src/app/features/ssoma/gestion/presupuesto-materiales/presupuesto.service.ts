@@ -20,6 +20,11 @@ import {
   RegistrarConsumoLineaDto,
   ControlSemanaDto,
   DashboardPresupuestoDto,
+  FamiliaConRatioDto,
+  RatioFamiliaComparacionDto,
+  HitoCriticoDisponibleDto,
+  PersonalHitoDto,
+  PersonalHitoGuardarDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -106,6 +111,32 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
+    return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getComparacionFamilia(familiaId: number): Observable<RatioFamiliaComparacionDto> {
+    return this.http.get<RatioFamiliaComparacionDto>(
+      `${this.base}/ratios/familias/${familiaId}/comparacion`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  actualizarIncluidoManual(
+    familiaId: number,
+    projectId: number,
+    incluir: boolean,
+    campo: 'RATIO' | 'PRECIO',
+  ): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/familias/${familiaId}/proyectos/${projectId}/incluir`,
+      { incluir, campo },
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Presupuesto ───────────────────────────────────────────────────
 
   generarPresupuesto(projectId: number, dto: GenerarPresupuestoDto): Observable<PresupuestoDetalleDto> {
@@ -184,6 +215,30 @@ export class PresupuestoMaterialesService {
   getDashboard(presupuestoId: number): Observable<DashboardPresupuestoDto> {
     return this.http.get<DashboardPresupuestoDto>(
       `${this.base}/control/presupuestos/${presupuestoId}/dashboard`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Dotación de personal por hito crítico ─────────────────────────
+
+  getHitosCriticosDisponibles(projectId: number): Observable<HitoCriticoDisponibleDto[]> {
+    return this.http.get<HitoCriticoDisponibleDto[]>(
+      `${this.base}/proyectos/${projectId}/personal-hitos/disponibles`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getPersonalHitos(projectId: number): Observable<PersonalHitoDto[]> {
+    return this.http.get<PersonalHitoDto[]>(
+      `${this.base}/proyectos/${projectId}/personal-hitos`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarPersonalHitos(projectId: number, dto: PersonalHitoGuardarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/personal-hitos`,
+      dto,
       { headers: this.authHeaders() },
     );
   }

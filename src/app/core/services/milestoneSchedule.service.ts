@@ -39,4 +39,13 @@ export class MilestoneScheduleService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  marcarCritico(milestoneScheduleId: number, esHitoCritico: boolean): Observable<{ message: string }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${milestoneScheduleId}/marcar-critico`,
+      { esHitoCritico },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

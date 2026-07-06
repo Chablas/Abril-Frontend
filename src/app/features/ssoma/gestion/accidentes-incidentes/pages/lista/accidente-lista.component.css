@@ -236,6 +236,16 @@
 
 .no-docs { color: #c8c5be; }
 
+.dias-perdidos-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 /* ── ACCIONES ─────────────────────────────────────────── */
 .acciones { display: flex; gap: 4px; }
 
