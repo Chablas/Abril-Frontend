@@ -9,7 +9,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
 /**
- * Subsección "Firma de Gerente General" de la Configuración de Contabilidad.
+ * Subsección "Firma" de la Configuración de Contabilidad.
  * Permite dibujar una firma con el mouse (o táctil) en un canvas y guardarla. Esa firma es
  * personal: se guarda en el registro de Person del usuario actual y se estampa en los documentos
  * que dicho usuario firme.

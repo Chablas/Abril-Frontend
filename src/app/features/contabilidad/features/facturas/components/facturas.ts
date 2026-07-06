@@ -13,6 +13,8 @@ import { StatusBadge } from '../../../../../shared/components/status-badge/statu
 import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { Roles } from '../../../../../core/constants/roles';
 
 import { InvoiceService } from '../services/invoice.service';
 import {
@@ -179,6 +181,7 @@ export class Facturas implements OnInit {
   /** Firma la factura: genera un PDF firmado (sin tocar el original). */
   signInvoice(inv: InvoiceDto): void {
     this.ctxInvoice = null;
+    if (!this.canSign) return;
     if (!inv.documentUrl) {
       Swal.fire({ icon: 'info', title: 'Sin documento', text: 'Esta factura no tiene un documento que firmar.' });
       return;
@@ -246,11 +249,17 @@ export class Facturas implements OnInit {
     },
   ];
 
+  /** Solo quienes tienen el rol firmante pueden firmar facturas (menú contextual en las 3 vistas). */
+  canSign = false;
+
   constructor(
     private service: InvoiceService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-  ) {}
+    private authService: AuthService,
+  ) {
+    this.canSign = this.authService.hasRole(Roles.CONTABILIDAD_FIRMANTE);
+  }
 
   ngOnInit(): void {
     this.loadInit();

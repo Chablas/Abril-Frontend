@@ -739,21 +739,23 @@
     >
       {{ ctxInvoice.invoiceNumber }}
     </div>
-    <button
-      type="button"
-      [disabled]="!ctxInvoice.documentUrl"
-      [title]="!ctxInvoice.documentUrl ? 'La factura no tiene documento que firmar' : ''"
-      (click)="signInvoice(ctxInvoice)"
-      class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"
-          fill="#64BC04"
-        />
-      </svg>
-      <span class="font-medium text-gray-700">Firmar</span>
-    </button>
+    @if (canSign) {
+      <button
+        type="button"
+        [disabled]="!ctxInvoice.documentUrl"
+        [title]="!ctxInvoice.documentUrl ? 'La factura no tiene documento que firmar' : ''"
+        (click)="signInvoice(ctxInvoice)"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-green-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"
+            fill="#64BC04"
+          />
+        </svg>
+        <span class="font-medium text-gray-700">Firmar</span>
+      </button>
+    }
     @if (ctxInvoice.signedDocumentUrl) {
       <button
         type="button"
