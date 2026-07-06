@@ -4034,3 +4034,30 @@ Esto deja fuera del repo el resto de `.claude/` (settings locales, etc.) pero pe
 ### 4. Merge a master vía "guardar master"
 
 `feature/milestone-schedule-improvements` (SPI en dashboard UDP, mejoras UX cronograma de actividades, drag&drop de jerarquía, skills guardar-rama/guardar-master) se mergeó a `master` con `ddf419c`. Build de producción (`ng build`) verificado OK antes del push. Sin cambios de código nuevos en esta sesión — solo consolidación y push.
+
+## Sesión 2026-07-05/06 — Dashboard de Indicadores Reactivos SSOMA + meta anual
+
+### 1. `dashboard-acumulado` (Dashboard SSOMA) — rediseño
+
+- Card de **Indicadores Reactivos (IF/IG/IA)** movida arriba de todo, ancho completo — prioridad visual pedida por el usuario (le importa a gerencia).
+- Nueva **meta anual editable**: chip "Meta X" bajo cada número grande (IF/IG/IA), verde si se cumple, rojo si no, gris si no hay meta cargada ese año. Botón "Meta" abre un modal simple para cargar/editar los 3 valores contra el endpoint nuevo del backend (`meta-anual`).
+- **Cierre de Accidentes** pasó a una columna ancha (antes compartía la columna angosta de 220px con el ranking) — tiles bastante más grandes, a pedido del usuario ("muy reducidos").
+- **Top Proyectos** se fusionó como una franja compacta arriba de "Puntaje Mensual Alcanzado" — ya no ocupa una fila propia del grid.
+- Tabla de reactivos ahora muestra 3 bloques de columnas por proyecto: Mes / Año / Total histórico (HHT, Acc, IF cada uno).
+
+### 2. Lista de Accidentes e Incidentes (`accidente-lista`)
+
+Nuevas columnas: **Descripción** (truncada con tooltip), **Días perdidos**, **Alta médica** (Cerrado/Abierto/— según si aplica). El orden por fecha del evento ya venía bien del backend.
+
+### 3. Coordinación con el backend
+
+Este trabajo depende de cambios en paralelo en `Abril_Backend` (mismo período): fix de performance en el cálculo de reactivos (1 fetch en vez de 3 por cada cambio de mes), nueva tabla `ssoma_meta_anual`, y corrección de un bug real encontrado en logs de producción (SQL crudo `interval + integer` en la consulta de días perdidos de la lista de accidentes — ya corregido en el backend antes de este push).
+
+### Archivos clave
+- `src/app/features/ssoma/gestion/indicadores-proactivos/pages/dashboard-acumulado/` (ts/html/css)
+- `src/app/features/ssoma/gestion/indicadores-proactivos/indicadores-proactivos.service.ts` y `.dtos.ts` (meta anual)
+- `src/app/features/ssoma/gestion/accidentes-incidentes/pages/lista/` (ts/html/css)
+
+### Pendiente
+- Cargar la meta anual real de 2026 desde el dashboard (todavía no tiene valores, sale "Sin meta").
+- Cronograma de Hitos (`milestone-schedule`): el usuario reportó fechas que no coinciden con un Excel de referencia (`CRONOGRAMA HITOS CEDRO - JULIO 26.xlsx`) — se confirmó que las fechas de cada hito son 100% manuales (sin cálculo ni importación automática desde ningún lado), pero el usuario cortó la investigación ("me equivoqué, es otro tema") antes de decidir si corregir manualmente o dejarlo así.
