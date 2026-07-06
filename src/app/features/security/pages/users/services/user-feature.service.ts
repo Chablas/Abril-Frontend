@@ -8,6 +8,7 @@ import { UserFeatureCreateDto } from '../../../../../core/dtos/user/userFeatureC
 import { UserFeatureUpdateDto } from '../../../../../core/dtos/user/userFeatureUpdate.model';
 import { AbrilWorkerOptionDto } from '../../../../../core/dtos/user/abrilWorkerOption.model';
 import { AbrilWorkerUserCreateDto } from '../../../../../core/dtos/user/abrilWorkerUserCreate.model';
+import { AbrilManualUserCreateDto } from '../../../../../core/dtos/user/abrilManualUserCreate.model';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -47,6 +48,11 @@ export class UserFeatureService {
 
   createAbrilWorkerUser(dto: AbrilWorkerUserCreateDto): Observable<any> {
     return this.http.post(`${this.apiUrl}/abril-worker`, dto, { headers: buildAuthHeaders() });
+  }
+
+  /** Alta manual de un usuario de Abril por correo (no registrado en workers). */
+  createAbrilManualUser(dto: AbrilManualUserCreateDto): Observable<any> {
+    return this.http.post(`${this.apiUrl}/abril-manual`, dto, { headers: buildAuthHeaders() });
   }
 
   updateUser(id: number, dto: UserFeatureUpdateDto): Observable<any> {
