@@ -5,7 +5,7 @@
     [titulo]="detalle?.codigo ?? 'Flash Report'"
     subtitulo="Detalle del evento"
     [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
-    [botonPrimario]="detalle && !detalle.enviado ? { label: 'Editar', icono: 'ti-edit' } : undefined"
+    [botonPrimario]="detalle ? { label: 'Editar', icono: 'ti-edit' } : undefined"
     (secondaryClick)="volver()"
     (primaryClick)="irAEditar()">
   </app-abril-page-header>

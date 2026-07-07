@@ -37,6 +37,7 @@ export class AccidenteIncidenteService {
     fechaDesde?: string;
     fechaHasta?: string;
     soloEnviados?: boolean;
+    areaOrigen?: string;
     page?: number;
     pageSize?: number;
   }): Observable<{ items: FlashReportListItemDto[]; total: number; page: number; pageSize: number; totalPages: number }> {
@@ -47,6 +48,7 @@ export class AccidenteIncidenteService {
     if (params.fechaDesde) p = p.set('fechaDesde', params.fechaDesde);
     if (params.fechaHasta) p = p.set('fechaHasta', params.fechaHasta);
     if (params.soloEnviados != null) p = p.set('soloEnviados', params.soloEnviados);
+    if (params.areaOrigen) p = p.set('areaOrigen', params.areaOrigen);
     p = p.set('page', params.page ?? 1);
     p = p.set('pageSize', params.pageSize ?? 20);
     return this.http.get<any>(this.base, { headers: this.authHeaders(), params: p });
@@ -62,6 +64,18 @@ export class AccidenteIncidenteService {
 
   actualizar(id: number, request: ActualizarFlashReportRequest): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/${id}`, request, { headers: this.authHeaders() });
+  }
+
+  actualizarSeveridad(
+    id: number,
+    consecuenciaRealPersonal: number | undefined,
+    consecuenciaPotencialPersonal: number | undefined,
+  ): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.base}/${id}/severidad`,
+      { consecuenciaRealPersonal: consecuenciaRealPersonal ?? null, consecuenciaPotencialPersonal: consecuenciaPotencialPersonal ?? null },
+      { headers: this.authHeaders() },
+    );
   }
 
   enviar(id: number, enviarEmail: boolean = true): Observable<{ message: string }> {

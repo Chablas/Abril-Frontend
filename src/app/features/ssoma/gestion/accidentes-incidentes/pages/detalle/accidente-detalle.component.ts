@@ -1,5 +1,5 @@
 ﻿import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -186,6 +186,7 @@ export class AccidenteDetalleComponent implements OnInit {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private sanitizer: DomSanitizer,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -219,7 +220,7 @@ export class AccidenteDetalleComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
+    this.location.back();
   }
 
   async confirmarEnviar(): Promise<void> {

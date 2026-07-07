@@ -135,19 +135,19 @@
 }
 
 .tabla th {
-  padding: 9px 12px;
+  padding: 8px 8px;
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
   color: #a8a59e;
   border-bottom: 0.5px solid #e8e5df;
   text-align: left;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .tabla td {
-  padding: 10px 12px;
+  padding: 8px 8px;
   border-bottom: 0.5px solid #f0ede8;
   color: #1a1a18;
   vertical-align: middle;
@@ -162,8 +162,8 @@
 .ta-c { text-align: center; }
 
 .td-fecha { white-space: nowrap; font-size: 11px; color: #5a5850; }
-.td-proyecto { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.td-descripcion { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-proyecto { max-width: 130px; white-space: normal; word-break: break-word; font-weight: 600; }
+.td-descripcion { max-width: 320px; min-width: 200px; white-space: normal; word-break: break-word; }
 
 /* ── TIPO CHIP ────────────────────────────────────────── */
 .tipo-chip {
@@ -178,6 +178,19 @@
 .tipo-incidente  { background: #fef3c7; color: #92400e; }
 .tipo-nc         { background: #ede9fe; color: #5b21b6; }
 .tipo-alerta     { background: #e0f2fe; color: #075985; }
+
+/* ── ÁREA CHIP ────────────────────────────────────────── */
+.area-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.area-produccion    { background: #f0ede8; color: #5a5850; }
+.area-postventa     { background: #fde7f3; color: #9d174d; }
+.area-arqcomercial  { background: #e0e7ff; color: #3730a3; }
 
 /* ── ESTADO CHIP ──────────────────────────────────────── */
 .estado-chip {
@@ -223,7 +236,24 @@
 
 /* ── COLS ─────────────────────────────────────────────── */
 .td-codigo    { white-space: nowrap; }
-.td-trabajador { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-trabajador { max-width: 160px; white-space: normal; word-break: break-word; }
+
+/* ── SELECT DE SEVERIDAD (edición rápida en la fila) ─────── */
+.nivel-select {
+  border: 0.5px solid #e8e5df;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fff;
+  color: #5a5850;
+  cursor: pointer;
+  min-width: 56px;
+}
+.nivel-select.nivel-bajo    { background: #dcfce7; color: #166534; border-color: transparent; }
+.nivel-select.nivel-medio   { background: #fef9c3; color: #713f12; border-color: transparent; }
+.nivel-select.nivel-alto    { background: #fee2e2; color: #991b1b; border-color: transparent; }
+.nivel-select.nivel-critico { background: #1b3a2d; color: #fff; border-color: transparent; }
 
 /* ── DOC COUNT ────────────────────────────────────────── */
 .doc-count {
@@ -348,7 +378,7 @@
   .lista-body { padding: 16px 24px; }
   .filtros-bar-mobile { display: none; }
   .filtros-panel { max-height: none; padding: 10px 24px; }
-  .filtros-grid { grid-template-columns: repeat(5, 1fr) auto; align-items: end; }
+  .filtros-grid { grid-template-columns: repeat(6, 1fr) auto; align-items: end; }
   .filtros-actions { grid-column: auto; }
   .tabla-wrap { display: block; }
   .cards-mobile { display: none; }

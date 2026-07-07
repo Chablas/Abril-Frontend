@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -10,6 +11,7 @@ import {
   FamiliaConRatioDto,
   RatioFamiliaComparacionDto,
   RatioProyectoItemDto,
+  ResumenRatiosDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -28,6 +30,7 @@ export class RatiosListaPage implements OnInit {
   private loader = inject(LoaderService);
   private error = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
 
   familias: FamiliaConRatioDto[] = [];
   loading = false;
@@ -39,7 +42,33 @@ export class RatiosListaPage implements OnInit {
   cargandoDetalleIds: Set<number> = new Set();
   actualizandoProjectId: number | null = null;
 
-  ngOnInit(): void { this.load(); }
+  // ── Resumen general ────────────────────────────────────────────────
+  resumen: ResumenRatiosDto | null = null;
+  loadingResumen = false;
+
+  ngOnInit(): void {
+    this.load();
+    this.loadResumen();
+  }
+
+  loadResumen(): void {
+    this.loadingResumen = true;
+    this.svc.getResumenRatios().subscribe({
+      next: (r) => {
+        this.resumen = r;
+        this.loadingResumen = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loadingResumen = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  irAProyecto(projectId: number): void {
+    this.router.navigate(['/ssoma/gestion/presupuesto-materiales/proyecto', projectId]);
+  }
 
   load(): void {
     this.loading = true;

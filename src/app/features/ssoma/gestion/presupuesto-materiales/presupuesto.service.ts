@@ -22,12 +22,15 @@ import {
   DashboardPresupuestoDto,
   FamiliaConRatioDto,
   RatioFamiliaComparacionDto,
+  RatioProyectoDto,
+  ResumenRatiosDto,
   HitoCriticoDisponibleDto,
   PersonalHitoDto,
   PersonalHitoGuardarDto,
   KitResumenDto,
   KitDetalleDto,
   KitCalculoLineaDto,
+  KitCreateDto,
   FamiliaCatalogoDto,
   ActualizarFamiliaDto,
   MaterialPendienteGlobalDto,
@@ -121,6 +124,18 @@ export class PresupuestoMaterialesService {
 
   listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
     return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getRatiosPorProyecto(projectId: number): Observable<RatioProyectoDto[]> {
+    return this.http.get<RatioProyectoDto[]>(`${this.base}/ratios/proyectos/${projectId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getResumenRatios(): Observable<ResumenRatiosDto> {
+    return this.http.get<ResumenRatiosDto>(`${this.base}/ratios/resumen`, {
       headers: this.authHeaders(),
     });
   }
@@ -279,6 +294,12 @@ export class PresupuestoMaterialesService {
     return this.http.get<KitCalculoLineaDto[]>(`${this.base}/kits/${kitId}/calcular`, {
       headers: this.authHeaders(),
       params: { cantidadKits },
+    });
+  }
+
+  crearKit(dto: KitCreateDto): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/kits`, dto, {
+      headers: this.authHeaders(),
     });
   }
 

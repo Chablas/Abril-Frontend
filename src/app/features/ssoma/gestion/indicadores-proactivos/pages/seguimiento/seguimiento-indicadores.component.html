@@ -57,8 +57,8 @@
 
                 <div class="pc-ind-row">
                   <span class="pc-ind-label">RACS cerrados</span>
-                  <span class="pc-ind-vals">Prog: {{ p.metaRacsTotal }}&nbsp; Ejec: <strong>{{ p.actualRacsCerradosTotal }}</strong></span>
-                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.metaRacsTotal, p.pctRacsCerrados)">{{ pctLabel(p.metaRacsTotal, p.pctRacsCerrados) }}</span>
+                  <span class="pc-ind-vals">Prog: {{ p.actualRacsTotal }}&nbsp; Ejec: <strong>{{ p.actualRacsCerradosTotal }}</strong></span>
+                  <span class="pc-ind-pct" [ngClass]="colorClassInd(p.actualRacsTotal, p.pctRacsCerrados)">{{ pctLabel(p.actualRacsTotal, p.pctRacsCerrados) }}</span>
                 </div>
 
                 <div class="pc-ind-row">
@@ -127,8 +127,8 @@
                     </div>
                     <div class="pc-ind-row">
                       <span class="pc-ind-label">RACS cerr.</span>
-                      <span class="pc-ind-vals">Prog: {{ emp.metaRacs }}&nbsp; Ejec: <strong>{{ emp.actualRacsCerrados }}</strong></span>
-                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.metaRacs, emp.pctRacsCerrados)">{{ pctLabel(emp.metaRacs, emp.pctRacsCerrados) }}</span>
+                      <span class="pc-ind-vals">Prog: {{ emp.actualRacs }}&nbsp; Ejec: <strong>{{ emp.actualRacsCerrados }}</strong></span>
+                      <span class="pc-ind-pct" [ngClass]="colorClassInd(emp.actualRacs, emp.pctRacsCerrados)">{{ pctLabel(emp.actualRacs, emp.pctRacsCerrados) }}</span>
                     </div>
                     <div class="pc-ind-row">
                       <span class="pc-ind-label">Inspecciones</span>
