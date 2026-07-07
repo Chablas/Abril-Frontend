@@ -4061,3 +4061,17 @@ Este trabajo depende de cambios en paralelo en `Abril_Backend` (mismo período):
 ### Pendiente
 - Cargar la meta anual real de 2026 desde el dashboard (todavía no tiene valores, sale "Sin meta").
 - Cronograma de Hitos (`milestone-schedule`): el usuario reportó fechas que no coinciden con un Excel de referencia (`CRONOGRAMA HITOS CEDRO - JULIO 26.xlsx`) — se confirmó que las fechas de cada hito son 100% manuales (sin cálculo ni importación automática desde ningún lado), pero el usuario cortó la investigación ("me equivoqué, es otro tema") antes de decidir si corregir manualmente o dejarlo así.
+
+## Sesión 2026-07-07 — Bug "Nueva semana" no aparecía en Dossier del contratista
+
+En `habilitacion/gestion/dossier` (Panel Contratista), al crear una semana nueva con el modal "Nueva semana" el registro se creaba bien en el backend (confirmado en Network tab: `GET /dossier` devolvía la semana nueva en estado `Borrador`), pero no aparecía en la lista de la UI.
+
+Causa: el getter `semanasFiltradas` en `dossier.ts` ocultaba toda semana en estado `Borrador` con `docsSubidos === 0`, pensado para no mostrarle al admin borradores vacíos de otros contratistas. Pero ese mismo filtro aplicaba también a la vista del contratista, ocultándole la semana que él mismo acababa de crear y dejándolo sin forma de subir documentos.
+
+**Fix:** `semanasFiltradas` ahora no aplica ese filtro cuando `isContratista()` es true — el contratista ve todas sus semanas (incluyendo borradores recién creados); el filtro de "ocultar borradores vacíos" se mantiene solo para la vista admin.
+
+### Archivos clave
+- `src/app/features/habilitacion/pages/dossier/dossier.ts` (getter `semanasFiltradas`, línea ~74)
+
+### Pendiente
+- Ninguno — verificado con Network tab que la semana ya aparece tras el fix.
