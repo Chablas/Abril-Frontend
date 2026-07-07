@@ -25,6 +25,14 @@ import {
   HitoCriticoDisponibleDto,
   PersonalHitoDto,
   PersonalHitoGuardarDto,
+  KitResumenDto,
+  KitDetalleDto,
+  KitCalculoLineaDto,
+  FamiliaCatalogoDto,
+  ActualizarFamiliaDto,
+  MaterialPendienteGlobalDto,
+  MaterialNoSsomaDto,
+  TipoMaterialDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -241,5 +249,79 @@ export class PresupuestoMaterialesService {
       dto,
       { headers: this.authHeaders() },
     );
+  }
+
+  /** Reparte cada línea de consumo del proyecto entre los hitos críticos de su cronograma vigente. */
+  asignarHitos(projectId: number): Observable<{ lineasActualizadas: number }> {
+    return this.http.post<{ lineasActualizadas: number }>(
+      `${this.base}/proyectos/${projectId}/asignar-hitos`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Kits / BOM ─────────────────────────────────────────────────────
+
+  listarKits(tipoId?: number): Observable<KitResumenDto[]> {
+    return this.http.get<KitResumenDto[]>(`${this.base}/kits`, {
+      headers: this.authHeaders(),
+      params: tipoId ? { tipoId } : {},
+    });
+  }
+
+  getKit(kitId: number): Observable<KitDetalleDto> {
+    return this.http.get<KitDetalleDto>(`${this.base}/kits/${kitId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  calcularKit(kitId: number, cantidadKits: number): Observable<KitCalculoLineaDto[]> {
+    return this.http.get<KitCalculoLineaDto[]>(`${this.base}/kits/${kitId}/calcular`, {
+      headers: this.authHeaders(),
+      params: { cantidadKits },
+    });
+  }
+
+  // ── Catálogo de Materiales ─────────────────────────────────────────
+
+  listarTiposCatalogo(): Observable<TipoMaterialDto[]> {
+    return this.http.get<TipoMaterialDto[]>(`${this.base}/catalogo/tipos`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  listarFamiliasCatalogo(q?: string, tipoId?: number, perteneceSsoma?: boolean): Observable<FamiliaCatalogoDto[]> {
+    const params: Record<string, string | number | boolean> = {};
+    if (q) params['q'] = q;
+    if (tipoId != null) params['tipoId'] = tipoId;
+    if (perteneceSsoma != null) params['perteneceSsoma'] = perteneceSsoma;
+    return this.http.get<FamiliaCatalogoDto[]>(`${this.base}/catalogo/familias`, {
+      headers: this.authHeaders(),
+      params,
+    });
+  }
+
+  actualizarFamiliaCatalogo(id: number, dto: ActualizarFamiliaDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/catalogo/familias/${id}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  obtenerSinEstandarizarGlobal(): Observable<MaterialPendienteGlobalDto[]> {
+    return this.http.get<MaterialPendienteGlobalDto[]>(`${this.base}/catalogo/sin-estandarizar`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  procesarSinEstandarizarGlobal(decisiones: RevisionDecisionDto[]): Observable<RevisionResultDto> {
+    return this.http.post<RevisionResultDto>(`${this.base}/catalogo/sin-estandarizar/procesar`, decisiones, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  obtenerNoSsoma(): Observable<MaterialNoSsomaDto[]> {
+    return this.http.get<MaterialNoSsomaDto[]>(`${this.base}/catalogo/no-ssoma`, {
+      headers: this.authHeaders(),
+    });
   }
 }

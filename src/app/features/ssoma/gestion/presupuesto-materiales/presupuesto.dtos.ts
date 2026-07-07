@@ -291,7 +291,7 @@ export interface PersonalHitoDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   esHitoCritico: boolean;
-  rol: 'PREVENCIONISTA' | 'MONITOR' | 'VIGIA';
+  rol: string;
   cantidad: number;
   semanas: number;
   costoMensual: number;
@@ -300,7 +300,7 @@ export interface PersonalHitoDto {
 
 export interface PersonalHitoItemInputDto {
   hitoId: number;
-  rol: 'PREVENCIONISTA' | 'MONITOR' | 'VIGIA';
+  rol: string;
   cantidad: number;
   semanas: number;
   costoMensual: number;
@@ -308,4 +308,90 @@ export interface PersonalHitoItemInputDto {
 
 export interface PersonalHitoGuardarDto {
   items: PersonalHitoItemInputDto[];
+}
+
+// ─── Kits / BOM (Botiquín, Estación de Emergencia, etc.) ──────────────────────
+
+export interface KitResumenDto {
+  id: number;
+  nombre: string;
+  tipoId: number;
+  nombreTipo: string;
+}
+
+export interface KitItemDto {
+  id: number;
+  familiaId: number;
+  nombreFamilia: string;
+  cantidadPorKit: number;
+  esConsumible: boolean;
+}
+
+export interface KitDetalleDto {
+  id: number;
+  nombre: string;
+  tipoId: number;
+  nombreTipo: string;
+  items: KitItemDto[];
+}
+
+export interface KitCalculoLineaDto {
+  familiaId: number;
+  nombreFamilia: string;
+  cantidadPorKit: number;
+  cantidadTotal: number;
+  esConsumible: boolean;
+}
+
+// ─── Catálogo de Materiales (3 secciones) ─────────────────────────────────────
+
+export interface TipoMaterialDto {
+  id: number;
+  nombre: string;
+}
+
+export interface FamiliaCatalogoDto {
+  id: number;
+  nombre: string;
+  tipoId: number;
+  nombreTipo: string;
+  variableBase: string;
+  unidadMedida?: string | null;
+  perteneceSsoma: boolean;
+  activo: boolean;
+}
+
+export interface ActualizarFamiliaDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  perteneceSsoma: boolean;
+  activo: boolean;
+}
+
+export interface MaterialPendienteGlobalDto {
+  lineaId: number;
+  projectId: number;
+  projectDescription: string;
+  recursoCrudo: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioTotal: number;
+  fechaGuia: string;
+  nombreItemSugerido?: string;
+  nombreFamiliaSugerida?: string;
+  itemIdSugerido?: number;
+  scoreMatch?: number;
+  metodoMatch?: string;
+}
+
+export interface MaterialNoSsomaDto {
+  lineaId: number;
+  projectId: number;
+  projectDescription: string;
+  recursoCrudo: string;
+  precioTotal: number;
+  fechaGuia: string;
+  estadoRevision?: string;
 }

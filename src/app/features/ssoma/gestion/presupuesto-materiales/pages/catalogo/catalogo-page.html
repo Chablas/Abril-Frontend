@@ -1,0 +1,129 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Catálogo de Materiales"
+    subtitulo="Catálogo normalizado, materiales sin estandarizar y materiales que no pertenecen a SSOMA."
+    [tabs]="headerTabs">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div class="tabs-internas">
+      <button class="tab-btn" [class.tab-activo]="seccion === 'normalizado'" (click)="cambiarSeccion('normalizado')">
+        Catálogo normalizado
+      </button>
+      <button class="tab-btn" [class.tab-activo]="seccion === 'sin-estandarizar'" (click)="cambiarSeccion('sin-estandarizar')">
+        Sin estandarizar
+      </button>
+      <button class="tab-btn" [class.tab-activo]="seccion === 'no-ssoma'" (click)="cambiarSeccion('no-ssoma')">
+        No pertenece a SSOMA
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="loading-msg">Cargando...</div>
+
+    <!-- Sección 1: catálogo normalizado editable -->
+    <div *ngIf="!loading && seccion === 'normalizado'">
+      <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar familia..." class="filtro-input" />
+      <p class="nota-explicativa">
+        <i class="ti ti-info-circle"></i>
+        Este es el catálogo maestro que usan la estandarización y el cálculo de ratios: el nombre,
+        el tipo, y "se calcula por" (HH/Área techada/Trabajadores/Calculado/Fijo/Metrado) de cada
+        familia. Editar aquí afecta cómo se calculan los ratios de TODOS los proyectos.
+      </p>
+      <table class="tabla-catalogo">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Tipo</th><th>Se calcula por</th><th>Unidad</th>
+            <th>Pertenece SSOMA</th><th>Activo</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of familiasFiltradas">
+            <td><input type="text" [(ngModel)]="f.nombre" /></td>
+            <td>
+              <select [(ngModel)]="f.tipoId">
+                <option *ngFor="let t of tipos" [ngValue]="t.id">{{ t.nombre }}</option>
+              </select>
+            </td>
+            <td>
+              <select [(ngModel)]="f.variableBase">
+                <option *ngFor="let v of variablesBase" [ngValue]="v">{{ v }}</option>
+              </select>
+            </td>
+            <td><input type="text" [(ngModel)]="f.unidadMedida" style="width:70px" /></td>
+            <td class="td-check"><input type="checkbox" [(ngModel)]="f.perteneceSsoma" /></td>
+            <td class="td-check"><input type="checkbox" [(ngModel)]="f.activo" /></td>
+            <td><button class="btn-sm btn-primary-sm" (click)="guardarFamilia(f)">Guardar</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Sección 2: sin estandarizar -->
+    <div *ngIf="!loading && seccion === 'sin-estandarizar'">
+      <p class="nota-explicativa">
+        <i class="ti ti-info-circle"></i>
+        Materiales de todos los proyectos que llegaron en un S10 y todavía no se pudieron
+        emparejar automáticamente con el catálogo. Busca el ítem correcto y autoriza, o rechaza si
+        no corresponde a SSOMA (se notifica a Oficina Técnica del proyecto).
+      </p>
+      <div *ngIf="pendientes.length === 0" class="empty-state">
+        <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
+        <p>No hay materiales pendientes de estandarizar.</p>
+      </div>
+      <table *ngIf="pendientes.length > 0" class="tabla-catalogo">
+        <thead>
+          <tr><th>Proyecto</th><th>Recurso (S10)</th><th>Cant.</th><th>Precio total</th><th>Sugerido</th><th>Buscar ítem</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pendientes">
+            <td>{{ p.projectDescription }}</td>
+            <td>{{ p.recursoCrudo }}</td>
+            <td>{{ p.cantidad }}</td>
+            <td>{{ p.precioTotal | number:'1.2-2' }}</td>
+            <td>{{ p.nombreItemSugerido || '—' }}</td>
+            <td class="td-buscar">
+              <input type="text" placeholder="Escribe para buscar..."
+                (ngModelChange)="onBuscarItem(p.lineaId, $event)" [ngModel]="busquedaPorLinea[p.lineaId]" />
+              <select *ngIf="resultadosPorLinea[p.lineaId]?.length" [(ngModel)]="seleccionPorLinea[p.lineaId]">
+                <option [ngValue]="null" disabled>Seleccionar...</option>
+                <option *ngFor="let r of resultadosPorLinea[p.lineaId]" [ngValue]="r.id">
+                  {{ r.nombre }} ({{ r.nombreFamilia }})
+                </option>
+              </select>
+            </td>
+            <td class="acciones-cell">
+              <button class="btn-sm btn-primary-sm" (click)="autorizar(p)">Autorizar</button>
+              <button class="btn-sm btn-outline" (click)="rechazar(p)">Rechazar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Sección 3: no pertenece a SSOMA -->
+    <div *ngIf="!loading && seccion === 'no-ssoma'">
+      <p class="nota-explicativa">
+        <i class="ti ti-info-circle"></i>
+        Reporte de solo lectura: materiales de S10 marcados como que no corresponden al presupuesto
+        SSOMA (ya rechazados en revisión, o de una familia fuera del alcance SSOMA).
+      </p>
+      <div *ngIf="noSsoma.length === 0" class="empty-state">
+        <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
+        <p>No hay materiales reportados fuera de SSOMA.</p>
+      </div>
+      <table *ngIf="noSsoma.length > 0" class="tabla-catalogo">
+        <thead><tr><th>Proyecto</th><th>Recurso (S10)</th><th>Precio total</th><th>Fecha</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let n of noSsoma">
+            <td>{{ n.projectDescription }}</td>
+            <td>{{ n.recursoCrudo }}</td>
+            <td>{{ n.precioTotal | number:'1.2-2' }}</td>
+            <td>{{ n.fechaGuia | date:'dd/MM/yyyy' }}</td>
+            <td>{{ n.estadoRevision || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

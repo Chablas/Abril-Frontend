@@ -10,15 +10,18 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { HitoCriticoDisponibleDto, PersonalHitoDto, PersonalHitoItemInputDto } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
-type RolPersonal = 'PREVENCIONISTA' | 'MONITOR' | 'VIGIA';
-
 interface FilaPersonalHito extends PersonalHitoItemInputDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   total: number;
 }
 
-const ROLES: RolPersonal[] = ['PREVENCIONISTA', 'MONITOR', 'VIGIA'];
+/** Roles SSOMA (dotación de seguridad) + roles de mano de obra general, para poder
+ * presupuestar la dotación completa por hito, no solo el personal de seguridad. */
+const ROLES: string[] = [
+  'PREVENCIONISTA', 'MONITOR', 'VIGIA',
+  'CAPATAZ', 'OFICIAL', 'OPERARIO', 'PEON', 'AYUDANTE',
+];
 const SEMANAS_POR_MES = 4.345;
 
 @Component({

@@ -251,6 +251,8 @@
           [pasoId]="paso.id"
           [ambito]="tabActiva"
           [filtroEstado]="filtroEstado"
+          [mesSeleccionado]="mesSeleccionado"
+          [anioSeleccionado]="anioSeleccionado"
           (actividadEliminada)="onEliminada($event)">
         </app-actividad-tree>
       </div>
@@ -392,6 +394,8 @@
 <app-ejecucion-modal
   *ngIf="actividadEjecutando"
   [actividad]="actividadEjecutando"
+  [mesSeleccionado]="mesSeleccionado"
+  [anioSeleccionado]="anioSeleccionado"
   (closed)="actividadEjecutando = null"
   (ejecucionCreada)="onEjecucionCreada($event)">
 </app-ejecucion-modal>

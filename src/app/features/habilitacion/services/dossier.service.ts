@@ -19,14 +19,14 @@ export class DossierService {
 
   // GET /dossier?proyectoId=&contributorId=&anio=
   getSemanas(
-    proyectoId: number,
+    proyectoId?: number | null,
     contributorId?: number | null,
     anio?: number | null,
   ): Observable<DossierSemanaDto[]> {
     return this.http.get<DossierSemanaDto[]>(this.base, {
       headers: buildHabHeaders(),
       params: buildHabParams({
-        proyectoId,
+        ...(proyectoId ? { proyectoId } : {}),
         ...(contributorId ? { contributorId } : {}),
         ...(anio ? { anio } : {}),
       }),

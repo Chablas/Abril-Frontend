@@ -8,6 +8,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { DossierService } from '../../services/dossier.service';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { ProjectService } from '../../../../core/services/project.service';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { DossierUploadModal } from './components/dossier-upload-modal/dossier-upload-modal';
 import { DossierRevisarModal } from './components/dossier-revisar-modal/dossier-revisar-modal';
@@ -36,6 +37,7 @@ export class Dossier implements OnInit {
 
   semanas: DossierSemanaDto[] = [];
   loadingSemanas = false;
+  filtroSemana: number | null = null;
 
   uploadModalSemanaId: number | null = null;
   revisarModalSemanaId: number | null = null;
@@ -43,6 +45,7 @@ export class Dossier implements OnInit {
   constructor(
     private dossierService: DossierService,
     private empresaContratistaService: EmpresaContratistaService,
+    private projectService: ProjectService,
     private authService: AuthService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -55,11 +58,37 @@ export class Dossier implements OnInit {
       this.loadProyectosContratista();
     } else {
       this.loadEmpresasAdmin();
+      this.loadProyectosGlobal();
+      this.loadSemanas();
     }
   }
 
   isContratista(): boolean {
     return this.authService.isContratista();
+  }
+
+  get puedeVerLista(): boolean {
+    return this.isContratista() ? !!this.proyectoId : true;
+  }
+
+  get semanasFiltradas(): DossierSemanaDto[] {
+    let lista = this.semanas.filter((s) => s.docsSubidos > 0 || s.estado !== 'Borrador');
+    if (this.filtroSemana) lista = lista.filter((s) => s.numeroSemana === this.filtroSemana);
+    return lista;
+  }
+
+  get totalRevisados(): number {
+    return this.semanasFiltradas.filter(
+      (s) => s.estado === 'Aprobado' || s.estado === 'Rechazado' || s.estado === 'Observado',
+    ).length;
+  }
+
+  get totalPorRevisar(): number {
+    return this.semanasFiltradas.filter((s) => s.estado === 'Enviado').length;
+  }
+
+  onFiltroSemanaChange(): void {
+    this.cdr.detectChanges();
   }
 
   // ── ADMIN ────────────────────────────────────────────────────────────────
@@ -76,21 +105,17 @@ export class Dossier implements OnInit {
 
   onEmpresaChange(id: number | null): void {
     this.empresaId = id;
-    this.proyectos = [];
-    this.proyectoId = null;
-    this.semanas = [];
-    if (id) this.loadProyectosAdmin(id);
+    this.loadSemanas();
     this.cdr.detectChanges();
   }
 
-  private loadProyectosAdmin(empresaId: number): void {
+  private loadProyectosGlobal(): void {
     this.loadingProyectos = true;
-    this.empresaContratistaService.getProyectos(empresaId).subscribe({
-      next: (res: any[]) => {
-        this.proyectos = (res ?? []).map((p) => ({
-          id: p.proyectoId,
-          nombre: p.proyectoNombre,
-        }));
+    this.projectService.getProjectsPaged({ pageSize: 500 }).subscribe({
+      next: (res) => {
+        this.proyectos = (res.data ?? [])
+          .filter((p) => p.estado === 'ACTIVO')
+          .map((p) => ({ id: p.projectId, nombre: p.projectDescription }));
         this.loadingProyectos = false;
         this.cdr.detectChanges();
       },
@@ -130,13 +155,12 @@ export class Dossier implements OnInit {
 
   onProyectoChange(id: number | null): void {
     this.proyectoId = id;
-    this.semanas = [];
-    if (id) this.loadSemanas();
+    if (id || !this.isContratista()) this.loadSemanas();
     this.cdr.detectChanges();
   }
 
   loadSemanas(): void {
-    if (!this.proyectoId) return;
+    if (this.isContratista() && !this.proyectoId) return;
     this.loadingSemanas = true;
     this.dossierService.getSemanas(this.proyectoId, this.empresaId).subscribe({
       next: (res) => {

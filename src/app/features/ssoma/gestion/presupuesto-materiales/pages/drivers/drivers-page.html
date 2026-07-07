@@ -3,16 +3,26 @@
     badge="SSOMA · Materiales"
     titulo="Drivers por Proyecto"
     subtitulo="HH, Área Techada y Trabajadores usados para calcular ratios"
-    [tabs]="[
-      { label: 'Cargas S10',               icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
-      { label: 'Drivers',                  icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' },
-      { label: 'Ratios',                   icono: 'ti-chart-bar',        route: '/ssoma/gestion/presupuesto-materiales/ratios' }
-    ]"
+    [tabs]="headerTabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
   </app-abril-page-header>
 
   <div class="page-body">
+    <div class="ir-a-proyecto">
+      <label>Ir a la ficha de un proyecto (incluye proyectos nuevos sin datos aún)
+        <div class="ir-a-proyecto-fila">
+          <select [(ngModel)]="proyectoSeleccionado">
+            <option [ngValue]="null">Selecciona un proyecto...</option>
+            <option *ngFor="let p of proyectosHabilitados" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
+          </select>
+          <button class="btn-primary" (click)="irAProyectoSeleccionado()" [disabled]="!proyectoSeleccionado">
+            <i class="ti ti-arrow-right"></i> Ir
+          </button>
+        </div>
+      </label>
+    </div>
+
     <div *ngIf="loading" class="loading-msg">Cargando proyectos...</div>
 
     <div *ngIf="!loading" class="drivers-table-wrap">

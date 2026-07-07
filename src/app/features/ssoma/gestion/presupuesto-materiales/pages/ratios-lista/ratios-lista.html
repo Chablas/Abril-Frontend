@@ -3,11 +3,7 @@
     badge="SSOMA · Materiales"
     titulo="Ratios por Familia"
     subtitulo="Compara el ratio y precio unitario de cada familia entre proyectos históricos"
-    [tabs]="[
-      { label: 'Cargas S10',             icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
-      { label: 'Drivers',                icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' },
-      { label: 'Ratios',                 icono: 'ti-chart-bar',        route: '/ssoma/gestion/presupuesto-materiales/ratios' }
-    ]"
+    [tabs]="headerTabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
   </app-abril-page-header>

@@ -1,0 +1,106 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Presupuesto de Materiales SSOMA"
+  subtitulo="Revisión y estandarización de materiales por proyecto"
+  [tabs]="headerTabs">
+</app-abril-page-header>
+
+<div class="pres-wrap">
+
+  <!-- Selector de proyecto -->
+  <div class="pres-toolbar">
+    <div class="pres-field">
+      <label class="pres-label">Proyecto</label>
+      <select class="pres-select" [(ngModel)]="proyectoId" (change)="onProyectoChange()">
+        <option [ngValue]="null">— Seleccionar proyecto —</option>
+        @for (p of proyectos; track p.projectId) {
+          <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (!proyectoId) {
+    <div class="empty-state">
+      <i class="ti ti-clipboard-check" style="font-size:48px;color:#d1d5db"></i>
+      <p>Selecciona un proyecto para revisar sus materiales pendientes.</p>
+    </div>
+  } @else {
+    <div class="pres-revision-header">
+      <button class="pres-btn-icon" (click)="loadPendientes()" title="Refrescar">
+        <i class="ti ti-refresh"></i>
+      </button>
+      @if (decisiones.size > 0) {
+        <span class="pres-sel-count">{{ totalSeleccionados }} seleccionados</span>
+        <button class="pres-btn-primary" [disabled]="procesando" (click)="procesarRevision()">
+          @if (procesando) {
+            <i class="ti ti-loader-2 spin"></i> Procesando...
+          } @else {
+            <i class="ti ti-check"></i> Aplicar decisiones
+          }
+        </button>
+      }
+    </div>
+
+    @if (loadingPendientes) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando pendientes...</div>
+    } @else if (pendientes.length === 0) {
+      <div class="empty-state">
+        <i class="ti ti-circle-check" style="font-size:48px;color:#16a34a"></i>
+        <p>No hay materiales pendientes de revisión.</p>
+      </div>
+    } @else {
+      <div class="pres-table-wrap">
+        <table class="pres-table">
+          <thead>
+            <tr>
+              <th>Recurso (crudo)</th>
+              <th>Ítem sugerido</th>
+              <th>Familia</th>
+              <th>Match</th>
+              <th>Cantidad</th>
+              <th>Precio Total</th>
+              <th>Fecha guía</th>
+              <th class="pres-th-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of pendientes; track item.lineaId) {
+              <tr [class.pres-tr--autorizado]="getDecision(item.lineaId) === 'AUTORIZADO'"
+                  [class.pres-tr--rechazado]="getDecision(item.lineaId) === 'RECHAZADO'">
+                <td class="pres-td-recurso">{{ item.recursoCrudo }}</td>
+                <td>{{ item.nombreItemSugerido ?? '—' }}</td>
+                <td class="pres-td-familia">{{ item.nombreFamiliaSugerida ?? '—' }}</td>
+                <td>
+                  @if (item.scoreMatch) {
+                    <span [style.color]="scoreColor(item.scoreMatch)" style="font-weight:600">
+                      {{ (item.scoreMatch * 100) | number:'1.0-0' }}%
+                    </span>
+                    <span class="pres-match-method">{{ item.metodoMatch }}</span>
+                  } @else {
+                    <span style="color:#9ca3af">—</span>
+                  }
+                </td>
+                <td class="pres-td-num">{{ item.cantidad | number:'1.2-2' }}</td>
+                <td class="pres-td-num">S/ {{ item.precioTotal | number:'1.2-2' }}</td>
+                <td class="pres-td-date">{{ item.fechaGuia }}</td>
+                <td class="pres-td-actions">
+                  <button class="pres-btn-auth"
+                    [class.pres-btn-auth--active]="getDecision(item.lineaId) === 'AUTORIZADO'"
+                    (click)="setDecision(item, 'AUTORIZADO')">
+                    <i class="ti ti-check"></i>
+                  </button>
+                  <button class="pres-btn-rej"
+                    [class.pres-btn-rej--active]="getDecision(item.lineaId) === 'RECHAZADO'"
+                    (click)="setDecision(item, 'RECHAZADO')">
+                    <i class="ti ti-x"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

@@ -3,10 +3,7 @@
     badge="SSOMA · Materiales"
     [titulo]="proyectNombre"
     subtitulo="Versiones de presupuesto de materiales"
-    [tabs]="[
-      { label: 'Importación S10', icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales' },
-      { label: 'Drivers',         icono: 'ti-settings',         route: '/ssoma/gestion/presupuesto-materiales/drivers' }
-    ]"
+    [tabs]="headerTabs"
     [botonPrimario]="{ label: 'Generar presupuesto', icono: 'ti-plus' }"
     [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
     (primaryClick)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()"
@@ -17,6 +14,85 @@
     <button class="btn-outline btn-sm" style="width: fit-content;" (click)="irAPersonalHitos()">
       <i class="ti ti-users"></i> Dotación de personal por hito
     </button>
+  </div>
+
+  <!-- Hitos críticos del cronograma vigente -->
+  <div class="page-body" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Hitos críticos del cronograma</h3>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn-outline btn-sm" (click)="irACronograma()">
+            <i class="ti ti-calendar-cog"></i> Editar cronograma
+          </button>
+          <button class="btn-primary" (click)="asignarHitos()" [disabled]="asignandoHitos || hitosCriticos.length === 0">
+            <i class="ti ti-arrows-shuffle"></i>
+            {{ asignandoHitos ? 'Asignando...' : 'Asignar hitos al consumo' }}
+          </button>
+        </div>
+      </div>
+      <p class="form-desc" style="margin-top:0;">
+        Reparte cada línea de consumo de materiales entre estos hitos según su fecha. El check de
+        "crítico" se marca en /projects/milestone-schedule.
+      </p>
+      <div *ngIf="loadingHitos" class="loading-msg">Cargando hitos críticos...</div>
+      <div *ngIf="!loadingHitos && hitosCriticos.length === 0" class="empty-state" style="padding: 1rem;">
+        <p>Este proyecto todavía no tiene hitos marcados como "críticos" en su cronograma.</p>
+        <button class="btn-primary" (click)="irACronograma()">
+          <i class="ti ti-calendar-plus"></i> Crear cronograma en Milestone Schedule
+        </button>
+      </div>
+
+      <div *ngIf="!loadingHitos && hitosCriticos.length > 0" class="hitos-lista">
+        <span *ngFor="let h of hitosCriticos" class="hito-chip">
+          <i class="ti ti-flag"></i> {{ h.hitoDescripcion }}
+          <span class="hito-fecha">{{ h.hitoFecha ? (h.hitoFecha | date:'dd/MM/yyyy') : 'Sin fecha' }}</span>
+        </span>
+      </div>
+
+      <!-- Dotación de personal por hito, aquí mismo -->
+      <div *ngIf="!loadingHitos && hitosCriticos.length > 0" class="personal-section">
+        <h3 class="form-titulo personal-section-titulo">Dotación de personal por hito</h3>
+        <div *ngIf="personalLoading" class="loading-msg">Cargando dotación...</div>
+
+        <div *ngIf="!personalLoading" class="personal-grid">
+          <div class="personal-hito-block" *ngFor="let grupo of personalPorHito">
+            <div class="personal-hito-titulo">
+              {{ grupo.hitoDescripcion }}
+              <span class="hito-fecha" *ngIf="grupo.hitoFecha">{{ grupo.hitoFecha | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <table class="personal-tabla">
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th>Cant.</th>
+                  <th>Sem.</th>
+                  <th>S/ mes</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let fila of grupo.filas">
+                  <td class="personal-rol">{{ fila.rol }}</td>
+                  <td><input type="number" min="0" [(ngModel)]="fila.cantidad" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td><input type="number" min="0" step="0.5" [(ngModel)]="fila.semanas" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td><input type="number" min="0" step="50" [(ngModel)]="fila.costoMensual" (change)="recalcularTotalPersonal(fila)" /></td>
+                  <td class="personal-total-cell">{{ fila.total | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!personalLoading" class="personal-footer">
+          <span>Total general: S/ {{ personalTotalGeneral | number:'1.2-2' }}</span>
+          <button class="btn-primary" (click)="guardarPersonal()" [disabled]="personalGuardando">
+            <i class="ti ti-device-floppy"></i>
+            {{ personalGuardando ? 'Guardando...' : 'Guardar dotación' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="page-body">
