@@ -4155,3 +4155,23 @@ En la pestaña **Proyecto** (`tipoCronogramaActivo === 'PROYECTO'`), cuando la t
 **Causa raíz**: en `commitInlineEdit()` (`cronograma-actividades.ts`) el `subscribe` del `PUT` solo llamaba a `patchActividadLocal(res.actividad)` (fila editada) y `patchPadresActualizados()` (padres), pero nunca leía `res.cascada.cambios`. En cambio `guardar()` sí llamaba a `patchCascadaCambios(res.cascada.cambios)` con esos mismos datos de la respuesta — por eso el modal de editar sí reflejaba la cascada y la edición inline no.
 
 **Fix**: se agregó en `commitInlineEdit()`, justo después del bloque de `patchActividadLocal()`/`patchPadresActualizados()`, el mismo `if (res.cascada?.cambios?.length) { this.patchCascadaCambios(res.cascada.cambios); }` que ya existía en `guardar()`. Sin llamadas HTTP nuevas — solo se aplican datos que ya venían en la respuesta del PUT existente. No se tocó el modal de preview de cascada (`mostrarCascadaSiHayCambios`) para la edición inline.
+
+## Sesión 2026-07-07 (continuación) — Observación por documento en Dossier + bug de staff en Charlas
+
+### 1. El contratista no veía el comentario del revisor por documento
+
+En el modal de subida del Dossier (`dossier-upload-modal.html`), cuando SSOMA marca un documento como "Observado" y deja un comentario (`doc.obsRevisor`), ese comentario solo se mostraba en el modal de revisión del admin (`dossier-revisar-modal.html`) — el contratista no tenía forma de saber qué corregir. Se agregó el bloque de observación por fila de documento (visible solo cuando `doc.estado === 'Observado' && doc.obsRevisor`), con estilo `.doc-obs` igual al patrón ya usado en `.obs-ssoma`.
+
+### 2. Bug: staff no se recargaba al cambiar de proyecto en "Nueva Charla" (`/ssoma/gestion/charlas`)
+
+**Síntoma reportado**: una coordinadora no veía el staff del proyecto en el modal "Nueva Charla", mientras que otro usuario sí lo veía para el mismo proyecto.
+
+**Causa**: `abrirCrear()` en `charlas-dashboard.ts` solo llamaba a `loadStaff()` cuando `!this.staff.length` — una vez que `staff` se poblaba (o quedaba en 0 tras un primer intento sin resultados), nunca se volvía a pedir al backend aunque el usuario cambiara de proyecto con el selector. El endpoint `GET /ssoma-charlas/staff` en sí no depende del usuario que lo llama (filtra por `ObraOficina == "Staff"`, `Estado == "ACTIVO"` y vinculación activa en `WorkerVinculacion` para ese `proyectoId`), así que el bug era 100% de caché en el frontend.
+
+**Fix**: `onProyectoChange()` ahora resetea `this.staff = []` antes de recargar, forzando que `abrirCrear()` vuelva a pedir el staff del proyecto recién seleccionado.
+
+**Pendiente**: si tras este fix la coordinadora sigue sin ver staff, el problema sería de datos — revisar que los trabajadores de su proyecto tengan `obra_oficina = 'Staff'`, `estado = 'ACTIVO'` y una fila activa en `worker_vinculacion` para ese proyecto.
+
+### Archivos clave
+- `src/app/features/habilitacion/pages/dossier/components/dossier-upload-modal/dossier-upload-modal.html` y `.css`
+- `src/app/features/ssoma/gestion/charlas/pages/dashboard/charlas-dashboard.ts` (`onProyectoChange`, línea ~131)
