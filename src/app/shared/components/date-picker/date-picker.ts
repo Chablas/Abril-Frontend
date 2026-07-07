@@ -5,6 +5,7 @@ import {
   HostListener,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
 } from '@angular/core';
@@ -32,7 +33,7 @@ interface DiaCelda {
   templateUrl: './date-picker.html',
   styleUrl: './date-picker.css',
 })
-export class DatePicker implements OnChanges {
+export class DatePicker implements OnChanges, OnDestroy {
   @Input() label: string = '';
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'dd/mm/aaaa';
@@ -65,8 +66,18 @@ export class DatePicker implements OnChanges {
   isOpen = false;
   /** Texto editable del input, en formato `dd/mm/aaaa`. */
   texto = '';
-  /** Si el panel se ancla a la derecha del campo (cuando a la izquierda no cabe en pantalla). */
-  alignRight = false;
+  /**
+   * Posición del panel (`position: fixed`, calculada respecto al viewport). Usar `fixed` en vez
+   * de `absolute` evita que el panel (más ancho que el campo) estire el contenedor cuando este
+   * está dentro de un elemento con scroll (ej. la tabla del cronograma): con `absolute` el panel
+   * formaba parte del ancho scrolleable del contenedor, ocultando días y cerrándose al tocar
+   * la barra de scroll horizontal que aparecía.
+   */
+  panelTop = 0;
+  panelLeft = 0;
+
+  /** Handler de scroll (capturing) usado para cerrar el panel si algún ancestro hace scroll. */
+  private readonly onAncestorScroll = () => this.close();
 
   /** Mes (0-11) y año visibles en el calendario. */
   vistaMes = 0;
@@ -82,6 +93,13 @@ export class DatePicker implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['value']) this.texto = this.formatoLegible(this.value);
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('scroll', this.onAncestorScroll, true);
+      window.removeEventListener('resize', this.onAncestorScroll);
+    }
   }
 
   @HostListener('document:pointerdown', ['$event'])
@@ -117,10 +135,12 @@ export class DatePicker implements OnChanges {
     if (this.disabled || this.isOpen) return;
     this.isOpen = true;
     this.vista = 'dias';
-    // Si el panel se saldría del viewport por la derecha, se ancla al borde derecho del campo.
-    if (typeof window !== 'undefined') {
-      const rect = this.el.nativeElement.getBoundingClientRect();
-      this.alignRight = rect.left + this.anchoPanel > window.innerWidth - 12;
+    this.posicionarPanel();
+    if (typeof document !== 'undefined') {
+      // Captura: los contenedores internos con scroll (ej. la tabla del cronograma) no
+      // burbujean su evento 'scroll', por lo que hay que escucharlo en fase de captura.
+      document.addEventListener('scroll', this.onAncestorScroll, true);
+      window.addEventListener('resize', this.onAncestorScroll);
     }
     this.initVista();
   }
@@ -135,6 +155,20 @@ export class DatePicker implements OnChanges {
   close() {
     this.isOpen = false;
     this.vista = 'dias';
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('scroll', this.onAncestorScroll, true);
+      window.removeEventListener('resize', this.onAncestorScroll);
+    }
+  }
+
+  /** Calcula la posición del panel (`fixed`), pegado al campo y ajustado para no salirse del viewport. */
+  private posicionarPanel() {
+    if (typeof window === 'undefined') return;
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    const margen = 12;
+    const left = Math.min(rect.left, window.innerWidth - this.anchoPanel - margen);
+    this.panelLeft = Math.max(left, margen);
+    this.panelTop = rect.bottom + 4;
   }
 
   /** Alterna entre la grilla de días y el selector de mes (click en el mes de la cabecera). */
