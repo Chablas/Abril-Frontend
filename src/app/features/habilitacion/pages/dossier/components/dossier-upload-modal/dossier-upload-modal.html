@@ -64,6 +64,12 @@
             </div>
           </div>
 
+          @if (doc?.estado === 'Observado' && doc?.obsRevisor) {
+            <div class="doc-obs">
+              <i class="ti ti-message-circle"></i> <strong>Observación:</strong> {{ doc!.obsRevisor }}
+            </div>
+          }
+
           <!-- Archivos subidos (tabla de registros) -->
           @if (doc?.archivos && doc!.archivos.length > 0) {
             <div class="archivos-list">
