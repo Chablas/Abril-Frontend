@@ -95,7 +95,7 @@ export class Detail implements OnInit {
     projectId: 0, contractorId: 0, contractTypeId: 0, contractModalityId: null as number | null,
     paymentMethodId: 0, paymentFormId: null as number | null, includesCartaFianza: false,
     advancePercentage: null as number | null,
-    amount: 0, currencyId: 0, hasIgv: false, workItemId: 0, workItemCategoryId: 0,
+    amount: 0, currencyId: 0, hasIgv: true, workItemId: 0, workItemCategoryId: 0,
     workSpecialtyId: null as number | null,
     isSubcontract: false, isLabor: false, contractWorkItemName: '',
   };
@@ -633,6 +633,8 @@ export class Detail implements OnInit {
           case 'FichaTecnica':         this.item.fichaTecnica         = uploaded; break;
           case 'Anexo':                this.item.anexo                = uploaded; break;
           case 'ScannedDoc1':          this.item.scannedDoc1          = uploaded; break;
+          case 'ScannedDoc2':          this.item.scannedDoc2          = uploaded; break;
+          case 'ScannedDoc3':          this.item.scannedDoc3          = uploaded; break;
         }
         Swal.fire({ icon: 'success', title: 'Archivo subido exitosamente', draggable: true });
       },
@@ -949,6 +951,43 @@ export class Detail implements OnInit {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
     this.step4File = input.files[0];
+  }
+
+  // ── Drag & drop del paso 4 (arrastrar el contrato completo sobre la tarjeta) ──
+  /** Se está arrastrando un archivo sobre la tarjeta del paso 4. */
+  step4Dragging = false;
+  /** Contador de dragenter/dragleave para evitar parpadeo del overlay (ver paso 3). */
+  private step4DragCount = 0;
+
+  private canDropStep4(): boolean {
+    return this.actualStatus === 4 && this.canSendToSc;
+  }
+
+  onStep4DragEnter(event: DragEvent): void {
+    if (!this.canDropStep4()) return;
+    event.preventDefault();
+    this.step4DragCount++;
+    this.step4Dragging = true;
+  }
+
+  onStep4DragOver(event: DragEvent): void {
+    if (!this.canDropStep4()) return;
+    event.preventDefault();
+  }
+
+  onStep4DragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.step4DragCount = Math.max(this.step4DragCount - 1, 0);
+    if (this.step4DragCount === 0) this.step4Dragging = false;
+  }
+
+  onStep4Drop(event: DragEvent): void {
+    if (!this.canDropStep4()) return;
+    event.preventDefault();
+    this.step4DragCount = 0;
+    this.step4Dragging = false;
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.step4File = file;
   }
 
   private async sendScNotification(): Promise<void> {
@@ -1316,6 +1355,43 @@ export class Detail implements OnInit {
     this.uploadDoc(this.currentScannedDocType, input.files[0]);
   }
 
+  // ── Drag & drop del paso 7 (arrastrar el escaneado sobre cada slot) ──
+  // Reutiliza dragDoc/dragEnterCount (mismas del paso 3; ambos pasos nunca se ven a la vez).
+  private canDropScanned(): boolean {
+    return this.hasOfCentral && this.uploadingDoc === null;
+  }
+
+  onScannedDragEnter(docKey: string, event: DragEvent): void {
+    if (!this.canDropScanned()) return;
+    event.preventDefault();
+    this.dragEnterCount[docKey] = (this.dragEnterCount[docKey] ?? 0) + 1;
+    this.dragDoc = docKey;
+  }
+
+  onScannedDragOver(docKey: string, event: DragEvent): void {
+    if (!this.canDropScanned()) return;
+    event.preventDefault();
+  }
+
+  onScannedDragLeave(docKey: string, event: DragEvent): void {
+    event.preventDefault();
+    const remaining = (this.dragEnterCount[docKey] ?? 1) - 1;
+    this.dragEnterCount[docKey] = Math.max(remaining, 0);
+    if (this.dragEnterCount[docKey] === 0 && this.dragDoc === docKey) this.dragDoc = null;
+  }
+
+  onScannedDrop(docKey: string, event: DragEvent): void {
+    if (!this.canDropScanned()) return;
+    event.preventDefault();
+    this.dragEnterCount[docKey] = 0;
+    this.dragDoc = null;
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.currentScannedDocType = docKey;
+      this.uploadDoc(docKey, file);
+    }
+  }
+
   private async sendStep8Notification(): Promise<void> {
     this.loaderService.show();
 
@@ -1543,7 +1619,8 @@ export class Detail implements OnInit {
         advancePercentage:  this.item.advancePercentage ?? null,
         amount:             this.item.amount,
         currencyId:         this.item.currencyId,
-        hasIgv:             this.item.amountHasIgv,
+        // El monto siempre incluye IGV (ya no es configurable).
+        hasIgv:             true,
         workItemId:         this.item.workItemId,
         workItemCategoryId: this.item.workItemCategoryId,
         workSpecialtyId:    this.item.workSpecialtyId ?? null,

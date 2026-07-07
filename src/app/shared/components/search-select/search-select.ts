@@ -30,6 +30,8 @@ export class SearchSelect {
   @Input() color: string = 'var(--color-abril-primary)';
   /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
   @Input() dark: boolean = false;
+  /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */
+  @Input() disabled: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
@@ -75,6 +77,7 @@ export class SearchSelect {
 
   toggle(event: MouseEvent) {
     event.stopPropagation();
+    if (this.disabled) return;
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.searchText = '';

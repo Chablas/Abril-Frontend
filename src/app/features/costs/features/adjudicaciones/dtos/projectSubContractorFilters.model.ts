@@ -6,4 +6,5 @@ export interface ProjectSubContractorFiltersDTO {
   contractTypeId: number | null;
   contractModalityId: number | null;
   paymentMethodId: number | null;
+  projectSubContractorStatusId: number | null;
 }

@@ -8,6 +8,7 @@ import { PaymentFormSimpleDTO } from "./paymentFormSimple.model";
 import { WorkItemSimpleDTO } from "./workItemSimple.model";
 import { WorkItemCategorySimpleDTO } from "./workItemCategorySimple.model";
 import { WorkSpecialtySimpleDTO } from "./workSpecialtySimple.model";
+import { ProjectSubContractorStatusSimpleDTO } from "./projectSubContractorStatusSimple.model";
 
 export interface ProjectSubContractorFormDataDTO {
     projects: ProjectSimpleDTO[];
@@ -20,4 +21,5 @@ export interface ProjectSubContractorFormDataDTO {
     contributors: ContributorFactoryDTO[];
     workItemCategories: WorkItemCategorySimpleDTO[];
     workSpecialties: WorkSpecialtySimpleDTO[];
+    projectSubContractorStatuses: ProjectSubContractorStatusSimpleDTO[];
 }
