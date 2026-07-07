@@ -40,11 +40,22 @@
           </span>
         </td>
 
-        <!-- Partida de control -->
+        <!-- Partida de control (+ indicador de instructivo) -->
         <td class="px-3 py-2">
-          <span *ngIf="item.workItemCategoryDescription; else noCategory"
-            [title]="item.workItemCategoryDescription" class="block line-clamp-1 text-sm text-gray-700">
-            {{ item.workItemCategoryDescription }}
+          <span *ngIf="item.workItemCategoryDescription; else noCategory" class="flex items-center gap-1.5">
+            <span [title]="item.workItemCategoryDescription" class="line-clamp-1 text-sm text-gray-700">
+              {{ item.workItemCategoryDescription }}
+            </span>
+            <svg *ngIf="item.categoryHasInstructivo" class="w-3.5 h-3.5 shrink-0 text-[#009C87]"
+              fill="currentColor" viewBox="0 0 24 24">
+              <title>La partida de control tiene instructivo</title>
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+            <svg *ngIf="!item.categoryHasInstructivo" class="w-3.5 h-3.5 shrink-0 text-gray-400"
+              fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <title>La partida de control no tiene instructivo</title>
+              <path stroke-linecap="round" d="M5 12h14"/>
+            </svg>
           </span>
           <ng-template #noCategory><span class="text-sm text-gray-400">—</span></ng-template>
         </td>

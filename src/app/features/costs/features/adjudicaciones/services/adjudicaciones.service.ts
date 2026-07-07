@@ -63,6 +63,14 @@ export class AdjudicacionesService {
     });
   }
 
+  getNotificationRecipients(projectSubContractorId: number): Observable<{ to: string[]; cc: string[] }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<{ to: string[]; cc: string[] }>(
+      `${this.apiUrl}/${projectSubContractorId}/notification-recipients`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   sendNotification(dto: { projectSubContractorId: number; graphAccessToken: string }): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}/send-notification`, dto, {

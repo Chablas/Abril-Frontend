@@ -4,5 +4,7 @@ export interface WorkItemFilterDto {
   hasValorizationForm?: boolean | null;
   /** Filtra por la partida de control a la que pertenece la partida. null: todas. */
   workItemCategoryId?: number | null;
+  /** true: solo activas · false: solo inactivas · null: todas. */
+  active?: boolean | null;
   page: number;
 }

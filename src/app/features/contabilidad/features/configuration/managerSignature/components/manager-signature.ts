@@ -9,9 +9,10 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
 /**
- * Subsección "Firma de Gerente General" de la Configuración de Contabilidad.
- * Permite dibujar una firma con el mouse (o táctil) en un canvas y guardarla. Esa firma se
- * estampa luego en los documentos firmados de las facturas. Es un único registro (singleton).
+ * Subsección "Firma" de la Configuración de Contabilidad.
+ * Permite dibujar una firma con el mouse (o táctil) en un canvas y guardarla. Esa firma es
+ * personal: se guarda en el registro de Person del usuario actual y se estampa en los documentos
+ * que dicho usuario firme.
  */
 @Component({
   selector: 'app-manager-signature',
@@ -53,7 +54,7 @@ export class ManagerSignature implements OnInit, AfterViewInit {
 
   load(): void {
     this.loaderService.show();
-    this.service.getSingleton().subscribe({
+    this.service.get().subscribe({
       next: (res) => {
         this.current = res;
         this.loaderService.hide();

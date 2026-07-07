@@ -15,8 +15,8 @@ export class ManagerSignatureService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  /** Firma única configurada (null si aún no se configuró). */
-  getSingleton(): Observable<ManagerSignatureDto | null> {
+  /** Firma del usuario actual (null si aún no la configuró). */
+  get(): Observable<ManagerSignatureDto | null> {
     return this.http.get<ManagerSignatureDto | null>(this.apiUrl, { headers: this.headers });
   }
 

@@ -28,7 +28,7 @@ export class ContabilidadConfiguracion implements OnInit {
 
   readonly sectionTabs: SectionTab[] = [
     { id: 'carpeta-facturas', label: 'Carpeta facturas' },
-    { id: 'firma-gg', label: 'Firma de Gerente General' },
+    { id: 'firma-gg', label: 'Firma' },
   ];
 
   private readonly validSections = this.sectionTabs.map((t) => t.id);

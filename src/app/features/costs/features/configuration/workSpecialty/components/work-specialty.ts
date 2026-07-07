@@ -5,6 +5,7 @@ import { WorkSpecialtyList } from './list/list';
 import { WorkSpecialtyCreate } from './create/create';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { WorkSpecialtyFilterDto } from '../dtos/work-specialty-filter.dto';
 import { WorkSpecialtyDto } from '../dtos/work-specialty.dto';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
@@ -12,14 +13,19 @@ import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.
 @Component({
   selector: 'app-work-specialty',
   standalone: true,
-  imports: [CommonModule, FormsModule, WorkSpecialtyList, WorkSpecialtyCreate, Paginator, SearchInput],
+  imports: [CommonModule, FormsModule, WorkSpecialtyList, WorkSpecialtyCreate, Paginator, SearchInput, SearchSelect],
   templateUrl: './work-specialty.html',
   styleUrl: './work-specialty.css',
 })
 export class WorkSpecialty implements OnInit {
   @ViewChild(WorkSpecialtyList) list!: WorkSpecialtyList;
 
-  filters: WorkSpecialtyFilterDto = { description: null, page: 1 };
+  filters: WorkSpecialtyFilterDto = { description: null, active: null, page: 1 };
+
+  readonly estadoOptions = [
+    { value: true, label: 'Activo' },
+    { value: false, label: 'Inactivo' },
+  ];
 
   currentPage = 1;
   totalPages = 0;

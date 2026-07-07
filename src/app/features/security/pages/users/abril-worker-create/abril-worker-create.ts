@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { UserFeatureService } from '../services/user-feature.service';
 import { RoleService } from '../../../../../core/services/role.service';
 import { AbrilWorkerOptionDto } from '../../../../../core/dtos/user/abrilWorkerOption.model';
+import { AbrilManualUserCreateDto } from '../../../../../core/dtos/user/abrilManualUserCreate.model';
 import { RoleSimpleDTO } from '../../../../../core/dtos/role/RoleSimpleDTO.model';
 import { Roles } from '../../../../../core/constants/roles';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -31,6 +32,10 @@ export class AbrilWorkerCreate implements OnInit {
 
   selectedPersonId: number | null = null;
   selectedRoleIds: number[] = [];
+
+  /** Modo "Otro trabajador": el correo @abril.pe se escribe a mano (no está en workers). */
+  otroTrabajador = false;
+  manualEmail = '';
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() userCreated = new EventEmitter<void>();
@@ -82,20 +87,24 @@ export class AbrilWorkerCreate implements OnInit {
     }
   }
 
+  /** Al alternar el modo, se limpia la selección del otro modo para no enviar datos cruzados. */
+  onOtroTrabajadorChange(checked: boolean): void {
+    this.otroTrabajador = checked;
+    if (checked) this.selectedPersonId = null;
+    else this.manualEmail = '';
+  }
+
   saveUser(): void {
+    if (this.otroTrabajador) {
+      this.saveManualUser();
+      return;
+    }
+
     const errors: string[] = [];
     if (!this.selectedPersonId) errors.push('Trabajador de Abril');
     if (this.selectedRoleIds.length === 0) errors.push('Rol (debe asignar al menos uno)');
-
     if (errors.length > 0) {
-      const listHtml = errors.map((e) => `<li>${e}</li>`).join('');
-      Swal.fire({
-        icon: 'warning',
-        title: 'Campos incompletos',
-        html: `<p style="font-size:0.85rem;color:#666;margin-bottom:8px">Por favor completa los siguientes campos:</p>
-               <ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
-        confirmButtonColor: '#64BC04',
-      });
+      this.showMissing(errors);
       return;
     }
 
@@ -103,13 +112,45 @@ export class AbrilWorkerCreate implements OnInit {
     this.userFeatureService
       .createAbrilWorkerUser({ personId: this.selectedPersonId!, roleIds: this.selectedRoleIds })
       .subscribe({
-        next: () => {
-          this.loaderService.hide();
-          this.userCreated.emit();
-          this.closeModal.emit();
-          Swal.fire({ title: 'Usuario creado exitosamente', icon: 'success', draggable: true });
-        },
+        next: () => this.onCreated(),
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
       });
+  }
+
+  /** Alta manual por correo (@abril.pe). El backend valida que exista en el directorio de Abril. */
+  private saveManualUser(): void {
+    const email = this.manualEmail.trim().toLowerCase();
+    const errors: string[] = [];
+    if (!/^[^\s@]+@abril\.pe$/.test(email)) errors.push('Correo @abril.pe válido');
+    if (this.selectedRoleIds.length === 0) errors.push('Rol (debe asignar al menos uno)');
+    if (errors.length > 0) {
+      this.showMissing(errors);
+      return;
+    }
+
+    const dto: AbrilManualUserCreateDto = { email, roleIds: this.selectedRoleIds };
+    this.loaderService.show();
+    this.userFeatureService.createAbrilManualUser(dto).subscribe({
+      next: () => this.onCreated(),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private onCreated(): void {
+    this.loaderService.hide();
+    this.userCreated.emit();
+    this.closeModal.emit();
+    Swal.fire({ title: 'Usuario creado exitosamente', icon: 'success', draggable: true });
+  }
+
+  private showMissing(errors: string[]): void {
+    const listHtml = errors.map((e) => `<li>${e}</li>`).join('');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos incompletos',
+      html: `<p style="font-size:0.85rem;color:#666;margin-bottom:8px">Por favor completa los siguientes campos:</p>
+             <ul style="text-align:left;font-size:0.85rem;padding-left:1.4rem;line-height:2">${listHtml}</ul>`,
+      confirmButtonColor: '#64BC04',
+    });
   }
 }

@@ -1,10 +1,8 @@
-/** Firma del Gerente General (singleton) configurada. */
+/** Firma del usuario actual, guardada en su registro de Person. */
 export interface ManagerSignatureDto {
-  managerSignatureId: number;
   /** data:image/png;base64,… para usar directamente en un <img src>. */
   imageDataUrl: string;
   updatedDateTime?: string | null;
-  createdDateTime: string;
 }
 
 /** Datos para guardar la firma: el data URL PNG exportado por el canvas. */

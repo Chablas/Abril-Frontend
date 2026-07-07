@@ -23,12 +23,48 @@
 
       </div>
 
+      <!-- Correos del contratista -->
+      <div *ngIf="createDto.contractorId" class="mt-[16px] flex flex-col gap-[8px]">
+        <p class="text-sm font-medium" style="color:var(--color-abril-primary)">Correos de contacto del contratista</p>
+        <div *ngIf="contractorEmails.length > 0; else noEmails" class="flex flex-wrap gap-[8px]">
+          <span
+            *ngFor="let email of contractorEmails"
+            class="inline-flex items-center gap-[6px] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full" style="background:var(--color-abril-primary-light)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
+            </svg>
+            {{ email }}
+          </span>
+        </div>
+        <ng-template #noEmails>
+          <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+            <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="text-xs text-red-600 font-medium leading-relaxed">
+              Esta empresa no tiene correos registrados.<br>
+              <span class="font-normal">Debes agregar al menos un correo antes de crear la adjudicación.</span>
+            </p>
+          </div>
+        </ng-template>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-[16px] mt-[16px]">
 
         <div class="flex flex-col gap-[4px]">
-          <app-search-select [fullText]="true" label="Especialidad" [options]="createFormData.workSpecialties"
+          <!-- Modo normal: desplegable de Especialidad. Modo búsqueda: desplegable de Partidas. -->
+          <app-search-select *ngIf="!searchByWorkItem" [fullText]="true" label="Especialidad" [options]="createFormData.workSpecialties"
             valueField="workSpecialtyId" displayField="workSpecialtyDescription"
             [value]="createDto.workSpecialtyId" (valueChange)="onWorkSpecialtyChange($event)" />
+          <app-search-select *ngIf="searchByWorkItem" [fullText]="true" label="Partida" [options]="searchableWorkItems"
+            valueField="workItemId" displayField="workItemDescription"
+            [value]="createDto.workItemId" (valueChange)="onSearchWorkItemSelected($event)" />
+          <label class="inline-flex items-center gap-[8px] cursor-pointer select-none mt-[2px]">
+            <input type="checkbox" [checked]="searchByWorkItem" (change)="toggleSearchByWorkItem()"
+              class="w-[14px] h-[14px] accent-[var(--color-abril-primary)] cursor-pointer" />
+            <span class="text-xs text-gray-500">Buscar por partida</span>
+          </label>
         </div>
 
         <div *ngIf="createDto.workSpecialtyId" class="flex flex-col gap-[6px]">
@@ -88,33 +124,6 @@
           </ng-container>
         </div>
 
-      </div>
-
-      <!-- Correos del contratista -->
-      <div *ngIf="createDto.contractorId" class="mt-[16px] flex flex-col gap-[8px]">
-        <p class="text-sm font-medium" style="color:var(--color-abril-primary)">Correos de contacto del contratista</p>
-        <div *ngIf="contractorEmails.length > 0; else noEmails" class="flex flex-wrap gap-[8px]">
-          <span
-            *ngFor="let email of contractorEmails"
-            class="inline-flex items-center gap-[6px] text-[#3a7a00] text-xs font-medium px-[10px] py-[5px] rounded-full" style="background:var(--color-abril-primary-light)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill="#3a7a00"/>
-            </svg>
-            {{ email }}
-          </span>
-        </div>
-        <ng-template #noEmails>
-          <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
-            <svg class="w-4 h-4 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
-              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <p class="text-xs text-red-600 font-medium leading-relaxed">
-              Esta empresa no tiene correos registrados.<br>
-              <span class="font-normal">Debes agregar al menos un correo antes de crear la adjudicación.</span>
-            </p>
-          </div>
-        </ng-template>
       </div>
 
     </div>

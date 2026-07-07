@@ -69,6 +69,9 @@ export class Create implements OnInit {
   advanceAmount: number | undefined = undefined;
   submitted = false;
 
+  /** Modo "Buscar por partida": reemplaza el desplegable de Especialidad por uno de partidas. */
+  searchByWorkItem = false;
+
   quotationFileItems: FilePreviewItem[] = [];
   comparativeFileItems: FilePreviewItem[] = [];
   readonly maxQuotationFiles = 3;
@@ -160,6 +163,48 @@ export class Create implements OnInit {
     return this.createFormData.workItems
       .find(w => w.workItemId === this.createDto.workItemId)
       ?.valorizationForms ?? [];
+  }
+
+  /**
+   * Partidas buscables en modo "Buscar por partida": solo las que tienen partida de control
+   * con especialidad, porque son las únicas alcanzables por el flujo en cascada normal
+   * (y la creación exige partida de control).
+   */
+  get searchableWorkItems() {
+    return this.createFormData.workItems.filter(w => {
+      if (!w.workItemCategoryId) return false;
+      const category = this.createFormData.workItemCategories
+        .find(c => c.workItemCategoryId === w.workItemCategoryId);
+      return !!category?.workSpecialtyId;
+    });
+  }
+
+  /** Al activar el modo búsqueda se limpia la cascada para empezar de cero. */
+  toggleSearchByWorkItem(): void {
+    this.searchByWorkItem = !this.searchByWorkItem;
+    if (this.searchByWorkItem) {
+      this.createDto.workSpecialtyId = null;
+      this.createDto.workItemCategoryId = 0;
+      this.createDto.workItemId = 0;
+      this.recomputeContractName();
+    }
+  }
+
+  /**
+   * Al elegir una partida en modo búsqueda se resuelve la cascada hacia atrás
+   * (partida → partida de control → especialidad) y se vuelve a la vista normal
+   * con los tres desplegables ya escogidos.
+   */
+  onSearchWorkItemSelected(workItemId: number): void {
+    const item = this.createFormData.workItems.find(w => w.workItemId === workItemId);
+    if (!item?.workItemCategoryId) return;
+    const category = this.createFormData.workItemCategories
+      .find(c => c.workItemCategoryId === item.workItemCategoryId);
+    this.createDto.workSpecialtyId = category?.workSpecialtyId ?? null;
+    this.createDto.workItemCategoryId = item.workItemCategoryId;
+    this.createDto.workItemId = workItemId;
+    this.recomputeContractName();
+    this.searchByWorkItem = false;
   }
 
   onCompanyChange(contractorId: number): void {

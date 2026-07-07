@@ -132,26 +132,22 @@
     <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Fechas</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fecha inicio <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.fechaInicio"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fecha fin <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.fechaFin"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Inicio de obra <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.inicioObra"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fin de obra <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.finObra"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
+      <app-date-picker
+        label="Fecha inicio (opcional)"
+        [(value)]="form.fechaInicio">
+      </app-date-picker>
+      <app-date-picker
+        label="Fecha fin (opcional)"
+        [(value)]="form.fechaFin">
+      </app-date-picker>
+      <app-date-picker
+        label="Inicio de obra (opcional)"
+        [(value)]="form.inicioObra">
+      </app-date-picker>
+      <app-date-picker
+        label="Fin de obra (opcional)"
+        [(value)]="form.finObra">
+      </app-date-picker>
     </div>
 
     <!-- =============== Métricas físicas =============== -->

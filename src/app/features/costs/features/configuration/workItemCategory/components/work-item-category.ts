@@ -25,7 +25,7 @@ import { SearchInput } from '../../../../../../shared/components/search-input/se
 export class WorkItemCategory implements OnInit {
   @ViewChild(WorkItemCategoryList) list!: WorkItemCategoryList;
 
-  filters: WorkItemCategoryFilterDto = { description: null, hasInstructivo: null, hasClause: null, workSpecialtyId: null, page: 1 };
+  filters: WorkItemCategoryFilterDto = { description: null, hasInstructivo: null, hasClause: null, workSpecialtyId: null, active: null, page: 1 };
 
   /** Especialidades para el desplegable de filtro. */
   specialties: WorkSpecialtyOptionDto[] = [];
@@ -38,6 +38,11 @@ export class WorkItemCategory implements OnInit {
   readonly clauseOptions = [
     { value: true, label: 'Con cláusula' },
     { value: false, label: 'Sin cláusula' },
+  ];
+
+  readonly estadoOptions = [
+    { value: true, label: 'Activo' },
+    { value: false, label: 'Inactivo' },
   ];
 
   currentPage = 1;

@@ -29,6 +29,8 @@ export class WorkItemCategoryService {
       params = params.set('hasClause', filters.hasClause.toString());
     if (filters.workSpecialtyId !== null && filters.workSpecialtyId !== undefined)
       params = params.set('workSpecialtyId', filters.workSpecialtyId.toString());
+    if (filters.active !== null && filters.active !== undefined)
+      params = params.set('active', filters.active.toString());
 
     return this.http.get<PagedResponseDTO<WorkItemCategoryDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,
