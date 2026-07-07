@@ -725,7 +725,27 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
         <div *ngFor="let doc of documents; trackBy: trackByDocKey"
-          class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px]">
+          class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] transition-colors"
+          [style.borderColor]="dragDoc === doc.key ? 'var(--color-abril-primary)' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === doc.key ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === doc.key ? 'var(--color-abril-primary-light)' : 'transparent'"
+          (dragenter)="onDocDragEnter(doc.key, $event)"
+          (dragover)="onDocDragOver(doc.key, $event)"
+          (dragleave)="onDocDragLeave(doc.key, $event)"
+          (drop)="onDocDrop(doc.key, $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === doc.key"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:var(--color-abril-primary-light); opacity:0.92">
+            <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ getDocFile(doc.key) ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
 
           <!-- Variable local: archivo actual del documento -->
           <ng-container *ngIf="{ file: getDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
