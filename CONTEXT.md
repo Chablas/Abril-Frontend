@@ -4104,3 +4104,13 @@ En la pestaña **Proyecto** (`tipoCronogramaActivo === 'PROYECTO'`), cuando la t
 - **`cronograma-actividades.ts`**: `usarPlantilla()` — confirma con SweetAlert2 ("¿Cargar la plantilla estándar de Proyecto? Se crearán 61 actividades."), y si el usuario confirma, activa `loadingActividades`/`loaderService.show()` (reutiliza el skeleton existente, F8) y llama `service.aplicarPlantilla()`. Éxito → `recargar()` + toast con el conteo real de `actividadesCreadas`. Error → apaga loading y usa `errorService.handleError()` (F9).
 - **`services/cronograma-actividades.service.ts`**: `aplicarPlantilla(proyectoId, body)` → `POST .../{proyectoId}/aplicar-plantilla`.
 - **`dtos/cronograma-actividades.dtos.ts`**: `AplicarPlantillaRequest { tipoCronograma }` / `AplicarPlantillaResultDto { actividadesCreadas }`, verificados 1:1 contra los DTOs reales del backend (`Abril_Backend/.../CronogramaActividadesDtos.cs`) — el endpoint ya estaba implementado del lado del backend (lee `Seeds/plantilla_proyecto_seed.json`, 61 actividades).
+
+## Sesión 2026-07-07
+
+### Bug de cascada no aplicada en edición inline de fechas
+
+**Síntoma**: al editar inline la fecha de una actividad con sucesoras (actividades cuya predecesora apunta a la editada), la fila editada se actualizaba al toque pero las sucesoras solo se veían correctas tras refrescar la página. Confirmado que el backend calculaba y persistía bien la cascada en la misma llamada `PUT` — el problema era 100% de frontend.
+
+**Causa raíz**: en `commitInlineEdit()` (`cronograma-actividades.ts`) el `subscribe` del `PUT` solo llamaba a `patchActividadLocal(res.actividad)` (fila editada) y `patchPadresActualizados()` (padres), pero nunca leía `res.cascada.cambios`. En cambio `guardar()` sí llamaba a `patchCascadaCambios(res.cascada.cambios)` con esos mismos datos de la respuesta — por eso el modal de editar sí reflejaba la cascada y la edición inline no.
+
+**Fix**: se agregó en `commitInlineEdit()`, justo después del bloque de `patchActividadLocal()`/`patchPadresActualizados()`, el mismo `if (res.cascada?.cambios?.length) { this.patchCascadaCambios(res.cascada.cambios); }` que ya existía en `guardar()`. Sin llamadas HTTP nuevas — solo se aplican datos que ya venían en la respuesta del PUT existente. No se tocó el modal de preview de cascada (`mostrarCascadaSiHayCambios`) para la edición inline.
