@@ -13,9 +13,9 @@
       @if (detalle) {
         <div class="progress-row">
           <div class="progress-track">
-            <div class="progress-fill" [style.width.%]="(detalle.subidos / detalle.totalDocs) * 100"></div>
+            <div class="progress-fill" [style.width.%]="(detalle.docsSubidos / detalle.totalDocs) * 100"></div>
           </div>
-          <span>{{ detalle.subidos }}/{{ detalle.totalDocs }} documentos</span>
+          <span>{{ detalle.docsSubidos }}/{{ detalle.totalDocs }} documentos</span>
         </div>
       }
     </div>

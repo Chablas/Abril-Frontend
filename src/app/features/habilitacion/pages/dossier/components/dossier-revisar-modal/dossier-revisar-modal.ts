@@ -41,6 +41,7 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
   docObservarId: number | null = null;
   comentarioDoc = '';
   guardandoDoc = false;
+  private huboCambios = false;
 
   docSafeUrl: SafeResourceUrl | null = null;
   loadingDoc = false;
@@ -189,6 +190,7 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
       next: () => {
         this.guardandoDoc = false;
         this.docObservarId = null;
+        this.huboCambios = true;
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: estado === 'Aprobado' ? 'Aprobado' : 'Observación registrada', timer: 1500, showConfirmButton: false });
         this.cargarDetalle();
@@ -202,6 +204,6 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
   }
 
   cerrar(): void {
-    this.closed.emit(false);
+    this.closed.emit(this.huboCambios);
   }
 }

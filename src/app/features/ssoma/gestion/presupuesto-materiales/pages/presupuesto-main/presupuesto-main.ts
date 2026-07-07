@@ -15,20 +15,14 @@ import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-
 import {
   ConsumoCargaResumenDto,
   ImportConsumoResultDto,
-  MaterialPendienteDto,
-  RevisionDecisionDto,
 } from '../../presupuesto.dtos';
-import {
-  AbrilPageHeaderComponent,
-  AbrilPageTab,
-} from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 
 interface ProyectoSimple {
   projectId: number;
   projectDescription: string;
 }
-
-type Tab = 'cargas' | 'revision';
 
 @Component({
   selector: 'app-presupuesto-main',
@@ -45,7 +39,8 @@ export class PresupuestoMainComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
-  tab: Tab = 'cargas';
+  readonly headerTabs = PRESUPUESTO_TABS;
+
   proyectos: ProyectoSimple[] = [];
   proyectoId: number | null = null;
 
@@ -56,34 +51,6 @@ export class PresupuestoMainComponent implements OnInit {
   uploadResult: ImportConsumoResultDto | null = null;
   archivoSeleccionado: File | null = null;
   estandarizandoId: number | null = null;
-
-  // Revisión
-  pendientes: MaterialPendienteDto[] = [];
-  loadingPendientes = false;
-  decisiones: Map<number, RevisionDecisionDto> = new Map();
-  procesando = false;
-
-  get headerTabs(): AbrilPageTab[] {
-    return [
-      { label: 'Cargas S10', icono: 'ti-file-spreadsheet', active: this.tab === 'cargas' },
-      { label: 'Revisión de Materiales', icono: 'ti-clipboard-check', active: this.tab === 'revision' },
-      { label: 'Drivers', icono: 'ti-settings', route: '/ssoma/gestion/presupuesto-materiales/drivers' },
-      { label: 'Ratios', icono: 'ti-chart-bar', route: '/ssoma/gestion/presupuesto-materiales/ratios' },
-    ];
-  }
-
-  onTabClick(t: AbrilPageTab): void {
-    if (t.label === 'Cargas S10') this.setTab('cargas');
-    else if (t.label === 'Revisión de Materiales') this.setTab('revision');
-  }
-
-  setTab(t: Tab): void {
-    this.tab = t;
-    if (t === 'revision' && this.proyectoId && this.pendientes.length === 0) {
-      this.loadPendientes();
-    }
-    this.cdr.markForCheck();
-  }
 
   ngOnInit(): void {
     this.loadProyectos();
@@ -104,12 +71,9 @@ export class PresupuestoMainComponent implements OnInit {
 
   onProyectoChange(): void {
     this.cargas = [];
-    this.pendientes = [];
     this.uploadResult = null;
-    this.decisiones.clear();
     if (!this.proyectoId) { this.cdr.markForCheck(); return; }
-    if (this.tab === 'cargas') this.loadCargas();
-    else this.loadPendientes();
+    this.loadCargas();
   }
 
   // ─── Cargas ──────────────────────────────────────────────────────────────
@@ -178,65 +142,6 @@ export class PresupuestoMainComponent implements OnInit {
     });
   }
 
-  // ─── Revisión ─────────────────────────────────────────────────────────────
-
-  loadPendientes(): void {
-    if (!this.proyectoId) return;
-    this.loadingPendientes = true;
-    this.decisiones.clear();
-    this.cdr.markForCheck();
-    this.svc.getPendientes(this.proyectoId).subscribe({
-      next: (p) => {
-        this.pendientes = p;
-        this.loadingPendientes = false;
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loadingPendientes = false;
-        this.errorSvc.handleError(err);
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  setDecision(item: MaterialPendienteDto, decision: 'AUTORIZADO' | 'RECHAZADO'): void {
-    if (this.decisiones.has(item.lineaId) && this.decisiones.get(item.lineaId)!.decision === decision) {
-      this.decisiones.delete(item.lineaId);
-    } else {
-      this.decisiones.set(item.lineaId, {
-        lineaId: item.lineaId,
-        decision,
-        itemIdConfirmado: decision === 'AUTORIZADO' ? item.itemIdSugerido : undefined,
-      });
-    }
-    this.cdr.markForCheck();
-  }
-
-  getDecision(lineaId: number): string | null {
-    return this.decisiones.get(lineaId)?.decision ?? null;
-  }
-
-  get totalSeleccionados(): number { return this.decisiones.size; }
-
-  procesarRevision(): void {
-    if (!this.proyectoId || this.decisiones.size === 0 || this.procesando) return;
-    this.procesando = true;
-    this.cdr.markForCheck();
-    this.svc.procesarRevision(this.proyectoId, Array.from(this.decisiones.values())).subscribe({
-      next: (res) => {
-        this.procesando = false;
-        this.decisiones.clear();
-        this.loadPendientes();
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.procesando = false;
-        this.errorSvc.handleError(err);
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   estadoCargaClass(estado: string): string {
@@ -245,12 +150,5 @@ export class PresupuestoMainComponent implements OnInit {
       case 'pendiente_revision': return 'pres-badge--warn';
       default: return 'pres-badge--neutral';
     }
-  }
-
-  scoreColor(score?: number): string {
-    if (!score) return '#9ca3af';
-    if (score >= 0.85) return '#16a34a';
-    if (score >= 0.6) return '#d97706';
-    return '#dc2626';
   }
 }

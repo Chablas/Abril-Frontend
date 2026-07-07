@@ -8,6 +8,12 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     data: { titulo: 'PRESUPUESTO MATERIALES · IMPORTACIÓN', roles: [] },
   },
   {
+    path: 'revision',
+    loadComponent: () =>
+      import('./pages/revision/revision-page').then((m) => m.RevisionPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · REVISIÓN', roles: [] },
+  },
+  {
     path: 'drivers',
     loadComponent: () =>
       import('./pages/drivers/drivers-page').then((m) => m.DriversPage),
@@ -42,6 +48,18 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/personal-hitos/personal-hitos-page').then((m) => m.PersonalHitosPage),
     data: { titulo: 'PRESUPUESTO MATERIALES · PERSONAL POR HITO', roles: [] },
+  },
+  {
+    path: 'kits',
+    loadComponent: () =>
+      import('./pages/kits/kits-page').then((m) => m.KitsPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · KITS / BOM', roles: [] },
+  },
+  {
+    path: 'catalogo',
+    loadComponent: () =>
+      import('./pages/catalogo/catalogo-page').then((m) => m.CatalogoPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · CATÁLOGO', roles: [] },
   },
 ];
 

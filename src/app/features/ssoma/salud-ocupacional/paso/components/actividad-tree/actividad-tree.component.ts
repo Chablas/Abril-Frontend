@@ -38,6 +38,8 @@ export class ActividadTreeComponent {
 
   @Input() pasoId!: number;
   @Input() ambito: 'Seguridad' | 'Salud' | 'Ambiente' = 'Seguridad';
+  @Input() mesSeleccionado: number = new Date().getMonth() + 1;
+  @Input() anioSeleccionado: number = new Date().getFullYear();
   @Output() actividadEditarClick = new EventEmitter<PasoActividadDto>();
   @Output() actividadEliminada = new EventEmitter<number>();
   @Output() ejecucionRegistrada = new EventEmitter<PasoEjecucionDto>();

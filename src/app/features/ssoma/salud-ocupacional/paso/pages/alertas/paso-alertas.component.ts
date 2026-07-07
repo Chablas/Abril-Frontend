@@ -22,6 +22,7 @@ export class PasoAlertasComponent implements OnInit {
   tabActiva: 'vencidas' | 'proximas' = 'vencidas';
 
   actividadEjecutando: PasoActividadDto | null = null;
+  alertaSeleccionada: PasoAlertaDto | null = null;
   loadingActividad = false;
 
   constructor(
@@ -68,6 +69,7 @@ export class PasoAlertasComponent implements OnInit {
 
   registrar(alerta: PasoAlertaDto): void {
     this.loadingActividad = true;
+    this.alertaSeleccionada = alerta;
     this.actividadService.getById(alerta.ejecucionId).subscribe({
       next: (a) => {
         this.actividadEjecutando = a;
@@ -81,8 +83,17 @@ export class PasoAlertasComponent implements OnInit {
     });
   }
 
+  get mesAlerta(): number {
+    return this.alertaSeleccionada ? new Date(this.alertaSeleccionada.fechaProgramada).getMonth() + 1 : new Date().getMonth() + 1;
+  }
+
+  get anioAlerta(): number {
+    return this.alertaSeleccionada ? new Date(this.alertaSeleccionada.fechaProgramada).getFullYear() : new Date().getFullYear();
+  }
+
   onEjecucionCreada(): void {
     this.actividadEjecutando = null;
+    this.alertaSeleccionada = null;
     this.load();
   }
 }

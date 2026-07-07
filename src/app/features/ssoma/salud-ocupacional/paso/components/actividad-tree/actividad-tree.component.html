@@ -65,6 +65,8 @@
 <app-ejecucion-modal
   *ngIf="actividadEjecutando"
   [actividad]="actividadEjecutando"
+  [mesSeleccionado]="mesSeleccionado"
+  [anioSeleccionado]="anioSeleccionado"
   (closed)="actividadEjecutando = null"
   (ejecucionCreada)="onEjecucionCreada($event)">
 </app-ejecucion-modal>

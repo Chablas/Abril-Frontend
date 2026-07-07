@@ -12,6 +12,7 @@ import {
   RatioProyectoItemDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 
 @Component({
   selector: 'app-ratios-lista',
@@ -22,6 +23,7 @@ import { AbrilPageHeaderComponent } from '../../../../../../shared/components/ab
   styleUrl: './ratios-lista.css',
 })
 export class RatiosListaPage implements OnInit {
+  readonly headerTabs = PRESUPUESTO_TABS;
   private svc = inject(PresupuestoMaterialesService);
   private loader = inject(LoaderService);
   private error = inject(ErrorService);

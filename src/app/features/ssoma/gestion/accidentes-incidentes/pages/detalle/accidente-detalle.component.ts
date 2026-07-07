@@ -231,14 +231,18 @@ export class AccidenteDetalleComponent implements OnInit {
       confirmButtonText: 'Sí, enviar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#1b3a2d',
+      input: 'checkbox',
+      inputPlaceholder: 'No enviar email (solo regularización)',
     });
     if (!result.isConfirmed) return;
+
+    const enviarEmail = !result.value;
 
     this.enviando = true;
     this.cdr.detectChanges();
     this.loaderService.show();
 
-    this.service.enviar(this.id).subscribe({
+    this.service.enviar(this.id, enviarEmail).subscribe({
       next: async (res) => {
         this.enviando = false;
         this.loaderService.hide();

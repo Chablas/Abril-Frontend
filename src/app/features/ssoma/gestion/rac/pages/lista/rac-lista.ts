@@ -10,6 +10,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { CatalogosSaludService } from '../../../../salud-ocupacional/services/catalogos-salud.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
@@ -44,6 +45,7 @@ export class RacLista implements OnInit {
     private errorService: ErrorService,
     private authService: AuthService,
     private projectService: ProjectService,
+    private catalogosSaludService: CatalogosSaludService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -55,13 +57,13 @@ export class RacLista implements OnInit {
   ngOnInit(): void {
     forkJoin({
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200 }),
-      empresas: this.authService.getEmpresasContratistas(),
+      empresas: this.catalogosSaludService.getEmpresas(),
     }).subscribe({
       next: ({ proyectos, empresas }) => {
         this.proyectos = proyectos.data
           .filter(p => p.estado === 'ACTIVO')
           .map(p => ({ id: p.projectId, nombre: p.projectDescription }));
-        this.empresas = empresas.map(e => ({ id: e.id, razonSocial: e.razonSocial }));
+        this.empresas = empresas.map(e => ({ id: e.id, razonSocial: e.nombre }));
         this.cdr.detectChanges();
       },
       error: () => {},

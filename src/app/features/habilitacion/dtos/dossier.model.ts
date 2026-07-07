@@ -28,7 +28,9 @@ export const DOSSIER_TIPOS: DossierTipoDocumento[] = [
 export interface DossierSemanaDto {
   id: number;
   contributorId: number;
+  empresaNombre: string | null;
   proyectoId: number;
+  proyectoNombre: string | null;
   anio: number;
   numeroSemana: number;
   fechaInicio: string;
@@ -37,8 +39,9 @@ export interface DossierSemanaDto {
   obsRevisor: string | null;
   createdAt: string;
   totalDocs: number;
-  subidos: number;
-  na: number;
+  docsSubidos: number;
+  docsNa: number;
+  docsAprobados: number;
 }
 
 export interface DossierArchivoDto {

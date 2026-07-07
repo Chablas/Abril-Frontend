@@ -14,7 +14,14 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { DriverProyectoDto, ActualizarDriversDto } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
 import Swal from 'sweetalert2';
+
+interface ProyectoSimple {
+  projectId: number;
+  projectDescription: string;
+}
 
 @Component({
   selector: 'app-drivers-page',
@@ -25,20 +32,48 @@ import Swal from 'sweetalert2';
   styleUrl: './drivers-page.css',
 })
 export class DriversPage implements OnInit {
+  readonly headerTabs = PRESUPUESTO_TABS;
   private svc    = inject(PresupuestoMaterialesService);
   private loader = inject(LoaderService);
   private error  = inject(ErrorService);
   private cdr    = inject(ChangeDetectorRef);
   private router = inject(Router);
+  private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
   drivers: DriverProyectoDto[] = [];
   loading = false;
   editandoId: number | null = null;
 
+  /** Todos los proyectos habilitados para SSOMA, incluyendo los que aún no tienen consumo/drivers
+   * cargados (proyectos nuevos en etapa de presupuesto). La tabla de abajo solo muestra los que ya
+   * tienen datos; este selector es la puerta de entrada para los que todavía no. */
+  proyectosHabilitados: ProyectoSimple[] = [];
+  proyectoSeleccionado: number | null = null;
+
   // Formulario de edición inline
   form: Partial<ActualizarDriversDto> = {};
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    this.loadProyectosHabilitados();
+  }
+
+  private loadProyectosHabilitados(): void {
+    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
+      next: (res) => {
+        this.proyectosHabilitados = res.map((p) => ({
+          projectId: p.projectId,
+          projectDescription: p.projectDescription,
+        }));
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
+  }
+
+  irAProyectoSeleccionado(): void {
+    if (this.proyectoSeleccionado) this.irAProyecto(this.proyectoSeleccionado);
+  }
 
   load(): void {
     this.loading = true;

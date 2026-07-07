@@ -64,8 +64,12 @@ export class AccidenteIncidenteService {
     return this.http.put<{ message: string }>(`${this.base}/${id}`, request, { headers: this.authHeaders() });
   }
 
-  enviar(id: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.base}/${id}/enviar`, {}, { headers: this.authHeaders() });
+  enviar(id: number, enviarEmail: boolean = true): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.base}/${id}/enviar?enviarEmail=${enviarEmail}`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   eliminar(id: number): Observable<{ message: string }> {

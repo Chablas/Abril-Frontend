@@ -50,3 +50,26 @@
 .btn-outline:hover { background: #f9fafb; }
 .btn-primary-sm { background: #2563eb; color: white; border: none; }
 .btn-primary-sm:hover { background: #1d4ed8; }
+
+.hitos-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; }
+.hitos-card-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.hitos-lista { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
+.hito-chip { display: inline-flex; align-items: center; gap: 6px; background: #fef3c7; color: #92400e;
+  border-radius: 9999px; padding: 4px 12px; font-size: 0.8rem; font-weight: 500; }
+.hito-fecha { color: #b45309; font-weight: 400; font-size: 0.75rem; }
+
+.personal-section { margin-top: 1rem; border-top: 1px solid #f3f4f6; padding-top: 1rem; }
+.personal-section-titulo { margin-bottom: 0.75rem; }
+.personal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.personal-hito-block { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; }
+.personal-hito-titulo { font-size: 0.8rem; font-weight: 600; color: #374151; display: flex;
+  justify-content: space-between; gap: 6px; margin-bottom: 0.5rem; }
+.personal-tabla { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.personal-tabla th { text-align: left; color: #9ca3af; font-weight: 600; padding: 2px 4px; }
+.personal-tabla td { padding: 2px 4px; }
+.personal-rol { font-weight: 600; color: #4b5563; white-space: nowrap; }
+.personal-tabla input { width: 100%; padding: 3px 4px; border: 1px solid #d1d5db;
+  border-radius: 4px; font-size: 0.75rem; }
+.personal-total-cell { font-weight: 600; color: #111827; white-space: nowrap; }
+.personal-footer { display: flex; align-items: center; gap: 1rem; margin-top: 1rem;
+  font-size: 0.875rem; font-weight: 600; color: #374151; }
