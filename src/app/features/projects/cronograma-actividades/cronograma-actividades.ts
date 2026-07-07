@@ -1518,6 +1518,9 @@ export class CronogramaActividades implements OnInit, OnDestroy {
             this.buildAvanceMap();
             this.buildColorMap();
           }
+          if (res.cascada?.cambios?.length) {
+            this.patchCascadaCambios(res.cascada.cambios);
+          }
           this.inlineEditInFlight = false;
           this.cdr.detectChanges();
         },
