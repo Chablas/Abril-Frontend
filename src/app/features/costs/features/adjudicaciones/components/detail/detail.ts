@@ -536,11 +536,53 @@ export class Detail implements OnInit {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length || !this.currentDocType) return;
+    this.validateAndUploadDoc(this.currentDocType, input.files[0]);
+  }
 
-    const file = input.files[0];
+  /** Documento (`doc.key`) sobre el que se está arrastrando un archivo en el paso 3. */
+  dragDoc: string | null = null;
 
+  /**
+   * Conteo de dragenter/dragleave pendientes por documento. Necesario porque al mover el
+   * mouse sobre los elementos hijos de la tarjeta el navegador dispara dragleave del padre
+   * seguido de dragenter, y usar solo dragover/dragleave produce un parpadeo del overlay.
+   */
+  private dragEnterCount: Record<string, number> = {};
+
+  onDocDragEnter(docKey: string, event: DragEvent): void {
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    event.preventDefault();
+    this.dragEnterCount[docKey] = (this.dragEnterCount[docKey] ?? 0) + 1;
+    this.dragDoc = docKey;
+  }
+
+  onDocDragOver(docKey: string, event: DragEvent): void {
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    // Necesario para permitir el drop; el estado visual lo maneja dragenter/dragleave.
+    event.preventDefault();
+  }
+
+  onDocDragLeave(docKey: string, event: DragEvent): void {
+    if (this.isTemplateDoc(docKey)) return;
+    event.preventDefault();
+    const remaining = (this.dragEnterCount[docKey] ?? 1) - 1;
+    this.dragEnterCount[docKey] = Math.max(remaining, 0);
+    if (this.dragEnterCount[docKey] === 0 && this.dragDoc === docKey) this.dragDoc = null;
+  }
+
+  onDocDrop(docKey: string, event: DragEvent): void {
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    event.preventDefault();
+    this.dragEnterCount[docKey] = 0;
+    this.dragDoc = null;
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.validateAndUploadDoc(docKey, file);
+  }
+
+  /** Valida la extensión según el tipo de documento (si aplica) y sube el archivo. */
+  private validateAndUploadDoc(docType: string, file: File): void {
     // Validación extra: los documentos Word-only solo permiten .docx / .doc
-    if (Detail.WORD_ONLY_DOCS.has(this.currentDocType)) {
+    if (Detail.WORD_ONLY_DOCS.has(docType)) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'docx' && ext !== 'doc') {
         Swal.fire({
@@ -554,7 +596,7 @@ export class Detail implements OnInit {
     }
 
     // Validación extra: los documentos PDF-only solo permiten .pdf
-    if (Detail.PDF_ONLY_DOCS.has(this.currentDocType)) {
+    if (Detail.PDF_ONLY_DOCS.has(docType)) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext !== 'pdf') {
         Swal.fire({
@@ -567,7 +609,7 @@ export class Detail implements OnInit {
       }
     }
 
-    this.uploadDoc(this.currentDocType, file);
+    this.uploadDoc(docType, file);
   }
 
   private uploadDoc(docType: string, file: File): void {
