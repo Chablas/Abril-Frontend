@@ -32,7 +32,8 @@ export class Create implements OnInit {
     workItems: [],
     contributors: [],
     workItemCategories: [],
-    workSpecialties: []
+    workSpecialties: [],
+    projectSubContractorStatuses: []
   }
 
   createDto: ProjectSubContractorCreateDTO = {
@@ -45,7 +46,8 @@ export class Create implements OnInit {
     includesCartaFianza: false,
     amount: 0,
     currencyId: 0,
-    hasIgv: false,
+    // El monto de una adjudicación siempre incluye IGV (ya no es configurable).
+    hasIgv: true,
     workItemId: 0,
     workItemCategoryId: 0,
     workSpecialtyId: null,

@@ -1,17 +1,23 @@
 import { Component, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { Roles } from '../../../../../core/constants/roles';
 import { AdjudicacionesDashboardService } from '../services/adjudicaciones-dashboard.service';
 import {
   AdjudicacionesDashboardDTO,
   AdjChartItemDTO,
+  AdjDashboardFiltersDTO,
+  AdjDashboardFilterValues,
 } from '../dtos/adjudicaciones-dashboard.dto';
 
 Chart.register(...registerables, ChartDataLabels);
@@ -19,11 +25,23 @@ Chart.register(...registerables, ChartDataLabels);
 @Component({
   selector: 'app-adjudicaciones-dashboard',
   standalone: true,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './adjudicaciones-dashboard.html',
 })
 export class AdjudicacionesDashboard implements AfterViewInit {
   data?: AdjudicacionesDashboardDTO;
+
+  /** Catálogos de los filtros (se cargan una sola vez en la primera petición). */
+  filterOptions?: AdjDashboardFiltersDTO;
+
+  /** Valores seleccionados en los filtros. */
+  filters: AdjDashboardFilterValues = {
+    projectId: null,
+    contractTypeId: null,
+    contractModalityId: null,
+    paymentMethodId: null,
+    projectSubContractorStatusId: null,
+  };
 
   /** Paleta verde de la app para barras/donas. */
   private readonly greens = [
@@ -36,18 +54,72 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     private service: AdjudicacionesDashboardService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngAfterViewInit(): void {
-    this.load();
+    this.load(true);
   }
 
-  private load(): void {
+  /**
+   * Usuario de Oficina Técnica "puro" (sin ser Admin ni Oficina Central): solo puede
+   * ver el dashboard de su(s) proyecto(s) asignado(s) en Configuración → Correo de
+   * staff por proyecto. Misma lógica que el backend (RestrictToOwnProjects): el
+   * catálogo de proyectos que llega ya viene restringido a los suyos, así que aquí
+   * solo bloqueamos el filtro para que no lo puedan cambiar a otro proyecto.
+   */
+  get projectLocked(): boolean {
+    const roles = this.authService.getRoles();
+    return (
+      roles.includes(Roles.COSTOS_OFICINA_TECNICA) &&
+      !roles.includes(Roles.COSTOS_ADMINISTRADOR) &&
+      !roles.includes(Roles.COSTOS_OFICINA_CENTRAL)
+    );
+  }
+
+  /** Aplica los filtros seleccionados y recarga todos los gráficos. */
+  applyFilters(): void {
+    this.load(false);
+  }
+
+  /** Limpia todos los filtros y recarga. */
+  clearFilters(): void {
+    this.filters = {
+      // Oficina Técnica no puede quitar su proyecto: se mantiene bloqueado.
+      projectId: this.projectLocked ? this.filterOptions?.projects?.[0]?.id ?? null : null,
+      contractTypeId: null,
+      contractModalityId: null,
+      paymentMethodId: null,
+      projectSubContractorStatusId: null,
+    };
+    this.load(false);
+  }
+
+  get hasActiveFilters(): boolean {
+    return (
+      this.filters.projectId != null ||
+      this.filters.contractTypeId != null ||
+      this.filters.contractModalityId != null ||
+      this.filters.paymentMethodId != null ||
+      this.filters.projectSubContractorStatusId != null
+    );
+  }
+
+  /** @param includeFilters solo true en la primera carga para traer los catálogos de filtros. */
+  private load(includeFilters: boolean): void {
     this.loaderService.show();
-    this.service.getDashboard().subscribe({
+    this.service.getDashboard(this.filters, includeFilters).subscribe({
       next: (res) => {
         this.data = res;
+        if (res.filters) {
+          this.filterOptions = res.filters;
+          // Oficina Técnica: el catálogo ya viene con solo su(s) proyecto(s).
+          // Dejamos el filtro marcado en su proyecto y bloqueado (ver template).
+          if (this.projectLocked && res.filters.projects?.length) {
+            this.filters.projectId = res.filters.projects[0].id;
+          }
+        }
         this.loaderService.hide();
         this.cdr.detectChanges();
         setTimeout(() => this.renderAll());
@@ -122,9 +194,20 @@ export class AdjudicacionesDashboard implements AfterViewInit {
         plugins: {
           legend: { display: false },
           tooltip: {
-            callbacks: money
-              ? { label: (ctx) => ` ${(ctx.raw as number).toLocaleString('es-PE')}` }
-              : {},
+            callbacks: {
+              ...(money ? { label: (ctx) => ` ${(ctx.raw as number).toLocaleString('es-PE')}` } : {}),
+              // Detalle breve por barra (solo los ítems que traen `items`, hoy porEstado):
+              // lista de adjudicaciones en ese estado, recortada para no tapar la pantalla.
+              afterBody: (ctxs) => {
+                const detail = items[ctxs[0]?.dataIndex ?? -1]?.items;
+                if (!detail?.length) return [];
+                const max = 10;
+                const lines = detail.slice(0, max).map((s) => `• ${s}`);
+                if (detail.length > max) lines.push(`… y ${detail.length - max} más`);
+                return lines;
+              },
+            },
+            bodyFont: { size: 11 },
           },
           datalabels: {
             color: '#5b6470',

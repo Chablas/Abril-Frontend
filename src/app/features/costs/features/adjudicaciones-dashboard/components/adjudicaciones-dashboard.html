@@ -11,6 +11,96 @@
   (secondaryClick)="downloadPDF()">
 </app-abril-page-header>
 
+<!-- ── FILTROS (afectan a todos los gráficos) ─────────────────────────── -->
+<div *ngIf="filterOptions" class="mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+  <div class="flex flex-wrap items-end gap-3">
+
+    <!-- Proyecto -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Proyecto"
+        placeholder="Todos"
+        [options]="filterOptions.projects"
+        valueField="id"
+        displayField="label"
+        [value]="filters.projectId"
+        [disabled]="projectLocked"
+        (valueChange)="filters.projectId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Tipo de contrato -->
+    <div class="w-[200px]">
+      <app-search-select
+        label="Tipo de contrato"
+        placeholder="Todos"
+        [options]="filterOptions.contractTypes"
+        valueField="id"
+        displayField="label"
+        [value]="filters.contractTypeId"
+        (valueChange)="filters.contractTypeId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Modalidad de contrato -->
+    <div class="w-[200px]">
+      <app-search-select
+        label="Modalidad de contrato"
+        placeholder="Todos"
+        [options]="filterOptions.contractModalities"
+        valueField="id"
+        displayField="label"
+        [value]="filters.contractModalityId"
+        (valueChange)="filters.contractModalityId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Modalidad de pago -->
+    <div class="w-[200px]">
+      <app-search-select
+        label="Modalidad de pago"
+        placeholder="Todos"
+        [options]="filterOptions.paymentMethods"
+        valueField="id"
+        displayField="label"
+        [value]="filters.paymentMethodId"
+        (valueChange)="filters.paymentMethodId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Estado (paso) de la adjudicación -->
+    <div class="w-[220px]">
+      <app-search-select
+        label="Estado"
+        placeholder="Todos"
+        [options]="filterOptions.statuses"
+        valueField="id"
+        displayField="label"
+        [value]="filters.projectSubContractorStatusId"
+        (valueChange)="filters.projectSubContractorStatusId = $event">
+      </app-search-select>
+    </div>
+
+    <!-- Botón aplicar -->
+    <button type="button" (click)="applyFilters()"
+      class="h-[42px] px-5 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors flex items-center gap-2 self-end" style="background:var(--color-abril-primary)">
+      <i class="ti ti-filter"></i>
+      Aplicar
+    </button>
+
+    <!-- Botón limpiar -->
+    <button type="button" (click)="clearFilters()" [disabled]="!hasActiveFilters"
+      class="h-[42px] px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 self-end"
+      [class.cursor-pointer]="hasActiveFilters"
+      [class.opacity-50]="!hasActiveFilters"
+      style="background:var(--color-abril-primary-light); color:var(--color-abril-primary)">
+      <i class="ti ti-x"></i>
+      Limpiar
+    </button>
+
+  </div>
+</div>
+
 <div *ngIf="data" class="flex flex-col gap-5 pb-3">
 
   <!-- ── KPIs ──────────────────────────────────────────────────────────── -->
@@ -92,16 +182,16 @@
   <!-- ══ BENTO: layout asimétrico para romper la cuadrícula uniforme ══════ -->
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
-    <!-- Destacado: tendencia mensual (ancho) -->
-    <div class="xl:col-span-8 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-lime-50/50 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <!-- Destacado: adjudicaciones por estado (ancho, primero) -->
+    <div class="xl:col-span-8 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-cyan-50/60 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-100 text-base text-[#509603]"><i class="ti ti-trending-up"></i></span>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 text-base text-[#0086A5]"><i class="ti ti-chart-bar"></i></span>
         <div class="flex flex-col">
-          <h3 class="text-sm font-semibold text-gray-700">Tendencia mensual de adjudicaciones</h3>
-          <span class="text-[11px] text-gray-400">Adjudicaciones creadas por mes</span>
+          <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por estado</h3>
+          <span class="text-[11px] text-gray-400">Distribución por paso del pipeline</span>
         </div>
       </div>
-      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-mes"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-estado"></canvas></div>
     </div>
 
     <!-- Donut alto: categoría de partida -->
@@ -113,33 +203,37 @@
       <div class="relative flex-1 min-h-[300px]"><canvas id="chart-categoria"></canvas></div>
     </div>
 
-    <!-- Fila asimétrica 5 / 4 / 3 -->
-    <div class="xl:col-span-5 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <!-- Tendencia mensual (ancho, se mantiene igual de grande) -->
+    <div class="xl:col-span-8 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-lime-50/50 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50 text-base text-[#0086A5]"><i class="ti ti-chart-bar"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por estado</h3>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-100 text-base text-[#509603]"><i class="ti ti-trending-up"></i></span>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-semibold text-gray-700">Tendencia mensual de adjudicaciones</h3>
+          <span class="text-[11px] text-gray-400">Adjudicaciones creadas por mes</span>
+        </div>
       </div>
-      <div class="relative flex-1 min-h-[280px]"><canvas id="chart-estado"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-mes"></canvas></div>
     </div>
 
+    <!-- Adjudicaciones por proyecto -->
     <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-building-estate"></i></span>
         <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por proyecto</h3>
       </div>
-      <div class="relative flex-1 min-h-[280px]"><canvas id="chart-proyecto"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-proyecto"></canvas></div>
     </div>
 
+    <!-- Fila de donuts pequeños (4) -->
     <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
         <h3 class="text-sm font-semibold text-gray-700">Por modalidad de contrato</h3>
       </div>
-      <div class="relative flex-1 min-h-[280px]"><canvas id="chart-modalidad"></canvas></div>
+      <div class="relative flex-1 min-h-[240px]"><canvas id="chart-modalidad"></canvas></div>
     </div>
 
-    <!-- Fila de donuts pequeños 4 / 4 / 4 -->
-    <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
         <h3 class="text-sm font-semibold text-gray-700">Por tipo de contrato</h3>
@@ -147,7 +241,7 @@
       <div class="relative flex-1 min-h-[240px]"><canvas id="chart-tipo"></canvas></div>
     </div>
 
-    <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
         <h3 class="text-sm font-semibold text-gray-700">Por modalidad de pago</h3>
@@ -155,7 +249,7 @@
       <div class="relative flex-1 min-h-[240px]"><canvas id="chart-modalidad-pago"></canvas></div>
     </div>
 
-    <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-base text-rose-500"><i class="ti ti-map-pin"></i></span>
         <h3 class="text-sm font-semibold text-gray-700">Llegada a Of. Central (paso 5)</h3>

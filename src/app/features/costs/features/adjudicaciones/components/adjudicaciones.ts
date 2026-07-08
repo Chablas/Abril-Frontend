@@ -18,6 +18,7 @@ import { ProjectSimpleDTO } from '../../../../../core/dtos/project/projectSimple
 import { ContractTypeSimpleDTO } from '../dtos/contractTypeSimple.model';
 import { ContractModalitySimpleDTO } from '../dtos/contractModalitySimple.model';
 import { PaymentMethodSimpleDTO } from '../dtos/paymentMethodSimple.model';
+import { ProjectSubContractorStatusSimpleDTO } from '../dtos/projectSubContractorStatusSimple.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
@@ -38,6 +39,7 @@ export class Adjudicaciones implements OnInit {
   contractTypes: ContractTypeSimpleDTO[] = [];
   contractModalities: ContractModalitySimpleDTO[] = [];
   paymentMethods: PaymentMethodSimpleDTO[] = [];
+  projectSubContractorStatuses: ProjectSubContractorStatusSimpleDTO[] = [];
 
   filters: ProjectSubContractorFiltersDTO = {
     page: 1,
@@ -47,6 +49,7 @@ export class Adjudicaciones implements OnInit {
     contractTypeId: null,
     contractModalityId: null,
     paymentMethodId: null,
+    projectSubContractorStatusId: null,
   };
 
   showAdvanced = false;
@@ -83,6 +86,7 @@ export class Adjudicaciones implements OnInit {
         this.contractTypes = response.filters.contractTypes;
         this.contractModalities = response.filters.contractModalities;
         this.paymentMethods = response.filters.paymentMethods;
+        this.projectSubContractorStatuses = response.filters.projectSubContractorStatuses;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

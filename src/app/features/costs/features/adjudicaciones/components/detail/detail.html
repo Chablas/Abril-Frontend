@@ -473,21 +473,12 @@
 
           </div>
 
-          <!-- IGV toggle -->
-          <div class="mt-[16px] flex items-center gap-[12px]">
-            <button type="button" (click)="step1Form.hasIgv = !step1Form.hasIgv"
-              class="relative w-[44px] h-[24px] rounded-full transition-colors duration-200 cursor-pointer focus:outline-none"
-              [ngClass]="step1Form.hasIgv ? 'bg-[var(--color-abril-primary)]' : 'bg-gray-300'">
-              <span class="absolute left-0 top-[3px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform duration-200"
-                [ngClass]="step1Form.hasIgv ? 'translate-x-[23px]' : 'translate-x-[3px]'"></span>
-            </button>
-            <span class="text-sm text-gray-600">
-              Incluye IGV
-              <span class="ml-[6px] text-xs font-semibold px-[8px] py-[2px] rounded-full"
-                [ngClass]="step1Form.hasIgv ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary)]' : 'bg-gray-100 text-gray-400'">
-                {{ step1Form.hasIgv ? 'SÍ' : 'NO' }}
-              </span>
-            </span>
+          <!-- El monto siempre incluye IGV -->
+          <div class="mt-[16px] flex items-center gap-[8px] text-sm text-gray-500">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            El monto ingresado <span class="font-semibold text-gray-600">incluye IGV</span>.
           </div>
         </div>
 
@@ -979,7 +970,27 @@
 
       <input #fileInputStep4 type="file" class="hidden" (change)="onStep4FileSelected($event)" />
 
-      <div class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px] max-w-sm">
+      <div class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] max-w-sm transition-colors"
+        [style.borderColor]="step4Dragging ? 'var(--color-abril-primary)' : '#E2E2E2'"
+        [style.borderStyle]="step4Dragging ? 'dashed' : 'solid'"
+        [style.background]="step4Dragging ? 'var(--color-abril-primary-light)' : 'transparent'"
+        (dragenter)="onStep4DragEnter($event)"
+        (dragover)="onStep4DragOver($event)"
+        (dragleave)="onStep4DragLeave($event)"
+        (drop)="onStep4Drop($event)">
+
+        <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+        <div *ngIf="step4Dragging"
+          class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+          style="background:var(--color-abril-primary-light); opacity:0.92">
+          <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Suelta aquí para {{ step4File || item.package ? 'reemplazar' : 'seleccionar' }}
+          </span>
+        </div>
 
         <!-- Encabezado -->
         <div class="flex items-center gap-[8px]">
@@ -1368,7 +1379,27 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
         <div *ngFor="let doc of scannedDocuments; trackBy: trackByDocKey"
-          class="border border-[#E2E2E2] rounded-lg p-[14px] flex flex-col gap-[10px]">
+          class="relative border rounded-lg p-[14px] flex flex-col gap-[10px] transition-colors"
+          [style.borderColor]="dragDoc === doc.key ? 'var(--color-abril-primary)' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === doc.key ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === doc.key ? 'var(--color-abril-primary-light)' : 'transparent'"
+          (dragenter)="onScannedDragEnter(doc.key, $event)"
+          (dragover)="onScannedDragOver(doc.key, $event)"
+          (dragleave)="onScannedDragLeave(doc.key, $event)"
+          (drop)="onScannedDrop(doc.key, $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === doc.key"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:var(--color-abril-primary-light); opacity:0.92">
+            <span class="flex items-center gap-2 text-sm font-semibold" style="color:var(--color-abril-primary)">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ getDocFile(doc.key) ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
 
           <ng-container *ngIf="{ file: getDocFile(doc.key) } as ctx">
 

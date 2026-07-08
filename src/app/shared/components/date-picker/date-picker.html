@@ -64,11 +64,14 @@
       </button>
     </div>
 
-    <!-- Calendario desplegable (se ancla a la derecha si no cabe en el viewport) -->
+    <!-- Calendario desplegable: `fixed` respecto al viewport (no `absolute`) para que un campo
+         angosto dentro de un contenedor con scroll (ej. tabla del cronograma) no se estire ni
+         genere scroll horizontal al mostrar el panel, que es más ancho que el campo. -->
     <div
       *ngIf="isOpen"
-      class="absolute top-[calc(100%+4px)] z-50 w-[272px] max-w-[calc(100vw-24px)] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-3 select-none"
-      [ngClass]="alignRight ? 'right-0' : 'left-0'"
+      class="fixed z-50 w-[272px] max-w-[calc(100vw-24px)] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-3 select-none"
+      [style.top.px]="panelTop"
+      [style.left.px]="panelLeft"
     >
       <!-- Cabecera: navegación (según vista) + mes/año clickeables -->
       <div class="flex items-center justify-between mb-2">

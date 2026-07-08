@@ -95,6 +95,19 @@
         </app-search-select>
       </div>
 
+      <!-- Estado (paso) de la adjudicación -->
+      <div class="w-[220px]">
+        <app-search-select
+          label="Estado"
+          placeholder="Todos"
+          [options]="projectSubContractorStatuses"
+          valueField="projectSubContractorStatusId"
+          displayField="projectSubContractorStatusDescription"
+          [value]="filters.projectSubContractorStatusId"
+          (valueChange)="filters.projectSubContractorStatusId = $event">
+        </app-search-select>
+      </div>
+
     </ng-container>
 
     <!-- Botón búsqueda avanzada -->
