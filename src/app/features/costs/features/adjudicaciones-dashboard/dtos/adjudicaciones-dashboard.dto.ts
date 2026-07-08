@@ -6,6 +6,14 @@ export interface AdjChartItemDTO {
   items?: string[];
 }
 
+/** Ítem para gráficos de doble barra: monto total adjudicado + monto del adelanto. */
+export interface AdjAdvanceChartItemDTO {
+  id: number;
+  label: string;
+  total: number;
+  advance: number;
+}
+
 export interface AdjMoneyByCurrencyDTO {
   code: string;
   symbol: string;
@@ -49,15 +57,13 @@ export interface AdjudicacionesDashboardDTO {
   filters?: AdjDashboardFiltersDTO;
   summary: AdjDashboardSummaryDTO;
   porEstado: AdjChartItemDTO[];
-  porProyecto: AdjChartItemDTO[];
-  porTipoContrato: AdjChartItemDTO[];
-  porCategoria: AdjChartItemDTO[];
-  porModalidad: AdjChartItemDTO[];
-  porModalidadPago: AdjChartItemDTO[];
-  llegadaObservaciones: AdjChartItemDTO[];
-  porMes: AdjChartItemDTO[];
   montoPorMoneda: AdjMoneyByCurrencyDTO[];
   topSubcontratistasPen: AdjChartItemDTO[];
   topSubcontratistasUsd: AdjChartItemDTO[];
-  topContratistas: AdjChartItemDTO[];
+  /** Top por monto solo de contratos con adelanto (Contrato con adelanto / Pago a cuenta). */
+  topSubcontratistasAdelantoPen: AdjAdvanceChartItemDTO[];
+  topSubcontratistasAdelantoUsd: AdjAdvanceChartItemDTO[];
+  /** Adjudicaciones pendientes por trabajador de OT (traen items = "RAZÓN SOCIAL — PARTIDA"). */
+  pendientesOtPaso2: AdjChartItemDTO[];
+  pendientesOtPaso4: AdjChartItemDTO[];
 }

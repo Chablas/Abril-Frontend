@@ -16,6 +16,7 @@ import { AdjudicacionesDashboardService } from '../services/adjudicaciones-dashb
 import {
   AdjudicacionesDashboardDTO,
   AdjChartItemDTO,
+  AdjAdvanceChartItemDTO,
   AdjDashboardFiltersDTO,
   AdjDashboardFilterValues,
 } from '../dtos/adjudicaciones-dashboard.dto';
@@ -42,13 +43,6 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     paymentMethodId: null,
     projectSubContractorStatusId: null,
   };
-
-  /** Paleta verde de la app para barras/donas. */
-  private readonly greens = [
-    '#64BC04', '#83c936', '#a2d768', '#509603', '#3c7102', '#c1e49b',
-    '#74c31d', '#284b02', '#b2de82', '#1e3801',
-  ];
-  private readonly doughnutColors = ['#64BC04', '#0086A5', '#F9A826', '#C7CEEA', '#F6C1CC', '#83c936', '#15445C'];
 
   constructor(
     private service: AdjudicacionesDashboardService,
@@ -134,18 +128,15 @@ export class AdjudicacionesDashboard implements AfterViewInit {
   private renderAll(): void {
     if (!this.data) return;
     this.barChart('chart-estado', this.data.porEstado, '#0086A5', '#CFEAF1', true);
-    this.lineChart('chart-mes', this.data.porMes);
-    this.barChart('chart-proyecto', this.data.porProyecto, '#64BC04', '#E5F7D1', true);
-    this.doughnut('chart-tipo', this.data.porTipoContrato);
-    this.doughnut('chart-categoria', this.data.porCategoria);
-    this.doughnut('chart-modalidad', this.data.porModalidad);
-    this.doughnut('chart-modalidad-pago', this.data.porModalidadPago);
-    // Con observaciones (rojo) vs sin observaciones (verde).
-    this.doughnut('chart-observaciones', this.data.llegadaObservaciones, ['#D30000', '#64BC04']);
+    // Pendientes por trabajador de OT (naranja = color de OT en el stepper del detalle).
+    this.barChart('chart-pendientes-ot-2', this.data.pendientesOtPaso2, '#F59E0B', '#FDEBC8', true);
+    this.barChart('chart-pendientes-ot-4', this.data.pendientesOtPaso4, '#F59E0B', '#FDEBC8', true);
     // Rankings (barras horizontales).
     this.barChart('chart-top-pen', this.data.topSubcontratistasPen, '#509603', '#E5F7D1', true, true);
     this.barChart('chart-top-usd', this.data.topSubcontratistasUsd, '#0086A5', '#CFEAF1', true, true);
-    this.barChart('chart-top-contratistas', this.data.topContratistas, '#64BC04', '#E5F7D1', true);
+    // Solo contratos con adelanto (Contrato con adelanto / Pago a cuenta): total vs adelanto.
+    this.dualBarChart('chart-top-adelanto-pen', this.data.topSubcontratistasAdelantoPen, '#509603', '#E5F7D1');
+    this.dualBarChart('chart-top-adelanto-usd', this.data.topSubcontratistasAdelantoUsd, '#0086A5', '#CFEAF1');
   }
 
   /** Aclara un color hex mezclándolo con blanco para obtener un relleno pastel. */
@@ -225,67 +216,37 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     });
   }
 
-  private lineChart(canvasId: string, items: AdjChartItemDTO[]): void {
+  /**
+   * Barras horizontales dobles por subcontratista: monto total adjudicado y monto del adelanto.
+   * El adelanto siempre va en ámbar para distinguirlo del total en ambas monedas.
+   */
+  private dualBarChart(
+    canvasId: string,
+    items: AdjAdvanceChartItemDTO[],
+    border: string,
+    bg: string,
+  ): void {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
     if (!canvas) return;
+    const advanceBorder = '#F9A826';
     Chart.getChart(canvas)?.destroy();
     new Chart(canvas, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels: items.map((i) => i.label),
         datasets: [
           {
-            label: 'Adjudicaciones creadas',
-            data: items.map((i) => i.value),
-            backgroundColor: 'rgba(100, 188, 4, 0.12)',
-            borderColor: '#64BC04',
+            label: 'Monto total',
+            data: items.map((i) => i.total),
+            backgroundColor: bg,
+            borderColor: border,
             borderWidth: 2,
-            pointBackgroundColor: '#64BC04',
-            pointRadius: 3,
-            tension: 0.35,
-            fill: true,
           },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          datalabels: {
-            color: '#509603',
-            anchor: 'end',
-            align: 'top',
-            offset: 3,
-            font: { weight: 'bold', size: 10 },
-            formatter: (v: number) => (v > 0 ? v : ''),
-          },
-        },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-      },
-    });
-  }
-
-  private doughnut(canvasId: string, items: AdjChartItemDTO[], colors?: string[]): void {
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const total = items.reduce((s, i) => s + i.value, 0);
-    const palette = colors ?? this.doughnutColors;
-    Chart.getChart(canvas)?.destroy();
-    new Chart(canvas, {
-      type: 'doughnut',
-      data: {
-        labels: total ? items.map((i) => i.label) : ['Sin datos'],
-        datasets: [
           {
-            data: total ? items.map((i) => i.value) : [1],
-            // Relleno pastel + borde fuerte del mismo color (igual que las barras).
-            backgroundColor: total
-              ? items.map((_, idx) => this.pastel(palette[idx % palette.length]))
-              : ['#F1F3F7'],
-            borderColor: total
-              ? items.map((_, idx) => palette[idx % palette.length])
-              : ['#D9DEE8'],
+            label: 'Adelanto',
+            data: items.map((i) => i.advance),
+            backgroundColor: this.pastel(advanceBorder),
+            borderColor: advanceBorder,
             borderWidth: 2,
           },
         ],
@@ -293,20 +254,32 @@ export class AdjudicacionesDashboard implements AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '58%',
-        layout: { padding: 6 },
+        indexAxis: 'y',
+        layout: { padding: { right: 28 } },
         plugins: {
           legend: {
+            display: true,
             position: 'bottom',
             labels: { boxWidth: 10, padding: 8, font: { size: 10 } },
           },
-          tooltip: { enabled: total > 0 },
-          datalabels: {
-            display: total > 0,
-            color: '#475569',
-            font: { weight: 'bold', size: 11 },
-            formatter: (v: number) => (v > 0 ? v : ''),
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label}: ${(ctx.raw as number).toLocaleString('es-PE')}`,
+            },
+            bodyFont: { size: 11 },
           },
+          datalabels: {
+            color: '#5b6470',
+            font: { weight: 'bold', size: 10 },
+            anchor: 'end',
+            align: 'right',
+            offset: 2,
+            formatter: (v: number) => (v > 0 ? this.formatMoney(v) : ''),
+          },
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } },
+          y: { ticks: { font: { size: 10 } } },
         },
       },
     });
@@ -368,7 +341,6 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     const marginX = 10;
     const usableWidth = 210 - marginX * 2;
     const halfWidth = usableWidth / 2;
-    const thirdWidth = usableWidth / 3;
     const pageHeight = 297;
     const chartHeight = 55;
     let currentY = 10;
@@ -399,44 +371,29 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
 
-    // Fila 1: estado / tendencia / proyecto (3 columnas)
-    const row1 = [
-      { id: 'chart-estado', title: 'ADJUDICACIONES POR ESTADO' },
-      { id: 'chart-mes', title: 'TENDENCIA MENSUAL' },
-      { id: 'chart-proyecto', title: 'ADJUDICACIONES POR PROYECTO' },
+    // Adjudicaciones por estado (ancho completo)
+    ensureSpace(chartHeight + 6);
+    pdf.text('ADJUDICACIONES POR ESTADO', 105, currentY, { align: 'center' });
+    const estadoImg = this.chartImage('chart-estado');
+    if (estadoImg) pdf.addImage(estadoImg, 'PNG', marginX, currentY + 2, usableWidth, chartHeight);
+    currentY += chartHeight + 10;
+
+    // Pendientes por trabajador de OT (pasos 2 y 4)
+    const pendientesPair = [
+      { id: 'chart-pendientes-ot-2', title: 'PENDIENTES DE OT — PASO 2 (DATOS DEL CONTRATO)' },
+      { id: 'chart-pendientes-ot-4', title: 'PENDIENTES DE OT — PASO 4 (POR ENVIAR AL SC)' },
     ];
     ensureSpace(chartHeight + 6);
-    row1.forEach((c, i) => {
-      pdf.text(c.title, marginX + thirdWidth * i + thirdWidth / 2, currentY, { align: 'center' });
+    pendientesPair.forEach((c, j) => {
+      pdf.text(c.title, marginX + halfWidth * j + halfWidth / 2, currentY, { align: 'center' });
     });
-    row1.forEach((c, i) => {
+    pendientesPair.forEach((c, j) => {
       const img = this.chartImage(c.id);
-      if (img) pdf.addImage(img, 'PNG', marginX + thirdWidth * i, currentY + 2, thirdWidth, chartHeight);
+      if (img) pdf.addImage(img, 'PNG', marginX + halfWidth * j, currentY + 2, halfWidth, chartHeight);
     });
     currentY += chartHeight + 10;
 
-    // Distribuciones (donas) en filas de 2
-    const dist = [
-      { id: 'chart-modalidad', title: 'POR MODALIDAD DE CONTRATO' },
-      { id: 'chart-categoria', title: 'POR CATEGORÍA DE PARTIDA' },
-      { id: 'chart-tipo', title: 'POR TIPO DE CONTRATO' },
-      { id: 'chart-modalidad-pago', title: 'POR MODALIDAD DE PAGO' },
-      { id: 'chart-observaciones', title: 'LLEGADA A OF. CENTRAL (PASO 5)' },
-    ];
-    for (let i = 0; i < dist.length; i += 2) {
-      const pair = dist.slice(i, i + 2);
-      ensureSpace(chartHeight + 6);
-      pair.forEach((c, j) => {
-        pdf.text(c.title, marginX + halfWidth * j + halfWidth / 2, currentY, { align: 'center' });
-      });
-      pair.forEach((c, j) => {
-        const img = this.chartImage(c.id);
-        if (img) pdf.addImage(img, 'PNG', marginX + halfWidth * j, currentY + 2, halfWidth, chartHeight);
-      });
-      currentY += chartHeight + 10;
-    }
-
-    // Rankings (barras horizontales) en filas de 2 + ancho completo
+    // Rankings (barras horizontales) en filas de 2
     const rankPair = [
       { id: 'chart-top-pen', title: 'TOP SUBCONTRATISTAS POR MONTO (S/.)' },
       { id: 'chart-top-usd', title: 'TOP SUBCONTRATISTAS POR MONTO ($)' },
@@ -451,10 +408,20 @@ export class AdjudicacionesDashboard implements AfterViewInit {
     });
     currentY += chartHeight + 10;
 
+    // Rankings solo de contratos con adelanto (total vs adelanto)
+    const rankAdelantoPair = [
+      { id: 'chart-top-adelanto-pen', title: 'TOP SUBCONTRATISTAS CON ADELANTO (S/.)' },
+      { id: 'chart-top-adelanto-usd', title: 'TOP SUBCONTRATISTAS CON ADELANTO ($)' },
+    ];
     ensureSpace(chartHeight + 6);
-    pdf.text('TOP SUBCONTRATISTAS MÁS ADJUDICADOS', 105, currentY, { align: 'center' });
-    const topImg = this.chartImage('chart-top-contratistas');
-    if (topImg) pdf.addImage(topImg, 'PNG', marginX, currentY + 2, usableWidth, chartHeight);
+    rankAdelantoPair.forEach((c, j) => {
+      pdf.text(c.title, marginX + halfWidth * j + halfWidth / 2, currentY, { align: 'center' });
+    });
+    rankAdelantoPair.forEach((c, j) => {
+      const img = this.chartImage(c.id);
+      if (img) pdf.addImage(img, 'PNG', marginX + halfWidth * j, currentY + 2, halfWidth, chartHeight);
+    });
+    currentY += chartHeight + 10;
 
     return pdf;
   }

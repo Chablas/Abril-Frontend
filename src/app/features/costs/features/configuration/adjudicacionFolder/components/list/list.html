@@ -4,6 +4,7 @@
       <tr class="text-sm" style="color:var(--color-abril-primary-dark)">
         <th class="py-2 px-2 w-[64px]"></th>
         <th class="py-2 px-3 text-left font-semibold">Proyecto</th>
+        <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Tipo</th>
         <th class="py-2 px-3 text-left font-semibold">Carpeta</th>
         <th class="py-2 px-3 text-left font-semibold">URL</th>
         <th class="py-2 px-3 text-center font-semibold whitespace-nowrap">Estado</th>
@@ -36,6 +37,18 @@
         <td class="px-3 py-2">
           <span [title]="item.projectDescription" class="block line-clamp-1 text-sm text-gray-700">
             {{ item.projectDescription }}
+          </span>
+        </td>
+
+        <!-- Tipo -->
+        <td class="px-3 py-2 text-center">
+          <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+            [ngClass]="{
+              'bg-[#E8F1FD] text-[#1D6FD4]': item.folderTypeId === 2,
+              'bg-[#F3E8FD] text-[#7C3AED]': item.folderTypeId !== 2
+            }"
+            [title]="item.folderTypeDescription">
+            {{ item.folderTypeDescription }}
           </span>
         </td>
 
@@ -73,7 +86,7 @@
       </tr>
 
       <tr *ngIf="items.length === 0">
-        <td colspan="6" class="text-center text-sm text-gray-400 italic py-8">
+        <td colspan="7" class="text-center text-sm text-gray-400 italic py-8">
           No hay registros.
         </td>
       </tr>
@@ -85,6 +98,7 @@
   *ngIf="showEditModal"
   [dto]="editDto"
   [folderName]="editFolderName"
+  [folderTypeDescription]="editFolderTypeDescription"
   (closeModal)="showEditModal = false"
   (saved)="load(1)">
 </app-adjudicacion-folder-edit>

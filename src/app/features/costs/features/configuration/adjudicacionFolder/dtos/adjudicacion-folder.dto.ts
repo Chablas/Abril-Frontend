@@ -2,6 +2,8 @@ export interface AdjudicacionFolderDto {
   projectAdjudicacionFolderId: number;
   projectId: number;
   projectDescription: string;
+  folderTypeId: number;
+  folderTypeDescription: string;
   linkUrl: string;
   driveId: string;
   folderId: string;

@@ -1,6 +1,12 @@
 <app-base-modal [title]="'EDITAR CARPETA DE ADJUDICACIONES'" width="w-[560px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-5 mt-5">
 
+    <!-- Tipo de carpeta -->
+    <div *ngIf="folderTypeDescription" class="flex items-center gap-2 text-sm bg-gray-50 border rounded-lg px-3 py-2" style="border-color:var(--color-abril-border)">
+      <span class="text-gray-500">Tipo de carpeta:</span>
+      <b class="text-gray-700">{{ folderTypeDescription }}</b>
+    </div>
+
     <!-- Carpeta actual -->
     <div *ngIf="folderName" class="flex items-center gap-2 text-sm bg-gray-50 border rounded-lg px-3 py-2" style="border-color:var(--color-abril-border)">
       <span class="text-gray-500">Carpeta actual:</span>

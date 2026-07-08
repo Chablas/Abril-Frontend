@@ -18,11 +18,12 @@ import Swal from 'sweetalert2';
   templateUrl: './create.html',
 })
 export class AdjudicacionFolderCreate {
-  @Input() formData: AdjudicacionFolderFormDataDto = { projects: [] };
+  @Input() formData: AdjudicacionFolderFormDataDto = { projects: [], folderTypes: [] };
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   projectId: number | null = null;
+  folderTypeId: number | null = null;
   linkUrl = '';
   driveId: string | null = null;
   folderId: string | null = null;
@@ -45,6 +46,10 @@ export class AdjudicacionFolderCreate {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Selecciona un proyecto.' });
       return;
     }
+    if (!this.folderTypeId) {
+      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Selecciona el tipo de carpeta.' });
+      return;
+    }
     if (!this.linkUrl.trim()) {
       Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingresa el link de la carpeta.' });
       return;
@@ -56,7 +61,7 @@ export class AdjudicacionFolderCreate {
 
     this.loaderService.show();
     this.service
-      .create({ projectId: this.projectId, linkUrl: this.linkUrl.trim(), driveId: this.driveId, folderId: this.folderId })
+      .create({ projectId: this.projectId, folderTypeId: this.folderTypeId, linkUrl: this.linkUrl.trim(), driveId: this.driveId, folderId: this.folderId })
       .subscribe({
         next: (res) => {
           this.loaderService.hide();

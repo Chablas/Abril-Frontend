@@ -25,6 +25,7 @@ export class AdjudicacionFolderList implements OnInit {
   showEditModal = false;
   editDto: AdjudicacionFolderUpdateDto = { projectAdjudicacionFolderId: 0, linkUrl: '', driveId: '', folderId: '', active: true };
   editFolderName: string | null = null;
+  editFolderTypeDescription: string | null = null;
 
   constructor(
     private service: AdjudicacionFolderService,
@@ -58,6 +59,7 @@ export class AdjudicacionFolderList implements OnInit {
       active: item.active,
     };
     this.editFolderName = item.folderName ?? null;
+    this.editFolderTypeDescription = item.folderTypeDescription;
     this.showEditModal = true;
   }
 
