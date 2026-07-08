@@ -4,6 +4,7 @@ export interface RacListQuery {
   severidad?: string;
   tipo?: string;
   empresaReportadaId?: number;
+  empresaReportanteId?: number;
   fechaDesde?: string;
   fechaHasta?: string;
   soloConPenalidad?: boolean;
@@ -82,6 +83,7 @@ export interface RacListItemDto {
   plazoLevantamiento?: string;
   aplicaPenalidad: boolean;
   empresaReportadaNombre?: string;
+  empresaReportanteNombre?: string;
   reportanteNombre?: string;
   descripcion?: string;
 }
@@ -132,6 +134,8 @@ export interface RacDashboardDto {
   criticosAbiertos: number;
   altosAbiertos: number;
   vencidosAbiertos: number;
+  totalReportados: number;
+  totalReportadosCerrados: number;
   porProyecto: RacPorProyectoDto[];
   porCategoria: RacPorCategoriaDto[];
   tendencia: RacTendenciaDto[];

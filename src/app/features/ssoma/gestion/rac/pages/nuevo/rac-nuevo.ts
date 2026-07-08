@@ -248,6 +248,9 @@ export class RacNuevo implements OnInit, OnDestroy {
       this.descripcion.trim() &&
       this.planAccion.trim() &&
       this.plazoLevantamiento &&
+      this.empresaReportadaId &&
+      this.empresaReportanteId &&
+      this.fotosSeleccionadas.length > 0 &&
       !this.saving
     );
   }
@@ -272,7 +275,7 @@ export class RacNuevo implements OnInit, OnDestroy {
       empresaReportanteId: this.empresaReportanteId ?? undefined,
       esAnonimoObservado: this.esAnonimoObservado,
       observadoWorkerIds: this.observadosSeleccionados.map((w) => w.id),
-      empresaReportadaId: this.esAnonimaEmpresaReportada ? undefined : (this.empresaReportadaId ?? undefined),
+      empresaReportadaId: this.empresaReportadaId ?? undefined,
       proyectoPiso: this.proyectoPiso || undefined,
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,
@@ -288,16 +291,18 @@ export class RacNuevo implements OnInit, OnDestroy {
     this.loaderService.show();
     this.racService.crear(req).subscribe({
       next: (res) => {
-        const mostrarSwalYNavegar = () => {
+        const mostrarSwalYNavegar = (fotosFallaron = false) => {
           this.saving = false;
           this.fotosSubiendo = false;
           this.loaderService.hide();
           Swal.fire({
-            icon: 'success',
-            title: 'RAC registrado',
-            html: `Código: <b>${res.codigo}</b>`,
-            timer: 2500,
-            showConfirmButton: false,
+            icon: fotosFallaron ? 'warning' : 'success',
+            title: fotosFallaron ? 'RAC registrado, pero las fotos no se pudieron subir' : 'RAC registrado',
+            html: fotosFallaron
+              ? `Código: <b>${res.codigo}</b><br>Vuelve a intentar subir las fotos desde el detalle del RAC.`
+              : `Código: <b>${res.codigo}</b>`,
+            timer: fotosFallaron ? undefined : 2500,
+            showConfirmButton: fotosFallaron,
           }).then(() => this.router.navigate(['/ssoma/gestion/rac/lista']));
         };
 
@@ -306,11 +311,11 @@ export class RacNuevo implements OnInit, OnDestroy {
           forkJoin(
             this.fotosSeleccionadas.map(f => this.racService.subirFoto(res.id, f, 'Observacion'))
           ).subscribe({
-            next: () => mostrarSwalYNavegar(),
-            error: () => mostrarSwalYNavegar(),
+            next: () => mostrarSwalYNavegar(false),
+            error: () => mostrarSwalYNavegar(true),
           });
         } else {
-          mostrarSwalYNavegar();
+          mostrarSwalYNavegar(false);
         }
       },
       error: (err: HttpErrorResponse) => {

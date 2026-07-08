@@ -5,6 +5,7 @@ import { RacService } from '../../services/rac.service';
 import { RacDashboardDto } from '../../dtos/rac.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { AuthService } from '../../../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-rac-dashboard',
@@ -24,7 +25,12 @@ export class RacDashboard implements OnInit {
     private racService: RacService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
+
+  get esContratista(): boolean {
+    return this.authService.isContratista();
+  }
 
   ngOnInit(): void {
     this.load();

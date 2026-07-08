@@ -28,7 +28,10 @@ export interface RacListFiltrosState {
   filtroTipo: string;
   filtroSoloConPenalidad: boolean;
   filtroProyectoId: number | null;
-  filtroEmpresaId: number | null;
+  filtroEmpresaReportadaId: number | null;
+  filtroEmpresaReportanteId: number | null;
+  filtroMes: number | null;
+  filtroAnio: number | null;
   page: number;
 }
 
