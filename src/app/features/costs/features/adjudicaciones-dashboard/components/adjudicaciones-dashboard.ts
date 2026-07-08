@@ -194,9 +194,20 @@ export class AdjudicacionesDashboard implements AfterViewInit {
         plugins: {
           legend: { display: false },
           tooltip: {
-            callbacks: money
-              ? { label: (ctx) => ` ${(ctx.raw as number).toLocaleString('es-PE')}` }
-              : {},
+            callbacks: {
+              ...(money ? { label: (ctx) => ` ${(ctx.raw as number).toLocaleString('es-PE')}` } : {}),
+              // Detalle breve por barra (solo los ítems que traen `items`, hoy porEstado):
+              // lista de adjudicaciones en ese estado, recortada para no tapar la pantalla.
+              afterBody: (ctxs) => {
+                const detail = items[ctxs[0]?.dataIndex ?? -1]?.items;
+                if (!detail?.length) return [];
+                const max = 10;
+                const lines = detail.slice(0, max).map((s) => `• ${s}`);
+                if (detail.length > max) lines.push(`… y ${detail.length - max} más`);
+                return lines;
+              },
+            },
+            bodyFont: { size: 11 },
           },
           datalabels: {
             color: '#5b6470',

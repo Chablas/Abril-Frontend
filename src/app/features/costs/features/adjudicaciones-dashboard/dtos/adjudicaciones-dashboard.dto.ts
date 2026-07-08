@@ -2,6 +2,8 @@ export interface AdjChartItemDTO {
   id: number;
   label: string;
   value: number;
+  /** Detalle breve por ítem ("CONTRATISTA — PARTIDA"); solo llega en porEstado (tooltip de la barra). */
+  items?: string[];
 }
 
 export interface AdjMoneyByCurrencyDTO {
