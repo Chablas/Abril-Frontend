@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, distinctUntilChanged, forkJoin, takeUntil } from 'rxjs';
+import { Subject, catchError, debounceTime, distinctUntilChanged, forkJoin, of, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { RacService } from '../../services/rac.service';
 import { RacCategoriaDto, RacCreateRequest, RacInfraccionDto } from '../../dtos/rac.dtos';
@@ -22,6 +22,7 @@ import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { compressImages } from '../../../../../../shared/utils/image-compress';
 
 @Component({
   selector: 'app-rac-nuevo',
@@ -257,8 +258,14 @@ export class RacNuevo implements OnInit, OnDestroy {
 
   onFotosChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.fotosSeleccionadas = Array.from(input.files ?? []);
+    const seleccionadas = Array.from(input.files ?? []);
     this.cdr.markForCheck();
+    // Las fotos de cámara pueden pesar 8-15MB; comprimirlas antes de subir evita
+    // que la subida falle por timeout en datos móviles.
+    compressImages(seleccionadas).then((comprimidas) => {
+      this.fotosSeleccionadas = comprimidas;
+      this.cdr.markForCheck();
+    });
   }
 
   submit(): void {
@@ -308,11 +315,16 @@ export class RacNuevo implements OnInit, OnDestroy {
 
         if (this.fotosSeleccionadas.length > 0) {
           this.fotosSubiendo = true;
+          // catchError por foto: una falla individual (típico en datos móviles) no debe
+          // tumbar la subida de las demás ni reportar "todo falló" cuando en realidad
+          // solo una imagen no llegó.
           forkJoin(
-            this.fotosSeleccionadas.map(f => this.racService.subirFoto(res.id, f, 'Observacion'))
-          ).subscribe({
-            next: () => mostrarSwalYNavegar(false),
-            error: () => mostrarSwalYNavegar(true),
+            this.fotosSeleccionadas.map(f =>
+              this.racService.subirFoto(res.id, f, 'Observacion').pipe(catchError(() => of(null))),
+            ),
+          ).subscribe((resultados) => {
+            const algunaFallo = resultados.some((r) => r === null);
+            mostrarSwalYNavegar(algunaFallo);
           });
         } else {
           mostrarSwalYNavegar(false);

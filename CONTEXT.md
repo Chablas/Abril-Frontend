@@ -4208,3 +4208,21 @@ El backend separó "RACs reportados" (por empresa reportante) de "RACs atribuido
 ### Pendiente
 - Verificar en el navegador (no se pudo en esta sesión) que los indicadores de RP Mural/Lumbreras cuenten correctamente tras el deploy del backend.
 - 11 RAC de julio con `empresa_reportada_id = NULL` siguen sin corregir en BD (ver detalle en `Abril_Backend/CONTEXT.md`).
+
+## Sesión 2026-07-07 (tarde) — RAC: compresión de fotos y subida resiliente
+
+Reporte urgente en producción (mobile, `intranet.abril.pe`): al crear un RAC, el modal mostraba "RAC registrado, pero las fotos no se pudieron subir". El RAC se guardaba bien; el problema era exclusivo de las fotos.
+
+**Causa**: `rac-nuevo.ts` subía las fotos tal cual salen de la cámara del celular (típicamente 8-15MB cada una) en paralelo vía `forkJoin`, sin comprimir. En datos móviles eso falla por timeout. Además, `forkJoin` es todo-o-nada: si UNA foto fallaba, se reportaba que fallaron todas aunque el resto sí se hubiera subido.
+
+**Cambios**:
+- Nuevo `src/app/shared/utils/image-compress.ts`: comprime cualquier imagen a máx. 1600px + JPEG calidad 0.75 vía `canvas`/`createImageBitmap` antes de subir (reduce el peso ~80-90%). Si el navegador no puede procesarla, devuelve el archivo original sin romper el flujo.
+- `rac-nuevo.ts`: `onFotosChange` ahora comprime antes de guardar en `fotosSeleccionadas`. La subida por `forkJoin` ahora envuelve cada `subirFoto` en `catchError(() => of(null))` y solo marca "fallaron" si de verdad hubo un `null` en los resultados — ya no es todo-o-nada.
+
+### Archivos clave
+- `src/app/shared/utils/image-compress.ts` (nuevo)
+- `src/app/features/ssoma/gestion/rac/pages/nuevo/rac-nuevo.ts`
+
+### Pendiente
+- Confirmar con el usuario en el celular real que el error ya no ocurre.
+- Si sigue fallando, el siguiente sospechoso es un límite de tamaño de cuerpo en el proxy/servidor delante del backend (IIS/nginx) — eso no lo resuelve este cambio de frontend.
