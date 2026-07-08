@@ -108,6 +108,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   inspectorNombre = '';
   inspectorCargo = '';
   inspectorEmpresa = '';
+  inspectorEmpresaId: number | null = null;
   representanteId: number | null = null;
   representanteNombre = '';
   representanteCargo = '';
@@ -349,6 +350,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       this.inspectorNombre = '';
       this.inspectorCargo = '';
       this.inspectorEmpresa = '';
+      this.inspectorEmpresaId = null;
     } else {
       const w = this.workers.find(x => x.workerId === id);
       if (w) {
@@ -356,6 +358,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
         const partes = [w.categoria, w.ocupacion].filter(Boolean);
         this.inspectorCargo = partes.join(' / ');
         this.inspectorEmpresa = w.empresaNombre ?? '';
+        this.inspectorEmpresaId = w.empresaId ?? null;
       }
     }
     this.cdr.markForCheck();
@@ -597,6 +600,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     const request: CrearInspeccionRequest = {
       proyectoId: Number(this.proyectoId),
       tipoId: Number(this.tipoId),
+      empresaId: this.inspectorEmpresaId ?? undefined,
       esPlanificada: this.esPlanificada,
       fecha: this.fecha,
       horaInicio: this.horaInicio || undefined,

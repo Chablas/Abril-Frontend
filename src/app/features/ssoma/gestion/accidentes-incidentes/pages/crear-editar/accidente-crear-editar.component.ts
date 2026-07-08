@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -18,6 +18,7 @@ import {
   TURNOS,
   TIPOS_CONTACTO,
   NIVELES_CONSECUENCIA_INCIDENTE,
+  AREAS_ORIGEN,
 } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -38,6 +39,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
   id?: number;
   guardando = false;
   cargando = true;
+  yaEnviado = false;
 
   init?: FlashReportInicializarDto;
 
@@ -63,6 +65,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
   readonly nivelesOpciones = [1, 2, 3, 4, 5, 6];
   readonly turnos = TURNOS;
   readonly tiposContacto = TIPOS_CONTACTO;
+  readonly areasOrigen = AREAS_ORIGEN;
 
   // Tipo de empresa: 'abril' | 'contratista'
   tipoEmpresa: 'abril' | 'contratista' = 'abril';
@@ -74,6 +77,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
   form: CrearFlashReportRequest = {
     proyectoId: 0,
     tipoId: 0,
+    areaOrigen: 'Produccion',
     fecha: new Date().toISOString().substring(0, 10),
     hora: '',
     lugarExacto: '',
@@ -92,6 +96,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -135,9 +140,11 @@ export class AccidenteCrearEditarComponent implements OnInit {
     this.service.getDetalle(this.id!).subscribe({
       next: (res) => {
         this.tipoEmpresa = res.empresaAbrilId ? 'abril' : 'contratista';
+        this.yaEnviado = res.enviado;
         this.form = {
           proyectoId: res.proyectoId,
           tipoId: res.tipoId,
+          areaOrigen: res.areaOrigen ?? 'Produccion',
           fecha: res.fecha.substring(0, 10),
           hora: res.hora ?? '',
           lugarExacto: res.lugarExacto,
@@ -172,16 +179,21 @@ export class AccidenteCrearEditarComponent implements OnInit {
             fechaFin: d.fechaFin.substring(0, 10),
             observacion: d.observacion,
           })),
-          trabajadores: (res.trabajadores ?? []).map((t) => ({
-            workerId: t.workerId,
-            trabajadorNombre: t.trabajadorNombre,
-            puestoTrabajo: t.puestoTrabajo,
-            edad: t.edad,
-            aniosExperiencia: t.aniosExperiencia,
-            celularTrabajador: t.celularTrabajador,
-            parteAfectadaId: t.parteAfectadaId,
-          })),
+          trabajadores: [],
         };
+        const primerTrabajador = (res.trabajadores ?? [])[0];
+        this.trabajadorNuevo = primerTrabajador
+          ? {
+              workerId: primerTrabajador.workerId,
+              trabajadorNombre: primerTrabajador.trabajadorNombre,
+              puestoTrabajo: primerTrabajador.puestoTrabajo,
+              edad: primerTrabajador.edad,
+              aniosExperiencia: primerTrabajador.aniosExperiencia,
+              celularTrabajador: primerTrabajador.celularTrabajador,
+              parteAfectadaId: primerTrabajador.parteAfectadaId,
+            }
+          : { trabajadorNombre: '' };
+        this.sinTrabajadorAfectado = !primerTrabajador;
         if (res.urlFoto1) this.cargarBlobFoto(1);
         if (res.urlFoto2) this.cargarBlobFoto(2);
         this.cargando = false;
@@ -299,18 +311,6 @@ export class AccidenteCrearEditarComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  agregarTrabajador(): void {
-    if (!this.trabajadorNuevo.trabajadorNombre?.trim()) return;
-    this.form.trabajadores.push({ ...this.trabajadorNuevo });
-    this.trabajadorNuevo = { trabajadorNombre: '' };
-    this.cdr.detectChanges();
-  }
-
-  quitarTrabajador(index: number): void {
-    this.form.trabajadores.splice(index, 1);
-    this.cdr.detectChanges();
-  }
-
   // ── Elaborado por ──────────────────────────────────────────────────────────
 
   onElaboradoPorSelect(id: number | undefined): void {
@@ -336,14 +336,16 @@ export class AccidenteCrearEditarComponent implements OnInit {
     if (!this.form.descripcion?.trim()) this.errores['descripcion'] = 'Descripción requerida.';
     if (!this.form.accionesInmediatas?.trim()) this.errores['accionesInmediatas'] = 'Acciones inmediatas requeridas.';
 
+    const hayTrabajadorCargado = !!this.trabajadorNuevo.trabajadorNombre?.trim();
+
     // Incidente con primeros auxilios (N2) obliga a registrar al trabajador afectado
     const primerAuxilio = this.esIncidente && this.form.consecuenciaRealPersonal === 2;
     if (primerAuxilio && this.sinTrabajadorAfectado) {
       this.sinTrabajadorAfectado = false; // forzar sección visible
       this.errores['trabajadores'] = 'Con primeros auxilios (N2) debe registrar al trabajador afectado.';
-    } else if (!this.sinTrabajadorAfectado && !this.esIncidente && this.form.trabajadores.length === 0) {
-      this.errores['trabajadores'] = 'Debe añadir al menos un trabajador afectado.';
-    } else if (!this.sinTrabajadorAfectado && primerAuxilio && this.form.trabajadores.length === 0) {
+    } else if (!this.sinTrabajadorAfectado && !this.esIncidente && !hayTrabajadorCargado) {
+      this.errores['trabajadores'] = 'Debe registrar al trabajador afectado.';
+    } else if (!this.sinTrabajadorAfectado && primerAuxilio && !hayTrabajadorCargado) {
       this.errores['trabajadores'] = 'Con primeros auxilios debe registrar al trabajador que recibió atención.';
     }
 
@@ -352,6 +354,12 @@ export class AccidenteCrearEditarComponent implements OnInit {
 
   guardar(): void {
     if (!this.validar()) { this.cdr.detectChanges(); return; }
+
+    // Un único trabajador afectado por Flash Report (SSO-FO-035: un reporte por accidentado)
+    this.form.trabajadores =
+      !this.sinTrabajadorAfectado && this.trabajadorNuevo.trabajadorNombre?.trim()
+        ? [{ ...this.trabajadorNuevo }]
+        : [];
 
     // Limpiar empresa no usada
     if (this.tipoEmpresa === 'abril') this.form.contributorId = undefined;
@@ -390,7 +398,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
 
   cancelar(): void {
     if (this.modoEditar) this.router.navigate(['/ssoma/gestion/accidentes-incidentes', this.id]);
-    else this.router.navigate(['/ssoma/gestion/accidentes-incidentes/lista']);
+    else this.location.back();
   }
 
   get tipoCodigo(): string {

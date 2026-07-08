@@ -36,6 +36,12 @@
         <option value="Borrador">Borrador</option>
         <option value="Enviado">Enviado</option>
       </select>
+      <select class="filtro-input" [(ngModel)]="filtroArea">
+        <option value="">Todas las áreas</option>
+        @for (a of areasOrigen; track a.value) {
+          <option [value]="a.value">{{ a.label }}</option>
+        }
+      </select>
       <input type="date" class="filtro-input" [(ngModel)]="filtroFechaDesde" />
       <input type="date" class="filtro-input" [(ngModel)]="filtroFechaHasta" />
       <div class="filtros-actions">
@@ -70,7 +76,9 @@
               <th>Descripción</th>
               <th>Trabajador</th>
               <th class="ta-c">Tipo</th>
-              <th class="ta-c">Severidad</th>
+              <th class="ta-c">Área</th>
+              <th class="ta-c">Severidad real</th>
+              <th class="ta-c">Severidad potencial</th>
               <th class="ta-c">Días perdidos</th>
               <th class="ta-c">Alta médica</th>
               <th class="ta-c">Estado</th>
@@ -80,7 +88,7 @@
           <tbody>
             @if (!items.length) {
               <tr>
-                <td colspan="11" class="empty-row">No se encontraron registros</td>
+                <td colspan="13" class="empty-row">No se encontraron registros</td>
               </tr>
             }
             @for (item of items; track item.id) {
@@ -96,13 +104,27 @@
                   <span class="tipo-chip" [ngClass]="tipoClass(item.tipoCodigo)">{{ item.tipoNombre }}</span>
                 </td>
                 <td class="ta-c">
-                  @if (item.consecuenciaRealPersonal) {
-                    <span class="nivel-chip" [ngClass]="nivelClass(item.consecuenciaRealPersonal)">
-                      N{{ item.consecuenciaRealPersonal }}
-                    </span>
-                  } @else {
-                    <span class="no-docs">—</span>
-                  }
+                  <span class="area-chip" [ngClass]="areaClass(item.areaOrigen)">{{ areaLabel(item.areaOrigen) }}</span>
+                </td>
+                <td class="ta-c" (click)="$event.stopPropagation()">
+                  <select class="nivel-select" [ngClass]="nivelClass(item.consecuenciaRealPersonal)"
+                    [ngModel]="item.consecuenciaRealPersonal ?? ''"
+                    (ngModelChange)="actualizarSeveridad(item, 'real', $event)">
+                    <option value="">—</option>
+                    @for (n of nivelesSeveridad; track n) {
+                      <option [value]="n">N{{ n }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="ta-c" (click)="$event.stopPropagation()">
+                  <select class="nivel-select" [ngClass]="nivelClass(item.consecuenciaPotencialPersonal)"
+                    [ngModel]="item.consecuenciaPotencialPersonal ?? ''"
+                    (ngModelChange)="actualizarSeveridad(item, 'potencial', $event)">
+                    <option value="">—</option>
+                    @for (n of nivelesSeveridad; track n) {
+                      <option [value]="n">N{{ n }}</option>
+                    }
+                  </select>
                 </td>
                 <td class="ta-c">
                   @if (item.diasPerdidos > 0) {

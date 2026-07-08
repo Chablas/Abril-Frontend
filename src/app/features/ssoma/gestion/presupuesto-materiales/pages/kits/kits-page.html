@@ -3,10 +3,53 @@
     badge="SSOMA · Materiales"
     titulo="Kits / BOM"
     subtitulo="Botiquín, Estación de Emergencia y otros equipos que se compran completos: define cuántos kits necesitas y calcula la cantidad inicial de cada material."
-    [tabs]="headerTabs">
+    [tabs]="headerTabs"
+    [botonPrimario]="{ label: mostrarFormCrear ? 'Cancelar' : 'Crear kit', icono: mostrarFormCrear ? 'ti-x' : 'ti-plus' }"
+    (primaryClick)="toggleFormCrear()">
   </app-abril-page-header>
 
   <div class="page-body">
+    <!-- Formulario crear kit -->
+    <div *ngIf="mostrarFormCrear" class="crear-kit-card">
+      <h3 class="form-titulo">Nuevo kit</h3>
+      <div class="form-fields">
+        <label>Nombre del kit
+          <input type="text" [(ngModel)]="nuevoKitNombre" placeholder="Ej. Botiquín tipo A" />
+        </label>
+        <label>Tipo de material
+          <select [(ngModel)]="nuevoKitTipoId">
+            <option [ngValue]="null" disabled>Seleccionar tipo...</option>
+            <option *ngFor="let t of tipos" [ngValue]="t.id">{{ t.nombre }}</option>
+          </select>
+        </label>
+      </div>
+
+      <h4 class="items-titulo">Materiales del kit (BOM)</h4>
+      <div class="item-row" *ngFor="let item of nuevoKitItems; let i = index">
+        <select [(ngModel)]="item.familiaId" class="item-familia">
+          <option [ngValue]="0" disabled>Seleccionar material...</option>
+          <option *ngFor="let f of familias" [ngValue]="f.id">{{ f.nombre }}</option>
+        </select>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadPorKit" placeholder="Cantidad" class="item-cantidad" />
+        <label class="item-consumible">
+          <input type="checkbox" [(ngModel)]="item.esConsumible" /> Consumible
+        </label>
+        <button class="btn-icon-danger" (click)="quitarItem(i)" [disabled]="nuevoKitItems.length === 1" title="Quitar">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+      <button class="btn-outline btn-sm" style="width: fit-content;" (click)="agregarItem()">
+        <i class="ti ti-plus"></i> Agregar material
+      </button>
+
+      <div class="form-actions">
+        <button class="btn-primary" (click)="guardarKit()" [disabled]="!formCrearValido || guardandoKit">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoKit ? 'Guardando...' : 'Guardar kit' }}
+        </button>
+      </div>
+    </div>
+
     <div *ngIf="loading" class="loading-msg">Cargando kits...</div>
 
     <div *ngIf="!loading" class="form-row">

@@ -15,6 +15,14 @@
   }
 
   @if (!cargando) {
+
+  @if (yaEnviado) {
+    <div class="info-hint" style="margin-bottom:16px">
+      <i class="ti ti-alert-circle"></i>
+      Este Flash Report ya fue enviado. Solo estás regularizando datos del registro — no se reenviará el correo ni se regenerará el PDF oficial ya emitido.
+    </div>
+  }
+
   <form class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
 
     <!-- ══════════════════════ DATOS DEL EVENTO ══════════════════════ -->
@@ -44,6 +52,16 @@
             }
           </select>
           @if (errores['tipoId']) { <span class="campo-error">{{ errores['tipoId'] }}</span> }
+        </div>
+
+        <div class="form-field">
+          <label>Área de origen *</label>
+          <select class="campo-input" [(ngModel)]="form.areaOrigen" name="areaOrigen">
+            @for (a of areasOrigen; track a.value) {
+              <option [ngValue]="a.value">{{ a.label }}</option>
+            }
+          </select>
+          @if (errores['areaOrigen']) { <span class="campo-error">{{ errores['areaOrigen'] }}</span> }
         </div>
 
         <div class="form-field">
@@ -216,28 +234,11 @@
 
       @if (!sinTrabajadorAfectado || !esIncidente) {
 
-        <!-- Lista de trabajadores añadidos -->
-        @if (form.trabajadores.length > 0) {
-          <div class="trabajadores-lista">
-            @for (t of form.trabajadores; track $index) {
-              <div class="trabajador-item">
-                <div class="trabajador-item__info">
-                  <span class="trabajador-item__nombre">{{ t.trabajadorNombre }}</span>
-                  @if (t.puestoTrabajo) { <span class="trabajador-item__sub">{{ t.puestoTrabajo }}</span> }
-                </div>
-                <button type="button" class="btn-quitar-trabajador" (click)="quitarTrabajador($index)" title="Quitar">
-                  <i class="ti ti-x"></i>
-                </button>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Formulario para añadir nuevo trabajador -->
+        <!-- Un único trabajador afectado por Flash Report (SSO-FO-035: un reporte por accidentado) -->
         <div class="trabajador-form">
           <h4 class="trabajador-form__title">
-            <i class="ti ti-user-plus"></i>
-            {{ form.trabajadores.length === 0 ? 'Trabajador afectado' : 'Añadir otro trabajador' }}
+            <i class="ti ti-user"></i>
+            Trabajador afectado
           </h4>
           <div class="form-grid">
 
@@ -288,12 +289,6 @@
                   <option [ngValue]="p.id">{{ p.nombre }}</option>
                 }
               </select>
-            </div>
-
-            <div class="form-field form-field--full">
-              <button type="button" class="btn-agregar-trabajador" (click)="agregarTrabajador()">
-                <i class="ti ti-plus"></i> Agregar trabajador
-              </button>
             </div>
 
           </div>

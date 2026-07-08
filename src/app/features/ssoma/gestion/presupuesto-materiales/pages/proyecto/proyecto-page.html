@@ -10,20 +10,14 @@
     (secondaryClick)="volver()">
   </app-abril-page-header>
 
-  <div class="page-body" style="padding-bottom: 0;">
-    <button class="btn-outline btn-sm" style="width: fit-content;" (click)="irAPersonalHitos()">
-      <i class="ti ti-users"></i> Dotación de personal por hito
-    </button>
-  </div>
-
-  <!-- Hitos críticos del cronograma vigente -->
+  <!-- Cronograma de hitos del proyecto: tabla simple, misma data que /projects/milestone-schedule -->
   <div class="page-body" style="padding-bottom: 0;">
     <div class="hitos-card">
       <div class="hitos-card-header">
-        <h3 class="form-titulo" style="margin:0;">Hitos críticos del cronograma</h3>
+        <h3 class="form-titulo" style="margin:0;">Cronograma de hitos</h3>
         <div style="display:flex; gap:0.5rem;">
-          <button class="btn-outline btn-sm" (click)="irACronograma()">
-            <i class="ti ti-calendar-cog"></i> Editar cronograma
+          <button class="btn-outline btn-sm" (click)="irACronograma()" title="Ver cronograma completo en Gantt, con orden y dependencias">
+            <i class="ti ti-chart-gantt"></i> Ver Gantt
           </button>
           <button class="btn-primary" (click)="asignarHitos()" [disabled]="asignandoHitos || hitosCriticos.length === 0">
             <i class="ti ti-arrows-shuffle"></i>
@@ -32,22 +26,53 @@
         </div>
       </div>
       <p class="form-desc" style="margin-top:0;">
-        Reparte cada línea de consumo de materiales entre estos hitos según su fecha. El check de
-        "crítico" se marca en /projects/milestone-schedule.
+        Marca "crítico" los hitos que cortan una etapa constructiva — esos reparten el consumo de
+        materiales y la dotación de personal por fase. Los cambios aquí se guardan en el mismo
+        cronograma que /projects/milestone-schedule.
       </p>
-      <div *ngIf="loadingHitos" class="loading-msg">Cargando hitos críticos...</div>
-      <div *ngIf="!loadingHitos && hitosCriticos.length === 0" class="empty-state" style="padding: 1rem;">
-        <p>Este proyecto todavía no tiene hitos marcados como "críticos" en su cronograma.</p>
-        <button class="btn-primary" (click)="irACronograma()">
-          <i class="ti ti-calendar-plus"></i> Crear cronograma en Milestone Schedule
+
+      <div *ngIf="loadingSchedule" class="loading-msg">Cargando cronograma...</div>
+
+      <div *ngIf="errorSchedule" class="empty-cell" style="color:#dc2626; background:#fef2f2; border-radius:6px; padding:0.75rem;">
+        {{ errorSchedule }}
+      </div>
+
+      <div *ngIf="!loadingSchedule && !errorSchedule" class="schedule-tabla">
+        <div class="schedule-tabla__header">
+          <div>Hito</div>
+          <div>Inicio</div>
+          <div>Fin</div>
+          <div>Crítico</div>
+          <div></div>
+        </div>
+        <div *ngFor="let h of hitosSchedule; let i = index" class="schedule-tabla__row">
+          <div class="schedule-tabla__nombre">{{ h.text }}</div>
+          <div><input type="date" [(ngModel)]="h.plannedStartDate" /></div>
+          <div><input type="date" [(ngModel)]="h.plannedEndDate" /></div>
+          <div class="schedule-tabla__critico"><input type="checkbox" [(ngModel)]="h.esHitoCritico" /></div>
+          <div>
+            <button class="btn-icon-danger" (click)="quitarHitoSchedule(i)" title="Quitar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="hitosSchedule.length === 0" class="empty-cell">
+          No hay hitos en el catálogo todavía.
+        </div>
+      </div>
+
+      <div class="schedule-agregar">
+        <input type="text" [(ngModel)]="nuevoHitoTexto" placeholder="Agregar un hito que no está en el catálogo..." class="schedule-input-texto" />
+        <button class="btn-outline btn-sm" (click)="agregarHitoPersonalizado()" [disabled]="!nuevoHitoTexto.trim()">
+          <i class="ti ti-plus"></i> Agregar
         </button>
       </div>
 
-      <div *ngIf="!loadingHitos && hitosCriticos.length > 0" class="hitos-lista">
-        <span *ngFor="let h of hitosCriticos" class="hito-chip">
-          <i class="ti ti-flag"></i> {{ h.hitoDescripcion }}
-          <span class="hito-fecha">{{ h.hitoFecha ? (h.hitoFecha | date:'dd/MM/yyyy') : 'Sin fecha' }}</span>
-        </span>
+      <div class="form-actions" style="margin-top: 0.75rem;">
+        <button class="btn-primary" (click)="guardarSchedule()" [disabled]="guardandoSchedule">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoSchedule ? 'Guardando...' : 'Guardar cronograma' }}
+        </button>
       </div>
 
       <!-- Dotación de personal por hito, aquí mismo -->
@@ -90,6 +115,49 @@
             <i class="ti ti-device-floppy"></i>
             {{ personalGuardando ? 'Guardando...' : 'Guardar dotación' }}
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ratios calculados del proyecto -->
+  <div class="page-body" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Ratios calculados del proyecto</h3>
+        <button class="btn-outline btn-sm" (click)="toggleRatios()">
+          <i class="ti" [ngClass]="mostrarRatios ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+          {{ mostrarRatios ? 'Ocultar' : 'Ver ratios' }} ({{ ratios.length }})
+        </button>
+      </div>
+
+      <div *ngIf="mostrarRatios">
+        <div *ngIf="loadingRatios" class="loading-msg">Cargando ratios...</div>
+        <div *ngIf="!loadingRatios && ratios.length === 0" class="empty-state" style="padding: 1rem;">
+          <p>Este proyecto todavía no tiene ratios calculados. Ve a la pestaña "Drivers" para calcularlos.</p>
+        </div>
+        <div *ngIf="!loadingRatios && ratios.length > 0" class="ratios-tabla">
+          <div class="ratios-tabla__header">
+            <div>Familia</div>
+            <div>Tipo</div>
+            <div>Ratio</div>
+            <div>Precio unit.</div>
+            <div>Cant. total</div>
+          </div>
+          <div
+            *ngFor="let r of ratios"
+            class="ratios-tabla__row"
+            [class.ratios-tabla__row--outlier]="r.esOutlier"
+          >
+            <div class="ratios-tabla__familia">
+              {{ r.nombreFamilia }}
+              <span *ngIf="r.esOutlier" class="badge badge-warn" title="Outlier respecto a otros proyectos">outlier</span>
+            </div>
+            <div>{{ r.tipoMaterial }}</div>
+            <div>{{ r.ratioCantidad | number:'1.2-6' }}</div>
+            <div>S/ {{ r.precioUnitarioPromedio | number:'1.2-2' }}</div>
+            <div>{{ r.cantidadTotal | number:'1.0-2' }}</div>
+          </div>
         </div>
       </div>
     </div>

@@ -160,13 +160,25 @@
           </svg>
         </div>
         <p class="empty-title">Este proyecto no tiene actividades aún</p>
-        <button class="btn-primary" (click)="abrirModalCrear()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            style="margin-right:0.3rem;flex-shrink:0">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Nueva Actividad
-        </button>
+        <div class="empty-actions">
+          <button *ngIf="tipoCronogramaActivo === 'PROYECTO'" class="btn-secondary" (click)="usarPlantilla()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              style="margin-right:0.35rem;flex-shrink:0">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="13" y2="17"/>
+            </svg>
+            Usar plantilla
+          </button>
+          <button class="btn-primary" (click)="abrirModalCrear()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              style="margin-right:0.3rem;flex-shrink:0">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nueva Actividad
+          </button>
+        </div>
       </div>
 
       <!-- Tabla -->
@@ -369,9 +381,7 @@
                   </span>
                 </td>
                 <td class="td-sema">
-                  <span *ngIf="getSemaforoClass(act)"
-                        class="semaforo-dot"
-                        [ngClass]="getSemaforoClass(act)"></span>
+                  <span class="semaforo-dot" [ngClass]="getSemaforoClass(act)"></span>
                 </td>
               </ng-container>
               <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">

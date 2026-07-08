@@ -72,7 +72,9 @@ export class Dossier implements OnInit {
   }
 
   get semanasFiltradas(): DossierSemanaDto[] {
-    let lista = this.semanas.filter((s) => s.docsSubidos > 0 || s.estado !== 'Borrador');
+    let lista = this.isContratista()
+      ? this.semanas
+      : this.semanas.filter((s) => s.docsSubidos > 0 || s.estado !== 'Borrador');
     if (this.filtroSemana) lista = lista.filter((s) => s.numeroSemana === this.filtroSemana);
     return lista;
   }

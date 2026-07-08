@@ -79,12 +79,14 @@ export interface FlashReportListItemDto {
   fecha: string;
   tipoNombre: string;
   tipoCodigo: string;
+  areaOrigen: string;
   trabajadorNombre?: string;
   estado: string;
   accidenteTrabajoId?: number;
   enviado: boolean;
   fechaEnvio?: string;
   consecuenciaRealPersonal?: number;
+  consecuenciaPotencialPersonal?: number;
   descripcion: string;
   diasPerdidos: number;
   /** null = no aplica (no es accidente con seguimiento médico); false = abierto; true = cerrado con alta médica */
@@ -110,6 +112,7 @@ export interface FlashReportDetalleDto {
   tipoId: number;
   tipoNombre: string;
   tipoCodigo: string;
+  areaOrigen: string;
   fecha: string;
   hora?: string;
   lugarExacto: string;
@@ -177,6 +180,7 @@ export interface DescansoRequest {
 export interface CrearFlashReportRequest {
   proyectoId: number;
   tipoId: number;
+  areaOrigen: string;
   fecha: string;
   hora?: string;
   lugarExacto: string;
@@ -343,6 +347,12 @@ export const GRAVEDADES_ACCIDENTE = [
 ];
 
 export const ESTADOS_ACCION = ['Pendiente', 'En proceso', 'Cumplido', 'No aplica'];
+
+export const AREAS_ORIGEN: { value: string; label: string }[] = [
+  { value: 'Produccion', label: 'Producción' },
+  { value: 'PostVenta', label: 'Post Venta' },
+  { value: 'ArquitecturaComercial', label: 'Arquitectura Comercial' },
+];
 
 export const NIVELES_CONSECUENCIA = [
   '',

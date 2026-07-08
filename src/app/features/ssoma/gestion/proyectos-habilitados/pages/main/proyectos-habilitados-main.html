@@ -9,6 +9,7 @@
     <thead>
       <tr>
         <th>Proyecto</th>
+        <th class="ph-td-center">Estado</th>
         <th class="ph-td-center">Habilitado para SSOMA</th>
       </tr>
     </thead>
@@ -16,6 +17,13 @@
       @for (p of proyectos; track p.proyectoId) {
         <tr>
           <td>{{ p.proyectoDescription }}</td>
+          <td class="ph-td-center">
+            @if (p.proyectoActivo) {
+              <span class="ph-estado ph-estado--activo">Activo</span>
+            } @else {
+              <span class="ph-estado ph-estado--culminado">Culminado / Inactivo</span>
+            }
+          </td>
           <td class="ph-td-center">
             <button
               class="ph-switch"
@@ -27,7 +35,7 @@
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="2" class="ph-empty">No hay proyectos activos.</td></tr>
+        <tr><td colspan="3" class="ph-empty">No hay proyectos.</td></tr>
       }
     </tbody>
   </table>

@@ -32,9 +32,19 @@ export class RacLista implements OnInit {
   filtroTipo = '';
   filtroSoloConPenalidad = false;
   filtroProyectoId: number | null = null;
-  filtroEmpresaId: number | null = null;
+  filtroEmpresaReportadaId: number | null = null;
+  filtroEmpresaReportanteId: number | null = null;
+  filtroMes: number | null = null;
+  filtroAnio: number | null = null;
   filtrosAbiertos = false;
   readonly anioActual = new Date().getFullYear();
+  readonly meses = [
+    { val: 1, label: 'Enero' }, { val: 2, label: 'Febrero' }, { val: 3, label: 'Marzo' },
+    { val: 4, label: 'Abril' }, { val: 5, label: 'Mayo' }, { val: 6, label: 'Junio' },
+    { val: 7, label: 'Julio' }, { val: 8, label: 'Agosto' }, { val: 9, label: 'Septiembre' },
+    { val: 10, label: 'Octubre' }, { val: 11, label: 'Noviembre' }, { val: 12, label: 'Diciembre' },
+  ];
+  readonly anios = Array.from({ length: 4 }, (_, i) => this.anioActual - 1 + i);
 
   proyectos: { id: number; nombre: string }[] = [];
   empresas: { id: number; razonSocial: string }[] = [];
@@ -77,10 +87,22 @@ export class RacLista implements OnInit {
       this.filtroTipo = previos.filtroTipo;
       this.filtroSoloConPenalidad = previos.filtroSoloConPenalidad;
       this.filtroProyectoId = previos.filtroProyectoId;
-      this.filtroEmpresaId = previos.filtroEmpresaId;
+      this.filtroEmpresaReportadaId = previos.filtroEmpresaReportadaId;
+      this.filtroEmpresaReportanteId = previos.filtroEmpresaReportanteId;
+      this.filtroMes = previos.filtroMes;
+      this.filtroAnio = previos.filtroAnio;
       this.query = { ...this.query, page: previos.page };
     }
     this.load();
+  }
+
+  private rangoMes(): { fechaDesde?: string; fechaHasta?: string } {
+    if (!this.filtroMes || !this.filtroAnio) return {};
+    // Backend filtra con FechaHasta inclusive (<=), así que el límite superior
+    // es el último día del mes seleccionado (día 0 del mes siguiente), no el día 1.
+    const desde = new Date(Date.UTC(this.filtroAnio, this.filtroMes - 1, 1));
+    const hasta = new Date(Date.UTC(this.filtroAnio, this.filtroMes, 0, 23, 59, 59));
+    return { fechaDesde: desde.toISOString(), fechaHasta: hasta.toISOString() };
   }
 
   load(): void {
@@ -93,7 +115,9 @@ export class RacLista implements OnInit {
       tipo: this.filtroTipo || undefined,
       soloConPenalidad: this.filtroSoloConPenalidad || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
-      empresaReportadaId: this.filtroEmpresaId ?? undefined,
+      empresaReportadaId: this.filtroEmpresaReportadaId ?? undefined,
+      empresaReportanteId: this.filtroEmpresaReportanteId ?? undefined,
+      ...this.rangoMes(),
     };
     this.query = q;
     this.racService.listFiltrosState = {
@@ -102,7 +126,10 @@ export class RacLista implements OnInit {
       filtroTipo: this.filtroTipo,
       filtroSoloConPenalidad: this.filtroSoloConPenalidad,
       filtroProyectoId: this.filtroProyectoId,
-      filtroEmpresaId: this.filtroEmpresaId,
+      filtroEmpresaReportadaId: this.filtroEmpresaReportadaId,
+      filtroEmpresaReportanteId: this.filtroEmpresaReportanteId,
+      filtroMes: this.filtroMes,
+      filtroAnio: this.filtroAnio,
       page: q.page ?? 1,
     };
     this.racService.getList(q).subscribe({
@@ -119,6 +146,12 @@ export class RacLista implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  onFiltroMesChange(value: string): void {
+    this.filtroMes = value ? +value : null;
+    if (this.filtroMes && !this.filtroAnio) this.filtroAnio = this.anioActual;
+    this.buscar();
   }
 
   buscar(): void {
@@ -138,7 +171,10 @@ export class RacLista implements OnInit {
     this.filtroTipo = '';
     this.filtroSoloConPenalidad = false;
     this.filtroProyectoId = null;
-    this.filtroEmpresaId = null;
+    this.filtroEmpresaReportadaId = null;
+    this.filtroEmpresaReportanteId = null;
+    this.filtroMes = null;
+    this.filtroAnio = null;
     this.query = { ...this.query, page: 1 };
     this.load();
   }
@@ -184,7 +220,8 @@ export class RacLista implements OnInit {
 
   get hayFiltrosActivos(): boolean {
     return !!(this.filtroEstado || this.filtroSeveridad || this.filtroTipo || this.filtroSoloConPenalidad
-      || this.filtroProyectoId || this.filtroEmpresaId);
+      || this.filtroProyectoId || this.filtroEmpresaReportadaId || this.filtroEmpresaReportanteId
+      || this.filtroMes || this.filtroAnio);
   }
 
   severidadClass(sev: string): string {

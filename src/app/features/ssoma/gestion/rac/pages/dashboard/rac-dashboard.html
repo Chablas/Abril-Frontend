@@ -70,6 +70,15 @@
           <span class="stat-card__lbl">Altos Abiertos</span>
         </div>
       </div>
+      @if (esContratista) {
+        <div class="stat-card stat-card--cerrado">
+          <div class="stat-card__icon"><i class="ti ti-clipboard-check"></i></div>
+          <div class="stat-card__body">
+            <span class="stat-card__val">{{ data.totalReportados }}</span>
+            <span class="stat-card__lbl">RACs Levantados por Ti ({{ data.totalReportadosCerrados }} cerrados)</span>
+          </div>
+        </div>
+      }
       <div class="stat-card" [class.stat-card--vencido]="data.vencidosAbiertos > 0">
         <div class="stat-card__icon"><i class="ti ti-clock-exclamation"></i></div>
         <div class="stat-card__body">

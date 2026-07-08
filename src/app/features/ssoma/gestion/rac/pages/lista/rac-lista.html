@@ -51,10 +51,31 @@
       </select>
 
       <select class="filtro-select"
-        [ngModel]="filtroEmpresaId ?? ''"
-        (ngModelChange)="filtroEmpresaId = $event ? +$event : null; buscar()">
-        <option value="">Todas las empresas</option>
+        [ngModel]="filtroEmpresaReportanteId ?? ''"
+        (ngModelChange)="filtroEmpresaReportanteId = $event ? +$event : null; buscar()">
+        <option value="">Todas (Reportante)</option>
         <option *ngFor="let e of empresas" [value]="e.id">{{ e.razonSocial }}</option>
+      </select>
+
+      <select class="filtro-select"
+        [ngModel]="filtroEmpresaReportadaId ?? ''"
+        (ngModelChange)="filtroEmpresaReportadaId = $event ? +$event : null; buscar()">
+        <option value="">Todas (Reportada)</option>
+        <option *ngFor="let e of empresas" [value]="e.id">{{ e.razonSocial }}</option>
+      </select>
+
+      <select class="filtro-select"
+        [ngModel]="filtroMes ?? ''"
+        (ngModelChange)="onFiltroMesChange($event)">
+        <option value="">Todos los meses</option>
+        <option *ngFor="let m of meses" [value]="m.val">{{ m.label }}</option>
+      </select>
+
+      <select class="filtro-select"
+        [ngModel]="filtroAnio ?? ''"
+        (ngModelChange)="filtroAnio = $event ? +$event : null; buscar()">
+        <option value="">Todos los años</option>
+        <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
       </select>
 
       <label class="filtro-check">
@@ -82,16 +103,17 @@
         <thead>
           <tr>
             <th class="th-dot"></th>
-            <th>Código</th>
+            <th class="th-codigo">Código</th>
             <th>Proyecto</th>
-            <th>Empresa</th>
+            <th>Reportante</th>
+            <th>Reportada</th>
             <th>Tipo</th>
             <th>Categoría</th>
             <th>Descripción</th>
             <th>Severidad</th>
             <th>Estado</th>
             <th>Fecha</th>
-            <th>Acciones</th>
+            <th class="th-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -104,6 +126,7 @@
               <span class="proyecto-abrev" *ngIf="item.proyectoAbreviacion">{{ item.proyectoAbreviacion }}</span>
               <span *ngIf="!item.proyectoAbreviacion">{{ item.proyectoNombre ?? '—' }}</span>
             </td>
+            <td class="col-empresa">{{ item.empresaReportanteNombre ?? '—' }}</td>
             <td class="col-empresa">{{ item.empresaReportadaNombre ?? '—' }}</td>
             <td>
               <span class="chip-tipo"
@@ -126,16 +149,16 @@
             </td>
             <td class="col-fecha">{{ item.fechaReporte | date:'dd/MM/yyyy' }}</td>
             <td class="col-acciones" (click)="$event.stopPropagation()">
-              <button type="button" class="btn-inline" title="PDF" (click)="descargarPdf(item.id)">
-                <i class="ti ti-file-type-pdf"></i> PDF
+              <button type="button" class="btn-icon" title="Descargar PDF" (click)="descargarPdf(item.id)">
+                <i class="ti ti-file-type-pdf"></i>
               </button>
               <button *ngIf="puedeVerBotonCerrar(item)"
-                      type="button" class="btn-inline btn-inline--danger" title="Cerrar"
+                      type="button" class="btn-icon btn-icon--danger" title="Cerrar"
                       (click)="irACerrar(item.id)">
-                <i class="ti ti-lock"></i> Cerrar
+                <i class="ti ti-lock"></i>
               </button>
-              <button type="button" class="btn-inline btn-inline--primary" title="Ver" (click)="irADetalle(item.id)">
-                <i class="ti ti-eye"></i> Ver
+              <button type="button" class="btn-icon btn-icon--primary" title="Ver detalle" (click)="irADetalle(item.id)">
+                <i class="ti ti-eye"></i>
               </button>
             </td>
           </tr>

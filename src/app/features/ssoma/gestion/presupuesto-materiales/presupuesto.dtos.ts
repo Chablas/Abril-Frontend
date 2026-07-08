@@ -127,6 +127,37 @@ export interface RatioFamiliaComparacionDto {
   promedioPrecioUnitario: number;
 }
 
+export interface RatioProyectoDto {
+  id: number;
+  familiaId: number;
+  nombreFamilia: string;
+  tipoMaterial: string;
+  projectId: number;
+  projectDescription: string;
+  variableBase: string;
+  cantidadTotal: number;
+  precioUnitarioPromedio: number;
+  valorDriver: number;
+  ratioCantidad: number;
+  esOutlier: boolean;
+  incluidoManualRatio: boolean;
+  incluidoManualPrecio: boolean;
+}
+
+export interface ResumenProyectoRatioDto {
+  projectId: number;
+  projectDescription: string;
+  familiasCalculadas: number;
+  totalGastoSsoma: number;
+  fechaMin: string | null;
+  fechaMax: string | null;
+}
+
+export interface ResumenRatiosDto {
+  proyectos: ResumenProyectoRatioDto[];
+  totalFamilias: number;
+}
+
 // ─── Presupuesto ──────────────────────────────────────────────────────────────
 
 export interface GenerarPresupuestoDto {
@@ -341,6 +372,18 @@ export interface KitCalculoLineaDto {
   cantidadPorKit: number;
   cantidadTotal: number;
   esConsumible: boolean;
+}
+
+export interface KitItemInputDto {
+  familiaId: number;
+  cantidadPorKit: number;
+  esConsumible: boolean;
+}
+
+export interface KitCreateDto {
+  nombre: string;
+  tipoId: number;
+  items: KitItemInputDto[];
 }
 
 // ─── Catálogo de Materiales (3 secciones) ─────────────────────────────────────

@@ -4061,3 +4061,150 @@ Este trabajo depende de cambios en paralelo en `Abril_Backend` (mismo período):
 ### Pendiente
 - Cargar la meta anual real de 2026 desde el dashboard (todavía no tiene valores, sale "Sin meta").
 - Cronograma de Hitos (`milestone-schedule`): el usuario reportó fechas que no coinciden con un Excel de referencia (`CRONOGRAMA HITOS CEDRO - JULIO 26.xlsx`) — se confirmó que las fechas de cada hito son 100% manuales (sin cálculo ni importación automática desde ningún lado), pero el usuario cortó la investigación ("me equivoqué, es otro tema") antes de decidir si corregir manualmente o dejarlo así.
+
+## Sesión 2026-07-07 — Bug "Nueva semana" no aparecía en Dossier del contratista
+
+En `habilitacion/gestion/dossier` (Panel Contratista), al crear una semana nueva con el modal "Nueva semana" el registro se creaba bien en el backend (confirmado en Network tab: `GET /dossier` devolvía la semana nueva en estado `Borrador`), pero no aparecía en la lista de la UI.
+
+Causa: el getter `semanasFiltradas` en `dossier.ts` ocultaba toda semana en estado `Borrador` con `docsSubidos === 0`, pensado para no mostrarle al admin borradores vacíos de otros contratistas. Pero ese mismo filtro aplicaba también a la vista del contratista, ocultándole la semana que él mismo acababa de crear y dejándolo sin forma de subir documentos.
+
+**Fix:** `semanasFiltradas` ahora no aplica ese filtro cuando `isContratista()` es true — el contratista ve todas sus semanas (incluyendo borradores recién creados); el filtro de "ocultar borradores vacíos" se mantiene solo para la vista admin.
+
+### Archivos clave
+- `src/app/features/habilitacion/pages/dossier/dossier.ts` (getter `semanasFiltradas`, línea ~74)
+
+### Pendiente
+- Ninguno — verificado con Network tab que la semana ya aparece tras el fix.
+
+## Sesión 2026-07-04
+
+### 1. Scroll propio en tabla de `cronograma-actividades`
+
+**Problema**: en `/projects/cronograma-actividades/{id}` la tabla de actividades (275+ filas) scrolleaba junto con toda la página — la barra de scroll horizontal quedaba al fondo, fuera de vista, obligando a bajar todo el scroll vertical primero para poder scrollear horizontalmente.
+
+**Fix — `features/projects/cronograma-actividades/cronograma-actividades.css`:**
+- `.table-wrapper`: agregado `overflow-y: auto` + `max-height: calc(100vh - 260px)` (mismo patrón que `.gantt-full-container`, que ya usaba `calc(100vh - 220px)`; +40px porque este contenedor tiene además el toolbar de botones encima).
+- `.data-table th`: agregado `position: sticky; top: 0; z-index: 2; background: #e2e8f0` para que el encabezado de columnas no se pierda al hacer scroll vertical.
+- No se tocó lógica, HTML, services ni DTOs. No hizo falta ajustar el budget de `anyComponentStyle` en `angular.json` (30kB/40kB) — el CSS minificado del componente sigue dentro del límite.
+- Verificado por el usuario en navegador con las 275 filas reales: scroll horizontal visible sin bajar el vertical, header sticky, drag-select de filas y triangulitos de colapsar/expandir siguen funcionando.
+
+### 2. `.tokensave/` agregado a `.gitignore`
+
+Directorio local generado por el MCP server `tokensave` (contiene `tokensave.db`, ~38MB) apareció como untracked. Se agregó `.tokensave/` a `.gitignore` — no debe versionarse, es cache/estado local de la herramienta.
+
+## Sesión 2026-07-05
+
+### 1. "Recordar última pestaña" en Cronograma de Actividades
+
+En `/projects/cronograma-actividades/:id` la pestaña de tipo de cronograma (Anteproyecto/Proyecto/Proyecto de Actualización) ya no vuelve siempre a Anteproyecto al reingresar:
+
+- **`services/cronograma-actividades.service.ts`**: `getUltimaPestana(proyectoId)` (`GET .../ultima-pestana`) y `actualizarUltimaPestana(proyectoId, tipoCronograma)` (`PATCH .../ultima-pestana`).
+- **`dtos/cronograma-actividades.dtos.ts`**: `UltimaPestanaDto { tipoCronograma: string | null }`.
+- **`cronograma-actividades.ts`**: `ngOnInit` llama `cargarUltimaPestana()` antes de cargar actividades — si el backend devuelve `null` o falla, cae a `'ANTEPROYECTO'` por defecto, sin error visible. `onTabChange()` dispara `guardarUltimaPestana()` en segundo plano (sin loader, sin bloquear UI, sin alertar si falla — es una preferencia, no algo crítico). Confirmado que `SectionTabs.valueChange` solo emite en click del usuario, no en el binding inicial, así que no hay un PATCH espurio al entrar a la página.
+
+### 2. Bug de cascada: la tabla no reflejaba fechas tras asignar predecesora de mismo nivel
+
+**Causa raíz (confirmada leyendo `Abril_Backend`)**: el `PUT .../actividades/{id}` ya aplica y persiste la cascada en la misma llamada (`EditarActividadAsync` → `AplicarCascadaAsync`, ver `CronogramaActividadesService.cs`/`CronogramaSchedulingService.cs` del backend) — no es un preview. El botón "Aplicar cambios" del modal disparaba una segunda llamada (`recalcular-cascada/aplicar`) que recalculaba sobre datos ya aplicados y por lo tanto siempre devolvía `cambios: []`; como ninguna otra ruta de parcheo tocaba las filas hermanas/sucesoras, la tabla se quedaba con las fechas viejas en memoria.
+
+**Fix — `cronograma-actividades.ts`**:
+- Nuevo método `patchCascadaCambios(cambios: CascadaCambioDto[])`, usado tanto en `guardar()` (parcheando directo desde `res.cascada.cambios` del PUT, que ya trae las fechas post-cascada reales) como en `aplicarCascada()` (ahora redundante pero inofensivo, se dejó sin tocar su comportamiento de red a pedido explícito).
+- El backend agregó `baselineStartDate`/`baselineEndDate` a `CascadaCambioDto` — se agregó al DTO frontend y a `patchCascadaCambios` para que Línea Base también se actualice en vivo. Desfase y semáforo no necesitaron cambios: son getters (`getDesfaseDias`/`getSemaforoClass`) que leen `planned`/`baseline` en vivo desde la fila en cada render.
+- `patchActividadLocal()` (compartido por `guardar()` y `commitInlineEdit()`) tampoco parcheaba `baselineStartDate`/`baselineEndDate` cuando el backend hacía auto-fill de LB al editar el fin programado manualmente — corregido.
+- El botón "Cancelar" del modal de cascada **no revierte nada hoy** (el cambio ya se guardó en BD antes de que el modal aparezca) — queda pendiente como decisión de producto, no se tocó en esta sesión.
+
+### 3. Rediseño del PDF exportado (`exportarPdf()` en `cronograma-actividades.ts`)
+
+Con jsPDF/jspdf-autotable (sin librerías nuevas):
+- **Jerarquía visual**: borde izquierdo de ~1.1mm por fila usando la paleta BCS (`#0D1B2A` nivel 0; `#1B263B`/`#415A77`/`#778DA9`/`#E0E1DD` cíclico por rama de nivel 1; derivados `#2C3E56`/`#557090`/`#8FA3B8`/`#CACBC7` para nivel 2+, heredado del ancestro de nivel 1) vía `buildPdfNivelColorMap()` + `didDrawCell`.
+- **KPIs** antes de la tabla: Total actividades, Avance general, conteo Verde/Amarillo/Rojo — cards estilo dashboard (`drawPdfKpiCard`: fondo blanco, `roundedRect`, borde sutil `#E2E8F0`, sin sombra, franja superior de acento).
+- **Barra de progreso** en la columna Avance% (riel gris + relleno según regla ≥75 verde/≥50 azul/≥25 naranja/<25 rojo/sin datos gris).
+- **Semáforo** pasó de texto coloreado a círculo (`doc.circle`), igual que en pantalla.
+- KPIs y colores de jerarquía usan una paleta y helpers propios del PDF (`PDF_NIVEL0_RGB`, `PDF_NIVEL1_RGB`, `PDF_NIVEL2_RGB`, `getPdfAvanceRgb`, `getPdfSemaforoRgb`) — independientes del `rowStyleMap` que se usa en pantalla.
+
+### 4. Semáforo "sin datos" ahora se muestra en gris (`#94A3B8`) en vez de ocultarse
+
+Antes, cuando una actividad no tenía baseline o fin programado (ej. "Envio de obs"), `getSemaforoClass()` devolvía `''` y el punto de semáforo se ocultaba (`*ngIf`) tanto en pantalla como en el PDF (ahí quedaba en blanco).
+
+- **`getSemaforoClass()`**: ahora devuelve `'semaforo-gris'` en vez de `''` (tanto para hojas sin desfase calculable como para padres cuyos hijos tampoco tienen dato). Se quitó el `.filter((s) => s !== '')` en la agregación de padres, ya innecesario.
+- **CSS**: nueva clase `.semaforo-gris { background: #94A3B8; ... }` junto a verde/amarillo/rojo.
+- **HTML**: se quitó el `*ngIf` en el punto de semáforo (ya no hace falta, la clase nunca vuelve vacía).
+- **PDF**: `getPdfSemaforoRgb()` ya no devuelve `null` — devuelve `#94A3B8` para el caso sin datos, así el círculo siempre se dibuja.
+- `getSemaforoTexto()` no cambió: sigue devolviendo `'—'` para el caso gris, correcto para vistas de texto (Excel/Gantt).
+
+### Pendiente para otra sesión
+
+- Decisión de producto sobre el botón "Cancelar" del modal de cascada (hoy no revierte nada, ver punto 2).
+
+## Sesión 2026-07-05 (parte 2)
+
+### Botón "Usar plantilla" en Cronograma de Actividades
+
+En la pestaña **Proyecto** (`tipoCronogramaActivo === 'PROYECTO'`), cuando la tabla está vacía (0 actividades), aparece un botón "Usar plantilla" junto a "Nueva Actividad" en el estado vacío.
+
+- **`cronograma-actividades.html`**: nuevo wrapper `.empty-actions` (flex row) dentro de `.table-empty-state` con el botón condicionado por pestaña.
+- **`cronograma-actividades.ts`**: `usarPlantilla()` — confirma con SweetAlert2 ("¿Cargar la plantilla estándar de Proyecto? Se crearán 61 actividades."), y si el usuario confirma, activa `loadingActividades`/`loaderService.show()` (reutiliza el skeleton existente, F8) y llama `service.aplicarPlantilla()`. Éxito → `recargar()` + toast con el conteo real de `actividadesCreadas`. Error → apaga loading y usa `errorService.handleError()` (F9).
+- **`services/cronograma-actividades.service.ts`**: `aplicarPlantilla(proyectoId, body)` → `POST .../{proyectoId}/aplicar-plantilla`.
+- **`dtos/cronograma-actividades.dtos.ts`**: `AplicarPlantillaRequest { tipoCronograma }` / `AplicarPlantillaResultDto { actividadesCreadas }`, verificados 1:1 contra los DTOs reales del backend (`Abril_Backend/.../CronogramaActividadesDtos.cs`) — el endpoint ya estaba implementado del lado del backend (lee `Seeds/plantilla_proyecto_seed.json`, 61 actividades).
+
+## Sesión 2026-07-07
+
+### Bug de cascada no aplicada en edición inline de fechas
+
+**Síntoma**: al editar inline la fecha de una actividad con sucesoras (actividades cuya predecesora apunta a la editada), la fila editada se actualizaba al toque pero las sucesoras solo se veían correctas tras refrescar la página. Confirmado que el backend calculaba y persistía bien la cascada en la misma llamada `PUT` — el problema era 100% de frontend.
+
+**Causa raíz**: en `commitInlineEdit()` (`cronograma-actividades.ts`) el `subscribe` del `PUT` solo llamaba a `patchActividadLocal(res.actividad)` (fila editada) y `patchPadresActualizados()` (padres), pero nunca leía `res.cascada.cambios`. En cambio `guardar()` sí llamaba a `patchCascadaCambios(res.cascada.cambios)` con esos mismos datos de la respuesta — por eso el modal de editar sí reflejaba la cascada y la edición inline no.
+
+**Fix**: se agregó en `commitInlineEdit()`, justo después del bloque de `patchActividadLocal()`/`patchPadresActualizados()`, el mismo `if (res.cascada?.cambios?.length) { this.patchCascadaCambios(res.cascada.cambios); }` que ya existía en `guardar()`. Sin llamadas HTTP nuevas — solo se aplican datos que ya venían en la respuesta del PUT existente. No se tocó el modal de preview de cascada (`mostrarCascadaSiHayCambios`) para la edición inline.
+
+## Sesión 2026-07-07 (continuación) — Observación por documento en Dossier + bug de staff en Charlas
+
+### 1. El contratista no veía el comentario del revisor por documento
+
+En el modal de subida del Dossier (`dossier-upload-modal.html`), cuando SSOMA marca un documento como "Observado" y deja un comentario (`doc.obsRevisor`), ese comentario solo se mostraba en el modal de revisión del admin (`dossier-revisar-modal.html`) — el contratista no tenía forma de saber qué corregir. Se agregó el bloque de observación por fila de documento (visible solo cuando `doc.estado === 'Observado' && doc.obsRevisor`), con estilo `.doc-obs` igual al patrón ya usado en `.obs-ssoma`.
+
+### 2. Bug: staff no se recargaba al cambiar de proyecto en "Nueva Charla" (`/ssoma/gestion/charlas`)
+
+**Síntoma reportado**: una coordinadora no veía el staff del proyecto en el modal "Nueva Charla", mientras que otro usuario sí lo veía para el mismo proyecto.
+
+**Causa**: `abrirCrear()` en `charlas-dashboard.ts` solo llamaba a `loadStaff()` cuando `!this.staff.length` — una vez que `staff` se poblaba (o quedaba en 0 tras un primer intento sin resultados), nunca se volvía a pedir al backend aunque el usuario cambiara de proyecto con el selector. El endpoint `GET /ssoma-charlas/staff` en sí no depende del usuario que lo llama (filtra por `ObraOficina == "Staff"`, `Estado == "ACTIVO"` y vinculación activa en `WorkerVinculacion` para ese `proyectoId`), así que el bug era 100% de caché en el frontend.
+
+**Fix**: `onProyectoChange()` ahora resetea `this.staff = []` antes de recargar, forzando que `abrirCrear()` vuelva a pedir el staff del proyecto recién seleccionado.
+
+**Pendiente**: si tras este fix la coordinadora sigue sin ver staff, el problema sería de datos — revisar que los trabajadores de su proyecto tengan `obra_oficina = 'Staff'`, `estado = 'ACTIVO'` y una fila activa en `worker_vinculacion` para ese proyecto.
+
+### Archivos clave
+- `src/app/features/habilitacion/pages/dossier/components/dossier-upload-modal/dossier-upload-modal.html` y `.css`
+- `src/app/features/ssoma/gestion/charlas/pages/dashboard/charlas-dashboard.ts` (`onProyectoChange`, línea ~131)
+
+## Sesión 2026-07-07 (continuación) — RAC: campos obligatorios, filtros, indicadores
+
+Contraparte frontend de la sesión de backend sobre RAC/indicadores (ver `Abril_Backend/CONTEXT.md` mismo día para el detalle de la investigación: fotos que no se guardaban por config de SharePoint faltante en producción, RACs huérfanos sin empresa, conteo de OPT/ATS/Charlas por vinculación incorrecta).
+
+### 1. `rac-nuevo` — Reportante, Reportada y Fotos ahora obligatorios
+
+Existían checkboxes "Reportar de forma anónima" y "No identificar la empresa reportada" que permitían crear un RAC sin `empresaReportanteId`/`empresaReportadaId` — 11+ RAC de julio quedaron sin empresa asignada, invisibles en cualquier filtro/indicador. Se quitaron ambos checkboxes de `rac-nuevo.html`; `canSubmit` en `rac-nuevo.ts` ahora exige `empresaReportadaId`, `empresaReportanteId` y `fotosSeleccionadas.length > 0`.
+
+También se corrigió que si la subida de fotos fallaba (ej. por el problema de SharePoint), el código mostraba "RAC registrado ✓" igual (el `error` callback de `subirFoto` llamaba a la misma función de éxito) — ahora muestra un aviso distinto ("RAC registrado, pero las fotos no se pudieron subir") sin fingir éxito.
+
+### 2. Lista de RAC — columnas separadas, filtros de mes y de empresa por rol
+
+`rac-lista.html`/`.ts`: se agregaron columnas "Reportante" y "Reportada" (antes solo mostraba una "Empresa" = reportada), filtro de mes/año (arma `fechaDesde`/`fechaHasta` que el backend ya soportaba pero la UI no exponía), y dos selects de empresa separados (`filtroEmpresaReportanteId` / `filtroEmpresaReportadaId`, antes uno solo). También se compactó la tabla: código con letra más chica, botones de acciones reducidos a íconos (`.btn-icon`), columnas de empresa con salto de línea en vez de truncar con "...".
+
+### 3. Dashboard RAC — nueva métrica "RACs Levantados por Ti"
+
+`rac-dashboard.html`/`.ts`: card nueva visible solo para contratistas (`esContratista`), mostrando `data.totalReportados`/`totalReportadosCerrados` — antes no existía ningún conteo de cuántos RAC había reportado la propia empresa (solo se veían los RAC que le fueron atribuidos).
+
+### 4. Indicadores proactivos — nuevo campo `actualRacsAtribuidos`
+
+El backend separó "RACs reportados" (por empresa reportante) de "RACs atribuidos/cerrados" (por empresa reportada) — antes ambas filas de la UI ("RACS rep."/"RACS cerr.") compartían el mismo campo `actualRacs`. Se agregó `actualRacsAtribuidos` al DTO y se actualizó `seguimiento-indicadores.component.html` para que la fila "RACS cerr." use ese campo como "Prog" en vez de reutilizar `actualRacs` (que ahora significa "reportados", no "atribuidos").
+
+### Archivos clave
+- `src/app/features/ssoma/gestion/rac/pages/nuevo/rac-nuevo.ts` y `.html`
+- `src/app/features/ssoma/gestion/rac/pages/lista/rac-lista.ts`, `.html`, `.css`
+- `src/app/features/ssoma/gestion/rac/pages/dashboard/rac-dashboard.ts` y `.html`
+- `src/app/features/ssoma/gestion/rac/dtos/rac.dtos.ts`, `services/rac.service.ts` (`RacListFiltrosState`)
+- `src/app/features/ssoma/gestion/indicadores-proactivos/indicadores-proactivos.dtos.ts`, `pages/seguimiento/seguimiento-indicadores.component.html`
+
+### Pendiente
+- Verificar en el navegador (no se pudo en esta sesión) que los indicadores de RP Mural/Lumbreras cuenten correctamente tras el deploy del backend.
+- 11 RAC de julio con `empresa_reportada_id = NULL` siguen sin corregir en BD (ver detalle en `Abril_Backend/CONTEXT.md`).

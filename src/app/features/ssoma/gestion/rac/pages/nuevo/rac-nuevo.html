@@ -100,12 +100,7 @@
         <i class="ti ti-user-circle"></i> Observador (Reportante)
       </h2>
 
-      <label class="check-label">
-        <input type="checkbox" [(ngModel)]="esAnonimoReportante" (ngModelChange)="clearReportante()" />
-        <span>Reportar de forma anónima</span>
-      </label>
-
-      <ng-container *ngIf="!esAnonimoReportante">
+      <ng-container>
 
         <div class="worker-search-wrap">
           <ng-container *ngIf="!reportanteSelected">
@@ -164,7 +159,7 @@
         <!-- Empresa -->
         <div class="form-grid">
           <div class="col-2">
-            <label class="form-label">Empresa del Observador</label>
+            <label class="form-label">Empresa del Observador *</label>
             <app-search-select
               [options]="empresas"
               valueField="id"
@@ -236,14 +231,10 @@
 
       </ng-container>
 
-      <!-- Empresa reportada — siempre visible -->
-      <label class="check-label">
-        <input type="checkbox" [(ngModel)]="esAnonimaEmpresaReportada" />
-        <span>No identificar la empresa reportada</span>
-      </label>
-      <div *ngIf="!esAnonimaEmpresaReportada" class="form-grid">
+      <!-- Empresa reportada — obligatoria, siempre visible -->
+      <div class="form-grid">
         <div class="col-2">
-          <label class="form-label">Empresa Reportada</label>
+          <label class="form-label">Empresa Reportada *</label>
           <app-search-select
             [options]="empresas"
             valueField="id"
@@ -273,7 +264,7 @@
     <!-- ■ 5. FOTOS DE EVIDENCIA ─────────────────────────────────────── -->
     <section class="form-section">
       <h2 class="section-title">
-        <i class="ti ti-camera"></i> Fotos de evidencia
+        <i class="ti ti-camera"></i> Fotos de evidencia *
       </h2>
       <input type="file" class="form-input" accept="image/*" multiple
              (change)="onFotosChange($event)" />
@@ -287,7 +278,7 @@
         </span>
       </div>
       <span class="form-hint" *ngIf="fotosSeleccionadas.length === 0">
-        Puedes adjuntar fotos de evidencia (opcional)
+        Debes adjuntar al menos una foto de evidencia
       </span>
     </section>
 

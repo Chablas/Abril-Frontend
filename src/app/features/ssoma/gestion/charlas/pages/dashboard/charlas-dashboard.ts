@@ -130,6 +130,7 @@ export class CharlasDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   onProyectoChange(): void {
     this.tab4Page = 1;
+    this.staff = [];
     this.load();
   }
 

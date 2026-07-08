@@ -47,6 +47,7 @@ export interface MetaEmpresaDto {
   metaInspecciones: number;
 
   actualRacs: number;
+  actualRacsAtribuidos: number;
   actualRacsCerrados: number;
   actualOpt: number;
   actualAts: number;

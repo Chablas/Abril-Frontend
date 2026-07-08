@@ -222,12 +222,21 @@
 }
 
 .col-dot { width: 24px; padding: 10px 6px 10px 12px; }
-.col-codigo { font-weight: 600; color: var(--rac-primary); white-space: nowrap; font-size: 11px; }
+.th-codigo { width: 90px; }
+.col-codigo { font-weight: 600; color: var(--rac-primary); white-space: nowrap; font-size: 10px; }
 .col-proyecto { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col-empresa { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--rac-text-muted); }
+.col-empresa {
+  max-width: 130px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.25;
+  font-size: 11px;
+  color: var(--rac-text-muted);
+}
 .col-categoria { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-desc { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--rac-text-muted); }
 .col-fecha { white-space: nowrap; color: var(--rac-text-muted); }
+.th-acciones { width: 100px; }
 .col-acciones { white-space: nowrap; }
 .card-subdesc { font-size: 11px; color: var(--rac-text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -344,6 +353,40 @@
 }
 
 .btn-inline--danger:hover { background: #fbdada; }
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 0.5px solid var(--rac-border-strong);
+  background: #f5f3ef;
+  color: #5a5850;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-right: 3px;
+}
+
+.btn-icon:hover { background: var(--rac-bg-hover); }
+
+.btn-icon--primary {
+  background: var(--rac-primary-soft);
+  color: var(--rac-primary);
+  border-color: #c1dac8;
+}
+
+.btn-icon--primary:hover { background: #d4ead9; }
+
+.btn-icon--danger {
+  background: var(--rac-danger-soft);
+  color: var(--rac-danger);
+  border-color: #f5bebe;
+}
+
+.btn-icon--danger:hover { background: #fbdada; }
 
 /* ── CARDS MOBILE (visible en mobile, ocultas en desktop) ── */
 .cards-mobile {

@@ -44,12 +44,6 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     data: { titulo: 'PRESUPUESTO MATERIALES · CONTROL SEMANAL', roles: [] },
   },
   {
-    path: 'proyecto/:projectId/personal-hitos',
-    loadComponent: () =>
-      import('./pages/personal-hitos/personal-hitos-page').then((m) => m.PersonalHitosPage),
-    data: { titulo: 'PRESUPUESTO MATERIALES · PERSONAL POR HITO', roles: [] },
-  },
-  {
     path: 'kits',
     loadComponent: () =>
       import('./pages/kits/kits-page').then((m) => m.KitsPage),
