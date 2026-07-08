@@ -4175,3 +4175,36 @@ En el modal de subida del Dossier (`dossier-upload-modal.html`), cuando SSOMA ma
 ### Archivos clave
 - `src/app/features/habilitacion/pages/dossier/components/dossier-upload-modal/dossier-upload-modal.html` y `.css`
 - `src/app/features/ssoma/gestion/charlas/pages/dashboard/charlas-dashboard.ts` (`onProyectoChange`, línea ~131)
+
+## Sesión 2026-07-07 (continuación) — RAC: campos obligatorios, filtros, indicadores
+
+Contraparte frontend de la sesión de backend sobre RAC/indicadores (ver `Abril_Backend/CONTEXT.md` mismo día para el detalle de la investigación: fotos que no se guardaban por config de SharePoint faltante en producción, RACs huérfanos sin empresa, conteo de OPT/ATS/Charlas por vinculación incorrecta).
+
+### 1. `rac-nuevo` — Reportante, Reportada y Fotos ahora obligatorios
+
+Existían checkboxes "Reportar de forma anónima" y "No identificar la empresa reportada" que permitían crear un RAC sin `empresaReportanteId`/`empresaReportadaId` — 11+ RAC de julio quedaron sin empresa asignada, invisibles en cualquier filtro/indicador. Se quitaron ambos checkboxes de `rac-nuevo.html`; `canSubmit` en `rac-nuevo.ts` ahora exige `empresaReportadaId`, `empresaReportanteId` y `fotosSeleccionadas.length > 0`.
+
+También se corrigió que si la subida de fotos fallaba (ej. por el problema de SharePoint), el código mostraba "RAC registrado ✓" igual (el `error` callback de `subirFoto` llamaba a la misma función de éxito) — ahora muestra un aviso distinto ("RAC registrado, pero las fotos no se pudieron subir") sin fingir éxito.
+
+### 2. Lista de RAC — columnas separadas, filtros de mes y de empresa por rol
+
+`rac-lista.html`/`.ts`: se agregaron columnas "Reportante" y "Reportada" (antes solo mostraba una "Empresa" = reportada), filtro de mes/año (arma `fechaDesde`/`fechaHasta` que el backend ya soportaba pero la UI no exponía), y dos selects de empresa separados (`filtroEmpresaReportanteId` / `filtroEmpresaReportadaId`, antes uno solo). También se compactó la tabla: código con letra más chica, botones de acciones reducidos a íconos (`.btn-icon`), columnas de empresa con salto de línea en vez de truncar con "...".
+
+### 3. Dashboard RAC — nueva métrica "RACs Levantados por Ti"
+
+`rac-dashboard.html`/`.ts`: card nueva visible solo para contratistas (`esContratista`), mostrando `data.totalReportados`/`totalReportadosCerrados` — antes no existía ningún conteo de cuántos RAC había reportado la propia empresa (solo se veían los RAC que le fueron atribuidos).
+
+### 4. Indicadores proactivos — nuevo campo `actualRacsAtribuidos`
+
+El backend separó "RACs reportados" (por empresa reportante) de "RACs atribuidos/cerrados" (por empresa reportada) — antes ambas filas de la UI ("RACS rep."/"RACS cerr.") compartían el mismo campo `actualRacs`. Se agregó `actualRacsAtribuidos` al DTO y se actualizó `seguimiento-indicadores.component.html` para que la fila "RACS cerr." use ese campo como "Prog" en vez de reutilizar `actualRacs` (que ahora significa "reportados", no "atribuidos").
+
+### Archivos clave
+- `src/app/features/ssoma/gestion/rac/pages/nuevo/rac-nuevo.ts` y `.html`
+- `src/app/features/ssoma/gestion/rac/pages/lista/rac-lista.ts`, `.html`, `.css`
+- `src/app/features/ssoma/gestion/rac/pages/dashboard/rac-dashboard.ts` y `.html`
+- `src/app/features/ssoma/gestion/rac/dtos/rac.dtos.ts`, `services/rac.service.ts` (`RacListFiltrosState`)
+- `src/app/features/ssoma/gestion/indicadores-proactivos/indicadores-proactivos.dtos.ts`, `pages/seguimiento/seguimiento-indicadores.component.html`
+
+### Pendiente
+- Verificar en el navegador (no se pudo en esta sesión) que los indicadores de RP Mural/Lumbreras cuenten correctamente tras el deploy del backend.
+- 11 RAC de julio con `empresa_reportada_id = NULL` siguen sin corregir en BD (ver detalle en `Abril_Backend/CONTEXT.md`).
