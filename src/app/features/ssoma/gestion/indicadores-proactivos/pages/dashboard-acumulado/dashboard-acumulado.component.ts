@@ -330,22 +330,22 @@ export class DashboardAcumuladoComponent implements OnInit, AfterViewInit {
             },
             align: 'top',
             anchor: 'end',
-            color: (ctx: any) => {
+            color: ((ctx: any) => {
               const dias = ctx.dataset.diasPerdidos?.[ctx.dataIndex] ?? 0;
               return dias > 0 ? ['#1e293b', '#d97706'] : '#1e293b';
-            },
-            font: (ctx: any) => {
+            }) as any,
+            font: ((ctx: any) => {
               const dias = ctx.dataset.diasPerdidos?.[ctx.dataIndex] ?? 0;
               return dias > 0
                 ? [{ size: 10.5, weight: 'bold' }, { size: 9, weight: 'bold' }]
                 : { size: 10.5, weight: 'bold' };
-            },
+            }) as any,
             formatter: (v: number, ctx: any) => {
               const dias = ctx.dataset.diasPerdidos?.[ctx.dataIndex] ?? 0;
               if (dias > 0) return [`${v}`, `⏱ ${dias} días`];
               return v > 0 ? `${v}` : '';
             },
-          },
+          } as any,
         },
         scales: {
           y: { beginAtZero: true, suggestedMax: 2, ticks: { font: { size: 10 }, precision: 0, color: '#64748b' }, grid: { color: '#eef2f7' }, border: { display: false } },
