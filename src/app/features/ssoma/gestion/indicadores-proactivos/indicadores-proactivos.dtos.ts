@@ -61,6 +61,9 @@ export interface MetaEmpresaDto {
   pctCharlas: number;
   pctInspecciones: number;
   pctProactivoGeneral: number;
+
+  esOculto: boolean;
+  puedeOcultarse: boolean;
 }
 
 // ─── Checklists por Proyecto ─────────────────────────────────────────────────

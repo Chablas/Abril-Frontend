@@ -41,6 +41,8 @@ export interface DesempenoSupervisorDto {
   esPrimeroEnProyecto: boolean;
   pctGeneralMesAnterior: number | null;
   esResidente: boolean;
+  esOculto: boolean;
+  puedeOcultarse: boolean;
 }
 
 interface ProyectoSimple { id: number; nombre: string; }
@@ -62,6 +64,7 @@ export class DesempenoSupervisorComponent implements OnInit {
   mes    = signal<number>(new Date().getMonth() + 1);
   anio   = signal<number>(new Date().getFullYear());
   proyectoFiltro = signal<number | null>(null);
+  verOcultos = signal<boolean>(false);
 
   todos     = signal<DesempenoSupervisorDto[]>([]);
   proyectos = signal<ProyectoSimple[]>([]);
@@ -155,7 +158,7 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      this.mes(); this.anio(); this.proyectoFiltro();
+      this.mes(); this.anio(); this.proyectoFiltro(); this.verOcultos();
       this.cargar();
     });
   }
@@ -172,12 +175,23 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   cargar(): void {
     this.loader.show();
-    let params = new HttpParams().set('mes', this.mes()).set('anio', this.anio());
+    let params = new HttpParams()
+      .set('mes', this.mes())
+      .set('anio', this.anio())
+      .set('incluirOcultos', this.verOcultos());
     const pid = this.proyectoFiltro();
     if (pid) params = params.set('proyectoId', pid);
     this.http.get<DesempenoSupervisorDto[]>(this.base, { headers: this.authHeaders(), params }).subscribe({
       next: data => { this.todos.set(data); this.loader.hide(); },
       error: err  => { this.loader.hide(); this.errorSvc.handleError(err); },
+    });
+  }
+
+  toggleOculto(s: DesempenoSupervisorDto): void {
+    const accion = s.esOculto ? 'mostrar' : 'ocultar';
+    this.http.patch<void>(`${this.base}/${s.supervisorId}/${accion}`, {}, { headers: this.authHeaders() }).subscribe({
+      next: () => this.cargar(),
+      error: err => this.errorSvc.handleError(err),
     });
   }
 

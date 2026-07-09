@@ -130,19 +130,9 @@ export class DashboardAcumuladoComponent implements OnInit {
     return { IF, IG, IA, totalHHT, totalAcc, totalDias };
   });
 
-  mejorPasso = computed(() => {
-    const t = this.tablaCombinada();
-    return t.length
-      ? [...t].sort((a, b) => b.pctPasso - a.pctPasso)[0]
-      : { proyectoNombre: '—', pctPasso: 0 };
-  });
-
-  mejorProactivo = computed(() => {
-    const t = this.tablaCombinada();
-    return t.length ? t[0] : { proyectoNombre: '—', pctProactivoGeneral: 0 };
-  });
-
   ngOnInit(): void { this.cargar(); }
+
+  imprimir(): void { window.print(); }
 
   cargar(): void {
     this.loader.show();
@@ -185,13 +175,10 @@ export class DashboardAcumuladoComponent implements OnInit {
   }
   gaugeArcClass(pct: number): string { return `g-arc--${this.sem(pct)}`; }
   gTextClass(pct: number): string    { return `g-pct--${this.sem(pct)}`; }
-  barClass(pct: number): string      { return `bar-fill--${this.sem(pct)}`; }
-  semClass(pct: number): string      { return `sem--${this.sem(pct)}`; }
   tileClass(pct: number): string     { return `tile--${this.sem(pct)}`; }
   tileValClass(pct: number): string  { return `tv--${this.sem(pct)}`; }
   chipClass(pct: number): string     { return `chip--${this.sem(pct)}`; }
   scoreColorClass(pts: number): string { return pts >= 90 ? 'sc--ok' : pts >= 70 ? 'sc--warn' : 'sc--alert'; }
-  scoreBarClass(pts: number): string   { return pts >= 90 ? 'sf--ok' : pts >= 70 ? 'sf--warn' : 'sf--alert'; }
   rkClass(pts: number): string         { return `rk-row--${this.scoreColorClass(pts).replace('sc--', '')}`; }
 
   // ── Reactivos (mayor = peor) ─────────────────────────────────────────────

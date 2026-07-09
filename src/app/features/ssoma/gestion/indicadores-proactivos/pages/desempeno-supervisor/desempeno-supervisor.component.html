@@ -31,6 +31,13 @@
 
       <div class="f-sep"></div>
 
+      <label class="f-check">
+        <input type="checkbox" [ngModel]="verOcultos()" (ngModelChange)="verOcultos.set($event)" />
+        Ver ocultos
+      </label>
+
+      <div class="f-sep"></div>
+
       <button class="f-btn-pdf" (click)="exportarPdf()" *ngIf="supervisores().length">
         <i class="ti ti-file-type-pdf"></i> PDF
       </button>
@@ -74,7 +81,15 @@
       <div *ngFor="let s of supervisores(); let i = index"
            class="sup-card"
            [class.sup-card--completo]="s.pctGeneral >= 100"
+           [class.sup-card--oculto]="s.esOculto"
            [ngClass]="ritmoCardClass(s)">
+
+        <button class="sup-ocultar-btn"
+                *ngIf="s.puedeOcultarse"
+                [title]="s.esOculto ? 'Volver a mostrar en el indicador' : 'Ocultar de este indicador (solo Coordinadores SSOMA)'"
+                (click)="toggleOculto(s)">
+          <i class="ti" [ngClass]="s.esOculto ? 'ti-eye' : 'ti-eye-off'"></i>
+        </button>
 
         <div class="sup-card__head">
           <div class="sup-avatar-wrap">

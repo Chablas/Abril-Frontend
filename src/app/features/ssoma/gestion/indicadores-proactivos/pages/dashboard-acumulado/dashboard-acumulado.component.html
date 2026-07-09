@@ -9,7 +9,7 @@
         <div class="dt-brand__sub">{{ tablaCombinada().length }} proyectos activos · {{ nombreMes(mes()) }} {{ anio() }}</div>
       </div>
     </div>
-    <div class="dt-controls">
+    <div class="dt-controls no-print">
       <select class="dt-sel" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
         <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
       </select>
@@ -17,6 +17,7 @@
         <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
       </select>
       <button class="dt-btn" (click)="cargar()"><i class="ti ti-refresh"></i> Actualizar</button>
+      <button class="dt-btn dt-btn--ghost" (click)="imprimir()"><i class="ti ti-printer"></i> Exportar PDF</button>
     </div>
   </div>
 
@@ -40,35 +41,32 @@
             <div class="rx-totals">
               <div class="rx-kpi">
                 <div class="rx-kpi__n" [ngClass]="ifColorClass(tot.IF)">{{ tot.IF | number:'1.1-1' }}</div>
-                <div class="rx-kpi__lbl">Índice de Frecuencia (año)</div>
+                <div class="rx-kpi__lbl">Índice Frecuencia (año)</div>
                 <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceFrecuencia != null; else sinMetaIF" [ngClass]="metaClass(tot.IF, metaAnual()?.metaIndiceFrecuencia)">
                   Meta {{ metaAnual()?.metaIndiceFrecuencia | number:'1.1-1' }}
                 </span>
                 <ng-template #sinMetaIF><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
               </div>
-              <div class="rx-sep"></div>
               <div class="rx-kpi">
                 <div class="rx-kpi__n" [ngClass]="igColorClass(tot.IG)">{{ tot.IG | number:'1.0-0' }}</div>
-                <div class="rx-kpi__lbl">Índice de Gravedad (año)</div>
+                <div class="rx-kpi__lbl">Índice Gravedad (año)</div>
                 <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceGravedad != null; else sinMetaIG" [ngClass]="metaClass(tot.IG, metaAnual()?.metaIndiceGravedad)">
                   Meta {{ metaAnual()?.metaIndiceGravedad | number:'1.0-0' }}
                 </span>
                 <ng-template #sinMetaIG><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
               </div>
-              <div class="rx-sep"></div>
               <div class="rx-kpi">
                 <div class="rx-kpi__n" [ngClass]="iaColorClass(tot.IA)">{{ tot.IA | number:'1.2-2' }}</div>
-                <div class="rx-kpi__lbl">Índice de Accidentabilidad (año)</div>
+                <div class="rx-kpi__lbl">Índice Accidentabilidad (año)</div>
                 <span class="meta-chip" *ngIf="metaAnual()?.metaIndiceAccidentabilidad != null; else sinMetaIA" [ngClass]="metaClass(tot.IA, metaAnual()?.metaIndiceAccidentabilidad)">
                   Meta {{ metaAnual()?.metaIndiceAccidentabilidad | number:'1.2-2' }}
                 </span>
                 <ng-template #sinMetaIA><span class="meta-chip meta-chip--sin-meta">Sin meta</span></ng-template>
               </div>
-              <div class="rx-sep"></div>
               <div class="rx-kpi rx-kpi--neutral">
                 <div class="rx-kpi__n rx-hht">{{ tot.totalHHT | number:'1.0-0' }}</div>
                 <div class="rx-kpi__lbl">HH Trabajadas (año)</div>
-                <div class="rx-kpi__form">{{ tot.totalAcc }} acc · {{ tot.totalDias }} días</div>
+                <div class="rx-kpi__form">{{ tot.totalAcc }} acc · {{ tot.totalDias }} días perdidos</div>
               </div>
             </div>
             <div class="rx-table-wrap">
@@ -76,14 +74,14 @@
                 <thead>
                   <tr>
                     <th rowspan="2" class="rx-t-nombre">Proyecto</th>
-                    <th colspan="3">{{ nombreMes(mes()) }}</th>
-                    <th colspan="3">Año {{ anio() }}</th>
-                    <th colspan="3">Total proyecto</th>
+                    <th colspan="4" class="rx-grp-lbl">{{ nombreMes(mes()) }}</th>
+                    <th colspan="4" class="rx-grp-lbl">Año {{ anio() }}</th>
+                    <th colspan="4" class="rx-grp-lbl rx-grp-lbl--total">Total proyecto</th>
                   </tr>
                   <tr class="rx-t-sub">
-                    <th>HHT</th><th>Acc</th><th>IF</th>
-                    <th>HHT</th><th>Acc</th><th>IF</th>
-                    <th>HHT</th><th>Acc</th><th>IF</th>
+                    <th>HHT</th><th>Acc</th><th>Días</th><th>IF</th>
+                    <th>HHT</th><th>Acc</th><th>Días</th><th>IF</th>
+                    <th class="rx-t-sub--total">HHT</th><th class="rx-t-sub--total">Acc</th><th class="rx-t-sub--total">Días</th><th class="rx-t-sub--total">IF</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -92,15 +90,18 @@
 
                     <td class="rx-t-num">{{ row.hht | number:'1.0-0' }}</td>
                     <td class="rx-t-num">{{ row.accidentes }}</td>
+                    <td class="rx-t-num">{{ row.diasPerdidos }}</td>
                     <td class="rx-t-idx" [ngClass]="ifColorClass(row.if)">{{ row.if | number:'1.1-1' }}</td>
 
                     <td class="rx-t-num">{{ row.hhtAnio | number:'1.0-0' }}</td>
                     <td class="rx-t-num">{{ row.accidentesAnio }}</td>
+                    <td class="rx-t-num">{{ row.diasPerdidosAnio }}</td>
                     <td class="rx-t-idx" [ngClass]="ifColorClass(row.ifAnio)">{{ row.ifAnio | number:'1.1-1' }}</td>
 
-                    <td class="rx-t-num">{{ row.hhtTotal | number:'1.0-0' }}</td>
-                    <td class="rx-t-num">{{ row.accidentesTotal }}</td>
-                    <td class="rx-t-idx" [ngClass]="ifColorClass(row.ifTotal)">{{ row.ifTotal | number:'1.1-1' }}</td>
+                    <td class="rx-t-num rx-t-num--total">{{ row.hhtTotal | number:'1.0-0' }}</td>
+                    <td class="rx-t-num rx-t-num--total">{{ row.accidentesTotal }}</td>
+                    <td class="rx-t-num rx-t-num--total">{{ row.diasPerdidosTotal }}</td>
+                    <td class="rx-t-idx rx-t-idx--total" [ngClass]="ifColorClass(row.ifTotal)">{{ row.ifTotal | number:'1.1-1' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -117,7 +118,7 @@
           <div class="rank-list">
             <div *ngFor="let row of tablaCombinada(); let i = index"
                  class="rk-row" [ngClass]="rkClass(row.puntajeTotal)">
-              <div class="rk-pos">{{ i + 1 }}</div>
+              <div class="rk-pos" [ngClass]="{'rk-pos--oro': i === 0, 'rk-pos--plata': i === 1, 'rk-pos--bronce': i === 2}">{{ i + 1 }}</div>
               <div class="rk-info">
                 <div class="rk-nombre" [title]="row.proyectoNombre">{{ row.proyectoNombre }}</div>
                 <div class="rk-chips">
@@ -156,25 +157,6 @@
                       [ngClass]="gTextClass(row.pctProactivoGeneral)">{{ row.pctProactivoGeneral | number:'1.0-0' }}%</text>
               </svg>
               <div class="gauge-name">{{ row.nombreCorto }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ■ PASSO — barras ─────────────────────────────────────────────── -->
-        <div class="card area-passo">
-          <div class="card-hd">
-            <span class="chd-label">PROG. ANUAL SSOMA (PASSO)</span>
-            <span class="chd-period">Acum. {{ anio() }}</span>
-          </div>
-          <div class="bar-list">
-            <div *ngFor="let row of tablaCombinada()" class="bar-row">
-              <span class="bar-lbl">{{ row.nombreCorto }}</span>
-              <div class="bar-track">
-                <div class="bar-fill" [ngClass]="barClass(row.pctPasso)"
-                     [style.width.%]="row.pctPasso > 100 ? 100 : row.pctPasso"></div>
-                <div class="bar-meta75"></div>
-              </div>
-              <span class="bar-val" [ngClass]="semClass(row.pctPasso)">{{ row.pctPasso | number:'1.0-0' }}%</span>
             </div>
           </div>
         </div>
@@ -225,29 +207,6 @@
                 </div>
               </ng-template>
             </ng-container>
-          </div>
-        </div>
-
-        <!-- ■ TOP PROYECTOS + PUNTAJE MENSUAL — fusionados, sin fila extra ─── -->
-        <div class="card area-puntaje">
-          <div class="card-hd">
-            <span class="chd-label">PUNTAJE MENSUAL · TOP PROYECTOS</span>
-            <span class="chd-period">{{ nombreMes(mes()) }} {{ anio() }} · máx 110 pts</span>
-          </div>
-          <div class="mini-awards">
-            <span class="mini-award"><span class="mini-award__icon">🏆</span> PASSO: <b>{{ mejorPasso().proyectoNombre }}</b> ({{ mejorPasso().pctPasso | number:'1.0-0' }}%)</span>
-            <span class="mini-award"><span class="mini-award__icon">⭐</span> Proactivos: <b>{{ mejorProactivo().proyectoNombre }}</b> ({{ mejorProactivo().pctProactivoGeneral | number:'1.0-0' }}%)</span>
-          </div>
-          <div class="score-list">
-            <div *ngFor="let row of tablaCombinada(); let i = index" class="score-row">
-              <span class="score-pos" [ngClass]="scoreColorClass(row.puntajeTotal)">#{{ i + 1 }}</span>
-              <span class="score-nombre">{{ row.proyectoNombre }}</span>
-              <div class="score-track">
-                <div class="score-fill" [ngClass]="scoreBarClass(row.puntajeTotal)"
-                     [style.width.%]="(row.puntajeTotal / 110) * 100"></div>
-              </div>
-              <span class="score-val" [ngClass]="scoreColorClass(row.puntajeTotal)">{{ row.puntajeTotal | number:'1.0-0' }}</span>
-            </div>
           </div>
         </div>
 

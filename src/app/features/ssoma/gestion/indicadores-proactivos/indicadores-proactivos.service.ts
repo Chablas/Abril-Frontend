@@ -47,12 +47,31 @@ export class IndicadoresProactivosService {
     });
   }
 
-  getSeguimiento(mes: number, anio: number): Observable<IndicadorProactivoProyectoDto[]> {
-    const params = new HttpParams().set('mes', mes).set('anio', anio);
+  getSeguimiento(mes: number, anio: number, incluirOcultos = false): Observable<IndicadorProactivoProyectoDto[]> {
+    const params = new HttpParams()
+      .set('mes', mes)
+      .set('anio', anio)
+      .set('incluirOcultos', incluirOcultos);
     return this.http.get<IndicadorProactivoProyectoDto[]>(`${this.base}/seguimiento`, {
       headers: this.authHeaders(),
       params,
     });
+  }
+
+  ocultarEmpresa(empresaId: number, motivo?: string): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/empresas/${empresaId}/ocultar`,
+      { motivo },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  mostrarEmpresa(empresaId: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.base}/empresas/${empresaId}/mostrar`,
+      {},
+      { headers: this.authHeaders() },
+    );
   }
 
   getIndicadoresProyecto(
