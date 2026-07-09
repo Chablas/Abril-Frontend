@@ -27,6 +27,7 @@ import {
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { Roles } from '../../../core/constants/roles';
 import { SectionTabs } from '../../../shared/components/section-tabs/section-tabs';
 
 interface PredResultItem {
@@ -157,8 +158,8 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   get esAdmin(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR DE UDP') ||
-      this.authService.hasRole('ADMINISTRADOR DE RESIDENTES')
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)
     );
   }
 

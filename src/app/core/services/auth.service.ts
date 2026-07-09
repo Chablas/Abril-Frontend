@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { ContratistaTokenDto, EmpresaSimpleDto } from '../../features/habilitacion/dtos/empresa.model';
 import { ClinicaTokenDto } from '../dtos/auth/clinica-token.model';
+import { Roles } from '../constants/roles';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -194,6 +195,16 @@ export class AuthService {
     }
   }
 
+  /**
+   * Devuelve los IDs de rol del usuario, como strings. El backend emite el ID (no el
+   * nombre) en el role claim del JWT, que jwt-decode expone bajo la URI de Microsoft.
+   * Se usan IDs para no depender del texto del rol (que puede editarse). Emparejar
+   * contra las constantes de `core/constants/roles.ts`.
+   *
+   * El backend guarda el nombre aparte, en el claim `role_name`, solo para mostrar.
+   * Las sesiones de CONTRATISTA/CLINICA traen su ID de rol igual, pero para "¿es
+   * contratista/clínica?" preferir `isContratista()` / `isClinica()` (claim `tipo`).
+   */
   getRoles(): string[] {
     const token = this.getToken();
     if (!token) return [];
@@ -203,9 +214,9 @@ export class AuthService {
     let roles =
       decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? decoded.role;
 
-    if (!roles) return [];
+    if (roles === undefined || roles === null) return [];
 
-    return Array.isArray(roles) ? roles : [roles];
+    return (Array.isArray(roles) ? roles : [roles]).map((r) => String(r));
   }
 
   hasRole(role: string): boolean {
@@ -260,6 +271,6 @@ export class AuthService {
    */
   esUsuarioAbrilBoletin(): boolean {
     const email = (this.getUserEmail() ?? '').toLowerCase();
-    return email.endsWith('@abril.pe') && this.hasRole('USUARIO DE ABRIL');
+    return email.endsWith('@abril.pe') && this.hasRole(Roles.USUARIO_DE_ABRIL);
   }
 }

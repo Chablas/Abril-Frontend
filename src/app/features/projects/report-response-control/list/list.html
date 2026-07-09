@@ -61,7 +61,7 @@
                         {{ item.residentReportResponseDescriptions[0].residentReportResponseDescription }}
                     </span>
 
-                    <button *ngIf="authService.hasRole('RESIDENTE') && item.residentReportResponseDescriptions.length == 0" (click)="openResponseModal(item, $event)"
+                    <button *ngIf="authService.hasRole(Roles.RESIDENTE) && item.residentReportResponseDescriptions.length == 0" (click)="openResponseModal(item, $event)"
                         class="py-[5px] px-[20px] rounded-lg border cursor-pointer w-[180px]" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
                         <div class="flex items-center gap-[10px]">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
@@ -72,7 +72,7 @@
                             <p class="text-lg leading-5">Responder incidencia</p>
                         </div>
                     </button>
-                    <span *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES') && item.residentReportResponseDescriptions.length == 0" class="text-xs text-gray-400 italic">Sin respuesta</span>
+                    <span *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES) && item.residentReportResponseDescriptions.length == 0" class="text-xs text-gray-400 italic">Sin respuesta</span>
                 </td>
                 <!--<td *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')" class="text-center">
                     <button

@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { NavGroup, NavModule } from '../../../core/navigation/nav.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { Roles } from '../../../core/constants/roles';
 import { GUIA_LECCIONES_APRENDIDAS } from '../../../shared/constants/mejora-continua-guia';
 
 @Component({
@@ -28,8 +29,8 @@ export class Dashboard {
    */
   get puedeVerGuiasMejoraContinua(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR DE MEJORA CONTINUA') ||
-      this.authService.hasRole('USUARIO DE ABRIL')
+      this.authService.hasRole(Roles.ADMINISTRADOR_MEJORA_CONTINUA) ||
+      this.authService.hasRole(Roles.USUARIO_DE_ABRIL)
     );
   }
 

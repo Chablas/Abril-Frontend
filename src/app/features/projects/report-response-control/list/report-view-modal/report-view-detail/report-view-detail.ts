@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, QueryList, ViewChildren } from '@angular/
 import { ResidentReportIncidenceDTO } from '../../../../../../core/dtos/reportResponseControl/residentReportIncidence.model';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import { ResidentReportIncidenceService } from '../../../../../../core/services/residentReportIncidence.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -16,6 +17,7 @@ import { UpdateIncidenceDTO } from '../../../../../../core/dtos/reportResponseCo
   styleUrl: './report-view-detail.css',
 })
 export class ReportViewDetail {
+  readonly Roles = Roles;
   @Input() selectedIncidence: ResidentReportIncidenceDTO = {
     residentReportIncidenceId: 0,
     residentReportIncidenceDescription: '',

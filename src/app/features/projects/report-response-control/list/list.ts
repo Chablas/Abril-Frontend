@@ -8,6 +8,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { RespondReportModal } from './respond-report-modal/respond-report-modal';
 import { ReportViewModal } from './report-view-modal/report-view-modal';
 
@@ -18,6 +19,7 @@ import { ReportViewModal } from './report-view-modal/report-view-modal';
   styleUrl: './list.css',
 })
 export class List implements OnInit {
+  readonly Roles = Roles;
   showResponseModal = false;
   showReportViewModal = false;
   selectedIncidence: ResidentReportIncidenceDTO = {

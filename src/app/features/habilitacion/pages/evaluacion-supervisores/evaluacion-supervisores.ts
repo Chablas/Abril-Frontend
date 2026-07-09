@@ -7,6 +7,7 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { EvaluacionService } from '../../services/evaluacion.service';
 import { EvalSupervisorListDto } from '../../dtos/evaluacion.model';
 import { EvalForm } from './components/eval-form/eval-form';
@@ -73,8 +74,8 @@ export class EvaluacionSupervisores implements OnInit, OnDestroy {
 
   isAdmin(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
+      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
     );
   }
 

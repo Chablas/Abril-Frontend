@@ -18,6 +18,7 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import { TrabajadorHabService } from '../../services/trabajador-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
@@ -102,8 +103,8 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   get puedeGestionarCatalogos(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
+      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
     );
   }
 
@@ -111,14 +112,14 @@ export class Trabajadores implements OnInit, OnDestroy {
     if (!this.selectedEntregable) return false;
     const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
     if (resp === 'SSOMA')
-      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-             this.authService.hasRole('ADMINISTRADOR DE UDP');
+      return this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+             this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
     if (resp === 'ADMINISTRACION')
-      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
-             this.authService.hasRole('ADMINISTRADOR DE UDP');
-    return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-           this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
-           this.authService.hasRole('ADMINISTRADOR DE UDP');
+      return this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
+             this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
+    return this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+           this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
+           this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
   }
 
   drawerOpen = false;
@@ -466,18 +467,18 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   isAdmin(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP') ||
-      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION')
+      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION)
     );
   }
 
   isSSoma(): boolean {
-    return this.authService.hasRole('ADMINISTRADOR SSOMA');
+    return this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA);
   }
 
   isAdministracion(): boolean {
-    return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION');
+    return this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION);
   }
 
   esSoloLectura(e: WorkerEntregableDto | null): boolean {
