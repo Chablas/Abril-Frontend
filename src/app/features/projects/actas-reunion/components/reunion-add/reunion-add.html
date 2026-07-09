@@ -1,0 +1,140 @@
+<app-base-modal [title]="'Agendar reunión'" width="w-[760px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <!-- Tema promovido desde otra reunión -->
+    <div *ngIf="reunionAnteriorId"
+      class="flex items-center gap-2 text-xs bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-2 text-gray-600">
+      <span class="ti ti-arrow-forward-up text-[var(--color-abril-primary)]"></span>
+      Tema promovido desde: <span class="font-medium">{{ reunionAnteriorLabel }}</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <app-search-select
+          label="Proyecto *"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="projectId"
+          (valueChange)="projectId = $event"
+          [disabled]="projectIdFijo != null"
+          placeholder="Selecciona un proyecto">
+        </app-search-select>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Tema de la reunión *</label>
+        <input type="text" [(ngModel)]="tema" maxlength="300"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. Comité de obra, revisión de acabados..." />
+      </div>
+      <div>
+        <app-search-select
+          label="Convocado por"
+          [options]="opcionesConvocadoPor"
+          valueField="fullName"
+          displayField="fullName"
+          [value]="convocadoPor || null"
+          (valueChange)="convocadoPor = $event ?? ''"
+          placeholder="Selecciona un trabajador">
+        </app-search-select>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Lugar</label>
+        <input type="text" [(ngModel)]="lugar" maxlength="200"
+          class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. Oficina - obra" />
+      </div>
+      <div>
+        <app-date-picker label="Fecha *" color="var(--color-abril-primary)" [value]="fecha" (valueChange)="fecha = $event"></app-date-picker>
+        <p class="text-[11px] text-gray-400 mt-1">
+          La fecha se puede reprogramar las veces que sea necesario.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de inicio</label>
+          <input type="time" [(ngModel)]="horaInicio"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Hora de término</label>
+          <input type="time" [(ngModel)]="horaFin"
+            class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Participantes ──────────────────────────────────────────────────── -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm font-medium text-gray-700">Participantes</label>
+        <button type="button" (click)="addParticipante()"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-plus"></span> Agregar participante
+        </button>
+      </div>
+      <div class="border border-[#E5EAF0] rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-[#F5F8FA] text-[var(--color-abril-primary)]">
+            <tr class="text-left">
+              <th class="px-3 py-2 font-medium">Nombre</th>
+              <th class="px-3 py-2 font-medium">Cargo</th>
+              <th class="px-3 py-2 font-medium w-24">Iniciales</th>
+              <th class="px-3 py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="participantes.length === 0">
+              <td colspan="4" class="px-4 py-5 text-center text-gray-400 text-sm">
+                Sin participantes. Usa "Agregar participante" para elegirlos de la lista de trabajadores.
+              </td>
+            </tr>
+            <tr *ngFor="let p of participantes; let i = index" class="border-t border-[#E5EAF0]">
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.nombre" (ngModelChange)="onNombreChange(p)" maxlength="200"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                  placeholder="Nombre completo" />
+              </td>
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.cargo" maxlength="200"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                  placeholder="Cargo" />
+              </td>
+              <td class="px-2 py-1.5">
+                <input type="text" [(ngModel)]="p.iniciales" (ngModelChange)="onInicialesChange(p)" maxlength="10"
+                  class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm text-center focus:outline-none focus:border-[var(--color-abril-primary)]" />
+              </td>
+              <td class="px-2 py-1.5 text-center">
+                <button type="button" (click)="removeParticipante(i)"
+                  class="text-red-400 hover:text-red-600 cursor-pointer">
+                  <span class="ti ti-trash text-base"></span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Acciones ───────────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-calendar-plus text-base"></span>
+        Agendar reunión
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<app-participante-add
+  *ngIf="showParticipanteModal"
+  [trabajadores]="trabajadores"
+  [inicialesExistentes]="inicialesActuales"
+  (closeModal)="showParticipanteModal = false"
+  (add)="onParticipanteAgregado($event)">
+</app-participante-add>

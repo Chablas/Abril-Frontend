@@ -243,6 +243,7 @@ export class DatePicker implements OnChanges, OnDestroy {
   /**
    * Valida lo escrito a mano (al salir del campo o con Enter): acepta `dd/mm/aaaa`
    * (también con `-` o `.`), emite si es una fecha real y revierte el texto si no lo es.
+   * El año también puede escribirse con 2 dígitos (ej. `26`): se autocompleta a `20xx`.
    */
   confirmarTexto() {
     const t = this.texto.trim();
@@ -253,11 +254,11 @@ export class DatePicker implements OnChanges, OnDestroy {
       return;
     }
 
-    const m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(t);
+    const m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/.exec(t);
     if (m) {
       const dia = +m[1];
       const mes = +m[2] - 1;
-      const anio = +m[3];
+      const anio = m[3].length === 2 ? 2000 + +m[3] : +m[3];
       const diasEnMes = new Date(anio, mes + 1, 0).getDate();
       if (mes >= 0 && mes <= 11 && dia >= 1 && dia <= diasEnMes) {
         const nuevo = this.format(anio, mes, dia);

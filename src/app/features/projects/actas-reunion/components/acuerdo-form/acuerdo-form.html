@@ -1,0 +1,68 @@
+<app-base-modal [title]="esEdicion ? 'Editar acuerdo' : 'Registrar acuerdo'" width="w-[640px]" (closeModal)="closeModal.emit()">
+  <div class="flex flex-col gap-4 p-1">
+
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">Descripción del acuerdo *</label>
+      <textarea [(ngModel)]="descripcion" rows="3"
+        class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"
+        placeholder="¿Qué se acordó en la reunión?"></textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-600 mb-1">Acciones</label>
+      <textarea [(ngModel)]="acciones" rows="2"
+        class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"
+        placeholder="Acciones a ejecutar para cumplir el acuerdo"></textarea>
+    </div>
+
+    <!-- ── Responsables ───────────────────────────────────────────────────── -->
+    <div>
+      <label class="block text-sm text-gray-600 mb-2">Responsables (participantes de la reunión)</label>
+      <div *ngIf="participantes.length === 0" class="text-xs text-gray-400">
+        La reunión aún no tiene participantes registrados.
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button *ngFor="let p of participantes" type="button" (click)="toggleResponsable(p.reunionParticipanteId)"
+          class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer"
+          [ngClass]="responsableIds.has(p.reunionParticipanteId)
+            ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
+            : 'bg-white text-gray-600 border-[#E5EAF0] hover:border-[var(--color-abril-primary)]'"
+          [title]="p.nombre + (p.cargo ? ' — ' + p.cargo : '')">
+          {{ p.iniciales || p.nombre }}
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <app-date-picker label="Fecha programada" color="var(--color-abril-primary)" [value]="fechaProgramada" (valueChange)="fechaProgramada = $event"></app-date-picker>
+      <app-date-picker label="Fecha de reprogramación" color="var(--color-abril-primary)" [value]="fechaReprogramacion" (valueChange)="fechaReprogramacion = $event"></app-date-picker>
+      <app-date-picker label="Fecha de cumplimiento" color="var(--color-abril-primary)" [value]="fechaCumplimiento" (valueChange)="fechaCumplimiento = $event"></app-date-picker>
+    </div>
+
+    <div *ngIf="esEdicion" class="w-56">
+      <label class="block text-sm text-gray-600 mb-1">Estado</label>
+      <app-search-select
+        [showLabel]="false"
+        [options]="estados"
+        valueField="id"
+        displayField="descripcion"
+        [value]="estadoId"
+        (valueChange)="estadoId = $event"
+        [allowClear]="false"
+        placeholder="Selecciona un estado">
+      </app-search-select>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="submit()"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-check text-base"></span>
+        {{ esEdicion ? 'Guardar cambios' : 'Registrar acuerdo' }}
+      </button>
+    </div>
+  </div>
+</app-base-modal>

@@ -9,6 +9,9 @@ import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
 import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
 import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cronograma-list';
 import { CronogramaDashboard } from './cronograma-dashboard/cronograma-dashboard';
+import { ActasReunion } from './actas-reunion/actas-reunion';
+import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
+import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
 
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
@@ -35,6 +38,25 @@ export const PROJECTS_ROUTES: Routes = [
     component: CronogramaDashboard,
     canActivate: [roleGuard],
     data: { titulo: 'DASHBOARD UDP', featureKey: 'projects.cronograma-dashboard' },
+  },
+  {
+    path: 'actas-reunion',
+    component: ActasReunion,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // Antes de `actas-reunion/:reunionId` para que el parámetro no capture "configuracion".
+    path: 'actas-reunion/configuracion',
+    component: ActasReunionConfiguracion,
+    canActivate: [roleGuard],
+    data: { titulo: 'CONFIGURACIÓN DE ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    path: 'actas-reunion/:reunionId',
+    component: ReunionDetail,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACTA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
     path: 'milestone-schedule',
