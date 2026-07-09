@@ -6,6 +6,7 @@ import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
 import { ResidentReportIncidenceDTO } from '../../../core/dtos/reportResponseControl/residentReportIncidence.model';
 import { Paginator } from '../../../shared/components/paginator/paginator';
 import { AuthService } from '../../../core/services/auth.service';
+import { Roles } from '../../../core/constants/roles';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
@@ -15,6 +16,7 @@ import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-
   styleUrl: './report-response-control.css',
 })
 export class ReportResponseControl {
+  readonly Roles = Roles;
   anioActual = new Date().getFullYear();
   showCreateModal = false;
 

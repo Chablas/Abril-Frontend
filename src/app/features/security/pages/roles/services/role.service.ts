@@ -18,8 +18,14 @@ export class RoleFeatureService {
 
   constructor(private http: HttpClient) {}
 
-  getRolesPaged(page: number): Observable<PagedResponseDTO<RoleDto>> {
-    return this.http.get<PagedResponseDTO<RoleDto>>(`${this.apiUrl}/paged?page=${page}`, {
+  getRolesPaged(
+    page: number,
+    search: string = '',
+    pageSize: number = 10,
+  ): Observable<PagedResponseDTO<RoleDto>> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search.trim()) params.set('search', search.trim());
+    return this.http.get<PagedResponseDTO<RoleDto>>(`${this.apiUrl}/paged?${params.toString()}`, {
       headers: buildAuthHeaders(),
     });
   }

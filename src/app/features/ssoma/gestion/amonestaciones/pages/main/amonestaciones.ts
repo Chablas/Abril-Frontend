@@ -16,6 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { AmonestacionService, EscuelitaService, EscuelitaItemDto, EscuelitaRegistrarRequest, RestringidosService, RestringidoListItemDto, RestringidoCreateRequest } from '../../services/amonestacion.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import {
   AmonCatalogoItem,
   AmonestacionDashboardDto,
@@ -33,12 +34,12 @@ import { FabButton } from '../../../../../../shared/components/fab-button/fab-bu
 
 type Tab = 'dashboard' | 'lista' | 'puntaje' | 'escuelita' | 'inhabilitados';
 
-const ROLES_INHABILITACION = [
-  'ADMINISTRADOR SSOMA',
-  'COORDINADOR SSOMA',
-  'JEFE SSOMA',
-  'ADMINISTRADOR DE OBRA',
-  'COORDINADOR DE ADMINISTRACIÓN',
+// Roles autorizados a ver la pestaña de inhabilitados. Se comparan por ID.
+// (Los antiguos 'COORDINADOR SSOMA', 'JEFE SSOMA' y 'COORDINADOR DE ADMINISTRACIÓN'
+//  no existen en la tabla role, por lo que nunca matcheaban.)
+const ROLES_INHABILITACION: string[] = [
+  Roles.ADMINISTRADOR_SSOMA,
+  Roles.ADMINISTRADOR_DE_OBRA,
 ];
 
 const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];

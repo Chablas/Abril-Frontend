@@ -17,7 +17,7 @@
 <div class="bg-white flex-1 min-h-0 p-[20px] flex flex-col gap-[20px]">
     <div>
         <div class="flex w-full">
-            <button *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES')" (click)="openCreateModal($event)"
+            <button *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)" (click)="openCreateModal($event)"
                 class="py-[5px] px-[20px] rounded-lg border cursor-pointer" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
                 <div class="flex items-center gap-[10px]">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">

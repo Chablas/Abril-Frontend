@@ -14,6 +14,7 @@ import { jwtDecode } from 'jwt-decode';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
@@ -158,9 +159,9 @@ export class Empresa implements OnInit {
 
   isAdmin(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP')
+      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
     );
   }
 
@@ -168,11 +169,11 @@ export class Empresa implements OnInit {
     if (!this.selectedEntregable) return false;
     const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
     if (resp === 'SSOMA')
-      return this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-             this.authService.hasRole('ADMINISTRADOR DE UDP');
+      return this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+             this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
     if (resp === 'ADMINISTRACION')
-      return this.authService.hasRole('ADMINISTRADOR ADMINISTRACION') ||
-             this.authService.hasRole('ADMINISTRADOR DE UDP');
+      return this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
+             this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
     return this.isAdmin();
   }
 

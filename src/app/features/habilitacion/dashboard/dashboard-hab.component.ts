@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
+import { Roles } from '../../../core/constants/roles';
 import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
 import { HabEmpresaService } from '../services/hab-empresa.service';
 import { TrabajadorHabService } from '../services/trabajador-hab.service';
@@ -52,8 +53,8 @@ export class DashboardHabComponent implements OnInit {
   get esContratista(): boolean { return this.authService.isContratista(); }
 
   get isAdmin(): boolean {
-    return this.authService.hasRole('ADMINISTRADOR DE UDP') ||
-           this.authService.hasRole('ADMINISTRADOR DEL SISTEMA');
+    return this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
+           this.authService.hasRole(Roles.ADMINISTRADOR_SISTEMA);
   }
 
   get empresaNombre(): string {

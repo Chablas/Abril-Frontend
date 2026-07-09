@@ -5,19 +5,12 @@
     <label class="block text-[0.72rem] uppercase tracking-widest font-bold text-gray-500 mb-1.5">
       Buscar rol
     </label>
-    <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400 max-w-xs
-                focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.3-4.3" />
-      </svg>
-      <input
-        type="text"
-        placeholder="Nombre del rol..."
-        [(ngModel)]="searchTerm"
-        class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm"
-      />
-    </div>
+    <app-search-input
+      placeholder="Nombre del rol..."
+      width="20rem"
+      [value]="searchTerm"
+      (valueChange)="onSearchChange($event)"
+    ></app-search-input>
   </div>
 
   <!-- Tabla desktop -->
@@ -34,7 +27,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredData" class="border-b border-gray-100 last:border-b-0 hover:bg-green-50 transition-colors">
+          <tr *ngFor="let item of tableData.data" class="border-b border-gray-100 last:border-b-0 hover:bg-green-50 transition-colors">
             <td class="px-4 py-3 text-[0.78rem] text-gray-400 font-semibold tabular-nums">{{ item.roleId }}</td>
             <td class="px-4 py-3 font-semibold text-gray-900">{{ item.roleDescription }}</td>
             <td class="px-4 py-3 text-[0.82rem] text-gray-500 whitespace-nowrap">
@@ -65,7 +58,7 @@
               </button>
             </td>
           </tr>
-          <tr *ngIf="filteredData.length === 0">
+          <tr *ngIf="tableData.data.length === 0">
             <td colspan="5" class="text-center text-gray-400 py-12 text-sm">Sin roles registrados.</td>
           </tr>
         </tbody>
@@ -76,7 +69,7 @@
   <!-- Cards mobile -->
   <div class="flex flex-col gap-2 md:hidden">
     <div
-      *ngFor="let item of filteredData"
+      *ngFor="let item of tableData.data"
       class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-2"
     >
       <div class="flex items-start justify-between gap-2">
@@ -106,7 +99,7 @@
         Editar
       </button>
     </div>
-    <p *ngIf="filteredData.length === 0" class="text-center text-gray-400 py-10 text-sm">
+    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">
       Sin roles registrados.
     </p>
   </div>

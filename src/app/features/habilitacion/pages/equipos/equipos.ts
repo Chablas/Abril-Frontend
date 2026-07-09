@@ -16,6 +16,7 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { EquipoHabService } from '../../services/equipo-hab.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { ProjectService } from '../../../../core/services/project.service';
@@ -268,9 +269,9 @@ export class Equipos implements OnInit, OnDestroy {
 
   isAdmin(): boolean {
     return (
-      this.authService.hasRole('ADMINISTRADOR SSOMA') ||
-      this.authService.hasRole('ADMINISTRADOR DE UDP') ||
-      this.authService.hasRole('ADMINISTRADOR ADMINISTRACION')
+      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
+      this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION)
     );
   }
 

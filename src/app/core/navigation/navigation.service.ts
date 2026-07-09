@@ -283,7 +283,14 @@ export class NavigationService {
   private isItemAllowed(item: NavItem): boolean {
     if (!item.featureKey && !item.roles?.length) return true;
     if (item.featureKey && this.getAllowedFeatures().includes(item.featureKey)) return true;
-    if (item.roles?.length && item.roles.some((r) => this.authService.hasRole(r))) return true;
+    if (item.roles?.length) {
+      // Centinelas por tipo de sesión: CONTRATISTA/CLINICA no viajan en el claim role_id
+      // (usan un JWT propio), así que se resuelven por el tipo guardado en localStorage.
+      if (item.roles.includes('CONTRATISTA') && this.authService.isContratista()) return true;
+      if (item.roles.includes('CLINICA') && this.authService.isClinica()) return true;
+      // Roles de staff: se comparan por ID (constantes de roles.ts) contra getRoles().
+      if (item.roles.some((r) => this.authService.hasRole(r))) return true;
+    }
     return false;
   }
 

@@ -7,6 +7,7 @@ import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { Roles } from '../../../../../core/constants/roles';
 import { FormsModule } from '@angular/forms';
 import {
   AreaNodeDto,
@@ -89,7 +90,7 @@ export class GestionSalidas implements OnInit {
 
   /** True si el usuario logueado tiene rol "USUARIO DE RECEPCIÓN" — habilita la columna extra. */
   get esRecepcion(): boolean {
-    return this.authService.hasRole('USUARIO DE RECEPCIÓN');
+    return this.authService.hasRole(Roles.USUARIO_RECEPCION);
   }
 
   guardarHoraReal(s: GestionSalidaListItemDto, valor: string, ev?: Event): void {

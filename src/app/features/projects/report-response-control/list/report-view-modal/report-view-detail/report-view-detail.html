@@ -23,7 +23,7 @@
         </div>
     </div>
     <button (click)="updateIncidence()"
-        *ngIf="authService.hasRole('ADMINISTRADOR DE RESIDENTES') && selectedIncidence.stateDescription == 'NO LEVANTADO' && selectedIncidence.residentReportResponseDescriptions.length > 0"
+        *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES) && selectedIncidence.stateDescription == 'NO LEVANTADO' && selectedIncidence.residentReportResponseDescriptions.length > 0"
         class="w-full py-3 rounded-[10px] text-white font-medium text-sm cursor-pointer transition-colors" style="background:var(--color-abril-primary)">
         Levantar incidencia
     </button>
