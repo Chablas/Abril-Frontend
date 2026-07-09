@@ -82,15 +82,6 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
   ];
   anios = [2024, 2025, 2026, 2027];
 
-  readonly INDICADORES = [
-    { key: 'Racs',         label: 'RAC Generados',  color: '#0f4c75' },
-    { key: 'RacsCerrados', label: 'RAC Cerrados',   color: '#1e88e5' },
-    { key: 'Opt',          label: 'OPT',            color: '#7c3aed' },
-    { key: 'Ats',          label: 'ATS',            color: '#0891b2' },
-    { key: 'Charlas',      label: 'Charlas',        color: '#16a34a' },
-    { key: 'Inspecciones', label: 'Inspecciones',   color: '#ea580c' },
-  ];
-
   ngOnInit(): void {
     this.http.get<SelectOption[]>(`${environment.apiUrl}api/v1/shared-filters/proyectos`)
       .subscribe({ next: data => this.proyectos.set(data) });
@@ -179,20 +170,21 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     });
   }
 
-  indiceFrecuencia(): number {
-    const acc = this.reactivoAcumulado();
-    if (!acc || !acc.hht) return 0;
-    return (acc.accidentes * 1_000_000) / acc.hht;
+  // ── Semáforo reactivos (mayor = peor) — mismos umbrales que el resto de SSOMA
+  ifColorClass(val: number): string {
+    if (val === 0) return 'rx--cero';
+    return val <= 5 ? 'rx--ok' : val <= 15 ? 'rx--warn' : 'rx--alert';
   }
-
-  indiceGravedad(): number {
-    const acc = this.reactivoAcumulado();
-    if (!acc || !acc.hht) return 0;
-    return (acc.diasPerdidos * 1_000_000) / acc.hht;
+  igColorClass(val: number): string {
+    if (val === 0) return 'rx--cero';
+    return val <= 100 ? 'rx--ok' : val <= 250 ? 'rx--warn' : 'rx--alert';
   }
-
-  indiceAccidentabilidad(): number {
-    return (this.indiceFrecuencia() * this.indiceGravedad()) / 1000;
+  iaColorClass(val: number): string {
+    if (val === 0) return 'rx--cero';
+    return val <= 2 ? 'rx--ok' : val <= 5 ? 'rx--warn' : 'rx--alert';
+  }
+  accColorClass(val: number): string {
+    return val > 0 ? 'rx--alert' : 'rx--cero';
   }
 
   trabajadoresMes(): number {
@@ -217,8 +209,10 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     };
   }
 
+  private readonly MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
   private renderMiniCharts(serie: MesSerieDto[]): void {
-    const labels = serie.map(s => `${s.mes}-${s.anio}`);
+    const labels = serie.map(s => this.MESES_CORTOS[s.mes - 1]);
 
     if (this.accCanvasRef?.nativeElement) {
       if (this.accChart) this.accChart.destroy();
@@ -250,7 +244,7 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
         type: 'line',
         data: {
           labels,
-          datasets: [this.lineDataset('N° de Trabajadores', serie.map(s => s.trabajadores), '#0f4c75')],
+          datasets: [this.lineDataset('N° de Trabajadores (promedio)', serie.map(s => s.trabajadores), '#0f4c75')],
         },
         options: this.miniChartOptions('#0f4c75'),
       });
@@ -261,20 +255,32 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 18 } },
+      // Padding generoso arriba: antes el valor del pico chocaba con la leyenda.
+      layout: { padding: { top: 26, right: 10, left: 4 } },
       plugins: {
-        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } },
+        // Sin leyenda: el título de la card ya dice qué mide, mostrarla dos
+        // veces (título + leyenda) era ruido y tapaba los números del pico.
+        legend: { display: false },
         datalabels: {
           align: 'top',
           anchor: 'end',
+          offset: 4,
           color,
-          font: { size: 10, weight: 'bold' },
+          font: { size: 10.5, weight: 'bold' },
           formatter: (v: number) => Math.round(v),
         },
       },
+      elements: { point: { radius: 3, hoverRadius: 5 } },
       scales: {
-        y: { beginAtZero: true, ticks: { font: { size: 9 }, precision: 0 }, grid: { color: '#eef2f7' } },
-        x: { ticks: { font: { size: 9 } }, grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          ticks: { font: { size: 9 }, precision: 0, color: '#94a3b8' },
+          grid: { color: '#f1f5f9' },
+          border: { display: false },
+          // Deja aire arriba para que el datalabel del punto más alto no se corte.
+          afterDataLimits: (axis: any) => { axis.max = axis.max * 1.28 || 1; },
+        },
+        x: { ticks: { font: { size: 9.5, weight: 'bold' }, color: '#64748b' }, grid: { display: false }, border: { color: '#e2e8f0' } },
       },
     };
   }
@@ -318,20 +324,6 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
 
   nombreMes(mes: number): string {
     return this.meses.find(m => m.valor === mes)?.nombre ?? '';
-  }
-
-  pctClass(pct: number): string {
-    if (pct >= 100) return 'pct--verde';
-    if (pct >= 75)  return 'pct--amarillo';
-    if (pct >= 50)  return 'pct--naranja';
-    return 'pct--rojo';
-  }
-
-  scoreClass(score: number): string {
-    if (score >= 90) return 'score--verde';
-    if (score >= 70) return 'score--amarillo';
-    if (score >= 50) return 'score--naranja';
-    return 'score--rojo';
   }
 
   gaugeOffset(score: number, max: number = 110): number {
