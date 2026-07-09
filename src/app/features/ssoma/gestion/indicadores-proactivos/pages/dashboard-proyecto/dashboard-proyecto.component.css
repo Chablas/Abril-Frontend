@@ -40,7 +40,7 @@
 }
 .filtro-select:focus { border-color: #0f4c75; background: #fff; }
 
-.filtro-action { display: flex; align-items: flex-end; }
+.filtro-action { display: flex; align-items: flex-end; gap: 0.5rem; }
 
 .btn-cargar {
   display: flex; align-items: center; gap: 0.4rem;
@@ -52,6 +52,19 @@
 }
 .btn-cargar:hover:not(:disabled) { background: #0a3a5c; }
 .btn-cargar:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-exportar {
+  display: flex; align-items: center; gap: 0.4rem;
+  height: 2.25rem; padding: 0 1.1rem;
+  background: #fff; color: #0f4c75;
+  border: 1px solid #0f4c75; border-radius: 0.5rem;
+  font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-exportar:hover:not(:disabled) { background: #eff6fb; }
+.btn-exportar:disabled { opacity: .5; cursor: not-allowed; }
+.spin { animation: dp-spin 0.8s linear infinite; }
+@keyframes dp-spin { to { transform: rotate(360deg); } }
 
 /* ── Cabecera del reporte ───────────────────────────────────────────────────── */
 .reporte-header {
@@ -79,8 +92,7 @@
 
 .reporte-header { flex-wrap: wrap; }
 
-/* ── Badges KPI (reactivos) ─────────────────────────────────────────────────── */
-.rh-kpi-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* ── Badge trabajadores del mes ─────────────────────────────────────────────── */
 .kpi-badge {
   display: flex; align-items: center; gap: 0.4rem;
   border: 1px solid #cfe0ef; border-radius: 0.5rem;
@@ -92,12 +104,29 @@
 .kpi-badge__body { display: flex; flex-direction: column; gap: 1px; }
 .kpi-badge__label { font-size: 0.58rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
 .kpi-badge__val { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
-.kpi-badge__val--sec { color: #64748b; }
-.kpi-badge__vals-row { display: flex; gap: 0.5rem; }
-.kpi-badge__sub { font-size: 0.56rem; color: #94a3b8; }
-.kpi-badge__sub-row { display: flex; gap: 0.8rem; font-size: 0.56rem; color: #94a3b8; }
 
-/* ── Tendencia mensual: 3 mini gráficos ────────────────────────────────────── */
+/* ── Reactivos: Mes/Año vs Total proyecto, en cards claras de alto contraste
+   (texto oscuro/negrita sobre blanco — legible incluso proyectado). ───────── */
+.rx-cards-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.rx-card {
+  flex: 1; min-width: 150px;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.rx-card__titulo { font-size: 0.66rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: .03em; }
+.rx-card__pares { display: flex; align-items: center; gap: 0.5rem; }
+.rx-card__par { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.rx-card__sep { width: 1px; align-self: stretch; background: #eef2f7; }
+.rx-card__n { font-size: 1.3rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.rx-card__lbl { font-size: 0.56rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .03em; }
+
+.rx--cero  { color: #16a34a; }
+.rx--ok    { color: #16a34a; }
+.rx--warn  { color: #d97706; }
+.rx--alert { color: #dc2626; }
+
+/* ── Tendencia mensual: accidentes, días perdidos, trabajadores promedio ────── */
 .mini-charts-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .mini-chart-card {
   flex: 1; min-width: 240px;
@@ -105,7 +134,7 @@
   padding: 0.4rem 0.6rem;
 }
 .mini-chart-title { font-size: 0.72rem; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 0.2rem; }
-.mini-chart-wrap { height: 110px; position: relative; }
+.mini-chart-wrap { height: 150px; position: relative; }
 
 /* ── Resumen de gestión: 5 gauges ───────────────────────────────────────────── */
 .gauges-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
@@ -125,65 +154,6 @@
 }
 .gauge-safe__icon { font-size: 1.05rem; color: #16a34a; }
 .gauge-safe__text { font-size: 0.55rem; font-weight: 700; color: #16a34a; text-align: center; line-height: 1.1; }
-
-/* ── KPI strip ──────────────────────────────────────────────────────────────── */
-.kpi-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.kpi-chip {
-  flex: 1; min-width: 110px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  display: flex; flex-direction: column; gap: 0.05rem;
-}
-.kpi-chip__label { font-size: 0.66rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-.kpi-chip__pct { font-size: 1rem; font-weight: 700; line-height: 1; }
-.kpi-chip__vals { font-size: 0.7rem; color: #94a3b8; }
-
-/* ── Puntaje strip ──────────────────────────────────────────────────────────── */
-.puntaje-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.ps-card {
-  flex: 1; min-width: 100px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  display: flex; flex-direction: column; gap: 0.05rem;
-}
-.ps-label { font-size: 0.64rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-.ps-pct { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
-.ps-pct--safe { font-size: 0.72rem; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 4px; }
-.ps-pts { font-size: 0.72rem; color: #64748b; }
-.ps-pct-total { font-size: 1.3rem; font-weight: 800; color: inherit; }
-
-.ps-card--proactivos { border-top: 3px solid #0f4c75; }
-.ps-card--passo      { border-top: 3px solid #7c3aed; }
-.ps-card--accidentes { border-top: 3px solid #dc2626; }
-.ps-card--hallazgos  { border-top: 3px solid #ea580c; }
-.ps-card--bonus      { border-top: 3px solid #94a3b8; }
-.ps-card--bonus-activo { border-top-color: #16a34a; }
-.ps-card--total      { border-top: 3px solid #64748b; }
-
-/* ── Color helpers ──────────────────────────────────────────────────────────── */
-.pct--verde    { color: #16a34a; }
-.pct--amarillo { color: #ca8a04; }
-.pct--naranja  { color: #ea580c; }
-.pct--rojo     { color: #dc2626; }
-
-.score--verde    { color: #16a34a; border-top-color: #16a34a !important; }
-.score--amarillo { color: #ca8a04; border-top-color: #ca8a04 !important; }
-.score--naranja  { color: #ea580c; border-top-color: #ea580c !important; }
-.score--rojo     { color: #dc2626; border-top-color: #dc2626 !important; }
 
 /* ── Empty state ────────────────────────────────────────────────────────────── */
 .empty-state {

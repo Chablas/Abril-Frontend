@@ -22,6 +22,7 @@ export class SeguimientoIndicadoresComponent implements OnInit {
   anio = signal<number>(new Date().getFullYear());
   proyectos = signal<IndicadorProactivoProyectoDto[]>([]);
   proyectoExpandido = signal<number | null>(null);
+  verOcultos = signal<boolean>(false);
 
   meses = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
@@ -40,7 +41,7 @@ export class SeguimientoIndicadoresComponent implements OnInit {
 
   cargar(): void {
     this.loader.show();
-    this.svc.getSeguimiento(this.mes(), this.anio()).subscribe({
+    this.svc.getSeguimiento(this.mes(), this.anio(), this.verOcultos()).subscribe({
       next: data => {
         this.proyectos.set(data);
         this.loader.hide();
@@ -56,6 +57,17 @@ export class SeguimientoIndicadoresComponent implements OnInit {
     this.proyectoExpandido.set(
       this.proyectoExpandido() === proyectoId ? null : proyectoId,
     );
+  }
+
+  toggleOculto(emp: { empresaId: number | null; esOculto: boolean }): void {
+    if (!emp.empresaId) return;
+    const accion = emp.esOculto
+      ? this.svc.mostrarEmpresa(emp.empresaId)
+      : this.svc.ocultarEmpresa(emp.empresaId);
+    accion.subscribe({
+      next: () => this.cargar(),
+      error: err => this.errorSvc.handleError(err),
+    });
   }
 
   nombreMes(mes: number): string {

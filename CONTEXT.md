@@ -4226,3 +4226,37 @@ Reporte urgente en producción (mobile, `intranet.abril.pe`): al crear un RAC, e
 ### Pendiente
 - Confirmar con el usuario en el celular real que el error ya no ocurre.
 - Si sigue fallando, el siguiente sospechoso es un límite de tamaño de cuerpo en el proxy/servidor delante del backend (IIS/nginx) — eso no lo resuelve este cambio de frontend.
+
+## Sesión 2026-07-09 — Rediseño dashboards SSOMA (acumulado y por proyecto)
+
+Serie de iteraciones de diseño sobre `ssoma/gestion/indicadores-proactivos/indicadores-ssoma/dashboard` y `.../dashboard-proyecto`, pedidas por el usuario para que sean presentables ante gerencia y legibles al proyectar.
+
+**Dashboard acumulado** (`pages/dashboard-acumulado/`):
+- Card "Indicadores Reactivos" en una sola fila: KPIs (IF/IG/IA/HHT) en grid 2×2 a la izquierda, gráfica de accidentes del mes al centro, tabla Año/Total proyecto a la derecha (se sacó la columna Julio de la tabla porque ya la cubre la gráfica).
+- Gráfica de accidentes: solo accidentes en barra (no días perdidos — un mes con muchos días, ej. 30, aplastaba la escala). Los días perdidos se muestran como segunda línea del datalabel arriba de la misma barra del proyecto (`diasPerdidos` embebido en el dataset, formatter multilínea de chartjs-plugin-datalabels).
+- Columna "Total proyecto" de la tabla: tinte champagne + borde dorado (se descartaron azul/verde sólidos, se veían "poco profesionales" según el usuario).
+- "Panorama General" → renombrado "Puntaje Mensual SSOMA", convertido de lista a gráfica de barras.
+- "Desempeño de Supervisores": gráfica horizontal, mismo semáforo verde/ámbar/rojo que el resto (se descartó el esquema oro/plata/bronce, "se veía como un circo").
+- "Cumplimiento Proactivo": un solo % por proyecto (se descartó el desglose Casa vs Contratistas), con descripción de qué mide bajo el título. Card "Mejores Proyectos" (estilo oscuro elegante, 2×2, números centrados) al costado, mejor proyecto por categoría incluyendo Cierre de Accidentes.
+- Se sacaron "Cierre de Accidentes" y "Cierre de Hallazgos" como tiles independientes (redundantes con Mejores Proyectos).
+- Responsive: `rx-layout` con `flex-wrap`, media query a 980px apila todo el grid a una columna (antes el contenido se recortaba en ventanas angostas).
+
+**Dashboard por proyecto** (`pages/dashboard-proyecto/`):
+- Se quitó el `kpi-strip` de RAC Generados/RAC Cerrados/OPT/ATS/Charlas/Inspecciones y el "puntaje desglosado" (Proactivos/PASSO/Cierre Acc/Cierre Hall/Bonus/Total) — redundante con los gauges de arriba.
+- Los badges de cabecera se reemplazaron por cards claras (`.rx-card`) Mes vs Total proyecto (Accidentes, Días perdidos) y Año vs Total proyecto (IF, IG, IA), usando directamente los campos `...Anio`/`...Total` que ya trae `IndicadorReactivoProyectoDto` del backend (antes se recalculaba a mano acumulando meses vía `reactivoAcumulado`).
+- Se agregó botón "Exportar PDF" en la toolbar — el método `exportarPDF()` (jsPDF + html2canvas) ya existía pero no estaba conectado a ningún botón.
+- Se mantuvieron las 3 gráficas de tendencia mensual (Accidentes, Días Perdidos, Trabajadores Promedio) después de una idea y vuelta (se sacaron y luego se repusieron a pedido); se les quitó la leyenda redundante (duplicaba el título de la card) y se les dio más padding arriba para que el datalabel del pico no se corte.
+
+### Bug de datos investigado (no era bug): caché de indicadores reactivos
+El usuario reportó que un descanso médico de 30 días recién aprobado no se sumaba a los indicadores reactivos. Diagnóstico confirmado por SQL: el dato en BD (`ss_accidente_trabajo.dias_descanso_reales`) estaba correcto — el problema era el caché de 10 min (`IMemoryCache`) de `IndicadoresProactivosController` (`ind_reactivos_*`), que no se invalidaba al cambiar un accidente/descanso. Fix en **Abril_Backend** (repo separado, requiere su propio "guardar master"):
+- `ReactivosCacheVersion` (singleton, contador simple) — nuevo en `Features/SsomaModule/IndicadoresProactivosFeature/Infrastructure/`.
+- Claves de caché de `/reactivos` y `/reactivos/{proyectoId}` ahora incluyen `_v{version}`.
+- `DescansoMedicoRepository.Aprobar` y `AccidenteTrabajoRepository.Create/Update/Cerrar/Delete` llaman `Bump()` tras guardar.
+
+### Archivos clave
+- `src/app/features/ssoma/gestion/indicadores-proactivos/pages/dashboard-acumulado/dashboard-acumulado.component.{ts,html,css}`
+- `src/app/features/ssoma/gestion/indicadores-proactivos/pages/dashboard-proyecto/dashboard-proyecto.component.{ts,html,css}`
+
+### Pendiente
+- El fix de caché del backend (`ReactivosCacheVersion`) está commiteado solo en el working tree de `Abril_Backend` en esta sesión — falta correr "guardar master" en ESE repo por separado (el usuario debe reiniciar el backend para que tome el cambio de todos modos).
+- No se verificó visualmente con navegador en ninguna iteración (instrucción explícita del usuario: él prueba visualmente en su máquina).

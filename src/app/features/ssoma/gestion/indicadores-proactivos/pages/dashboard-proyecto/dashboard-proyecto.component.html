@@ -31,6 +31,10 @@
           <button type="button" class="btn-cargar" (click)="cargar()" [disabled]="!proyectoId()">
             <i class="ti ti-search"></i> Cargar
           </button>
+          <button type="button" class="btn-exportar" (click)="exportarPDF()" [disabled]="!indicadores() || exportando()">
+            <i class="ti" [ngClass]="exportando() ? 'ti-loader-2 spin' : 'ti-file-type-pdf'"></i>
+            {{ exportando() ? 'Generando...' : 'Exportar PDF' }}
+          </button>
         </div>
       </div>
     </div>
@@ -48,75 +52,94 @@
           </span>
         </div>
 
-        <!-- Badges KPI reactivos -->
-        <div class="rh-kpi-badges">
-          <div class="kpi-badge">
-            <i class="ti ti-hard-hat kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">Trabajadores</span>
-              <span class="kpi-badge__val">{{ trabajadoresMes() | number:'1.0-0' }}</span>
-              <span class="kpi-badge__sub">Mes</span>
+        <div class="kpi-badge kpi-badge--trab">
+          <i class="ti ti-hard-hat kpi-badge__icon"></i>
+          <div class="kpi-badge__body">
+            <span class="kpi-badge__label">Trabajadores (mes)</span>
+            <span class="kpi-badge__val">{{ trabajadoresMes() | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- REACTIVOS: Mes vs Total proyecto (accidentes/días) · Año vs Total proyecto (IF/IG/IA) -->
+      <div class="rx-cards-row">
+        <div class="rx-card">
+          <span class="rx-card__titulo">Accidentes</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalAccidentes ?? 0)">{{ reactivoActual()?.totalAccidentes ?? 0 }}</span>
+              <span class="rx-card__lbl">Mes</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalAccidentesTotal ?? 0)">{{ reactivoActual()?.totalAccidentesTotal ?? 0 }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
             </div>
           </div>
-          <div class="kpi-badge">
-            <i class="ti ti-alert-triangle kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">N° Accidentes</span>
-              <span class="kpi-badge__vals-row">
-                <span class="kpi-badge__val">{{ reactivoActual()?.totalAccidentes ?? 0 }}</span>
-                <span class="kpi-badge__val kpi-badge__val--sec">{{ reactivoAcumulado()?.accidentes ?? 0 }}</span>
-              </span>
-              <span class="kpi-badge__sub-row"><span>Mensual</span><span>Total</span></span>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Días perdidos</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalDiasPerdidos ?? 0)">{{ reactivoActual()?.totalDiasPerdidos ?? 0 }}</span>
+              <span class="rx-card__lbl">Mes</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="accColorClass(reactivoActual()?.totalDiasPerdidosTotal ?? 0)">{{ reactivoActual()?.totalDiasPerdidosTotal ?? 0 }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
             </div>
           </div>
-          <div class="kpi-badge">
-            <i class="ti ti-calendar-x kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">N° Días Perdidos</span>
-              <span class="kpi-badge__vals-row">
-                <span class="kpi-badge__val">{{ reactivoActual()?.totalDiasPerdidos ?? 0 }}</span>
-                <span class="kpi-badge__val kpi-badge__val--sec">{{ reactivoAcumulado()?.diasPerdidos ?? 0 }}</span>
-              </span>
-              <span class="kpi-badge__sub-row"><span>Mensual</span><span>Total</span></span>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Frecuencia</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="ifColorClass(reactivoActual()?.indiceFrecuenciaAnio ?? 0)">{{ reactivoActual()?.indiceFrecuenciaAnio ?? 0 | number:'1.1-1' }}</span>
+              <span class="rx-card__lbl">Año</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="ifColorClass(reactivoActual()?.indiceFrecuenciaTotal ?? 0)">{{ reactivoActual()?.indiceFrecuenciaTotal ?? 0 | number:'1.1-1' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
             </div>
           </div>
-          <div class="kpi-badge">
-            <i class="ti ti-activity kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">I.Frecuencia</span>
-              <span class="kpi-badge__vals-row">
-                <span class="kpi-badge__val">{{ indiceFrecuencia() | number:'1.1-1' }}</span>
-                <span class="kpi-badge__val kpi-badge__val--sec">{{ indiceFrecuencia() | number:'1.1-1' }}</span>
-              </span>
-              <span class="kpi-badge__sub-row"><span>Anual</span><span>Total</span></span>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Gravedad</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="igColorClass(reactivoActual()?.indiceGravedadAnio ?? 0)">{{ reactivoActual()?.indiceGravedadAnio ?? 0 | number:'1.0-0' }}</span>
+              <span class="rx-card__lbl">Año</span>
+            </div>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="igColorClass(reactivoActual()?.indiceGravedadTotal ?? 0)">{{ reactivoActual()?.indiceGravedadTotal ?? 0 | number:'1.0-0' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
             </div>
           </div>
-          <div class="kpi-badge">
-            <i class="ti ti-gauge kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">I.Gravedad</span>
-              <span class="kpi-badge__vals-row">
-                <span class="kpi-badge__val">{{ indiceGravedad() | number:'1.0-0' }}</span>
-                <span class="kpi-badge__val kpi-badge__val--sec">{{ indiceGravedad() | number:'1.0-0' }}</span>
-              </span>
-              <span class="kpi-badge__sub-row"><span>Anual</span><span>Total</span></span>
+        </div>
+
+        <div class="rx-card">
+          <span class="rx-card__titulo">Índice de Accidentabilidad</span>
+          <div class="rx-card__pares">
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="iaColorClass(reactivoActual()?.indiceAccidentabilidadAnio ?? 0)">{{ reactivoActual()?.indiceAccidentabilidadAnio ?? 0 | number:'1.2-2' }}</span>
+              <span class="rx-card__lbl">Año</span>
             </div>
-          </div>
-          <div class="kpi-badge">
-            <i class="ti ti-report-analytics kpi-badge__icon"></i>
-            <div class="kpi-badge__body">
-              <span class="kpi-badge__label">I.Accidentabilidad</span>
-              <span class="kpi-badge__vals-row">
-                <span class="kpi-badge__val">{{ indiceAccidentabilidad() | number:'1.2-2' }}</span>
-                <span class="kpi-badge__val kpi-badge__val--sec">{{ indiceAccidentabilidad() | number:'1.2-2' }}</span>
-              </span>
-              <span class="kpi-badge__sub-row"><span>Anual</span><span>Total</span></span>
+            <div class="rx-card__sep"></div>
+            <div class="rx-card__par">
+              <span class="rx-card__n" [ngClass]="iaColorClass(reactivoActual()?.indiceAccidentabilidadTotal ?? 0)">{{ reactivoActual()?.indiceAccidentabilidadTotal ?? 0 | number:'1.2-2' }}</span>
+              <span class="rx-card__lbl">Total proyecto</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- TENDENCIA MENSUAL: 3 GRÁFICOS -->
+      <!-- TENDENCIA MENSUAL: accidentes, días perdidos y trabajadores promedio -->
       <div class="mini-charts-row">
         <div class="mini-chart-card">
           <div class="mini-chart-title">Número de Accidentes por Mes</div>
@@ -127,7 +150,7 @@
           <div class="mini-chart-wrap"><canvas #diasCanvas></canvas></div>
         </div>
         <div class="mini-chart-card">
-          <div class="mini-chart-title">Número de Trabajadores por Mes</div>
+          <div class="mini-chart-title">N° de Trabajadores Promedio por Mes</div>
           <div class="mini-chart-wrap"><canvas #trabCanvas></canvas></div>
         </div>
       </div>
@@ -216,59 +239,6 @@
         </div>
       </div>
 
-      <!-- KPI PROACTIVOS TOTALES -->
-      <div class="kpi-strip">
-        <div *ngFor="let ind_ of INDICADORES" class="kpi-chip">
-          <span class="kpi-chip__label">{{ ind_.label }}</span>
-          <span class="kpi-chip__pct" [ngClass]="pctClass($any(ind)['pct' + ind_.key])"
-                [style.color]="ind_.color">
-            {{ $any(ind)['pct' + ind_.key] | number:'1.0-0' }}%
-          </span>
-          <span class="kpi-chip__vals">
-            {{ $any(ind)['actual' + ind_.key + 'Total'] ?? $any(ind)['actual' + ind_.key] }}
-            / {{ $any(ind)['meta' + ind_.key + 'Total'] ?? $any(ind)['meta' + ind_.key] }}
-          </span>
-        </div>
-      </div>
-
-      <!-- PUNTAJE DESGLOSADO -->
-      <div class="puntaje-strip" *ngIf="puntaje() as pts">
-        <div class="ps-card ps-card--proactivos">
-          <span class="ps-label">Proactivos (40%)</span>
-          <span class="ps-pct">{{ pts.pctProactivos | number:'1.0-0' }}%</span>
-          <span class="ps-pts">{{ pts.puntajeProactivos | number:'1.1-1' }} pts</span>
-        </div>
-        <div class="ps-card ps-card--passo">
-          <span class="ps-label">PASSO (25%)</span>
-          <span class="ps-pct">{{ pts.pctPasso | number:'1.0-0' }}%</span>
-          <span class="ps-pts">{{ pts.puntajePasso | number:'1.1-1' }} pts</span>
-        </div>
-        <div class="ps-card ps-card--accidentes">
-          <span class="ps-label">Cierre Acc. (20%)</span>
-          <ng-container *ngIf="(reactivoAcumulado()?.accidentes ?? 0) === 0; else psAccPct">
-            <span class="ps-pct ps-pct--safe"><i class="ti ti-shield-check"></i> Sin accidentes</span>
-          </ng-container>
-          <ng-template #psAccPct>
-            <span class="ps-pct">{{ pts.pctCierreAccidentes | number:'1.0-0' }}%</span>
-          </ng-template>
-          <span class="ps-pts">{{ pts.puntajeCierreAccidentes | number:'1.1-1' }} pts</span>
-        </div>
-        <div class="ps-card ps-card--hallazgos">
-          <span class="ps-label">Cierre Hall. (15%)</span>
-          <span class="ps-pct">{{ pts.pctCierreHallazgos | number:'1.0-0' }}%</span>
-          <span class="ps-pts">{{ pts.puntajeCierreHallazgos | number:'1.1-1' }} pts</span>
-        </div>
-        <div class="ps-card ps-card--bonus" [class.ps-card--bonus-activo]="pts.bonusProactivos > 0">
-          <span class="ps-label">Bonus</span>
-          <span class="ps-pct">—</span>
-          <span class="ps-pts">+{{ pts.bonusProactivos | number:'1.1-1' }} pts</span>
-        </div>
-        <div class="ps-card ps-card--total" [ngClass]="scoreClass(pts.puntajeTotal)">
-          <span class="ps-label">TOTAL</span>
-          <span class="ps-pct-total">{{ pts.puntajeTotal | number:'1.1-1' }}</span>
-          <span class="ps-pts">/ 110 pts</span>
-        </div>
-      </div>
 
       <!-- ── CHECKLISTS ──────────────────────────────────────────────────────── -->
       <div class="dp-section" *ngIf="indicadores()?.checklists?.length">

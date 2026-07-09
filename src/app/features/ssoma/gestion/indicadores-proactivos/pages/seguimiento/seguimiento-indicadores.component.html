@@ -15,6 +15,10 @@
       <select class="tb-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
         <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
       </select>
+      <label class="tb-check">
+        <input type="checkbox" [ngModel]="verOcultos()" (ngModelChange)="verOcultos.set($event); cargar()" />
+        Ver ocultas
+      </label>
       <button type="button" class="tb-btn" (click)="cargar()">
         <i class="ti ti-refresh"></i> Aplicar
       </button>
@@ -105,7 +109,14 @@
                 {{ p.proyectoNombre }} — Detalle por empresa
               </div>
               <div class="det-emp-grid">
-                <div *ngFor="let emp of p.empresas" class="emp-card" [class.emp-card--inactiva]="!emp.esActiva">
+                <div *ngFor="let emp of p.empresas" class="emp-card" [class.emp-card--inactiva]="!emp.esActiva" [class.emp-card--oculta]="emp.esOculto">
+
+                  <button class="emp-ocultar-btn"
+                          *ngIf="emp.puedeOcultarse"
+                          [title]="emp.esOculto ? 'Volver a mostrar en el indicador' : 'Ocultar de este indicador (solo Coordinadores SSOMA)'"
+                          (click)="$event.stopPropagation(); toggleOculto(emp)">
+                    <i class="ti" [ngClass]="emp.esOculto ? 'ti-eye' : 'ti-eye-off'"></i>
+                  </button>
 
                   <div class="emp-card-header">
                     <i class="ti" [class.ti-home]="emp.empresaTipo === 'Casa'" [class.ti-truck]="emp.empresaTipo !== 'Casa'"></i>
