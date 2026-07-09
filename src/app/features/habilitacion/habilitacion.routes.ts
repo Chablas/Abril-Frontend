@@ -78,6 +78,15 @@ export const HABILITACION_ROUTES: Routes = [
         canActivate: [authGuard],
         data: { titulo: 'HABILITACIÓN - USUARIOS' },
       },
+      {
+        path: 'admin-usuarios',
+        loadComponent: () =>
+          import('./pages/admin-contratista-usuarios/admin-contratista-usuarios').then(
+            (m) => m.AdminContratistaUsuarios,
+          ),
+        canActivate: [authGuard],
+        data: { titulo: 'HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA' },
+      },
     ],
   },
 
