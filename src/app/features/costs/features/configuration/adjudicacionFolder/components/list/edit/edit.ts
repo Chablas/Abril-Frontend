@@ -21,6 +21,8 @@ export class AdjudicacionFolderEdit {
   /** dto incluye driveId/folderId actuales para preseleccionar la carpeta. */
   @Input() dto: AdjudicacionFolderUpdateDto = { projectAdjudicacionFolderId: 0, linkUrl: '', driveId: '', folderId: '', active: true };
   @Input() folderName: string | null = null;
+  /** Descripción del tipo de carpeta (solo informativa; el tipo no se edita). */
+  @Input() folderTypeDescription: string | null = null;
 
   readonly statusOptions = [
     { value: true, label: 'ACTIVO' },

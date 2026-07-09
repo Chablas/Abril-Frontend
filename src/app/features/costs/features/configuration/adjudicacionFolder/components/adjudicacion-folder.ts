@@ -23,7 +23,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 export class AdjudicacionFolder implements OnInit {
   @ViewChild(AdjudicacionFolderList) list!: AdjudicacionFolderList;
 
-  formData: AdjudicacionFolderFormDataDto = { projects: [] };
+  formData: AdjudicacionFolderFormDataDto = { projects: [], folderTypes: [] };
   projectOptions: ProjectSimpleDto[] = [];
 
   filters: AdjudicacionFolderFilterDto = { projectId: null, page: 1 };

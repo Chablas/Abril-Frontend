@@ -182,8 +182,8 @@
   <!-- ══ BENTO: layout asimétrico para romper la cuadrícula uniforme ══════ -->
   <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
 
-    <!-- Destacado: adjudicaciones por estado (ancho, primero) -->
-    <div class="xl:col-span-8 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-cyan-50/60 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <!-- Destacado: adjudicaciones por estado (ancho completo) -->
+    <div class="xl:col-span-12 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-cyan-50/60 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 text-base text-[#0086A5]"><i class="ti ti-chart-bar"></i></span>
         <div class="flex flex-col">
@@ -194,67 +194,27 @@
       <div class="relative flex-1 min-h-[300px]"><canvas id="chart-estado"></canvas></div>
     </div>
 
-    <!-- Donut alto: categoría de partida -->
-    <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <!-- Pendientes por trabajador de OT (pasos 2 y 4) -->
+    <div class="xl:col-span-6 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Por categoría de partida</h3>
-      </div>
-      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-categoria"></canvas></div>
-    </div>
-
-    <!-- Tendencia mensual (ancho, se mantiene igual de grande) -->
-    <div class="xl:col-span-8 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-lime-50/50 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
-      <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-100 text-base text-[#509603]"><i class="ti ti-trending-up"></i></span>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-base text-[#F59E0B]"><i class="ti ti-user-exclamation"></i></span>
         <div class="flex flex-col">
-          <h3 class="text-sm font-semibold text-gray-700">Tendencia mensual de adjudicaciones</h3>
-          <span class="text-[11px] text-gray-400">Adjudicaciones creadas por mes</span>
+          <h3 class="text-sm font-semibold text-gray-700">Pendientes de OT — Paso 2 (Datos del contrato)</h3>
+          <span class="text-[11px] text-gray-400">Adjudicaciones por trabajador de Oficina Técnica</span>
         </div>
       </div>
-      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-mes"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-pendientes-ot-2"></canvas></div>
     </div>
 
-    <!-- Adjudicaciones por proyecto -->
-    <div class="xl:col-span-4 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <div class="xl:col-span-6 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-building-estate"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Adjudicaciones por proyecto</h3>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-base text-[#F59E0B]"><i class="ti ti-user-exclamation"></i></span>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-semibold text-gray-700">Pendientes de OT — Paso 4 (Por enviar al SC)</h3>
+          <span class="text-[11px] text-gray-400">Adjudicaciones por trabajador de Oficina Técnica</span>
+        </div>
       </div>
-      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-proyecto"></canvas></div>
-    </div>
-
-    <!-- Fila de donuts pequeños (4) -->
-    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
-      <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Por modalidad de contrato</h3>
-      </div>
-      <div class="relative flex-1 min-h-[240px]"><canvas id="chart-modalidad"></canvas></div>
-    </div>
-
-    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
-      <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Por tipo de contrato</h3>
-      </div>
-      <div class="relative flex-1 min-h-[240px]"><canvas id="chart-tipo"></canvas></div>
-    </div>
-
-    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
-      <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-chart-donut"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Por modalidad de pago</h3>
-      </div>
-      <div class="relative flex-1 min-h-[240px]"><canvas id="chart-modalidad-pago"></canvas></div>
-    </div>
-
-    <div class="xl:col-span-3 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
-      <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-base text-rose-500"><i class="ti ti-map-pin"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Llegada a Of. Central (paso 5)</h3>
-      </div>
-      <div class="relative flex-1 min-h-[240px]"><canvas id="chart-observaciones"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-pendientes-ot-4"></canvas></div>
     </div>
 
     <!-- Rankings: 7 / 5 asimétrico -->
@@ -274,13 +234,21 @@
       <div class="relative flex-1 min-h-[300px]"><canvas id="chart-top-usd"></canvas></div>
     </div>
 
-    <!-- Ancho completo: más adjudicados -->
-    <div class="xl:col-span-12 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <!-- Rankings solo contratos con adelanto (total vs adelanto): 7 / 5 asimétrico -->
+    <div class="xl:col-span-7 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-50 text-base text-[#509603]"><i class="ti ti-award"></i></span>
-        <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas más adjudicados</h3>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-base text-[#F9A826]"><i class="ti ti-cash-banknote"></i></span>
+        <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas con adelanto por monto (S/.)</h3>
       </div>
-      <div class="relative min-h-[300px]"><canvas id="chart-top-contratistas"></canvas></div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-top-adelanto-pen"></canvas></div>
+    </div>
+
+    <div class="xl:col-span-5 flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-slate-50/70 p-5 shadow-sm transition-shadow duration-150 hover:shadow-md">
+      <div class="flex items-center gap-2">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-base text-[#F9A826]"><i class="ti ti-cash-banknote"></i></span>
+        <h3 class="text-sm font-semibold text-gray-700">Top subcontratistas con adelanto por monto ($)</h3>
+      </div>
+      <div class="relative flex-1 min-h-[300px]"><canvas id="chart-top-adelanto-usd"></canvas></div>
     </div>
 
   </div>
