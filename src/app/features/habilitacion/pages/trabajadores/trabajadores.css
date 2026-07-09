@@ -976,6 +976,7 @@ textarea.field-input {
 .dot-aprobado  { background: #22c55e; }
 .dot-falta     { background: #ef4444; }
 .dot-enviado   { background: #f59e0b; }
+.dot-renovando { background: #3b82f6; }
 .dot-no-aplica { background: #d1d5db; }
 
 /* Icon buttons */

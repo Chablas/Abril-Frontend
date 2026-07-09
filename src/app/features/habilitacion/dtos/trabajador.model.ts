@@ -25,6 +25,8 @@ export interface WorkerEntregableDto {
   nombreItem: string;
   estado: string;
   vigencia?: string;
+  /** Fecha propuesta en una renovación (estado "Renovando"); null en otros casos. */
+  vigenciaPropuesta?: string;
   archivoUrl?: string;
   obsAbril?: string;
   obsContratista?: string;

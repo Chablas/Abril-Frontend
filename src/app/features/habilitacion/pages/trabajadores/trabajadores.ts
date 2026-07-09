@@ -381,9 +381,12 @@ export class Trabajadores implements OnInit, OnDestroy {
   selectEntregable(e: WorkerEntregableDto): void {
     this.archivosPendientes = [];
     this.selectedEntregable = e;
+    // En una renovación (estado "Renovando") se precarga la fecha propuesta por el contratista,
+    // para que el aprobador la vea y la aplique al aprobar.
+    const vigParaPanel = e.estado === 'Renovando' && e.vigenciaPropuesta ? e.vigenciaPropuesta : e.vigencia;
     this.panelVigencia = !e.requiereVigencia
       ? '2040-12-31'
-      : (e.vigencia ? e.vigencia.substring(0, 10) : '');
+      : (vigParaPanel ? vigParaPanel.substring(0, 10) : '');
     this.panelObsAbril = this.isContratista() ? (e.obsContratista ?? '') : (e.obsAbril ?? '');
     this.panelEstado = e.estado;
     this.drawerOpen = true;
@@ -510,14 +513,17 @@ export class Trabajadores implements OnInit, OnDestroy {
   }
 
   estaVencido(estado: string, vigencia?: string | null): boolean {
-    if (estado !== 'Aprobado' || !vigencia) return false;
+    // "Renovando" conserva la vigencia aprobada anterior; si esa ya venció, cuenta como vencido.
+    if ((estado !== 'Aprobado' && estado !== 'Renovando') || !vigencia) return false;
     const vigenciaDate = new Date(vigencia);
     if (isNaN(vigenciaDate.getTime())) return false;
     return vigenciaDate.getTime() <= Date.now();
   }
 
   getEstadoLabel(estado: string, vigencia?: string | null): string {
-    return this.estaVencido(estado, vigencia) ? 'Vencido' : estado;
+    if (this.estaVencido(estado, vigencia)) return 'Vencido';
+    if (estado === 'Renovando') return 'En Renovación';
+    return estado;
   }
 
   getChipEstado(estado: string, vigencia?: string | null): string {
@@ -525,6 +531,8 @@ export class Trabajadores implements OnInit, OnDestroy {
     switch (estado) {
       case 'Aprobado':
         return 'chip-green';
+      case 'Renovando':
+        return 'chip-blue';
       case 'Enviado':
         return 'chip-orange';
       case 'Rechazado':
@@ -541,6 +549,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     if (this.estaVencido(estado, vigencia)) return 'dot-falta';
     const norm = (estado ?? '').toLowerCase();
     if (norm === 'aprobado') return 'dot-aprobado';
+    if (norm === 'renovando') return 'dot-renovando';
     if (norm === 'falta' || norm === 'rechazado') return 'dot-falta';
     if (norm === 'enviado') return 'dot-enviado';
     if (norm === 'no aplica') return 'dot-no-aplica';
