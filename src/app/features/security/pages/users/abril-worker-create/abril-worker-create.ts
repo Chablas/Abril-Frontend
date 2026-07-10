@@ -59,9 +59,14 @@ export class AbrilWorkerCreate implements OnInit {
         this.roleService.getRoles().subscribe({
           next: (roles) => {
             this.roles = roles;
-            // Preseleccionar "USUARIO DE ABRIL" si existe en el catálogo.
+            // Preseleccionar "USUARIO DE ABRIL" y "USUARIO GESTION PROACTIVA" si existen
+            // en el catálogo (todo usuario creado como trabajador de Abril desde acá
+            // arranca con acceso a Gestión SSOMA por defecto; se puede quitar a mano).
             const usuarioAbril = roles.find((r) => r.roleDescription === Roles.USUARIO_DE_ABRIL);
-            this.selectedRoleIds = usuarioAbril ? [usuarioAbril.roleId] : [];
+            const gestionProactiva = roles.find((r) => r.roleDescription === 'USUARIO GESTION PROACTIVA');
+            this.selectedRoleIds = [usuarioAbril, gestionProactiva]
+              .filter((r): r is RoleSimpleDTO => !!r)
+              .map((r) => r.roleId);
             this.loaderService.hide();
           },
           error: (err: HttpErrorResponse) => this.errorService.handleError(err),

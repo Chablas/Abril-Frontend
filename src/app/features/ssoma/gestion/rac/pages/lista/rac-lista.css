@@ -1,3 +1,10 @@
+.resultados-contador {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rac-text-muted);
+  margin: 4px 2px 8px;
+}
+
 /* ── DESIGN SYSTEM TOKENS ────────────────────────────────── */
 .lista-root {
   --rac-primary:        #1b3a2d;
@@ -570,26 +577,39 @@
 
 /* ── RESPONSIVE — DESKTOP (≥ 768px) ─────────────────────── */
 @media (min-width: 768px) {
-  .lista-body { padding: 20px 24px; gap: 14px; }
+  .lista-body { padding: 14px 20px; gap: 8px; }
 
   .filtros-toggle { display: none; }
 
   .filtros-bar {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    border-radius: 10px;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    overflow-x: auto;
   }
 
-  .filtro-select { width: auto; min-width: 140px; }
-  .btn-buscar { width: auto; }
-  .btn-limpiar { width: auto; }
+  .filtro-select {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .filtro-check { flex: 0 0 auto; white-space: nowrap; font-size: 12px; padding: 4px 2px; }
+  .btn-buscar { width: auto; flex: 0 0 auto; padding: 6px 12px; font-size: 12px; }
+  .btn-limpiar { width: auto; flex: 0 0 auto; padding: 6px 12px; font-size: 12px; }
+
+  .resultados-contador { margin: 0 2px; }
 
   .tabla-wrap { display: block; }
   .cards-mobile { display: none; }
+
+  .tabla-rac th { padding: 6px 10px; }
+  .tabla-rac td { padding: 5px 10px; font-size: 11.5px; }
 
   .fab__label { display: inline; }
 }
