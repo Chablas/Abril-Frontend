@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { lastValueFrom } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { InterconsultaService } from '../../../ssoma/salud-ocupacional/services/interconsulta.service';
 import {
   InterconsultaListDto,
@@ -35,7 +36,7 @@ interface EditandoData {
 @Component({
   selector: 'app-interconsultas-clinica',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, DocumentViewer],
   templateUrl: './interconsultas.html',
   styleUrls: ['./interconsultas.css'],
 })
@@ -56,6 +57,10 @@ export class InterconsultasClinica implements OnInit {
   viendo: InterconsultaDetalleDto | null = null;
   form: InterconsultaUpdateDto = {};
   saving = false;
+
+  // Visor de documento (informe de interconsulta)
+  visorUrl = '';
+  visorNombre = '';
 
   readonly estados = ['', 'Pendiente', 'Atendida', 'Cancelada'];
 
@@ -229,6 +234,17 @@ export class InterconsultasClinica implements OnInit {
   cerrarVer(): void {
     this.viendo = null;
     this.form = {};
+  }
+
+  verDocumento(url: string | undefined | null, nombre: string): void {
+    if (!url) return;
+    this.visorUrl = url;
+    this.visorNombre = nombre;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorNombre = '';
   }
 
   guardar(): void {

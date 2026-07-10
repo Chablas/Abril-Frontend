@@ -281,9 +281,13 @@
       </div>
 
       <div class="dm-field">
-        <label class="dm-label">URL Informe</label>
-        <input type="text" class="dm-input" [(ngModel)]="form.urlInforme"
-          placeholder="https://..." />
+        <label class="dm-label">Informe de interconsulta</label>
+        <button *ngIf="form.urlInforme" type="button" class="btn-ver"
+          (click)="verDocumento(form.urlInforme, 'Informe Interconsulta')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver
+        </button>
+        <span *ngIf="!form.urlInforme" class="dm-sub-missing">Sin archivo</span>
       </div>
 
       <div class="dm-field dm-full">
@@ -315,3 +319,9 @@
   </div>
 
 </div>
+
+<app-document-viewer
+  [archivoUrl]="visorUrl"
+  [nombre]="visorNombre"
+  (closed)="onVisorClosed()">
+</app-document-viewer>
