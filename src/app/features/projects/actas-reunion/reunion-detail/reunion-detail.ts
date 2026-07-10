@@ -444,14 +444,23 @@ export class ReunionDetail implements OnInit {
   }
 
   // ── Siguiente reunión ────────────────────────────────────────────────────
-  get participantesParaSiguiente(): ReunionParticipanteInput[] {
-    return (this.detalle?.participantes ?? []).map((p) => ({
+  /**
+   * Copia de los participantes del acta para sugerirlos en la siguiente reunión.
+   * Se materializa al abrir el modal (no como getter): un getter crearía un array
+   * nuevo en cada ciclo de change detection y el modal recrearía sus filas con
+   * ngModel sin parar, congelando la página en un bucle infinito de microtasks.
+   */
+  participantesParaSiguiente: ReunionParticipanteInput[] = [];
+
+  abrirSiguienteModal(): void {
+    this.participantesParaSiguiente = (this.detalle?.participantes ?? []).map((p) => ({
       reunionParticipanteId: null,
       nombre: p.nombre,
       cargo: p.cargo,
       iniciales: p.iniciales,
       asistio: false,
     }));
+    this.showSiguienteModal = true;
   }
 
   onSiguienteCreada(reunionId: number): void {
