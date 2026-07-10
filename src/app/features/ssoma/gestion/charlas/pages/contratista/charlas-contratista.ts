@@ -19,8 +19,10 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 })
 export class CharlasContratista implements OnInit {
   pendientes: CharlaContratistaPendienteDto[] = [];
+  diasFaltantes: CharlaContratistaPendienteDto[] = [];
   historial: CharlaContratistaDto[] = [];
   loadingPendientes = true;
+  loadingDiasFaltantes = true;
   loadingHistorial = true;
 
   proyectoSeleccionado: CharlaContratistaPendienteDto | null = null;
@@ -38,6 +40,7 @@ export class CharlasContratista implements OnInit {
 
   ngOnInit(): void {
     this.cargarPendientes();
+    this.cargarDiasFaltantes();
     this.cargarHistorial();
   }
 
@@ -59,6 +62,21 @@ export class CharlasContratista implements OnInit {
       },
       error: () => {
         this.loadingPendientes = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cargarDiasFaltantes(): void {
+    this.loadingDiasFaltantes = true;
+    this.svc.getDiasFaltantes().subscribe({
+      next: (res) => {
+        this.diasFaltantes = res ?? [];
+        this.loadingDiasFaltantes = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loadingDiasFaltantes = false;
         this.cdr.markForCheck();
       },
     });
@@ -129,6 +147,7 @@ export class CharlasContratista implements OnInit {
           Swal.fire({ icon: 'success', title: 'Charla registrada', timer: 1800, showConfirmButton: false });
           this.cerrarFormulario();
           this.cargarPendientes();
+          this.cargarDiasFaltantes();
           this.cargarHistorial();
         },
         error: (err: HttpErrorResponse) => {
