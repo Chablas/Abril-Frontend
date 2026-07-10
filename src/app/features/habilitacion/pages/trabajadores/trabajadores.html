@@ -481,8 +481,8 @@
         <div class="field-grp">
           <label class="field-lbl">ÚLTIMAS PÓLIZAS</label>
           <div *ngIf="loadingSctrPolizas" class="list-msg" style="font-size:12px">Cargando…</div>
-          <div *ngIf="!loadingSctrPolizas && sctrPolizasWorker.length === 0" class="no-data" style="font-size:12px">Sin pólizas registradas.</div>
-          <div *ngFor="let p of sctrPolizasWorker" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+          <div *ngIf="!loadingSctrPolizas && polizasFiltradas.length === 0" class="no-data" style="font-size:12px">Sin pólizas registradas.</div>
+          <div *ngFor="let p of polizasFiltradas" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
             <span style="flex:1;color:#0f172a">{{ p.mes }}/{{ p.anio }} · {{ p.tipoPoliza }}</span>
             <span [class]="'btn-chip ' + (p.estado === 'Aprobado' ? 'chip-green' : p.estado === 'Enviado' ? 'chip-orange' : 'chip-gray')" style="font-size:10px">{{ p.estado }}</span>
             <span *ngIf="p.vigencia" style="color:#64748b">{{ p.vigencia | date:'dd/MM/yyyy' }}</span>

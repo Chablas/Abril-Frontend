@@ -174,6 +174,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.loadTab1();
     this.loadTab4();
     if (this.activeTab === 2) this.loadTab2();
+    if (this.activeTab === 3) this.loadTab3();
   }
 
   // ── Tab 1 ──────────────────────────────────────────────────────────────────────

@@ -221,8 +221,53 @@
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
 }
+.foto-thumb:hover { transform: scale(1.03); box-shadow: 0 2px 8px rgb(0 0 0 / .15); }
 .foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Lightbox */
+.foto-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / .85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  cursor: zoom-out;
+  overflow: hidden;
+}
+.foto-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: default;
+  box-shadow: 0 4px 24px rgb(0 0 0 / .4);
+  transition: transform .08s ease-out;
+  will-change: transform;
+}
+.foto-lightbox-cerrar {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgb(255 255 255 / .15);
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+}
+.foto-lightbox-cerrar:hover { background: rgb(255 255 255 / .3); }
 
 .spin { animation: spin .7s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }

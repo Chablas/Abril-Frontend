@@ -107,7 +107,7 @@
         <h3 class="card-title">Evidencia fotográfica</h3>
         <div class="fotos-grid">
           @for (foto of auditoria.fotos; track $index) {
-            <div class="foto-thumb">
+            <div class="foto-thumb" (click)="ampliarFoto(foto)">
               <img [src]="'data:image/jpeg;base64,' + foto" alt="Foto {{ $index + 1 }}" />
             </div>
           }
@@ -115,5 +115,18 @@
       </div>
     }
 
+  }
+
+  @if (fotoAmpliada) {
+    <div class="foto-lightbox" (click)="cerrarFotoAmpliada()" (wheel)="onWheelZoom($event)">
+      <button type="button" class="foto-lightbox-cerrar" (click)="cerrarFotoAmpliada()">
+        <i class="ti ti-x"></i>
+      </button>
+      <img
+        [src]="'data:image/jpeg;base64,' + fotoAmpliada"
+        alt="Foto ampliada"
+        [style.transform]="'scale(' + zoom + ')'"
+        (click)="$event.stopPropagation()" />
+    </div>
   }
 </div>

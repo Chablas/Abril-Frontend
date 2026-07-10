@@ -24,6 +24,10 @@ export class AuditoriaAtsDetalleComponent implements OnInit {
   auditoria?: AuditoriaAtsDetalleDto;
   loading = true;
   readonly scoreConfig = SCORE_CONFIG;
+  fotoAmpliada: string | null = null;
+  zoom = 1;
+  readonly zoomMin = 1;
+  readonly zoomMax = 4;
 
   constructor(
     private service: AuditoriaAtsService,
@@ -58,5 +62,21 @@ export class AuditoriaAtsDetalleComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/ssoma/gestion/auditoria-ats/lista']);
+  }
+
+  ampliarFoto(foto: string): void {
+    this.fotoAmpliada = foto;
+    this.zoom = 1;
+  }
+
+  cerrarFotoAmpliada(): void {
+    this.fotoAmpliada = null;
+    this.zoom = 1;
+  }
+
+  onWheelZoom(event: WheelEvent): void {
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 0.2 : -0.2;
+    this.zoom = Math.min(this.zoomMax, Math.max(this.zoomMin, this.zoom + delta));
   }
 }

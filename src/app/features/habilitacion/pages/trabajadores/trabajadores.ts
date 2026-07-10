@@ -403,7 +403,10 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.sctrPolizasWorker = [];
     this.sctrVidaLeyService.getPorTrabajador(workerId).subscribe({
       next: (res) => {
-        this.sctrPolizasWorker = (res ?? []).slice(0, 3);
+        // Guardamos todas; el filtro por tipo (SCTR vs VIDA_LEY) se aplica
+        // en el getter polizasFiltradas segun el entregable abierto, para
+        // no mezclar pólizas de un tipo dentro del modal del otro.
+        this.sctrPolizasWorker = res ?? [];
         this.loadingSctrPolizas = false;
         this.cdr.detectChanges();
       },
@@ -412,6 +415,12 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  get polizasFiltradas(): SctrVidaLeyDto[] {
+    if (!this.selectedEntregable) return [];
+    const tipoEsperado = this.selectedEntregable.itemId === 11 ? 'SCTR' : 'VIDA_LEY';
+    return this.sctrPolizasWorker.filter((p) => p.tipo === tipoEsperado).slice(0, 3);
   }
 
   closeDrawer(): void {

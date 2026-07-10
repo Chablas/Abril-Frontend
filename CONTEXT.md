@@ -4260,3 +4260,19 @@ El usuario reportó que un descanso médico de 30 días recién aprobado no se s
 ### Pendiente
 - El fix de caché del backend (`ReactivosCacheVersion`) está commiteado solo en el working tree de `Abril_Backend` en esta sesión — falta correr "guardar master" en ESE repo por separado (el usuario debe reiniciar el backend para que tome el cambio de todos modos).
 - No se verificó visualmente con navegador en ninguna iteración (instrucción explícita del usuario: él prueba visualmente en su máquina).
+
+## Sesión 2026-07-09 (2) — CASA puede invitar usuarios de una contratista
+
+El panel `/habilitacion/gestion/usuarios` (pestaña "Usuarios") solo aparecía para usuarios con rol CONTRATISTA. El componente `AdminContratistaUsuarios` (selector de empresa + `forceAdminMode`) ya existía y reutiliza el mismo flujo de invitación (mismo endpoint `ContratistaUsuarioController`, que solo exige `[Authorize]` sin restricción de rol), pero no estaba enlazado en ningún menú — solo accesible por URL directa `/habilitacion/admin-usuarios-contratista`.
+
+**Cambio:** se agregó la ruta `gestion/admin-usuarios` (reutiliza `AdminContratistaUsuarios`) y la pestaña "Usuarios" al set de tabs que ve CASA/admin en `gestion-hab.component.ts`. Verificado en vivo por el usuario: funciona correctamente.
+
+También incluido en el mismo commit un fix menor preexistente en el working tree: `charlas-dashboard.component.ts` ahora carga `loadTab3()` cuando esa pestaña está activa.
+
+### Archivos clave
+- `src/app/features/habilitacion/habilitacion.routes.ts`
+- `src/app/features/habilitacion/gestion/gestion-hab.component.ts`
+- `src/app/features/ssoma/gestion/charlas/charlas-dashboard.component.ts`
+
+### Pendiente
+- Ninguno conocido.

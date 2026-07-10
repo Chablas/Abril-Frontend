@@ -92,6 +92,11 @@
       </button>
     </div>
 
+    <!-- CONTADOR: total según filtros, sin paginar -->
+    <div *ngIf="!loading && result" class="resultados-contador">
+      {{ result.total }} {{ result.total === 1 ? 'RAC encontrado' : 'RACs encontrados' }}
+    </div>
+
     <!-- SKELETON -->
     <div *ngIf="loading" class="skeleton-wrap">
       <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>

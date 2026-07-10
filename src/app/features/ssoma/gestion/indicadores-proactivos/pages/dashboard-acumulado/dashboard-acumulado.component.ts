@@ -214,7 +214,7 @@ export class DashboardAcumuladoComponent implements OnInit, AfterViewInit {
     const mejorCierreAcc = mejor(filas, r => r.pctCierreAccidentes);
 
     return [
-      { titulo: 'PROG. ANUAL SSOMA', proyecto: mejorPuntaje?.nombreCorto ?? '—', valor: mejorPuntaje?.puntajeTotal ?? 0, max: 110, sufijo: 'pts' },
+      { titulo: 'PUNTAJE MENSUAL SSOMA', proyecto: mejorPuntaje?.nombreCorto ?? '—', valor: mejorPuntaje?.puntajeTotal ?? 0, max: 110, sufijo: 'pts' },
       { titulo: 'CUMPLIMIENTO PROACTIVO', proyecto: mejorProactivo?.nombreCorto ?? '—', valor: mejorProactivo?.pctProactivoGeneral ?? 0, max: 100, sufijo: '%' },
       { titulo: 'KPI SUPERVISOR', proyecto: mejorSupervisor?.nombreCorto ?? '—', valor: mejorSupervisor?.promedio ?? 0, max: 100, sufijo: '%' },
       { titulo: 'CIERRE DE ACCIDENTES', proyecto: mejorCierreAcc?.nombreCorto ?? '—', valor: mejorCierreAcc?.pctCierreAccidentes ?? 0, max: 100, sufijo: '%' },
