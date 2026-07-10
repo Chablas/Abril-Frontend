@@ -29,6 +29,7 @@ export class ActasReunion implements OnInit {
   proyectos: ProyectoFiltroDTO[] = [];
   estados: CatalogoDTO[] = [];
   trabajadores: TrabajadorAbrilDTO[] = [];
+  temas: CatalogoDTO[] = [];
   reuniones: PagedResultDTO<ReunionListItemDTO> = {
     page: 1,
     pageSize: 10,
@@ -62,6 +63,7 @@ export class ActasReunion implements OnInit {
         this.proyectos = data.proyectos;
         this.estados = data.reunionEstados;
         this.trabajadores = data.trabajadores;
+        this.temas = data.temas;
         this.reuniones = data.reuniones;
         this.loaderService.hide();
       },

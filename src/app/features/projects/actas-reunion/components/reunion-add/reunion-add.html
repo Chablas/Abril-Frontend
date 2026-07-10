@@ -22,8 +22,24 @@
         </app-search-select>
       </div>
       <div>
-        <label class="block text-sm text-gray-600 mb-1">Tema de la reunión *</label>
-        <input type="text" [(ngModel)]="tema" maxlength="300"
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm text-gray-600">Tema de la reunión *</label>
+          <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [(ngModel)]="temaPersonalizado" (ngModelChange)="onTemaPersonalizadoChange()"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Tema personalizado
+          </label>
+        </div>
+        <app-search-select *ngIf="!temaPersonalizado"
+          [options]="temas"
+          valueField="descripcion"
+          displayField="descripcion"
+          [showLabel]="false"
+          [value]="tema || null"
+          (valueChange)="tema = $event ?? ''"
+          placeholder="Selecciona un tema">
+        </app-search-select>
+        <input *ngIf="temaPersonalizado" type="text" [(ngModel)]="tema" maxlength="300"
           class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
           placeholder="Ej. Comité de obra, revisión de acabados..." />
       </div>
