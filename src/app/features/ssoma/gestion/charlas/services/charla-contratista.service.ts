@@ -24,6 +24,12 @@ export class CharlaContratistaService {
     });
   }
 
+  getDiasFaltantes(): Observable<CharlaContratistaPendienteDto[]> {
+    return this.http.get<CharlaContratistaPendienteDto[]>(`${this.base}/dias-faltantes`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
   getHistorial(page = 1, pageSize = 20): Observable<CharlaContratistaDto[]> {
     const params = new HttpParams().set('page', page).set('pageSize', pageSize);
     return this.http.get<CharlaContratistaDto[]>(`${this.base}/historial`, {

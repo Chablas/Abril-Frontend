@@ -98,6 +98,10 @@ export class Empresa implements OnInit {
   get panelArchivoUrl(): string { return this.archivosPendientes.find(a => a.path)?.path ?? ''; }
 
   private readonly SCTR_VIDA_LEY_IDS = [15, 16];
+
+  private excluirSCTRVidaLey(list: EmpresaEntregableDto[]): EmpresaEntregableDto[] {
+    return list.filter((e) => !this.SCTR_VIDA_LEY_IDS.includes(e.itemId));
+  }
   private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
 
   get esSCTRoVidaLey(): boolean {
@@ -250,7 +254,7 @@ export class Empresa implements OnInit {
       this.loadingProgreso.add(p.id);
       this.habEmpresaService.getEntregables(eid, p.id).subscribe({
         next: (items) => {
-          const list = items ?? [];
+          const list = this.excluirSCTRVidaLey(items ?? []);
           console.log('proyecto:', p.nombre, 'entregables:', list);
           console.log('total:', list.length, 'aprobados:', list.filter((e) => e.estado === 'Aprobado').length);
           this.progresoPorProyecto.set(p.id, {
@@ -331,7 +335,7 @@ export class Empresa implements OnInit {
     this.loadingEntregables = true;
     this.habEmpresaService.getEntregables(this.empresaId, proyectoId).subscribe({
       next: (res) => {
-        this.entregables = res ?? [];
+        this.entregables = this.excluirSCTRVidaLey(res ?? []);
         this.loadingEntregables = false;
         this.cdr.detectChanges();
       },
@@ -848,7 +852,7 @@ export class Empresa implements OnInit {
     const eid = this.empresaId;
     this.habEmpresaService.getEntregables(eid, pid).subscribe({
       next: (items) => {
-        const list = items ?? [];
+        const list = this.excluirSCTRVidaLey(items ?? []);
         console.log('entregables frescos:', list.map(e => ({
           id: e.id, itemId: e.itemId, estado: e.estado,
           meses: e.meses?.length

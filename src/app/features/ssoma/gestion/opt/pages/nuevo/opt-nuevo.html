@@ -403,7 +403,7 @@
         </button>
       }
       @if (paso === totalPasos) {
-        <button type="button" class="btn-primary btn-guardar" (click)="guardar()" [disabled]="guardando">
+        <button type="button" class="btn-primary btn-guardar" (click)="guardar()" [disabled]="guardando || fotosAreaBase64.length < 3">
           @if (guardando) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-check"></i> }
           Guardar OPT
         </button>
