@@ -349,6 +349,7 @@
   *ngIf="showSiguienteModal && detalle"
   [proyectos]="[{ projectId: detalle.projectId, projectDescription: detalle.projectDescription }]"
   [trabajadores]="detalle.trabajadores"
+  [temas]="detalle.temas"
   [projectIdFijo]="detalle.projectId"
   [reunionAnteriorId]="detalle.reunionId"
   [reunionAnteriorLabel]="'Reunión N°' + detalle.numero + ' — ' + detalle.tema"

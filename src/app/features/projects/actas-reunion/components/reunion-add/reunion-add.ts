@@ -10,6 +10,7 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ActasReunionService } from '../../services/actas-reunion.service';
 import {
+  CatalogoDTO,
   ProyectoFiltroDTO,
   ReunionParticipanteInput,
   TrabajadorAbrilDTO,
@@ -34,6 +35,8 @@ export class ReunionAdd implements OnInit {
   @Input() proyectos: ProyectoFiltroDTO[] = [];
   /** Trabajadores de Abril para los desplegables de "Convocado por" y participantes. */
   @Input() trabajadores: TrabajadorAbrilDTO[] = [];
+  /** Temas predefinidos (catálogo reunion_tema) para el desplegable de "Tema de la reunión". */
+  @Input() temas: CatalogoDTO[] = [];
   /** Preselecciona el proyecto (al agendar desde el detalle de otra reunión). */
   @Input() projectIdFijo: number | null = null;
   /** Reunión desde la que se promueve el tema de esta nueva reunión. */
@@ -57,6 +60,11 @@ export class ReunionAdd implements OnInit {
 
   projectId: number | null = null;
   tema = '';
+  /**
+   * Con el checkbox activo el desplegable de temas se convierte en un campo de texto libre.
+   * El tema escrito a mano solo se guarda en la reunión, no en el catálogo de temas.
+   */
+  temaPersonalizado = false;
   convocadoPor = '';
   lugar = '';
   fecha: string | null = null;
@@ -88,6 +96,11 @@ export class ReunionAdd implements OnInit {
 
   get inicialesActuales(): string[] {
     return this.participantes.map((p) => p.iniciales).filter(Boolean);
+  }
+
+  /** Al alternar entre desplegable y texto libre se limpia el tema para no mezclar valores. */
+  onTemaPersonalizadoChange(): void {
+    this.tema = '';
   }
 
   addParticipante(): void {

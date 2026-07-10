@@ -46,6 +46,8 @@ export interface ReunionPaginaInicialDTO {
   proyectos: ProyectoFiltroDTO[];
   reunionEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
+  /** Temas predefinidos para el desplegable de "Tema de la reunión" al agendar. */
+  temas: CatalogoDTO[];
   reuniones: PagedResultDTO<ReunionListItemDTO>;
 }
 
@@ -117,6 +119,8 @@ export interface ReunionDetalleDTO {
   reprogramaciones: ReunionReprogramacionDTO[];
   acuerdoEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
+  /** Temas predefinidos para el desplegable al "Agendar siguiente reunión". */
+  temas: CatalogoDTO[];
 }
 
 // ── Requests ───────────────────────────────────────────────────────────────
