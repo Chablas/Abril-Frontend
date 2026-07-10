@@ -4276,3 +4276,24 @@ También incluido en el mismo commit un fix menor preexistente en el working tre
 
 ### Pendiente
 - Ninguno conocido.
+
+## Sesión 2026-07-10 — Interconsultas: filtros, envío de correos, columnas nuevas
+
+Rediseño de `features/ssoma/salud-ocupacional/interconsultas` a pedido del usuario, en varias rondas iterativas (ver `CONTEXT.md` del backend para el detalle de la lógica de resolución de datos).
+
+**Filtros**: se agregaron Razón social (solo empresas `esAbril`), Proyecto (`ProyectoHabilitadoService.getHabilitados()`) y Tipo (Staff/Oficina Central/Obra — sin "Contratista", esta pantalla es solo personal de Abril). Estado por defecto "Pendiente". Todo en una sola fila con `app-search-select` en modo `[compact]="true"` para bajar la altura, más el botón "Enviar correos" al final de la misma fila.
+
+**Columnas nuevas**: Tipo (badge), Razón social, Proyecto actual, Jefatura, Administrador, y Categoría/Ocupación (esta última compactada como segunda línea junto al DNI del trabajador en vez de una columna propia, para no perder espacio horizontal — con truncado + tooltip donde aplica).
+
+**Selección y envío de correos**: checkboxes por fila + "seleccionar todos", botón "Enviar correos (N)" con confirmación (SweetAlert2) y resumen de resultado.
+
+**Layout de una sola pantalla**: la sección ya no hace scroll de página completa — los filtros quedan fijos arriba y solo `.table-wrapper` tiene scroll interno, con `thead` sticky y paginador siempre visible abajo.
+
+### Archivos clave
+- `src/app/features/ssoma/salud-ocupacional/interconsultas/interconsultas.ts` / `.html` / `.css`
+- `src/app/features/ssoma/salud-ocupacional/dtos/interconsulta.model.ts`
+- `src/app/features/ssoma/salud-ocupacional/services/interconsulta.service.ts`
+
+### Pendiente
+- El usuario pidió explícitamente no compilar en esta sesión — no se corrió `ng build` ni `tsc` sobre los últimos cambios (categoría/ocupación). Verificar al compilar.
+- Falta que el usuario confirme visualmente en su máquina que el layout de una sola pantalla y los nuevos campos se ven bien.
