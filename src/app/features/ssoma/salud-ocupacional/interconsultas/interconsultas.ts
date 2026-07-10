@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
+import Swal from 'sweetalert2';
 import { InterconsultaService } from '../services/interconsulta.service';
+import { CatalogosSaludService } from '../services/catalogos-salud.service';
+import { ProyectoHabilitadoService } from '../../shared/services/proyecto-habilitado.service';
 import {
   InterconsultaListDto,
   InterconsultaQueryParams,
@@ -23,6 +26,17 @@ interface FilterOption {
   id: string;
   nombre: string;
 }
+
+/** Clasificación simplificada de workers.obra_oficina para el filtro "Tipo".
+ * Se excluye "Contratista": esta pantalla es solo para personal de Abril. */
+const TIPO_OPTIONS: FilterOption[] = [
+  { id: '', nombre: 'Todos los tipos' },
+  { id: 'Staff', nombre: 'Staff' },
+  { id: 'Oficina Central', nombre: 'Oficina Central' },
+  { id: 'Obra', nombre: 'Obrero (Obra)' },
+];
+
+const OBRA_OFICINA_CON_CORREO_PROPIO = new Set(['Staff', 'Oficina Central']);
 
 @Component({
   selector: 'app-salud-interconsultas',
@@ -44,7 +58,10 @@ export class Interconsultas implements OnInit, OnDestroy {
 
   filters = {
     search: '',
-    estado: '',
+    estado: 'Pendiente',
+    proyectoId: '',
+    contributorId: '',
+    obraOficina: '',
   };
 
   estadoOptions: FilterOption[] = [
@@ -54,6 +71,10 @@ export class Interconsultas implements OnInit, OnDestroy {
     { id: 'Cancelada', nombre: 'Cancelada' },
   ];
 
+  tipoOptions: FilterOption[] = TIPO_OPTIONS;
+  proyectoOptions: FilterOption[] = [{ id: '', nombre: 'Todos los proyectos' }];
+  razonSocialOptions: FilterOption[] = [{ id: '', nombre: 'Todas las razones sociales' }];
+
   items: InterconsultaListDto[] = [];
   totalRecords = 0;
   totalPages = 1;
@@ -61,12 +82,16 @@ export class Interconsultas implements OnInit, OnDestroy {
   loading = false;
 
   selectedId: number | null = null;
+  selectedIds = new Set<number>();
+  sendingEmails = false;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
 
   constructor(
     private service: InterconsultaService,
+    private catalogosService: CatalogosSaludService,
+    private proyectoService: ProyectoHabilitadoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -76,12 +101,44 @@ export class Interconsultas implements OnInit, OnDestroy {
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.load(1));
+    this.loadCatalogos();
     this.load(1);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadCatalogos(): void {
+    this.proyectoService.getHabilitados().subscribe({
+      next: (proyectos) => {
+        this.proyectoOptions = [
+          { id: '', nombre: 'Todos los proyectos' },
+          ...proyectos.map((p) => ({ id: String(p.projectId), nombre: p.projectDescription })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todos".
+      },
+    });
+
+    this.catalogosService.getEmpresas().subscribe({
+      next: (empresas) => {
+        // Solo razones sociales de Abril: los trabajadores de contratistas no se gestionan aquí.
+        this.razonSocialOptions = [
+          { id: '', nombre: 'Todas las razones sociales' },
+          ...empresas
+            .filter((e) => e.esAbril)
+            .map((e) => ({ id: String(e.id), nombre: e.nombre })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todas".
+      },
+    });
   }
 
   load(page: number): void {
@@ -92,6 +149,9 @@ export class Interconsultas implements OnInit, OnDestroy {
       pageSize: this.pageSize,
       search: this.filters.search?.trim() || undefined,
       estado: this.filters.estado || undefined,
+      proyectoId: this.filters.proyectoId ? Number(this.filters.proyectoId) : undefined,
+      contributorId: this.filters.contributorId ? Number(this.filters.contributorId) : undefined,
+      obraOficina: this.filters.obraOficina || undefined,
     };
     this.service.getInterconsultas(query).subscribe({
       next: (res) => {
@@ -99,6 +159,7 @@ export class Interconsultas implements OnInit, OnDestroy {
         this.currentPage = res.page;
         this.totalPages = Math.max(res.totalPages, 1);
         this.totalRecords = res.totalRecords;
+        this.selectedIds.clear();
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -121,7 +182,7 @@ export class Interconsultas implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { search: '', estado: '' };
+    this.filters = { search: '', estado: 'Pendiente', proyectoId: '', contributorId: '', obraOficina: '' };
     this.load(1);
   }
 
@@ -165,7 +226,91 @@ export class Interconsultas implements OnInit, OnDestroy {
     return 'text-red-700 bg-red-100';
   }
 
+  /** Trabajador con correo propio (Staff/Oficina Central con email corporativo). */
+  tieneCorreoPropio(item: InterconsultaListDto): boolean {
+    return !!item.workerEmail && OBRA_OFICINA_CON_CORREO_PROPIO.has(item.obraOficina ?? '');
+  }
+
+  /** Si obra_oficina viene vacío se asume "Obra": solo Staff/Oficina Central se marcan explícitamente. */
+  tipoDisplay(item: InterconsultaListDto): string {
+    return item.obraOficina?.trim() || 'Obra';
+  }
+
+  /** Categoría + ocupación combinados en un solo texto compacto ("Operario · Albañil"). */
+  puestoDisplay(item: InterconsultaListDto): string {
+    return [item.categoria, item.ocupacion].filter((v) => !!v?.trim()).join(' · ');
+  }
+
   get hasActiveFilters(): boolean {
-    return !!(this.filters.search || this.filters.estado);
+    return !!(
+      this.filters.search ||
+      this.filters.estado !== 'Pendiente' ||
+      this.filters.proyectoId ||
+      this.filters.contributorId ||
+      this.filters.obraOficina
+    );
+  }
+
+  // ===== Selección y envío de correos =====
+
+  isSelected(id: number): boolean {
+    return this.selectedIds.has(id);
+  }
+
+  toggleSelection(id: number): void {
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else this.selectedIds.add(id);
+  }
+
+  get allVisibleSelected(): boolean {
+    return this.items.length > 0 && this.items.every((i) => this.selectedIds.has(i.id));
+  }
+
+  toggleSelectAll(): void {
+    if (this.allVisibleSelected) {
+      this.items.forEach((i) => this.selectedIds.delete(i.id));
+    } else {
+      this.items.forEach((i) => this.selectedIds.add(i.id));
+    }
+  }
+
+  enviarCorreos(): void {
+    if (this.selectedIds.size === 0 || this.sendingEmails) return;
+    const ids = Array.from(this.selectedIds);
+
+    Swal.fire({
+      icon: 'question',
+      title: '¿Enviar correos de recordatorio?',
+      html: `Se notificará a <strong>${ids.length}</strong> trabajador(es) seleccionado(s).<br>
+        Staff/Oficina Central reciben correo individual; obreros sin correo se agrupan en un
+        correo consolidado a su administrador encargado.`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      this.sendingEmails = true;
+      this.loaderService.show();
+      this.service.enviarCorreos(ids).subscribe({
+        next: (res) => {
+          this.sendingEmails = false;
+          this.loaderService.hide();
+          Swal.fire({
+            icon: res.totalErrores > 0 ? 'warning' : 'success',
+            title: 'Correos procesados',
+            html: `Enviados: <strong>${res.totalEnviados}</strong> · Errores: <strong>${res.totalErrores}</strong> de ${res.totalSeleccionadas} seleccionada(s).`,
+          });
+          this.selectedIds.clear();
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.sendingEmails = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
   }
 }

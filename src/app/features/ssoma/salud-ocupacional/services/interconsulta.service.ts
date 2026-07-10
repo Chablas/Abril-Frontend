@@ -6,6 +6,7 @@ import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders, buildParams } from './http-ba
 import {
   InterconsultaDerivacionPatchDto,
   InterconsultaDetalleDto,
+  InterconsultaEnviarCorreoResultDto,
   InterconsultaListDto,
   InterconsultaQueryParams,
   InterconsultaResultadoPatchDto,
@@ -60,5 +61,13 @@ export class InterconsultaService {
     return this.http.post<{ url: string }>(`${this.apiUrl}/${id}/documentos`, fd, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  enviarCorreos(ids: number[]): Observable<InterconsultaEnviarCorreoResultDto> {
+    return this.http.post<InterconsultaEnviarCorreoResultDto>(
+      `${this.apiUrl}/enviar-correos`,
+      { ids },
+      { headers: buildAuthHeaders() },
+    );
   }
 }

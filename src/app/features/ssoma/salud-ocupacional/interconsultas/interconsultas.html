@@ -17,13 +17,13 @@
   ]">
 </app-abril-page-header>
 
-<section class="p-6 space-y-4 flex-1 overflow-y-auto">
+<section class="ic-section">
   <div class="filters-card">
-    <div class="filters-grid">
-      <div class="filter-search">
+    <div class="filters-row">
+      <div class="filter-item filter-search">
         <label class="filter-label">Buscar</label>
         <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="7"/>
             <path d="M21 21l-4.3-4.3"/>
           </svg>
@@ -36,9 +36,10 @@
         </div>
       </div>
 
-      <div>
+      <div class="filter-item">
         <label class="filter-label">Estado</label>
         <app-search-select
+          [compact]="true"
           [options]="estadoOptions"
           valueField="id"
           displayField="nombre"
@@ -48,10 +49,61 @@
           (valueChange)="filters.estado = $event; onFilterChange()"
         ></app-search-select>
       </div>
-    </div>
 
-    <div *ngIf="hasActiveFilters" class="pt-2">
-      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+      <div class="filter-item">
+        <label class="filter-label">Razón social</label>
+        <app-search-select
+          [compact]="true"
+          [options]="razonSocialOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.contributorId"
+          [showLabel]="false"
+          placeholder="Todas"
+          (valueChange)="filters.contributorId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label">Proyecto</label>
+        <app-search-select
+          [compact]="true"
+          [options]="proyectoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.proyectoId"
+          [showLabel]="false"
+          placeholder="Todos"
+          (valueChange)="filters.proyectoId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label">Tipo</label>
+        <app-search-select
+          [compact]="true"
+          [options]="tipoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.obraOficina"
+          [showLabel]="false"
+          placeholder="Todos"
+          (valueChange)="filters.obraOficina = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+
+      <div class="filter-actions">
+        <button *ngIf="hasActiveFilters" type="button" class="btn-link" (click)="clearFilters()">Limpiar</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="selectedIds.size === 0 || sendingEmails"
+          (click)="enviarCorreos()"
+        >
+          <i class="ti ti-mail"></i>
+          Enviar correos ({{ selectedIds.size }})
+        </button>
+      </div>
     </div>
   </div>
 
@@ -60,7 +112,15 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th class="checkbox-col">
+              <input type="checkbox" [checked]="allVisibleSelected" (click)="toggleSelectAll()" (change)="$event.stopPropagation()" />
+            </th>
             <th>Trabajador</th>
+            <th>Tipo</th>
+            <th>Razón social</th>
+            <th>Proyecto actual</th>
+            <th>Jefatura</th>
+            <th>Administrador</th>
             <th>Especialidad</th>
             <th>Derivación</th>
             <th>Atención</th>
@@ -72,15 +132,32 @@
           <tr
             *ngFor="let item of items"
             class="row-clickable"
+            [class.row-selected]="isSelected(item.id)"
             (click)="openDetail(item)"
           >
+            <td class="checkbox-col" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id)" />
+            </td>
             <td>
-              <div class="worker-cell">
+              <div class="worker-cell" [title]="puestoDisplay(item)">
                 <span class="worker-name">{{ item.workerNombre }}</span>
-                <span class="worker-dni">DNI · {{ item.workerDni }}</span>
+                <span class="worker-dni">
+                  {{ item.workerDni }}<span *ngIf="puestoDisplay(item)"> · {{ puestoDisplay(item) }}</span>
+                </span>
               </div>
             </td>
-            <td class="font-medium">{{ item.especialidad }}</td>
+            <td>
+              <span class="badge border tipo-badge" [class.tipo-obrero]="!tieneCorreoPropio(item)">
+                {{ tipoDisplay(item) }}
+              </span>
+            </td>
+            <td class="truncate-cell" [title]="item.razonSocial">{{ item.razonSocial || '—' }}</td>
+            <td class="truncate-cell" [title]="item.proyectoNombre">{{ item.proyectoNombre || '—' }}</td>
+            <td class="truncate-cell" [title]="item.jefatura">{{ item.jefatura || '—' }}</td>
+            <td class="truncate-cell" [title]="item.administradorEmail">
+              <span class="admin-cell">{{ item.administradorEmail || '—' }}</span>
+            </td>
+            <td class="font-medium truncate-cell" [title]="item.especialidad">{{ item.especialidad }}</td>
             <td>{{ item.fechaDerivacion | date: 'dd/MM/yyyy' }}</td>
             <td>{{ item.fechaAtencion ? (item.fechaAtencion | date: 'dd/MM/yyyy') : '—' }}</td>
             <td>
@@ -101,7 +178,7 @@
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="6" class="empty-row">Sin interconsultas.</td>
+            <td colspan="12" class="empty-row">Sin interconsultas.</td>
           </tr>
         </tbody>
       </table>
