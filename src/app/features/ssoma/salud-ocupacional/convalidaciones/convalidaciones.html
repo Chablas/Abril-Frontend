@@ -47,6 +47,42 @@
           (valueChange)="filters.resultado = $event; onFilterChange()"
         ></app-search-select>
       </div>
+      <div>
+        <label class="filter-label">Proyecto</label>
+        <app-search-select
+          [options]="proyectoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.proyectoId"
+          [showLabel]="false"
+          placeholder="Todos"
+          (valueChange)="filters.proyectoId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="filter-label">Razón social</label>
+        <app-search-select
+          [options]="empresaDestinoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.empresaDestinoId"
+          [showLabel]="false"
+          placeholder="Todas"
+          (valueChange)="filters.empresaDestinoId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
+      <div>
+        <label class="filter-label">Tipo</label>
+        <app-search-select
+          [options]="tipoEmoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.tipoEmoId"
+          [showLabel]="false"
+          placeholder="Todos"
+          (valueChange)="filters.tipoEmoId = $event; onFilterChange()"
+        ></app-search-select>
+      </div>
     </div>
 
     <div *ngIf="hasActiveFilters" class="pt-2">
@@ -60,12 +96,14 @@
         <thead>
           <tr>
             <th>Trabajador</th>
+            <th>Proyecto</th>
             <th>Empresa origen</th>
             <th>Empresa destino</th>
             <th>Fecha</th>
             <th>Resultado</th>
             <th>Vencimiento</th>
             <th class="text-right">Días</th>
+            <th class="text-right">PDF</th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +114,7 @@
                 <span class="worker-dni">DNI · {{ item.workerDni }}</span>
               </div>
             </td>
+            <td class="text-gray-600">{{ item.proyecto || '—' }}</td>
             <td class="text-gray-600">{{ item.empresaOrigen }}</td>
             <td class="font-medium">{{ item.empresaDestino }}</td>
             <td>{{ item.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
@@ -95,10 +134,21 @@
                 <span class="text-gray-400">—</span>
               </ng-template>
             </td>
+            <td class="text-right">
+              <button
+                type="button"
+                class="btn-link"
+                [disabled]="descargandoPdfId === item.id"
+                (click)="descargarPdf(item, $event)"
+                title="Descargar constancia de convalidación"
+              >
+                {{ descargandoPdfId === item.id ? '...' : 'Descargar' }}
+              </button>
+            </td>
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="7" class="empty-row">Sin convalidaciones.</td>
+            <td colspan="9" class="empty-row">Sin convalidaciones.</td>
           </tr>
         </tbody>
       </table>

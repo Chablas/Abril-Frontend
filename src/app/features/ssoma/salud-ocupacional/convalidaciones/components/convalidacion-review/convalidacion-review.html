@@ -6,7 +6,7 @@
       <div class="worker-meta">DNI {{ item.workerDni }}</div>
       <div class="worker-meta">
         <span *ngIf="item.empresaOrigen">{{ item.empresaOrigen }} →</span>
-        <strong>{{ item.empresaDestino }}</strong>
+        <strong>{{ item.empresaDestino || 'Sin empresa destino' }}</strong>
       </div>
       <div class="worker-meta" *ngIf="item.tipoEmo">
         EMO: {{ item.tipoEmo }}<span *ngIf="item.fechaEmoOrigen"> · {{ item.fechaEmoOrigen | date:'dd/MM/yyyy' }}</span>
@@ -104,6 +104,18 @@
 
     <h4 class="section-title mt-6">Resolución del médico</h4>
     <div class="grid-2">
+      <div class="col-span-2">
+        <label class="field-label">Empresa destino *</label>
+        <app-search-select
+          [options]="empresas"
+          valueField="id"
+          displayField="nombre"
+          [value]="empresaDestinoId"
+          [showLabel]="false"
+          placeholder="Seleccionar empresa destino"
+          (valueChange)="empresaDestinoId = $event"
+        ></app-search-select>
+      </div>
       <div class="col-span-2">
         <label class="field-label">Resultado *</label>
         <app-search-select

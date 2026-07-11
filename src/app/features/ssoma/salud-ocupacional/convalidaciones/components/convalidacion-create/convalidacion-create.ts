@@ -78,7 +78,9 @@ export class ConvalidacionCreate implements OnInit {
       this.cdr.detectChanges();
     });
     this.catalogos.getMedicos().subscribe((res) => {
-      this.medicos = res;
+      // Solo médicos internos de Abril (sin clínica externa asociada) pueden
+      // firmar convalidaciones — los de clínicas contratadas no aplican acá.
+      this.medicos = res.filter((m) => !m.clinicaId);
       this.cdr.detectChanges();
     });
   }

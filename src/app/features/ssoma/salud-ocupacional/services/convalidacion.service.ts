@@ -8,6 +8,8 @@ import { ConvalidacionCreateDto, ConvalidacionListDto } from '../dtos/convalidac
 export interface ConvalidacionQueryParams {
   workerId?: number;
   empresaDestinoId?: number;
+  proyectoId?: number;
+  tipoEmoId?: number;
   resultado?: string;
   search?: string;
   page?: number;
@@ -47,6 +49,13 @@ export class ConvalidacionService {
   ): Observable<ConvalidacionListDto> {
     return this.http.put<ConvalidacionListDto>(`${this.apiUrl}/${id}`, dto, {
       headers: buildAuthHeaders(),
+    });
+  }
+
+  descargarPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
     });
   }
 }

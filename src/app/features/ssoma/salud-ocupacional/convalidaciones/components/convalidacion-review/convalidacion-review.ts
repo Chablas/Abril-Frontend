@@ -16,7 +16,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { ConvalidacionService } from '../../../services/convalidacion.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
-import { MedicoSimpleDto } from '../../../dtos/catalogos.model';
+import { EmpresaSimpleDto, MedicoSimpleDto } from '../../../dtos/catalogos.model';
 import { ConvalidacionListDto, ConvalidacionResultado } from '../../../dtos/convalidacion.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -35,10 +35,12 @@ export class ConvalidacionReview implements OnChanges {
   @Output() saved = new EventEmitter<void>();
 
   medicos: MedicoSimpleDto[] = [];
+  empresas: EmpresaSimpleDto[] = [];
 
   resultado: ConvalidacionResultado = 'Pendiente';
   fechaVencimiento = '';
   medicoId: number | null = null;
+  empresaDestinoId: number | null = null;
   notas = '';
   saving = false;
 
@@ -65,11 +67,20 @@ export class ConvalidacionReview implements OnChanges {
       this.resultado = (this.item.resultado as ConvalidacionResultado) ?? 'Pendiente';
       this.fechaVencimiento = this.item.fechaVencimiento || this.item.emoFechaVencimiento || '';
       this.medicoId = null;
+      this.empresaDestinoId = this.item.empresaDestinoId ?? null;
       this.notas = this.item.notas ?? '';
       this.saving = false;
       if (!this.medicos.length) {
         this.catalogos.getMedicos().subscribe((res) => {
-          this.medicos = res;
+          // Solo médicos internos de Abril (sin clínica externa asociada) pueden
+          // firmar convalidaciones — los de clínicas contratadas no aplican acá.
+          this.medicos = res.filter((m) => !m.clinicaId);
+          this.cdr.detectChanges();
+        });
+      }
+      if (!this.empresas.length) {
+        this.catalogos.getEmpresas().subscribe((res) => {
+          this.empresas = res;
           this.cdr.detectChanges();
         });
       }
@@ -83,6 +94,7 @@ export class ConvalidacionReview implements OnChanges {
   get canSubmit(): boolean {
     if (this.saving) return false;
     if (this.fechaVencimientoRequerida && !this.fechaVencimiento) return false;
+    if (!this.empresaDestinoId) return false;
     return true;
   }
 
@@ -91,6 +103,7 @@ export class ConvalidacionReview implements OnChanges {
 
     const payload = {
       fechaConvalidacion: this.item.fechaConvalidacion,
+      empresaDestinoId: this.empresaDestinoId ?? undefined,
       medicoId: this.medicoId ?? undefined,
       resultado: this.resultado,
       fechaVencimiento: this.fechaVencimiento || undefined,

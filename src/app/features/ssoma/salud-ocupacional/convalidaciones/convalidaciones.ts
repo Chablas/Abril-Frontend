@@ -8,6 +8,8 @@ import {
   ConvalidacionQueryParams,
   ConvalidacionService,
 } from '../services/convalidacion.service';
+import { CatalogosSaludService } from '../services/catalogos-salud.service';
+import { ProyectoHabilitadoService } from '../../shared/services/proyecto-habilitado.service';
 import { ConvalidacionListDto } from '../dtos/convalidacion.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -49,6 +51,9 @@ export class Convalidaciones implements OnInit, OnDestroy {
   filters = {
     search: '',
     resultado: '',
+    proyectoId: '',
+    empresaDestinoId: '',
+    tipoEmoId: '',
   };
 
   resultadoOptions: FilterOption[] = [
@@ -58,6 +63,10 @@ export class Convalidaciones implements OnInit, OnDestroy {
     { id: 'Pendiente', nombre: 'Pendiente' },
   ];
 
+  proyectoOptions: FilterOption[] = [{ id: '', nombre: 'Todos los proyectos' }];
+  empresaDestinoOptions: FilterOption[] = [{ id: '', nombre: 'Todas las razones sociales' }];
+  tipoEmoOptions: FilterOption[] = [{ id: '', nombre: 'Todos los tipos' }];
+
   items: ConvalidacionListDto[] = [];
   totalRecords = 0;
   totalPages = 1;
@@ -66,12 +75,15 @@ export class Convalidaciones implements OnInit, OnDestroy {
 
   reviewOpen = false;
   selectedItem: ConvalidacionListDto | null = null;
+  descargandoPdfId: number | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
 
   constructor(
     private service: ConvalidacionService,
+    private catalogosService: CatalogosSaludService,
+    private proyectoService: ProyectoHabilitadoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -81,7 +93,49 @@ export class Convalidaciones implements OnInit, OnDestroy {
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.load(1));
+    this.loadCatalogos();
     this.load(1);
+  }
+
+  private loadCatalogos(): void {
+    this.proyectoService.getHabilitados().subscribe({
+      next: (proyectos) => {
+        this.proyectoOptions = [
+          { id: '', nombre: 'Todos los proyectos' },
+          ...proyectos.map((p) => ({ id: String(p.projectId), nombre: p.projectDescription })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todos".
+      },
+    });
+
+    this.catalogosService.getEmpresas().subscribe({
+      next: (empresas) => {
+        this.empresaDestinoOptions = [
+          { id: '', nombre: 'Todas las razones sociales' },
+          ...empresas.map((e) => ({ id: String(e.id), nombre: e.nombre })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todas".
+      },
+    });
+
+    this.catalogosService.getEmoTipos().subscribe({
+      next: (tipos) => {
+        this.tipoEmoOptions = [
+          { id: '', nombre: 'Todos los tipos' },
+          ...tipos.map((t) => ({ id: String(t.id), nombre: t.nombre })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todos".
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -97,6 +151,9 @@ export class Convalidaciones implements OnInit, OnDestroy {
       pageSize: this.pageSize,
       search: this.filters.search?.trim() || undefined,
       resultado: this.filters.resultado || undefined,
+      proyectoId: this.filters.proyectoId ? Number(this.filters.proyectoId) : undefined,
+      empresaDestinoId: this.filters.empresaDestinoId ? Number(this.filters.empresaDestinoId) : undefined,
+      tipoEmoId: this.filters.tipoEmoId ? Number(this.filters.tipoEmoId) : undefined,
     };
     this.service.getConvalidaciones(query).subscribe({
       next: (res) => {
@@ -126,7 +183,7 @@ export class Convalidaciones implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { search: '', resultado: '' };
+    this.filters = { search: '', resultado: '', proyectoId: '', empresaDestinoId: '', tipoEmoId: '' };
     this.load(1);
   }
 
@@ -165,6 +222,33 @@ export class Convalidaciones implements OnInit, OnDestroy {
   }
 
   get hasActiveFilters(): boolean {
-    return !!(this.filters.search || this.filters.resultado);
+    return !!(
+      this.filters.search ||
+      this.filters.resultado ||
+      this.filters.proyectoId ||
+      this.filters.empresaDestinoId ||
+      this.filters.tipoEmoId
+    );
+  }
+
+  descargarPdf(item: ConvalidacionListDto, event: Event): void {
+    event.stopPropagation();
+    if (this.descargandoPdfId) return;
+    this.descargandoPdfId = item.id;
+    this.service.descargarPdf(item.id).subscribe({
+      next: (blob) => {
+        this.descargandoPdfId = null;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Convalidacion_${item.workerDni}_${item.id}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoPdfId = null;
+        this.errorService.handleError(err);
+      },
+    });
   }
 }

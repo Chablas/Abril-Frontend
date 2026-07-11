@@ -7,7 +7,9 @@ export interface ConvalidacionListDto {
   workerNombre: string;
   workerDni: string;
   empresaOrigen: string;
+  empresaDestinoId?: number | null;
   empresaDestino: string;
+  proyecto?: string | null;
   fechaConvalidacion: string;
   fechaVencimiento: string;
   resultado: ConvalidacionResultado;
