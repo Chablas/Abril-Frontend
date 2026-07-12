@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BirthdayClub } from './birthday-club/birthday-club';
+import { AuthService } from '../../../core/services/auth.service';
+
+type FloatingAction = 'login' | 'inicio-casa' | 'inicio-contratista';
 
 type TabKey = 'inicio' | 'somos-abril' | 'efemerides' | 'bienestar' | 'novedades' | 'opina';
 
@@ -69,16 +72,45 @@ export class Boletin implements OnInit {
   /** Modal "THE BIRTHDAY CLUB" (calendario de cumpleaños del trimestre). */
   mostrarCumpleanos = false;
 
-  constructor(private router: Router) {}
+  /**
+   * El boletín (VAMOS + pestañas) es exclusivo de Casa logueado. Contratistas
+   * logueados y visitantes sin sesión solo ven la portada estática, sin poder
+   * entrar al contenido.
+   */
+  puedeVerBoletin = false;
+
+  /**
+   * Accesos rápidos de autoservicio (descanso médico / autorización de salida).
+   * Exclusivos de Casa logueado: contratistas y clínica no gestionan esto aquí.
+   */
+  mostrarAccesosRapidos = false;
+
+  /** Estado del botón flotante único (reemplaza al ícono fijo de casa). */
+  accionFlotante: FloatingAction = 'login';
+
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
+    const logueado = !!this.authService.getToken();
+    const esCasa = logueado && this.authService.esUsuarioAbrilBoletin();
+    const esContratista = logueado && this.authService.isContratista();
+
+    this.puedeVerBoletin = esCasa;
+    this.mostrarAccesosRapidos = esCasa;
+    this.accionFlotante = esCasa ? 'inicio-casa' : esContratista ? 'inicio-contratista' : 'login';
+
     const yaVista =
       typeof sessionStorage !== 'undefined' && sessionStorage.getItem(Boletin.PORTADA_KEY) === '1';
-    this.mostrarPortada = !yaVista;
+    // Contratista/visitante: siempre la portada estática, sin VAMOS que abrir.
+    this.mostrarPortada = !this.puedeVerBoletin || !yaVista;
   }
 
   /** "¡VAMOS!": cierra la portada y entra al boletín (pestaña SOMOS ABRIL). */
   entrarAlBoletin(): void {
+    if (!this.puedeVerBoletin) return;
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(Boletin.PORTADA_KEY, '1');
     }
@@ -87,6 +119,7 @@ export class Boletin implements OnInit {
   }
 
   seleccionarTab(tab: TabKey): void {
+    if (!this.puedeVerBoletin) return;
     // La pestaña INICIO reabre la portada animada a pantalla completa.
     if (tab === 'inicio') {
       this.mostrarPortada = true;
@@ -95,8 +128,31 @@ export class Boletin implements OnInit {
     this.tabActiva = tab;
   }
 
+  /** Click del botón flotante: destino según quién está viendo la portada. */
   irAlDashboard(): void {
-    this.router.navigate(['/']);
+    switch (this.accionFlotante) {
+      case 'login':
+        this.router.navigate(['/auth/login']);
+        return;
+      case 'inicio-contratista': {
+        const modulos = this.authService.getContratistaModulos();
+        const landing = modulos === 'SSOMA' ? '/ssoma/gestion/rac/dashboard' : '/habilitacion';
+        this.router.navigate([landing]);
+        return;
+      }
+      case 'inicio-casa':
+      default:
+        this.router.navigate(['/inicio']);
+        return;
+    }
+  }
+
+  irADescansoMedico(): void {
+    this.router.navigate(['/ssoma/salud-ocupacional/mi-salud'], { queryParams: { nuevo: '1' } });
+  }
+
+  irASolicitudSalida(): void {
+    this.router.navigate(['/gestion-administrativa/solicitud-salidas'], { queryParams: { nuevo: '1' } });
   }
 
   /**

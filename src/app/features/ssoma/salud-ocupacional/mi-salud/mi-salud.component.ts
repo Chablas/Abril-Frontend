@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -49,11 +50,16 @@ export class MiSaludComponent implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private cdr         : ChangeDetectorRef,
+    private route       : ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.loadResumen();
     this.loadDescansos(1);
+    // Atajo desde el boletín (?nuevo=1): abre el formulario directo, sin pasos extra.
+    if (this.route.snapshot.queryParamMap.get('nuevo') === '1') {
+      this.abrirModal();
+    }
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }

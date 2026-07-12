@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SolicitudSalidaCreate } from './create/create';
@@ -53,11 +54,16 @@ export class SolicitudSalidas implements OnInit {
     private service: SolicitudSalidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.loadFilterData();
     this.load();
+    // Atajo desde el boletín (?nuevo=1): abre el formulario directo, sin pasos extra.
+    if (this.route.snapshot.queryParamMap.get('nuevo') === '1') {
+      this.showModal = true;
+    }
   }
 
   loadFilterData(): void {

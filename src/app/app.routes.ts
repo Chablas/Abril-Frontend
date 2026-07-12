@@ -14,12 +14,19 @@ export const routes: Routes = [
   },
 
   {
+    path: 'boletin',
+    component: Boletin,
+    canActivate: [boletinGuard],
+  },
+
+  { path: '', pathMatch: 'full', redirectTo: 'boletin' },
+
+  {
     path: '',
     component: Layout,
     canActivateChild: [authGuard],
     children: [
-      { path: '', component: Dashboard },
-      { path: 'boletin', component: Boletin, canActivate: [boletinGuard] },
+      { path: 'inicio', component: Dashboard },
 
       {
         path: 'security',

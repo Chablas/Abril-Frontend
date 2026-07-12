@@ -32,6 +32,7 @@ export class Login implements OnInit {
   contratistaForm!: FormGroup;
 
   activeTab: LoginTab = 'abril';
+  mostrarTutoriales = false;
   showContratistaPassword = false;
   clinicaForm = { email: '', password: '' };
   clinicaLoading = false;
@@ -61,6 +62,10 @@ export class Login implements OnInit {
 
   setTab(tab: LoginTab): void {
     this.activeTab = tab;
+  }
+
+  toggleTutoriales(): void {
+    this.mostrarTutoriales = !this.mostrarTutoriales;
   }
 
   toggleContratistaPassword(): void {
