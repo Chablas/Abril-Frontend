@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BirthdayClub } from './birthday-club/birthday-club';
 import { AuthService } from '../../../core/services/auth.service';
@@ -27,7 +28,7 @@ interface TarjetaSomosAbril {
 @Component({
   selector: 'app-boletin',
   standalone: true,
-  imports: [BirthdayClub],
+  imports: [CommonModule, BirthdayClub],
   templateUrl: './boletin.html',
   styleUrl: './boletin.css',
 })
@@ -87,6 +88,14 @@ export class Boletin implements OnInit {
 
   /** Estado del botón flotante único (reemplaza al ícono fijo de casa). */
   accionFlotante: FloatingAction = 'login';
+
+  /**
+   * En celular los botones flotantes arrancan colapsados (solo ícono, poco invasivo).
+   * El primer tap sobre cualquiera revela las etiquetas de texto; recién el
+   * siguiente tap ejecuta la acción. En escritorio esto no aplica: el hover
+   * ya se encarga de mostrar la etiqueta.
+   */
+  menuAccesosAbierto = false;
 
   constructor(
     private router: Router,
@@ -153,6 +162,33 @@ export class Boletin implements OnInit {
 
   irASolicitudSalida(): void {
     this.router.navigate(['/gestion-administrativa/solicitud-salidas'], { queryParams: { nuevo: '1' } });
+  }
+
+  private esMobile(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  }
+
+  /**
+   * Click de cualquier botón flotante. En celular, el primer tap solo abre el
+   * menú (revela las etiquetas); el segundo ejecuta la acción real. En
+   * escritorio ejecuta directo (el hover ya mostró la etiqueta antes del click).
+   */
+  manejarClickFlotante(accion: 'descanso' | 'salida' | 'dashboard'): void {
+    if (this.esMobile() && !this.menuAccesosAbierto) {
+      this.menuAccesosAbierto = true;
+      return;
+    }
+    switch (accion) {
+      case 'descanso':
+        this.irADescansoMedico();
+        return;
+      case 'salida':
+        this.irASolicitudSalida();
+        return;
+      case 'dashboard':
+        this.irAlDashboard();
+        return;
+    }
   }
 
   /**
