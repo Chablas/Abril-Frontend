@@ -10,9 +10,7 @@
     { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
     { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
     { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
-  ]"
-  [botonPrimario]="{ label: 'Solicitar salida', icono: 'ti-plus' }"
-  (primaryClick)="showModal = true">
+  ]">
 </app-abril-page-header>
 
 <div class="flex flex-col gap-[20px] bg-white p-[20px] flex-1 overflow-y-auto">
@@ -23,6 +21,7 @@
     <div class="w-[220px]">
       <app-search-select
         label="Lugar de proyecto"
+        placeholder="Selecciona el proyecto"
         [options]="lugarProyectoOptions"
         valueField="id"
         displayField="nombreDisplay"
@@ -175,9 +174,12 @@
 
 </div>
 
+<app-fab label="Solicitar salida" (clicked)="showModal = true"></app-fab>
+
 <!-- ── Modal de creación ─────────────────────────────────────────────── -->
 <app-solicitud-salida-create
   *ngIf="showModal"
+  [fullScreen]="modalFullScreen"
   (closeModal)="showModal = false"
   (saved)="onSaved()" />
 

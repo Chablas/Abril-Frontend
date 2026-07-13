@@ -149,6 +149,7 @@
 
 <app-mi-salud-modal
   *ngIf="modalVisible"
+  [fullScreen]="modalFullScreen"
   (closed)="cerrarModal()"
   (saved)="onGuardado()">
 </app-mi-salud-modal>

@@ -95,6 +95,37 @@
   opacity: 0.8;
 }
 
+/* ── Botón primario flotante (estándar único de "agregar" en toda la app) ── */
+.ssoma-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1b3a2d;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(27, 58, 45, 0.3);
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  transition: background 0.15s, transform 0.1s;
+}
+.ssoma-fab i { font-size: 16px; }
+.ssoma-fab:hover:not(:disabled) { background: #152e23; transform: scale(1.02); }
+.ssoma-fab:disabled { opacity: 0.6; cursor: not-allowed; }
+.ssoma-fab span { display: none; }
+@media (min-width: 640px) {
+  .ssoma-fab span { display: inline; }
+}
+
 /* ── Hamburger (hidden on desktop) ── */
 .hamburger-btn {
   display: none;

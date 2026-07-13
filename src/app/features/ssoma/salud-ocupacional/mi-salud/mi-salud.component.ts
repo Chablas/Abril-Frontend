@@ -42,6 +42,8 @@ export class MiSaludComponent implements OnInit, OnDestroy {
   currentPage  = 1;
 
   modalVisible = false;
+  /** true cuando el formulario se abrió desde el atajo del boletín (?nuevo=1) → pantalla completa. */
+  modalFullScreen = false;
 
   private destroy$ = new Subject<void>();
 
@@ -58,6 +60,7 @@ export class MiSaludComponent implements OnInit, OnDestroy {
     this.loadDescansos(1);
     // Atajo desde el boletín (?nuevo=1): abre el formulario directo, sin pasos extra.
     if (this.route.snapshot.queryParamMap.get('nuevo') === '1') {
+      this.modalFullScreen = true;
       this.abrirModal();
     }
   }
@@ -105,7 +108,7 @@ export class MiSaludComponent implements OnInit, OnDestroy {
   onPageChange(p: number): void { this.loadDescansos(p); }
 
   abrirModal(): void  { this.modalVisible = true;  this.cdr.detectChanges(); }
-  cerrarModal(): void { this.modalVisible = false; this.cdr.detectChanges(); }
+  cerrarModal(): void { this.modalVisible = false; this.modalFullScreen = false; this.cdr.detectChanges(); }
 
   onGuardado(): void {
     this.cerrarModal();

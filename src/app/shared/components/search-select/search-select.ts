@@ -68,7 +68,24 @@ export class SearchSelect {
     const empty = this.value === null || this.value === undefined || this.value === 0;
     if (empty) return this.placeholder;
     const found = this.options.find(opt => opt[this.valueField] === this.value);
-    return found ? String(found[this.displayField]) : this.placeholder;
+    return found ? this.formatLabel(String(found[this.displayField])) : this.placeholder;
+  }
+
+  /**
+   * Suaviza etiquetas que llegan en MAYÚSCULA TOTAL desde la base de datos (ej. "AMANCAE") a
+   * formato de nombre propio ("Amancae"), que se lee más profesional. Si el texto ya viene con
+   * mayúsculas/minúsculas mixtas (ej. siglas como "TI" combinadas con palabras normales) se deja
+   * intacto para no romper esos casos.
+   */
+  optionLabel(option: any): string {
+    return this.formatLabel(String(option[this.displayField]));
+  }
+
+  private formatLabel(text: string): string {
+    if (!text) return text;
+    const isAllCaps = text === text.toUpperCase() && text !== text.toLowerCase();
+    if (!isAllCaps) return text;
+    return text.toLowerCase().replace(/(^|[\s\-/])([a-záéíóúñ])/g, (_m, sep, c) => sep + c.toUpperCase());
   }
 
   get hasValue(): boolean {

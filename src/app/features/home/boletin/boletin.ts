@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BirthdayClub } from './birthday-club/birthday-club';
 import { AuthService } from '../../../core/services/auth.service';
 
 type FloatingAction = 'login' | 'inicio-casa' | 'inicio-contratista';
+type BotonFlotante = 'descanso' | 'salida' | 'dashboard';
 
 type TabKey = 'inicio' | 'somos-abril' | 'efemerides' | 'bienestar' | 'novedades' | 'opina';
 
@@ -91,16 +92,27 @@ export class Boletin implements OnInit {
 
   /**
    * En celular los botones flotantes arrancan colapsados (solo ícono, poco invasivo).
-   * El primer tap sobre cualquiera revela las etiquetas de texto; recién el
-   * siguiente tap ejecuta la acción. En escritorio esto no aplica: el hover
-   * ya se encarga de mostrar la etiqueta.
+   * El primer tap sobre UN botón revela solo su etiqueta; el siguiente tap sobre
+   * ese mismo botón ejecuta la acción. Tocar fuera de los botones los vuelve a
+   * colapsar. En escritorio esto no aplica: el hover ya muestra la etiqueta.
    */
-  menuAccesosAbierto = false;
+  botonExpandido: BotonFlotante | null = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
+    private elementRef: ElementRef<HTMLElement>,
   ) {}
+
+  /** Cualquier tap/click fuera de los botones flotantes los colapsa de nuevo. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(ev: MouseEvent): void {
+    if (this.botonExpandido === null) return;
+    const contenedor = this.elementRef.nativeElement.querySelector('[data-accesos-flotantes]');
+    if (contenedor && !contenedor.contains(ev.target as Node)) {
+      this.botonExpandido = null;
+    }
+  }
 
   ngOnInit(): void {
     const logueado = !!this.authService.getToken();
@@ -169,15 +181,18 @@ export class Boletin implements OnInit {
   }
 
   /**
-   * Click de cualquier botón flotante. En celular, el primer tap solo abre el
-   * menú (revela las etiquetas); el segundo ejecuta la acción real. En
-   * escritorio ejecuta directo (el hover ya mostró la etiqueta antes del click).
+   * Click de un botón flotante. En celular, el primer tap sobre ESE botón solo
+   * revela su etiqueta; el segundo tap (con la etiqueta ya visible) ejecuta la
+   * acción. En escritorio ejecuta directo (el hover ya mostró la etiqueta antes
+   * del click).
    */
-  manejarClickFlotante(accion: 'descanso' | 'salida' | 'dashboard'): void {
-    if (this.esMobile() && !this.menuAccesosAbierto) {
-      this.menuAccesosAbierto = true;
+  manejarClickFlotante(accion: BotonFlotante, ev: Event): void {
+    if (this.esMobile() && this.botonExpandido !== accion) {
+      ev.stopPropagation();
+      this.botonExpandido = accion;
       return;
     }
+    this.botonExpandido = null;
     switch (accion) {
       case 'descanso':
         this.irADescansoMedico();

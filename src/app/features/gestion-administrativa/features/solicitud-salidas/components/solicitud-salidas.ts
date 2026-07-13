@@ -12,11 +12,12 @@ import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/so
 import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/solicitud-salida-capturas-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FabButton } from '../../../../../shared/components/fab-button/fab-button';
 
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton],
   templateUrl: './solicitud-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -24,6 +25,8 @@ export class SolicitudSalidas implements OnInit {
   anioActual = new Date().getFullYear();
   solicitudes: SolicitudSalidaListItemDto[] = [];
   showModal = false;
+  /** true cuando el formulario se abrió desde el atajo del boletín (?nuevo=1) → pantalla completa. */
+  modalFullScreen = false;
 
   /** ID de la solicitud cuyo modal de detalle (read-only) está abierto. null = cerrado. */
   detalleId: number | null = null;
@@ -63,6 +66,7 @@ export class SolicitudSalidas implements OnInit {
     // Atajo desde el boletín (?nuevo=1): abre el formulario directo, sin pasos extra.
     if (this.route.snapshot.queryParamMap.get('nuevo') === '1') {
       this.showModal = true;
+      this.modalFullScreen = true;
     }
   }
 

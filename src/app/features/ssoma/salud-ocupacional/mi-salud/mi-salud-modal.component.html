@@ -1,4 +1,4 @@
-<app-base-modal titulo="Registrar Descanso Médico" (closed)="closed.emit()">
+<app-base-modal [title]="'Registrar Descanso Médico'" [fullScreen]="fullScreen" (closeModal)="closed.emit()">
   <div class="modal-body">
 
     <div class="field-row">

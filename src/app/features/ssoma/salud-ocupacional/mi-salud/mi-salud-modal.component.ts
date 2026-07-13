@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnDestroy, Output,
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +20,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   styleUrl: './mi-salud-modal.component.css',
 })
 export class MiSaludModalComponent implements OnDestroy {
+  @Input() fullScreen = false;
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
 

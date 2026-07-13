@@ -3,7 +3,6 @@
     <button type="button" class="hamburger-btn" (click)="onHamburgerClick()" aria-label="Abrir menú">
       <i class="ti ti-menu-2" aria-hidden="true"></i>
     </button>
-    <span *ngIf="badge" class="ssoma-hero__badge">{{ badge }}</span>
     <div class="ssoma-hero__vline"></div>
     <div class="ssoma-hero__title-wrap">
       <h1 class="ssoma-hero__title">{{ titulo }}</h1>
@@ -28,18 +27,21 @@
       <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
       <span>{{ botonSecundario.label }}</span>
     </button>
-    <button *ngIf="botonPrimario"
-            type="button"
-            class="ssoma-hero__btn ssoma-hero__btn--primary"
-            [disabled]="botonPrimarioDeshabilitado"
-            [title]="botonPrimarioTooltip || ''"
-            (click)="primaryClick.emit()">
-      <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
-      <span>{{ botonPrimario.label }}</span>
-    </button>
     <div class="ssoma-hero__avatar-gap"></div>
   </div>
 </div>
+
+<!-- El botón primario ("Nuevo X") es siempre flotante — estándar único para toda la app,
+     igual que app-fab. Así ninguna página puede volver a ponerlo en el encabezado. -->
+<button *ngIf="botonPrimario"
+        type="button"
+        class="ssoma-fab"
+        [disabled]="botonPrimarioDeshabilitado"
+        [title]="botonPrimarioTooltip || botonPrimario.label"
+        (click)="primaryClick.emit()">
+  <i class="ti {{ botonPrimario.icono }}" aria-hidden="true"></i>
+  <span>{{ botonPrimario.label }}</span>
+</button>
 
 <!-- Group selector — solo aparece cuando hay múltiples grupos -->
 <div class="abril-tab-groups" *ngIf="hasGroups">

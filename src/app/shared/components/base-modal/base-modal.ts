@@ -20,6 +20,8 @@ export class BaseModal {
    * siga igual que cuando se abrió, el clic fuera lo cierra normalmente.
    */
   @Input() preventCloseWhenDirty: boolean = false;
+  /** Si es true, ocupa toda la pantalla (sin backdrop ni tarjeta centrada) — para accesos rápidos móviles. */
+  @Input() fullScreen: boolean = false;
   @Output() closeModal = new EventEmitter();
 
   /** El contenido del modal fue modificado respecto a su estado inicial. */

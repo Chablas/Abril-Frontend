@@ -1,3 +1,18 @@
+@if (fullScreen) {
+  <div class="fixed inset-0 bg-white z-[50] flex flex-col overflow-y-auto">
+    <div class="px-5 pt-4 pb-2 flex flex-col flex-1"
+         (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
+      <h1 class="text-lg font-bold text-center flex-shrink-0 mb-3 pr-6" style="color:#0F6E56">{{ title }}</h1>
+      <ng-content></ng-content>
+    </div>
+
+    <button class="fixed top-4 right-5 cursor-pointer" (click)="close()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 20L4 4M20 4L4 20" stroke="#64BC04" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+} @else {
 <div
   class="fixed inset-0 bg-black/40 z-[50]"
   [class.overflow-y-auto]="!height"
@@ -19,7 +34,7 @@
         (input)="markDirty()"
         (change)="markDirty()"
         (modalfieldchange)="markDirty()">
-        <h1 [class]="height ? 'text-base text-center flex-shrink-0 mb-2 pr-6' : 'text-2xl text-center'">{{ title }}</h1>
+        <h1 [class]="(height ? 'text-base mb-2' : 'text-lg mb-3') + ' font-bold text-center flex-shrink-0 pr-6'" style="color:#0F6E56">{{ title }}</h1>
         <ng-content></ng-content>
       </div>
 
@@ -31,3 +46,4 @@
     </div>
   </div>
 </div>
+}
