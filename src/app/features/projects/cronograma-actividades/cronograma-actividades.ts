@@ -68,7 +68,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   collapsedIds  = new Set<number>();
   ganttModalAct: ActividadDto | null = null;
   private parentIds = new Set<number>();
-  private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
+  private rowStyleMap = new Map<number, { color: string; text?: string }>();
   private avanceMap = new Map<number, number>();
 
   // Drag & Drop
@@ -82,18 +82,22 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   formNivel = 1;
   formPadreId: number | null = null;
   private readonly NIVEL0 = { bg: '#1B263B', text: '#E0E1DD' } as const;
-  private readonly NIVEL0_ENTRIES = [
-    { bg: '#ffffff', text: '#1E3A5F', border: '#2E6DB4', color: '#2E6DB4' },
-    { bg: '#ffffff', text: '#1E3A5F', border: '#1B6B3A', color: '#1B6B3A' },
-    { bg: '#ffffff', text: '#1E3A5F', border: '#D97706', color: '#D97706' },
-    { bg: '#ffffff', text: '#1E3A5F', border: '#C0392B', color: '#C0392B' },
-  ] as const;
   private readonly GANTT_WEEK_PX = 50;
   private readonly GANTT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  // Paleta corporativa — debe coincidir con las 10 custom properties --corporate-* del .css
   private readonly LEVEL1_COLORS = [
-    '#3B82F6', '#14B8A6', '#F59E0B', '#A855F7',
-    '#EF4444', '#10B981', '#F97316', '#6366F1',
+    '#5E6AD2', // indigo
+    '#2E7D6A', // salvia
+    '#4F709C', // steel
+    '#B08B5C', // bronze
+    '#A35D6A', // clay
+    '#64748B', // slate
+    '#6D5C7E', // amethyst
+    '#115E59', // forest
+    '#A06A3A', // ochre
+    '#475569', // graphite
   ];
+  private readonly DARK_TEXT = '#2C2C2A';
 
   // Formulario del modal
   formActividad = '';
@@ -248,64 +252,58 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   private buildColorMap(): void {
     this.rowStyleMap.clear();
-    // Only true root activities (no parent) count as nivel-0
-    const nivel0Count = this.actividades.filter(
-      (a) => (a.hierarchyLevel != null ? Number(a.hierarchyLevel) : 0) <= 0 && a.parentId == null,
-    ).length;
-    let nivel0Idx = 0;
-    let level1Idx = 0;
-    for (const act of this.actividades) {
-      // Coerce to number: guards against null/undefined from unexpected JSON responses
-      const level = act.hierarchyLevel != null ? Number(act.hierarchyLevel) : 0;
-      // An activity with a parent is never a root node, regardless of hierarchyLevel value
-      const isRoot = level <= 0 && act.parentId == null;
 
-      if (isRoot) {
-        if (nivel0Count === 1) {
-          // Single root — dark navy header style
-          this.rowStyleMap.set(act.projectActivityId, { ...this.NIVEL0 });
-        } else {
-          // Multiple roots — use bg/text/color from NIVEL0_ENTRIES cyclically
-          const entry = this.NIVEL0_ENTRIES[nivel0Idx % this.NIVEL0_ENTRIES.length];
-          this.rowStyleMap.set(act.projectActivityId, { ...entry });
-          nivel0Idx++;
-        }
-      } else if (level <= 1) {
-        const color = this.LEVEL1_COLORS[level1Idx % this.LEVEL1_COLORS.length];
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: '#ffffff',
-          text: '#1B263B',
-          border: color,
-          color,
-        });
-        level1Idx++;
-      } else if (level === 2) {
-        const parentColor = this.findAncestorColorAtLevel(act, 1);
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: '#f0f4f8',
-          text: '#2d3f52',
-          border: parentColor ? this.hexToRgba(parentColor, 0.45) : 'transparent',
-          color: parentColor ?? undefined,
-        });
-      } else {
-        const parentColor = this.findAncestorColorAtLevel(act, 1);
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: '#f8fafc',
-          text: '#4a6580',
-          color: parentColor ?? undefined,
-        });
+    // ── Paso 1: color base por rama ──────────────────────────────────────────
+    // Cada nodo raíz (sin padre) recibe uno de los 10 colores base, cicleando
+    // SOLO entre raíces en el orden en que aparecen. Sus descendientes heredan
+    // ESE mismo color base; nunca uno nuevo del ciclo.
+    let rootIdx = 0;
+    for (const act of this.actividades) {
+      if (act.parentId == null) {
+        const color = this.LEVEL1_COLORS[rootIdx % this.LEVEL1_COLORS.length];
+        this.rowStyleMap.set(act.projectActivityId, { color, text: this.getBranchTextColor(color) });
+        rootIdx++;
       }
+    }
+
+    // ── Paso 2: descendientes heredan el color base de su raíz ────────────────
+    // Los tonos de fondo/borde/texto de los niveles hijos ya no se precalculan
+    // aquí: se derivan en CSS con color-mix() a partir de --base-color
+    // (ver getRowStyle y las reglas .lvl-1/.lvl-2/.lvl-deep en el .css).
+    for (const act of this.actividades) {
+      if (act.parentId == null) continue;
+      const base = this.findRootColor(act) ?? '#415a77';
+      this.rowStyleMap.set(act.projectActivityId, { color: base });
     }
   }
 
-  private findAncestorColorAtLevel(act: ActividadDto, targetLevel: number): string | null {
-    if (act.parentId === null) return null;
-    const parent = this.actividades.find((a) => a.projectActivityId === act.parentId);
-    if (!parent) return null;
-    if (parent.hierarchyLevel === targetLevel) {
-      return this.rowStyleMap.get(parent.projectActivityId)?.color ?? null;
+  /** Sube por la jerarquía hasta la raíz y devuelve su color base heredado. */
+  private findRootColor(act: ActividadDto): string | null {
+    let cur: ActividadDto | undefined = act;
+    // Límite de seguridad por si hubiera un ciclo en los datos.
+    for (let i = 0; cur && cur.parentId != null && i < 100; i++) {
+      cur = this.actividades.find((a) => a.projectActivityId === cur!.parentId);
     }
-    return this.findAncestorColorAtLevel(parent, targetLevel);
+    return cur ? (this.rowStyleMap.get(cur.projectActivityId)?.color ?? null) : null;
+  }
+
+  /** Texto legible (blanco o gris oscuro) para el fondo sólido de una rama nivel 1, según contraste WCAG AA (≥4.5:1). */
+  private getBranchTextColor(hex: string): string {
+    return this.contrastRatio(hex, '#ffffff') >= 4.5 ? '#ffffff' : this.DARK_TEXT;
+  }
+
+  private relativeLuminance(hex: string): number {
+    const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const r = toLinear(parseInt(hex.slice(1, 3), 16) / 255);
+    const g = toLinear(parseInt(hex.slice(3, 5), 16) / 255);
+    const b = toLinear(parseInt(hex.slice(5, 7), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  private contrastRatio(hexA: string, hexB: string): number {
+    const lA = this.relativeLuminance(hexA) + 0.05;
+    const lB = this.relativeLuminance(hexB) + 0.05;
+    return lA > lB ? lA / lB : lB / lA;
   }
 
   private hexToRgba(hex: string, alpha: number): string {
@@ -317,18 +315,21 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   getRowStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    // Fallback: level-0 activity not yet in map (e.g. called before buildColorMap runs)
-    const resolved: { bg: string; text: string; border?: string } | null =
-      info ?? ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null ? this.NIVEL0 : null);
-    if (!resolved) return {};
-    const style: Record<string, string> = { 'background-color': resolved.bg, color: resolved.text };
-    if (resolved.border) style['--lvl-border'] = resolved.border;
+    if (!info) {
+      // Fallback: nivel 0 aún no está en el mapa (p.ej. llamado antes de que corra buildColorMap)
+      if ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null) {
+        return { '--base-color': this.NIVEL0.bg, color: this.NIVEL0.text };
+      }
+      return {};
+    }
+    const style: Record<string, string> = { '--base-color': info.color };
+    if (info.text) style['color'] = info.text; // solo nivel 1 (raíz) trae texto explícito
     return style;
   }
 
   isDarkBg(act: ActividadDto): boolean {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    if (info) return info.text === '#E0E1DD';
+    if (info) return info.text === '#ffffff';
     return (act.hierarchyLevel ?? 0) <= 0 && act.parentId == null;
   }
 
@@ -348,7 +349,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   getChevronStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    return info ? { color: info.text } : {};
+    return info?.text ? { color: info.text } : {};
   }
 
   getFechaRealStyle(act: ActividadDto): Record<string, string> {
@@ -937,10 +938,13 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   usarPlantilla(): void {
     if (!this.selectedProyectoId || !this.tipoCronogramaActivo) return;
+    const esAnteproyecto = this.tipoCronogramaActivo === 'ANTEPROYECTO';
     Swal.fire({
       icon: 'question',
-      title: '¿Cargar la plantilla estándar de Proyecto?',
-      text: 'Se crearán 61 actividades.',
+      title: esAnteproyecto
+        ? '¿Cargar la plantilla estándar de Anteproyecto?'
+        : '¿Cargar la plantilla estándar de Proyecto?',
+      text: esAnteproyecto ? 'Se crearán 72 actividades.' : 'Se crearán 61 actividades.',
       showCancelButton: true,
       confirmButtonText: 'Sí, cargar',
       cancelButtonText: 'Cancelar',
@@ -1695,7 +1699,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     gantt.config.bar_height = 16;
     gantt.config.scale_height = 44;
     (gantt.config as any).fit_tasks = true;
-    gantt.config.grid_width = 1135;
+    gantt.config.grid_width = 680;
     (gantt.config as any).scroll_size = 8;
 
     gantt.config.scales = [
@@ -1704,25 +1708,11 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     ];
 
     gantt.config.columns = [
-      { name: 'orden', label: '#', align: 'center', width: 35,
-        template: (task: any) => task['orden'] },
       { name: 'text', label: 'Actividad', tree: true, width: 500, min_width: 500 },
-      { name: 'start_date', label: 'Inicio Prog.', align: 'center', width: 90,
+      { name: 'start_date', label: 'Inicio Programado', align: 'center', width: 90,
         template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.start_date) },
-      { name: 'end_date', label: 'Fin Prog.', align: 'center', width: 90,
+      { name: 'end_date', label: 'Fin Programado', align: 'center', width: 90,
         template: (task: any) => gantt.date.date_to_str('%d/%m/%y')(task.end_date) },
-      { name: 'duracion', label: 'Duración', align: 'center', width: 65,
-        template: (task: any) => task['duracion'] },
-      { name: 'desfaseIni', label: 'Desfase Ini.', align: 'center', width: 75,
-        template: (task: any) => task['desfaseIni'] },
-      { name: 'desfaseFin', label: 'Desfase Fin.', align: 'center', width: 75,
-        template: (task: any) => task['desfaseFin'] },
-      { name: 'semaforo', label: 'Semáforo', align: 'center', width: 55,
-        template: (task: any) => task['semaforo'] },
-      { name: 'finReal', label: 'Fin Real', align: 'center', width: 60,
-        template: (task: any) => task['finReal'] },
-      { name: 'avance', label: 'Avance', align: 'center', width: 90,
-        template: (task: any) => `${task['avance']}%` },
     ];
 
     gantt.templates.task_class = (_s: any, _e: any, task: any) =>
@@ -1745,7 +1735,8 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     const hoy = new Date();
     const tasks = this.actividades.map((act) => {
       const info = this.rowStyleMap.get(act.projectActivityId);
-      const barColor = info?.color ?? info?.bg ?? '#415a77';
+      const barColor = info?.color ?? '#415a77';
+      const barTextColor = info?.color ? this.getBranchTextColor(info.color) : '#ffffff';
 
       let start: Date;
       let end: Date;
@@ -1767,6 +1758,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
         parent: act.parentId ?? 0,
         open: true,
         color: barColor,
+        textColor: barTextColor,
         hierarchyLevel: act.hierarchyLevel,
         avance: this.getAvance(act),
         orden: act.order,

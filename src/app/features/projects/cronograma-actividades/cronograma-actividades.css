@@ -11,6 +11,18 @@
   --amarillo-light: #fef3c7;
   --gris: #9ca3af;
   --gris-light: #f3f4f6;
+
+  /* Paleta corporativa — color base por rama (nivel 1), 10 tonos */
+  --corporate-indigo: #5E6AD2;
+  --corporate-salvia: #2E7D6A;
+  --corporate-steel: #4F709C;
+  --corporate-bronze: #B08B5C;
+  --corporate-clay: #A35D6A;
+  --corporate-slate: #64748B;
+  --corporate-amethyst: #6D5C7E;
+  --corporate-forest: #115E59;
+  --corporate-ochre: #A06A3A;
+  --corporate-graphite: #475569;
 }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
@@ -294,30 +306,75 @@
 
 .data-table tbody tr:last-child td { border-bottom: none; }
 
-/* ── Separador visual sobre cada grupo nivel 1 ────────────────────────────── */
-.data-table tbody tr.lvl-1 td {
-  border-top: 3px solid #f0f4f8;
+/* ── Nivel 1 (raíz de rama) — color sólido, tarjeta elevada ────────────────
+   El color base llega por fila vía --base-color (ver getRowStyle en el .ts).
+   El texto (blanco u oscuro, según contraste WCAG AA) también llega inline.
+   El padding-top extra separa visualmente cada rama de la anterior. */
+.data-table tbody tr.lvl-0 td {
   padding-top: 1rem;
+  background-color: var(--base-color);
+  font-weight: 700;
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--base-color) 25%, transparent);
+  transition: box-shadow 0.15s ease, transform 0.15s ease, background 0.13s ease;
+}
+.data-table tbody tr.lvl-0 td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.data-table tbody tr.lvl-0 td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.data-table tbody tr.lvl-0.row-clickable:hover td {
+  /* Sin esto, la regla genérica .row-clickable:hover td (más específica que
+     la base .lvl-0 td) gana el "background" y sustituye el color sólido por
+     un negro casi transparente que deja ver el blanco de la tarjeta detrás,
+     apagando el contraste del texto blanco fijo de nivel 1. */
+  background-color: var(--base-color);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -1px color-mix(in srgb, var(--base-color) 35%, transparent);
 }
 
-/* ── Borde lateral izquierdo — nivel 0 múltiple (acento de color) ─────────── */
-.data-table tbody tr.row-nivel0-multi td:first-child {
-  border-left: 4px solid var(--lvl-border, transparent) !important;
+/* ── Niveles 2, 3+ (hijos) — variantes derivadas del color base con color-mix() ── */
+.data-table tbody tr.lvl-1 td,
+.data-table tbody tr.lvl-2 td,
+.data-table tbody tr.lvl-deep td {
+  --child-bg: color-mix(in srgb, var(--base-color) 10%, transparent);
+  --child-border: color-mix(in srgb, var(--base-color) 25%, transparent);
+  --child-text: color-mix(in srgb, var(--base-color) 85%, white);
+  --child-border-left: var(--base-color);
+  background-color: var(--child-bg);
+  border-top: 1px solid var(--child-border);
+  border-bottom: 1px solid var(--child-border);
+  color: var(--child-text);
+  font-weight: 500;
+  transition: background 0.13s ease, border-color 0.13s ease;
 }
-
-/* ── Borde lateral izquierdo — nivel 1 (color pleno) ─────────────────────── */
-.data-table tbody tr.lvl-1 td:first-child {
-  border-left: 3px solid var(--lvl-border, transparent);
-}
-
-/* ── Borde lateral izquierdo — nivel 2 (color a 45% opacidad, ya en rgba) ── */
-.data-table tbody tr.lvl-2 td:first-child {
-  border-left: 3px solid var(--lvl-border, transparent);
-}
-
-/* ── Nivel 3+ sin borde lateral visible ──────────────────────────────────── */
+.data-table tbody tr.lvl-1 td:first-child,
+.data-table tbody tr.lvl-2 td:first-child,
 .data-table tbody tr.lvl-deep td:first-child {
-  border-left: 2px solid #e9eef4;
+  border-left: 1px solid var(--child-border);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.data-table tbody tr.lvl-1 td:last-child,
+.data-table tbody tr.lvl-2 td:last-child,
+.data-table tbody tr.lvl-deep td:last-child {
+  border-right: 1px solid var(--child-border);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.data-table tbody tr.lvl-1.row-clickable:hover td,
+.data-table tbody tr.lvl-2.row-clickable:hover td,
+.data-table tbody tr.lvl-deep.row-clickable:hover td {
+  background-color: color-mix(in srgb, var(--base-color) 16%, transparent);
+  border-color: color-mix(in srgb, var(--base-color) 40%, transparent);
+}
+
+/* ── Acento lateral — solo nivel 3+ (nietos y más profundo) ───────────────── */
+.data-table tbody tr.lvl-2 td:first-child,
+.data-table tbody tr.lvl-deep td:first-child {
+  border-left: 4px solid var(--child-border-left) !important;
 }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
@@ -345,46 +402,31 @@
 .drop-inside td:first-child { box-shadow: 0 1px 0 0 #2E6DB4, 0 -1px 0 0 #2E6DB4, -1px 0 0 0 #2E6DB4; }
 .drop-inside td:last-child  { box-shadow: 0 1px 0 0 #2E6DB4, 0 -1px 0 0 #2E6DB4,  1px 0 0 0 #2E6DB4; }
 
-/* ── Filas coloreadas — regla compartida ──────────────────────────────────── */
-.data-table tbody tr.row-dark td,
-.data-table tbody tr.row-light td { color: inherit; }
+/* ── Filas coloreadas — regla compartida ──────────────────────────────────────
+   Nivel 1 (row-dark/row-light, ambos = raíz): el texto llega inline en el <tr>
+   (ver getRowStyle), así que basta con heredarlo. Niveles 2/3+ (siempre
+   row-light) ya traen su propio color vía --child-text en cada <td>; estas
+   reglas de columnas específicas deben apuntar a esa misma variable en vez de
+   "inherit" para no perder el tinte de rama (tienen más especificidad que la
+   regla `tr.lvl-1 td` y ganarían el color plano si no se re-declaran así). */
+.data-table tbody tr.row-dark td { color: inherit; }
 
-.data-table tbody tr.row-dark .td-order,
-.data-table tbody tr.row-light .td-order { color: inherit; opacity: 0.6; }
+.data-table tbody tr.row-dark .td-order   { color: inherit; opacity: 0.6; }
+.data-table tbody tr.row-light .td-order  { color: var(--child-text, inherit); opacity: 0.6; }
 
-.data-table tbody tr.row-dark .td-fecha,
-.data-table tbody tr.row-light .td-fecha { color: inherit; opacity: 0.78; }
+.data-table tbody tr.row-dark .td-fecha   { color: inherit; opacity: 0.78; }
+.data-table tbody tr.row-light .td-fecha  { color: var(--child-text, inherit); opacity: 0.78; }
 
-.data-table tbody tr.row-dark .avance-pct,
-.data-table tbody tr.row-light .avance-pct { color: inherit; }
+/* avance-pct ya no hereda el color de fila: vive dentro de .avance-wrap, que
+   ahora es un chip de fondo neutro (ver más abajo), así que usa el color base
+   de .avance-pct (#374151) sobre cualquier rama. */
 
-/* ── Fila oscura (nivel 0) ────────────────────────────────────────────────── */
-.data-table tbody tr.row-dark .avance-bar-bg {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.data-table tbody tr.row-dark.row-clickable:hover td {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* ── Filas claras (niveles 1, 2, 3+) ─────────────────────────────────────── */
-.data-table tbody tr.row-light .avance-bar-bg {
-  background: rgba(0, 0, 0, 0.07);
-}
-
-.data-table tbody tr.row-light.row-clickable:hover td {
-  background: rgba(0, 0, 0, 0.038);
-}
-
-/* ── Hover genérico (fallback para filas sin clase) ───────────────────────── */
+/* ── Hover genérico (fallback para filas sin clase de nivel) ──────────────── */
 .data-table tbody tr.row-clickable { cursor: pointer; }
 .data-table tbody tr.row-clickable:hover td { background: rgba(0, 0, 0, 0.038); }
 
-/* ── Font weights por nivel ───────────────────────────────────────────────── */
-.data-table tbody tr.lvl-0 .td-actividad    { font-weight: 700; letter-spacing: 0.01em; }
-.data-table tbody tr.lvl-1 .td-actividad    { font-weight: 600; }
-.data-table tbody tr.lvl-2 .td-actividad    { font-weight: 500; }
-.data-table tbody tr.lvl-deep .td-actividad { font-weight: 400; }
+/* ── Peso de fuente y espaciado del nombre de actividad por nivel ─────────── */
+.data-table tbody tr.lvl-0 .td-actividad { letter-spacing: 0.01em; }
 
 /* ── Columna # con botones de nivel ──────────────────────────────────────── */
 .order-cell {
@@ -498,7 +540,14 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
 }
+/* Fondo propio tipo chip — para que la barra/pct no dependan del contraste
+   con el color de fila/rama (blanco translúcido sobre raíz, gris muy claro
+   sobre hijos). */
+.data-table tbody tr.row-dark .avance-wrap  { background: rgba(255, 255, 255, 0.85); }
+.data-table tbody tr.row-light .avance-wrap { background: rgba(0, 0, 0, 0.04); }
 
 .avance-bar-bg {
   flex: 1;
@@ -1401,6 +1450,16 @@
   text-align: right;
 }
 
+/* Chip de fondo propio — para que "0d"/"-3d" no dependan del contraste con
+   el color de fila/rama. Los colores semánticos van encima, sin cambios. */
+.desfase-chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+.data-table tbody tr.row-dark .desfase-chip  { background: rgba(255, 255, 255, 0.85); }
+.data-table tbody tr.row-light .desfase-chip { background: rgba(0, 0, 0, 0.04); }
+
 /* Colores de desfase: colocados después de row-dark/row-light para ganar cascada */
 .td-desfase .desfase-ok   { color: #22c55e; font-weight: 600; }
 .td-desfase .desfase-warn { color: #f59e0b; font-weight: 600; }
@@ -1408,6 +1467,19 @@
 
 /* ── Columna semáforo ─────────────────────────────────────────────────────── */
 .td-sema { text-align: center; white-space: nowrap; }
+
+/* Halo/chip detrás del punto — evita que se pierda cuando el color de fila
+   se acerca al del semáforo (p.ej. semáforo verde sobre rama salvia). */
+.sema-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+.data-table tbody tr.row-dark .sema-chip  { background: rgba(255, 255, 255, 0.85); }
+.data-table tbody tr.row-light .sema-chip { background: rgba(0, 0, 0, 0.04); }
 
 .semaforo-dot {
   display: inline-block;

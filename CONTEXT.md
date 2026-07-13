@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-07 — Bug fix commitInlineEdit (change+input en date picker), columna DURACIÓN en tabla, export PDF client-side (jsPDF), campo Duración complementario en modal Nueva Actividad, patch local padresActualizados en crear/editar.
+> **Última actualización**: 2026-07-13 — Paleta corporativa de 10 colores por rama en la tabla de cronograma (`color-mix()` en CSS en vez de precálculo en TS), tratamiento tipo chip para desfase/semáforo/avance, fix de hover en filas nivel 1.
 
 ---
 
@@ -4327,3 +4327,49 @@ Verificado: OPT e Inspección ya estaban bien (solo tenían CSS muerto de una ve
 2. Ancho inconsistente entre `.wizard-body` (centrado, max-width) y `.wizard-footer`/`.stepper` (ancho completo de pantalla) en los wizards — se ve como que el footer está "separado" del formulario. No corregido aún.
 3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte.
 4. No se verificó visualmente con navegador en esta sesión (instrucción explícita del usuario). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios).
+
+## Sesión 2026-07-12
+
+### Fix: colores del Gantt agrupados por rama (paleta por rama)
+
+**Síntoma**: en "Ver Gantt", los colores cicleaban fila por fila (azul, verde, naranja, navy...) en vez de agruparse por rama. Bajo cada padre raíz (ej. "Definición de plano Base ARQ") los ~7 hijos directos salían cada uno de un color distinto, cuando debían mantenerse todos en la misma familia de color heredada de su raíz.
+
+**Causa raíz**: el esquema de color en `buildColorMap` estaba desfasado un nivel. En la data de la plantilla las ramas raíz son nodos `hierarchyLevel === 0` / `parentId == null` (hay ~15-20). El código viejo daba a las raíces el tratamiento `NIVEL0_ENTRIES` (fondo blanco + borde) y cicleaba los 4 colores base (`#4080B0`, `#8CC63F`, `#E2672C`, `#102B4E`) sobre las filas `level <= 1`, es decir sobre los **hijos directos** → de ahí el cicleo. Además `findAncestorColorAtLevel` comparaba `parent.hierarchyLevel === targetLevel` con `===` sin coerción (frágil si el nivel venía como string).
+
+**Fix — `cronograma-actividades.ts`**:
+- `buildColorMap` reescrito en 2 pasos: (1) asigna un color base de los 4 **solo a los nodos raíz**, cicleando únicamente entre raíces en orden de aparición; (2) cada descendiente hereda el color base de su raíz vía `findRootColor` (camina por `parentId` hasta el nodo sin padre) y lo aclara según profundidad con `lightenHex`/`darkenHex` (nuevos helpers de mezcla con blanco/negro). Nivel raíz = color sólido + texto blanco (o `#173404` en la rama verde vía `getBranchTextColor`); nivel 1 = base aclarado 80%; nivel 2 = 90%; nivel 3+ = 94%, todos con `border-left` del color base.
+- `findAncestorColorAtLevel` eliminado y reemplazado por `findRootColor` (sin dependencia del valor numérico de nivel, con guard anti-ciclo).
+- Constante `NIVEL0_ENTRIES` eliminada (quedó muerta). `NIVEL0` navy se conserva solo como fallback en `getRowStyle`/`isDarkBg`.
+- Las barras del Gantt dhtmlx (`renderGanttActividades`) y el mini-gantt ya leían `rowStyleMap.color`, así que heredan el color por rama automáticamente.
+
+**Fix — `cronograma-actividades.css`**:
+- `.lvl-deep td:first-child` ahora usa `border-left: 3px solid var(--lvl-border)` (antes gris fijo) → nivel 3+ muestra el color base de la rama.
+- El separador de grupo (`border-top` + `padding-top`) se movió de `.lvl-1` a `.lvl-0`, para que cada familia de rama se lea como un bloque.
+
+**Fix — `src/styles.css`**: reglas `.gantt_task_line` / `.gantt_task_content` para que las barras dhtmlx tomen el color por rama (anula el fondo/texto blanco forzado por defecto).
+
+**Cambio menor — `cronograma-actividades.html`**: el botón "Usar plantilla" del estado vacío ahora también aparece para `tipoCronogramaActivo === 'ANTEPROYECTO'` (antes solo `PROYECTO`).
+
+**Nota**: un cronograma con una sola raíz ahora sale en azul base (antes navy). Si se quiere conservar el navy para raíz única, habría que reintroducirlo como excepción en el paso 1 de `buildColorMap`.
+
+## Sesión 2026-07-13
+
+### Paleta corporativa de 10 colores por rama + tratamiento chip + fix de hover (tabla de cronograma)
+
+Reemplazo de la paleta de 4 colores de rama (sesión 2026-07-12) por 10 tonos corporativos, y reemplazo del precálculo manual de tintes en TS por derivación en CSS con `color-mix()`. Mismo mecanismo de herencia por rama (solo los nodos raíz — `parentId == null` — ciclan la paleta; los descendientes heredan el hex exacto de su raíz vía `findRootColor`).
+
+**`cronograma-actividades.ts`**:
+- `LEVEL1_COLORS`: 10 hex corporativos (indigo, salvia, steel, bronze, clay, slate, amethyst, forest, ochre, graphite) — deben coincidir con las custom properties `--corporate-*` del `.css`.
+- `rowStyleMap` simplificado a `{ color: string; text?: string }`. `color` = hex base de la rama (igual para toda la rama, usado también por las barras del Gantt sin mezclar). `text` solo se puebla para nodos raíz (nivel 1) — blanco u oscuro (`#2C2C2A`) según contraste real calculado, no hardcodeado por índice.
+- `getBranchTextColor` ahora calcula contraste WCAG AA real (`relativeLuminance` + `contrastRatio`, fórmula estándar) contra blanco, con umbral 4.5:1, en vez de un array paralelo de colores de texto por índice. Nota: con esta paleta, **bronze** sí necesita texto oscuro (3.14:1 con blanco) pero **ochre** en realidad pasa el umbral con blanco (4.55:1) — usar oscuro en ochre lo empeoraría (3.08:1) — así que ochre quedó en blanco pese a la intuición inicial de que ambos lo necesitaban.
+- `lightenHex`/`darkenHex` eliminados — la derivación de fondo/borde/texto de niveles hijos ahora vive en CSS (`color-mix()`), no en TS.
+- `getRowStyle()` solo expone `--base-color` (+ `color` inline solo para nivel 1/raíz). Niveles hijos no llevan color inline; lo toman de `--child-text` en CSS.
+
+**`cronograma-actividades.css`**:
+- Custom properties `--corporate-*` (10) agregadas al bloque `:host`.
+- Nivel 1 (raíz): fondo sólido `var(--base-color)`, texto según `getRowStyle`, `font-weight:700`, `border-radius:12px` (solo en `td:first-child`/`td:last-child`, porque la tabla usa `border-collapse:collapse` y no se puede redondear un `<tr>` completo), `box-shadow` con `color-mix(... 25%, transparent)`. Hover: `translateY(-1px)` + shadow más pronunciada — **sin tocar el background**.
+- Niveles 2/3+: `--child-bg`/`--child-border`/`--child-text` derivados con `color-mix()` desde `--base-color` (10%/25%/85%). Solo nivel 3+ (`lvl-2`/`lvl-deep`) lleva el acento `border-left: 4px solid var(--base-color) !important` — antes lo llevaban todos los niveles hijos por igual.
+- **Bug de hover en nivel 1** (reportado en pantalla): el fondo se aclaraba casi a blanco al pasar el cursor, ilegible sobre texto blanco fijo. Causa raíz confirmada por especificidad CSS: la regla genérica `.row-clickable:hover td { background: rgba(0,0,0,0.038) }` (specificity `(0,3,3)`) le ganaba a la regla base `.lvl-0 td { background-color: var(--base-color) }` (`(0,2,3)`) durante el hover, porque la regla de hover específica de nivel 1 nunca re-declaraba `background-color`. Fix: `.lvl-0.row-clickable:hover td` ahora re-declara `background-color: var(--base-color)` explícitamente (specificity `(0,4,3)`, gana a todo lo demás).
+- Chips de fondo propio para DESFASE INI./FIN. (`.desfase-chip`), SEMÁFORO (`.sema-chip`, halo circular) y AVANCE (`.avance-wrap` con padding+radius), todos con `rgba(255,255,255,0.85)` sobre filas `row-dark` y `rgba(0,0,0,0.04)` sobre `row-light` — mismo criterio que ya usaba el badge de ESTADO (no tocado). Los overrides de color por fila en `.avance-pct`/`.avance-bar-bg` se quitaron porque ahora esos elementos viven dentro de un chip de fondo neutro, no directo sobre el color de fila.
+
+**Pendiente / no verificado en vivo**: el border-radius de 12px y el padding de las filas nivel 1/2 no se verificaron visualmente contra las ~81 actividades de la plantilla de Proyecto (sin acceso a browser/credenciales en este entorno) — si se ve muy espaciado en una tabla densa, bajar a 6-8px es un cambio de una sola línea (buscar `border-radius: 12px`, 4 ocurrencias).
