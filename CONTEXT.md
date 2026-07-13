@@ -4327,3 +4327,39 @@ Verificado: OPT e Inspección ya estaban bien (solo tenían CSS muerto de una ve
 2. Ancho inconsistente entre `.wizard-body` (centrado, max-width) y `.wizard-footer`/`.stepper` (ancho completo de pantalla) en los wizards — se ve como que el footer está "separado" del formulario. No corregido aún.
 3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte.
 4. No se verificó visualmente con navegador en esta sesión (instrucción explícita del usuario). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios).
+
+## Sesión 2026-07-13 (2) — Modal compartido SSOMA + dashboard de Arquitectura Comercial
+
+Continuación de la sesión anterior. Los 4 pendientes de arriba quedaron resueltos (el #1 se hizo distinto a lo recomendado: en vez de panel lateral, terminó siendo un modal centrado — ver abajo). El #3 (módulo PASO) sigue sin tocar.
+
+**1. Nuevo componente compartido `app-abril-modal-panel`** (`shared/components/abril-modal-panel/`): fondo gris + panel centrado redondeado + header de color con ícono + footer fijo. Dos variantes: `variant="teal"` (default, `--color-abril-standard`, para Gestión Administrativa/Salidas — sigue usando `app-base-modal` sin cambios) y `variant="blue"` (`--color-abril-logo-blue`, para SSOMA).
+
+**Decisión importante que cambia lo documentado en la sesión anterior**: ya NO existe la "excepción de wizard de página completa". Todo formulario SSOMA (incluyendo los que tienen stepper multi-paso) va dentro de `app-abril-modal-panel`, nunca como página completa con `app-abril-page-header`. El stepper (círculos 1-2-3-4) se mantiene, pero ahora vive DENTRO del modal como contenido proyectado, no como header de página.
+
+**2. Migrados a `app-abril-modal-panel` (variant blue)**: RAC, OPT, Inspección, Accidentes, Amonestaciones (Amonestaciones fue el piloto — antes tenía su propio `.panel-overlay`/`.panel-container` a mano, ahora usa el shell). Cada uno perdió su header/footer/overlay local (CSS muerto eliminado). Accidentes tiene una particularidad: el botón de guardar quedó en el footer del modal (fuera del `<form>`), así que usa `<form id="accForm">` + `<button form="accForm">` para poder seguir enviando el formulario.
+
+**3. Azul del logo Abril**: se abrió `public/images/abril-logo.png`, no se pudo muestrear el pixel exacto (herramientas de imagen no disponibles en el sandbox), se estimó visualmente y el usuario confirmó el hex real: `#005D9D` → token `--color-abril-logo-blue` (+ `-hover`/`-light`) en `styles.css`. Distinto del teal general (`--color-abril-standard`, `#0F6E56`).
+
+**4. Ajustes menores al mismo modal, iterando con el usuario**: quitó título "Trabajador" redundante en Amonestaciones, separó visualmente "Puntos por infracción" sin darle su propio título de sección (margin-top 20px), corrigió mayúsculas de Inspección (el estándar de case es sentence-case, no uppercase — ya no hay ambigüedad, confirmado contra `solicitud-salidas`), arregló un bug real: `.abril-field` (global, `styles.css`) le faltaba `margin-top: 9px` — por eso un combo (`app-search-select`, que sí tiene ese margen en su propio template) y un campo nativo en la misma fila quedaban desalineados verticalmente. Ya corregido a nivel global, no por página.
+
+**5. Dashboard de Arquitectura Comercial** (`features/arquitectura-comercial/dashboard/`): el usuario lo señaló como el dashboard "que le gusta" visualmente y pidió usarlo de referencia para estandarizar los dashboards de SSOMA — pero antes de propagarlo había que arreglar el dashboard de AC mismo, que no estaba nada estandarizado a nivel de código (40+ colores hex sueltos repetidos inline). Se hizo, con alcance acotado (no se tocó el archivo completo de 1400 líneas, solo KPI cards + alertas + filtros):
+   - Tokens de estado nuevos en `styles.css`: `--color-status-info/-primary/-success/-danger/-warning/-pending` (+ `-light`).
+   - KPI cards: de `style="border-top-color:#hex"` repetido 7 veces → clases `.kpi-card--info/success/primary/danger/pending/teal`.
+   - Alertas clickeables: de bloques con ~10 inline styles cada uno → `.alert-tile` + `.alert-tile--danger/warning/info`.
+   - Filtros: la barra azul con `<select>` nativos + botón "Buscar" → `app-filter-trigger`/`app-filter-modal` + `app-search-select` con auto-búsqueda (mismo patrón que el resto de la app). Se agregó `filtrosAbiertos`, getter `filtrosActivos`, `limpiarFiltros()` en `dashboard.ts`.
+   - De paso se encontró y corrigió un bug real preexistente: había una **segunda definición duplicada y muerta** de `.kpi-card`/`.kpi-sub` más abajo en el CSS que pisaba silenciosamente los estilos reales por orden de cascada (`.kpi-grid`/`.kpi-label`/`.kpi-value`/`.alert-card`/`.alert-clickable` viejos) — eliminada, confirmado que ninguna de esas clases se usa ya en el HTML actual.
+   - **No se tocó** el resto del archivo (rankings, gráficos Chart.js, donut, barras horizontales, modales de detalle) — fuera del alcance acordado con el usuario para esta ronda.
+
+### Archivos clave
+- `src/app/shared/components/abril-modal-panel/{abril-modal-panel.ts,html,css}` — componente nuevo.
+- `src/styles.css` — tokens `--color-abril-logo-blue*` y `--color-status-*`, fix de `margin-top: 9px` en `.abril-field`.
+- `src/app/features/ssoma/gestion/{rac,opt,inspeccion,accidentes-incidentes,amonestaciones}/pages/.../*.{ts,html,css}` — migración a `app-abril-modal-panel`.
+- `src/app/features/arquitectura-comercial/dashboard/{dashboard.ts,html,css}` — tokens + filtros estándar.
+- `CLAUDE.md` — sección "UI standard (2026)" reescrita: ya no hay excepción de página completa, todo es `app-abril-modal-panel` (SSOMA) o `app-base-modal` (resto).
+
+### Pendiente (para la próxima sesión)
+1. **Propagar el patrón de dashboard a SSOMA**: el usuario pidió específicamente seguir con OPT, Inspección u otro dashboard de SSOMA usando el mismo patrón (tokens de estado + `app-filter-modal` + `.kpi-card`) recién validado en Arquitectura Comercial. No se llegó a hacer — se acabaron los tokens de la sesión justo después de terminar AC. Preguntar por cuál dashboard seguir (OPT, Inspección, o Salud Ocupacional, quedó sin decidir).
+2. Auditoría pendiente y no iniciada de "todo lo demás" que el usuario mencionó (Salud Ocupacional, y en general cualquier página fuera de los wizards SSOMA ya migrados) contra los estándares de esta y la sesión anterior — el usuario quiere una pasada completa por la app, no solo los módulos ya tocados.
+3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte, mencionado en ambas sesiones, nunca resuelto.
+4. Dentro del dashboard de AC quedan sin tokenizar: rankings (barras con gradiente hardcodeado), donut/gráficos Chart.js (colores hardcodeados en `dashboard.ts`, no en el HTML), y los 3 modales de detalle (alertas/carga/hitos) — decidir si vale la pena extender el mismo tratamiento ahí o dejarlo así.
+5. No se verificó visualmente con navegador en ningún momento de esta sesión (instrucción explícita del usuario, la hizo él en su máquina). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios) en cada paso.
