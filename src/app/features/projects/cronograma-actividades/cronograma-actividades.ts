@@ -67,7 +67,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   collapsedIds  = new Set<number>();
   ganttModalAct: ActividadDto | null = null;
   private parentIds = new Set<number>();
-  private rowStyleMap = new Map<number, { bg: string; text: string; border?: string; color?: string }>();
+  private rowStyleMap = new Map<number, { color: string; text?: string }>();
   private avanceMap = new Map<number, number>();
 
   // Drag & Drop
@@ -83,8 +83,20 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   private readonly NIVEL0 = { bg: '#1B263B', text: '#E0E1DD' } as const;
   private readonly GANTT_WEEK_PX = 50;
   private readonly GANTT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-  private readonly LEVEL1_COLORS = ['#4080B0', '#8CC63F', '#E2672C', '#102B4E'];
-  private readonly LEVEL1_TEXT_COLORS = ['#ffffff', '#173404', '#ffffff', '#ffffff'];
+  // Paleta corporativa — debe coincidir con las 10 custom properties --corporate-* del .css
+  private readonly LEVEL1_COLORS = [
+    '#5E6AD2', // indigo
+    '#2E7D6A', // salvia
+    '#4F709C', // steel
+    '#B08B5C', // bronze
+    '#A35D6A', // clay
+    '#64748B', // slate
+    '#6D5C7E', // amethyst
+    '#115E59', // forest
+    '#A06A3A', // ochre
+    '#475569', // graphite
+  ];
+  private readonly DARK_TEXT = '#2C2C2A';
 
   // Formulario del modal
   formActividad = '';
@@ -241,54 +253,26 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     this.rowStyleMap.clear();
 
     // ── Paso 1: color base por rama ──────────────────────────────────────────
-    // Cada nodo raíz (sin padre) recibe uno de los 4 colores base, cicleando
+    // Cada nodo raíz (sin padre) recibe uno de los 10 colores base, cicleando
     // SOLO entre raíces en el orden en que aparecen. Sus descendientes heredan
     // ESE mismo color base; nunca uno nuevo del ciclo.
     let rootIdx = 0;
     for (const act of this.actividades) {
       if (act.parentId == null) {
         const color = this.LEVEL1_COLORS[rootIdx % this.LEVEL1_COLORS.length];
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: color,
-          text: this.getBranchTextColor(color),
-          border: color,
-          color,
-        });
+        this.rowStyleMap.set(act.projectActivityId, { color, text: this.getBranchTextColor(color) });
         rootIdx++;
       }
     }
 
-    // ── Paso 2: descendientes heredan el color base, aclarado por profundidad ─
+    // ── Paso 2: descendientes heredan el color base de su raíz ────────────────
+    // Los tonos de fondo/borde/texto de los niveles hijos ya no se precalculan
+    // aquí: se derivan en CSS con color-mix() a partir de --base-color
+    // (ver getRowStyle y las reglas .lvl-1/.lvl-2/.lvl-deep en el .css).
     for (const act of this.actividades) {
       if (act.parentId == null) continue;
       const base = this.findRootColor(act) ?? '#415a77';
-      // Coerce to number: guards against null/undefined from unexpected JSON responses
-      const level = act.hierarchyLevel != null ? Number(act.hierarchyLevel) : 1;
-
-      if (level <= 1) {
-        // Hijo directo de la rama: mismo color base, notablemente aclarado.
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: this.lightenHex(base, 0.8),
-          text: this.darkenHex(base, 0.55),
-          border: base,
-          color: base,
-        });
-      } else if (level === 2) {
-        // Fondo muy claro derivado + acento lateral con el color base.
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: this.lightenHex(base, 0.9),
-          text: this.darkenHex(base, 0.5),
-          border: base,
-          color: base,
-        });
-      } else {
-        this.rowStyleMap.set(act.projectActivityId, {
-          bg: this.lightenHex(base, 0.94),
-          text: this.darkenHex(base, 0.45),
-          border: base,
-          color: base,
-        });
-      }
+      this.rowStyleMap.set(act.projectActivityId, { color: base });
     }
   }
 
@@ -302,10 +286,23 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     return cur ? (this.rowStyleMap.get(cur.projectActivityId)?.color ?? null) : null;
   }
 
-  /** Texto legible (blanco o verde oscuro) para el color base de una rama nivel-1. */
-  private getBranchTextColor(color: string): string {
-    const idx = this.LEVEL1_COLORS.indexOf(color);
-    return idx >= 0 ? this.LEVEL1_TEXT_COLORS[idx] : '#ffffff';
+  /** Texto legible (blanco o gris oscuro) para el fondo sólido de una rama nivel 1, según contraste WCAG AA (≥4.5:1). */
+  private getBranchTextColor(hex: string): string {
+    return this.contrastRatio(hex, '#ffffff') >= 4.5 ? '#ffffff' : this.DARK_TEXT;
+  }
+
+  private relativeLuminance(hex: string): number {
+    const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const r = toLinear(parseInt(hex.slice(1, 3), 16) / 255);
+    const g = toLinear(parseInt(hex.slice(3, 5), 16) / 255);
+    const b = toLinear(parseInt(hex.slice(5, 7), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  private contrastRatio(hexA: string, hexB: string): number {
+    const lA = this.relativeLuminance(hexA) + 0.05;
+    const lB = this.relativeLuminance(hexB) + 0.05;
+    return lA > lB ? lA / lB : lB / lA;
   }
 
   private hexToRgba(hex: string, alpha: number): string {
@@ -315,38 +312,23 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  /** Mezcla el color con blanco. factor 0 = original, 1 = blanco puro. */
-  private lightenHex(hex: string, factor: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const mix = (c: number) => Math.round(c + (255 - c) * factor);
-    return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
-  }
-
-  /** Mezcla el color con negro. factor 0 = original, 1 = negro puro. */
-  private darkenHex(hex: string, factor: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const mix = (c: number) => Math.round(c * (1 - factor));
-    return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
-  }
-
   getRowStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    // Fallback: level-0 activity not yet in map (e.g. called before buildColorMap runs)
-    const resolved: { bg: string; text: string; border?: string } | null =
-      info ?? ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null ? this.NIVEL0 : null);
-    if (!resolved) return {};
-    const style: Record<string, string> = { 'background-color': resolved.bg, color: resolved.text };
-    if (resolved.border) style['--lvl-border'] = resolved.border;
+    if (!info) {
+      // Fallback: nivel 0 aún no está en el mapa (p.ej. llamado antes de que corra buildColorMap)
+      if ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null) {
+        return { '--base-color': this.NIVEL0.bg, color: this.NIVEL0.text };
+      }
+      return {};
+    }
+    const style: Record<string, string> = { '--base-color': info.color };
+    if (info.text) style['color'] = info.text; // solo nivel 1 (raíz) trae texto explícito
     return style;
   }
 
   isDarkBg(act: ActividadDto): boolean {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    if (info) return info.text === '#E0E1DD' || info.text === '#ffffff';
+    if (info) return info.text === '#ffffff';
     return (act.hierarchyLevel ?? 0) <= 0 && act.parentId == null;
   }
 
@@ -366,7 +348,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   getChevronStyle(act: ActividadDto): Record<string, string> {
     const info = this.rowStyleMap.get(act.projectActivityId);
-    return info ? { color: info.text } : {};
+    return info?.text ? { color: info.text } : {};
   }
 
   getFechaRealStyle(act: ActividadDto): Record<string, string> {
@@ -1752,7 +1734,7 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     const hoy = new Date();
     const tasks = this.actividades.map((act) => {
       const info = this.rowStyleMap.get(act.projectActivityId);
-      const barColor = info?.color ?? info?.bg ?? '#415a77';
+      const barColor = info?.color ?? '#415a77';
       const barTextColor = info?.color ? this.getBranchTextColor(info.color) : '#ffffff';
 
       let start: Date;
