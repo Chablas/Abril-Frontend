@@ -62,6 +62,24 @@
   --color-status-pending:       #D4A017; /* dorado — pendiente / sin iniciar */
   --color-status-pending-light: #FEF9E7;
 
+  /* ── Neutros para dashboards (escala slate) ─────────
+     Misma idea que los --color-status-*: extraídos del dashboard de
+     Arquitectura Comercial (escala "slate" de Tailwind), que es una escala
+     de grises distinta a los --color-abril-* de abajo (esos son para el
+     resto de la app). Única fuente para dashboards nuevos — no hardcodear
+     estos hex de nuevo. */
+  --color-dash-text:          #1E293B; /* texto fuerte: headings, valores grandes */
+  --color-dash-text-muted:    #475569; /* texto secundario */
+  --color-dash-text-subtle:   #64748B; /* texto terciario */
+  --color-dash-text-faint:    #94A3B8; /* texto muy tenue / placeholders */
+  --color-dash-border:        #E2E8F0; /* borde estándar (cards, pills, inputs) */
+  --color-dash-border-soft:   #F1F5F9; /* borde muy sutil (separadores internos) */
+  --color-dash-border-mid:    #C8CEDC; /* borde intermedio (hover de botones) */
+  --color-dash-border-strong: #CBD5E1; /* borde/scroll más marcado */
+  --color-dash-bg-alt:        #F8FAFC; /* fondo alterno de fila/card */
+  --color-dash-page-bg:       #F4F6F9; /* fondo de página del dashboard */
+  --color-dash-accent-deep:   #1E3A5F; /* variante oscura del navy (--color-status-info) para títulos */
+
   /* ── Neutros ─────────────────────────────────────── */
   --color-abril-ink:            #0D1B2A;
   --color-abril-body:           #374151;

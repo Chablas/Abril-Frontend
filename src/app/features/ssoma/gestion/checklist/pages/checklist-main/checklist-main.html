@@ -202,6 +202,14 @@
     @if (loadingPlantillas) {
       <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando plantillas...</div>
     } @else if (!plantillaDetalleVisible) {
+      <div class="cl-plantillas-filter" style="margin-bottom:12px;">
+        <app-search-input
+          placeholder="Buscar plantilla por nombre..."
+          [(value)]="plantillasSearchText"
+          (valueChange)="onPlantillasFilterChange()"
+          width="280px">
+        </app-search-input>
+      </div>
       <div class="cl-plantillas-tabla w-full flex-1 min-h-0 overflow-auto">
         <table class="abril-table cl-table">
           <thead class="sticky top-0 z-10">
@@ -216,7 +224,10 @@
             </tr>
           </thead>
           <tbody>
-            @for (p of plantillas; track p.id) {
+            @if (plantillasFiltradas.length === 0) {
+              <tr><td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Sin resultados.</td></tr>
+            }
+            @for (p of plantillasPaged; track p.id) {
               <tr class="cl-row-clickable" (click)="verPlantilla(p)" title="Ver modelo">
                 <td class="cl-td-num">{{ p.orden }}</td>
                 <td class="cl-td-nombre">{{ p.nombre }}</td>
@@ -245,6 +256,14 @@
             }
           </tbody>
         </table>
+      </div>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
+        <app-paginator
+          [totalRecords]="plantillasFiltradas.length"
+          [currentPage]="plantillasCurrentPage"
+          [totalPages]="plantillasTotalPages"
+          (pageChange)="changePlantillasPage($event)">
+        </app-paginator>
       </div>
     } @else {
 

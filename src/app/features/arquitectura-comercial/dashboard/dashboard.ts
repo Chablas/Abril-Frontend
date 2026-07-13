@@ -29,6 +29,7 @@ import {
   EficienciaSpiDTO,
   CategoriaItemDTO,
   CategoriaDashboardItemDTO,
+  SemanaDashboardDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
   ActividadListItemDTO,
@@ -103,6 +104,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   eficienciaSpi           : EficienciaSpiDTO[]          = [];
   categorias              : CategoriaItemDTO[]          = [];
   distribucionPorCategoria: CategoriaDashboardItemDTO[] = [];
+  semanaActual            : SemanaDashboardDTO | null   = null;
+  rangoUltimasSemanas     = '';
 
   // ─── catálogos para filtros ────────────────────────────────────
   proyectos  : { id: number; nombre: string }[]     = [];
@@ -232,12 +235,12 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     const f = this.getFiltroActual();
     forkJoin({
       dashboard: this.service.getDashboardV2(f),
-      proyectos : this.service.getProyectos().pipe(catchError(() => of([]))),
+      proyectos : this.service.getProyectosConActividades().pipe(catchError(() => of([]))),
       workers   : this.service.getSupervisoresAc().pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ dashboard, proyectos, workers }) => {
-        this.proyectos   = proyectos.map((p: any) => ({ id: p.projectId ?? p.id, nombre: p.projectDescription ?? p.nombre }));
-        this.arquitectos = workers.map((w: any) => ({ id: w.userId ?? w.id, nombre: w.nombre ?? w.fullName }));
+        this.proyectos   = proyectos.map(p => ({ id: p.id, nombre: p.nombre }));
+        this.arquitectos = workers.map(w => ({ id: w.id, nombre: w.apellidoNombre }));
         if (dashboard.categorias?.length) this.categorias = dashboard.categorias;
         this.aplicarDashboard(dashboard);
         this.loader = false;
@@ -276,6 +279,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.eficienciaSpi           = d.eficienciaSpi            ?? [];
     this.distribucionPorCategoria= d.distribucionPorCategoria ?? [];
     this.distribucionTipos       = d.distribucionTipos        ?? [];
+    this.semanaActual            = d.semanaActual             ?? null;
+    this.rangoUltimasSemanas     = d.rangoUltimasSemanas       ?? '';
     this.cdr.detectChanges();
     this.destruirCharts();
     setTimeout(() => { this.renderCharts(); this.cdr.detectChanges(); }, 50);
@@ -305,11 +310,14 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           {
             label: 'Programado',
             data: data.map(s => s.programado),
-            borderColor: '#D6E4F0',
-            backgroundColor: 'rgba(214,228,240,0.25)',
-            borderWidth: 2,
-            borderDash: [5, 4],
-            pointRadius: 0,
+            borderColor: '#5B8DC9',
+            backgroundColor: 'rgba(91,141,201,0.12)',
+            borderWidth: 3,
+            borderDash: [6, 4],
+            pointRadius: 3,
+            pointBackgroundColor: '#5B8DC9',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
             tension: 0.3,
             fill: true,
           },
@@ -317,8 +325,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
             label: 'Real',
             data: data.map(s => s.real),
             borderColor: '#1B3A6B',
-            backgroundColor: 'rgba(27,58,107,0.08)',
-            borderWidth: 2.5,
+            backgroundColor: 'rgba(27,58,107,0.10)',
+            borderWidth: 3.5,
             pointRadius: 4,
             pointBackgroundColor: '#1B3A6B',
             pointBorderColor: '#fff',
@@ -348,29 +356,43 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     if (!this.eficienciaRef?.nativeElement) return;
     const data = this.eficienciaSpi.slice(-6);
     const vals = data.map(s => Number((s.spi * 100).toFixed(1)));
+    const esperado = data.map(s => Number((s.esperado * 100).toFixed(1)));
     this.eficienciaChart = new Chart(this.eficienciaRef.nativeElement, {
       type: 'line',
       data: {
         labels: data.map(s => s.semana),
-        datasets: [{
-          label: 'SPI %',
-          data: vals,
-          borderColor: '#27AE60',
-          backgroundColor: 'rgba(39,174,96,0.08)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointBackgroundColor: vals.map(v => v >= 95 ? '#1B6B3A' : v >= 80 ? '#D4A017' : '#C0392B'),
-          pointBorderColor: '#fff',
-          pointBorderWidth: 1.5,
-          fill: true,
-          tension: 0.4,
-        }],
+        datasets: [
+          {
+            label: 'Esperado',
+            data: esperado,
+            borderColor: '#94A3B8',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+          },
+          {
+            label: 'Logrado',
+            data: vals,
+            borderColor: '#27AE60',
+            backgroundColor: 'rgba(39,174,96,0.08)',
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: vals.map(v => v >= 95 ? '#1B6B3A' : v >= 80 ? '#D4A017' : '#C0392B'),
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            fill: true,
+            tension: 0.4,
+          },
+        ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          datalabels: { anchor: 'end' as const, align: 'end' as const, offset: 2, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
-          legend: { display: false },
+          datalabels: { display: (ctx) => ctx.datasetIndex === 1, anchor: 'end' as const, align: 'end' as const, offset: 2, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
+          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
           tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
         },
         scales: {
@@ -700,6 +722,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   get hitosProximosCnt()  { return this.hitosCriticos.filter(h => h.diasRestantes > 7).length; }
 
   getSubtitulo(): string {
+    if (this.semanaActual) return this.semanaActual.label;
     const n = new Date();
     const mes = n.toLocaleString('es-PE', { month: 'long' });
     const anio = n.getFullYear();

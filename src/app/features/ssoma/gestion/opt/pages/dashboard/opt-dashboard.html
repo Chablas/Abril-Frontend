@@ -10,7 +10,39 @@
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
+
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Proyecto"
+        placeholder="Buscar proyecto..."
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="filtroProyectoId"
+        [allowClear]="true"
+        (valueChange)="filtroProyectoId = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Año"
+        placeholder="Todos los años"
+        [options]="aniosOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filtroAnio"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="filtroAnio = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
 
   <div class="dash-body">
 
@@ -45,14 +77,14 @@
         <div class="kpi-card" [ngClass]="scoreClass(data.scorePromedioGlobal)">
           <div class="kpi-icon kpi-icon--green"><i class="ti ti-chart-line"></i></div>
           <div class="kpi-body">
-            <span class="kpi-val">{{ data.scorePromedioGlobal !== undefined ? (data.scorePromedioGlobal | number:'1.1-1') + '%' : '—' }}</span>
+            <span class="kpi-val">{{ data.scorePromedioGlobal != null ? (data.scorePromedioGlobal | number:'1.1-1') + '%' : '—' }}</span>
             <span class="kpi-lbl">Score global</span>
           </div>
         </div>
         <div class="kpi-card" [ngClass]="scoreClass(data.scorePromedioEsteMes)">
           <div class="kpi-icon kpi-icon--amber"><i class="ti ti-chart-bar"></i></div>
           <div class="kpi-body">
-            <span class="kpi-val">{{ data.scorePromedioEsteMes !== undefined ? (data.scorePromedioEsteMes | number:'1.1-1') + '%' : '—' }}</span>
+            <span class="kpi-val">{{ data.scorePromedioEsteMes != null ? (data.scorePromedioEsteMes | number:'1.1-1') + '%' : '—' }}</span>
             <span class="kpi-lbl">Score este mes</span>
           </div>
         </div>
@@ -74,7 +106,7 @@
           <div class="tendencia-chart">
             @for (t of data.tendenciaMensual; track t.mes) {
               <div class="tend-col">
-                <span class="tend-val">{{ t.scorePromedio !== undefined ? (t.scorePromedio | number:'1.0-0') : '—' }}</span>
+                <span class="tend-val">{{ t.scorePromedio != null ? (t.scorePromedio | number:'1.0-0') : '—' }}</span>
                 <div class="tend-bar-wrap">
                   <div class="tend-bar"
                     [ngClass]="scoreClass(t.scorePromedio)"
@@ -109,7 +141,7 @@
                     </div>
                   </div>
                   <span class="rank-pct" [ngClass]="scoreClass(e.scorePromedio)">
-                    {{ e.scorePromedio !== undefined ? (e.scorePromedio | number:'1.0-0') + '%' : '—' }}
+                    {{ e.scorePromedio != null ? (e.scorePromedio | number:'1.0-0') + '%' : '—' }}
                   </span>
                 </div>
               }
@@ -141,7 +173,7 @@
                     <td class="td-muted">{{ t.empresa ?? '—' }}</td>
                     <td class="ta-c">
                       <span class="score-chip" [ngClass]="scoreClass(t.scorePromedio)">
-                        {{ t.scorePromedio !== undefined ? (t.scorePromedio | number:'1.0-0') + '%' : '—' }}
+                        {{ t.scorePromedio != null ? (t.scorePromedio | number:'1.0-0') + '%' : '—' }}
                       </span>
                     </td>
                     <td class="ta-c fw-600">{{ t.totalInseguros }}</td>

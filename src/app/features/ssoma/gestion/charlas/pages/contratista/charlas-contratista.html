@@ -90,6 +90,16 @@
   <section class="card">
     <h3>Historial</h3>
     <div *ngIf="loadingHistorial" class="loading">Cargando...</div>
+
+    <div *ngIf="!loadingHistorial && historial.length > 0" class="historial-filter">
+      <app-search-input
+        placeholder="Buscar por proyecto o tema..."
+        [(value)]="historialSearchText"
+        (valueChange)="onHistorialFilterChange()"
+        width="280px">
+      </app-search-input>
+    </div>
+
     <table class="abril-table historial-table" *ngIf="!loadingHistorial && historial.length > 0">
       <thead>
         <tr>
@@ -100,7 +110,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let h of historial">
+        <tr *ngFor="let h of historialPaged">
           <td>{{ h.fecha }}</td>
           <td>{{ h.proyectoNombre }}</td>
           <td>{{ h.tema }}</td>
@@ -109,8 +119,21 @@
             <span *ngIf="!h.evidenciaUrl">—</span>
           </td>
         </tr>
+        <tr *ngIf="historialFiltrado.length === 0">
+          <td colspan="4" class="empty">Sin resultados.</td>
+        </tr>
       </tbody>
     </table>
+
+    <div *ngIf="!loadingHistorial && historial.length > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="historialFiltrado.length"
+        [currentPage]="historialCurrentPage"
+        [totalPages]="historialTotalPages"
+        (pageChange)="changeHistorialPage($event)">
+      </app-paginator>
+    </div>
+
     <div *ngIf="!loadingHistorial && historial.length === 0" class="empty">
       Aún no has registrado charlas.
     </div>

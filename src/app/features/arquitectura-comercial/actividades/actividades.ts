@@ -2,6 +2,9 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
@@ -29,7 +32,7 @@ interface EtapaGroup {
 @Component({
   selector: 'app-arq-comercial-actividades',
   standalone: true,
-  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable, RouterModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, NuevaConsulta, EditarActividad, NuevoHito, NuevoEntregable, RouterModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css',
 })
@@ -59,11 +62,39 @@ export class Actividades implements OnInit {
   tipoFiltro: TipoFiltro = '';
   etapaNombreFiltro: string | null = null;
   searchQuery = '';
-  soloActivas = false;
+  soloActivas = true;
   excluirCulminadas = false;
   filtroSupervisorId: number | null = null;
 
   mostrarSinActividades = false;
+
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.tipoFiltro) n++;
+    if (this.etapaNombreFiltro) n++;
+    if (this.searchQuery) n++;
+    if (!this.soloActivas) n++; // "Solo activas" es el default: solo cuenta si el usuario lo desactivó
+    if (this.excluirCulminadas) n++;
+    if (this.filtroSupervisorId != null) n++;
+    if (this.mostrarSinActividades) n++;
+    return n;
+  }
+
+  get proyectoOptions(): Array<{ id: number; nombreDisplay: string }> {
+    const lista = this.mostrarSinActividades ? this.proyectosSinActividades : this.proyectosConActividades;
+    return lista.map(p => ({
+      id: p.id,
+      nombreDisplay: this.mostrarSinActividades
+        ? `${p.nombre} — sin actividades`
+        : `${p.nombre} — ${p.totalActividades} actividades · ${p.activas} activas`,
+    }));
+  }
+
+  get etapaOptions(): Array<{ value: string; label: string }> {
+    return this.etapasFijas.map(e => ({ value: e, label: e }));
+  }
 
   mostrarNuevaConsulta = false;
   mostrarNuevoHito = false;
@@ -113,11 +144,27 @@ export class Actividades implements OnInit {
     this.loadActividades();
   }
 
+  onProyectoSeleccionado(id: number | null): void {
+    if (id == null) {
+      this.selectedProyectoId = null;
+      return;
+    }
+    const p = this.proyectos.find(pr => pr.id === id);
+    if (p) this.selectProyecto(p);
+  }
+
+  limpiarFiltros(): void {
+    this.resetFilters();
+    this.mostrarSinActividades = false;
+    this.onFiltroChange();
+    this.rebuildGroups();
+  }
+
   resetFilters(): void {
     this.tipoFiltro = '';
     this.etapaNombreFiltro = null;
     this.searchQuery = '';
-    this.soloActivas = false;
+    this.soloActivas = true;
     this.excluirCulminadas = false;
     this.filtroSupervisorId = null;
   }
@@ -233,10 +280,6 @@ export class Actividades implements OnInit {
   private daysBetween(from: Date, to: Date): number {
     const MS_PER_DAY = 24 * 60 * 60 * 1000;
     return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
-  }
-
-  trackByProyecto(_: number, p: ProyectoConActividadesDTO): number {
-    return p.id;
   }
 
   trackByActividad(_: number, a: ActividadListItemDTO): number {
@@ -398,17 +441,6 @@ export class Actividades implements OnInit {
       case 'ALMACEN': return 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
       default: return 'bg-[#E5E7EB] text-[#6B7280] border-[#E5E7EB]';
     }
-  }
-
-  proyectoRowClass(p: ProyectoConActividadesDTO): string {
-    const base: string[] = [];
-    if (this.selectedProyectoId === p.id) {
-      base.push('bg-[#DCFCE7] border-l-[3px] border-[#16A34A] text-[#15803D]');
-    } else {
-      base.push('border-l-[3px] border-transparent hover:bg-gray-100');
-    }
-    if (p.estado !== 'ACTIVO') base.push('opacity-60');
-    return base.join(' ');
   }
 
   onNuevaConsultaGuardada(): void {

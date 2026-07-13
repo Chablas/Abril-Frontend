@@ -32,49 +32,69 @@
     </button>
   </div>
 
+  <!-- ══ INDICADOR DE RANGO ══ -->
+  <div class="rango-indicador" *ngIf="rangoUltimasSemanas || semanaActual"
+       style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11px;color:#64748B">
+    <span style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#EDF4FB;border-radius:6px;font-weight:600;color:#1B3A6B">
+      <i class="ti ti-calendar-week"></i>
+      {{ filtro.semana ? ('Semana filtrada: ' + semanaActual?.label) : rangoUltimasSemanas }}
+    </span>
+    <span *ngIf="!filtro.semana" style="color:#94A3B8">Cards superiores muestran las últimas 2 semanas por defecto · usa el filtro "Semana" para ver otro rango</span>
+    <span *ngIf="semanaActual" style="margin-left:auto;padding:4px 10px;background:#F1F5F9;border-radius:6px;font-weight:600;color:#334155">
+      Progreso global, distribución de carga y ranking: {{ semanaActual.label }}
+    </span>
+  </div>
+
   <!-- ══ KPI BAR ══ -->
   <div class="kpi-bar">
     <div class="kpi-card kpi-card--info">
-      <div class="kpi-icon-wrap"><i class="ti ti-list-check"></i></div>
-      <span class="kpi-num">{{ kpis.totalActividades }}</span>
-      <span class="kpi-title">Total actividades</span>
-      <span class="kpi-sub">proyecto</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-list-check"></i></div>
+        <span class="kpi-num">{{ kpis.totalActividades }}</span>
+      </div>
+      <span class="kpi-title">Total actividades <span class="kpi-sub">· proyecto</span></span>
     </div>
     <div class="kpi-card kpi-card--success">
-      <div class="kpi-icon-wrap"><i class="ti ti-circle-check"></i></div>
-      <span class="kpi-num">{{ kpis.culminadas }}</span>
-      <span class="kpi-title">Culminadas</span>
-      <span class="kpi-sub">a tiempo</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-circle-check"></i></div>
+        <span class="kpi-num">{{ kpis.culminadas }}</span>
+      </div>
+      <span class="kpi-title">Culminadas <span class="kpi-sub">· a tiempo</span></span>
     </div>
     <div class="kpi-card kpi-card--primary">
-      <div class="kpi-icon-wrap"><i class="ti ti-player-play"></i></div>
-      <span class="kpi-num">{{ kpis.enProceso }}</span>
-      <span class="kpi-title">En proceso</span>
-      <span class="kpi-sub">activas</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-player-play"></i></div>
+        <span class="kpi-num">{{ kpis.enProceso }}</span>
+      </div>
+      <span class="kpi-title">En proceso <span class="kpi-sub">· activas</span></span>
     </div>
     <div class="kpi-card kpi-card--danger">
-      <div class="kpi-icon-wrap"><i class="ti ti-alert-circle"></i></div>
-      <span class="kpi-num">{{ kpis.vencidas }}</span>
-      <span class="kpi-title">Vencidas</span>
-      <span class="kpi-sub">sin cerrar</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-alert-circle"></i></div>
+        <span class="kpi-num">{{ kpis.vencidas }}</span>
+      </div>
+      <span class="kpi-title">Vencidas <span class="kpi-sub">· sin cerrar</span></span>
     </div>
     <div class="kpi-card kpi-card--pending">
-      <div class="kpi-icon-wrap"><i class="ti ti-clock"></i></div>
-      <span class="kpi-num">{{ kpis.pendientes }}</span>
-      <span class="kpi-title">Pendientes</span>
-      <span class="kpi-sub">sin iniciar</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-clock"></i></div>
+        <span class="kpi-num">{{ kpis.pendientes }}</span>
+      </div>
+      <span class="kpi-title">Pendientes <span class="kpi-sub">· sin iniciar</span></span>
     </div>
     <div class="kpi-card kpi-card--teal">
-      <div class="kpi-icon-wrap"><i class="ti ti-gauge"></i></div>
-      <span class="kpi-num">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
-      <span class="kpi-title">Eficiencia media</span>
-      <span class="kpi-sub" title="Schedule Performance Index · desempeño vs cronograma">SPI real</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-gauge"></i></div>
+        <span class="kpi-num">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Eficiencia media <span class="kpi-sub" title="Schedule Performance Index · desempeño vs cronograma">· SPI real</span></span>
     </div>
     <div class="kpi-card kpi-card--info">
-      <div class="kpi-icon-wrap"><i class="ti ti-trending-up"></i></div>
-      <span class="kpi-num">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
-      <span class="kpi-title">Progreso global</span>
-      <span class="kpi-sub">del proyecto</span>
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-trending-up"></i></div>
+        <span class="kpi-num">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Progreso global <span class="kpi-sub">· del proyecto</span></span>
     </div>
   </div>
 
@@ -138,7 +158,7 @@
         <div class="rank-header">
           <div class="rank-header-left">
             <span class="rank-title-text">RANKING EFICIENCIA</span>
-            <span class="rank-subtitle">IES = culminadas sin retraso ÷ total asignadas</span>
+            <span class="rank-subtitle">IES = culminadas sin retraso ÷ total asignadas · {{ semanaActual?.label }}</span>
           </div>
           <div class="rank-prom-pill" title="Promedio de IES del equipo">
             <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
@@ -165,12 +185,13 @@
                 <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
                 <span class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
               </div>
-              <div class="rank-stats-row">
+              <div class="rank-stats-row" title="Culminadas / asignadas esta semana">
                 <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
                   {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
                 </span>
                 <span class="rank-stat-sep">/</span>
                 <span class="rank-stat-tot">{{ sup.total }}</span>
+                <span class="rank-stat-lbl" style="font-size:9px;color:#94A3B8">culminadas/asignadas</span>
                 <span class="rank-stat-sep">·</span>
                 <span class="rank-stat-ies-lbl" title="Índice de Eficiencia del Supervisor">IES</span>
                 <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
@@ -228,7 +249,7 @@
         <div class="rank-header">
           <div class="rank-header-left">
             <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
-            <span class="rank-subtitle">Actividades asignadas · línea = media del equipo</span>
+            <span class="rank-subtitle">Actividades activas · {{ semanaActual?.label }} · línea = media del equipo</span>
             <span class="rank-subtitle" style="font-size:10px;color:#94A3B8;margin-top:1px">H = Hitos · E = Entregables · C = Consultas</span>
           </div>
           <div class="rank-prom-pill" *ngIf="cargaStats">
@@ -413,7 +434,7 @@
               <div style="font-size:11px;font-weight:600;color:#1B3A6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4"
                    [title]="h.nombre">{{ h.nombre }}</div>
               <div style="font-size:10px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                {{ h.proyecto }}
+                {{ h.proyecto }} <span style="color:#94A3B8">· Sem {{ h.semana }}</span>
               </div>
             </div>
             <!-- Fecha + días -->
@@ -751,6 +772,7 @@
               <th>Proyecto</th>
               <th>Estado</th>
               <th>Fecha Límite</th>
+              <th>Semana</th>
               <th>Días</th>
               <th style="width:90px">Alerta</th>
             </tr>
@@ -762,6 +784,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#D97706">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row" (click)="alertarHito(h)">
@@ -779,6 +802,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#2E6DB4">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row" (click)="alertarHito(h)">
@@ -796,6 +820,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#C0392B">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" style="color:#C0392B">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row btn-alert-urgent" (click)="alertarHito(h)">
@@ -810,7 +835,7 @@
             <tr *ngIf="(tabHito==='INICIAR' && hitosIniciar.length===0) ||
                        (tabHito==='VENCER'  && hitosVencer.length===0)  ||
                        (tabHito==='VENCIDOS'&& hitosVencidos.length===0)">
-              <td colspan="6" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
+              <td colspan="7" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
             </tr>
           </tbody>
         </table>

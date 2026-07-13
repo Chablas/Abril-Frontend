@@ -40,11 +40,10 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 type Tab = 'dashboard' | 'lista' | 'puntaje' | 'escuelita' | 'inhabilitados';
 
 // Roles autorizados a ver la pestaña de inhabilitados. Se comparan por ID.
-// (Los antiguos 'COORDINADOR SSOMA', 'JEFE SSOMA' y 'COORDINADOR DE ADMINISTRACIÓN'
-//  no existen en la tabla role, por lo que nunca matcheaban.)
 const ROLES_INHABILITACION: string[] = [
-  Roles.ADMINISTRADOR_SSOMA,
+  Roles.ADMINISTRADOR_SSOMA, // JEFE SSOMA
   Roles.ADMINISTRADOR_DE_OBRA,
+  Roles.COORDINADOR_SSOMA,
 ];
 
 const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];

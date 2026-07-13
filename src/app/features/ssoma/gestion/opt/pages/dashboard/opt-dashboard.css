@@ -10,7 +10,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: #ffffff;
+  background: var(--color-abril-surface);
 }
 
 /* ── BODY ─────────────────────────────────────────────────── */
@@ -31,7 +31,7 @@
 
 .skeleton-card,
 .skeleton-body {
-  background: linear-gradient(90deg, #f0ede8 25%, #e8e5df 50%, #f0ede8 75%);
+  background: linear-gradient(90deg, var(--color-dash-border-soft) 25%, var(--color-dash-border) 50%, var(--color-dash-border-soft) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 10px;
@@ -52,8 +52,8 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: #fff;
-  border: 0.5px solid #e8e5df;
+  background: var(--color-abril-surface);
+  border: 0.5px solid var(--color-dash-border);
   border-radius: 12px;
   cursor: default;
   transition: box-shadow 0.15s;
@@ -72,11 +72,11 @@
   flex-shrink: 0;
 }
 
-.kpi-icon--blue   { background: #eef4ff; color: #2563a8; }
-.kpi-icon--teal   { background: #e0f7f4; color: #0a8c80; }
+.kpi-icon--blue   { background: var(--color-status-info-light); color: var(--color-status-info); }
+.kpi-icon--teal   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .kpi-icon--green  { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
-.kpi-icon--amber  { background: #fef5d0; color: #8a5a00; }
-.kpi-icon--red    { background: #fdecea; color: #b83030; }
+.kpi-icon--amber  { background: var(--color-status-warning-light); color: var(--color-status-warning); }
+.kpi-icon--red    { background: var(--color-status-danger-light); color: var(--color-status-danger); }
 
 .kpi-body {
   display: flex;
@@ -88,13 +88,13 @@
 .kpi-val {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a18;
+  color: var(--color-dash-text);
   line-height: 1;
 }
 
 .kpi-lbl {
   font-size: 11px;
-  color: #8a8880;
+  color: var(--color-dash-text-subtle);
 }
 
 /* Score coloring on kpi-card */
@@ -104,8 +104,8 @@
 
 /* ── CARDS ────────────────────────────────────────────────── */
 .dash-card {
-  background: #fff;
-  border: 0.5px solid #e8e5df;
+  background: var(--color-abril-surface);
+  border: 0.5px solid var(--color-dash-border);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -116,14 +116,14 @@
 .dash-card__title {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a18;
+  color: var(--color-dash-text);
   margin: 0;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.dash-card__title i { color: #8a8880; }
+.dash-card__title i { color: var(--color-dash-text-subtle); }
 
 /* ── TENDENCIA ────────────────────────────────────────────── */
 .dash-card--tendencia { overflow: hidden; }
@@ -150,7 +150,7 @@
 .tend-val {
   font-size: 9px;
   font-weight: 600;
-  color: #1a1a18;
+  color: var(--color-dash-text);
   white-space: nowrap;
 }
 
@@ -178,38 +178,38 @@
 
 .tend-lbl {
   font-size: 9px;
-  color: #8a8880;
+  color: var(--color-dash-text-subtle);
   text-align: center;
 }
 
 .tend-n {
   font-size: 8px;
-  color: #a8a59e;
+  color: var(--color-dash-text-faint);
 }
 
 /* Score color classes (shared) */
 .score--verde    { background: var(--color-abril-standard); color: var(--color-abril-standard-light); }
-.score--amarillo { background: #d97706; color: #fef5d0; }
-.score--rojo     { background: #b83030; color: #fdecea; }
-.score--na       { background: #e8e5df; color: #8a8880; }
+.score--amarillo { background: var(--color-status-warning); color: var(--color-status-warning-light); }
+.score--rojo     { background: var(--color-status-danger); color: var(--color-status-danger-light); }
+.score--na       { background: var(--color-dash-border); color: var(--color-dash-text-subtle); }
 
 /* As dots / bars */
 .tend-bar.score--verde    { background: var(--color-abril-standard); }
-.tend-bar.score--amarillo { background: #d97706; }
-.tend-bar.score--rojo     { background: #b83030; }
-.tend-bar.score--na       { background: #d4d0c8; }
+.tend-bar.score--amarillo { background: var(--color-status-warning); }
+.tend-bar.score--rojo     { background: var(--color-status-danger); }
+.tend-bar.score--na       { background: var(--color-dash-border-strong); }
 
 .tend-line-dot.score--verde    { background: var(--color-abril-standard); }
-.tend-line-dot.score--amarillo { background: #d97706; }
-.tend-line-dot.score--rojo     { background: #b83030; }
-.tend-line-dot.score--na       { background: #d4d0c8; }
+.tend-line-dot.score--amarillo { background: var(--color-status-warning); }
+.tend-line-dot.score--rojo     { background: var(--color-status-danger); }
+.tend-line-dot.score--na       { background: var(--color-dash-border-strong); }
 
 .chart-legend {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #8a8880;
+  color: var(--color-dash-text-subtle);
   flex-wrap: wrap;
 }
 
@@ -235,7 +235,7 @@
 
 .rank-nombre {
   font-size: 11px;
-  color: #1a1a18;
+  color: var(--color-dash-text);
   width: 100px;
   flex-shrink: 0;
   overflow: hidden;
@@ -246,7 +246,7 @@
 .rank-bar-track {
   flex: 1;
   height: 8px;
-  background: #f0ede8;
+  background: var(--color-dash-border-soft);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -258,9 +258,9 @@
 }
 
 .rank-bar.score--verde    { background: var(--color-abril-standard); }
-.rank-bar.score--amarillo { background: #d97706; }
-.rank-bar.score--rojo     { background: #b83030; }
-.rank-bar.score--na       { background: #d4d0c8; }
+.rank-bar.score--amarillo { background: var(--color-status-warning); }
+.rank-bar.score--rojo     { background: var(--color-status-danger); }
+.rank-bar.score--na       { background: var(--color-dash-border-strong); }
 
 .rank-pct {
   font-size: 11px;
@@ -271,9 +271,9 @@
 }
 
 .rank-pct.score--verde    { color: var(--color-abril-standard); }
-.rank-pct.score--amarillo { color: #d97706; }
-.rank-pct.score--rojo     { color: #b83030; }
-.rank-pct.score--na       { color: #8a8880; }
+.rank-pct.score--amarillo { color: var(--color-status-warning); }
+.rank-pct.score--rojo     { color: var(--color-status-danger); }
+.rank-pct.score--na       { color: var(--color-dash-text-subtle); }
 
 /* ── CHARTS ROW ───────────────────────────────────────────── */
 .charts-row {
@@ -299,26 +299,26 @@
   padding: 6px 10px;
   font-size: 9px;
   font-weight: 600;
-  color: #a8a59e;
+  color: var(--color-dash-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  border-bottom: 0.5px solid #e8e5df;
+  border-bottom: 0.5px solid var(--color-dash-border);
   text-align: left;
   white-space: nowrap;
 }
 
 .dash-table td {
   padding: 7px 10px;
-  color: #1a1a18;
-  border-bottom: 0.5px solid #f0ede8;
+  color: var(--color-dash-text);
+  border-bottom: 0.5px solid var(--color-dash-border-soft);
 }
 
 .dash-table tbody tr:last-child td { border-bottom: none; }
-.dash-table tbody tr:hover td { background: #f8f6f3; }
+.dash-table tbody tr:hover td { background: var(--color-dash-bg-alt); }
 
 .ta-c { text-align: center; }
 .fw-600 { font-weight: 600; }
-.td-muted { color: #8a8880; font-size: 11px; }
+.td-muted { color: var(--color-dash-text-subtle); font-size: 11px; }
 
 .score-chip {
   display: inline-block;
@@ -340,17 +340,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 0;
-  border-bottom: 0.5px solid #f0ede8;
+  border-bottom: 0.5px solid var(--color-dash-border-soft);
 }
 
 .accion-row:last-child { border-bottom: none; }
 
-.accion-nombre { font-size: 12px; color: #1a1a18; }
+.accion-nombre { font-size: 12px; color: var(--color-dash-text); }
 
 .accion-badge {
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-abril-surface);
   background: var(--color-abril-standard);
   padding: 2px 8px;
   border-radius: 999px;
@@ -364,10 +364,10 @@
   justify-content: center;
   gap: 12px;
   padding: 60px 20px;
-  color: #8a8880;
+  color: var(--color-dash-text-subtle);
 }
 
-.empty-state__icon { font-size: 48px; color: #d4d0c8; }
+.empty-state__icon { font-size: 48px; color: var(--color-dash-border-strong); }
 
 .btn-primary {
   display: inline-flex;
@@ -377,7 +377,7 @@
   border-radius: 9px;
   border: none;
   background: var(--color-abril-standard);
-  color: #fff;
+  color: var(--color-abril-surface);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

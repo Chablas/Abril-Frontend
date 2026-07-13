@@ -14,6 +14,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { jwtDecode } from 'jwt-decode';
 import { ProyectoDisponibleDto } from '../../../../dtos/empresa.model';
+import { Roles } from '../../../../../../core/constants/roles';
 
 @Component({
   selector: 'app-contratista-usuarios',
@@ -261,9 +262,9 @@ export class ContratistaUsuarios implements OnInit {
     (window as any)._workerSeleccionado = null;
     this.usuarioService.invitar(this.contractorId, {
       email: value.email,
-      rolNombre: 'ADMIN',
+      rolNombre: 'GESTOR',
       scope: 'TODOS',
-      systemRoleId: 11,
+      systemRoleId: parseInt(Roles.CONTRATISTA_SUPERVISOR_CAMPO, 10),
       modulos: value.modulos,
       workerId: value.workerId,
       esWorker: true,

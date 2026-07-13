@@ -45,6 +45,14 @@ export interface HitoCriticoDTO {
   fechaLimite: string;
   diasRestantes: number;
   estado: string;
+  semana: number;
+}
+
+export interface SemanaDashboardDTO {
+  numero: number;
+  label: string;
+  inicio: string;
+  fin: string;
 }
 
 export interface CategoriaDashboardItemDTO {
@@ -73,6 +81,8 @@ export interface ArqComercialDashboardDTO {
   categorias                  : CategoriaItemDTO[];
   distribucionPorCategoria    : CategoriaDashboardItemDTO[];
   distribucionTipos           : ChartItemDTO[];
+  semanaActual                : SemanaDashboardDTO;
+  rangoUltimasSemanas         : string;
 }
 
 export interface TareasPorArquitectoDTO {
@@ -92,8 +102,9 @@ export interface AvanceSemanalDTO {
 }
 
 export interface EficienciaSpiDTO {
-  semana: string;
-  spi   : number;
+  semana  : string;
+  spi     : number;
+  esperado: number;
 }
 
 export interface CategoriaItemDTO {
