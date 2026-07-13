@@ -161,7 +161,7 @@
         </div>
         <p class="empty-title">Este proyecto no tiene actividades aún</p>
         <div class="empty-actions">
-          <button *ngIf="tipoCronogramaActivo === 'PROYECTO'" class="btn-secondary" (click)="usarPlantilla()">
+          <button *ngIf="tipoCronogramaActivo === 'PROYECTO' || tipoCronogramaActivo === 'ANTEPROYECTO'" class="btn-secondary" (click)="usarPlantilla()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               style="margin-right:0.35rem;flex-shrink:0">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -211,7 +211,6 @@
               [class.row-dark]="isDarkBg(act)"
               [class.row-light]="!isDarkBg(act)"
               [class.row-bordered]="act.hierarchyLevel >= 3"
-              [class.row-nivel0-multi]="!isDarkBg(act) && (act.hierarchyLevel ?? 0) <= 0"
               [class.lvl-0]="act.hierarchyLevel === 0"
               [class.lvl-1]="act.hierarchyLevel === 1"
               [class.lvl-2]="act.hierarchyLevel === 2"
@@ -371,17 +370,19 @@
                   </span>
                 </td>
                 <td class="td-desfase">
-                  <span [ngClass]="getDesfaseClass(getDesfaseDias(act, 'start'))">
+                  <span class="desfase-chip" [ngClass]="getDesfaseClass(getDesfaseDias(act, 'start'))">
                     {{ formatDesfase(getDesfaseDias(act, 'start')) }}
                   </span>
                 </td>
                 <td class="td-desfase">
-                  <span [ngClass]="getDesfaseClass(getDesfaseDias(act, 'end'))">
+                  <span class="desfase-chip" [ngClass]="getDesfaseClass(getDesfaseDias(act, 'end'))">
                     {{ formatDesfase(getDesfaseDias(act, 'end')) }}
                   </span>
                 </td>
                 <td class="td-sema">
-                  <span class="semaforo-dot" [ngClass]="getSemaforoClass(act)"></span>
+                  <span class="sema-chip">
+                    <span class="semaforo-dot" [ngClass]="getSemaforoClass(act)"></span>
+                  </span>
                 </td>
               </ng-container>
               <td class="td-fecha" [ngStyle]="getFechaRealStyle(act)">
