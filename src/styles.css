@@ -363,6 +363,14 @@ app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-2 { background: #f0f4f8
 app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-2 { background: #f0f4f8; }
 app-cronograma-actividades .gantt_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
 app-cronograma-actividades .gantt_task_row.gantt-cron-row-lvl-3 { background: #f8fafc; }
+/* cronograma-actividades — barras coloreadas por rama (anula el fondo/texto blanco forzado por defecto) */
+app-cronograma-actividades .gantt_task_line {
+  background: var(--dhx-gantt-task-background, #415a77) !important;
+  border-color: var(--dhx-gantt-task-background, #415a77) !important;
+}
+app-cronograma-actividades .gantt_task_content {
+  color: var(--dhx-gantt-task-color, #ffffff) !important;
+}
 /* Barra de avance interna de cada task */
 app-cronograma-actividades .gantt_task_line .gantt_task_progress { opacity: 0.35; }
 

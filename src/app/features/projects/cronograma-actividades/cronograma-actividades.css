@@ -294,8 +294,8 @@
 
 .data-table tbody tr:last-child td { border-bottom: none; }
 
-/* ── Separador visual sobre cada grupo nivel 1 ────────────────────────────── */
-.data-table tbody tr.lvl-1 td {
+/* ── Separador visual sobre cada rama raíz (grupo de color) ───────────────── */
+.data-table tbody tr.lvl-0 td {
   border-top: 3px solid #f0f4f8;
   padding-top: 1rem;
 }
@@ -315,9 +315,9 @@
   border-left: 3px solid var(--lvl-border, transparent);
 }
 
-/* ── Nivel 3+ sin borde lateral visible ──────────────────────────────────── */
+/* ── Borde lateral izquierdo — nivel 3+ (color base de la rama) ──────────── */
 .data-table tbody tr.lvl-deep td:first-child {
-  border-left: 2px solid #e9eef4;
+  border-left: 3px solid var(--lvl-border, transparent);
 }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
