@@ -145,7 +145,7 @@
 
 </section>
 
-<app-fab label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
+<app-fab *ngIf="!modalVisible" label="Nuevo Descanso" (clicked)="abrirModal()"></app-fab>
 
 <app-mi-salud-modal
   *ngIf="modalVisible"

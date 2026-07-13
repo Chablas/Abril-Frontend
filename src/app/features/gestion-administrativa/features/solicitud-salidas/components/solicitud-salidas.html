@@ -174,7 +174,7 @@
 
 </div>
 
-<app-fab label="Solicitar salida" (clicked)="showModal = true"></app-fab>
+<app-fab *ngIf="!showModal" label="Solicitar salida" (clicked)="showModal = true"></app-fab>
 
 <!-- ── Modal de creación ─────────────────────────────────────────────── -->
 <app-solicitud-salida-create

@@ -181,16 +181,15 @@ export class Boletin implements OnInit {
   }
 
   /**
-   * Click de un botón flotante. En celular, el primer tap sobre ESE botón solo
-   * revela su etiqueta; el segundo tap (con la etiqueta ya visible) ejecuta la
-   * acción. En escritorio ejecuta directo (el hover ya mostró la etiqueta antes
-   * del click).
+   * Click de un botón flotante: ejecuta la acción siempre, con un solo tap
+   * (en celular no se puede depender de un segundo tap: falla si el usuario
+   * asume que ya funcionó al ver el ícono, o si el navegador dispara el
+   * segundo evento distinto). El "expandir para mostrar la etiqueta" queda
+   * solo como gesto cosmético vía botonExpandido, no bloquea la navegación.
    */
   manejarClickFlotante(accion: BotonFlotante, ev: Event): void {
-    if (this.esMobile() && this.botonExpandido !== accion) {
-      ev.stopPropagation();
+    if (this.esMobile()) {
       this.botonExpandido = accion;
-      return;
     }
     this.botonExpandido = null;
     switch (accion) {
