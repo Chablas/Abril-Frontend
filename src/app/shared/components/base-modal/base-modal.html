@@ -1,8 +1,8 @@
 @if (fullScreen) {
-  <div class="fixed inset-0 bg-white z-[50] flex flex-col overflow-y-auto">
-    <div class="px-5 pt-4 pb-2 flex flex-col flex-1"
+  <div class="fixed inset-0 z-[50] bg-white overflow-y-auto">
+    <div class="px-5 pt-4 pb-10"
          (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
-      <h1 class="text-lg font-bold text-center flex-shrink-0 mb-3 pr-6" style="color:#0F6E56">{{ title }}</h1>
+      <h1 class="text-lg font-bold text-center mb-3 pr-6" style="color:#0F6E56">{{ title }}</h1>
       <ng-content></ng-content>
     </div>
 
