@@ -1,7 +1,9 @@
-<app-abril-page-header
+﻿<app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Gestión de Salidas"
   subtitulo="Aprobación y rendición de solicitudes de salida."
+  [botonSecundario]="{ label: 'Exportar a excel', icono: 'ti-download' }"
+  (secondaryClick)="exportarExcel()"
   [tabs]="[
     { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
     { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
@@ -11,112 +13,25 @@
     { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
     { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
   ]">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<div class="page-container flex flex-col gap-[20px] bg-white flex-1 min-h-0 overflow-y-auto">
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
 
-  <!-- ── Filtros ──────────────────────────────────────────────────────── -->
-  <!-- Layout: una primera columna fija (primer filtro) y, al costado, un
-       contenedor flex que envuelve en varias líneas el resto de filtros. -->
-  <div class="flex items-start gap-x-4 gap-y-3">
+  <!-- ── Acciones bulk sobre la selección ──────────────────────────────────
+       Siempre visibles (deshabilitadas si no aplica), estilo neutro con
+       ícono de color — mismo lenguaje que el botón "Filtros". -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
 
-    <!-- Área en cascada (primer filtro): al elegir un área con subáreas aparece otro desplegable.
-         Un solo label "Área" (el primero); los siguientes van sin label. -->
-    <div class="bg-[var(--color-abril-lime-light)] rounded-lg px-3 py-2 -mb-2 flex flex-wrap items-end gap-3 shrink-0">
-      <ng-container *ngFor="let level of areaLevels; let i = index">
-        <div class="w-[220px]">
-          <app-search-select
-            label="Área"
-            [showLabel]="i === 0"
-            [options]="level"
-            valueField="areaScopeId"
-            displayField="name"
-            [value]="selectedAreaNodes[i]?.areaScopeId"
-            (valueChange)="onAreaNodeChange(i, $event)"
-            [fullText]="true"
-            [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
-          ></app-search-select>
-        </div>
-      </ng-container>
-    </div>
-
-    <!-- Columna fija: segundo filtro -->
-    <div class="flex flex-col gap-3 shrink-0 w-[220px]">
-      <app-search-select
-        label="Trabajador"
-        [options]="trabajadorOptions"
-        valueField="workerId"
-        displayField="nombreCompleto"
-        [value]="filters.workerId"
-        (valueChange)="filters.workerId = $event">
-      </app-search-select>
-    </div>
-
-    <!-- Resto de filtros/opciones: fluyen y hacen wrap ocupando el espacio restante -->
-    <div class="flex flex-wrap items-end gap-3 flex-1 min-w-0">
-
-      <div class="w-[220px]">
-        <app-search-select
-          label="Lugar de proyecto"
-          [options]="lugarProyectoOptions"
-          valueField="gaLugarId"
-          displayField="nombreDisplay"
-          [value]="filters.lugarProyectoId"
-          (valueChange)="filters.lugarProyectoId = $event">
-        </app-search-select>
-      </div>
-
-      <div class="w-[180px]">
-        <app-search-select
-          label="Aprobación"
-          [options]="estadoAprobacionOptions"
-          valueField="value"
-          displayField="label"
-          [value]="filters.estadoAprobacion"
-          (valueChange)="filters.estadoAprobacion = $event">
-        </app-search-select>
-      </div>
-
-      <div class="w-[180px]">
-        <app-search-select
-          label="Rendición"
-          [options]="estadoRendicionOptions"
-          valueField="value"
-          displayField="label"
-          [value]="filters.estadoRendicion"
-          (valueChange)="filters.estadoRendicion = $event">
-        </app-search-select>
-      </div>
-
-      <button type="button" (click)="onSearch()" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 14A4.5 4.5 0 1 0 9.5 5a4.5 4.5 0 0 0 0 9Z" fill="white"/>
-        </svg>
-        Buscar
-      </button>
-
-      <button class="group flex items-center cursor-pointer gap-1.5 h-[38px] ml-auto" (click)="exportarExcel()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="color:var(--color-abril-accent)">
-          <path d="M12 16L16 11H13V4H11V11H8L12 16Z" fill="currentColor"/>
-          <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
-        </svg>
-        <span style="color:var(--color-abril-primary)" class="group-hover:underline text-sm">Exportar a excel</span>
-      </button>
-
-    </div>
-
-  </div>
-
-  <!-- ── Acciones bulk sobre la selección (horizontal) ─────────────────────
-       Una sola selección compartida; cada botón actúa solo sobre las filas
-       seleccionadas válidas para su acción y se deshabilita si no hay ninguna. -->
-  <div class="flex flex-wrap items-center gap-3">
     <button
       type="button"
+      abrilBulkAction="default"
       (click)="aprobarBulk()"
-      [disabled]="selectedPendientes.length === 0"
-      class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-green-300 text-green-700 hover:bg-green-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      [disabled]="selectedPendientes.length === 0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
       Aprobar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
@@ -124,10 +39,10 @@
 
     <button
       type="button"
+      abrilBulkAction="danger"
       (click)="rechazarBulk()"
-      [disabled]="selectedPendientes.length === 0"
-      class="h-[36px] px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors border border-red-200 text-red-600 hover:bg-red-50 disabled:border-gray-200 disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      [disabled]="selectedPendientes.length === 0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
       </svg>
       Rechazar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
@@ -135,30 +50,25 @@
 
     <button
       type="button"
+      abrilBulkAction="primary"
       (click)="marcarRendidasBulk()"
-      [disabled]="selectedRendibles.length === 0"
-      class="h-[36px] px-4 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-      style="background:var(--color-abril-accent)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      [disabled]="selectedRendibles.length === 0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
       Marcar como rendidas<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
     </button>
-
-    <span *ngIf="selectedIds.size === 0" class="text-xs text-gray-400">
-      Selecciona filas (usa Shift+clic para rangos) y aplica una acción.
-    </span>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <!-- shrink-0: evita que flexbox encoja la tabla (que es scroll container por
-       el overflow-x) y le meta scroll vertical propio. Así crece a su alto real
-       y es la tarjeta (min-h-0 + overflow-y-auto) la que scrollea. -->
-  <div class="table-scroll shrink-0">
-    <table class="w-full text-sm">
-      <thead class="sticky top-0 z-10" style="background:var(--color-abril-primary-light)">
-        <tr style="color:var(--color-abril-primary-dark)">
-          <th class="text-left px-[16px] py-[10px] font-semibold">
+  <!-- Sin caja/borde propio: ocupa el máximo espacio disponible. flex-1 + scroll
+       interno propio (no de toda la página) para que filtros/acciones/paginador
+       queden siempre visibles sin necesidad de bajar la página entera. -->
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
             <input
               type="checkbox"
               [checked]="allSelected"
@@ -168,58 +78,58 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">#</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
+          <th>#</th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
             <span class="inline-flex items-center gap-1">Trabajador
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('fechaSalida')" title="Ordenar por fecha">
+          <th class="cursor-pointer select-none" (click)="toggleSort('fechaSalida')" title="Ordenar por fecha">
             <span class="inline-flex items-center gap-1">Fecha
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('fechaSalida')">{{ sortDirOf('fechaSalida') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('horaSalida')" title="Ordenar por hora de salida">
+          <th class="cursor-pointer select-none" (click)="toggleSort('horaSalida')" title="Ordenar por hora de salida">
             <span class="inline-flex items-center gap-1">Salida
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaSalida')">{{ sortDirOf('horaSalida') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('horaRetorno')" title="Ordenar por hora de retorno">
+          <th class="cursor-pointer select-none" (click)="toggleSort('horaRetorno')" title="Ordenar por hora de retorno">
             <span class="inline-flex items-center gap-1">Retorno
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('horaRetorno')">{{ sortDirOf('horaRetorno') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('motivo')" title="Ordenar por motivo">
+          <th class="cursor-pointer select-none" (click)="toggleSort('motivo')" title="Ordenar por motivo">
             <span class="inline-flex items-center gap-1">Motivo
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('motivo')">{{ sortDirOf('motivo') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('lugarOrigen')" title="Ordenar por origen">
+          <th class="cursor-pointer select-none" (click)="toggleSort('lugarOrigen')" title="Ordenar por origen">
             <span class="inline-flex items-center gap-1">Origen
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarOrigen')">{{ sortDirOf('lugarOrigen') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('lugarDestino')" title="Ordenar por destino">
+          <th class="cursor-pointer select-none" (click)="toggleSort('lugarDestino')" title="Ordenar por destino">
             <span class="inline-flex items-center gap-1">Destino
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarDestino')">{{ sortDirOf('lugarDestino') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por aprobación">
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por aprobación">
             <span class="inline-flex items-center gap-1">Aprobación
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoAprobacion')">{{ sortDirOf('estadoAprobacion') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('estadoRendicion')" title="Ordenar por rendición">
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoRendicion')" title="Ordenar por rendición">
             <span class="inline-flex items-center gap-1">Rendición
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoRendicion')">{{ sortDirOf('estadoRendicion') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="text-left px-[16px] py-[10px] font-semibold cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de registro">
+          <th class="cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de registro">
             <span class="inline-flex items-center gap-1">Registrada
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('createdAt')">{{ sortDirOf('createdAt') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th *ngIf="esRecepcion" class="text-left px-[16px] py-[10px] font-semibold"
+          <th *ngIf="esRecepcion"
               title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
             Hora real
           </th>
@@ -242,7 +152,7 @@
           style="border-color:var(--color-abril-border)">
 
           <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
-          <td class="px-[16px] py-[10px] select-none" (click)="onSelectClick($event, i)">
+          <td class="select-none" (click)="onSelectClick($event, i)">
             <input
               type="checkbox"
               [checked]="selectedIds.has(s.id)"
@@ -250,70 +160,70 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+          <td class="text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
 
-          <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.trabajador }}</td>
+          <td class="text-gray-700 whitespace-nowrap">{{ s.trabajador | titleCase }}</td>
 
-          <td class="px-[16px] py-[10px] text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+          <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
 
-          <td class="px-[16px] py-[10px] text-gray-700">
+          <td class="text-gray-700">
             {{ s.horaSalida }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
-                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-400">
+          <td class="text-gray-400">
             {{ s.horaRetorno ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
-                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-700">
-            {{ s.motivo }}
+          <td class="text-gray-700">
+            {{ s.motivo | titleCase }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
-                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-500">
-            {{ s.lugarOrigen ?? '—' }}
+          <td class="text-gray-500">
+            {{ (s.lugarOrigen | titleCase) || '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
-                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-500">
-            {{ s.lugarDestino ?? '—' }}
+          <td class="text-gray-500">
+            {{ (s.lugarDestino | titleCase) || '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
-                  style="background:var(--color-abril-primary-light);color:var(--color-abril-primary-dark)"
+                  style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
               +{{ s.trayectosCount - 1 }}
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px]">
+          <td >
             <app-status-badge
               [text]="s.estadoAprobacion"
               [bgColor]="aprobacionColors(s.estadoAprobacion).bg"
               [textColor]="aprobacionColors(s.estadoAprobacion).text" />
           </td>
 
-          <td class="px-[16px] py-[10px]">
+          <td >
             <!-- No aprobada → guion -->
             <span *ngIf="s.estadoAprobacion !== 'Aprobado'" class="text-gray-300">—</span>
 
@@ -346,12 +256,12 @@
             </span>
           </td>
 
-          <td class="px-[16px] py-[10px] text-gray-400 whitespace-nowrap">
+          <td class="text-gray-400 whitespace-nowrap">
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
 
           <!-- Hora real (recepción) -->
-          <td *ngIf="esRecepcion" class="px-[16px] py-[10px]" (click)="$event.stopPropagation()">
+          <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
             <input
               type="time"
               [value]="horaRealInput(s)"
@@ -366,15 +276,90 @@
     </table>
   </div>
 
-  <!-- ── Paginador ─────────────────────────────────────────────────────── -->
-  <app-paginator
-    [totalRecords]="totalRecords"
-    [currentPage]="currentPage"
-    [totalPages]="totalPages"
-    (pageChange)="onPageChange($event)">
-  </app-paginator>
+  <!-- ── Paginador ─────────────────────────────────────────────────────────
+       Ancho limitado y alineado a la izquierda: nunca invade la esquina
+       inferior derecha donde vive el botón flotante. -->
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
 
 </div>
+
+<app-fab label="Solicitar salida" (clicked)="irASolicitarSalida()"></app-fab>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          (valueChange)="onAreaNodeChange(i, $event); onSearch()"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+        ></app-search-select>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador"
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Lugar de proyecto"
+      [options]="lugarProyectoOptions"
+      valueField="gaLugarId"
+      displayField="nombreDisplay"
+      [value]="filters.lugarProyectoId"
+      (valueChange)="filters.lugarProyectoId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Aprobación"
+        [options]="estadoAprobacionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoAprobacion"
+        (valueChange)="filters.estadoAprobacion = $event; onSearch()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Rendición"
+        [options]="estadoRendicionOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoRendicion"
+        (valueChange)="filters.estadoRendicion = $event; onSearch()">
+      </app-search-select>
+    </div>
+  </div>
+
+</app-filter-modal>
 
 <!-- ── Modal detalle de solicitud rendida ─────────────────────────────── -->
 <app-gestion-salida-detalle-modal

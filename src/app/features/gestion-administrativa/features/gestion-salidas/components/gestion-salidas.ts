@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -19,6 +20,11 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { FabButton } from '../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
+import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -30,7 +36,7 @@ interface AreaCascadeNode {
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './gestion-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -81,12 +87,44 @@ export class GestionSalidas implements OnInit {
   /** Detalle abierto en modal (null = modal cerrado). */
   detalle: GestionSalidaDetalleDto | null = null;
 
+  /** Modal de filtros (los combos viven ahí para no ocupar espacio fijo en la galería). */
+  filtrosAbiertos = false;
+
+  /** Cantidad de filtros con valor activo, para el badge del botón "Filtros". */
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.workerId != null) n++;
+    if (this.filters.lugarProyectoId != null) n++;
+    if (this.filters.estadoAprobacion != null) n++;
+    if (this.filters.estadoRendicion != null) n++;
+    if (this.selectedAreaNodes.some((node) => node)) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.filters = {
+      workerId: null,
+      lugarProyectoId: null,
+      estadoRendicion: null,
+      estadoAprobacion: null,
+    };
+    this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
+    this.selectedAreaNodes = this.selectedAreaNodes.length ? [undefined] : this.selectedAreaNodes;
+    this.onSearch();
+  }
+
   constructor(
     private service:       GestionSalidasService,
     private loaderService: LoaderService,
     private errorService:  ErrorService,
     private authService:   AuthService,
+    private router:        Router,
   ) {}
+
+  /** FAB "Solicitar salida": lleva a la pestaña de autoservicio con el formulario abierto. */
+  irASolicitarSalida(): void {
+    this.router.navigate(['/gestion-administrativa/solicitud-salidas'], { queryParams: { nuevo: '1' } });
+  }
 
   /** True si el usuario logueado tiene rol "USUARIO DE RECEPCIÓN" — habilita la columna extra. */
   get esRecepcion(): boolean {

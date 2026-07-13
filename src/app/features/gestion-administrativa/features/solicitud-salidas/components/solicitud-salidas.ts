@@ -13,11 +13,14 @@ import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../shared/components/fab-button/fab-button';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal],
   templateUrl: './solicitud-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -52,6 +55,22 @@ export class SolicitudSalidas implements OnInit {
     estadoAprobacion: null as string | null,
     estadoRendicion:  null as string | null,
   };
+
+  /** Modal de filtros (mismo patrón que Gestión de Salidas). */
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.lugarProyectoId != null)  n++;
+    if (this.filters.estadoAprobacion != null) n++;
+    if (this.filters.estadoRendicion != null)  n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.filters = { lugarProyectoId: null, estadoAprobacion: null, estadoRendicion: null };
+    this.onSearch();
+  }
 
   constructor(
     private service: SolicitudSalidasService,

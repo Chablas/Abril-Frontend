@@ -21,6 +21,17 @@
   --color-abril-accent-hover:   #00796B;
   --color-abril-accent-light:   #E0F2F1;
 
+  /* ── Estándar de formularios y galerías (2026) ──────
+     Fuente única del teal usado en labels flotantes, combobox, botones
+     bulk, thead de tablas y paginador. Cambiar este bloque re-estiliza
+     TODA la app: no usar hex sueltos para este color en componentes nuevos,
+     usar siempre estas variables. */
+  --color-abril-standard:        #0F6E56;
+  --color-abril-standard-hover:  #0B5744;
+  --color-abril-standard-light:  #F0FAF7;
+  --color-abril-standard-border: #CDEBE0;
+  --radius-standard:             7px;
+
   /* ── Neutros ─────────────────────────────────────── */
   --color-abril-ink:            #0D1B2A;
   --color-abril-body:           #374151;
@@ -186,9 +197,9 @@
   box-sizing: border-box;
 }
 /* Alias legado */
-.page-container { padding: 16px; }
+.page-container { padding: 16px 10px; }
 @media (min-width: 640px) {
-  .page-container { padding: 24px; }
+  .page-container { padding: 20px 12px; }
 }
 
 /* ── Scroll horizontal en tablas mobile ─────────────────────── */
@@ -197,6 +208,29 @@
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-abril-border);
+}
+
+/* ── Galería/tabla estándar (2026) ─────────────────────────────
+   Clase opcional para <table>: encabezado teal + densidad de fila
+   estándar, sin caja/borde propio (para que la tabla use el máximo
+   ancho). Aplica solo lo que no depende del contenido de cada columna
+   (thead, th, td); el resto (checkboxes, sort, badges) lo define cada
+   página. Cambiar este bloque re-estiliza toda tabla que lo use. */
+.abril-table {
+  width: 100%;
+  font-size: 12px;
+}
+.abril-table thead {
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+.abril-table th {
+  text-align: left;
+  padding: 7px 14px;
+  font-weight: 600;
+}
+.abril-table td {
+  padding: 7px 14px;
 }
 
 /* ── Filtros responsive ─────────────────────────────────────── */

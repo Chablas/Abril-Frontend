@@ -25,9 +25,9 @@ export class SearchSelect {
   /**
    * Color de acento del componente (borde/anillo al enfocar y opción seleccionada).
    * Acepta cualquier valor CSS de color o variable de la paleta (ej. 'var(--color-abril-lime)').
-   * Por defecto usa el teal estándar de formularios (#0F6E56).
+   * Por defecto usa el teal estándar de formularios (--color-abril-standard).
    */
-  @Input() color: string = '#0F6E56';
+  @Input() color: string = 'var(--color-abril-standard)';
   /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
   @Input() dark: boolean = false;
   /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */

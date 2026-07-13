@@ -136,10 +136,25 @@
   background: #ffffff;
   flex-shrink: 0;
 }
+.abril-tabs__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .abril-tabs__nav {
   display: flex;
   gap: 0;
   padding: 0;
+}
+.abril-tabs__extra {
+  display: flex;
+  align-items: center;
+  padding-right: 12px;
+  flex-shrink: 0;
+}
+.abril-tabs__extra:empty {
+  display: none;
 }
 .abril-tabs__tab {
   display: inline-flex;
