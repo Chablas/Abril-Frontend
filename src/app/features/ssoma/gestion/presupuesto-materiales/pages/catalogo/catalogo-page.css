@@ -19,8 +19,8 @@
 
 .tabla-catalogo { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white;
   border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
-.tabla-catalogo th { text-align: left; padding: 8px 10px; color: #6b7280; font-weight: 600;
-  font-size: 0.75rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+.tabla-catalogo th { text-align: left; padding: 8px 10px; font-weight: 600;
+  font-size: 0.75rem; }
 .tabla-catalogo td { padding: 6px 10px; border-bottom: 1px solid #f3f4f6; }
 .tabla-catalogo input[type="text"], .tabla-catalogo select { padding: 4px 6px; border: 1px solid #d1d5db;
   border-radius: 5px; font-size: 0.8rem; width: 100%; }

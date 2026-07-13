@@ -13,12 +13,16 @@ import { ProjectService } from '../../../../../../core/services/project.service'
 import { CatalogosSaludService } from '../../../../salud-ocupacional/services/catalogos-salud.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 @Component({
   selector: 'app-rac-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator],
   templateUrl: './rac-lista.html',
   styleUrl: './rac-lista.css',
 })
@@ -49,6 +53,28 @@ export class RacLista implements OnInit {
   proyectos: { id: number; nombre: string }[] = [];
   empresas: { id: number; razonSocial: string }[] = [];
 
+  readonly estadoFilterOptions = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'Abierto', label: 'Abierto' },
+    { value: 'Cerrado', label: 'Cerrado' },
+  ];
+  readonly severidadFilterOptions = [
+    { value: '', label: 'Toda severidad' },
+    { value: 'CRITICO', label: 'Crítico' },
+    { value: 'ALTO', label: 'Alto' },
+    { value: 'MEDIO', label: 'Medio' },
+    { value: 'BAJO', label: 'Bajo' },
+  ];
+  readonly tipoFilterOptions = [
+    { value: '', label: 'Todos los tipos' },
+    { value: 'ACTO', label: 'Acto' },
+    { value: 'CONDICION', label: 'Condición' },
+  ];
+  readonly mesFilterOptions = [{ value: null, label: 'Todos los meses' }, ...this.meses.map((m) => ({ value: m.val, label: m.label }))];
+  get anioFilterOptions() {
+    return [{ value: null, label: 'Todos los años' }, ...this.anios.map((a) => ({ value: a, label: String(a) }))];
+  }
+
   constructor(
     private racService: RacService,
     private loaderService: LoaderService,
@@ -72,8 +98,11 @@ export class RacLista implements OnInit {
       next: ({ proyectos, empresas }) => {
         this.proyectos = proyectos.data
           .filter(p => p.estado === 'ACTIVO')
-          .map(p => ({ id: p.projectId, nombre: p.projectDescription }));
-        this.empresas = empresas.map(e => ({ id: e.id, razonSocial: e.nombre }));
+          .map(p => ({ id: p.projectId, nombre: p.projectDescription }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+        this.empresas = empresas
+          .map(e => ({ id: e.id, razonSocial: e.nombre }))
+          .sort((a, b) => a.razonSocial.localeCompare(b.razonSocial));
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -148,8 +177,8 @@ export class RacLista implements OnInit {
     });
   }
 
-  onFiltroMesChange(value: string): void {
-    this.filtroMes = value ? +value : null;
+  onFiltroMesChange(value: number | null): void {
+    this.filtroMes = value ?? null;
     if (this.filtroMes && !this.filtroAnio) this.filtroAnio = this.anioActual;
     this.buscar();
   }

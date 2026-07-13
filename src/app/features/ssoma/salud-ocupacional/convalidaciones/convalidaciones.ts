@@ -24,6 +24,11 @@ import {
   diasVencerStyle,
 } from '../shared/dias-vencer.utils';
 import { ConvalidacionReview } from './components/convalidacion-review/convalidacion-review';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 
 interface FilterOption {
   id: string;
@@ -40,6 +45,11 @@ interface FilterOption {
     SearchSelect,
     ConvalidacionReview,
     AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
   ],
   templateUrl: './convalidaciones.html',
   styleUrl: './convalidaciones.css',
@@ -76,6 +86,7 @@ export class Convalidaciones implements OnInit, OnDestroy {
   reviewOpen = false;
   selectedItem: ConvalidacionListDto | null = null;
   descargandoPdfId: number | null = null;
+  filtrosAbiertos = false;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -229,6 +240,16 @@ export class Convalidaciones implements OnInit, OnDestroy {
       this.filters.empresaDestinoId ||
       this.filters.tipoEmoId
     );
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.resultado) n++;
+    if (this.filters.proyectoId) n++;
+    if (this.filters.empresaDestinoId) n++;
+    if (this.filters.tipoEmoId) n++;
+    return n;
   }
 
   descargarPdf(item: ConvalidacionListDto, event: Event): void {

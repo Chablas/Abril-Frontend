@@ -163,7 +163,7 @@
   padding: 0.4rem 0.85rem;
   font-size: 12px;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--color-abril-muted);
   text-decoration: none;
   background: transparent;
   border: none;
@@ -173,7 +173,7 @@
   transition: color .15s;
 }
 .abril-tabs__tab i { font-size: 12px; }
-.abril-tabs__tab:hover { color: #374151; }
+.abril-tabs__tab:hover { color: var(--color-abril-body); }
 .abril-tabs__tab--active {
   color: #111827;
   font-weight: 700;
@@ -197,7 +197,7 @@
   gap: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-abril-muted);
   background: transparent;
   border: 1px solid transparent;
   padding: 4px 12px;

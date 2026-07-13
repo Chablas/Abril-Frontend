@@ -90,7 +90,7 @@
   gap: 5px;
   transition: color .1s, border-color .1s;
 }
-.sm-tab.active { color: #1b3a2d; border-bottom-color: #64bc04; }
+.sm-tab.active { color: var(--color-abril-standard); border-bottom-color: #64bc04; }
 .sm-tab:hover:not(.active) { color: #374151; }
 
 .sm-tab-badge {
@@ -138,7 +138,7 @@
   width: 100%;
   justify-content: center;
   padding: .5rem 1rem;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   border-radius: 6px;
   font-size: .82rem;

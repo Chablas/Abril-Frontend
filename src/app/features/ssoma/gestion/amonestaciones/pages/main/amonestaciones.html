@@ -214,38 +214,9 @@
   <!-- ── TAB LISTA ─────────────────────────────────────────────── -->
   @if (tab === 'lista') {
 
-    <!-- Filtros -->
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label>DNI / Nombre</label>
-        <input type="text" class="filter-control" [(ngModel)]="filtroWorkerSearch"
-               placeholder="Buscar…" (keyup.enter)="filtrar()" />
-      </div>
-      <div class="filter-group">
-        <label>Empresa</label>
-        <input type="text" class="filter-control" [(ngModel)]="filtroEmpresa"
-               placeholder="Buscar…" (keyup.enter)="filtrar()" />
-      </div>
-      <div class="filter-group">
-        <label>Proyecto</label>
-        <select class="filter-control" [ngModel]="filtroProyectoId ?? ''"
-                (ngModelChange)="filtroProyectoId = $event ? +$event : undefined">
-          <option value="">Todos</option>
-          @for (p of proyectos; track p.id) {
-            <option [value]="p.id">{{ p.nombre }}</option>
-          }
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Desde</label>
-        <input type="date" class="filter-control" [(ngModel)]="filtroFechaDesde" />
-      </div>
-      <div class="filter-group">
-        <label>Hasta</label>
-        <input type="date" class="filter-control" [(ngModel)]="filtroFechaHasta" />
-      </div>
-      <button class="btn-filtrar" (click)="filtrar()">Filtrar</button>
-      <button class="btn-limpiar" (click)="limpiarFiltros()">Limpiar</button>
+    <!-- Botón "Filtros" estándar -->
+    <div class="flex justify-end mb-[10px]">
+      <app-filter-trigger [count]="filtrosListaActivos" (open)="filtrosListaAbiertos = true" />
     </div>
 
     @if (loadingLista) {
@@ -253,9 +224,9 @@
     } @else if (lista.length === 0) {
       <div class="empty-state">No se encontraron amonestaciones.</div>
     } @else {
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
+      <div class="table-wrapper w-full flex-1 min-h-0 overflow-auto">
+        <table class="abril-table data-table">
+          <thead class="sticky top-0 z-10">
             <tr>
               <th>Código</th>
               <th>Fecha</th>
@@ -332,15 +303,14 @@
       </div>
 
       <!-- Paginación -->
-      @if (totalPaginas > 1) {
-        <div class="pagination">
-          <button class="page-btn" [disabled]="query.page === 1" (click)="cambiarPagina(query.page! - 1)">‹</button>
-          @for (p of paginas; track p) {
-            <button class="page-btn" [class.active]="p === query.page" (click)="cambiarPagina(p)">{{ p }}</button>
-          }
-          <button class="page-btn" [disabled]="query.page === totalPaginas" (click)="cambiarPagina(query.page! + 1)">›</button>
-        </div>
-      }
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="totalLista"
+          [currentPage]="query.page ?? 1"
+          [totalPages]="totalPaginas"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
+      </div>
     }
   }
 
@@ -854,6 +824,51 @@
 
   <app-fab label="Generar amonestación" (clicked)="nuevaAmonestacion()"></app-fab>
 </div>
+
+@if (filtrosListaAbiertos) {
+  <app-filter-modal (closeModal)="filtrosListaAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por DNI o nombre..."
+        [(value)]="filtroWorkerSearch"
+        (valueChange)="filtrar()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por empresa..."
+        [(value)]="filtroEmpresa"
+        (valueChange)="filtrar()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="w-full">
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        [value]="filtroProyectoId"
+        (valueChange)="filtroProyectoId = $event; filtrar()"
+        placeholder="Todos los proyectos">
+      </app-search-select>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="abril-label">Desde</label>
+        <input type="date" class="abril-input" [(ngModel)]="filtroFechaDesde" (change)="filtrar()" />
+      </div>
+      <div class="flex-1">
+        <label class="abril-label">Hasta</label>
+        <input type="date" class="abril-input" [(ngModel)]="filtroFechaHasta" (change)="filtrar()" />
+      </div>
+    </div>
+  </app-filter-modal>
+}
 
 @if (fotoLightbox) {
   <div class="lightbox-overlay" (click)="cerrarLightbox()">

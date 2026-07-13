@@ -26,6 +26,11 @@ import {
 } from '../shared/estado.utils';
 import { ProgramacionCreate } from './components/programacion-create/programacion-create';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 
 interface DiaCalendario {
   fecha: Date;
@@ -41,7 +46,7 @@ interface FilterOption {
 @Component({
   selector: 'app-salud-programaciones',
   standalone: true,
-  imports: [FabButton, 
+  imports: [FabButton,
     CommonModule,
     FormsModule,
     Paginator,
@@ -50,6 +55,11 @@ interface FilterOption {
     ProgramacionCreate,
     DatePipe,
     AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
   ],
   templateUrl: './programaciones.html',
   styleUrl: './programaciones.css',
@@ -114,6 +124,7 @@ export class Programaciones implements OnInit, OnDestroy {
   };
 
   createOpen = false;
+  filtrosAbiertos = false;
   rechazandoId: number | null = null;
   motivoRechazo = '';
   filtroClinicaId: number | null = null;
@@ -411,6 +422,20 @@ export class Programaciones implements OnInit, OnDestroy {
       this.filters.hasta ||
       this.filtroClinicaId
     );
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.estado) n++;
+    if (this.filters.desde) n++;
+    if (this.filters.hasta) n++;
+    if (this.filtroClinicaId) n++;
+    return n;
+  }
+
+  get clinicaOptions(): Array<{ id: number | null; nombre: string }> {
+    return [{ id: null, nombre: 'Todas' }, ...this.clinicas];
   }
 
   get semanaLabel(): string {

@@ -94,7 +94,7 @@ export class SolicitudSalidas implements OnInit {
       next: (data) => {
         this.lugarProyectoOptions = [
           { id: null, nombreDisplay: 'Todos los proyectos' },
-          ...data.lugaresProyecto,
+          ...[...data.lugaresProyecto].sort((a, b) => a.nombreDisplay.localeCompare(b.nombreDisplay)),
         ];
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),

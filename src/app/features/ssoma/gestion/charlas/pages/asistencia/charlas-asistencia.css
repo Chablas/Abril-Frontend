@@ -106,7 +106,7 @@
   white-space: nowrap;
 }
 
-.badge--verde   { background: #eaf2ee; color: #1b3a2d; }
+.badge--verde   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .badge--rojo    { background: #fdecea; color: #b83030; }
 .badge--gris    { background: #f0ede8; color: #8a8880; }
 
@@ -164,7 +164,7 @@
 .checkbox-label input[type="checkbox"] {
   width: 15px;
   height: 15px;
-  accent-color: #1b3a2d;
+  accent-color: var(--color-abril-standard);
   cursor: pointer;
 }
 
@@ -192,14 +192,14 @@
 .supervisor-row:hover { background: #f8f6f3; }
 
 .supervisor-row--marcado {
-  background: #eaf2ee;
+  background: var(--color-abril-standard-light);
   border-color: #c1dac8;
 }
 
 .sup-checkbox {
   width: 15px;
   height: 15px;
-  accent-color: #1b3a2d;
+  accent-color: var(--color-abril-standard);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -208,7 +208,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   display: flex;
   align-items: center;
@@ -226,7 +226,7 @@
 }
 
 .marcado-icon {
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   font-size: 15px;
 }
 
@@ -258,7 +258,7 @@
   padding: 9px 18px;
   border-radius: 9px;
   border: none;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -266,7 +266,7 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) { background: #152e23; }
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-standard-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (min-width: 768px) {

@@ -15,116 +15,47 @@
     { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
   ]">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="p-6 space-y-4 flex-1 overflow-y-auto">
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div class="filter-search">
-        <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/>
-            <path d="M21 21l-4.3-4.3"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Nombre o DNI"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
-      </div>
-      <div>
-        <label class="filter-label">Resultado</label>
-        <app-search-select
-          [options]="resultadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.resultado"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.resultado = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="filter-label">Proyecto</label>
-        <app-search-select
-          [options]="proyectoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.proyectoId"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.proyectoId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="filter-label">Razón social</label>
-        <app-search-select
-          [options]="empresaDestinoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.empresaDestinoId"
-          [showLabel]="false"
-          placeholder="Todas"
-          (valueChange)="filters.empresaDestinoId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="filter-label">Tipo</label>
-        <app-search-select
-          [options]="tipoEmoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.tipoEmoId"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.tipoEmoId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-    </div>
+<section class="page-container flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
-    <div *ngIf="hasActiveFilters" class="pt-2">
-      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
           <tr>
             <th>Trabajador</th>
             <th>Proyecto</th>
             <th>Empresa origen</th>
             <th>Empresa destino</th>
             <th>Fecha</th>
-            <th>Resultado</th>
+            <th class="text-center">Resultado</th>
             <th>Vencimiento</th>
             <th class="text-right">Días</th>
             <th class="text-right">PDF</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of items" class="cursor-pointer hover:bg-gray-50" (click)="openReview(item)">
-            <td>
+          <tr *ngFor="let item of items" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)" (click)="openReview(item)">
+            <td class="cursor-pointer">
               <div class="worker-cell">
-                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
                 <span class="worker-dni">DNI · {{ item.workerDni }}</span>
               </div>
             </td>
-            <td class="text-gray-600">{{ item.proyecto || '—' }}</td>
-            <td class="text-gray-600">{{ item.empresaOrigen }}</td>
-            <td class="font-medium">{{ item.empresaDestino }}</td>
-            <td>{{ item.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
-            <td>
+            <td class="text-gray-500 cursor-pointer">{{ item.proyecto || '—' }}</td>
+            <td class="text-gray-500 cursor-pointer">{{ item.empresaOrigen }}</td>
+            <td class="font-medium cursor-pointer">{{ item.empresaDestino }}</td>
+            <td class="cursor-pointer">{{ item.fechaConvalidacion | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-center cursor-pointer">
               <span class="badge border" [ngClass]="resultadoClass(item.resultado)">
                 {{ item.resultado }}
               </span>
             </td>
-            <td>{{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
-            <td class="text-right">
+            <td class="cursor-pointer">{{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-right cursor-pointer">
               <ng-container *ngIf="item.diasParaVencer != null; else sinVencimiento">
                 <span class="badge border" [ngClass]="diasClass(item.diasParaVencer)">
                   {{ diasLabel(item.diasParaVencer) }}
@@ -137,7 +68,7 @@
             <td class="text-right">
               <button
                 type="button"
-                class="btn-link"
+                abrilBulkAction="default"
                 [disabled]="descargandoPdfId === item.id"
                 (click)="descargarPdf(item, $event)"
                 title="Descargar constancia de convalidación"
@@ -148,23 +79,23 @@
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="9" class="empty-row">Sin convalidaciones.</td>
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasActiveFilters ? 'Sin resultados.' : 'Sin convalidaciones.' }}
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
+  </div>
 
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-      <app-paginator
-        [totalRecords]="totalRecords"
-        [currentPage]="currentPage"
-        [totalPages]="totalPages"
-        (pageChange)="onPageChange($event)"
-      ></app-paginator>
-    </div>
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
   </div>
 </section>
-
 
 <app-convalidacion-review
   [open]="reviewOpen"
@@ -172,3 +103,63 @@
   (closed)="closeReview()"
   (saved)="onReviewed()"
 ></app-convalidacion-review>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Resultado"
+      [options]="resultadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.resultado"
+      placeholder="Todos"
+      (valueChange)="filters.resultado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Razón social"
+      [options]="empresaDestinoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaDestinoId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaDestinoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoEmoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.tipoEmoId"
+      placeholder="Todos"
+      (valueChange)="filters.tipoEmoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

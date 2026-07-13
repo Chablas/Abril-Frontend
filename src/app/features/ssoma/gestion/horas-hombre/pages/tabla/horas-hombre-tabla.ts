@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -16,7 +18,7 @@ interface OpcionSimple { id: number; nombre: string; }
 @Component({
   selector: 'app-horas-hombre-tabla',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, Paginator],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, Paginator, FilterTriggerButton, FilterModal],
   templateUrl: './horas-hombre-tabla.html',
   styleUrl: './horas-hombre-tabla.css',
 })
@@ -30,6 +32,16 @@ export class HorasHombreTabla implements OnInit {
   filtroEmpresaId: number | null = null;
   filtroFechaDesde = '';
   filtroFechaHasta = '';
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroProyectoId != null) n++;
+    if (this.filtroEmpresaId != null) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    return n;
+  }
 
   items: HorasHombreDiaDto[] = [];
   loading = false;
@@ -49,14 +61,18 @@ export class HorasHombreTabla implements OnInit {
   ngOnInit(): void {
     this.projectService.getProjectsPaged({ pageSize: 300 }).subscribe({
       next: (res) => {
-        this.proyectos = (res.data ?? []).map((p) => ({ id: p.projectId, nombre: p.projectDescription }));
+        this.proyectos = (res.data ?? [])
+          .map((p) => ({ id: p.projectId, nombre: p.projectDescription }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
         this.cdr.detectChanges();
       },
       error: () => { this.proyectos = []; },
     });
     this.authService.getEmpresasContratistas().subscribe({
       next: (res) => {
-        this.empresas = (res ?? []).map((e: any) => ({ id: e.id, nombre: e.razonSocial ?? e.nombre }));
+        this.empresas = (res ?? [])
+          .map((e: any) => ({ id: e.id, nombre: e.razonSocial ?? e.nombre }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
         this.cdr.detectChanges();
       },
       error: () => { this.empresas = []; },

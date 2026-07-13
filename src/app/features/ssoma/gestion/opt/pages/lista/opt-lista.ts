@@ -9,12 +9,16 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 @Component({
   selector: 'app-opt-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator],
   templateUrl: './opt-lista.html',
   styleUrl: './opt-lista.css',
 })
@@ -112,6 +116,12 @@ export class OptLista implements OnInit {
   get hayFiltrosActivos(): boolean {
     return !!(this.filtroTipo || this.filtroFechaDesde || this.filtroFechaHasta);
   }
+
+  readonly tipoFilterOptions = [
+    { value: '', label: 'Todo tipo' },
+    { value: 'Planeada', label: 'Planeada' },
+    { value: 'No Planeada', label: 'No Planeada' },
+  ];
 
   scoreClass(score?: number): string {
     if (score === undefined || score === null) return 'score-na';

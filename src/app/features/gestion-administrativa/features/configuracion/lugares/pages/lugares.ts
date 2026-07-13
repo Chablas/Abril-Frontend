@@ -16,6 +16,7 @@ import { FilterModal } from '../../../../../../shared/components/filter-modal/fi
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 
 @Component({
   standalone: true,
@@ -40,7 +41,7 @@ export class GaLugares implements OnInit {
   ];
   filtrosAbiertos = false;
   currentPage = 1;
-  readonly pageSize = 15;
+  readonly pageSize = DEFAULT_PAGE_SIZE;
 
   get filtrosActivos(): number {
     let n = 0;

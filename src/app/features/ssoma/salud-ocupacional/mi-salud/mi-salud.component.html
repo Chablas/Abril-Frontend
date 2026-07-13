@@ -5,10 +5,10 @@
   [tabs]="tabs">
 </app-abril-page-header>
 
-<section class="px-3 py-4 space-y-4 flex-1 overflow-y-auto">
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-hidden">
 
   <!-- Resumen -->
-  <div class="summary-grid" *ngIf="resumen">
+  <div class="summary-grid shrink-0" *ngIf="resumen">
 
     <!-- Card EMO -->
     <div class="summary-card">
@@ -81,12 +81,12 @@
   </div>
 
   <!-- Mis Descansos -->
-  <div class="card">
+  <div class="flex flex-col gap-[10px] flex-1 min-h-0">
     <div class="card-header">
       <span class="card-header__title">Mis Descansos Médicos</span>
     </div>
-    <div class="table-wrapper">
-      <table class="data-table">
+    <div class="w-full flex-1 min-h-0 overflow-auto">
+      <table class="abril-table">
         <colgroup>
           <col style="width:80px"/>
           <col style="width:100px"/>
@@ -96,25 +96,25 @@
           <col style="width:100px"/>
           <col style="width:36px"/>
         </colgroup>
-        <thead>
+        <thead class="sticky top-0 z-10">
           <tr>
             <th>Tipo</th>
             <th>Desde</th>
             <th>Hasta</th>
-            <th>Días</th>
+            <th class="text-center">Días</th>
             <th>Motivo</th>
-            <th>Estado</th>
+            <th class="text-center">Estado</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let d of descansos">
+          <tr *ngFor="let d of descansos" class="border-b" style="border-color:var(--color-abril-border)">
             <td><span class="badge badge-blue">{{ d.tipo }}</span></td>
-            <td>{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
-            <td>{{ d.fechaFin   | date:'dd/MM/yyyy' }}</td>
-            <td class="col-mono">{{ d.dias ?? '—' }}</td>
-            <td class="col-truncate">{{ d.motivo ?? '—' }}</td>
-            <td>
+            <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
+            <td class="text-gray-500">{{ d.fechaFin   | date:'dd/MM/yyyy' }}</td>
+            <td class="col-mono text-center">{{ d.dias ?? '—' }}</td>
+            <td class="col-truncate text-gray-500">{{ d.motivo ?? '—' }}</td>
+            <td class="text-center">
               <span class="badge" [ngClass]="estadoClass(d.estado)">{{ d.estado ?? '—' }}</span>
             </td>
             <td>
@@ -128,15 +128,15 @@
             </td>
           </tr>
           <tr *ngIf="!loadingDescansos && descansos.length === 0">
-            <td colspan="7" class="empty-row">Sin descansos médicos registrados.</td>
+            <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Sin descansos médicos registrados.</td>
           </tr>
           <tr *ngIf="loadingDescansos && descansos.length === 0">
-            <td colspan="7" class="empty-row">Cargando...</td>
+            <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Cargando...</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+    <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
       <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
         [totalPages]="totalPages" (pageChange)="onPageChange($event)">
       </app-paginator>

@@ -71,7 +71,7 @@
 .kpi-sub--rojo { color: #991b1b; font-weight: 600; }
 
 /* Score colors */
-.score-verde    { color: #1b3a2d; }
+.score-verde    { color: var(--color-abril-standard); }
 .score-amarillo { color: #d97706; }
 .score-rojo     { color: #b83030; }
 .score-na       { color: #8a8880; }
@@ -133,7 +133,7 @@
   min-height: 4px;
 }
 
-.bar-fill.score-verde    { background: #1b3a2d; }
+.bar-fill.score-verde    { background: var(--color-abril-standard); }
 .bar-fill.score-amarillo { background: #d97706; }
 .bar-fill.score-rojo     { background: #b83030; }
 .bar-fill.score-na       { background: #d4d0c8; }
@@ -151,7 +151,7 @@
 
 .bar-lbl { font-size: 9px; color: #8a8880; margin-top: 3px; }
 .bar-tasa { font-size: 9px; font-weight: 600; }
-.bar-tasa.score-verde    { color: #1b3a2d; }
+.bar-tasa.score-verde    { color: var(--color-abril-standard); }
 .bar-tasa.score-amarillo { color: #d97706; }
 .bar-tasa.score-rojo     { color: #b83030; }
 
@@ -179,7 +179,7 @@
 
 .tipo-bar-fill {
   height: 100%;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   border-radius: 3px;
   transition: width 0.4s ease;
 }

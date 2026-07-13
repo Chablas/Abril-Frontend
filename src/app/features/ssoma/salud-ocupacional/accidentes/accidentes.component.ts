@@ -30,12 +30,29 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CatalogosSaludService } from '../services/catalogos-salud.service';
 import { AgenteRiesgoDto } from '../dtos/catalogos.model';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 @Component({
   selector: 'app-accidentes',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, AbrilPageHeaderComponent, Paginator, DescansoModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    AbrilPageHeaderComponent,
+    Paginator,
+    DescansoModalComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchSelect,
+    StatusBadge,
+    TitleCasePipe,
+  ],
   templateUrl: './accidentes.component.html',
   styleUrl: './accidentes.component.css',
 })
@@ -62,6 +79,8 @@ export class AccidentesComponent implements OnInit, OnDestroy {
     { id: 'Abierto', nombre: 'Abierto' },
     { id: 'Cerrado', nombre: 'Cerrado' },
   ];
+
+  filtrosAbiertos = false;
 
   // Catálogos
   tiposCita: TipoItemDto[] = [];
@@ -234,7 +253,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
     }).then((r) => {
       if (!r.isConfirmed) return;
       this.svc.cerrar(id).subscribe({
@@ -257,7 +276,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
     }).then(r => {
       if (!r.isConfirmed) return;
       this.svc.marcarReinduccion(a.id).subscribe({
@@ -286,7 +305,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   guardarCita(): void {
     if (!this.detalle) return;
     if (!this.formCita.tipoId || !this.formCita.fechaCita) {
-      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo de cita y fecha son obligatorios.', confirmButtonColor: '#1b3a2d' });
+      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo de cita y fecha son obligatorios.', confirmButtonColor: '#0F6E56' });
       return;
     }
     this.saving = true;
@@ -331,7 +350,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   guardarEquipo(): void {
     if (!this.detalle) return;
     if (!this.formEquipo.tipoEquipoId || !this.formEquipo.fechaPrestamo || this.formEquipo.cantidad < 1) {
-      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo, cantidad y fecha de préstamo son obligatorios.', confirmButtonColor: '#1b3a2d' });
+      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo, cantidad y fecha de préstamo son obligatorios.', confirmButtonColor: '#0F6E56' });
       return;
     }
     this.saving = true;
@@ -360,7 +379,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
 
   guardarDevolucion(): void {
     if (!this.devolucionEquipoId || !this.formDevolucion.fechaDevolucion) {
-      Swal.fire({ icon: 'warning', title: 'La fecha de devolución es obligatoria.', confirmButtonColor: '#1b3a2d' });
+      Swal.fire({ icon: 'warning', title: 'La fecha de devolución es obligatoria.', confirmButtonColor: '#0F6E56' });
       return;
     }
     this.saving = true;
@@ -405,11 +424,11 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   guardarAlta(): void {
     if (!this.detalle) return;
     if (!this.formAlta.tipoId || !this.formAlta.fechaAlta) {
-      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo de alta y fecha son obligatorios.', confirmButtonColor: '#1b3a2d' });
+      Swal.fire({ icon: 'warning', title: 'Completa los campos obligatorios', text: 'Tipo de alta y fecha son obligatorios.', confirmButtonColor: '#0F6E56' });
       return;
     }
     if (this.formAlta.tieneRestriccion && !this.formAlta.descripcionRestriccion?.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Describe la restricción', confirmButtonColor: '#1b3a2d' });
+      Swal.fire({ icon: 'warning', title: 'Describe la restricción', confirmButtonColor: '#0F6E56' });
       return;
     }
     this.saving = true;
@@ -522,5 +541,14 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
            || this.filtros.workerId  || this.filtros.estado);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtros.fechaDesde) n++;
+    if (this.filtros.fechaHasta) n++;
+    if (this.filtros.workerId) n++;
+    if (this.filtros.estado) n++;
+    return n;
   }
 }

@@ -15,10 +15,13 @@
     { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
   ]">
+
+  <!-- Botón "Filtros" estándar: solo aplica a la vista Lista. -->
+  <app-filter-trigger *ngIf="viewMode === 'list'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="p-6 space-y-4 flex-1 overflow-y-auto">
-  <div class="flex justify-end">
+<section class="page-container p-6 flex flex-col gap-[16px] flex-1 min-h-0 overflow-hidden">
+  <div class="flex justify-end shrink-0">
     <app-view-toggle
       [modes]="viewModes"
       [value]="viewMode"
@@ -27,7 +30,7 @@
   </div>
 
   <!-- KPIs -->
-  <div class="kpis-row">
+  <div class="kpis-row shrink-0">
     <div class="kpi-card">
       <span class="kpi-value">{{ resumen.programados }}</span>
       <span class="kpi-label">Programados</span>
@@ -59,76 +62,10 @@
   </div>
 
   <!-- Vista Lista -->
-  <ng-container *ngIf="viewMode === 'list'">
-    <div class="filters-card">
-      <div class="filters-grid">
-        <div class="filter-search">
-          <label class="filter-label">Buscar</label>
-          <div class="search-input">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="7"/>
-              <path d="M21 21l-4.3-4.3"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Nombre o DNI"
-              [ngModel]="filters.search"
-              (ngModelChange)="onSearchChange($event)"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label class="filter-label">Estado</label>
-          <app-search-select
-            [options]="estadoOptions"
-            valueField="id"
-            displayField="nombre"
-            [value]="filters.estado"
-            [showLabel]="false"
-            placeholder="Todos"
-            (valueChange)="filters.estado = $event; onFilterChange()"
-          ></app-search-select>
-        </div>
-
-        <div>
-          <label class="filter-label">Desde</label>
-          <input
-            type="date"
-            class="field-input"
-            [(ngModel)]="filters.desde"
-            (change)="onFilterChange()"
-          />
-        </div>
-
-        <div>
-          <label class="filter-label">Hasta</label>
-          <input
-            type="date"
-            class="field-input"
-            [(ngModel)]="filters.hasta"
-            (change)="onFilterChange()"
-          />
-        </div>
-
-        <div>
-          <label class="filter-label">Clínica</label>
-          <select class="field-input" [(ngModel)]="filtroClinicaId" (change)="onFilterChange()">
-            <option [ngValue]="null">Todas</option>
-            <option *ngFor="let c of clinicas" [ngValue]="c.id">{{ c.nombre }}</option>
-          </select>
-        </div>
-      </div>
-
-      <div *ngIf="hasActiveFilters" class="pt-2">
-        <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
+  <div *ngIf="viewMode === 'list'" class="flex flex-col gap-[10px] flex-1 min-h-0">
+    <div class="w-full flex-1 min-h-0 overflow-auto">
+        <table class="abril-table">
+          <thead class="sticky top-0 z-10">
             <tr>
               <th>Trabajador</th>
               <th>Tipo EMO</th>
@@ -136,33 +73,33 @@
               <th>Hora</th>
               <th>Clínica</th>
               <th>Médico</th>
-              <th>Estado</th>
+              <th class="text-center">Estado</th>
               <th class="text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of items">
+            <tr *ngFor="let item of items" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
               <td>
                 <div class="worker-cell">
-                  <span class="worker-name">{{ item.workerNombre }}</span>
+                  <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
                   <span class="worker-dni">DNI · {{ item.workerDni }}</span>
                 </div>
               </td>
-              <td>{{ item.tipoEmo }}</td>
-              <td>{{ formatFecha(item.fechaProgramada) }}</td>
-              <td>{{ item.horaProgramada || '—' }}</td>
-              <td class="text-gray-600">{{ item.clinica || '—' }}</td>
-              <td class="text-gray-600">{{ item.medico || '—' }}</td>
-              <td>
+              <td class="text-gray-500">{{ item.tipoEmo }}</td>
+              <td class="text-gray-500">{{ formatFecha(item.fechaProgramada) }}</td>
+              <td class="text-gray-500">{{ item.horaProgramada || '—' }}</td>
+              <td class="text-gray-500">{{ item.clinica || '—' }}</td>
+              <td class="text-gray-500">{{ item.medico || '—' }}</td>
+              <td class="text-center">
                 <span class="badge border" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
                 <span *ngIf="esAutomatico(item)" class="badge border bg-violet-50 text-violet-700 border-violet-200" style="font-size:0.68rem">AUTO</span>
               </td>
               <td class="text-right">
-                <div class="row-actions">
+                <div class="row-actions flex items-center justify-end gap-[8px]">
                   <button
                     *ngIf="puedeConfirmar(item)"
                     type="button"
-                    class="btn-chip chip-green"
+                    abrilBulkAction="default"
                     title="Confirmar"
                     (click)="cambiarEstado(item, 'Confirmada')"
                   >
@@ -171,7 +108,7 @@
                   <button
                     *ngIf="puedeMarcarNoPresento(item)"
                     type="button"
-                    class="btn-chip chip-orange"
+                    abrilBulkAction="default"
                     title="No se presentó"
                     (click)="cambiarEstado(item, 'No se presentó')"
                   >
@@ -180,7 +117,7 @@
                   <button
                     *ngIf="puedeCancelar(item)"
                     type="button"
-                    class="btn-chip chip-gray"
+                    abrilBulkAction="danger"
                     title="Cancelar"
                     (click)="cambiarEstado(item, 'Cancelada')"
                   >
@@ -205,22 +142,23 @@
             </tr>
 
             <tr *ngIf="!loading && items.length === 0">
-              <td colspan="8" class="empty-row">Sin programaciones.</td>
+              <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+                {{ hasActiveFilters ? 'Sin resultados.' : 'Sin programaciones.' }}
+              </td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-        <app-paginator
-          [totalRecords]="totalRecords"
-          [currentPage]="currentPage"
-          [totalPages]="totalPages"
-          (pageChange)="onPageChange($event)"
-        ></app-paginator>
-      </div>
     </div>
-  </ng-container>
+
+    <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
 
   <!-- Vista Calendario -->
   <ng-container *ngIf="viewMode === 'calendar'">
@@ -271,3 +209,50 @@
   (closed)="closeCreate()"
   (saved)="onCreated()"
 ></app-programacion-create>
+
+<!-- ── Modal de filtros estándar (solo vista Lista) ────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="abril-filter-label">Desde</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filters.desde" (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1">
+      <label class="abril-filter-label">Hasta</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filters.hasta" (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Clínica"
+      [options]="clinicaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroClinicaId"
+      placeholder="Todas"
+      (valueChange)="filtroClinicaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

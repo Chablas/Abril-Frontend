@@ -25,9 +25,8 @@
 .tipo-body { overflow-x: auto; }
 
 .lineas-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-.lineas-table th { padding: 0.5rem 0.75rem; background: #f9fafb; text-align: left;
-  font-size: 0.7rem; font-weight: 600; color: #6b7280; text-transform: uppercase;
-  border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.lineas-table th { padding: 0.5rem 0.75rem; text-align: left;
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
 .lineas-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
 .num { text-align: right; }
 .total-cell { font-weight: 600; color: #111827; }

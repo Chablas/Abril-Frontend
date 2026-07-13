@@ -11,12 +11,16 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 @Component({
   selector: 'app-inspeccion-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator],
   templateUrl: './inspeccion-lista.component.html',
   styleUrl: './inspeccion-lista.component.css',
 })
@@ -53,7 +57,7 @@ export class InspeccionListaComponent implements OnInit {
     }).subscribe({
       next: ({ catalogos, proyectos }) => {
         this.tipos = catalogos.tipos;
-        this.proyectos = proyectos.data;
+        this.proyectos = [...proyectos.data].sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.cdr.markForCheck();
         this.load();
       },
@@ -161,6 +165,23 @@ export class InspeccionListaComponent implements OnInit {
 
   get hayFiltros(): boolean {
     return !!(this.filtroProyectoId || this.filtroTipoId || this.filtroEstado || this.filtroFechaDesde || this.filtroFechaHasta);
+  }
+
+  readonly estadoFilterOptions = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'Borrador', label: 'Borrador' },
+    { value: 'EnProceso', label: 'En Proceso' },
+    { value: 'Cerrada', label: 'Cerrada' },
+  ];
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroProyectoId) n++;
+    if (this.filtroTipoId) n++;
+    if (this.filtroEstado) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    return n;
   }
 
   scoreClass(v?: number | null): string {

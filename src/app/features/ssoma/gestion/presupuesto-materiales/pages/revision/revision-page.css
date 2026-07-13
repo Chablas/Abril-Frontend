@@ -61,8 +61,7 @@
 .pres-table-wrap { overflow-x: auto; }
 .pres-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .pres-table th {
-  background: #f9fafb; border-bottom: 2px solid #e5e7eb;
-  padding: 9px 12px; text-align: left; font-weight: 600; color: #374151; white-space: nowrap;
+  padding: 9px 12px; text-align: left; font-weight: 600; white-space: nowrap;
 }
 .pres-table td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; color: #374151; }
 .pres-td-file { font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

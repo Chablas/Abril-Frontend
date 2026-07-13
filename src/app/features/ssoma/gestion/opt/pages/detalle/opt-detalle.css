@@ -47,7 +47,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   text-transform: uppercase;
 }
 
@@ -112,7 +112,7 @@
   transition: stroke-dashoffset 0.5s ease;
 }
 
-.gauge-fill.score-verde    { stroke: #1b3a2d; }
+.gauge-fill.score-verde    { stroke: var(--color-abril-standard); }
 .gauge-fill.score-amarillo { stroke: #d97706; }
 .gauge-fill.score-rojo     { stroke: #b83030; }
 .gauge-fill.score-na       { stroke: #d4d0c8; }
@@ -129,7 +129,7 @@
   font-weight: 700;
 }
 
-.gauge-val.score-verde    { color: #1b3a2d; }
+.gauge-val.score-verde    { color: var(--color-abril-standard); }
 .gauge-val.score-amarillo { color: #d97706; }
 .gauge-val.score-rojo     { color: #b83030; }
 .gauge-val.score-na       { color: #8a8880; }
@@ -219,7 +219,7 @@
   gap: 6px;
 }
 
-.det-card__title i { color: #1b3a2d; }
+.det-card__title i { color: var(--color-abril-standard); }
 
 /* ── TRABAJADORES ────────────────────────────────────────── */
 .trabajadores-grid {
@@ -291,7 +291,7 @@
 .row-inseguro { background: #fff8f8; }
 
 .th-num { width: 36px; }
-.td-num { font-size: 11px; font-weight: 700; color: #1b3a2d; }
+.td-num { font-size: 11px; font-weight: 700; color: var(--color-abril-standard); }
 .td-nivel { font-size: 10px; color: #8a8880; }
 .ta-c { text-align: center; }
 
@@ -306,7 +306,7 @@
   font-weight: 700;
 }
 
-.res-seguro   { background: #eaf2ee; color: #1b3a2d; }
+.res-seguro   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .res-inseguro { background: #fdecea; color: #922b21; }
 .res-na       { background: #f0ede8; color: #8a8880; }
 .res-sin      { background: #f5f3ef; color: #a8a59e; }
@@ -325,8 +325,8 @@
 }
 
 .verif-row:last-child { border-bottom: none; }
-.verif-row--ok { color: #1b3a2d; }
-.verif-row--ok i { color: #1b3a2d; }
+.verif-row--ok { color: var(--color-abril-standard); }
+.verif-row--ok i { color: var(--color-abril-standard); }
 .verif-row i { font-size: 14px; color: #d4d0c8; flex-shrink: 0; }
 
 /* ── RETROALIMENTACIÓN ───────────────────────────────────── */
@@ -348,8 +348,8 @@
 }
 
 .retro-item i { font-size: 14px; flex-shrink: 0; }
-.retro-item--ok { border-color: #c1dac8; color: #1b3a2d; background: #f4faf6; }
-.retro-item--ok i { color: #1b3a2d; }
+.retro-item--ok { border-color: #c1dac8; color: var(--color-abril-standard); background: #f4faf6; }
+.retro-item--ok i { color: var(--color-abril-standard); }
 
 .accion-box {
   padding: 10px 12px;

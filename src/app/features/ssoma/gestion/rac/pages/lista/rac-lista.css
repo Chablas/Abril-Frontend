@@ -7,13 +7,13 @@
 
 /* ── DESIGN SYSTEM TOKENS ────────────────────────────────── */
 .lista-root {
-  --rac-primary:        #1b3a2d;
-  --rac-primary-soft:   #eaf2ee;
-  --rac-primary-hover:  #152e23;
+  --rac-primary:        var(--color-abril-standard);
+  --rac-primary-soft:   var(--color-abril-standard-light);
+  --rac-primary-hover:  var(--color-abril-standard-hover);
   --rac-text-dark:      #1a1a18;
   --rac-text-muted:     #8a8880;
   --rac-text-light:     #a8a59e;
-  --rac-bg-page:        #f5f3ef;
+  --rac-bg-page:        #ffffff;
   --rac-bg-card:        #ffffff;
   --rac-bg-hover:       #f0ede8;
   --rac-border:         #e8e5df;
@@ -26,8 +26,8 @@
   --rac-amber-soft:     #fdf3dc;
   --rac-info:           #2563a8;
   --rac-info-soft:      #eef4ff;
-  --rac-success:        #1b3a2d;
-  --rac-success-soft:   #eaf2ee;
+  --rac-success:        var(--color-abril-standard);
+  --rac-success-soft:   var(--color-abril-standard-light);
 }
 
 :host {
@@ -51,7 +51,9 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   gap: 12px;
 }
@@ -186,9 +188,6 @@
 .tabla-wrap {
   display: none;
   overflow-x: auto;
-  border-radius: var(--radius-md);
-  border: 0.5px solid var(--rac-border);
-  background: var(--rac-bg-card);
 }
 
 .tabla-rac {
@@ -196,18 +195,7 @@
   border-collapse: collapse;
 }
 
-.tabla-rac th {
-  background: var(--rac-bg-page);
-  padding: 10px 12px;
-  text-align: left;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--rac-text-light);
-  white-space: nowrap;
-  border-bottom: 0.5px solid var(--rac-border);
-}
+
 
 .th-dot { width: 24px; padding: 10px 6px 10px 12px; }
 
@@ -265,7 +253,7 @@
 .dot--critico { background: #b83030; }
 .dot--alto    { background: #d97706; }
 .dot--medio   { background: #d97706; }
-.dot--bajo    { background: #1b3a2d; }
+.dot--bajo    { background: var(--color-abril-standard); }
 .dot--default { background: var(--rac-text-light); }
 
 /* ── CHIPS TIPO ──────────────────────────────────────────── */
@@ -298,7 +286,7 @@
 .badge-critico { background: #fdecea; color: #922b21; }
 .badge-alto    { background: #fef5d0; color: #7d6008; }
 .badge-medio   { background: #fef5d0; color: #7d6008; }
-.badge-bajo    { background: #eaf2ee; color: #1b3a2d; }
+.badge-bajo    { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .badge-default { background: #f5f3ef; color: #5a5850; }
 
 /* ── CHIPS ESTADO (spec 2.4) ─────────────────────────────── */
@@ -315,7 +303,7 @@
 .chip-estado--sm { font-size: 9px; padding: 1px 7px; }
 
 .estado-abierto  { background: #f5f3ef;  color: #5a5850; }
-.estado-cerrado  { background: #eaf2ee;  color: #1b3a2d; }
+.estado-cerrado  { background: var(--color-abril-standard-light);  color: var(--color-abril-standard); }
 .estado-vencido  { background: #fdecea;  color: #922b21; }
 .estado-proceso  { background: #eef4ff;  color: #2563a8; }
 
@@ -413,7 +401,7 @@
 .rac-card--critico { border-left-color: #b83030; }
 .rac-card--alto    { border-left-color: #d97706; }
 .rac-card--medio   { border-left-color: #d97706; }
-.rac-card--bajo    { border-left-color: #1b3a2d; }
+.rac-card--bajo    { border-left-color: var(--color-abril-standard); }
 
 .card-top {
   display: flex;

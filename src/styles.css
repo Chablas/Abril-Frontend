@@ -35,7 +35,7 @@
   /* ── Neutros ─────────────────────────────────────── */
   --color-abril-ink:            #0D1B2A;
   --color-abril-body:           #374151;
-  --color-abril-muted:          #6B7280;
+  --color-abril-muted:          #4B5563;
   --color-abril-placeholder:    #9CA3AF;
   --color-abril-border:         #E5E7EB;
   --color-abril-border-strong:  #D1D5DB;
@@ -182,6 +182,29 @@
   font-size: 0.78rem; font-weight: 600;
   color: var(--color-abril-primary-dark);
   text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ── Filtro estándar (2026): label + input nativo dentro de app-filter-modal,
+   dimensionado igual al combobox (app-search-select) para que ambos convivan
+   sin saltar visualmente — usar en vez de .abril-label/.abril-input, que son
+   más grandes y de otro color (legado, previos al estándar 2026). ────────── */
+.abril-filter-label {
+  display: block; margin-bottom: 4px;
+  font-size: 11px; font-weight: 600;
+  color: var(--color-abril-muted, #4B5563);
+}
+.abril-filter-input {
+  height: 34px; padding: 0 10px; width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-standard, 7px);
+  font-size: 12px; font-weight: 500; color: var(--color-abril-body, #374151);
+  background: var(--color-abril-surface, #fff);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.abril-filter-input:focus {
+  border-color: var(--color-abril-standard);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-abril-standard) 30%, transparent);
 }
 
 /* ── Page layout ────────────────────────────────────────────── */

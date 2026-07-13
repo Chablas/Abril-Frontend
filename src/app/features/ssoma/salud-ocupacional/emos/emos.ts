@@ -28,6 +28,10 @@ import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
 import { EditarEmoModal } from '../../../../shared/components/editar-emo-modal/editar-emo-modal';
 import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo-modal/documentos-emo-modal';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 interface FilterOption {
   id: string;
@@ -49,6 +53,10 @@ interface FilterOption {
     EditarEmoModal,
     DocumentosEmoModal,
     AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    TitleCasePipe,
   ],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
@@ -96,6 +104,8 @@ export class Emos implements OnInit, OnDestroy {
   ];
 
   empresaOptions: Array<EmpresaSimpleDto & { idAsString?: string }> = [];
+
+  filtrosAbiertos = false;
 
   items: EmoPorTrabajadorDto[] = [];
   totalRecords = 0;
@@ -391,5 +401,20 @@ export class Emos implements OnInit, OnDestroy {
       this.filters.sinEmoCompleto ||
       this.filters.sortBy
     );
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.aptitud) n++;
+    if (this.filters.estado) n++;
+    if (this.filters.empresaId) n++;
+    if (this.filters.proyectoId) n++;
+    if (this.filters.fechaEmoDesde) n++;
+    if (this.filters.fechaEmoHasta) n++;
+    if (this.filters.sinLectura) n++;
+    if (this.filters.sinCertificado) n++;
+    if (this.filters.sinEmoCompleto) n++;
+    return n;
   }
 }

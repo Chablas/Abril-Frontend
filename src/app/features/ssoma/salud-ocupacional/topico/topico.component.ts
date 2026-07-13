@@ -16,6 +16,10 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 export const SSOMA_TABS = [
   { label: 'Dashboard',      icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
@@ -35,7 +39,19 @@ export const SSOMA_TABS = [
   selector: 'app-salud-topico',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, TopicoModalComponent],
+  imports: [
+    FabButton,
+    CommonModule,
+    FormsModule,
+    AbrilPageHeaderComponent,
+    Paginator,
+    SearchSelect,
+    TopicoModalComponent,
+    FilterTriggerButton,
+    FilterModal,
+    StatusBadge,
+    TitleCasePipe,
+  ],
   templateUrl: './topico.component.html',
   styleUrl: './topico.component.css',
 })
@@ -54,6 +70,13 @@ export class TopicoComponent implements OnInit, OnDestroy {
 
   modalVisible = false;
   atencionSeleccionada: TopicoAtencionDto | null = null;
+  filtrosAbiertos = false;
+
+  readonly estadoOpts = [
+    { value: '', label: 'Todos' },
+    { value: 'Abierta', label: 'Abierta' },
+    { value: 'Cerrada', label: 'Cerrada' },
+  ];
 
   readonly tipoOpts = [
     { id: '',  nombre: 'Todos los tipos' },
@@ -135,7 +158,7 @@ export class TopicoComponent implements OnInit, OnDestroy {
       showCancelButton: true,
       confirmButtonText: 'Cerrar atención',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
     }).then(r => {
       if (!r.isConfirmed) return;
       this.svc.cerrar(a.id).subscribe({
@@ -168,5 +191,15 @@ export class TopicoComponent implements OnInit, OnDestroy {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
            || this.filtros.workerId  || this.filtros.tipoAtencionId
            || this.filtros.estado);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtros.fechaDesde) n++;
+    if (this.filtros.fechaHasta) n++;
+    if (this.filtros.workerId) n++;
+    if (this.filtros.tipoAtencionId) n++;
+    if (this.filtros.estado) n++;
+    return n;
   }
 }

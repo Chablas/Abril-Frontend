@@ -10,12 +10,16 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 @Component({
   selector: 'app-accidente-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator],
   templateUrl: './accidente-lista.component.html',
   styleUrl: './accidente-lista.component.css',
 })
@@ -37,6 +41,11 @@ export class AccidenteListaComponent implements OnInit {
   filtroFechaHasta = '';
   filtroArea = '';
   readonly areasOrigen = AREAS_ORIGEN;
+  readonly estadoFilterOptions = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'Borrador', label: 'Borrador' },
+    { value: 'Enviado', label: 'Enviado' },
+  ];
 
   constructor(
     private service: AccidenteIncidenteService,
@@ -60,7 +69,9 @@ export class AccidenteListaComponent implements OnInit {
     this.loaderService.show();
     this.service.inicializar().subscribe({
       next: (init) => {
-        this.proyectos = init.proyectos.map((p) => ({ projectId: p.id, projectDescription: p.nombre }));
+        this.proyectos = init.proyectos
+          .map((p) => ({ projectId: p.id, projectDescription: p.nombre }))
+          .sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.tipos = init.tipos;
         this.loaderService.hide();
         this.cdr.markForCheck();
@@ -174,6 +185,17 @@ export class AccidenteListaComponent implements OnInit {
   get pagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
   get hayFiltros(): boolean {
     return !!(this.filtroProyectoId || this.filtroTipoId || this.filtroEstado || this.filtroFechaDesde || this.filtroFechaHasta || this.filtroArea);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroProyectoId) n++;
+    if (this.filtroTipoId) n++;
+    if (this.filtroEstado) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    if (this.filtroArea) n++;
+    return n;
   }
 
   areaLabel(area: string): string {

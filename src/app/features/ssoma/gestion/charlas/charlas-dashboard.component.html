@@ -11,6 +11,9 @@
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="loadAll()">
+
+    <!-- Filtro "Estado" de la pestaña Gestión: solo aplica a esa tabla. -->
+    <app-filter-trigger *ngIf="activeTab === 4" tabsExtra [count]="filtrosTab4Activos" (open)="filtrosTab4Abiertos = true" />
   </app-abril-page-header>
 
   <!-- FILTROS GLOBALES -->
@@ -458,44 +461,39 @@
 
       <!-- ═══════════════════════════════ TAB 4 ─ Gestión y aprobación -->
       @if (activeTab === 4) {
-        <div class="table-card">
-          <div class="chart-title-row">
-            <span class="chart-title">Lista de Charlas</span>
-            <select class="filtro-input filtro-input--sm" [(ngModel)]="tab4Estado" (change)="tab4Page=1; loadTab4()">
-              <option value="">Todos los estados</option>
-              <option value="Abierto">Abierto</option>
-              <option value="Enviado">Enviado</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
-          </div>
+        <div class="flex flex-col gap-[10px] flex-1 min-h-0">
 
           @if (loadingTab4) { <div class="skeleton-body" style="height:120px"></div> }
           @else if (!tab4Items.length) {
-            <p class="empty-msg">Sin charlas con los filtros seleccionados.</p>
+            <p class="empty-msg">{{ tab4Estado ? 'Sin resultados.' : 'Sin charlas registradas.' }}</p>
           } @else {
-            <div class="table-wrap">
-              <table class="dash-table">
-                <thead>
+            <div class="w-full flex-1 min-h-0 overflow-auto">
+              <table class="abril-table">
+                <thead class="sticky top-0 z-10">
                   <tr>
                     <th>Título</th>
                     <th>Tema</th>
                     <th>Fecha</th>
                     <th>Supervisor</th>
-                    <th class="ta-c">Estado</th>
-                    <th class="ta-r">Asistentes</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-right">Asistentes</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (item of tab4Items; track item.id) {
-                    <tr>
+                    <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
                       <td class="fw-600">{{ item.titulo }}</td>
-                      <td>{{ item.tema ?? '—' }}</td>
-                      <td class="td-muted">{{ formatFecha(item.fecha) }}</td>
-                      <td class="td-muted">{{ item.supervisorNombre || '—' }}</td>
-                      <td class="ta-c"><span class="badge" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span></td>
-                      <td class="ta-r">{{ item.totalAsistentes }}</td>
+                      <td class="text-gray-500">{{ item.tema ?? '—' }}</td>
+                      <td class="text-gray-500">{{ formatFecha(item.fecha) }}</td>
+                      <td class="text-gray-500">{{ item.supervisorNombre || '—' }}</td>
+                      <td class="text-center">
+                        <app-status-badge
+                          [text]="item.estado | uppercase"
+                          [bgColor]="item.estado === 'Aprobado' ? '#D7FAF4' : item.estado === 'Rechazado' ? '#FAD5D4' : '#FEF3C7'"
+                          [textColor]="item.estado === 'Aprobado' ? '#009C87' : item.estado === 'Rechazado' ? '#D30000' : '#B45309'" />
+                      </td>
+                      <td class="text-right text-gray-500">{{ item.totalAsistentes }}</td>
                       <td>
                         <button class="btn-row" (click)="abrirDetalle(item)" title="Ver detalle">
                           <i class="ti ti-eye"></i>
@@ -506,17 +504,14 @@
                 </tbody>
               </table>
             </div>
-            @if (tab4TotalPages > 1) {
-              <div class="paginacion">
-                <button class="pg-btn" (click)="tab4GoPage(tab4Page-1)" [disabled]="tab4Page===1">
-                  <i class="ti ti-chevron-left"></i>
-                </button>
-                <span class="pg-info">{{ tab4Page }} / {{ tab4TotalPages }} ({{ tab4Total }})</span>
-                <button class="pg-btn" (click)="tab4GoPage(tab4Page+1)" [disabled]="tab4Page===tab4TotalPages">
-                  <i class="ti ti-chevron-right"></i>
-                </button>
-              </div>
-            }
+            <div class="shrink-0 max-w-[440px]">
+              <app-paginator
+                [totalRecords]="tab4Total"
+                [currentPage]="tab4Page"
+                [totalPages]="tab4TotalPages"
+                (pageChange)="tab4GoPage($event)">
+              </app-paginator>
+            </div>
           }
         </div>
       }
@@ -643,3 +638,18 @@
     }
   </div>
 }
+
+<!-- ── Modal de filtros estándar (solo pestaña Gestión) ────────────── -->
+<app-filter-modal *ngIf="filtrosTab4Abiertos" (closeModal)="filtrosTab4Abiertos = false" (clear)="limpiarFiltrosTab4()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="tab4EstadoOpts"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="tab4Estado"
+      (valueChange)="tab4Estado = $event; tab4Page = 1; loadTab4()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

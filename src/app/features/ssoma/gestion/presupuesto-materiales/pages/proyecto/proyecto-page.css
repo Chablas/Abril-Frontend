@@ -65,7 +65,7 @@
 .personal-hito-titulo { font-size: 0.8rem; font-weight: 600; color: #374151; display: flex;
   justify-content: space-between; gap: 6px; margin-bottom: 0.5rem; }
 .personal-tabla { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-.personal-tabla th { text-align: left; color: #9ca3af; font-weight: 600; padding: 2px 4px; }
+.personal-tabla th { text-align: left; font-weight: 600; padding: 2px 4px; }
 .personal-tabla td { padding: 2px 4px; }
 .personal-rol { font-weight: 600; color: #4b5563; white-space: nowrap; }
 .personal-tabla input { width: 100%; padding: 3px 4px; border: 1px solid #d1d5db;

@@ -10,35 +10,12 @@
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="hayFiltrosActivos ? 1 : 0" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <div class="lista-body">
-
-    <!-- FILTROS toggle (mobile) -->
-    <button type="button" class="filtros-toggle" (click)="toggleFiltros()">
-      <i class="ti ti-filter"></i>
-      <span>Filtrar</span>
-      @if (hayFiltrosActivos) { <span class="filtros-badge">●</span> }
-      <i class="ti" [class.ti-chevron-down]="!filtrosAbiertos" [class.ti-chevron-up]="filtrosAbiertos" style="margin-left:auto"></i>
-    </button>
-
-    <div class="filtros-bar" [class.filtros-bar--open]="filtrosAbiertos">
-      <select class="filtro-select" [(ngModel)]="filtroTipo">
-        <option value="">Todo tipo</option>
-        <option value="Planeada">Planeada</option>
-        <option value="No Planeada">No Planeada</option>
-      </select>
-      <input type="date" class="filtro-select" [(ngModel)]="filtroFechaDesde" placeholder="Desde" />
-      <input type="date" class="filtro-select" [(ngModel)]="filtroFechaHasta" placeholder="Hasta" />
-      <button type="button" class="btn-buscar" (click)="load()">
-        <i class="ti ti-search"></i> Buscar
-      </button>
-      @if (hayFiltrosActivos) {
-        <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
-          <i class="ti ti-x"></i> Limpiar
-        </button>
-      }
-    </div>
 
     <!-- SKELETON -->
     @if (loading) {
@@ -51,9 +28,9 @@
 
     <!-- TABLA DESKTOP -->
     @if (!loading && (result?.data?.length ?? 0) > 0) {
-      <div class="tabla-wrap">
-        <table class="tabla-opt">
-          <thead>
+      <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+        <table class="abril-table tabla-opt">
+          <thead class="sticky top-0 z-10">
             <tr>
               <th>Fecha</th>
               <th>Proyecto</th>
@@ -149,24 +126,43 @@
     }
 
     <!-- PAGINACIÓN -->
-    @if ((result?.totalPages ?? 0) > 1) {
-      <div class="paginacion">
-        <button type="button" class="pag-btn"
-          [disabled]="(query.page ?? 1) <= 1"
-          (click)="cambiarPagina((query.page ?? 1) - 1)">
-          <i class="ti ti-chevron-left"></i> Anterior
-        </button>
-        <span class="pag-info">Página {{ query.page }} de {{ result!.totalPages }}</span>
-        <button type="button" class="pag-btn"
-          [disabled]="(query.page ?? 1) >= result!.totalPages"
-          (click)="cambiarPagina((query.page ?? 1) + 1)">
-          Siguiente <i class="ti ti-chevron-right"></i>
-        </button>
+    @if (result) {
+      <div class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="result.totalRecords"
+          [currentPage]="query.page ?? 1"
+          [totalPages]="result.totalPages"
+          (pageChange)="cambiarPagina($event)">
+        </app-paginator>
       </div>
     }
 
   </div><!-- /lista-body -->
 
-
   <app-fab label="Nueva OPT" (clicked)="irANuevo()"></app-fab>
 </div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroTipo"
+      (valueChange)="filtroTipo = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="abril-filter-label">Desde</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    </div>
+    <div class="flex-1">
+      <label class="abril-filter-label">Hasta</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    </div>
+  </div>
+</app-filter-modal>

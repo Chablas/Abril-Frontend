@@ -30,8 +30,8 @@
         el tipo, y "se calcula por" (HH/Área techada/Trabajadores/Calculado/Fijo/Metrado) de cada
         familia. Editar aquí afecta cómo se calculan los ratios de TODOS los proyectos.
       </p>
-      <table class="tabla-catalogo">
-        <thead>
+      <table class="abril-table tabla-catalogo">
+        <thead class="sticky top-0 z-10">
           <tr>
             <th>Nombre</th><th>Tipo</th><th>Se calcula por</th><th>Unidad</th>
             <th>Pertenece SSOMA</th><th>Activo</th><th></th>
@@ -71,8 +71,8 @@
         <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
         <p>No hay materiales pendientes de estandarizar.</p>
       </div>
-      <table *ngIf="pendientes.length > 0" class="tabla-catalogo">
-        <thead>
+      <table *ngIf="pendientes.length > 0" class="abril-table tabla-catalogo">
+        <thead class="sticky top-0 z-10">
           <tr><th>Proyecto</th><th>Recurso (S10)</th><th>Cant.</th><th>Precio total</th><th>Sugerido</th><th>Buscar ítem</th><th></th></tr>
         </thead>
         <tbody>
@@ -112,8 +112,8 @@
         <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
         <p>No hay materiales reportados fuera de SSOMA.</p>
       </div>
-      <table *ngIf="noSsoma.length > 0" class="tabla-catalogo">
-        <thead><tr><th>Proyecto</th><th>Recurso (S10)</th><th>Precio total</th><th>Fecha</th><th>Estado</th></tr></thead>
+      <table *ngIf="noSsoma.length > 0" class="abril-table tabla-catalogo">
+        <thead class="sticky top-0 z-10"><tr><th>Proyecto</th><th>Recurso (S10)</th><th>Precio total</th><th>Fecha</th><th>Estado</th></tr></thead>
         <tbody>
           <tr *ngFor="let n of noSsoma">
             <td>{{ n.projectDescription }}</td>

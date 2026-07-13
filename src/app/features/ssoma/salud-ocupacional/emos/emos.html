@@ -14,141 +14,19 @@
     { label: 'Asistente Social', icono: 'ti-heart-handshake',  route: '/ssoma/salud-ocupacional/asistente-social' },
     { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
-  ]">
+  ]"
+  [botonSecundario]="{ label: 'Descargar Excel', icono: 'ti-file-spreadsheet' }"
+  (secondaryClick)="descargarExcel()">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
-  <!-- Filtros -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div class="filter-search">
-        <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/>
-            <path d="M21 21l-4.3-4.3"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Nombre o DNI"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label class="filter-label">Aptitud</label>
-        <app-search-select
-          [options]="aptitudOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.aptitud"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todas"
-          (valueChange)="filters.aptitud = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div>
-        <label class="filter-label">Estado</label>
-        <app-search-select
-          [options]="estadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.estado"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todos"
-          (valueChange)="filters.estado = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div>
-        <label class="filter-label">Empresa</label>
-        <app-search-select
-          [options]="empresaOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.empresaId"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todas"
-          (valueChange)="filters.empresaId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div>
-        <label class="filter-label">Proyecto</label>
-        <app-search-select
-          [options]="proyectoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.proyectoId"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todos"
-          (valueChange)="filters.proyectoId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div>
-        <label class="filter-label">Fecha EMO desde</label>
-        <input type="date" class="filter-date"
-               [(ngModel)]="filters.fechaEmoDesde"
-               (ngModelChange)="onFilterChange()" />
-      </div>
-
-      <div>
-        <label class="filter-label">Fecha EMO hasta</label>
-        <input type="date" class="filter-date"
-               [(ngModel)]="filters.fechaEmoHasta"
-               (ngModelChange)="onFilterChange()" />
-      </div>
-
-      <div>
-        <label class="filter-label">Ordenar por</label>
-        <app-search-select
-          [options]="sortOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.sortBy"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Nombre (A-Z)"
-          (valueChange)="filters.sortBy = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-    </div>
-
-    <div class="filters-grid-evidencia">
-      <label class="filter-check">
-        <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
-        Sin Lectura EMO (evidencia)
-      </label>
-      <label class="filter-check">
-        <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
-        Sin Certificado de Aptitud (evidencia)
-      </label>
-      <label class="filter-check">
-        <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
-        Sin EMO Completo (evidencia)
-      </label>
-    </div>
-
-    <div class="pt-2 filters-actions">
-      <button *ngIf="hasActiveFilters" type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
-      <button type="button" class="btn-excel" (click)="descargarExcel()">
-        <i class="ti ti-file-spreadsheet"></i> Descargar Excel
-      </button>
-    </div>
-  </div>
+<section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- Tabla -->
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+      <table class="abril-table">
         <colgroup>
           <col style="width: auto" />
           <col style="width: 80px" />
@@ -163,7 +41,7 @@
           <col style="width: 60px" />
           <col style="width: 160px" />
         </colgroup>
-        <thead>
+        <thead class="sticky top-0 z-10">
           <tr>
             <th>Trabajador</th>
             <th>T.EMO</th>
@@ -187,7 +65,7 @@
           >
             <td class="col-worker">
               <div class="worker-cell">
-                <span class="worker-name">{{ item.nombreCompleto }}</span>
+                <span class="worker-name">{{ item.nombreCompleto | titleCase }}</span>
                 <span class="worker-dni">DNI · {{ item.dni }}</span>
               </div>
             </td>
@@ -294,20 +172,120 @@
           </tr>
         </tbody>
       </table>
-    </div>
+  </div>
 
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-      <app-paginator
-        [totalRecords]="totalRecords"
-        [currentPage]="currentPage"
-        [totalPages]="totalPages"
-        (pageChange)="onPageChange($event)"
-      ></app-paginator>
-    </div>
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
   </div>
 </section>
 
 <app-fab label="Nuevo EMO" (clicked)="openCreate()"></app-fab>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Aptitud"
+      [options]="aptitudOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.aptitud"
+      placeholder="Todas"
+      (valueChange)="filters.aptitud = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa"
+      [options]="empresaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="abril-filter-label">Fecha EMO desde</label>
+      <input type="date" class="abril-filter-input"
+             [(ngModel)]="filters.fechaEmoDesde"
+             (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1">
+      <label class="abril-filter-label">Fecha EMO hasta</label>
+      <input type="date" class="abril-filter-input"
+             [(ngModel)]="filters.fechaEmoHasta"
+             (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Ordenar por"
+      [options]="sortOptions"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filters.sortBy"
+      placeholder="Nombre (A-Z)"
+      (valueChange)="filters.sortBy = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
+    Sin Lectura EMO (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
+    Sin Certificado de Aptitud (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
+    Sin EMO Completo (evidencia)
+  </label>
+</app-filter-modal>
 
 <app-emo-create
   *ngIf="createOpen"

@@ -1,119 +1,85 @@
-<div class="space-y-4">
+<div class="flex flex-col gap-[10px] flex-1 min-h-0">
   <header class="section-bar">
     <div>
       <h3 class="section-title">Clínicas</h3>
       <p class="section-sub">Centros médicos para EMOs e interconsultas.</p>
     </div>
-    <button type="button" class="btn-primary" (click)="openCreate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-      Nueva clínica
-    </button>
+    <div class="flex items-center gap-2">
+      <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Nueva clínica
+      </button>
+    </div>
   </header>
 
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div class="filter-search">
-        <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Nombre, RUC o email"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label class="filter-label">Estado</label>
-        <select
-          class="field-input"
-          [(ngModel)]="filters.estado"
-          (change)="onFilterChange()"
-        >
-          <option value="">Todos</option>
-          <option value="activo">Activos</option>
-          <option value="inactivo">Inactivos</option>
-        </select>
-      </div>
-    </div>
-
-    <div *ngIf="hasActiveFilters" class="pt-2">
-      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
-    </div>
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Nombre</th>
+          <th>RUC</th>
+          <th>Email</th>
+          <th>Teléfono</th>
+          <th>Dirección</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of pageItems" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ item.nombre | titleCase }}</td>
+          <td class="text-gray-500">{{ item.ruc || '—' }}</td>
+          <td class="text-gray-500">{{ emailsMap.get(item.id) || '—' }}</td>
+          <td class="text-gray-500">{{ item.telefono || '—' }}</td>
+          <td class="text-gray-500">{{ (item.direccion | titleCase) || '—' }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="item.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="item.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="item.activo ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button type="button" abrilBulkAction="default" (click)="openEdit(item)">
+                Editar
+              </button>
+              <button
+                type="button"
+                [abrilBulkAction]="item.activo ? 'danger' : 'default'"
+                (click)="toggleActivo(item)"
+              >
+                {{ item.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                type="button"
+                abrilBulkAction="default"
+                title="Enviar activación de cuenta"
+                (click)="enviarActivacion(item)"
+              >
+                📧 Activación
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && pageItems.length === 0">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ hasActiveFilters ? 'Sin resultados.' : 'Sin clínicas registradas.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>RUC</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
-            <th>Estado</th>
-            <th class="text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of pageItems">
-            <td class="font-semibold text-gray-800">{{ item.nombre }}</td>
-            <td class="text-gray-600">{{ item.ruc || '—' }}</td>
-            <td class="text-gray-600">{{ emailsMap.get(item.id) || '—' }}</td>
-            <td class="text-gray-600">{{ item.telefono || '—' }}</td>
-            <td class="text-gray-600">{{ item.direccion || '—' }}</td>
-            <td>
-              <span class="badge border" [ngClass]="item.activo ? 'chip-green' : 'chip-gray'">
-                {{ item.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td class="text-right">
-              <div class="row-actions">
-                <button type="button" class="btn-chip chip-blue" (click)="openEdit(item)">
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  class="btn-chip"
-                  [ngClass]="item.activo ? 'chip-orange' : 'chip-green'"
-                  (click)="toggleActivo(item)"
-                >
-                  {{ item.activo ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button
-                  type="button"
-                  class="btn-chip btn-activacion"
-                  title="Enviar activación de cuenta"
-                  (click)="enviarActivacion(item)"
-                >
-                  📧 Activación
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="!loading && pageItems.length === 0">
-            <td colspan="7" class="empty-row">Sin clínicas registradas.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-      <app-paginator
-        [totalRecords]="totalRecords"
-        [currentPage]="currentPage"
-        [totalPages]="totalPages"
-        (pageChange)="onPageChange($event)"
-      ></app-paginator>
-    </div>
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
   </div>
 </div>
 
@@ -125,3 +91,26 @@
   (closed)="closeForm()"
   (saved)="onSaved()"
 ></app-clinica-form>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre, RUC o email..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filters.estado"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

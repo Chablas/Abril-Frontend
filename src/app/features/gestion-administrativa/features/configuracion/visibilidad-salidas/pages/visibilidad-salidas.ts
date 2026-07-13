@@ -15,6 +15,7 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -49,7 +50,7 @@ export class VisibilidadSalidas implements OnInit {
   searchText = '';
   categoriaFilter: number | null = null;
   currentPage = 1;
-  readonly pageSize = 10;
+  readonly pageSize = DEFAULT_PAGE_SIZE;
 
   // ── Filtro de área en cascada (incluye todos los tipos de área, gerencia incluida) ──
   /** Niveles visibles del desplegable en cascada: [0] = raíces, [1] = hijos del nodo elegido, … */

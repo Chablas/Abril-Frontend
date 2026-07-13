@@ -9,11 +9,32 @@ import { GaMotivoCreate } from '../components/create/create';
 import { GaMotivoEdit } from '../components/edit/edit';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   standalone: true,
   selector: 'app-ga-motivos',
-  imports: [CommonModule, GaMotivoCreate, GaMotivoEdit, StatusBadge, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    GaMotivoCreate,
+    GaMotivoEdit,
+    StatusBadge,
+    AbrilPageHeaderComponent,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+    Paginator,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    SearchSelect,
+  ],
   templateUrl: './motivos.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -23,6 +44,58 @@ export class GaMotivos implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   motivoToEdit: GaMotivoSalidaConfigItemDto | null = null;
+
+  searchText = '';
+  estadoFilter: boolean | null = null;
+  readonly estadoFilterOptions = [
+    { value: null, label: 'Todos' },
+    { value: true, label: 'Activo' },
+    { value: false, label: 'Inactivo' },
+  ];
+  filtrosAbiertos = false;
+
+  private readonly pager = new ClientPager<GaMotivoSalidaConfigItemDto>();
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.estadoFilter !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.estadoFilter = null;
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
+  get filteredMotivos(): GaMotivoSalidaConfigItemDto[] {
+    return this.motivos.filter((m) => {
+      const matchesTexto = !this.searchText.trim() || SearchInput.matches(m.descripcion ?? '', this.searchText);
+      const matchesEstado = this.estadoFilter === null || m.activo === this.estadoFilter;
+      return matchesTexto && matchesEstado;
+    });
+  }
+
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.filteredMotivos);
+  }
+
+  get pagedMotivos(): GaMotivoSalidaConfigItemDto[] {
+    return this.pager.page(this.filteredMotivos);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
 
   constructor(
     private service: GaMotivoSalidaService,
@@ -39,6 +112,7 @@ export class GaMotivos implements OnInit {
     this.service.getAll().subscribe({
       next: (data) => {
         this.motivos = data;
+        this.pager.reset();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

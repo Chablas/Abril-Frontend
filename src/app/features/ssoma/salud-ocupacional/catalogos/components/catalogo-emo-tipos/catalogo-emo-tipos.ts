@@ -10,11 +10,30 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
 import { EmoTipoDto } from '../../../dtos/catalogos.model';
 import { EmoTipoForm } from '../emo-tipo-form/emo-tipo-form';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 
 @Component({
   selector: 'app-catalogo-emo-tipos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, EmoTipoForm],
+  imports: [
+    CommonModule,
+    FormsModule,
+    Paginator,
+    EmoTipoForm,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    SearchSelect,
+    StatusBadge,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+  ],
   templateUrl: './catalogo-emo-tipos.html',
   styleUrl: './catalogo-emo-tipos.css',
 })
@@ -35,6 +54,13 @@ export class CatalogoEmoTipos implements OnInit, OnDestroy {
   formOpen = false;
   formMode: 'create' | 'edit' = 'create';
   formInitial: EmoTipoDto | null = null;
+
+  filtrosAbiertos = false;
+  readonly estadoFilterOptions = [
+    { value: '', label: 'Todos' },
+    { value: 'activo', label: 'Activos' },
+    { value: 'inactivo', label: 'Inactivos' },
+  ];
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -175,5 +201,12 @@ export class CatalogoEmoTipos implements OnInit, OnDestroy {
 
   get hasActiveFilters(): boolean {
     return !!(this.filters.search || this.filters.estado);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.estado) n++;
+    return n;
   }
 }

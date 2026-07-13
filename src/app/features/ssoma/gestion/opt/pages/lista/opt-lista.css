@@ -10,7 +10,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--color-abril-page-bg);
+  background: #ffffff;
   position: relative;
 }
 
@@ -18,7 +18,9 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   gap: 12px;
 }
@@ -65,7 +67,7 @@
   width: 100%;
 }
 
-.filtro-select:focus { outline: none; border-color: #1b3a2d; }
+.filtro-select:focus { outline: none; border-color: var(--color-abril-standard); }
 
 .btn-buscar {
   display: inline-flex;
@@ -75,7 +77,7 @@
   padding: 9px 16px;
   border-radius: 9px;
   border: none;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -83,7 +85,7 @@
   width: 100%;
 }
 
-.btn-buscar:hover { background: #152e23; }
+.btn-buscar:hover { background: var(--color-abril-standard-hover); }
 
 .btn-limpiar {
   display: inline-flex;
@@ -130,18 +132,7 @@
   border-collapse: collapse;
 }
 
-.tabla-opt th {
-  background: var(--color-abril-page-bg);
-  padding: 9px 11px;
-  text-align: left;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #a8a59e;
-  white-space: nowrap;
-  border-bottom: 0.5px solid #e8e5df;
-}
+
 
 .tabla-opt td {
   padding: 9px 11px;
@@ -184,7 +175,7 @@
 
 .score-badge--sm { font-size: 9px; padding: 1px 7px; }
 
-.score-badge.score-verde    { background: #eaf2ee; color: #1b3a2d; }
+.score-badge.score-verde    { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .score-badge.score-amarillo { background: #fef5d0; color: #8a5a00; }
 .score-badge.score-rojo     { background: #fdecea; color: #922b21; }
 .score-badge.score-na       { background: #f0ede8; color: #8a8880; }
@@ -230,7 +221,7 @@
   white-space: nowrap;
 }
 
-.btn-inline--primary { background: #eaf2ee; color: #1b3a2d; border-color: #c1dac8; }
+.btn-inline--primary { background: var(--color-abril-standard-light); color: var(--color-abril-standard); border-color: #c1dac8; }
 .btn-inline--primary:hover { background: #d4ead9; }
 
 /* ── CARDS MOBILE ────────────────────────────────────────── */
@@ -339,7 +330,7 @@
   transition: background 0.12s;
 }
 
-.pag-btn:hover:not(:disabled) { background: #eaf2ee; border-color: #1b3a2d; color: #1b3a2d; }
+.pag-btn:hover:not(:disabled) { background: var(--color-abril-standard-light); border-color: var(--color-abril-standard); color: var(--color-abril-standard); }
 .pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .pag-info { font-size: 12px; color: #8a8880; white-space: nowrap; }
 
@@ -349,7 +340,7 @@
   bottom: 24px;
   right: 24px;
   z-index: 100;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   border: none;
   border-radius: 999px;
@@ -365,7 +356,7 @@
   min-height: 44px;
 }
 
-.fab:hover { background: #152e23; transform: scale(1.02); }
+.fab:hover { background: var(--color-abril-standard-hover); transform: scale(1.02); }
 .fab__label { display: none; }
 
 /* ── RESPONSIVE ≥768px ────────────────────────────────────── */

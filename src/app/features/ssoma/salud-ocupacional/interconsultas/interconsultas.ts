@@ -21,6 +21,11 @@ import {
   estadoInterconsultaStyle,
 } from '../shared/estado.utils';
 import { InterconsultaDetail } from './components/interconsulta-detail/interconsulta-detail';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 
 interface FilterOption {
   id: string;
@@ -48,6 +53,11 @@ const OBRA_OFICINA_CON_CORREO_PROPIO = new Set(['Staff', 'Oficina Central']);
     SearchSelect,
     InterconsultaDetail,
     AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
   ],
   templateUrl: './interconsultas.html',
   styleUrl: './interconsultas.css',
@@ -84,6 +94,7 @@ export class Interconsultas implements OnInit, OnDestroy {
   selectedId: number | null = null;
   selectedIds = new Set<number>();
   sendingEmails = false;
+  filtrosAbiertos = false;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -249,6 +260,16 @@ export class Interconsultas implements OnInit, OnDestroy {
       this.filters.contributorId ||
       this.filters.obraOficina
     );
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.estado !== 'Pendiente') n++;
+    if (this.filters.proyectoId) n++;
+    if (this.filters.contributorId) n++;
+    if (this.filters.obraOficina) n++;
+    return n;
   }
 
   // ===== Selección y envío de correos =====

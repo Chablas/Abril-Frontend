@@ -11,23 +11,12 @@
     ]"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <div class="penalidades-body">
-
-  <!-- FILTROS -->
-  <div class="filtros-bar">
-    <select class="filtro-select" [(ngModel)]="filtroEstado">
-      <option value="">Todos los estados</option>
-      <option value="EnEvaluacion">En evaluación</option>
-      <option value="DescargoPresentado">Descargo presentado</option>
-      <option value="Aplicada">Aplicada</option>
-      <option value="Anulada">Anulada</option>
-    </select>
-    <button type="button" class="hdr-btn hdr-btn--primary" (click)="load()">
-      <i class="ti ti-search"></i> Buscar
-    </button>
-  </div>
 
   <!-- SKELETON -->
   <div *ngIf="loading" class="skeleton-wrap">
@@ -36,8 +25,8 @@
 
   <!-- TABLA -->
   <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="tabla-wrap">
-    <table class="tabla-rac">
-      <thead>
+    <table class="abril-table tabla-rac">
+      <thead class="sticky top-0 z-10">
         <tr>
           <th>Código</th>
           <th>RAC</th>
@@ -85,23 +74,32 @@
   </div>
 
   <!-- PAGINACIÓN -->
-  <div *ngIf="(result?.totalPages ?? 0) > 1" class="paginacion">
-    <button type="button" class="pag-btn"
-            [disabled]="(query.page ?? 1) <= 1"
-            (click)="cambiarPagina((query.page ?? 1) - 1)">
-      <i class="ti ti-chevron-left"></i> Anterior
-    </button>
-    <span class="pag-info">Página {{ query.page }} de {{ result!.totalPages }}</span>
-    <button type="button" class="pag-btn"
-            [disabled]="(query.page ?? 1) >= result!.totalPages"
-            (click)="cambiarPagina((query.page ?? 1) + 1)">
-      Siguiente <i class="ti ti-chevron-right"></i>
-    </button>
+  <div *ngIf="result" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="result.total"
+      [currentPage]="query.page ?? 1"
+      [totalPages]="result.totalPages"
+      (pageChange)="cambiarPagina($event)">
+    </app-paginator>
   </div>
 
   </div><!-- /penalidades-body -->
 
 </div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
 
 <!-- ═══════════════════════════════════════════════ -->
 <!-- MODAL DETALLE                                   -->

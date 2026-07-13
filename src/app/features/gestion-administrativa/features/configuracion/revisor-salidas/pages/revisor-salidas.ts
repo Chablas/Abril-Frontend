@@ -14,11 +14,27 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 
 @Component({
   standalone: true,
   selector: 'app-revisor-salidas',
-  imports: [CommonModule, FormsModule, SearchSelect, SearchInput, Paginator, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SearchSelect,
+    SearchInput,
+    Paginator,
+    AbrilPageHeaderComponent,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+    FilterTriggerButton,
+    FilterModal,
+  ],
   templateUrl: './revisor-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -34,8 +50,10 @@ export class RevisorSalidas implements OnInit {
   /** Filtro por categoría del trabajador: workersCategoryId o null = todas. */
   categoriaTrabajadorFilter: number | null = null;
 
+  filtrosAbiertos = false;
+
   currentPage = 1;
-  readonly pageSize = 10;
+  readonly pageSize = DEFAULT_PAGE_SIZE;
 
   /** Worker en edición (solo uno a la vez) y jefe seleccionado en el selector. */
   editingWorkerId: number | null = null;
@@ -151,6 +169,21 @@ export class RevisorSalidas implements OnInit {
       }
     }
     return [...seen.values()].sort((a, b) => (a.fullName ?? '').localeCompare(b.fullName ?? ''));
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.jefeFilter !== null) n++;
+    if (this.categoriaTrabajadorFilter !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.jefeFilter = null;
+    this.categoriaTrabajadorFilter = null;
+    this.currentPage = 1;
   }
 
   onFilterChange(): void {

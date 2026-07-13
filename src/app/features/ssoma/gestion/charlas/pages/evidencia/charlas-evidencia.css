@@ -106,7 +106,7 @@
   white-space: nowrap;
 }
 
-.badge--verde   { background: #eaf2ee; color: #1b3a2d; }
+.badge--verde   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .badge--rojo    { background: #fdecea; color: #b83030; }
 .badge--gris    { background: #f0ede8; color: #8a8880; }
 
@@ -115,7 +115,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #eaf2ee;
+  background: var(--color-abril-standard-light);
   border: 0.5px solid #c1dac8;
   border-radius: 12px;
   padding: 12px 16px;
@@ -127,7 +127,7 @@
 
 .evidencia-ok-icon {
   font-size: 28px;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
 }
 
 .evidencia-info {
@@ -139,7 +139,7 @@
 .evidencia-label {
   font-size: 10px;
   font-weight: 700;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -147,7 +147,7 @@
 .evidencia-link {
   font-size: 13px;
   font-weight: 600;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -194,11 +194,11 @@
   min-height: 120px;
 }
 
-.drop-zone:hover { border-color: #1b3a2d; background: #f5f3ef; }
+.drop-zone:hover { border-color: var(--color-abril-standard); background: #f5f3ef; }
 
 .drop-zone--active {
-  border-color: #1b3a2d;
-  background: #eaf2ee;
+  border-color: var(--color-abril-standard);
+  background: var(--color-abril-standard-light);
 }
 
 .file-input {
@@ -238,7 +238,7 @@
 
 .file-preview-icon {
   font-size: 28px;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   flex-shrink: 0;
 }
 
@@ -295,7 +295,7 @@
   padding: 9px 18px;
   border-radius: 9px;
   border: none;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -303,7 +303,7 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) { background: #152e23; }
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-standard-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (min-width: 768px) {

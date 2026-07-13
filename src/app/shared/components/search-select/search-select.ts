@@ -32,6 +32,13 @@ export class SearchSelect {
   @Input() dark: boolean = false;
   /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */
   @Input() disabled: boolean = false;
+  /**
+   * Ordena las opciones alfabéticamente por `displayField` (una sola vez, acá, para que ninguna
+   * página tenga que acordarse de hacerlo). La opción "Todos/Todas" (valueField === null/undefined/'')
+   * queda siempre fija primero, sin importar su texto. Poner en `false` solo cuando el orden es
+   * semántico y no alfabético (ej. meses Ene→Dic, severidad Bajo→Crítico, año ascendente).
+   */
+  @Input() sortAlpha: boolean = true;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
@@ -55,10 +62,30 @@ export class SearchSelect {
       .toLowerCase();
   }
 
+  /** `options`, ordenadas alfabéticamente si corresponde (ver `sortAlpha`). */
+  private get baseOptions(): any[] {
+    if (!this.sortAlpha) return this.options;
+    const isPlaceholder = (opt: any) => {
+      const v = opt[this.valueField];
+      // 0 también cuenta como "sin selección" — mismo criterio que `hasValue`, usado en
+      // varias páginas como sentinel de "Todos" en campos numéricos (ej. clinicaId: 0).
+      return v === null || v === undefined || v === '' || v === 0;
+    };
+    const pinned = this.options.filter(isPlaceholder);
+    const rest = this.options
+      .filter(opt => !isPlaceholder(opt))
+      .slice()
+      .sort((a, b) =>
+        this.formatLabel(String(a[this.displayField])).localeCompare(this.formatLabel(String(b[this.displayField]))),
+      );
+    return [...pinned, ...rest];
+  }
+
   get filteredOptions(): any[] {
-    if (!this.searchText.trim()) return this.options;
+    const base = this.baseOptions;
+    if (!this.searchText.trim()) return base;
     const words = this.searchText.trim().split(/\s+/).map(w => this.normalize(w));
-    return this.options.filter(opt => {
+    return base.filter(opt => {
       const label = this.normalize(String(opt[this.displayField]));
       return words.every(w => label.includes(w));
     });

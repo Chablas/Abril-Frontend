@@ -9,11 +9,32 @@ import { GaTrayectoCreate } from '../components/create/create';
 import { GaTrayectoEdit } from '../components/edit/edit';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../shared/utils/client-pager';
+import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 
 @Component({
   standalone: true,
   selector: 'app-ga-trayectos',
-  imports: [CommonModule, GaTrayectoCreate, GaTrayectoEdit, StatusBadge, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    GaTrayectoCreate,
+    GaTrayectoEdit,
+    StatusBadge,
+    AbrilPageHeaderComponent,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+    Paginator,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    SearchSelect,
+  ],
   templateUrl: './trayectos.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -23,6 +44,61 @@ export class GaTrayectos implements OnInit {
   showCreateModal = false;
   showEditModal = false;
   trayectoToEdit: GaTrayectoListItemDto | null = null;
+
+  searchText = '';
+  estadoFilter: boolean | null = null;
+  readonly estadoFilterOptions = [
+    { value: null, label: 'Todos' },
+    { value: true, label: 'Activo' },
+    { value: false, label: 'Inactivo' },
+  ];
+  filtrosAbiertos = false;
+
+  private readonly pager = new ClientPager<GaTrayectoListItemDto>();
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.estadoFilter !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.estadoFilter = null;
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
+  get filteredTrayectos(): GaTrayectoListItemDto[] {
+    return this.trayectos.filter((t) => {
+      const matchesTexto =
+        !this.searchText.trim() ||
+        SearchInput.matches(t.lugarOrigenNombre ?? '', this.searchText) ||
+        SearchInput.matches(t.lugarDestinoNombre ?? '', this.searchText);
+      const matchesEstado = this.estadoFilter === null || t.activo === this.estadoFilter;
+      return matchesTexto && matchesEstado;
+    });
+  }
+
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.filteredTrayectos);
+  }
+
+  get pagedTrayectos(): GaTrayectoListItemDto[] {
+    return this.pager.page(this.filteredTrayectos);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
 
   constructor(
     private service: GaTrayectoService,
@@ -39,6 +115,7 @@ export class GaTrayectos implements OnInit {
     this.service.getAll().subscribe({
       next: (data) => {
         this.trayectos = data;
+        this.pager.reset();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

@@ -48,36 +48,16 @@
 .btn-link { font-size: .82rem; color: #64bc04; font-weight: 600; }
 .btn-link:hover { text-decoration: underline; }
 
-.table-wrapper { overflow-x: auto; }
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .8rem;
+.abril-table {
   table-layout: fixed;
 }
-.data-table thead th {
-  text-align: left;
-  padding: 6px 8px;
-  font-weight: 600;
-  font-size: .72rem;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: #6b7280;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  white-space: nowrap;
-}
-.data-table tbody td {
-  padding: 6px 8px;
-  border-bottom: 1px solid #f3f4f6;
-  color: #374151;
-  vertical-align: middle;
+.abril-table td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
-.data-table tbody tr:last-child td { border-bottom: 0; }
+.abril-table tbody tr:last-child td { border-bottom: 0; }
 
 .col-mono { color: #9ca3af; font-size: .72rem; font-variant-numeric: tabular-nums; }
 .col-worker { white-space: normal !important; overflow: visible !important; }

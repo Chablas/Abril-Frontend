@@ -11,6 +11,12 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
 import { ClinicaSimpleDto, MedicoSimpleDto } from '../../../dtos/catalogos.model';
 import { MedicoForm } from '../medico-form/medico-form';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 
 interface FilterOption {
   id: string | number;
@@ -20,7 +26,19 @@ interface FilterOption {
 @Component({
   selector: 'app-catalogo-medicos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, MedicoForm],
+  imports: [
+    CommonModule,
+    FormsModule,
+    Paginator,
+    SearchSelect,
+    MedicoForm,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    StatusBadge,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+  ],
   templateUrl: './catalogo-medicos.html',
   styleUrl: './catalogo-medicos.css',
 })
@@ -48,6 +66,13 @@ export class CatalogoMedicos implements OnInit, OnDestroy {
   formOpen = false;
   formMode: 'create' | 'edit' = 'create';
   formInitial: MedicoSimpleDto | null = null;
+
+  filtrosAbiertos = false;
+  readonly estadoFilterOptions = [
+    { value: '', label: 'Todos' },
+    { value: 'activo', label: 'Activos' },
+    { value: 'inactivo', label: 'Inactivos' },
+  ];
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -203,5 +228,13 @@ export class CatalogoMedicos implements OnInit, OnDestroy {
 
   get hasActiveFilters(): boolean {
     return !!(this.filters.search || this.filters.estado || this.filters.clinicaId);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.estado) n++;
+    if (this.filters.clinicaId) n++;
+    return n;
   }
 }

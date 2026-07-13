@@ -271,12 +271,9 @@
   font-size: 13px;
 }
 .cl-table th {
-  background: #f9fafb;
-  border-bottom: 2px solid #e5e7eb;
   padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  color: #374151;
   white-space: nowrap;
 }
 .cl-table td {

@@ -167,11 +167,9 @@
 
 .historial-table th {
   text-align: left;
-  color: #64748b;
   font-size: 0.72rem;
   text-transform: uppercase;
   padding: 6px 8px;
-  border-bottom: 1px solid #e2e8f0;
 }
 
 .historial-table td {

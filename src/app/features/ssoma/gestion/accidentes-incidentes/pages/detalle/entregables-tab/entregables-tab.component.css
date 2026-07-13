@@ -56,7 +56,7 @@
 .medidas-title {
   font-size: 14px;
   font-weight: 700;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   margin: 0;
   display: flex;
   align-items: center;

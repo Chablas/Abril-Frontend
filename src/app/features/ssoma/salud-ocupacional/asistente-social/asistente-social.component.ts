@@ -21,12 +21,28 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { SSOMA_TABS } from '../topico/topico.component';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { CasoSocialModalComponent } from './caso-social-modal.component';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 @Component({
   selector: 'app-asistente-social',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchSelect, CasoSocialModalComponent],
+  imports: [
+    FabButton,
+    CommonModule,
+    FormsModule,
+    AbrilPageHeaderComponent,
+    Paginator,
+    SearchSelect,
+    CasoSocialModalComponent,
+    FilterTriggerButton,
+    FilterModal,
+    StatusBadge,
+    TitleCasePipe,
+  ],
   templateUrl: './asistente-social.component.html',
   styleUrl: './asistente-social.component.css',
 })
@@ -43,6 +59,7 @@ export class AsistenteSocialComponent implements OnInit, OnDestroy {
 
   modalVisible = false;
   modalCasoId: string | null = null;
+  filtrosAbiertos = false;
 
   filtros: CasoSocialFilterDto = {};
 
@@ -155,6 +172,16 @@ export class AsistenteSocialComponent implements OnInit, OnDestroy {
   get hasFilters(): boolean {
     return !!(this.filtros.workerId || this.filtros.estado || this.filtros.tipoCaso
            || this.filtros.prioridad || this.filtros.empresaId);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtros.workerId) n++;
+    if (this.filtros.estado) n++;
+    if (this.filtros.tipoCaso) n++;
+    if (this.filtros.prioridad) n++;
+    if (this.filtros.empresaId) n++;
+    return n;
   }
 
   badgeClass(prioridad: string): string {

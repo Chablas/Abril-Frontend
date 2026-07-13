@@ -43,7 +43,7 @@
 
 .det-header__title { flex: 1; display: flex; flex-direction: column; gap: 1px; }
 
-.header-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #1b3a2d; text-transform: uppercase; }
+.header-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--color-abril-standard); text-transform: uppercase; }
 
 .det-header__title h1 { font-size: 15px; font-weight: 700; color: #1a1a18; margin: 0; }
 
@@ -108,7 +108,7 @@
 .gauge-svg { width: 96px; height: 96px; }
 
 .gauge-fill { transition: stroke-dashoffset 0.5s ease; }
-.gauge-fill.score-verde    { stroke: #1b3a2d; }
+.gauge-fill.score-verde    { stroke: var(--color-abril-standard); }
 .gauge-fill.score-amarillo { stroke: #d97706; }
 .gauge-fill.score-rojo     { stroke: #b83030; }
 .gauge-fill.score-na       { stroke: #d4d0c8; }
@@ -116,7 +116,7 @@
 .gauge-center { margin-top: -68px; display: flex; align-items: center; justify-content: center; }
 
 .gauge-val { font-size: 18px; font-weight: 700; }
-.gauge-val.score-verde    { color: #1b3a2d; }
+.gauge-val.score-verde    { color: var(--color-abril-standard); }
 .gauge-val.score-amarillo { color: #d97706; }
 .gauge-val.score-rojo     { color: #b83030; }
 .gauge-val.score-na       { color: #8a8880; }
@@ -142,7 +142,7 @@
 
 .estado-chip--borrador, .estado-chip--borrrador { background: #f0ede8; color: #8a8880; }
 .estado-chip--enproceso, .estado-chip--en { background: #fef3c7; color: #92400e; }
-.estado-chip--cerrada   { background: #eaf2ee; color: #1b3a2d; }
+.estado-chip--cerrada   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 
 /* ── META CARD ───────────────────────────────────────── */
 .meta-card {
@@ -222,13 +222,13 @@
   letter-spacing: 0.06em;
 }
 
-.det-card__title i { color: #1b3a2d; }
+.det-card__title i { color: var(--color-abril-standard); }
 
 .btn-toggle-na {
   font-size: 11px;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   background: none;
-  border: 0.5px solid #1b3a2d;
+  border: 0.5px solid var(--color-abril-standard);
   border-radius: 999px;
   padding: 2px 9px;
   cursor: pointer;
@@ -334,15 +334,15 @@
 
 .estado-abierto  { background: #fee2e2; color: #991b1b; }
 .estado-proceso  { background: #fef3c7; color: #92400e; }
-.estado-cerrado  { background: #eaf2ee; color: #1b3a2d; }
+.estado-cerrado  { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 
 .btn-cerrar-hallazgo {
   margin-left: auto;
   padding: 4px 10px;
   border-radius: 7px;
-  border: 0.5px solid #1b3a2d;
+  border: 0.5px solid var(--color-abril-standard);
   background: #fff;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -548,7 +548,7 @@
   padding: 9px 18px;
   border: none;
   border-radius: 9px;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;

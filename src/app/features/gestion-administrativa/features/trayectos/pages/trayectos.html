@@ -13,58 +13,58 @@
   ]"
   [botonPrimario]="{ label: 'Nuevo trayecto', icono: 'ti-plus' }"
   (primaryClick)="showCreateModal = true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<div class="flex flex-col gap-[20px] bg-white p-[20px] flex-1 overflow-y-auto">
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full rounded-lg overflow-auto border-t border-x" style="border-color:var(--color-abril-border)">
-    <table class="w-full text-sm">
-      <thead style="background:var(--color-abril-primary-light)">
-        <tr style="color:var(--color-abril-primary-dark)">
-          <th class="text-left px-[16px] py-[10px] font-semibold">Origen</th>
-          <th class="text-left px-[16px] py-[10px] font-semibold">Destino</th>
-          <th class="text-right px-[16px] py-[10px] font-semibold">Monto (S/)</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold">Estado</th>
-          <th class="text-center px-[16px] py-[10px] font-semibold">Acciones</th>
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th class="text-right">Monto (S/)</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
         </tr>
       </thead>
       <tbody>
 
-        <tr *ngIf="trayectos.length === 0">
-          <td colspan="5" class="px-[16px] py-[32px] text-center text-gray-400 text-sm">
-            No hay trayectos registrados.
+        <tr *ngIf="filteredTrayectos.length === 0">
+          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay trayectos registrados.' }}
           </td>
         </tr>
 
-        <tr *ngFor="let t of trayectos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+        <tr *ngFor="let t of pagedTrayectos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
 
-          <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarOrigenNombre }}</td>
-          <td class="px-[16px] py-[10px] text-gray-700">{{ t.lugarDestinoNombre }}</td>
-          <td class="px-[16px] py-[10px] text-right text-gray-800 font-medium">
+          <td class="text-gray-700">{{ t.lugarOrigenNombre | titleCase }}</td>
+          <td class="text-gray-700">{{ t.lugarDestinoNombre | titleCase }}</td>
+          <td class="text-right text-gray-800 font-medium">
             {{ t.monto | number:'1.2-2' }}
           </td>
 
-          <td class="px-[16px] py-[10px] text-center">
+          <td class="text-center">
             <app-status-badge
               [text]="t.activo ? 'ACTIVO' : 'INACTIVO'"
               [bgColor]="t.activo ? '#D7FAF4' : '#FAD5D4'"
               [textColor]="t.activo ? '#009C87' : '#D30000'" />
           </td>
 
-          <td class="px-[16px] py-[10px] text-center">
-            <div class="flex items-center justify-center gap-[10px]">
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
               <button
                 (click)="toggle(t)"
-                class="text-xs font-medium px-[10px] py-[4px] rounded-[6px] border transition-colors cursor-pointer"
-                [ngClass]="t.activo
-                  ? 'border-red-200 text-red-600 hover:bg-red-50'
-                  : 'border-green-300 text-green-700 hover:bg-green-50'">
+                [abrilBulkAction]="t.activo ? 'danger' : 'default'">
                 {{ t.activo ? 'Desactivar' : 'Activar' }}
               </button>
               <button
                 (click)="openEdit(t)"
-                class="text-xs font-medium transition-colors cursor-pointer" style="color:var(--color-abril-primary)">
+                abrilBulkAction="default">
                 Editar
               </button>
             </div>
@@ -73,6 +73,15 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredTrayectos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
   </div>
 
 </div>
@@ -88,3 +97,26 @@
   [trayecto]="trayectoToEdit!"
   (closeModal)="showEditModal = false; trayectoToEdit = null"
   (saved)="load()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por origen o destino..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

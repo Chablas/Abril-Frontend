@@ -231,7 +231,7 @@ export class AccidenteDetalleComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Sí, enviar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
       input: 'checkbox',
       inputPlaceholder: 'No enviar email (solo regularización)',
     });

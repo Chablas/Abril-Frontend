@@ -6,6 +6,9 @@
     [tabs]="headerTabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
+
+    <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <div class="page-body">
@@ -42,24 +45,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="filtro-row">
-      <input
-        type="text"
-        class="filtro-input"
-        placeholder="Buscar familia o tipo de material..."
-        [value]="filtro"
-        (input)="onFiltroChange($any($event.target).value)"
-      />
-      <select class="filtro-select" [value]="tipoSeleccionado" (change)="onTipoChange($any($event.target).value)">
-        <option value="">Todos los tipos</option>
-        <option *ngFor="let t of tiposDisponibles" [value]="t">{{ t }}</option>
-      </select>
-      <select class="filtro-select" [value]="variableBaseSeleccionada" (change)="onVariableBaseChange($any($event.target).value)">
-        <option value="">Se calcula por: todos</option>
-        <option *ngFor="let vb of variableBasesDisponibles" [value]="vb">{{ driverLabel(vb) }}</option>
-      </select>
     </div>
 
     <div *ngIf="loading" class="loading-msg">Cargando familias...</div>
@@ -139,3 +124,39 @@
     </div>
   </div>
 </div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar familia o tipo de material..."
+      [(value)]="filtro"
+      (valueChange)="onFiltroChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tiposFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="tipoSeleccionado"
+      (valueChange)="onTipoChange($event)"
+      placeholder="Todos los tipos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Se calcula por"
+      [options]="variableBasesFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="variableBaseSeleccionada"
+      (valueChange)="onVariableBaseChange($event)"
+      placeholder="Todos">
+    </app-search-select>
+  </div>
+</app-filter-modal>

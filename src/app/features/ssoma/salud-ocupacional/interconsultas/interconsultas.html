@@ -15,105 +15,33 @@
     { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
   ]">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="ic-section">
-  <div class="filters-card">
-    <div class="filters-row">
-      <div class="filter-item filter-search">
-        <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/>
-            <path d="M21 21l-4.3-4.3"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Nombre o DNI"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
-      </div>
+<section class="page-container ic-section flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
-      <div class="filter-item">
-        <label class="filter-label">Estado</label>
-        <app-search-select
-          [compact]="true"
-          [options]="estadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.estado"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.estado = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-item">
-        <label class="filter-label">Razón social</label>
-        <app-search-select
-          [compact]="true"
-          [options]="razonSocialOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.contributorId"
-          [showLabel]="false"
-          placeholder="Todas"
-          (valueChange)="filters.contributorId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-item">
-        <label class="filter-label">Proyecto</label>
-        <app-search-select
-          [compact]="true"
-          [options]="proyectoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.proyectoId"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.proyectoId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-item">
-        <label class="filter-label">Tipo</label>
-        <app-search-select
-          [compact]="true"
-          [options]="tipoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.obraOficina"
-          [showLabel]="false"
-          placeholder="Todos"
-          (valueChange)="filters.obraOficina = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-actions">
-        <button *ngIf="hasActiveFilters" type="button" class="btn-link" (click)="clearFilters()">Limpiar</button>
-        <button
-          type="button"
-          class="btn-primary"
-          [disabled]="selectedIds.size === 0 || sendingEmails"
-          (click)="enviarCorreos()"
-        >
-          <i class="ti ti-mail"></i>
-          Enviar correos ({{ selectedIds.size }})
-        </button>
-      </div>
-    </div>
+  <!-- Acción bulk sobre la selección -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      [disabled]="selectedIds.size === 0 || sendingEmails"
+      (click)="enviarCorreos()"
+    >
+      <i class="ti ti-mail"></i>
+      Enviar correos<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
+    </button>
   </div>
 
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
           <tr>
             <th class="checkbox-col">
-              <input type="checkbox" [checked]="allVisibleSelected" (click)="toggleSelectAll()" (change)="$event.stopPropagation()" />
+              <input type="checkbox" [checked]="allVisibleSelected" (click)="toggleSelectAll()" (change)="$event.stopPropagation()" style="accent-color:var(--color-abril-accent)" />
             </th>
             <th>Trabajador</th>
             <th>Tipo</th>
@@ -124,23 +52,23 @@
             <th>Especialidad</th>
             <th>Derivación</th>
             <th>Atención</th>
-            <th>Estado</th>
+            <th class="text-center">Estado</th>
             <th class="text-right">Días pendiente</th>
           </tr>
         </thead>
         <tbody>
           <tr
             *ngFor="let item of items"
-            class="row-clickable"
+            class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)"
             [class.row-selected]="isSelected(item.id)"
             (click)="openDetail(item)"
           >
             <td class="checkbox-col" (click)="$event.stopPropagation()">
-              <input type="checkbox" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id)" />
+              <input type="checkbox" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id)" style="accent-color:var(--color-abril-accent)" />
             </td>
             <td>
               <div class="worker-cell" [title]="puestoDisplay(item)">
-                <span class="worker-name">{{ item.workerNombre }}</span>
+                <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
                 <span class="worker-dni">
                   {{ item.workerDni }}<span *ngIf="puestoDisplay(item)"> · {{ puestoDisplay(item) }}</span>
                 </span>
@@ -151,16 +79,16 @@
                 {{ tipoDisplay(item) }}
               </span>
             </td>
-            <td class="truncate-cell" [title]="item.razonSocial">{{ item.razonSocial || '—' }}</td>
-            <td class="truncate-cell" [title]="item.proyectoNombre">{{ item.proyectoNombre || '—' }}</td>
-            <td class="truncate-cell" [title]="item.jefatura">{{ item.jefatura || '—' }}</td>
+            <td class="truncate-cell text-gray-500" [title]="item.razonSocial">{{ item.razonSocial || '—' }}</td>
+            <td class="truncate-cell text-gray-500" [title]="item.proyectoNombre">{{ item.proyectoNombre || '—' }}</td>
+            <td class="truncate-cell text-gray-500" [title]="item.jefatura">{{ item.jefatura || '—' }}</td>
             <td class="truncate-cell" [title]="item.administradorEmail">
               <span class="admin-cell">{{ item.administradorEmail || '—' }}</span>
             </td>
             <td class="font-medium truncate-cell" [title]="item.especialidad">{{ item.especialidad }}</td>
-            <td>{{ item.fechaDerivacion | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ item.fechaAtencion ? (item.fechaAtencion | date: 'dd/MM/yyyy') : '—' }}</td>
-            <td>
+            <td class="text-gray-500">{{ item.fechaDerivacion | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-gray-500">{{ item.fechaAtencion ? (item.fechaAtencion | date: 'dd/MM/yyyy') : '—' }}</td>
+            <td class="text-center">
               <span class="badge border" [ngClass]="estadoClass(item.estado)" [class.pulse]="isPendientePulse(item.estado)">
                 {{ item.estado }}
               </span>
@@ -178,20 +106,21 @@
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="12" class="empty-row">Sin interconsultas.</td>
+            <td colspan="12" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasActiveFilters ? 'Sin resultados.' : 'Sin interconsultas.' }}
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
+  </div>
 
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-      <app-paginator
-        [totalRecords]="totalRecords"
-        [currentPage]="currentPage"
-        [totalPages]="totalPages"
-        (pageChange)="onPageChange($event)"
-      ></app-paginator>
-    </div>
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    ></app-paginator>
   </div>
 </section>
 
@@ -200,3 +129,63 @@
   [interconsultaId]="selectedId"
   (closed)="closeDetail()"
 ></app-interconsulta-detail>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Razón social"
+      [options]="razonSocialOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.contributorId"
+      placeholder="Todas"
+      (valueChange)="filters.contributorId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.obraOficina"
+      placeholder="Todos"
+      (valueChange)="filters.obraOficina = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

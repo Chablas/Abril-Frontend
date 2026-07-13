@@ -31,6 +31,11 @@ import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-s
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 type Tab = 'dashboard' | 'lista' | 'puntaje' | 'escuelita' | 'inhabilitados';
 
@@ -47,7 +52,18 @@ const MESES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'
 @Component({
   selector: 'app-amonestaciones',
   standalone: true,
-  imports: [FabButton, CommonModule, FormsModule, RouterModule, AbrilPageHeaderComponent],
+  imports: [
+    FabButton,
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    SearchSelect,
+    Paginator,
+  ],
   templateUrl: './amonestaciones.html',
   styleUrl: './amonestaciones.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +86,17 @@ export class Amonestaciones implements OnInit {
   filtroEmpresa = '';
   filtroProyectoId: number | undefined;
   proyectos: AmonCatalogoItem[] = [];
+  filtrosListaAbiertos = false;
+
+  get filtrosListaActivos(): number {
+    let n = 0;
+    if (this.filtroWorkerSearch.trim()) n++;
+    if (this.filtroEmpresa.trim()) n++;
+    if (this.filtroProyectoId != null) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    return n;
+  }
 
   // ── Detalle / PDF inline / Cierre ─────────────────────────────────
   detalleVisible = false;
@@ -250,7 +277,7 @@ export class Amonestaciones implements OnInit {
   private loadInit(): void {
     this.svc.getInit().subscribe({
       next: (init) => {
-        this.proyectos = init.proyectos;
+        this.proyectos = [...init.proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre));
         this.cdr.markForCheck();
       },
       error: () => {},

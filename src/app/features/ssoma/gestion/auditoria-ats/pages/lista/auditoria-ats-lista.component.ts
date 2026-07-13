@@ -18,12 +18,15 @@ import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trab
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 
 @Component({
   selector: 'app-auditoria-ats-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [FabButton, CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, Paginator],
   templateUrl: './auditoria-ats-lista.component.html',
   styleUrl: './auditoria-ats-lista.component.css',
 })
@@ -41,6 +44,17 @@ export class AuditoriaAtsListaComponent implements OnInit {
   filtroFechaDesde = '';
   filtroFechaHasta = '';
   filtroEstado = '';
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroAuditadoId != null) n++;
+    if (this.filtroProyectoId != null) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    if (this.filtroEstado) n++;
+    return n;
+  }
 
   // Paginación
   page = 1;
@@ -63,8 +77,8 @@ export class AuditoriaAtsListaComponent implements OnInit {
       workers: this.trabajadorService.getTrabajadores({ pageSize: 9999 }),
     }).subscribe({
       next: ({ proyectos, workers }) => {
-        this.proyectos = proyectos.data;
-        this.workers = workers.data;
+        this.proyectos = [...proyectos.data].sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
+        this.workers = [...workers.data].sort((a, b) => (a.apellidoNombre ?? '').localeCompare(b.apellidoNombre ?? ''));
         this.loadingCatalogos = false;
         this.cargar();
       },

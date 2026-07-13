@@ -18,9 +18,8 @@
 
 .drivers-table-wrap { overflow-x: auto; }
 .drivers-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-.drivers-table th { background: #f9fafb; padding: 0.625rem 0.75rem; text-align: left;
-  font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase;
-  border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.drivers-table th { padding: 0.625rem 0.75rem; text-align: left;
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
 .drivers-table td { padding: 0.625rem 0.75rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
 .num-col { text-align: right; }
 .driver-row:hover { background: #f9fafb; }

@@ -16,12 +16,29 @@ import { DescansoMedicoListItemDto, DescansoFilterDto } from './descansos.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 @Component({
   selector: 'app-descansos',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, FabButton, DescansoModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AbrilPageHeaderComponent,
+    Paginator,
+    FabButton,
+    DescansoModalComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchSelect,
+    StatusBadge,
+    TitleCasePipe,
+  ],
   templateUrl: './descansos.component.html',
   styleUrl: './descansos.component.css',
 })
@@ -40,6 +57,7 @@ export class DescansosComponent implements OnInit, OnDestroy {
 
   modalVisible = false;
   descansoSeleccionadoId: number | null = null;
+  filtrosAbiertos = false;
 
   readonly estadoOpts = [
     { id: '', nombre: 'Todos' },
@@ -137,6 +155,16 @@ export class DescansosComponent implements OnInit, OnDestroy {
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
            || this.filtros.workerId   || this.filtros.estado || this.filtros.tipo);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtros.fechaDesde) n++;
+    if (this.filtros.fechaHasta) n++;
+    if (this.filtros.workerId) n++;
+    if (this.filtros.estado) n++;
+    if (this.filtros.tipo) n++;
+    return n;
   }
 
   estadoBadgeClass(estado: string): string {

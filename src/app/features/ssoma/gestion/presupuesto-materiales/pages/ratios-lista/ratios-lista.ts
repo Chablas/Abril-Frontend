@@ -15,12 +15,16 @@ import {
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-ratios-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput, SearchSelect],
   templateUrl: './ratios-lista.html',
   styleUrl: './ratios-lista.css',
 })
@@ -37,6 +41,22 @@ export class RatiosListaPage implements OnInit {
   filtro = '';
   tipoSeleccionado = '';
   variableBaseSeleccionada = '';
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtro.trim()) n++;
+    if (this.tipoSeleccionado) n++;
+    if (this.variableBaseSeleccionada) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.filtro = '';
+    this.tipoSeleccionado = '';
+    this.variableBaseSeleccionada = '';
+    this.cdr.markForCheck();
+  }
 
   detalles: Map<number, RatioFamiliaComparacionDto> = new Map();
   cargandoDetalleIds: Set<number> = new Set();
@@ -93,6 +113,14 @@ export class RatiosListaPage implements OnInit {
 
   get tiposDisponibles(): string[] {
     return Array.from(new Set(this.familias.map((f) => f.tipoMaterial))).sort();
+  }
+
+  get tiposFilterOptions(): { value: string; label: string }[] {
+    return this.tiposDisponibles.map((t) => ({ value: t, label: t }));
+  }
+
+  get variableBasesFilterOptions(): { value: string; label: string }[] {
+    return this.variableBasesDisponibles.map((vb) => ({ value: vb, label: this.driverLabel(vb) }));
   }
 
   get variableBasesDisponibles(): string[] {

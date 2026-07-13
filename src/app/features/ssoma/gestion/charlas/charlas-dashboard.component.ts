@@ -26,6 +26,10 @@ import {
   CharlaListItem, CharlaDetalle, UsuarioDto, Staff, CharlaGaleriaItem,
   DashPersonalResult, DashPersonalItem, DashDiaSemana,
 } from './dtos/charlas.dtos';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
+import { Paginator } from '../../../../shared/components/paginator/paginator';
 
 Chart.register(...registerables);
 
@@ -33,7 +37,20 @@ Chart.register(...registerables);
   selector: 'app-charlas-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, AppGenericSelectComponent, AppGenericSearchComponent, FindDiaPipe, SecureImgDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AbrilPageHeaderComponent,
+    SearchSelect,
+    AppGenericSelectComponent,
+    AppGenericSearchComponent,
+    FindDiaPipe,
+    SecureImgDirective,
+    FilterTriggerButton,
+    FilterModal,
+    StatusBadge,
+    Paginator,
+  ],
   templateUrl: './charlas-dashboard.component.html',
   styleUrl: './charlas-dashboard.component.css',
 })
@@ -107,6 +124,25 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   loadingDetalle = false;
   motivoRechazo = '';
   showRechazarForm = false;
+  filtrosTab4Abiertos = false;
+
+  readonly tab4EstadoOpts = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'Abierto', label: 'Abierto' },
+    { value: 'Enviado', label: 'Enviado' },
+    { value: 'Aprobado', label: 'Aprobado' },
+    { value: 'Rechazado', label: 'Rechazado' },
+  ];
+
+  get filtrosTab4Activos(): number {
+    return this.tab4Estado ? 1 : 0;
+  }
+
+  limpiarFiltrosTab4(): void {
+    this.tab4Estado = '';
+    this.tab4Page = 1;
+    this.loadTab4();
+  }
 
   readonly Math = Math;
   private chartInstance: Chart | null = null;

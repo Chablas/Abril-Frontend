@@ -15,8 +15,8 @@ import { FormsModule } from '@angular/forms';
   imports: [FormsModule, NgIf],
   template: `
     <div
-      class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-400
-             focus-within:bg-white focus-within:border-[#64bc04] focus-within:shadow-[0_0_0_3px_rgba(100,188,4,0.15)] transition-all"
+      class="flex items-center gap-[8px] bg-white h-[34px] rounded-[7px] px-[10px] text-gray-400 border
+             border-[#e2e8f0] focus-within:border-[var(--color-abril-standard)] focus-within:ring-1 focus-within:ring-[var(--color-abril-standard)]/30 transition-colors"
       [style.width]="width"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="flex-shrink-0">
@@ -27,17 +27,17 @@ import { FormsModule } from '@angular/forms';
         [placeholder]="placeholder"
         [(ngModel)]="value"
         (ngModelChange)="valueChange.emit($event)"
-        class="flex-1 border-0 outline-none bg-transparent text-gray-900 text-sm min-w-0"
+        class="flex-1 border-0 outline-none bg-transparent text-gray-800 text-[12px] font-medium min-w-0 placeholder:text-gray-500 placeholder:font-normal"
       />
       <button
         *ngIf="value"
         (click)="clear()"
-        class="flex-shrink-0 text-gray-400 hover:text-gray-600 leading-none cursor-pointer"
+        class="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
         type="button"
         aria-label="Limpiar"
       >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M18 6L6 18M6 6l12 12"/>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>

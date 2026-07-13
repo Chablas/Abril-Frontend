@@ -413,7 +413,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   initCanvasInspector(): void {
     if (!this.canvasInspector) return;
     this.ctxInspector = this.canvasInspector.nativeElement.getContext('2d')!;
-    this.ctxInspector.strokeStyle = '#1b3a2d';
+    this.ctxInspector.strokeStyle = '#0F6E56';
     this.ctxInspector.lineWidth = 2;
     this.ctxInspector.lineCap = 'round';
   }
@@ -471,7 +471,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   initCanvasRepresentante(): void {
     if (!this.canvasRepresentante) return;
     this.ctxRepresentante = this.canvasRepresentante.nativeElement.getContext('2d')!;
-    this.ctxRepresentante.strokeStyle = '#1b3a2d';
+    this.ctxRepresentante.strokeStyle = '#0F6E56';
     this.ctxRepresentante.lineWidth = 2;
     this.ctxRepresentante.lineCap = 'round';
   }

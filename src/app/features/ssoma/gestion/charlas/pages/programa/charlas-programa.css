@@ -73,7 +73,7 @@
   transition: border-color 0.15s;
 }
 
-.filter-input:focus { border-color: #1b3a2d; }
+.filter-input:focus { border-color: var(--color-abril-standard); }
 
 /* ── PROGRAMA HEADER ─────────────────────────────────────── */
 .programa-header {
@@ -93,8 +93,8 @@
 .programa-badge {
   font-size: 10px;
   font-weight: 700;
-  color: #1b3a2d;
-  background: #eaf2ee;
+  color: var(--color-abril-standard);
+  background: var(--color-abril-standard-light);
   padding: 2px 8px;
   border-radius: 999px;
   width: fit-content;
@@ -167,7 +167,7 @@
   transition: border-color 0.15s;
 }
 
-.form-input:focus { border-color: #1b3a2d; }
+.form-input:focus { border-color: var(--color-abril-standard); }
 
 .form-actions {
   display: flex;
@@ -230,12 +230,12 @@
   letter-spacing: 0.06em;
 }
 
-.badge--verde   { background: #eaf2ee; color: #1b3a2d; }
+.badge--verde   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .badge--rojo    { background: #fdecea; color: #b83030; }
 .badge--gris    { background: #f0ede8; color: #8a8880; }
 
 /* ── EVIDENCIA ICONS ─────────────────────────────────────── */
-.evidencia--ok { color: #1b3a2d; font-size: 15px; }
+.evidencia--ok { color: var(--color-abril-standard); font-size: 15px; }
 .evidencia--no { color: #d4d0c8; font-size: 15px; }
 
 /* ── ACTION BUTTONS ──────────────────────────────────────── */
@@ -273,7 +273,7 @@
   padding: 8px 16px;
   border-radius: 9px;
   border: none;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -281,7 +281,7 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover { background: #152e23; }
+.btn-primary:hover { background: var(--color-abril-standard-hover); }
 
 .btn-secondary {
   display: inline-flex;
@@ -330,7 +330,7 @@
 .link-btn {
   background: none;
   border: none;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   font-weight: 600;
   cursor: pointer;
   padding: 0;

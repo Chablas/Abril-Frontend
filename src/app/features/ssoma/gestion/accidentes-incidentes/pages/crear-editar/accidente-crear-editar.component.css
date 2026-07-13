@@ -33,7 +33,7 @@
 .flash-section__title {
   font-size: 13px;
   font-weight: 700;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -82,7 +82,7 @@
   font-family: inherit;
 }
 
-.campo-input:focus { border-color: #1b3a2d; }
+.campo-input:focus { border-color: var(--color-abril-standard); }
 
 .campo-textarea { resize: vertical; min-height: 80px; }
 
@@ -94,10 +94,10 @@
 
 /* ── Checkbox ────────────────────────────────────────── */
 .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; font-weight: 600; color: #1a1a18; }
-.checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: #1b3a2d; cursor: pointer; }
+.checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--color-abril-standard); cursor: pointer; }
 
 /* ── Info hint ───────────────────────────────────────── */
-.info-hint { font-size: 11px; color: #1b3a2d; background: #e6f0eb; border-radius: 6px; padding: 4px 8px; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
+.info-hint { font-size: 11px; color: var(--color-abril-standard); background: #e6f0eb; border-radius: 6px; padding: 4px 8px; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
 
 /* ── Alerta SUNAFIL ──────────────────────────────────── */
 .alerta-sunafil { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #991b1b; display: flex; align-items: center; gap: 8px; }
@@ -134,7 +134,7 @@
   gap: 4px;
   padding: 4px 10px;
   background: #e6f0eb;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
   border: none;
   border-radius: 6px;
   font-size: 12px;
@@ -165,7 +165,7 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
-.foto-upload-btn:hover { border-color: #1b3a2d; background: #f0f5f2; }
+.foto-upload-btn:hover { border-color: var(--color-abril-standard); background: #f0f5f2; }
 .foto-upload-btn i { font-size: 22px; }
 
 .foto-preview-wrap { position: relative; border-radius: 10px; overflow: hidden; }
@@ -222,7 +222,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   border: none;
   border-radius: 9px;
@@ -276,7 +276,7 @@
 .trabajador-item__nombre {
   font-size: 13px;
   font-weight: 600;
-  color: #1b3a2d;
+  color: var(--color-abril-standard);
 }
 
 .trabajador-item__sub {
@@ -328,4 +328,4 @@
   cursor: pointer;
   transition: background 0.15s;
 }
-.btn-agregar-trabajador:hover { background: #1b3a2d; }
+.btn-agregar-trabajador:hover { background: var(--color-abril-standard); }

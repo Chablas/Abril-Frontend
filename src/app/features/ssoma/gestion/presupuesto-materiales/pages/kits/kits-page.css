@@ -13,8 +13,7 @@
 .bom-titulo, .resultado-titulo { font-weight: 600; color: #111827; margin: 0 0 0.75rem 0; font-size: 0.9rem; }
 
 .tabla-bom { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.tabla-bom th { text-align: left; padding: 6px 8px; color: #6b7280; font-weight: 600; font-size: 0.75rem;
-  border-bottom: 1px solid #e5e7eb; }
+.tabla-bom th { text-align: left; padding: 6px 8px; font-weight: 600; font-size: 0.75rem; }
 .tabla-bom td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; }
 .total-cell { font-weight: 600; color: #111827; }
 

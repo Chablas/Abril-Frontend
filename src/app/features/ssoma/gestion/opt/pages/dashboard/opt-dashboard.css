@@ -74,7 +74,7 @@
 
 .kpi-icon--blue   { background: #eef4ff; color: #2563a8; }
 .kpi-icon--teal   { background: #e0f7f4; color: #0a8c80; }
-.kpi-icon--green  { background: #eaf2ee; color: #1b3a2d; }
+.kpi-icon--green  { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 .kpi-icon--amber  { background: #fef5d0; color: #8a5a00; }
 .kpi-icon--red    { background: #fdecea; color: #b83030; }
 
@@ -188,18 +188,18 @@
 }
 
 /* Score color classes (shared) */
-.score--verde    { background: #1b3a2d; color: #eaf2ee; }
+.score--verde    { background: var(--color-abril-standard); color: var(--color-abril-standard-light); }
 .score--amarillo { background: #d97706; color: #fef5d0; }
 .score--rojo     { background: #b83030; color: #fdecea; }
 .score--na       { background: #e8e5df; color: #8a8880; }
 
 /* As dots / bars */
-.tend-bar.score--verde    { background: #1b3a2d; }
+.tend-bar.score--verde    { background: var(--color-abril-standard); }
 .tend-bar.score--amarillo { background: #d97706; }
 .tend-bar.score--rojo     { background: #b83030; }
 .tend-bar.score--na       { background: #d4d0c8; }
 
-.tend-line-dot.score--verde    { background: #1b3a2d; }
+.tend-line-dot.score--verde    { background: var(--color-abril-standard); }
 .tend-line-dot.score--amarillo { background: #d97706; }
 .tend-line-dot.score--rojo     { background: #b83030; }
 .tend-line-dot.score--na       { background: #d4d0c8; }
@@ -257,7 +257,7 @@
   transition: width 0.3s;
 }
 
-.rank-bar.score--verde    { background: #1b3a2d; }
+.rank-bar.score--verde    { background: var(--color-abril-standard); }
 .rank-bar.score--amarillo { background: #d97706; }
 .rank-bar.score--rojo     { background: #b83030; }
 .rank-bar.score--na       { background: #d4d0c8; }
@@ -270,7 +270,7 @@
   flex-shrink: 0;
 }
 
-.rank-pct.score--verde    { color: #1b3a2d; }
+.rank-pct.score--verde    { color: var(--color-abril-standard); }
 .rank-pct.score--amarillo { color: #d97706; }
 .rank-pct.score--rojo     { color: #b83030; }
 .rank-pct.score--na       { color: #8a8880; }
@@ -351,7 +351,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #fff;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   padding: 2px 8px;
   border-radius: 999px;
 }
@@ -376,7 +376,7 @@
   padding: 9px 18px;
   border-radius: 9px;
   border: none;
-  background: #1b3a2d;
+  background: var(--color-abril-standard);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -384,7 +384,7 @@
   transition: background 0.15s;
 }
 
-.btn-primary:hover { background: #152e23; }
+.btn-primary:hover { background: var(--color-abril-standard-hover); }
 
 /* ── RESPONSIVE ≥768px ────────────────────────────────────── */
 @media (min-width: 768px) {

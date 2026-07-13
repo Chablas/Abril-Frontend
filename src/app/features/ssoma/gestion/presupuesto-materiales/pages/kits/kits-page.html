@@ -72,7 +72,7 @@
     <!-- BOM del kit seleccionado (receta) -->
     <div *ngIf="kitDetalle && resultado.length === 0" class="bom-card">
       <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
-      <table class="tabla-bom">
+      <table class="abril-table tabla-bom">
         <thead>
           <tr><th>Material</th><th>Cantidad por kit</th><th>Tipo</th></tr>
         </thead>
@@ -94,7 +94,7 @@
     <div *ngIf="resultado.length > 0" class="resultado-grid">
       <div class="resultado-col">
         <h3 class="resultado-titulo">Equipo durable — se compra 1 sola vez</h3>
-        <table class="tabla-bom">
+        <table class="abril-table tabla-bom">
           <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
           <tbody>
             <tr *ngFor="let l of durables">
@@ -106,7 +106,7 @@
       </div>
       <div class="resultado-col">
         <h3 class="resultado-titulo">Consumibles — cantidad inicial (más reposición aparte)</h3>
-        <table class="tabla-bom">
+        <table class="abril-table tabla-bom">
           <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
           <tbody>
             <tr *ngFor="let l of consumibles">

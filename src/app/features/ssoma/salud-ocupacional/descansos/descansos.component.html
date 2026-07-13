@@ -3,48 +3,16 @@
   titulo="Descansos Médicos"
   subtitulo="Registro y seguimiento de descansos médicos ocupacionales."
   [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
-
-  <!-- Filtros -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div>
-        <label class="filter-label">Fecha desde</label>
-        <input type="date" class="field-input" [(ngModel)]="filtros.fechaDesde" (ngModelChange)="onFilterChange()" />
-      </div>
-      <div>
-        <label class="filter-label">Fecha hasta</label>
-        <input type="date" class="field-input" [(ngModel)]="filtros.fechaHasta" (ngModelChange)="onFilterChange()" />
-      </div>
-      <div>
-        <label class="filter-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filtros.estado" (ngModelChange)="onFilterChange()">
-          <option *ngFor="let e of estadoOpts" [value]="e.id">{{ e.nombre }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="filter-label">Tipo</label>
-        <select class="field-input" [(ngModel)]="filtros.tipo" (ngModelChange)="onFilterChange()">
-          <option *ngFor="let t of tipoOpts" [value]="t.id">{{ t.nombre }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="filter-label">ID Trabajador</label>
-        <input type="number" class="field-input" [(ngModel)]="filtros.workerId"
-          placeholder="Número" (ngModelChange)="onWorkerChange()" />
-      </div>
-    </div>
-    <div *ngIf="hasFilters" class="pt-2">
-      <button class="btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
-    </div>
-  </div>
+<section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- Tabla -->
-  <div class="card">
-    <div class="table-wrapper">
-      <table class="data-table">
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+      <table class="abril-table">
         <colgroup>
           <col style="width:50px"/>
           <col/>
@@ -56,33 +24,33 @@
           <col style="width:80px"/>
           <col style="width:36px"/>
         </colgroup>
-        <thead>
+        <thead class="sticky top-0 z-10">
           <tr>
             <th>#</th>
             <th>Trabajador</th>
             <th>Tipo</th>
             <th>Inicio</th>
             <th>Fin</th>
-            <th>Días</th>
-            <th>Estado</th>
+            <th class="text-center">Días</th>
+            <th class="text-center">Estado</th>
             <th>Acceso</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let d of descansos" class="row-clickable" (click)="abrirModal(d.id)">
+          <tr *ngFor="let d of descansos" class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)" (click)="abrirModal(d.id)">
             <td class="col-mono">{{ d.id }}</td>
             <td class="col-worker">
               <div class="worker-cell">
-                <span class="worker-name">{{ d.workerNombre ?? '—' }}</span>
+                <span class="worker-name">{{ (d.workerNombre | titleCase) ?? '—' }}</span>
                 <span class="worker-dni">{{ d.workerDni }}</span>
               </div>
             </td>
             <td><span class="badge badge-gray">{{ d.tipo }}</span></td>
-            <td>{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
-            <td>{{ d.fechaFin | date:'dd/MM/yyyy' }}</td>
-            <td class="col-mono">{{ d.dias }}</td>
-            <td>
+            <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
+            <td class="text-gray-500">{{ d.fechaFin | date:'dd/MM/yyyy' }}</td>
+            <td class="col-mono text-center">{{ d.dias }}</td>
+            <td class="text-center">
               <span class="badge" [ngClass]="estadoBadgeClass(d.estado)">{{ d.estado }}</span>
             </td>
             <td>
@@ -94,7 +62,7 @@
               </span>
               <span *ngIf="!d.trabajadorBloqueado" class="free-chip">Activo</span>
             </td>
-            <td class="text-right">
+            <td class="text-right" (click)="$event.stopPropagation()">
               <button class="row-action" (click)="eliminar(d, $event)" title="Eliminar">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
@@ -103,16 +71,18 @@
             </td>
           </tr>
           <tr *ngIf="!loading && descansos.length === 0">
-            <td colspan="9" class="empty-row">Sin descansos médicos registrados.</td>
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+              {{ hasFilters ? 'Sin resultados.' : 'Sin descansos médicos registrados.' }}
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
-    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
-      <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
-        [totalPages]="totalPages" (pageChange)="onPageChange($event)">
-      </app-paginator>
-    </div>
+  </div>
+
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
+      [totalPages]="totalPages" (pageChange)="onPageChange($event)">
+    </app-paginator>
   </div>
 
 </section>
@@ -125,3 +95,47 @@
   (closed)="cerrarModal()"
   (saved)="onGuardado()">
 </app-descanso-modal>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="abril-filter-label">Desde</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1">
+      <label class="abril-filter-label">Hasta</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.estado"
+      (valueChange)="filtros.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.tipo"
+      (valueChange)="filtros.tipo = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <label class="abril-filter-label">ID Trabajador</label>
+    <input type="number" class="abril-filter-input" [(ngModel)]="filtros.workerId"
+      placeholder="Número" (ngModelChange)="onWorkerChange()" />
+  </div>
+</app-filter-modal>

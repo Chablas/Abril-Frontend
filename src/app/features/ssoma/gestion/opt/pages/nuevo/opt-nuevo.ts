@@ -298,7 +298,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
   initCanvasObs(): void {
     if (!this.canvasObs) return;
     this.ctxObs = this.canvasObs.nativeElement.getContext('2d')!;
-    this.ctxObs.strokeStyle = '#1b3a2d';
+    this.ctxObs.strokeStyle = '#0F6E56';
     this.ctxObs.lineWidth = 2;
     this.ctxObs.lineCap = 'round';
     this.cdr.markForCheck();
@@ -363,7 +363,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     if (!canvas) return null;
     if (!this.ctxTrab.has(id)) {
       const ctx = canvas.getContext('2d')!;
-      ctx.strokeStyle = '#1b3a2d';
+      ctx.strokeStyle = '#0F6E56';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       this.ctxTrab.set(id, ctx);

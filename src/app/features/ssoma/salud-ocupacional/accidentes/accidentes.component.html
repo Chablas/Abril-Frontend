@@ -3,45 +3,20 @@
   titulo="Accidentes de Trabajo"
   subtitulo="Registro y seguimiento de accidentes de trabajo."
   [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<section class="px-3 py-4 space-y-3 flex-1 overflow-y-auto">
-
-  <!-- Filtros -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div>
-        <label class="filter-label">Fecha desde</label>
-        <input type="date" class="field-input" [(ngModel)]="filtros.fechaDesde" (ngModelChange)="onFilterChange()" />
-      </div>
-      <div>
-        <label class="filter-label">Fecha hasta</label>
-        <input type="date" class="field-input" [(ngModel)]="filtros.fechaHasta" (ngModelChange)="onFilterChange()" />
-      </div>
-      <div>
-        <label class="filter-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filtros.estado" (ngModelChange)="onFilterChange()">
-          <option *ngFor="let e of estadoOpts" [value]="e.id">{{ e.nombre }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="filter-label">ID Trabajador</label>
-        <input type="number" class="field-input" [(ngModel)]="filtros.workerId"
-          placeholder="Número" (ngModelChange)="onWorkerChange()" />
-      </div>
-    </div>
-    <div *ngIf="hasFilters" class="pt-2">
-      <button class="btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
-    </div>
-  </div>
+<section class="page-container px-3 py-4 space-y-3 flex-1 min-h-0 overflow-y-auto">
 
   <!-- Layout: tabla + panel detalle -->
   <div class="detail-layout" [class.panel-open]="detalle || loadingDetalle">
 
     <!-- Tabla -->
-    <div class="card">
-      <div class="table-wrapper">
-        <table class="data-table">
+    <div class="flex flex-col min-h-0">
+      <div class="w-full flex-1 min-h-0 overflow-auto">
+        <table class="abril-table">
           <colgroup>
             <col style="width:50px"/>
             <col/>
@@ -51,40 +26,38 @@
             <col style="width:60px"/>
             <col style="width:110px"/>
           </colgroup>
-          <thead>
+          <thead class="sticky top-0 z-10">
             <tr>
               <th>#</th>
               <th>Trabajador</th>
               <th>Fecha</th>
               <th>Tipo</th>
-              <th>Estado</th>
-              <th>Desc.</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center">Desc.</th>
               <th>Reinducción</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let a of accidentes"
-              class="row-clickable"
+              class="row-clickable border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)"
               [class.row-selected]="detalle?.id === a.id"
               (click)="openDetalle(a)">
               <td class="col-mono">{{ a.id }}</td>
               <td class="col-worker">
                 <div class="worker-cell">
-                  <span class="worker-name">{{ a.workerNombre ?? '—' }}</span>
+                  <span class="worker-name">{{ (a.workerNombre | titleCase) ?? '—' }}</span>
                   <span class="worker-dni">{{ a.workerDni }}</span>
                 </div>
               </td>
-              <td>{{ a.fechaAccidente | date:'dd/MM/yyyy' }}</td>
-              <td>{{ a.tipoAccidente ?? '—' }}</td>
-              <td>
-                <span class="badge"
-                  [class.badge-red]="a.estado === 'Abierto'"
-                  [class.badge-green]="a.estado === 'Cerrado'"
-                  [class.badge-gray]="a.estado !== 'Abierto' && a.estado !== 'Cerrado'">
-                  {{ a.estado }}
-                </span>
+              <td class="text-gray-500">{{ a.fechaAccidente | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-500">{{ a.tipoAccidente ?? '—' }}</td>
+              <td class="text-center">
+                <app-status-badge
+                  [text]="a.estado | uppercase"
+                  [bgColor]="a.estado === 'Abierto' ? '#FAD5D4' : '#D7FAF4'"
+                  [textColor]="a.estado === 'Abierto' ? '#D30000' : '#009C87'" />
               </td>
-              <td>{{ a.totalSeguimientos }}</td>
+              <td class="text-center text-gray-500">{{ a.totalSeguimientos }}</td>
               <td>
                 @if (a.requiereReinduccion && !a.reinduccionCompletada) {
                   <button class="badge badge-orange btn-reinduccion"
@@ -98,12 +71,14 @@
               </td>
             </tr>
             <tr *ngIf="!loading && accidentes.length === 0">
-              <td colspan="7" class="empty-row">Sin accidentes registrados.</td>
+              <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+                {{ hasFilters ? 'Sin resultados.' : 'Sin accidentes registrados.' }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px] mt-[10px]">
         <app-paginator [totalRecords]="totalRecords" [currentPage]="currentPage"
           [totalPages]="totalPages" (pageChange)="onPageChange($event)">
         </app-paginator>
@@ -599,3 +574,35 @@
     (saved)="onDescansoGuardado()">
   </app-descanso-modal>
 }
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="abril-filter-label">Desde</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
+    </div>
+    <div class="flex-1">
+      <label class="abril-filter-label">Hasta</label>
+      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOpts"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      [value]="filtros.estado"
+      (valueChange)="filtros.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <label class="abril-filter-label">ID Trabajador</label>
+    <input type="number" class="abril-filter-input" [(ngModel)]="filtros.workerId"
+      placeholder="Número" (ngModelChange)="onWorkerChange()" />
+  </div>
+</app-filter-modal>

@@ -68,7 +68,7 @@ export class SeguimientoMedicoTabComponent implements OnChanges {
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
     }).then((r) => {
       if (!r.isConfirmed) return;
       this.svc.cerrar(id).subscribe({
@@ -91,7 +91,7 @@ export class SeguimientoMedicoTabComponent implements OnChanges {
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#1b3a2d',
+      confirmButtonColor: '#0F6E56',
     }).then((r) => {
       if (!r.isConfirmed) return;
       this.svc.marcarReinduccion(id).subscribe({

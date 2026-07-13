@@ -202,9 +202,9 @@
     @if (loadingPlantillas) {
       <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando plantillas...</div>
     } @else if (!plantillaDetalleVisible) {
-      <div class="cl-plantillas-tabla">
-        <table class="cl-table">
-          <thead>
+      <div class="cl-plantillas-tabla w-full flex-1 min-h-0 overflow-auto">
+        <table class="abril-table cl-table">
+          <thead class="sticky top-0 z-10">
             <tr>
               <th>#</th>
               <th>Nombre</th>

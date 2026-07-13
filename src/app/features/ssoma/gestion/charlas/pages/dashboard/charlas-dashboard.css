@@ -12,7 +12,7 @@
   padding: 0 10px; font-size: 13px; background: #fff; color: #1a1a18;
   outline: none; cursor: pointer;
 }
-.filtro-input:focus { border-color: #1b3a2d; }
+.filtro-input:focus { border-color: var(--color-abril-standard); }
 .filtro-input--sm { height: 30px; font-size: 12px; }
 
 /* ── SKELETON ──────────────────────────────────────────── */
@@ -41,7 +41,7 @@
 .kpi-sub { font-size: 10px; }
 .kpi-sub--rojo { color: #991b1b; font-weight: 600; }
 
-.score-verde    { color: #1b3a2d; }
+.score-verde    { color: var(--color-abril-standard); }
 .score-amarillo { color: #d97706; }
 .score-rojo     { color: #b83030; }
 .score-na       { color: #8a8880; }
@@ -66,7 +66,7 @@
 .tipo-nombre { flex: 1; color: #1a1a18; font-size: 12px; }
 .tipo-total { font-size: 11px; font-weight: 700; color: #5a5850; }
 .tipo-bar-bg { height: 5px; background: #f0ede8; border-radius: 3px; overflow: hidden; }
-.tipo-bar-fill { height: 100%; background: #1b3a2d; border-radius: 3px; transition: width 0.4s ease; }
+.tipo-bar-fill { height: 100%; background: var(--color-abril-standard); border-radius: 3px; transition: width 0.4s ease; }
 
 /* ── BOTTOM ROW ───────────────────────────────────────── */
 .bottom-row { display: flex; flex-direction: column; gap: 14px; }
@@ -187,13 +187,13 @@
 .form-group--wide { flex: 2; }
 .form-group label, .form-group > span { font-size: 12px; font-weight: 600; color: #5a5850; }
 .form-input { border: 0.5px solid #d4d0c8; border-radius: 8px; padding: 7px 10px; font-size: 13px; outline: none; color: #1a1a18; background: #fff; width: 100%; box-sizing: border-box; }
-.form-input:focus { border-color: #1b3a2d; }
+.form-input:focus { border-color: var(--color-abril-standard); }
 .form-textarea { resize: vertical; min-height: 60px; }
 .form-hint { font-size: 11px; color: #8a8880; margin: 0; }
 .req { color: #dc2626; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; }
 
-.btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; background: #1b3a2d; color: #fff; }
+.btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--color-abril-standard); color: #fff; }
 .btn-primary:hover { background: #14432e; }
 .btn-primary:disabled { opacity: 0.5; cursor: default; }
 .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 0.5px solid #d4d0c8; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; color: #5a5850; }
