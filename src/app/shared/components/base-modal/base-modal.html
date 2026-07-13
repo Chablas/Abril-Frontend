@@ -1,9 +1,19 @@
+<!--
+  Un solo <ng-content> en todo el componente, reutilizado por ambas ramas vía
+  ngTemplateOutlet. Tener dos <ng-content> (uno por rama @if/@else) hacía que
+  Angular proyectara el contenido de forma no confiable — a veces el título
+  aparecía pero el resto del formulario quedaba completamente fuera del DOM.
+-->
+<ng-template #projectedContent>
+  <ng-content></ng-content>
+</ng-template>
+
 @if (fullScreen) {
-  <div class="fixed inset-0 z-[50] bg-white overflow-y-auto" style="transform:translateZ(0); -webkit-backface-visibility:hidden;">
+  <div class="fixed inset-0 z-[50] bg-white overflow-y-auto">
     <div class="px-5 pt-4 pb-10"
          (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
       <h1 class="text-lg font-bold text-center mb-3 pr-6" style="color:var(--color-abril-standard)">{{ title }}</h1>
-      <ng-content></ng-content>
+      <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
     </div>
 
     <button class="fixed top-4 right-5 cursor-pointer" (click)="close()">
@@ -35,7 +45,7 @@
         (change)="markDirty()"
         (modalfieldchange)="markDirty()">
         <h1 [class]="(height ? 'text-base mb-2' : 'text-lg mb-3') + ' font-bold text-center flex-shrink-0 pr-6'" style="color:var(--color-abril-standard)">{{ title }}</h1>
-        <ng-content></ng-content>
+        <ng-container *ngTemplateOutlet="projectedContent"></ng-container>
       </div>
 
       <button class="absolute top-3 right-4 cursor-pointer" (click)="close()">

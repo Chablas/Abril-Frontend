@@ -11,6 +11,10 @@ import { SearchInput } from '../../../../../../shared/components/search-input/se
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { VisibilidadModal } from '../components/visibilidad-modal/visibilidad-modal';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -30,6 +34,10 @@ interface AreaCascadeNode {
     Paginator,
     AbrilPageHeaderComponent,
     VisibilidadModal,
+    TitleCasePipe,
+    AbrilBulkActionDirective,
+    FilterTriggerButton,
+    FilterModal,
   ],
   templateUrl: './visibilidad-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -53,6 +61,26 @@ export class VisibilidadSalidas implements OnInit {
 
   /** Trabajador en edición (modal abierto). null = modal cerrado. */
   editing: VisibilidadWorkerItemDTO | null = null;
+
+  /** Modal de filtros (mismo patrón que Gestión de Salidas). */
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim())                n++;
+    if (this.categoriaFilter != null)           n++;
+    if (this.selectedAreaNodes.some((x) => x))  n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.categoriaFilter = null;
+    this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
+    this.selectedAreaNodes = this.selectedAreaNodes.length ? [undefined] : this.selectedAreaNodes;
+    this.appliedAreaScopeIds = new Set();
+    this.onFilterChange();
+  }
 
   constructor(
     private service: VisibilidadSalidasService,
@@ -114,6 +142,8 @@ export class VisibilidadSalidas implements OnInit {
       this.areaLevels.push(selected.children);
       this.selectedAreaNodes.push(undefined);
     }
+
+    this.onBuscar();
   }
 
   /** area_scope_id del nodo seleccionado más profundo + todos sus descendientes. */
