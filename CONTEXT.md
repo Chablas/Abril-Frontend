@@ -4114,3 +4114,27 @@ En la pestaña **Proyecto** (`tipoCronogramaActivo === 'PROYECTO'`), cuando la t
 **Causa raíz**: en `commitInlineEdit()` (`cronograma-actividades.ts`) el `subscribe` del `PUT` solo llamaba a `patchActividadLocal(res.actividad)` (fila editada) y `patchPadresActualizados()` (padres), pero nunca leía `res.cascada.cambios`. En cambio `guardar()` sí llamaba a `patchCascadaCambios(res.cascada.cambios)` con esos mismos datos de la respuesta — por eso el modal de editar sí reflejaba la cascada y la edición inline no.
 
 **Fix**: se agregó en `commitInlineEdit()`, justo después del bloque de `patchActividadLocal()`/`patchPadresActualizados()`, el mismo `if (res.cascada?.cambios?.length) { this.patchCascadaCambios(res.cascada.cambios); }` que ya existía en `guardar()`. Sin llamadas HTTP nuevas — solo se aplican datos que ya venían en la respuesta del PUT existente. No se tocó el modal de preview de cascada (`mostrarCascadaSiHayCambios`) para la edición inline.
+
+## Sesión 2026-07-12
+
+### Fix: colores del Gantt agrupados por rama (paleta por rama)
+
+**Síntoma**: en "Ver Gantt", los colores cicleaban fila por fila (azul, verde, naranja, navy...) en vez de agruparse por rama. Bajo cada padre raíz (ej. "Definición de plano Base ARQ") los ~7 hijos directos salían cada uno de un color distinto, cuando debían mantenerse todos en la misma familia de color heredada de su raíz.
+
+**Causa raíz**: el esquema de color en `buildColorMap` estaba desfasado un nivel. En la data de la plantilla las ramas raíz son nodos `hierarchyLevel === 0` / `parentId == null` (hay ~15-20). El código viejo daba a las raíces el tratamiento `NIVEL0_ENTRIES` (fondo blanco + borde) y cicleaba los 4 colores base (`#4080B0`, `#8CC63F`, `#E2672C`, `#102B4E`) sobre las filas `level <= 1`, es decir sobre los **hijos directos** → de ahí el cicleo. Además `findAncestorColorAtLevel` comparaba `parent.hierarchyLevel === targetLevel` con `===` sin coerción (frágil si el nivel venía como string).
+
+**Fix — `cronograma-actividades.ts`**:
+- `buildColorMap` reescrito en 2 pasos: (1) asigna un color base de los 4 **solo a los nodos raíz**, cicleando únicamente entre raíces en orden de aparición; (2) cada descendiente hereda el color base de su raíz vía `findRootColor` (camina por `parentId` hasta el nodo sin padre) y lo aclara según profundidad con `lightenHex`/`darkenHex` (nuevos helpers de mezcla con blanco/negro). Nivel raíz = color sólido + texto blanco (o `#173404` en la rama verde vía `getBranchTextColor`); nivel 1 = base aclarado 80%; nivel 2 = 90%; nivel 3+ = 94%, todos con `border-left` del color base.
+- `findAncestorColorAtLevel` eliminado y reemplazado por `findRootColor` (sin dependencia del valor numérico de nivel, con guard anti-ciclo).
+- Constante `NIVEL0_ENTRIES` eliminada (quedó muerta). `NIVEL0` navy se conserva solo como fallback en `getRowStyle`/`isDarkBg`.
+- Las barras del Gantt dhtmlx (`renderGanttActividades`) y el mini-gantt ya leían `rowStyleMap.color`, así que heredan el color por rama automáticamente.
+
+**Fix — `cronograma-actividades.css`**:
+- `.lvl-deep td:first-child` ahora usa `border-left: 3px solid var(--lvl-border)` (antes gris fijo) → nivel 3+ muestra el color base de la rama.
+- El separador de grupo (`border-top` + `padding-top`) se movió de `.lvl-1` a `.lvl-0`, para que cada familia de rama se lea como un bloque.
+
+**Fix — `src/styles.css`**: reglas `.gantt_task_line` / `.gantt_task_content` para que las barras dhtmlx tomen el color por rama (anula el fondo/texto blanco forzado por defecto).
+
+**Cambio menor — `cronograma-actividades.html`**: el botón "Usar plantilla" del estado vacío ahora también aparece para `tipoCronogramaActivo === 'ANTEPROYECTO'` (antes solo `PROYECTO`).
+
+**Nota**: un cronograma con una sola raíz ahora sale en azul base (antes navy). Si se quiere conservar el navy para raíz única, habría que reintroducirlo como excepción en el paso 1 de `buildColorMap`.
