@@ -23,11 +23,11 @@ export class SearchSelect {
   /** Si es true, muestra el texto completo (sin truncar con "…") tanto en el trigger como en las opciones. */
   @Input() fullText: boolean = false;
   /**
-   * Color de acento del componente (label, borde/anillo al enfocar y opción seleccionada).
+   * Color de acento del componente (borde/anillo al enfocar y opción seleccionada).
    * Acepta cualquier valor CSS de color o variable de la paleta (ej. 'var(--color-abril-lime)').
-   * Por defecto usa el verde primario de la marca.
+   * Por defecto usa el teal estándar de formularios (#0F6E56).
    */
-  @Input() color: string = 'var(--color-abril-primary)';
+  @Input() color: string = '#0F6E56';
   /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
   @Input() dark: boolean = false;
   /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */

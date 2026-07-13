@@ -1,7 +1,9 @@
-<div class="flex flex-col gap-[6px]" [style.--ss-accent]="color">
+<div class="relative" [ngClass]="showLabel && label ? 'mt-[9px]' : ''" [style.--ss-accent]="color">
 
-  <!-- Label opcional -->
-  <label *ngIf="showLabel && label" class="text-[11px] font-medium text-gray-500">
+  <!-- Label opcional: se posiciona sobre el borde superior del combobox, "cortándolo" -->
+  <label *ngIf="showLabel && label"
+    class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none"
+    [ngClass]="dark ? 'bg-[#1B3A6B] text-white' : 'bg-white'">
     {{ label }}
   </label>
 
@@ -22,14 +24,14 @@
         'border border-[rgba(255,255,255,0.2)]',
         isOpen ? 'bg-[#2a4a71]' : 'bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)]'
       ] : [
-        'rounded-[7px] bg-[#f8fafc] pl-[8px] pr-[6px] h-[28px] text-[11px] border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
+        'rounded-[7px] bg-white pl-[10px] pr-[8px] h-[34px] text-[12px] font-medium border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
         isOpen ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : 'border-[#e2e8f0]'
       ]"
     >
       <span
         class="ss-trigger-label"
         [class.ss-full]="fullText"
-        [ngClass]="dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-400')"
+        [ngClass]="dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-500')"
       >
         {{ selectedLabel }}
       </span>

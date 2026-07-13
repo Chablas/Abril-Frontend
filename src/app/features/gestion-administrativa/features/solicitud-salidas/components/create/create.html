@@ -3,13 +3,13 @@
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
     <!-- ── Fecha ─────────────────────────────────────────────────────── -->
-    <div class="flex flex-col gap-[4px] w-fit">
-      <label class="text-[11px] font-medium text-gray-500">Fecha de salida</label>
+    <div class="relative mt-[9px] w-fit">
+      <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Fecha de salida</label>
       <input
         type="date"
         [(ngModel)]="fechaSalida"
-        class="border border-[#e2e8f0] rounded-[7px] h-[28px] px-[8px] text-[11px] text-gray-700 focus:outline-none w-[150px]" />
-      <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500">Campo requerido</p>
+        class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[150px]" />
+      <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
     </div>
 
     <!-- ── Trayectos ─────────────────────────────────────────────────── -->
@@ -17,7 +17,7 @@
          [ngClass]="i > 0 ? 'pt-[10px] border-t border-gray-100' : ''">
 
       <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-[6px]">
-        <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-500">Trayecto {{ i + 1 }}</p>
+        <p class="text-[12px] font-bold uppercase tracking-widest text-gray-600">Trayecto {{ i + 1 }}</p>
         <button
           *ngIf="i > 0"
           type="button"
@@ -31,7 +31,7 @@
       <!-- Horas -->
       <div class="flex flex-wrap gap-[24px]">
         <div class="flex flex-col gap-[4px] w-fit">
-          <label class="text-[11px] font-medium text-gray-500">Hora de salida</label>
+          <label class="text-[12px] font-semibold text-gray-600">Hora de salida</label>
           <div class="flex gap-[6px]">
             <app-search-select class="w-[64px]" [showLabel]="false" placeholder="HH"
               [options]="horasSalidaOptions(t)" valueField="valor" displayField="label"
@@ -44,7 +44,7 @@
         </div>
 
         <div class="flex flex-col gap-[4px] w-fit">
-          <label class="text-[11px] font-medium text-gray-500">Hora de retorno</label>
+          <label class="text-[12px] font-semibold text-gray-600">Hora de retorno</label>
           <div class="flex gap-[6px]" [class.opacity-50]="t.sinRetorno" [class.pointer-events-none]="t.sinRetorno">
             <app-search-select class="w-[64px]" [showLabel]="false" placeholder="HH"
               [options]="horasRetornoOptions(t)" valueField="valor" displayField="label"
@@ -55,7 +55,7 @@
           </div>
           <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
             <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
-            <span class="text-xs text-gray-500">Sin retorno</span>
+            <span class="text-[12px] text-gray-600">Sin retorno</span>
           </label>
           <p *ngIf="submitted && !t.sinRetorno && (!t.retornoHH || !t.retornoMM)" class="text-xs text-red-500">Campo requerido</p>
         </div>
@@ -68,15 +68,17 @@
             valueField="id" displayField="descripcion" [(value)]="t.motivoId" />
         </ng-container>
         <ng-container *ngIf="t.motivoLibreOn">
-          <label class="text-[11px] font-medium text-gray-500">Motivo</label>
-          <input type="text" [(ngModel)]="t.motivoLibre" placeholder="Ingresa el motivo"
-            [maxlength]="MOTIVO_LIBRE_MAX"
-            class="border border-[#e2e8f0] rounded-[7px] h-[28px] px-[8px] text-[11px] text-gray-700 focus:outline-none" />
+          <div class="relative mt-[9px]">
+            <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Motivo</label>
+            <input type="text" [(ngModel)]="t.motivoLibre" placeholder="Ingresa el motivo"
+              [maxlength]="MOTIVO_LIBRE_MAX"
+              class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+          </div>
           <span class="text-[11px] text-gray-400 self-end">{{ t.motivoLibre?.length || 0 }}/{{ MOTIVO_LIBRE_MAX }}</span>
         </ng-container>
         <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
           <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
-          <span class="text-xs text-gray-500">Otro motivo</span>
+          <span class="text-[12px] text-gray-600">Otro motivo</span>
         </label>
         <p *ngIf="submitted && !t.motivoId && !t.motivoLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
       </div>
@@ -92,23 +94,27 @@
                 valueField="id" displayField="nombreDisplay" [(value)]="t.lugarOrigenId" />
             </ng-container>
             <ng-container *ngIf="t.origenLibre">
-              <label class="text-[11px] font-medium text-gray-500">Lugar de origen</label>
-              <input type="text" [(ngModel)]="t.lugarOrigenLibre" placeholder="Ingresa la dirección o lugar"
-                class="border border-[#e2e8f0] rounded-[7px] h-[28px] px-[8px] text-[11px] text-gray-700 focus:outline-none" />
+              <div class="relative mt-[9px]">
+                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de origen</label>
+                <input type="text" [(ngModel)]="t.lugarOrigenLibre" placeholder="Ingresa la dirección o lugar"
+                  class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+              </div>
             </ng-container>
             <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
               <input type="checkbox" [ngModel]="t.origenLibre" (ngModelChange)="onOrigenLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
-              <span class="text-xs text-gray-500">Otro lugar</span>
+              <span class="text-[12px] text-gray-600">Otro lugar</span>
             </label>
             <p *ngIf="submitted && !t.lugarOrigenId && !t.lugarOrigenLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
           </ng-container>
 
           <ng-container *ngIf="i > 0">
-            <label class="text-[11px] font-medium text-gray-500">Lugar de origen</label>
-            <input type="text" disabled
-              [value]="t.origenAutoLabel || '(define el destino del trayecto anterior)'"
-              class="border border-[#e2e8f0] rounded-[7px] h-[28px] px-[8px] text-[11px] text-gray-500 bg-gray-50" />
-            <p class="text-[11px] text-gray-400 italic">Encadenado al destino del trayecto anterior</p>
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de origen</label>
+              <input type="text" disabled
+                [value]="t.origenAutoLabel || '(define el destino del trayecto anterior)'"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-500 bg-gray-50" />
+            </div>
+            <p class="text-[11px] text-gray-400 italic mt-[4px]">Encadenado al destino del trayecto anterior</p>
           </ng-container>
         </div>
 
@@ -120,15 +126,17 @@
               (valueChange)="t.lugarDestinoId = $event; onDestinoCambio(i)" />
           </ng-container>
           <ng-container *ngIf="t.destinoLibre">
-            <label class="text-[11px] font-medium text-gray-500">Lugar de destino</label>
-            <input type="text" [ngModel]="t.lugarDestinoLibre"
-              (ngModelChange)="t.lugarDestinoLibre = $event; onDestinoCambio(i)"
-              placeholder="Ingresa la dirección o lugar"
-              class="border border-[#e2e8f0] rounded-[7px] h-[28px] px-[8px] text-[11px] text-gray-700 focus:outline-none" />
+            <div class="relative mt-[9px]">
+              <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Lugar de destino</label>
+              <input type="text" [ngModel]="t.lugarDestinoLibre"
+                (ngModelChange)="t.lugarDestinoLibre = $event; onDestinoCambio(i)"
+                placeholder="Ingresa la dirección o lugar"
+                class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+            </div>
           </ng-container>
           <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
             <input type="checkbox" [ngModel]="t.destinoLibre" (ngModelChange)="onDestinoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
-            <span class="text-xs text-gray-500">Otro lugar</span>
+            <span class="text-[12px] text-gray-600">Otro lugar</span>
           </label>
           <p *ngIf="submitted && !t.lugarDestinoId && !t.lugarDestinoLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
         </div>
