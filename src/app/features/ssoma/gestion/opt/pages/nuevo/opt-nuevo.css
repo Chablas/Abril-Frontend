@@ -1,21 +1,5 @@
-:host {
-  display: flex;
-  flex: 1;
-  height: 100%; /* .page-content (el padre real) no es display:flex, así que flex:1
-                    solo no alcanza para darle un alto real al host — sin esto, el
-                    host crece a su contenido y .paso-body nunca llega a scrollear
-                    internamente; quien scrollea es .page-content completo. */
-  min-height: 0;
-  flex-direction: column;
-}
-
-.nuevo-root {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  background: #ffffff;
-}
+/* :host ya no necesita forzar altura — el que scrollea ahora es .amp-body
+   del shared shell app-abril-modal-panel, no este componente. */
 
 /* ── STEPPER ─────────────────────────────────────────────── */
 .stepper {
@@ -53,15 +37,15 @@
 }
 
 .step--active .step-circle {
-  background: var(--color-abril-standard);
-  border-color: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue);
+  border-color: var(--color-abril-logo-blue);
   color: #fff;
 }
 
 .step--done .step-circle {
-  background: var(--color-abril-standard-light);
-  border-color: var(--color-abril-standard);
-  color: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue-light);
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
 }
 
 .step-label {
@@ -74,7 +58,7 @@
   transition: color 0.2s;
 }
 
-.step--active .step-label { color: var(--color-abril-standard); }
+.step--active .step-label { color: var(--color-abril-logo-blue); }
 .step--done   .step-label { color: #5a5850; }
 
 .step-line {
@@ -86,7 +70,7 @@
   transition: background 0.2s;
 }
 
-.step-line--done { background: var(--color-abril-standard); }
+.step-line--done { background: var(--color-abril-logo-blue); }
 
 /* ── LOADING ─────────────────────────────────────────────── */
 .loading-catalogos {
@@ -129,39 +113,23 @@
   gap: 6px;
 }
 
-.paso-title i { color: var(--color-abril-standard); }
+.paso-title i { color: var(--color-abril-logo-blue); }
 
 /* ── FORM ────────────────────────────────────────────────── */
-.form-group {
-  margin-bottom: 14px;
-}
+/* .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+.abril-field { margin-bottom: 14px; }
 
-.form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #5a5850;
-  margin-bottom: 5px;
+/* .toggle-label reutiliza .abril-field-label pero es una fila completa
+   clickeable, no un label flotando sobre un input — se resetea la posición
+   y se deja que .toggle-label controle fondo/padding/tipografía. */
+.abril-field-label.toggle-label {
+  position: static;
+  top: auto;
+  left: auto;
+  z-index: auto;
+  pointer-events: auto;
 }
-
-.form-input {
-  width: 100%;
-  padding: 9px 11px;
-  border: 0.5px solid #d4d0c8;
-  border-radius: 9px;
-  font-size: 13px;
-  color: #1a1a18;
-  background: #fff;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-abril-standard);
-}
-
-textarea.form-input { resize: vertical; }
 
 .form-row {
   display: flex;
@@ -181,7 +149,7 @@ textarea.form-input { resize: vertical; }
   flex-shrink: 0;
 }
 
-.toggle--on { background: var(--color-abril-standard); }
+.toggle--on { background: var(--color-abril-logo-blue); }
 
 .toggle-thumb {
   position: absolute;
@@ -249,8 +217,8 @@ textarea.form-input { resize: vertical; }
   padding: 6px 12px;
   border-radius: 8px;
   border: 0.5px solid #c1dac8;
-  background: var(--color-abril-standard-light);
-  color: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -357,8 +325,8 @@ textarea.form-input { resize: vertical; }
   padding: 6px 12px;
   border-radius: 8px;
   border: 0.5px solid #c1dac8;
-  background: var(--color-abril-standard-light);
-  color: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -391,7 +359,7 @@ textarea.form-input { resize: vertical; }
 .paso-num {
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-abril-standard);
+  color: var(--color-abril-logo-blue);
   min-width: 32px;
   padding-top: 10px;
 }
@@ -432,7 +400,7 @@ textarea.form-input { resize: vertical; }
 .res-full  { display: inline; }
 .res-short { display: none; }
 
-.resultado-btn--seguro   { background: var(--color-abril-standard-light); color: var(--color-abril-standard); border-color: #c1dac8; }
+.resultado-btn--seguro   { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); border-color: #c1dac8; }
 .resultado-btn--inseguro { background: #fdecea; color: #b83030; border-color: #f5bebe; }
 .resultado-btn--na       { background: #f0ede8; color: #5a5850; border-color: #d4d0c8; }
 
@@ -459,8 +427,8 @@ textarea.form-input { resize: vertical; }
   padding: 9px 12px;
   border: 0.5px solid #c1dac8;
   border-radius: 9px;
-  background: var(--color-abril-standard-light);
-  color: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
   font-size: 13px;
 }
 
@@ -473,7 +441,7 @@ textarea.form-input { resize: vertical; }
   border-radius: 6px;
   border: 0.5px solid #a3c4aa;
   background: transparent;
-  color: var(--color-abril-standard);
+  color: var(--color-abril-logo-blue);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -590,14 +558,14 @@ textarea.form-input { resize: vertical; }
 .foto-area-add i { font-size: 22px; }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
-.wizard-footer {
+/* El chrome del footer (fondo, borde, padding) vive en el shared shell
+   app-abril-modal-panel (.amp-footer) — esto solo reparte Cancelar a la
+   izquierda y Anterior/Siguiente a la derecha dentro de ese footer. */
+.modal-footer-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-top: 0.5px solid #e8e5df;
-  background: #fff;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .footer-nav {
@@ -636,7 +604,7 @@ textarea.form-input { resize: vertical; }
   padding: 9px 18px;
   border-radius: 9px;
   border: none;
-  background: var(--color-abril-standard);
+  background: var(--color-abril-logo-blue);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -644,7 +612,7 @@ textarea.form-input { resize: vertical; }
   transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) { background: var(--color-abril-standard-hover); }
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-guardar { min-width: 120px; justify-content: center; }
@@ -658,18 +626,16 @@ textarea.form-input { resize: vertical; }
 
 /* ── RESPONSIVE ≥768px ────────────────────────────────────── */
 @media (min-width: 768px) {
-  .stepper { padding: 16px 32px; }
+  .stepper { padding: 16px 32px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
   .paso-body { padding: 24px 32px; max-width: 720px; margin: 0 auto; width: 100%; }
-
-  .wizard-footer { padding: 14px 32px; }
 
   .form-row {
     flex-direction: row;
     gap: 16px;
   }
 
-  .form-row .form-group { flex: 1; margin-bottom: 14px; }
+  .form-row .abril-field { flex: 1; margin-bottom: 14px; }
 
   .toggle-grid {
     display: grid;

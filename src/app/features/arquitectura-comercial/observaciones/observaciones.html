@@ -1,0 +1,146 @@
+<app-abril-page-header
+  [badge]="'ARQUITECTURA COMERCIAL · ' + anioActual"
+  titulo="Observaciones"
+  subtitulo="Observaciones reportadas y su levantamiento por proyecto."
+  [tabs]="[
+    { label: 'Dashboard',   icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/dashboard' },
+    { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades' },
+    { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
+    { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' },
+    { label: 'Observaciones', icono: 'ti-alert-triangle', route: '/arquitectura-comercial/observaciones' }
+  ]"
+  [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
+  (primaryClick)="showNuevaModal = true">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Código</th>
+          <th>Proyecto</th>
+          <th>Fecha</th>
+          <th>Reportado por</th>
+          <th>Partida</th>
+          <th>Descripción</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Fotos</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="items.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos ? 'Sin resultados.' : 'No hay observaciones registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let o of items; trackBy: trackById" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ o.codigo }}</td>
+          <td class="text-gray-700">{{ o.proyectoNombre }}</td>
+          <td class="text-gray-700 whitespace-nowrap">{{ o.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td class="text-gray-700">{{ o.personaReporta }}</td>
+          <td class="text-gray-700">{{ o.partidaReportada }}</td>
+          <td class="text-gray-700 max-w-[280px] truncate" [title]="o.descripcion">{{ o.descripcion }}</td>
+
+          <td class="text-center">
+            <span class="inline-block px-[10px] py-[2px] rounded-full text-xs border" [ngClass]="estadoBadgeClass(o.estado)">
+              {{ o.estado }}
+            </span>
+          </td>
+
+          <td class="text-center text-gray-500 text-sm">
+            <span *ngIf="fotoObservacion(o)" class="mr-[6px]" title="Foto de observación">📷</span>
+            <span *ngIf="fotosLevantamiento(o) > 0" title="Fotos de levantamiento">🛠️ {{ fotosLevantamiento(o) }}</span>
+          </td>
+
+          <td class="text-center">
+            <button
+              *ngIf="o.estado !== 'Completado'"
+              (click)="abrirLevantar(o)"
+              abrilBulkAction="primary">
+              Levantar
+            </button>
+            <span *ngIf="o.estado === 'Completado'" class="text-xs text-gray-400">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="total"
+      [currentPage]="pagina"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<app-nueva-observacion
+  *ngIf="showNuevaModal"
+  [proyectos]="filtros.proyectos"
+  [partidas]="filtros.partidas.length ? filtros.partidas : ['Pintura', 'Limpieza', 'Accesorios', 'Otros']"
+  (closeModal)="showNuevaModal = false"
+  (saved)="onNuevaGuardada()" />
+
+<app-levantar-observacion
+  *ngIf="showLevantarModal && observacionParaLevantar"
+  [observacion]="observacionParaLevantar!"
+  (closeModal)="showLevantarModal = false; observacionParaLevantar = null"
+  (saved)="onLevantadaGuardada()" />
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código, descripción o persona..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="filtros.proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      [sortAlpha]="false"
+      valueField="value"
+      displayField="label"
+      placeholder="Selecciona estado"
+      [value]="estado"
+      (valueChange)="estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Partida"
+      [options]="partidaOptions"
+      valueField="value"
+      displayField="label"
+      placeholder="Selecciona partida"
+      [value]="partida"
+      (valueChange)="partida = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

@@ -22,11 +22,13 @@ import { WorkerSearchService } from '../../../../salud-ocupacional/services/work
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
 @Component({
   selector: 'app-amonestacion-nueva',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
   templateUrl: './amonestacion-nueva.html',
   styleUrl: './amonestacion-nueva.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -156,6 +158,21 @@ export class AmonestacionNueva implements OnInit, OnDestroy {
   get esContratista(): boolean {
     return !(this.workerSelected === null) &&
       !this.workerSelected?.empresaActual?.toLowerCase().includes('abril');
+  }
+
+  /** Catálogos que crecen -> combobox, no <select> nativo (necesitan label combinado). */
+  get tiposSancionOpts(): { id: number; label: string }[] {
+    return (this.init?.tiposSancion ?? []).map((t) => ({ id: t.id, label: `${t.nombre} (${t.nivelGravedad})` }));
+  }
+
+  get racInfraccionesOpts(): { id: number; label: string }[] {
+    const uit = this.init?.uitActual ?? 0;
+    return (this.init?.racInfracciones ?? []).map((ri) => {
+      let label = ri.nombre;
+      if (ri.montoFijo) label += ` — S/ ${ri.montoFijo.toFixed(2)}`;
+      else if (ri.factorUit) label += ` — ${ri.factorUit}xUIT (S/ ${(ri.factorUit * uit).toFixed(2)})`;
+      return { id: ri.id, label };
+    });
   }
 
   // ── Fotos ─────────────────────────────────────────────────────────

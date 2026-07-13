@@ -20,14 +20,14 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { compressImages } from '../../../../../../shared/utils/image-compress';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
 @Component({
   selector: 'app-rac-nuevo',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
   templateUrl: './rac-nuevo.html',
   styleUrl: './rac-nuevo.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

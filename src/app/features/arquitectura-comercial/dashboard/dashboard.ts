@@ -5,6 +5,9 @@ import {
 import { CommonModule }   from '@angular/common';
 import { FormsModule }    from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels    from 'chartjs-plugin-datalabels';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -45,7 +48,7 @@ type TabHito    = 'INICIAR' | 'VENCER' | 'VENCIDOS';
 @Component({
   selector   : 'app-arq-comercial-dashboard',
   standalone : true,
-  imports    : [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports    : [CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect],
   templateUrl: './dashboard.html',
   styleUrl   : './dashboard.css',
 })
@@ -69,6 +72,20 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     mes         : null,
     anio        : null,
   };
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    return [this.filtro.userId, this.filtro.semana, this.filtro.mes, this.filtro.proyectoId]
+      .filter((v) => v !== null && v !== undefined).length;
+  }
+
+  limpiarFiltros(): void {
+    this.filtro.userId = null;
+    this.filtro.semana = null;
+    this.filtro.mes = null;
+    this.filtro.proyectoId = null;
+    this.buscar();
+  }
 
   // ─── datos del dashboard ────────────────────────────────────────
   kpis: ArqComercialKpiDTO = {

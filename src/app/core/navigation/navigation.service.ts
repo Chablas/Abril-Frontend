@@ -127,6 +127,7 @@ export class NavigationService {
         { label: 'Actividades', route: '/arquitectura-comercial/actividades', featureKey: 'arquitectura-comercial.actividades' },
         { label: 'Gantt',       route: '/arquitectura-comercial/gantt',       featureKey: 'arquitectura-comercial.gantt' },
         { label: 'Plantilla',   route: '/arquitectura-comercial/plantilla',   featureKey: 'arquitectura-comercial.plantilla' },
+        { label: 'Observaciones', route: '/arquitectura-comercial/observaciones', featureKey: 'arquitectura-comercial.observaciones' },
       ],
       groups: [],
     },

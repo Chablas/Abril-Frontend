@@ -106,7 +106,7 @@
 .kpi-card {
   background: #ffffff;
   border-radius: 10px;
-  border-top: 3px solid #1B3A6B;
+  border-top: 3px solid var(--kpi-color, #1B3A6B);
   padding: 10px 12px 10px;
   display: flex;
   flex-direction: column;
@@ -119,6 +119,16 @@
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
 }
 
+/* Modificadores de color — única fuente, no hex suelto por tarjeta.
+   --kpi-color alimenta el border-top; --kpi-bg el fondo del ícono. */
+.kpi-card--info    { --kpi-color: var(--color-status-info);    --kpi-bg: var(--color-status-info-light); }
+.kpi-card--primary { --kpi-color: var(--color-status-primary); --kpi-bg: var(--color-status-primary-light); }
+.kpi-card--success { --kpi-color: var(--color-status-success); --kpi-bg: var(--color-status-success-light); }
+.kpi-card--danger  { --kpi-color: var(--color-status-danger);  --kpi-bg: var(--color-status-danger-light); }
+.kpi-card--warning { --kpi-color: var(--color-status-warning); --kpi-bg: var(--color-status-warning-light); }
+.kpi-card--pending  { --kpi-color: var(--color-status-pending); --kpi-bg: var(--color-status-pending-light); }
+.kpi-card--teal     { --kpi-color: var(--color-abril-standard); --kpi-bg: var(--color-abril-standard-light); }
+
 .kpi-icon-wrap {
   width: 28px;
   height: 28px;
@@ -127,13 +137,16 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 4px;
+  background: var(--kpi-bg, #EDF4FB);
 }
+.kpi-icon-wrap i { color: var(--kpi-color, #1B3A6B); font-size: 14px; }
 
 .kpi-num {
   font-size: 22px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
+  color: var(--kpi-color, #1B3A6B);
 }
 
 .kpi-title {
@@ -350,27 +363,6 @@
 }
 .cat-pill.active .cat-pill-dot { background: #fff !important; }
 
-/* ─── KPI Grid ─── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 7px;
-  flex-shrink: 0;
-}
-.kpi-card {
-  background: #fff;
-  border: 0.5px solid #E2E8F0;
-  border-radius: 9px;
-  padding: 8px 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
-.kpi-label { font-size: 8px; color:#94A3B8; text-align:center; text-transform:uppercase; letter-spacing:0.4px; font-weight:600; line-height:1.2; }
-.kpi-value { font-size: 16px; font-weight:700; line-height:1.15; margin:2px 0 1px; }
-.kpi-sub   { font-size: 8px; color:#94A3B8; text-align:center; }
-
 /* ─── Alert Grid ─── */
 .alert-grid {
   display: grid;
@@ -378,31 +370,41 @@
   gap: 6px;
   flex-shrink: 0;
 }
-.alert-card {
-  border: 0.5px solid #E2E8F0;
-  border-left-width: 3px;
-  border-radius: 8px;
-  padding: 5px 10px;
+
+/* Tarjeta de alerta clickeable — única definición, modificadores de color
+   por variable (antes: hex repetido a mano en cada una de las 4 tarjetas). */
+.alert-tile {
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: transform 0.12s, box-shadow 0.12s;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--alert-color, #C0392B);
+  border-left: 4px solid var(--alert-color, #C0392B);
+  background: #fff;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.15s;
 }
-.alert-clickable { cursor: pointer; }
-.alert-clickable:hover {
+.alert-tile:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(0,0,0,0.08);
 }
-.alert-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+.alert-tile--danger  { --alert-color: var(--color-status-danger); }
+.alert-tile--warning { --alert-color: var(--color-status-warning); }
+.alert-tile--info    { --alert-color: var(--color-status-info); }
+.alert-tile--success { --alert-color: var(--color-status-success); }
+
+.alert-tile-num {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--alert-color, #C0392B);
+  min-width: 52px;
+  text-align: center;
+  line-height: 1;
 }
-.alert-icon  { opacity: 0.6; }
-.alert-num   { font-size: 16px; font-weight: 800; line-height: 1; }
-.alert-label { font-size: 10px; font-weight: 600; color: #374151; }
-.alert-action{ display: none; }
+.alert-tile-body { flex: 1; min-width: 0; }
+.alert-tile-title { font-size: 12px; font-weight: 600; color: #1E293B; line-height: 1.3; }
+.alert-tile-sub { font-size: 10px; color: var(--alert-color, #C0392B); margin-top: 2px; opacity: 0.85; }
 
 /* ─── Main Grid ─── */
 .main-grid {

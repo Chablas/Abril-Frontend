@@ -32,6 +32,36 @@
   --color-abril-standard-border: #CDEBE0;
   --radius-standard:             7px;
 
+  /* Azul del isotipo del logo (la palabra "ABRIL" en public/images/abril-logo.png),
+     distinto del teal de --color-abril-standard. Confirmado por el usuario: #005d9d.
+     Úsalo solo donde se pida explícitamente "el azul del logo"; el acento oficial de
+     toda la UI sigue siendo --color-abril-standard. Por ahora solo en
+     amonestaciones/pages/nueva/ (panel en prueba) — no propagar a otras páginas
+     hasta confirmación explícita. */
+  --color-abril-logo-blue:        #005D9D;
+  --color-abril-logo-blue-hover:  #004A7D;
+  --color-abril-logo-blue-light:  #E6F0F8;
+
+  /* ── Colores de estado para dashboards (2026) ───────
+     Extraídos del dashboard de Arquitectura Comercial, que tenía estos
+     mismos 5 colores repetidos como hex suelto en 40+ lugares (KPI cards,
+     alertas, badges, gráficos). Única fuente — no volver a hardcodear estos
+     hex en un dashboard nuevo, referenciar la variable. El teal ya
+     existente (--color-abril-standard) se reutiliza para "eficiencia/OK",
+     no se duplica aquí. */
+  --color-status-info:          #1B3A6B; /* navy — totales, progreso, informativo neutro */
+  --color-status-info-light:    #EDF4FB;
+  --color-status-primary:       #2E6DB4; /* azul — en proceso / activo */
+  --color-status-primary-light: #EDF4FB;
+  --color-status-success:       #1B6B3A; /* verde — culminado / OK */
+  --color-status-success-light: #EAF3DE;
+  --color-status-danger:        #C0392B; /* rojo — vencido / crítico */
+  --color-status-danger-light:  #FDF2F2;
+  --color-status-warning:       #D97706; /* ámbar — próximo a vencer / atención */
+  --color-status-warning-light: #FEF3C7;
+  --color-status-pending:       #D4A017; /* dorado — pendiente / sin iniciar */
+  --color-status-pending-light: #FEF9E7;
+
   /* ── Neutros ─────────────────────────────────────── */
   --color-abril-ink:            #0D1B2A;
   --color-abril-body:           #374151;
@@ -206,6 +236,49 @@
   border-color: var(--color-abril-standard);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-abril-standard) 30%, transparent);
 }
+
+/* ── Campo de wizard estándar (2026): label flotante que corta el borde
+   superior del input, mismo tratamiento visual que ya usa app-search-select
+   internamente. Único origen de verdad — no reimplementar esto por página
+   (era el bug: RAC/OPT/Inspección/Accidentes tenían 4 copias locales
+   ligeramente distintas, una de ellas con position:relative faltante).
+   Uso: <div class="abril-field"><label class="abril-field-label">X</label>
+   <input class="abril-field-input" ...></div>. Funciona con <input>,
+   <select> y <textarea>. ──────────────────────────────────────────── */
+.abril-field { position: relative; margin-top: 9px; }
+
+.abril-field-label {
+  position: absolute;
+  top: -8px;
+  left: 9px;
+  z-index: 1;
+  background: var(--color-abril-surface, #fff);
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-abril-muted, #4B5563);
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.abril-field-input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--color-abril-border-strong, #D1D5DB);
+  border-radius: var(--radius-standard, 7px);
+  font-size: 13px;
+  color: var(--color-abril-body, #374151);
+  background: var(--color-abril-surface, #fff);
+  box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.abril-field-input:focus { border-color: var(--color-abril-standard); }
+.abril-field-input::placeholder { color: var(--color-abril-placeholder, #9CA3AF); }
+textarea.abril-field-input { resize: vertical; }
+select.abril-field-input { cursor: pointer; }
 
 /* ── Page layout ────────────────────────────────────────────── */
 /* Uso: <div class="page-wrapper"> + <app-abril-page-header> + <div class="page-body"> */

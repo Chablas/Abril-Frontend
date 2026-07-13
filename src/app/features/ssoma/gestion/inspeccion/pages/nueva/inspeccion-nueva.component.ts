@@ -28,7 +28,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import Swal from 'sweetalert2';
 
 interface RespuestaForm {
@@ -64,7 +64,7 @@ interface HallazgoForm {
   selector: 'app-inspeccion-nueva',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
   templateUrl: './inspeccion-nueva.component.html',
   styleUrl: './inspeccion-nueva.component.css',
 })
@@ -80,6 +80,11 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   tipos: InspeccionTipoDto[] = [];
   proyectos: any[] = [];
   workers: WorkerHabilitacionListDto[] = [];
+
+  /** Lista larga (crece con nuevos tipos/ámbitos) -> combobox, no <select> nativo. */
+  get tiposOpts(): { id: number; label: string }[] {
+    return this.tipos.map((t) => ({ id: t.id, label: `${t.nombre} (${t.ambito})` }));
+  }
 
   // Paso 1
   proyectoId = 0;

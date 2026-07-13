@@ -6,6 +6,7 @@ import { Actividades } from './actividades/actividades';
 import { Entregables } from './entregables/entregables';
 import { Gantt } from './gantt/gantt';
 import { Plantilla } from './plantilla/plantilla';
+import { Observaciones } from './observaciones/observaciones';
 
 const routes: Routes = [
   {
@@ -41,6 +42,12 @@ const routes: Routes = [
         component: Plantilla,
         canActivate: [roleGuard],
         data: { titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA', featureKey: 'arquitectura-comercial.plantilla' },
+      },
+      {
+        path: 'observaciones',
+        component: Observaciones,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - OBSERVACIONES', featureKey: 'arquitectura-comercial.observaciones' },
       },
     ],
   },

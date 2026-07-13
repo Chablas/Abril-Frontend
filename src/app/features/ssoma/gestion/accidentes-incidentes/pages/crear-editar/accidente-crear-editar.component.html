@@ -1,12 +1,9 @@
-<div class="form-root">
-
-  <app-abril-page-header
-    badge="SSOMA"
-    [titulo]="titulo"
-    subtitulo="Formulario Flash Report — SSO-FO-035"
-    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
-    (secondaryClick)="cancelar()">
-  </app-abril-page-header>
+<app-abril-modal-panel
+  [titulo]="titulo"
+  icono="ti-alert-triangle"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
 
   @if (cargando) {
     <div class="skeleton-form">
@@ -23,15 +20,16 @@
     </div>
   }
 
-  <form class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
+  <form id="accForm" class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
 
     <!-- ══════════════════════ DATOS DEL EVENTO ══════════════════════ -->
     <section class="flash-section">
       <h3 class="flash-section__title"><i class="ti ti-info-circle"></i> Datos del evento</h3>
       <div class="form-grid">
 
-        <div class="form-field">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Proyecto *"
             [options]="proyectosOpts()"
             valueField="projectId"
@@ -43,9 +41,9 @@
           @if (errores['proyectoId']) { <span class="campo-error">{{ errores['proyectoId'] }}</span> }
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Tipo de evento *</label>
-          <select class="campo-input" [(ngModel)]="form.tipoId" name="tipoId">
+          <select class="abril-field-input" [(ngModel)]="form.tipoId" name="tipoId">
             <option [ngValue]="0" disabled>Seleccionar tipo</option>
             @for (t of tipos; track t.id) {
               <option [ngValue]="t.id">{{ t.nombre }}</option>
@@ -54,9 +52,9 @@
           @if (errores['tipoId']) { <span class="campo-error">{{ errores['tipoId'] }}</span> }
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Área de origen *</label>
-          <select class="campo-input" [(ngModel)]="form.areaOrigen" name="areaOrigen">
+          <select class="abril-field-input" [(ngModel)]="form.areaOrigen" name="areaOrigen">
             @for (a of areasOrigen; track a.value) {
               <option [ngValue]="a.value">{{ a.label }}</option>
             }
@@ -64,20 +62,20 @@
           @if (errores['areaOrigen']) { <span class="campo-error">{{ errores['areaOrigen'] }}</span> }
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Fecha *</label>
-          <input type="date" class="campo-input" [(ngModel)]="form.fecha" name="fecha" />
+          <input type="date" class="abril-field-input" [(ngModel)]="form.fecha" name="fecha" />
           @if (errores['fecha']) { <span class="campo-error">{{ errores['fecha'] }}</span> }
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Hora</label>
-          <input type="time" class="campo-input" [(ngModel)]="form.hora" name="hora" />
+          <input type="time" class="abril-field-input" [(ngModel)]="form.hora" name="hora" />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Turno</label>
-          <select class="campo-input" [(ngModel)]="form.turno" name="turno">
+          <select class="abril-field-input" [(ngModel)]="form.turno" name="turno">
             <option [ngValue]="undefined">— Sin especificar —</option>
             @for (t of turnos; track t) {
               <option [ngValue]="t">{{ t }}</option>
@@ -85,9 +83,9 @@
           </select>
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Tipo de contacto / mecanismo</label>
-          <select class="campo-input" [(ngModel)]="form.tipoContacto" name="tipoContacto">
+          <select class="abril-field-input" [(ngModel)]="form.tipoContacto" name="tipoContacto">
             <option [ngValue]="undefined">— Sin especificar —</option>
             <optgroup label="Contacto con persona">
               <option>Golpe por objeto en movimiento</option>
@@ -113,15 +111,16 @@
           </select>
         </div>
 
-        <div class="form-field form-field--full">
+        <div class="abril-field abril-field--full">
           <label>Lugar exacto *</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
+          <input type="text" class="abril-field-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
             placeholder="Ej: Sótano 2, eje C-D, zona de excavación" />
           @if (errores['lugarExacto']) { <span class="campo-error">{{ errores['lugarExacto'] }}</span> }
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Etapa del proyecto"
             [options]="etapas"
             valueField="id"
@@ -133,8 +132,9 @@
           />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Partida"
             [options]="partidasOpts()"
             valueField="id"
@@ -154,7 +154,7 @@
       <h3 class="flash-section__title"><i class="ti ti-building"></i> Empresa involucrada</h3>
       <div class="form-grid">
 
-        <div class="form-field form-field--full">
+        <div class="abril-field abril-field--full">
           <label>Tipo de empresa</label>
           <div class="radio-group">
             <label class="radio-label">
@@ -169,8 +169,9 @@
         </div>
 
         @if (tipoEmpresa === 'abril') {
-          <div class="form-field">
+          <div class="abril-field">
             <app-search-select
+            color="var(--color-abril-logo-blue)"
               label="Razón social (Abril)"
               [options]="empresasAbrilDelProyecto()"
               valueField="id"
@@ -184,8 +185,9 @@
         }
 
         @if (tipoEmpresa === 'contratista') {
-          <div class="form-field">
+          <div class="abril-field">
             <app-search-select
+            color="var(--color-abril-logo-blue)"
               label="Contratista"
               [options]="contratistasDelProyecto()"
               valueField="id"
@@ -198,8 +200,9 @@
           </div>
         }
 
-        <div class="form-field">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Jefe inmediato"
             [options]="jefeInmediatoOpts()"
             valueField="id"
@@ -242,8 +245,9 @@
           </h4>
           <div class="form-grid">
 
-            <div class="form-field form-field--full">
+            <div class="abril-field abril-field--full">
               <app-search-select
+            color="var(--color-abril-logo-blue)"
                 label="Buscar trabajador"
                 [options]="trabajadoresOpts()"
                 valueField="id"
@@ -255,35 +259,35 @@
               />
             </div>
 
-            <div class="form-field form-field--full">
+            <div class="abril-field abril-field--full">
               <label>Nombre completo</label>
-              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.trabajadorNombre" name="tnNombre"
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.trabajadorNombre" name="tnNombre"
                 placeholder="Nombre completo" />
             </div>
 
-            <div class="form-field">
+            <div class="abril-field">
               <label>Puesto de trabajo</label>
-              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.puestoTrabajo" name="tnPuesto" />
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.puestoTrabajo" name="tnPuesto" />
             </div>
 
-            <div class="form-field">
+            <div class="abril-field">
               <label>Edad</label>
-              <input type="number" class="campo-input" [(ngModel)]="trabajadorNuevo.edad" name="tnEdad" min="18" max="80" />
+              <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.edad" name="tnEdad" min="18" max="80" />
             </div>
 
-            <div class="form-field">
+            <div class="abril-field">
               <label>Años experiencia</label>
-              <input type="number" class="campo-input" [(ngModel)]="trabajadorNuevo.aniosExperiencia" name="tnAnios" min="0" />
+              <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.aniosExperiencia" name="tnAnios" min="0" />
             </div>
 
-            <div class="form-field">
+            <div class="abril-field">
               <label>Celular</label>
-              <input type="text" class="campo-input" [(ngModel)]="trabajadorNuevo.celularTrabajador" name="tnCelular" placeholder="9XXXXXXXX" />
+              <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.celularTrabajador" name="tnCelular" placeholder="9XXXXXXXX" />
             </div>
 
-            <div class="form-field">
+            <div class="abril-field">
               <label>Parte del cuerpo afectada</label>
-              <select class="campo-input" [(ngModel)]="trabajadorNuevo.parteAfectadaId" name="tnParte">
+              <select class="abril-field-input" [(ngModel)]="trabajadorNuevo.parteAfectadaId" name="tnParte">
                 <option [ngValue]="undefined">— Sin especificar —</option>
                 @for (p of partes; track p.id) {
                   <option [ngValue]="p.id">{{ p.nombre }}</option>
@@ -305,7 +309,7 @@
       <h3 class="flash-section__title"><i class="ti ti-alert-triangle"></i> Daños y consecuencias</h3>
       <div class="form-grid">
 
-        <div class="form-field form-field--full">
+        <div class="abril-field abril-field--full">
           <label class="checkbox-label">
             <input type="checkbox" [(ngModel)]="form.danioProcesFlag" name="danioProcesFlag" />
             ¿Se produjo daño al proceso / equipo / material?
@@ -313,19 +317,19 @@
         </div>
 
         @if (form.danioProcesFlag) {
-          <div class="form-field form-field--full">
+          <div class="abril-field abril-field--full">
             <label>Descripción del daño al proceso / equipo / material</label>
-            <textarea class="campo-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
+            <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
               placeholder="Describa el daño a proceso, equipo o material"></textarea>
           </div>
         }
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Consecuencia real — Personal</label>
           @if (esIncidente) {
             <p class="info-hint"><i class="ti ti-info-circle"></i> Incidente: máximo N2 — Primeros auxilios. N3 en adelante es Accidente.</p>
           }
-          <select class="campo-input" [(ngModel)]="form.consecuenciaRealPersonal" name="consecReal">
+          <select class="abril-field-input" [(ngModel)]="form.consecuenciaRealPersonal" name="consecReal">
             <option [ngValue]="undefined">— No aplica —</option>
             @for (n of nivelesReal; track n) {
               <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
@@ -333,10 +337,10 @@
           </select>
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Consecuencia potencial — Personal</label>
           <p class="info-hint"><i class="ti ti-info-circle"></i> ¿Qué podría haber pasado en otras circunstancias?</p>
-          <select class="campo-input" [(ngModel)]="form.consecuenciaPotencialPersonal" name="consecPot">
+          <select class="abril-field-input" [(ngModel)]="form.consecuenciaPotencialPersonal" name="consecPot">
             <option [ngValue]="undefined">— No aplica —</option>
             @for (n of nivelesPotencial; track n) {
               <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
@@ -345,7 +349,7 @@
         </div>
 
         @if ((form.consecuenciaRealPersonal ?? 0) >= 5) {
-          <div class="form-field form-field--full alerta-sunafil">
+          <div class="abril-field abril-field--full alerta-sunafil">
             <i class="ti ti-alert-triangle"></i>
             Consecuencia N{{ form.consecuenciaRealPersonal }} — Este evento requiere notificación a SUNAFIL en menos de 24 horas (D.S. 023-2017-EM).
           </div>
@@ -358,8 +362,8 @@
     <section class="flash-section">
       <h3 class="flash-section__title"><i class="ti ti-file-text"></i> Descripción del evento</h3>
       <div class="form-grid">
-        <div class="form-field form-field--full">
-          <textarea class="campo-input campo-textarea" [(ngModel)]="form.descripcion" name="descripcion" rows="5"
+        <div class="abril-field abril-field--full">
+          <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.descripcion" name="descripcion" rows="5"
             placeholder="Describa con detalle cómo ocurrió el evento, secuencia de hechos, condiciones del entorno..."></textarea>
           @if (errores['descripcion']) { <span class="campo-error">{{ errores['descripcion'] }}</span> }
         </div>
@@ -370,8 +374,8 @@
     <section class="flash-section">
       <h3 class="flash-section__title"><i class="ti ti-bolt"></i> Acciones inmediatas</h3>
       <div class="form-grid">
-        <div class="form-field form-field--full">
-          <textarea class="campo-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
+        <div class="abril-field abril-field--full">
+          <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
             placeholder="Liste las acciones tomadas inmediatamente después del evento..."></textarea>
           @if (errores['accionesInmediatas']) { <span class="campo-error">{{ errores['accionesInmediatas'] }}</span> }
         </div>
@@ -383,9 +387,9 @@
       <h3 class="flash-section__title"><i class="ti ti-medical-cross"></i> Atención médica</h3>
       <div class="form-grid">
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Tipo de atención</label>
-          <select class="campo-input" [(ngModel)]="form.atencionMedica" name="atencionMedica">
+          <select class="abril-field-input" [(ngModel)]="form.atencionMedica" name="atencionMedica">
             <option [ngValue]="undefined">— No aplica —</option>
             <option>Tópico de obra</option>
             <option>Tópico de oficina</option>
@@ -395,9 +399,9 @@
         </div>
 
         @if (form.atencionMedica && form.atencionMedica !== 'Ninguna') {
-          <div class="form-field">
+          <div class="abril-field">
             <label>Centro de atención</label>
-            <input type="text" class="campo-input" [(ngModel)]="form.centroAtencion" name="centroAtencion"
+            <input type="text" class="abril-field-input" [(ngModel)]="form.centroAtencion" name="centroAtencion"
               placeholder="Nombre del centro de atención" />
           </div>
         }
@@ -448,8 +452,9 @@
       <h3 class="flash-section__title"><i class="ti ti-pen"></i> Elaborado por</h3>
       <div class="form-grid">
 
-        <div class="form-field form-field--full">
+        <div class="abril-field abril-field--full">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Buscar trabajador"
             [options]="elaboradoPorOpts()"
             valueField="id"
@@ -461,40 +466,39 @@
           />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Nombre</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorNombre" name="elaboradoNombre" />
+          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorNombre" name="elaboradoNombre" />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Cargo</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorCargo" name="elaboradoCargo" />
+          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorCargo" name="elaboradoCargo" />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Email</label>
-          <input type="email" class="campo-input" [(ngModel)]="form.elaboradoPorEmail" name="elaboradoEmail" />
+          <input type="email" class="abril-field-input" [(ngModel)]="form.elaboradoPorEmail" name="elaboradoEmail" />
         </div>
 
-        <div class="form-field">
+        <div class="abril-field">
           <label>Teléfono</label>
-          <input type="text" class="campo-input" [(ngModel)]="form.elaboradoPorTelefono" name="elaboradoTel" />
+          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorTelefono" name="elaboradoTel" />
         </div>
 
       </div>
     </section>
 
-    <!-- ══════════════════════ BOTONES ══════════════════════ -->
-    <div class="form-actions">
-      <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
-      <button type="submit" class="btn-guardar" [disabled]="guardando">
-        @if (guardando) { <i class="ti ti-loader-2 spin"></i> }
-        @else { <i class="ti ti-device-floppy"></i> }
-        {{ guardando ? 'Guardando...' : 'Guardar borrador' }}
-      </button>
-    </div>
-
   </form>
   }
 
-</div>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
+    <button type="submit" form="accForm" class="btn-guardar" [disabled]="guardando || cargando">
+      @if (guardando) { <i class="ti ti-loader-2 spin"></i> }
+      @else { <i class="ti ti-device-floppy"></i> }
+      {{ guardando ? 'Guardando...' : 'Guardar borrador' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

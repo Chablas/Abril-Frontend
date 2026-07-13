@@ -1,12 +1,9 @@
-<div class="nuevo-root">
-
-  <!-- HEADER -->
-  <app-abril-page-header
-    badge="SSOMA"
-    titulo="Nueva Observación Planeada"
-    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
-    (secondaryClick)="cancelar()">
-  </app-abril-page-header>
+<app-abril-modal-panel
+  titulo="Nueva Observación Planeada"
+  icono="ti-clipboard-text"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
 
   <!-- STEPPER -->
   <div class="stepper">
@@ -42,8 +39,9 @@
         <h2 class="paso-title"><i class="ti ti-clipboard-text"></i> Datos de la observación</h2>
 
         <!-- FIX 2: SearchSelect para proyecto -->
-        <div class="form-group">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Proyecto *"
             [options]="proyectos"
             valueField="projectId"
@@ -55,13 +53,13 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Fecha *</label>
-            <input type="date" class="form-input" [(ngModel)]="fecha" />
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha *</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Tipo de observación *</label>
-            <select class="form-input" [(ngModel)]="tipoObservacion">
+          <div class="abril-field">
+            <label class="abril-field-label">Tipo de observación *</label>
+            <select class="abril-field-input" [(ngModel)]="tipoObservacion">
               <option value="">Seleccionar...</option>
               <option value="Planeada">Planeada</option>
               <option value="No Planeada">No Planeada</option>
@@ -69,9 +67,9 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">PET asociado</label>
-          <select class="form-input" [(ngModel)]="petId" (ngModelChange)="onPetChange()">
+        <div class="abril-field">
+          <label class="abril-field-label">PET asociado</label>
+          <select class="abril-field-input" [(ngModel)]="petId" (ngModelChange)="onPetChange()">
             <option [value]="null">Sin PET</option>
             @for (p of pets; track p.id) {
               <option [value]="p.id">{{ p.nombre }}</option>
@@ -87,16 +85,16 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label toggle-label">
+          <div class="abril-field">
+            <label class="abril-field-label toggle-label">
               <span>¿Cuenta con PET?</span>
               <div class="toggle" [class.toggle--on]="cuentaConPet" (click)="cuentaConPet = !cuentaConPet">
                 <div class="toggle-thumb"></div>
               </div>
             </label>
           </div>
-          <div class="form-group">
-            <label class="form-label toggle-label">
+          <div class="abril-field">
+            <label class="abril-field-label toggle-label">
               <span>¿Se informó al trabajador?</span>
               <div class="toggle" [class.toggle--on]="seInformaTrabajador" (click)="seInformaTrabajador = !seInformaTrabajador">
                 <div class="toggle-thumb"></div>
@@ -105,14 +103,15 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Área *</label>
-          <input type="text" class="form-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
+        <div class="abril-field">
+          <label class="abril-field-label">Área *</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
         </div>
 
         <!-- FIX 2+3: Observador via SearchSelect con auto-fill nombre+cargo -->
-        <div class="form-group">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Observador *"
             [options]="workersObservador"
             valueField="workerId"
@@ -123,9 +122,9 @@
             (valueChange)="onObservadorChange($event)">
           </app-search-select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Cargo del observador</label>
-          <input type="text" class="form-input" [(ngModel)]="observadorCargo"
+        <div class="abril-field">
+          <label class="abril-field-label">Cargo del observador</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="observadorCargo"
             [disabled]="!!observadorId"
             placeholder="Se autocompleta al seleccionar observador" />
         </div>
@@ -140,8 +139,9 @@
         <!-- TRABAJADORES -->
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
-        <div class="form-group">
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Agregar trabajador observado"
             [options]="workersObservador"
             valueField="workerId"
@@ -218,7 +218,7 @@
             <div class="paso-num">{{ p.numeroDisplay }}</div>
             <div class="paso-fields">
               <div class="paso-top-row">
-                <input type="text" class="form-input paso-desc" [(ngModel)]="p.descripcion"
+                <input type="text" class="abril-field-input paso-desc" [(ngModel)]="p.descripcion"
                   placeholder="Descripción del paso..." />
                 <div class="resultado-group">
                   <button type="button" class="resultado-btn"
@@ -245,7 +245,7 @@
                 </button>
               </div>
               @if (p.resultado === 'Inseguro') {
-                <input type="text" class="form-input" [(ngModel)]="p.desviacionObservada"
+                <input type="text" class="abril-field-input" [(ngModel)]="p.desviacionObservada"
                   placeholder="Desviación observada (acto/condición inseguro)..." />
               }
             </div>
@@ -315,9 +315,9 @@
         </div>
 
         <div class="form-row" style="margin-top:16px">
-          <div class="form-group">
-            <label class="form-label">Acción requerida</label>
-            <select class="form-input" [(ngModel)]="accionRequerida">
+          <div class="abril-field">
+            <label class="abril-field-label">Acción requerida</label>
+            <select class="abril-field-input" [(ngModel)]="accionRequerida">
               <option value="">Sin acción requerida</option>
               @for (a of accionesRequeridas; track a) {
                 <option [value]="a">{{ a }}</option>
@@ -327,9 +327,9 @@
         </div>
 
         @if (accionRequerida) {
-          <div class="form-group">
-            <label class="form-label">Observación sobre la acción</label>
-            <textarea class="form-input" [(ngModel)]="accionObservacion" rows="3"
+          <div class="abril-field">
+            <label class="abril-field-label">Observación sobre la acción</label>
+            <textarea class="abril-field-input" [(ngModel)]="accionObservacion" rows="3"
               placeholder="Describe la acción requerida..."></textarea>
           </div>
         }
@@ -384,8 +384,14 @@
 
   }<!-- /!loadingCatalogos -->
 
-  <!-- FOOTER NAVEGACIÓN -->
-  <div class="wizard-footer">
+  <!-- FIX 1: Visor de documentos PET (modal overlay) -->
+  <app-document-viewer
+    [archivoUrl]="petVisorUrl"
+    [nombre]="petVisorNombre"
+    (closed)="cerrarVisorPet()">
+  </app-document-viewer>
+
+  <div modalFooter class="modal-footer-row">
     <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
     <div class="footer-nav">
       @if (paso > 1) {
@@ -408,11 +414,4 @@
     </div>
   </div>
 
-  <!-- FIX 1: Visor de documentos PET (modal overlay) -->
-  <app-document-viewer
-    [archivoUrl]="petVisorUrl"
-    [nombre]="petVisorNombre"
-    (closed)="cerrarVisorPet()">
-  </app-document-viewer>
-
-</div>
+</app-abril-modal-panel>

@@ -1,0 +1,28 @@
+<app-base-modal title="Levantar observación" width="w-[560px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[12px] p-[4px]">
+
+    <div class="text-sm text-gray-600">
+      <p><span class="font-medium">{{ observacion.codigo }}</span> — {{ observacion.proyectoNombre }}</p>
+      <p class="mt-[4px]">{{ observacion.descripcion }}</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Comentario del levantamiento</label>
+      <textarea class="form-input" rows="3" [(ngModel)]="comentario" name="comentario"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Imagen del levantamiento</label>
+      <input type="file" accept="image/*" (change)="onFotoSelected($event)" />
+      <img *ngIf="fotoPreviewUrl" [src]="fotoPreviewUrl" class="mt-[8px] max-h-[160px] rounded-[var(--radius-standard)] border" style="border-color:var(--color-abril-border)" />
+    </div>
+
+  </div>
+
+  <div class="flex justify-end gap-[8px] mt-[16px]">
+    <button class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button class="btn-primary" (click)="save()">Confirmar levantamiento</button>
+  </div>
+
+</app-base-modal>
