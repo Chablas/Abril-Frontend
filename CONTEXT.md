@@ -4297,3 +4297,33 @@ Rediseño de `features/ssoma/salud-ocupacional/interconsultas` a pedido del usua
 ### Pendiente
 - El usuario pidió explícitamente no compilar en esta sesión — no se corrió `ng build` ni `tsc` sobre los últimos cambios (categoría/ocupación). Verificar al compilar.
 - Falta que el usuario confirme visualmente en su máquina que el layout de una sola pantalla y los nuevos campos se ven bien.
+
+## Sesión 2026-07-13 — Estandarización de wizards SSOMA (RAC/OPT/Inspección/Accidentes)
+
+Sesión larga de estandarización visual/estructural de los formularios "nuevo"/"crear-editar" de RAC, OPT, Inspección y Accidentes, más limpieza de fondos de página en toda la app. Ver CLAUDE.md sección "UI standard (2026)" para las reglas nuevas que quedaron documentadas.
+
+**1. Fondo de página incorrecto (`--color-abril-page-bg` en vez de blanco)**: ese token es solo para el layout general detrás del header, no para el contenido de una página. Corregido a `#ffffff` en 17 páginas: `opt-nuevo/detalle/dashboard`, `rac-nuevo`, `inspeccion-nueva/detalle/dashboard`, `accidente-crear-editar/detalle`, `paso-lista`, `paso-salud-lista`, `charlas-dashboard.component.css`, `dashboard-acumulado`, `desempeno-supervisor`, `seguimiento-indicadores`, y en clínica/evaluaciones/habilitación (`agenda`, `dashboard`, `interconsultas`, `programaciones`, `asignaciones`, `configuracion-plantilla`, `dashboard-gerencia`, `evaluar-residente`, `control-acceso`, `gestion-hab.component.css`).
+No se tocó `paso-dashboard.component.css` (sistema de diseño propio completo, requiere conversación aparte) ni las páginas de `charlas/pages/{asistencia,evidencia,programa,lista}` (código muerto, sin ruta real).
+
+**2. Header hand-rolled → `app-abril-page-header`**: RAC y OPT (`nuevo` y `opt-detalle`) reinventaban su propio header (`.nuevo-header`/`.back-btn`/`.header-badge`) en vez de usar el componente compartido. Inspección y Accidentes ya lo hacían bien — se usaron como referencia. CSS muerto correspondiente eliminado.
+
+**3. Estándar de wizard de página completa documentado en CLAUDE.md**: un create/edit form solo puede ser página completa (en vez de `app-base-modal`) si es un wizard multi-paso real (varias etapas distintas). Estructura fija: `app-abril-page-header` (nunca hand-rolled) + `.wizard-root`/`.stepper`/`.wizard-body`/`.wizard-footer`.
+
+**4. Estándar de input de hora documentado**: `<input type="time">` nativo para horas sin restricción (ej. Inspección), vs par `app-search-select` HH/MM solo cuando hay restricción real (no permitir hora pasada, retorno ≥ salida). Migrado Gestión de Salidas (`solicitud-salidas/components/create/`) del picker HH/MM viejo al input nativo con `[attr.min]` dinámico — simplificó ~35 líneas de lógica (`horasSalidaOptions`/`minutosSalidaOptions`/etc. eliminados).
+
+**5. Wording de `app-search-select` unificado** (documentado en CLAUDE.md): "Buscar proyecto...", "Buscar por nombre o DNI..." (personas), "Buscar empresa.../Buscar contratista..." (catálogos grandes), "Selecciona {entidad}" (catálogos chicos). Aplicado en RAC/OPT/Inspección/Accidentes — antes había 4 wordings distintos solo para "Proyecto".
+
+**6. RAC migrado de buscador de trabajador custom a `app-search-select`**: RAC tenía su propio widget completo (`WorkerSearchService` + debounce + `.worker-search-wrap`/`.worker-results`/`.worker-chip`) para Observador y Trabajador(es) observado(s), distinto a como lo hacen OPT e Inspección (catálogo precargado vía `TrabajadorHabService` + `app-search-select`). Migrado a ese mismo patrón. El campo "Cargo" (antes 3 cajas separadas Cargo/Categoría/Ocupación) ahora es un solo campo `categoría · ocupación`, igual que OPT — no se perdió ningún dato, solo se unificó la presentación.
+Verificado: OPT e Inspección ya estaban bien (solo tenían CSS muerto de una versión anterior, limpiado). Accidentes usa una fuente de trabajadores distinta a propósito (filtrada por proyecto del evento, no todo el catálogo de la empresa) — correcto, no es una inconsistencia.
+
+### Archivos clave
+- `CLAUDE.md` — sección "UI standard (2026)", reglas nuevas de wizard/hora/placeholders.
+- `src/app/features/ssoma/gestion/rac/pages/nuevo/rac-nuevo.{ts,html,css}` — migración completa.
+- `src/app/features/ssoma/gestion/opt/pages/nuevo/opt-nuevo.{ts,html,css}`, `.../detalle/opt-detalle.{ts,html,css}`.
+- `src/app/features/gestion-administrativa/features/solicitud-salidas/components/create/create.{ts,html}` — hora nativa.
+
+### Pendiente (para la próxima sesión)
+1. **Discutido pero no implementado**: hay 3 patrones visuales distintos para forms de un solo paso (`app-base-modal` centrado, `app-base-modal [fullScreen]="true"` — este último se ve roto/sin chrome, y el panel lateral custom de `ssoma/gestion/amonestaciones/pages/nueva/` que el usuario prefiere visualmente). Recomendación dada: crear un componente compartido de panel lateral (inspirado en el de Amonestaciones), migrar Solicitud de Salidas y Amonestaciones a él, dejar el wizard full-page solo para multi-paso real. Amonestaciones también reinventa su propio buscador de trabajador (mismo problema que tenía RAC) — migrar a `app-search-select` de paso.
+2. Ancho inconsistente entre `.wizard-body` (centrado, max-width) y `.wizard-footer`/`.stepper` (ancho completo de pantalla) en los wizards — se ve como que el footer está "separado" del formulario. No corregido aún.
+3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte.
+4. No se verificó visualmente con navegador en esta sesión (instrucción explícita del usuario). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios).
