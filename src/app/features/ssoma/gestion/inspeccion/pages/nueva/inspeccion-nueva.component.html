@@ -33,8 +33,8 @@
         <h2 class="section-title">Datos de la inspección</h2>
 
         <div class="form-group">
-          <label class="form-label">Proyecto <span class="required">*</span></label>
           <app-search-select
+            label="Proyecto *"
             [options]="proyectos"
             valueField="projectId"
             displayField="projectDescription"
@@ -75,12 +75,12 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Responsable del área</label>
           <app-search-select
+            label="Responsable del área"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="responsableAreaId"
             (valueChange)="onResponsableChange($event)">
           </app-search-select>
@@ -345,12 +345,12 @@
         <h2 class="section-title">Inspector</h2>
 
         <div class="form-group">
-          <label class="form-label">Buscar inspector</label>
           <app-search-select
+            label="Buscar inspector"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="inspectorId"
             (valueChange)="onInspectorChange($event)">
           </app-search-select>
@@ -392,12 +392,12 @@
         <h2 class="section-title">Representante del área (RM 050)</h2>
 
         <div class="form-group">
-          <label class="form-label">Buscar representante</label>
           <app-search-select
+            label="Buscar representante"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="representanteId"
             (valueChange)="onRepresentanteChange($event)">
           </app-search-select>

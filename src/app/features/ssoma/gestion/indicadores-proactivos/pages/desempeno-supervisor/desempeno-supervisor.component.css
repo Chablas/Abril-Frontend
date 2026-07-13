@@ -1,5 +1,5 @@
 /* ── Root ─────────────────────────────────────────────────────────────── */
-.ds-root { display: flex; flex-direction: column; min-height: 100%; background: #f0f2f5; }
+.ds-root { display: flex; flex-direction: column; min-height: 100%; background: #ffffff; }
 
 /* ── Filtros ──────────────────────────────────────────────────────────── */
 .ds-filtros {

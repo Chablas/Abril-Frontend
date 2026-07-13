@@ -1,6 +1,6 @@
 :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
-.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--color-abril-page-bg, #f5f3ef); }
+.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 
 .dash-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .dash-body--cap { padding: 8px !important; gap: 0; }

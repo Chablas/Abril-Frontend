@@ -31,6 +31,7 @@ import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-s
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
 
 interface TrabajadorForm {
@@ -60,7 +61,7 @@ interface PasoForm {
   selector: 'app-opt-nuevo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer],
+  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer, AbrilPageHeaderComponent],
   templateUrl: './opt-nuevo.html',
   styleUrl: './opt-nuevo.css',
 })

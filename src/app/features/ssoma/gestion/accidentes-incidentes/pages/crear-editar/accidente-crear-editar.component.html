@@ -31,12 +31,12 @@
       <div class="form-grid">
 
         <div class="form-field">
-          <label>Proyecto *</label>
           <app-search-select
+            label="Proyecto *"
             [options]="proyectosOpts()"
             valueField="projectId"
             displayField="projectDescription"
-            placeholder="Seleccionar proyecto"
+            placeholder="Buscar proyecto..."
             [value]="form.proyectoId || undefined"
             (valueChange)="onProyectoChange($event ?? 0)"
           />
@@ -121,8 +121,8 @@
         </div>
 
         <div class="form-field">
-          <label>Etapa del proyecto</label>
           <app-search-select
+            label="Etapa del proyecto"
             [options]="etapas"
             valueField="id"
             displayField="nombre"
@@ -134,8 +134,8 @@
         </div>
 
         <div class="form-field">
-          <label>Partida</label>
           <app-search-select
+            label="Partida"
             [options]="partidasOpts()"
             valueField="id"
             displayField="nombre"
@@ -170,12 +170,12 @@
 
         @if (tipoEmpresa === 'abril') {
           <div class="form-field">
-            <label>Razón social (Abril)</label>
             <app-search-select
+              label="Razón social (Abril)"
               [options]="empresasAbrilDelProyecto()"
               valueField="id"
               displayField="nombre"
-              placeholder="— Seleccionar empresa —"
+              placeholder="Buscar empresa..."
               [allowClear]="true"
               [value]="form.empresaAbrilId"
               (valueChange)="form.empresaAbrilId = $event; onEmpresaChange()"
@@ -185,12 +185,12 @@
 
         @if (tipoEmpresa === 'contratista') {
           <div class="form-field">
-            <label>Contratista</label>
             <app-search-select
+              label="Contratista"
               [options]="contratistasDelProyecto()"
               valueField="id"
               displayField="razonSocial"
-              placeholder="— Seleccionar contratista —"
+              placeholder="Buscar contratista..."
               [allowClear]="true"
               [value]="form.contributorId"
               (valueChange)="form.contributorId = $event; onEmpresaChange()"
@@ -199,12 +199,12 @@
         }
 
         <div class="form-field">
-          <label>Jefe inmediato</label>
           <app-search-select
+            label="Jefe inmediato"
             [options]="jefeInmediatoOpts()"
             valueField="id"
             displayField="label"
-            placeholder="Buscar jefe inmediato"
+            placeholder="Buscar por nombre o DNI..."
             [allowClear]="true"
             [value]="jefeInmediatoWorkerId"
             (valueChange)="onJefeSelect($event)"
@@ -243,12 +243,12 @@
           <div class="form-grid">
 
             <div class="form-field form-field--full">
-              <label>Buscar trabajador</label>
               <app-search-select
+                label="Buscar trabajador"
                 [options]="trabajadoresOpts()"
                 valueField="id"
                 displayField="label"
-                placeholder="Buscar por nombre"
+                placeholder="Buscar por nombre o DNI..."
                 [allowClear]="true"
                 [value]="trabajadorNuevo.workerId"
                 (valueChange)="onTrabajadorSelect($event)"
@@ -449,12 +449,12 @@
       <div class="form-grid">
 
         <div class="form-field form-field--full">
-          <label>Buscar trabajador</label>
           <app-search-select
+            label="Buscar trabajador"
             [options]="elaboradoPorOpts()"
             valueField="id"
             displayField="label"
-            placeholder="Buscar por nombre"
+            placeholder="Buscar por nombre o DNI..."
             [allowClear]="true"
             [value]="elaboradoPorWorkerId"
             (valueChange)="onElaboradoPorSelect($event)"

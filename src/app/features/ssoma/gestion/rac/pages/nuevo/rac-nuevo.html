@@ -1,15 +1,12 @@
 <div class="nuevo-root">
 
   <!-- ── HEADER ────────────────────────────────────────────────────── -->
-  <div class="nuevo-header">
-    <button type="button" class="back-btn" (click)="cancelar()">
-      <i class="ti ti-arrow-left"></i>
-    </button>
-    <div class="nuevo-header__title">
-      <span class="header-badge">SSOMA · RAC</span>
-      <h1>Nuevo RAC</h1>
-    </div>
-  </div>
+  <app-abril-page-header
+    badge="SSOMA · RAC"
+    titulo="Nuevo RAC"
+    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
+    (secondaryClick)="cancelar()">
+  </app-abril-page-header>
 
   <!-- ── LOADING ───────────────────────────────────────────────────── -->
   <div *ngIf="loadingCatalogos" class="loading-catalogos">
@@ -29,14 +26,13 @@
 
         <!-- Proyecto -->
         <div class="col-2">
-          <label class="form-label">Proyecto *</label>
           <app-search-select
+            label="Proyecto *"
             [options]="proyectos"
             valueField="projectId"
             displayField="projectDescription"
             [value]="proyectoId"
-            [showLabel]="false"
-            placeholder="Selecciona el proyecto"
+            placeholder="Buscar proyecto..."
             (valueChange)="proyectoId = $event"
           ></app-search-select>
         </div>
@@ -58,13 +54,12 @@
 
         <!-- Categoría RAC -->
         <div>
-          <label class="form-label">Categoría RAC *</label>
           <app-search-select
+            label="Categoría RAC *"
             [options]="categorias"
             valueField="id"
             displayField="nombre"
             [value]="categoriaId"
-            [showLabel]="false"
             placeholder="Selecciona categoría"
             (valueChange)="categoriaId = $event"
           ></app-search-select>
@@ -102,71 +97,34 @@
 
       <ng-container>
 
-        <div class="worker-search-wrap">
-          <ng-container *ngIf="!reportanteSelected">
-            <div class="search-bar">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar observador por nombre o DNI (mín. 2 caracteres)"
-                [ngModel]="reportanteQuery"
-                (ngModelChange)="onReportanteQueryChange($event)"
-              />
-            </div>
-            <div *ngIf="reportanteSearching" class="search-hint">Buscando…</div>
-            <ul *ngIf="reportanteResults.length > 0" class="worker-results">
-              <li *ngFor="let w of reportanteResults" (click)="selectReportante(w)">
-                <div>
-                  <div class="wr-name">{{ w.apellidoNombre }}</div>
-                  <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
-                </div>
-                <span class="wr-action"><i class="ti ti-check"></i> Seleccionar</span>
-              </li>
-            </ul>
-            <div
-              *ngIf="reportanteQuery.length >= 2 && !reportanteSearching && reportanteResults.length === 0"
-              class="search-hint"
-            >Sin resultados para "{{ reportanteQuery }}".</div>
-          </ng-container>
-
-          <div *ngIf="reportanteSelected" class="worker-chip">
-            <div class="worker-chip__info">
-              <div class="worker-chip__name">{{ reportanteSelected.apellidoNombre }}</div>
-              <div class="worker-chip__meta">DNI {{ reportanteSelected.dni }}</div>
-            </div>
-            <button type="button" class="btn-change" (click)="clearReportante()">Cambiar</button>
-          </div>
+        <div class="form-group">
+          <app-search-select
+            label="Observador *"
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            [value]="reportanteId"
+            placeholder="Buscar por nombre o DNI..."
+            [allowClear]="true"
+            (valueChange)="onReportanteChange($event)"
+          ></app-search-select>
         </div>
-
-        <!-- Cargo · Categoría · Ocupación -->
-        <div *ngIf="reportanteSelected" class="form-grid form-grid--3">
-          <div>
-            <label class="form-label">Cargo</label>
-            <div class="form-readonly">{{ reportanteSelected.cargo || '—' }}</div>
-          </div>
-          <div>
-            <label class="form-label">Categoría</label>
-            <div class="form-readonly">{{ reportanteSelected.categoria || '—' }}</div>
-          </div>
-          <div>
-            <label class="form-label">Ocupación</label>
-            <div class="form-readonly">{{ reportanteSelected.ocupacion || '—' }}</div>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Cargo del observador</label>
+          <input type="text" class="form-input" [(ngModel)]="reportanteCargo"
+            [disabled]="!!reportanteId" placeholder="Se autocompleta al seleccionar observador" />
         </div>
 
         <!-- Empresa -->
         <div class="form-grid">
           <div class="col-2">
-            <label class="form-label">Empresa del Observador *</label>
             <app-search-select
+              label="Empresa del Observador *"
               [options]="empresas"
               valueField="id"
               displayField="nombre"
               [value]="empresaReportanteId"
-              [showLabel]="false"
-              placeholder="Selecciona empresa"
+              placeholder="Buscar empresa..."
               (valueChange)="empresaReportanteId = $event"
             ></app-search-select>
           </div>
@@ -188,32 +146,17 @@
 
       <ng-container *ngIf="!esAnonimoObservado">
 
-        <div class="worker-search-wrap">
-          <div class="search-bar">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar y agregar trabajador por nombre o DNI"
-              [ngModel]="observadoQuery"
-              (ngModelChange)="onObservadoQueryChange($event)"
-            />
-          </div>
-          <div *ngIf="observadoSearching" class="search-hint">Buscando…</div>
-          <ul *ngIf="observadoResults.length > 0" class="worker-results">
-            <li *ngFor="let w of observadoResults" (click)="addObservado(w)">
-              <div>
-                <div class="wr-name">{{ w.apellidoNombre }}</div>
-                <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
-              </div>
-              <span class="wr-action"><i class="ti ti-plus"></i> Agregar</span>
-            </li>
-          </ul>
-          <div
-            *ngIf="observadoQuery.length >= 2 && !observadoSearching && observadoResults.length === 0"
-            class="search-hint"
-          >Sin resultados.</div>
+        <div class="form-group">
+          <app-search-select
+            label="Agregar trabajador observado"
+            [options]="workers"
+            valueField="workerId"
+            displayField="apellidoNombre"
+            [value]="trabajadorObservadoId"
+            [allowClear]="true"
+            placeholder="Buscar por nombre o DNI..."
+            (valueChange)="onTrabajadorObservadoChange($event)"
+          ></app-search-select>
         </div>
 
         <!-- Trabajadores seleccionados -->
@@ -223,7 +166,7 @@
               <div class="trab-chip__name">{{ w.apellidoNombre }}</div>
               <div class="trab-chip__meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
             </div>
-            <button type="button" class="btn-chip-remove" (click)="removeObservado(w.id)" title="Quitar">
+            <button type="button" class="btn-chip-remove" (click)="removeObservado(w.workerId)" title="Quitar">
               <i class="ti ti-x"></i>
             </button>
           </div>
@@ -234,14 +177,13 @@
       <!-- Empresa reportada — obligatoria, siempre visible -->
       <div class="form-grid">
         <div class="col-2">
-          <label class="form-label">Empresa Reportada *</label>
           <app-search-select
+            label="Empresa Reportada *"
             [options]="empresas"
             valueField="id"
             displayField="nombre"
             [value]="empresaReportadaId"
-            [showLabel]="false"
-            placeholder="Selecciona empresa"
+            placeholder="Buscar empresa..."
             (valueChange)="empresaReportadaId = $event"
           ></app-search-select>
         </div>
@@ -315,13 +257,12 @@
 
       <div *ngIf="aplicaPenalidad" class="form-grid">
         <div class="col-2">
-          <label class="form-label">Infracción</label>
           <app-search-select
+            label="Infracción"
             [options]="infracciones"
             valueField="id"
             displayField="nombre"
             [value]="infraccionId"
-            [showLabel]="false"
             placeholder="Selecciona infracción"
             (valueChange)="infraccionId = $event"
           ></app-search-select>

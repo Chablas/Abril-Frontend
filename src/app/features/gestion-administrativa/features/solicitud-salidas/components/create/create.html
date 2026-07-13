@@ -30,34 +30,23 @@
 
       <!-- Horas -->
       <div class="flex flex-wrap gap-[24px]">
-        <div class="flex flex-col gap-[4px] w-fit">
-          <label class="text-[12px] font-semibold text-gray-600">Hora de salida</label>
-          <div class="flex gap-[6px]">
-            <app-search-select class="w-[64px]" [showLabel]="false" placeholder="HH"
-              [options]="horasSalidaOptions(t)" valueField="valor" displayField="label"
-              [allowClear]="false" [(value)]="t.salidaHH" />
-            <app-search-select class="w-[64px]" [showLabel]="false" placeholder="MM"
-              [options]="minutosSalidaOptions(t)" valueField="valor" displayField="label"
-              [allowClear]="false" [(value)]="t.salidaMM" />
-          </div>
-          <p *ngIf="submitted && (!t.salidaHH || !t.salidaMM)" class="text-xs text-red-500">Campo requerido</p>
+        <div class="relative mt-[9px] w-fit">
+          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Hora de salida</label>
+          <input type="time" [(ngModel)]="t.horaSalida" [attr.min]="minHoraSalida(t)"
+            class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[130px]" />
+          <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
         </div>
 
-        <div class="flex flex-col gap-[4px] w-fit">
-          <label class="text-[12px] font-semibold text-gray-600">Hora de retorno</label>
-          <div class="flex gap-[6px]" [class.opacity-50]="t.sinRetorno" [class.pointer-events-none]="t.sinRetorno">
-            <app-search-select class="w-[64px]" [showLabel]="false" placeholder="HH"
-              [options]="horasRetornoOptions(t)" valueField="valor" displayField="label"
-              [allowClear]="false" [(value)]="t.retornoHH" />
-            <app-search-select class="w-[64px]" [showLabel]="false" placeholder="MM"
-              [options]="minutosRetornoOptions(t)" valueField="valor" displayField="label"
-              [allowClear]="false" [(value)]="t.retornoMM" />
-          </div>
-          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+        <div class="relative mt-[9px] w-fit">
+          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Hora de retorno</label>
+          <input type="time" [(ngModel)]="t.horaRetorno" [attr.min]="minHoraRetorno(t)" [disabled]="t.sinRetorno"
+            class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[130px]"
+            [class.opacity-50]="t.sinRetorno" />
+          <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
             <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
             <span class="text-[12px] text-gray-600">Sin retorno</span>
           </label>
-          <p *ngIf="submitted && !t.sinRetorno && (!t.retornoHH || !t.retornoMM)" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
         </div>
       </div>
 

@@ -1,19 +1,12 @@
 <div class="detalle-root">
 
   <!-- HEADER -->
-  <div class="det-header">
-    <button type="button" class="back-btn" (click)="volver()">
-      <i class="ti ti-arrow-left"></i>
-    </button>
-    <div class="det-header__title">
-      <span class="header-badge">SSOMA · OPT</span>
-      @if (data) {
-        <h1>OPT #{{ data.id }}</h1>
-      } @else {
-        <h1>Detalle OPT</h1>
-      }
-    </div>
-  </div>
+  <app-abril-page-header
+    badge="SSOMA · OPT"
+    [titulo]="data ? ('OPT #' + data.id) : 'Detalle OPT'"
+    [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+    (secondaryClick)="volver()">
+  </app-abril-page-header>
 
   <div class="det-body">
 

@@ -1,15 +1,12 @@
 <div class="nuevo-root">
 
   <!-- HEADER -->
-  <div class="nuevo-header">
-    <button type="button" class="back-btn" (click)="cancelar()">
-      <i class="ti ti-arrow-left"></i>
-    </button>
-    <div class="nuevo-header__title">
-      <span class="header-badge">SSOMA</span>
-      <h1>Nueva Observación Planeada</h1>
-    </div>
-  </div>
+  <app-abril-page-header
+    badge="SSOMA"
+    titulo="Nueva Observación Planeada"
+    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
+    (secondaryClick)="cancelar()">
+  </app-abril-page-header>
 
   <!-- STEPPER -->
   <div class="stepper">
@@ -46,13 +43,13 @@
 
         <!-- FIX 2: SearchSelect para proyecto -->
         <div class="form-group">
-          <label class="form-label">Proyecto *</label>
           <app-search-select
+            label="Proyecto *"
             [options]="proyectos"
             valueField="projectId"
             displayField="projectDescription"
             [value]="proyectoId"
-            placeholder="Seleccionar proyecto..."
+            placeholder="Buscar proyecto..."
             (valueChange)="proyectoId = $event">
           </app-search-select>
         </div>
@@ -115,13 +112,13 @@
 
         <!-- FIX 2+3: Observador via SearchSelect con auto-fill nombre+cargo -->
         <div class="form-group">
-          <label class="form-label">Observador *</label>
           <app-search-select
+            label="Observador *"
             [options]="workersObservador"
             valueField="workerId"
             displayField="apellidoNombre"
             [value]="observadorId"
-            placeholder="Buscar observador por nombre..."
+            placeholder="Buscar por nombre o DNI..."
             [allowClear]="true"
             (valueChange)="onObservadorChange($event)">
           </app-search-select>
@@ -144,8 +141,8 @@
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
         <div class="form-group">
-          <label class="form-label">Agregar trabajador observado</label>
           <app-search-select
+            label="Agregar trabajador observado"
             [options]="workersObservador"
             valueField="workerId"
             displayField="apellidoNombre"

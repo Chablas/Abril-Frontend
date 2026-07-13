@@ -1,5 +1,5 @@
 :host { display: flex; flex: 1; min-height: 0; flex-direction: column; }
-.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--color-abril-page-bg, #F0F4F1); }
+.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 
 /* ── TOOLBAR ────────────────────────────────────────────────────────────── */
 .dash-toolbar {
