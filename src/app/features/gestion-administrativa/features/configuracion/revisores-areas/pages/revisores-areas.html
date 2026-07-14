@@ -1,0 +1,122 @@
+<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
+     viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="w-full flex-1 min-h-0 overflow-auto">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Área</th>
+          <th>Área padre</th>
+          <th class="w-[320px]">Revisores</th>
+          <th class="text-center w-[170px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of pagedRows" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700">{{ r.areaName }}</td>
+          <td class="text-gray-700">{{ r.parentName || '—' }}</td>
+          <td class="text-gray-700">
+            <ng-container *ngIf="r.revisores.length > 0; else fallbackGth">
+              <ng-container *ngIf="revisorPrincipal(r) as principal; else sinActivos">
+                <span>{{ principal.revisorFullName | titleCase }}</span>
+                <span *ngIf="r.revisores.length > 1"
+                      class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                  +{{ r.revisores.length - 1 }} más
+                </span>
+              </ng-container>
+              <ng-template #sinActivos>
+                <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
+                  {{ r.revisores.length }} inactivo(s) → GTH
+                </span>
+              </ng-template>
+            </ng-container>
+            <ng-template #fallbackGth>
+              <span class="text-gray-400 italic">GTH (por defecto)</span>
+            </ng-template>
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-2">
+              <button (click)="openDetalle(r)" abrilBulkAction="default">
+                Ver
+              </button>
+              <button (click)="openEdit(r)" abrilBulkAction="default">
+                Editar
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="filteredRows.length === 0">
+          <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay áreas de tipo Área Estándar.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredRows.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal detalle (n revisores del área) ─────────────────────────── -->
+<app-revisores-areas-detalle
+  *ngIf="detalleDe"
+  [area]="detalleDe"
+  (closeModal)="detalleDe = null"
+></app-revisores-areas-detalle>
+
+<!-- ── Modal editar (agregar/quitar/priorizar/activar revisores) ────── -->
+<app-revisores-areas-editar
+  *ngIf="editando"
+  [area]="editando"
+  [options]="options"
+  (closeModal)="editando = null"
+  (saved)="onSaved()"
+></app-revisores-areas-editar>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Área padre"
+      [options]="parentFilterOptions"
+      valueField="name"
+      displayField="name"
+      [value]="parentFilter"
+      (valueChange)="parentFilter = $event; onFilterChange()"
+      placeholder="Todas las áreas padre"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Revisor"
+      [options]="revisorFilterOptions"
+      valueField="workerId"
+      displayField="fullName"
+      [value]="revisorFilter"
+      (valueChange)="revisorFilter = $event; onFilterChange()"
+      placeholder="Todos los revisores"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por área o revisor..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+</app-filter-modal>

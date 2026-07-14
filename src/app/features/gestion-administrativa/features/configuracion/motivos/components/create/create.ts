@@ -19,6 +19,7 @@ export class GaMotivoCreate {
   @Output() saved = new EventEmitter<void>();
 
   descripcion = '';
+  requiereAdjunto = false;
   submitted = false;
 
   constructor(
@@ -32,7 +33,9 @@ export class GaMotivoCreate {
     if (!this.descripcion.trim()) return;
 
     this.loaderService.show();
-    this.service.create({ descripcion: this.descripcion.trim() }).subscribe({
+    this.service
+      .create({ descripcion: this.descripcion.trim(), requiereAdjunto: this.requiereAdjunto })
+      .subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ title: res.message, icon: 'success', draggable: true });

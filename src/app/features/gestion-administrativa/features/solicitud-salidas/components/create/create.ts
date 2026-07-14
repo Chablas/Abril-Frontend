@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { FileSelector, SelectedFile } from '../../../../../../shared/components/file-selector/file-selector';
 import { SolicitudSalidasService } from '../../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -30,12 +31,14 @@ interface TrayectoForm {
   lugarDestinoId: number | null;
   lugarDestinoLibre: string | null;
   destinoLibre: boolean;
+  /** Documento adjunto (prueba) — obligatorio cuando el motivo elegido lo requiere. */
+  adjunto: SelectedFile | null;
 }
 
 @Component({
   standalone: true,
   selector: 'app-solicitud-salida-create',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, FileSelector],
   templateUrl: './create.html',
   styleUrl: './create.css',
 })
@@ -115,6 +118,7 @@ export class SolicitudSalidaCreate implements OnInit {
       lugarDestinoId: null,
       lugarDestinoLibre: null,
       destinoLibre: false,
+      adjunto: null,
     };
   }
 
@@ -216,6 +220,29 @@ export class SolicitudSalidaCreate implements OnInit {
     t.motivoLibreOn = checked;
     t.motivoId = null;
     t.motivoLibre = null;
+    t.adjunto = null;
+  }
+
+  // ── Documento adjunto por motivo ───────────────────────────────────
+
+  /** true si el motivo elegido del trayecto exige documento adjunto. */
+  motivoRequiereAdjunto(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return false;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.requiereAdjunto ?? false;
+  }
+
+  onMotivoChange(t: TrayectoForm, motivoId: number | null): void {
+    t.motivoId = motivoId;
+    // El adjunto pertenece al motivo elegido: al cambiarlo se descarta.
+    t.adjunto = null;
+  }
+
+  onAdjuntoSelected(t: TrayectoForm, file: SelectedFile): void {
+    t.adjunto = file;
+  }
+
+  quitarAdjunto(t: TrayectoForm): void {
+    t.adjunto = null;
   }
 
   onOrigenLibreChange(t: TrayectoForm, checked: boolean): void {
@@ -246,6 +273,8 @@ export class SolicitudSalidaCreate implements OnInit {
     if (!t.lugarDestinoId && !t.lugarDestinoLibre?.trim()) errs.push(`${pref}: lugar de destino`);
     if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
       errs.push(`${pref}: origen y destino no pueden ser iguales`);
+    if (this.motivoRequiereAdjunto(t) && !t.adjunto)
+      errs.push(`${pref}: el motivo seleccionado requiere un documento adjunto`);
     return errs;
   }
 
@@ -282,8 +311,13 @@ export class SolicitudSalidaCreate implements OnInit {
       })),
     };
 
+    // Documento adjunto por índice de trayecto (solo los que tienen archivo).
+    const adjuntos = this.trayectos
+      .map((t, i) => ({ trayectoIndex: i, file: t.adjunto?.file }))
+      .filter((a): a is { trayectoIndex: number; file: File } => !!a.file);
+
     this.loaderService.show();
-    this.service.create(payload).subscribe({
+    this.service.create(payload, adjuntos).subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ title: res.message, icon: 'success', draggable: true });

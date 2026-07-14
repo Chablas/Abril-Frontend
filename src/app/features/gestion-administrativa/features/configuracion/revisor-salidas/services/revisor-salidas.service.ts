@@ -3,9 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import {
-  WorkerRevisorSalidaItemDTO,
-  WorkerRevisorSalidaOptionDTO,
-  WorkerRevisorSalidaUpdateDTO,
+  RevisorSalidaInicialDTO,
+  WorkerRevisoresUpdateDTO,
 } from '../dtos/workerRevisorSalida.model';
 
 @Injectable({ providedIn: 'root' })
@@ -19,20 +18,13 @@ export class RevisorSalidasService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getRevisores(): Observable<WorkerRevisorSalidaItemDTO[]> {
-    return this.http.get<WorkerRevisorSalidaItemDTO[]>(this.apiUrl, { headers: this.headers });
+  /** Carga inicial: trabajadores con sus revisores + opciones + árbol de áreas (1 petición). */
+  getInitialData(): Observable<RevisorSalidaInicialDTO> {
+    return this.http.get<RevisorSalidaInicialDTO>(this.apiUrl, { headers: this.headers });
   }
 
-  getOptions(): Observable<WorkerRevisorSalidaOptionDTO[]> {
-    return this.http.get<WorkerRevisorSalidaOptionDTO[]>(`${this.apiUrl}/options`, {
-      headers: this.headers,
-    });
-  }
-
-  updateRevisor(
-    workerId: number,
-    dto: WorkerRevisorSalidaUpdateDTO,
-  ): Observable<{ message: string }> {
+  /** Reemplaza el conjunto completo de revisores del trabajador. */
+  updateRevisores(workerId: number, dto: WorkerRevisoresUpdateDTO): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.apiUrl}/${workerId}`, dto, {
       headers: this.headers,
     });

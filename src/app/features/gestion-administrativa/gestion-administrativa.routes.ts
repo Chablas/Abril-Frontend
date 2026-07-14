@@ -28,62 +28,93 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKey: 'gestion-administrativa.gestion-salidas',
     },
   },
+  // Contenedor de configuración: cada sección conserva su ruta, featureKey y
+  // roleGuard, pero todas renderizan GaConfiguracion (que conmuta la sección
+  // activa con app-section-tabs a partir de data.seccion).
   {
-    path: 'configuracion/motivos',
+    path: 'configuracion',
     loadComponent: () =>
-      import('./features/configuracion/motivos/pages/motivos').then(
-        (m) => m.GaMotivos,
-      ),
-    canActivate: [authGuard, roleGuard],
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard],
     data: {
-      titulo: 'MOTIVOS DE SALIDA',
-      featureKey: 'gestion-administrativa.config.motivos',
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
     },
   },
   {
     path: 'configuracion/lugares',
     loadComponent: () =>
-      import('./features/configuracion/lugares/pages/lugares').then(
-        (m) => m.GaLugares,
-      ),
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'LUGARES DE ORIGEN / DESTINO',
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
       featureKey: 'gestion-administrativa.config.lugares',
+      seccion: 'lugares',
+    },
+  },
+  {
+    path: 'configuracion/motivos',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.motivos',
+      seccion: 'motivos',
     },
   },
   {
     path: 'configuracion/trayectos',
     loadComponent: () =>
-      import('./features/trayectos/pages/trayectos').then((m) => m.GaTrayectos),
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'TRAYECTOS',
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
       featureKey: 'gestion-administrativa.config.trayectos',
+      seccion: 'trayectos',
     },
   },
   {
     path: 'configuracion/revisor-salidas',
     loadComponent: () =>
-      import('./features/configuracion/revisor-salidas/pages/revisor-salidas').then(
-        (m) => m.RevisorSalidas,
-      ),
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'REVISOR DE SALIDAS',
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
       featureKey: 'gestion-administrativa.config.revisor-salidas',
+      seccion: 'revisor-salidas',
+    },
+  },
+  {
+    path: 'configuracion/revisores-areas',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.revisores-areas',
+      seccion: 'revisores-areas',
     },
   },
   {
     path: 'configuracion/visibilidad-salidas',
     loadComponent: () =>
-      import('./features/configuracion/visibilidad-salidas/pages/visibilidad-salidas').then(
-        (m) => m.VisibilidadSalidas,
-      ),
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
     canActivate: [authGuard, roleGuard],
     data: {
-      titulo: 'VISIBILIDAD DE SALIDAS',
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
       featureKey: 'gestion-administrativa.config.visibilidad-salidas',
+      seccion: 'visibilidad-salidas',
+    },
+  },
+  {
+    path: 'configuracion/carpeta-adjuntos',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.carpeta-adjuntos',
+      seccion: 'carpeta-adjuntos',
     },
   },
 ];

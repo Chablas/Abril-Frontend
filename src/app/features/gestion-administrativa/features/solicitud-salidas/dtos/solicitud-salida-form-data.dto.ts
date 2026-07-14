@@ -1,6 +1,8 @@
 export interface MotivoSalidaDto {
   id: number;
   descripcion: string;
+  /** Si true, al elegir este motivo se exige subir un documento adjunto. */
+  requiereAdjunto: boolean;
 }
 
 export interface LugarSalidaDto {

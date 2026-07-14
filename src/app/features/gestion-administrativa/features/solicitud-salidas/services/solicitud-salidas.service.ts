@@ -46,8 +46,22 @@ export class SolicitudSalidasService {
     });
   }
 
-  create(dto: SolicitudSalidaCreateDto): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(this.apiUrl, dto, {
+  /**
+   * Crea la solicitud (multipart): `data` = JSON del dto; `adjuntos` +
+   * `adjuntosTrayectoIndex` = documento adjunto por índice de trayecto (0-based),
+   * obligatorio cuando el motivo elegido requiere documento.
+   */
+  create(
+    dto: SolicitudSalidaCreateDto,
+    adjuntos: { trayectoIndex: number; file: File }[] = [],
+  ): Observable<{ id: number; message: string }> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(dto));
+    adjuntos.forEach((a) => {
+      formData.append('adjuntos', a.file, a.file.name);
+      formData.append('adjuntosTrayectoIndex', a.trayectoIndex.toString());
+    });
+    return this.http.post<{ id: number; message: string }>(this.apiUrl, formData, {
       headers: this.headers,
     });
   }

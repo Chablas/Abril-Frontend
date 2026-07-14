@@ -21,6 +21,7 @@ export class GaMotivoEdit implements OnInit {
   @Output() saved = new EventEmitter<void>();
 
   descripcion = '';
+  requiereAdjunto = false;
   submitted = false;
 
   constructor(
@@ -31,6 +32,7 @@ export class GaMotivoEdit implements OnInit {
 
   ngOnInit(): void {
     this.descripcion = this.motivo.descripcion;
+    this.requiereAdjunto = this.motivo.requiereAdjunto;
   }
 
   save(): void {
@@ -38,7 +40,12 @@ export class GaMotivoEdit implements OnInit {
     if (!this.descripcion.trim()) return;
 
     this.loaderService.show();
-    this.service.edit(this.motivo.id, { descripcion: this.descripcion.trim() }).subscribe({
+    this.service
+      .edit(this.motivo.id, {
+        descripcion: this.descripcion.trim(),
+        requiereAdjunto: this.requiereAdjunto,
+      })
+      .subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ title: res.message, icon: 'success', draggable: true });

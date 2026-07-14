@@ -5,13 +5,9 @@
   [botonSecundario]="{ label: 'Exportar a excel', icono: 'ti-download' }"
   (secondaryClick)="exportarExcel()"
   [tabs]="[
-    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
-    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
-    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
-    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
-    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
-    { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
-    { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
+    { label: 'Solicitud de Salidas', icono: 'ti-file-text', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+    { label: 'Gestión de Salidas',   icono: 'ti-briefcase', route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+    { label: 'Configuración',        icono: 'ti-settings',  route: '/gestion-administrativa/configuracion',     featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.revisor-salidas','gestion-administrativa.config.revisores-areas','gestion-administrativa.config.visibilidad-salidas','gestion-administrativa.config.carpeta-adjuntos'] }
   ]">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
@@ -65,7 +61,7 @@
        interno propio (no de toda la página) para que filtros/acciones/paginador
        queden siempre visibles sin necesidad de bajar la página entera. -->
   <div class="w-full flex-1 min-h-0 overflow-auto">
-    <table class="abril-table">
+    <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
           <th>

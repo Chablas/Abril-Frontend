@@ -82,6 +82,18 @@
             <div class="text-xs text-gray-500 uppercase">Destino</div>
             <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
           </div>
+          <div *ngIf="t.adjuntoUrl" class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">Documento adjunto</div>
+            <a [href]="t.adjuntoUrl" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 hover:underline text-sm font-medium break-all"
+               style="color:var(--color-abril-standard)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+              </svg>
+              {{ t.adjuntoFilename || 'Ver documento' }}
+            </a>
+          </div>
         </div>
 
         <div *ngIf="t.capturas.length > 0" class="mt-1 flex flex-wrap gap-2">

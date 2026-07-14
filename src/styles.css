@@ -255,6 +255,13 @@
 .abril-table td {
   padding: 7px 14px;
 }
+/* Variante opt-in de abril-table: nombres de columna centrados (Gestión
+   Administrativa — Salidas). Debe vivir aquí y no como `text-center` en cada
+   <th>: estas reglas están fuera de @layer, por lo que ganan siempre a las
+   utilities de Tailwind (que sí están en @layer utilities). */
+.abril-table--th-center th {
+  text-align: center;
+}
 
 /* ── Filtros responsive ─────────────────────────────────────── */
 .filter-row {

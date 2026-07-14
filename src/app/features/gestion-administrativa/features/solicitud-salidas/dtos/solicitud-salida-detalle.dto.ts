@@ -14,6 +14,9 @@ export interface TrayectoDetalleDto {
   motivo: string;
   lugarOrigen: string | null;
   lugarDestino: string | null;
+  /** webUrl del documento adjunto del trayecto (motivos que requieren documento). */
+  adjuntoUrl: string | null;
+  adjuntoFilename: string | null;
   capturas: SolicitudSalidaCapturaDto[];
   /** Monto del catálogo ga_trayecto (solo trabajador TI con match origen+destino). */
   montoCatalogo: number | null;
