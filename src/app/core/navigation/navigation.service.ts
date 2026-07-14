@@ -322,6 +322,7 @@ export class NavigationService {
               { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },
               { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista' },
               { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones' },
+              { label: 'Dossier', route: '/habilitacion/gestion/dossier' },
             ],
             groups: [],
           };

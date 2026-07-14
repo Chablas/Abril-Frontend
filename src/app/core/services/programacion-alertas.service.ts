@@ -10,10 +10,24 @@ export class ProgramacionAlertasService {
 
   constructor(private http: HttpClient) {}
 
+  /** Mismos featureKeys que exige el backend en ProgramacionEmoController — si el usuario no
+   * tiene ninguno, ni vale la pena llamar al endpoint (403 seguro, solo ensucia la red). */
+  private tienePermiso(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const allowed: string[] = JSON.parse(localStorage.getItem('allowed_features') ?? '[]');
+      return ['ssoma.salud-ocupacional.programaciones', 'clinica.agenda', 'clinica.programaciones'].some((k) =>
+        allowed.includes(k),
+      );
+    } catch {
+      return false;
+    }
+  }
+
   checkRechazados(): void {
     const token =
       typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
-    if (!token) return;
+    if (!token || !this.tienePermiso()) return;
     const hoy = new Date().toISOString().split('T')[0];
     this.http
       .get<any>(

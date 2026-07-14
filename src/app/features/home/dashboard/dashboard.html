@@ -1,202 +1,32 @@
-<div class="flex flex-col h-full p-8" style="background:#f7f7f5">
+<div class="flex flex-col flex-1 p-8 gap-5 bg-white">
 
-  <!-- Sin módulos asignados -->
-  <div
-    *ngIf="navService.getModules().length === 0"
-    class="flex flex-1 flex-col items-center justify-center gap-4 text-center"
-  >
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8Zm-1-13h2v6h-2Zm0 8h2v2h-2Z"
-        fill="#64BC04"
-      />
-    </svg>
-    <p class="text-gray-700 text-base font-medium">Tu cuenta aún no tiene módulos habilitados.</p>
-    <p class="text-gray-500 text-sm max-w-sm">
-      Para acceder a las funcionalidades del sistema, comunícate con el administrador para que te
-      asigne los permisos correspondientes.
-    </p>
-  </div>
+  <!-- Saludo -->
+  <app-home-greeting [firstName]="firstName" [subtitle]="jobTitle ? jobTitle + ' · ' + todayCapitalized : todayCapitalized" />
 
-  <ng-container *ngIf="navService.getModules().length > 0">
+  <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín) + Centro de aprendizaje -->
+  <div class="grid gap-5 flex-1" [style.grid-template-columns]="puedeVerGuiasMejoraContinua ? '1.3fr 1fr' : '1fr'">
 
-    <!-- Bento grid Gestión de Ingresos -->
-    <ng-container *ngIf="habilitacionModule">
-      <div *ngFor="let group of orderedGroups">
-
-        <!-- Separador de grupo -->
-        <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;font-weight:600;margin-top:20px;margin-bottom:8px">
-          {{ group.label }}
-        </p>
-
-        <!-- Grid adaptado al número de items del grupo -->
-        <div class="grid gap-[10px] w-full"
-             [style.grid-template-columns]="'repeat(' + getGroupCols(group.label) + ', 1fr)'">
-          <a
-            *ngFor="let item of group.items"
-            [routerLink]="item.route"
-            class="bento-card group relative flex flex-col justify-between rounded-[14px] border no-underline
-                   transition-all duration-200 hover:-translate-y-0.5
-                   hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)]"
-            style="height:90px;padding:14px"
-            [style.background-color]="item.featureKey === 'habilitacion.trabajadores' ? '#f8f6ff' : '#ffffff'"
-            [style.border-color]="item.featureKey === 'habilitacion.trabajadores' ? '#e4deff' : '#ececec'"
-            [style.--hover-border]="getGroupAccent(group.label).hoverBorder"
-          >
-            <!-- Ícono arriba izquierda -->
-            <div
-              class="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
-              [ngStyle]="item.featureKey === 'habilitacion.trabajadores'
-                ? { background: '#ede9ff', color: '#5b4fcf' }
-                : { background: getGroupAccent(group.label).iconBg, color: getGroupAccent(group.label).iconColor }"
-            >
-                <ng-container [ngSwitch]="item.featureKey">
-
-                  <svg *ngSwitchCase="'habilitacion.trabajadores'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.empresa'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.equipos'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.07 4.93l-1.41 1.41M5.34 17.66l-1.41 1.41M17.66 17.66l1.41 1.41
-                             M5.34 6.34L3.93 4.93M12 2v2m0 18v-2m10-8h-2M4 12H2"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.sctr-vidaley'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.inducciones'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-                    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.reglas'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6"/>
-                    <line x1="8" y1="12" x2="21" y2="12"/>
-                    <line x1="8" y1="18" x2="21" y2="18"/>
-                    <line x1="3" y1="6" x2="3.01" y2="6"/>
-                    <line x1="3" y1="12" x2="3.01" y2="12"/>
-                    <line x1="3" y1="18" x2="3.01" y2="18"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.auditoria'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"/>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.clinicas'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.bandeja'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-                    <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.registros-modelo'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <polyline points="10 9 9 9 8 9"/>
-                  </svg>
-
-                  <svg *ngSwitchCase="'habilitacion.evaluacion-supervisores'"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
-
-                  <svg *ngSwitchDefault
-                    width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  </svg>
-
-                </ng-container>
-            </div>
-
-            <!-- Flecha en hover: posición absoluta, no afecta el flow -->
-            <svg
-              class="absolute opacity-0 group-hover:opacity-100 transition-opacity"
-              style="top:14px;right:14px;width:12px;height:12px;color:#b0b0b0"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            >
-              <line x1="7" y1="17" x2="17" y2="7"/>
-              <polyline points="7 7 17 7 17 17"/>
-            </svg>
-
-            <!-- Nombre abajo izquierda -->
-            <p class="text-[13px] leading-tight" style="color:#1f2937;font-weight:600">{{ item.label }}</p>
-
-          </a>
-        </div>
-
+    <div class="rounded-2xl border p-5 pt-14" style="border-color:#ececec">
+      <div class="flex items-center gap-2 mb-8" style="color:#16a34a">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
+        <span class="text-[11px] font-bold uppercase tracking-[0.06em]">Novedades y comunicados</span>
       </div>
-    </ng-container>
-
-  </ng-container>
-
-  <!-- Guías de Mejora Continua (solo ADMINISTRADOR DE MEJORA CONTINUA / USUARIO DE ABRIL) -->
-  <ng-container *ngIf="puedeVerGuiasMejoraContinua">
-    <div class="flex items-center gap-2 mt-6 mb-2">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="#4f46e5">
-        <path d="M8 5v14l11-7z" />
-      </svg>
-      <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#4f46e5;font-weight:600;margin:0">
-        Guías de Mejora Continua
-      </p>
+      <div class="grid grid-cols-3 gap-6 pb-4 max-[900px]:grid-cols-1">
+        <app-highlight-card
+          *ngFor="let h of novedades"
+          [titulo]="h.titulo"
+          [descripcion]="h.descripcion"
+          [img]="h.img"
+          (cta)="irAlBoletin()"
+        />
+      </div>
     </div>
 
-    <div class="grid gap-[10px] w-full" style="grid-template-columns:repeat(3, 1fr)">
-      <a
-        *ngFor="let guia of guiasMejoraContinua"
-        [href]="guia.url" target="_blank" rel="noopener noreferrer"
-        class="group flex items-center gap-3 rounded-[14px] border no-underline transition-all duration-200
-               hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(79,70,229,0.10)]"
-        style="background:#f5f4ff;border-color:#e4deff;padding:14px"
-      >
-        <div class="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center shrink-0"
-             style="background:#ede9ff;color:#4f46e5">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </div>
-        <div class="flex flex-col min-w-0">
-          <p class="text-[13px] leading-tight" style="color:#1f2937;font-weight:600;margin:0">{{ guia.titulo }}</p>
-          <span class="text-[12px]" style="color:#4f46e5;font-weight:600">Ver guía →</span>
-        </div>
-      </a>
-    </div>
-  </ng-container>
+    <app-learning-guides
+      *ngIf="puedeVerGuiasMejoraContinua"
+      accentColor="#0F6E56"
+      [guias]="guiasMejoraContinua"
+    />
+  </div>
 
 </div>
