@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../../../../environments/environment';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface IndicadorReactivoDto {
   proyectoId: number;
@@ -22,7 +23,7 @@ interface IndicadorReactivoDto {
 @Component({
   selector: 'app-reactivos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './reactivos.component.html',
   styleUrls: ['./reactivos.component.css'],
 })
@@ -46,7 +47,7 @@ export class ReactivosComponent implements OnInit {
     { valor: 9, nombre: 'Septiembre' }, { valor: 10, nombre: 'Octubre' },
     { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
   ];
-  readonly anios = [2024, 2025, 2026, 2027];
+  readonly anios = [2024, 2025, 2026, 2027].map(a => ({ valor: a, nombre: String(a) }));
 
   private authHeaders(): HttpHeaders {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;

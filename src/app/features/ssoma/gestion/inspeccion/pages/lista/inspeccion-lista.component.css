@@ -128,11 +128,6 @@
 .tabla-wrap { display: none; overflow-x: auto; }
 
 .tabla {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
   font-size: 12px;
 }
 
@@ -156,7 +151,7 @@
 .td-proyecto { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .td-inspector { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 
-.tipo-cell { display: flex; flex-direction: column; gap: 2px; }
+.tipo-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 
 /* ── SCORE BADGE ──────────────────────────────────────── */
 .score-badge {
@@ -199,34 +194,8 @@
 .estado-proceso  { background: #fef3c7; color: #92400e; }
 .estado-cerrada  { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 
-/* ── BADGE AMBITO ─────────────────────────────────────── */
-.badge-ambito {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.badge-seguridad { background: #dbeafe; color: #1e40af; }
-.badge-salud     { background: #d1fae5; color: #065f46; }
-.badge-ambiente  { background: #dcfce7; color: #166534; }
-
-.btn-ver {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  border: 0.5px solid #e8e5df;
-  background: #fff;
-  cursor: pointer;
-  color: #5a5850;
-  font-size: 14px;
-}
-
-.btn-ver:hover { background: #f0ede8; }
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
 
 /* ── CARDS MOBILE ─────────────────────────────────────── */
 .cards-mobile { display: flex; flex-direction: column; gap: 8px; }

@@ -11,7 +11,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
@@ -20,7 +21,7 @@ import { EmoTipoDto, EmoTipoUpsertDto } from '../../../dtos/catalogos.model';
 @Component({
   selector: 'app-emo-tipo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect],
   templateUrl: './emo-tipo-form.html',
   styleUrl: './emo-tipo-form.css',
 })
@@ -33,6 +34,15 @@ export class EmoTipoForm implements OnChanges {
 
   model: EmoTipoUpsertDto = this.empty();
   saving = false;
+
+  readonly siNoOpts = [
+    { id: false, label: 'No' },
+    { id: true, label: 'Sí' },
+  ];
+  readonly estadoOpts = [
+    { id: true, label: 'Activo' },
+    { id: false, label: 'Inactivo' },
+  ];
 
   constructor(
     private service: CatalogosSaludService,

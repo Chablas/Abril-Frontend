@@ -12,12 +12,10 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { SolicitudSalidaFormDataDto } from '../../dtos/solicitud-salida-form-data.dto';
 import { SolicitudSalidaCreateDto, TrayectoCreateDto } from '../../dtos/solicitud-salida-create.dto';
 
-/** Estado en memoria de un trayecto en el form (las horas se mantienen como HH/MM por separado). */
+/** Estado en memoria de un trayecto en el form. Horas en formato nativo "HH:mm". */
 interface TrayectoForm {
-  salidaHH: string;
-  salidaMM: string;
-  retornoHH: string;
-  retornoMM: string;
+  horaSalida: string;
+  horaRetorno: string;
   sinRetorno: boolean;
   motivoId: number | null;
   motivoLibre: string | null;
@@ -65,9 +63,6 @@ export class SolicitudSalidaCreate implements OnInit {
   fechaSalida = '';
   trayectos: TrayectoForm[] = [];
 
-  readonly TODAS_HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-  readonly TODOS_MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-
   submitted = false;
 
   constructor(
@@ -103,10 +98,8 @@ export class SolicitudSalidaCreate implements OnInit {
   private nuevoTrayecto(esPrimero: boolean): TrayectoForm {
     const now = new Date();
     return {
-      salidaHH: esPrimero ? String(now.getHours()).padStart(2, '0') : '',
-      salidaMM: esPrimero ? String(now.getMinutes()).padStart(2, '0') : '',
-      retornoHH: '',
-      retornoMM: '',
+      horaSalida: esPrimero ? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}` : '',
+      horaRetorno: '',
       sinRetorno: false,
       motivoId: null,
       motivoLibre: null,
@@ -177,43 +170,23 @@ export class SolicitudSalidaCreate implements OnInit {
     return match ? match.monto : null;
   }
 
-  // ── Pickers de hora (mismo patrón que antes, ahora por trayecto) ───
+  // ── Restricciones de hora (input nativo type="time" con min/max) ────
 
-  horasSalidaOptions(t: TrayectoForm): { valor: string; label: string }[] {
-    // Si la fecha es hoy y es el primer trayecto, restringe a horas >= ahora.
-    if (this.fechaSalida === this.todayStr && t === this.trayectos[0]) {
-      const nowH = new Date().getHours();
-      return this.TODAS_HORAS.filter((h) => parseInt(h) >= nowH).map((v) => ({ valor: v, label: v }));
-    }
-    return this.TODAS_HORAS.map((v) => ({ valor: v, label: v }));
+  /** Hora mínima seleccionable para "salida": ahora mismo, solo si la fecha es hoy y es el primer trayecto. */
+  minHoraSalida(t: TrayectoForm): string | null {
+    if (this.fechaSalida !== this.todayStr || t !== this.trayectos[0]) return null;
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
 
-  minutosSalidaOptions(t: TrayectoForm): { valor: string; label: string }[] {
-    if (this.fechaSalida === this.todayStr && t === this.trayectos[0] && t.salidaHH) {
-      const now = new Date();
-      if (parseInt(t.salidaHH) > now.getHours())
-        return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
-      return this.TODOS_MINUTOS.filter((m) => parseInt(m) >= now.getMinutes()).map((v) => ({ valor: v, label: v }));
-    }
-    return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
-  }
-
-  horasRetornoOptions(t: TrayectoForm): { valor: string; label: string }[] {
-    if (!t.salidaHH) return this.TODAS_HORAS.map((v) => ({ valor: v, label: v }));
-    return this.TODAS_HORAS.filter((h) => parseInt(h) >= parseInt(t.salidaHH)).map((v) => ({ valor: v, label: v }));
-  }
-
-  minutosRetornoOptions(t: TrayectoForm): { valor: string; label: string }[] {
-    if (!t.retornoHH || !t.salidaHH) return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
-    if (parseInt(t.retornoHH) > parseInt(t.salidaHH))
-      return this.TODOS_MINUTOS.map((v) => ({ valor: v, label: v }));
-    const salM = parseInt(t.salidaMM || '00');
-    return this.TODOS_MINUTOS.filter((m) => parseInt(m) > salM).map((v) => ({ valor: v, label: v }));
+  /** Hora mínima seleccionable para "retorno": la hora de salida del mismo trayecto. */
+  minHoraRetorno(t: TrayectoForm): string | null {
+    return t.horaSalida || null;
   }
 
   onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
     t.sinRetorno = checked;
-    if (checked) { t.retornoHH = ''; t.retornoMM = ''; }
+    if (checked) { t.horaRetorno = ''; }
   }
 
   onMotivoLibreChange(t: TrayectoForm, checked: boolean): void {
@@ -263,11 +236,13 @@ export class SolicitudSalidaCreate implements OnInit {
   private validarTrayecto(t: TrayectoForm, idx: number): string[] {
     const errs: string[] = [];
     const pref = `Trayecto ${idx + 1}`;
-    const horaSalida = t.salidaHH && t.salidaMM ? `${t.salidaHH}:${t.salidaMM}` : '';
-    const horaRetorno = !t.sinRetorno && t.retornoHH && t.retornoMM ? `${t.retornoHH}:${t.retornoMM}` : null;
 
-    if (!horaSalida) errs.push(`${pref}: hora de salida`);
-    if (!t.sinRetorno && !horaRetorno) errs.push(`${pref}: hora de retorno`);
+    if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
+    if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
+    const minSalida = this.minHoraSalida(t);
+    if (t.horaSalida && minSalida && t.horaSalida < minSalida) errs.push(`${pref}: la hora de salida ya pasó`);
+    if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
+      errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);
     if (!t.lugarOrigenId && !t.lugarOrigenLibre?.trim()) errs.push(`${pref}: lugar de origen`);
     if (!t.lugarDestinoId && !t.lugarDestinoLibre?.trim()) errs.push(`${pref}: lugar de destino`);
@@ -300,8 +275,8 @@ export class SolicitudSalidaCreate implements OnInit {
     const payload: SolicitudSalidaCreateDto = {
       fechaSalida: this.fechaSalida,
       trayectos: this.trayectos.map<TrayectoCreateDto>((t) => ({
-        horaSalida: `${t.salidaHH}:${t.salidaMM}`,
-        horaRetorno: t.sinRetorno ? null : `${t.retornoHH}:${t.retornoMM}`,
+        horaSalida: t.horaSalida,
+        horaRetorno: t.sinRetorno ? null : t.horaRetorno,
         motivoId: t.motivoId,
         motivoLibre: t.motivoLibre?.trim() || null,
         lugarOrigenId: t.lugarOrigenId,

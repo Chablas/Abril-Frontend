@@ -3,7 +3,8 @@
   <app-abril-page-header
     badge="SSOMA"
     titulo="Flash Reports — Accidentes e Incidentes"
-    subtitulo="Registro, seguimiento y envío de Flash Reports">
+    subtitulo="Registro, seguimiento y envío de Flash Reports"
+    [hasExtra]="true">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
@@ -22,7 +23,7 @@
     @if (!loading) {
 
       <!-- TABLA DESKTOP -->
-      <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+      <div class="tabla-wrap abril-table-wrap">
         <table class="abril-table tabla">
           <thead class="sticky top-0 z-10">
             <tr>
@@ -63,24 +64,38 @@
                   <span class="area-chip" [ngClass]="areaClass(item.areaOrigen)">{{ areaLabel(item.areaOrigen) }}</span>
                 </td>
                 <td class="ta-c" (click)="$event.stopPropagation()">
-                  <select class="nivel-select" [ngClass]="nivelClass(item.consecuenciaRealPersonal)"
-                    [ngModel]="item.consecuenciaRealPersonal ?? ''"
-                    (ngModelChange)="actualizarSeveridad(item, 'real', $event)">
-                    <option value="">—</option>
-                    @for (n of nivelesSeveridad; track n) {
-                      <option [value]="n">N{{ n }}</option>
-                    }
-                  </select>
+                  <app-search-select
+                    class="nivel-select"
+                    [badgeStyle]="nivelBadgeStyle(item.consecuenciaRealPersonal)"
+                    [compact]="true"
+                    [showLabel]="false"
+                    [fullText]="true"
+                    [options]="nivelesSeveridadOpts"
+                    valueField="value"
+                    displayField="label"
+                    [sortAlpha]="false"
+                    placeholder="—"
+                    [allowClear]="true"
+                    [value]="item.consecuenciaRealPersonal"
+                    (valueChange)="actualizarSeveridad(item, 'real', $event === null ? '' : $event)">
+                  </app-search-select>
                 </td>
                 <td class="ta-c" (click)="$event.stopPropagation()">
-                  <select class="nivel-select" [ngClass]="nivelClass(item.consecuenciaPotencialPersonal)"
-                    [ngModel]="item.consecuenciaPotencialPersonal ?? ''"
-                    (ngModelChange)="actualizarSeveridad(item, 'potencial', $event)">
-                    <option value="">—</option>
-                    @for (n of nivelesSeveridad; track n) {
-                      <option [value]="n">N{{ n }}</option>
-                    }
-                  </select>
+                  <app-search-select
+                    class="nivel-select"
+                    [badgeStyle]="nivelBadgeStyle(item.consecuenciaPotencialPersonal)"
+                    [compact]="true"
+                    [showLabel]="false"
+                    [fullText]="true"
+                    [options]="nivelesSeveridadOpts"
+                    valueField="value"
+                    displayField="label"
+                    [sortAlpha]="false"
+                    placeholder="—"
+                    [allowClear]="true"
+                    [value]="item.consecuenciaPotencialPersonal"
+                    (valueChange)="actualizarSeveridad(item, 'potencial', $event === null ? '' : $event)">
+                  </app-search-select>
                 </td>
                 <td class="ta-c">
                   @if (item.diasPerdidos > 0) {
@@ -102,11 +117,11 @@
                 </td>
                 <td>
                   <div class="acciones">
-                    <button type="button" class="btn-ver" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
+                    <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
                       <i class="ti ti-eye"></i>
                     </button>
                     @if (!item.enviado) {
-                      <button type="button" class="btn-del" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
+                      <button type="button" class="abril-action-btn abril-action-btn--danger" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
                         <i class="ti ti-trash"></i>
                       </button>
                     }
@@ -209,13 +224,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
     </div>
   </div>
 </app-filter-modal>

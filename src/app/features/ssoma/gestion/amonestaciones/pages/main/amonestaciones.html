@@ -5,7 +5,11 @@
     titulo="Amonestaciones y Suspensiones"
     subtitulo="Registro y seguimiento de amonestaciones e inhabilitaciones"
     [tabs]="headerTabs"
+    [hasExtra]="tab === 'lista'"
     (tabClick)="onTabClick($event)">
+    @if (tab === 'lista') {
+      <app-filter-trigger tabsExtra [count]="filtrosListaActivos" (open)="filtrosListaAbiertos = true" />
+    }
   </app-abril-page-header>
 
   <div class="page-body">
@@ -214,17 +218,12 @@
   <!-- ── TAB LISTA ─────────────────────────────────────────────── -->
   @if (tab === 'lista') {
 
-    <!-- Botón "Filtros" estándar -->
-    <div class="flex justify-end mb-[10px]">
-      <app-filter-trigger [count]="filtrosListaActivos" (open)="filtrosListaAbiertos = true" />
-    </div>
-
     @if (loadingLista) {
       <div class="loading-state">Cargando…</div>
     } @else if (lista.length === 0) {
       <div class="empty-state">No se encontraron amonestaciones.</div>
     } @else {
-      <div class="table-wrapper w-full flex-1 min-h-0 overflow-auto">
+      <div class="table-wrapper abril-table-wrap">
         <table class="abril-table data-table">
           <thead class="sticky top-0 z-10">
             <tr>

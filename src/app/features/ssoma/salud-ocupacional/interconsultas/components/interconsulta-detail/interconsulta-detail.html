@@ -1,4 +1,9 @@
-<app-base-modal title="Interconsulta" width="w-[780px]" (closeModal)="close()">
+<app-abril-modal-panel
+  titulo="Interconsulta"
+  icono="ti-arrows-right-left"
+  variant="blue"
+  width="780px"
+  (closeModal)="close()">
   <div *ngIf="loading && !data" class="state-msg">Cargando interconsulta…</div>
 
   <ng-container *ngIf="data">
@@ -32,7 +37,7 @@
       </div>
     </div>
 
-    <h4 class="section-title mt-6">Registro de atención</h4>
+    <h2 class="paso-title mt-6"><i class="ti ti-clipboard-check"></i> Registro de atención</h2>
     <div class="grid-2">
       <div *ngIf="data.fechaAtencion">
         <div class="field-label">Fecha atención</div>
@@ -65,11 +70,11 @@
       </div>
     </div>
 
-    <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cerrar</button>
-    </footer>
+    <div modalFooter style="justify-content: flex-end;">
+      <button type="button" class="btn-primary" (click)="close()">Cerrar</button>
+    </div>
   </ng-container>
-</app-base-modal>
+</app-abril-modal-panel>
 
 <app-document-viewer
   [archivoUrl]="visorUrl"

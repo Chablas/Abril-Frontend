@@ -22,16 +22,34 @@
       <div class="info-grid">
         <div class="info-item">
           <span class="info-label">Trabajador auditado</span>
-          <span class="info-value">{{ auditoria.auditadoNombre }}</span>
+          <span class="info-value">{{ auditoria.auditadoNombre | titleCase }}</span>
+          @if (auditoria.auditadoEmpresaNombre || auditoria.auditadoCategoria || auditoria.auditadoOcupacion) {
+            <span class="info-sub">
+              {{ auditoria.auditadoEmpresaNombre }}
+              @if (auditoria.auditadoEmpresaNombre && (auditoria.auditadoCategoria || auditoria.auditadoOcupacion)) { · }
+              {{ auditoria.auditadoCategoria }}
+              @if (auditoria.auditadoCategoria && auditoria.auditadoOcupacion) { · }
+              {{ auditoria.auditadoOcupacion }}
+            </span>
+          }
         </div>
         <div class="info-item">
           <span class="info-label">Auditor</span>
-          <span class="info-value">{{ auditoria.auditorNombre }}</span>
+          <span class="info-value">{{ auditoria.auditorNombre | titleCase }}</span>
+          @if (auditoria.auditorEmpresaNombre || auditoria.auditorCategoria || auditoria.auditorOcupacion) {
+            <span class="info-sub">
+              {{ auditoria.auditorEmpresaNombre }}
+              @if (auditoria.auditorEmpresaNombre && (auditoria.auditorCategoria || auditoria.auditorOcupacion)) { · }
+              {{ auditoria.auditorCategoria }}
+              @if (auditoria.auditorCategoria && auditoria.auditorOcupacion) { · }
+              {{ auditoria.auditorOcupacion }}
+            </span>
+          }
         </div>
         @if (auditoria.proyectoNombre) {
           <div class="info-item">
             <span class="info-label">Proyecto</span>
-            <span class="info-value">{{ auditoria.proyectoNombre }}</span>
+            <span class="info-value">{{ auditoria.proyectoNombre | titleCase }}</span>
           </div>
         }
         @if (auditoria.emailAuditado) {

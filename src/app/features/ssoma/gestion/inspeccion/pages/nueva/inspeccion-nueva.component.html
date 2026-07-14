@@ -1,12 +1,9 @@
-<div class="wizard-root">
-
-  <app-abril-page-header
-    badge="SSOMA"
-    titulo="NUEVA INSPECCIÓN"
-    subtitulo="Formulario de inspección de seguridad"
-    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
-    (secondaryClick)="cancelar()">
-  </app-abril-page-header>
+<app-abril-modal-panel
+  titulo="Nueva Inspección"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
 
   <!-- STEPPER -->
   <div class="stepper">
@@ -29,12 +26,13 @@
 
     <!-- ═══ PASO 1 — CABECERA ═══════════════════════════════════════ -->
     @if (paso === 1) {
-      <div class="form-section">
-        <h2 class="section-title">Datos de la inspección</h2>
+      <div class="abril-form-section">
+        <h2 class="abril-section-title">Datos de la inspección</h2>
 
-        <div class="form-group">
-          <label class="form-label">Proyecto <span class="required">*</span></label>
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
             [options]="proyectos"
             valueField="projectId"
             displayField="projectDescription"
@@ -44,50 +42,54 @@
           </app-search-select>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Tipo de inspección <span class="required">*</span></label>
-          <select class="form-input" [(ngModel)]="tipoId">
-            <option [ngValue]="0">Seleccionar tipo...</option>
-            @for (t of tipos; track t.id) {
-              <option [ngValue]="t.id">{{ t.nombre }} ({{ t.ambito }})</option>
-            }
-          </select>
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de inspección *"
+            [options]="tiposOpts"
+            valueField="id"
+            displayField="label"
+            [value]="tipoId"
+            placeholder="Buscar tipo de inspección..."
+            (valueChange)="tipoId = $event"
+          ></app-search-select>
         </div>
 
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Fecha <span class="required">*</span></label>
-            <input type="date" class="form-input" [(ngModel)]="fecha" />
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha <span class="required">*</span></label>
+            <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Hora inicio</label>
-            <input type="time" class="form-input" [(ngModel)]="horaInicio" />
+          <div class="abril-field">
+            <label class="abril-field-label">Hora inicio</label>
+            <input type="time" class="abril-field-input" [(ngModel)]="horaInicio" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Hora fin</label>
-            <input type="time" class="form-input" [(ngModel)]="horaFin" />
+          <div class="abril-field">
+            <label class="abril-field-label">Hora fin</label>
+            <input type="time" class="abril-field-input" [(ngModel)]="horaFin" />
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Área inspeccionada</label>
-          <input type="text" class="form-input" [(ngModel)]="area" placeholder="Ej. Almacén, Frente de trabajo..." />
+        <div class="abril-field">
+          <label class="abril-field-label">Área inspeccionada</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="area" placeholder="Ej. Almacén, Frente de trabajo..." />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Responsable del área</label>
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Responsable del área"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="responsableAreaId"
             (valueChange)="onResponsableChange($event)">
           </app-search-select>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Tipo de inspección</label>
+        <div class="abril-field">
+          <label class="abril-field-label">Planificación</label>
           <div class="toggle-row">
             <button type="button" class="toggle-opt" [class.toggle-opt--active]="esPlanificada" (click)="esPlanificada = true">
               Planeada
@@ -173,9 +175,9 @@
 
     <!-- ═══ PASO 3 — HALLAZGOS ══════════════════════════════════════ -->
     @if (paso === 3) {
-      <div class="form-section">
+      <div class="abril-form-section">
         <div class="hallazgos-header">
-          <h2 class="section-title">Hallazgos</h2>
+          <h2 class="abril-section-title">Hallazgos</h2>
           <button type="button" class="btn-agregar-hallazgo" (click)="agregarHallazgo()">
             <i class="ti ti-plus"></i> Agregar hallazgo
           </button>
@@ -186,13 +188,13 @@
           <div class="hallazgo-form">
             <div class="hallazgo-form__title">Nuevo hallazgo</div>
 
-            <div class="form-group">
-              <label class="form-label">Descripción <span class="required">*</span></label>
-              <textarea class="form-input" [(ngModel)]="nuevoHallazgo.descripcion" rows="2" placeholder="Describe el hallazgo..."></textarea>
+            <div class="abril-field">
+              <label class="abril-field-label">Descripción <span class="required">*</span></label>
+              <textarea class="abril-field-input" [(ngModel)]="nuevoHallazgo.descripcion" rows="2" placeholder="Describe el hallazgo..."></textarea>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Tipo</label>
+            <div class="abril-field">
+              <label class="abril-field-label">Tipo</label>
               <div class="tipo-btns">
                 @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
                   <button type="button" class="btn-tipo" [ngClass]="tipoHallazgoClass(t)"
@@ -205,35 +207,43 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Área</label>
-                <input type="text" class="form-input" [(ngModel)]="nuevoHallazgo.area" />
+              <div class="abril-field">
+                <label class="abril-field-label">Área</label>
+                <input type="text" class="abril-field-input" [(ngModel)]="nuevoHallazgo.area" />
               </div>
-              <div class="form-group">
-                <label class="form-label">Fecha límite</label>
-                <input type="date" class="form-input" [(ngModel)]="nuevoHallazgo.fechaLimite" />
+              <div class="abril-field">
+                <label class="abril-field-label">Fecha límite</label>
+                <input type="date" class="abril-field-input" [(ngModel)]="nuevoHallazgo.fechaLimite" />
               </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Responsable</label>
-                <input type="text" class="form-input" [(ngModel)]="nuevoHallazgo.responsableNombre" placeholder="Nombre" />
+              <div class="abril-field">
+                <app-search-select
+                  color="var(--color-abril-logo-blue)"
+                  label="Responsable"
+                  [options]="workers"
+                  valueField="workerId"
+                  displayField="apellidoNombre"
+                  placeholder="Buscar por nombre o DNI..."
+                  [value]="hallazgoResponsableId"
+                  (valueChange)="onHallazgoResponsableChange($event)">
+                </app-search-select>
               </div>
-              <div class="form-group">
-                <label class="form-label">Cargo</label>
-                <input type="text" class="form-input" [(ngModel)]="nuevoHallazgo.responsableCargo" placeholder="Cargo" />
+              <div class="abril-field">
+                <label class="abril-field-label">Cargo</label>
+                <input type="text" class="abril-field-input" [(ngModel)]="nuevoHallazgo.responsableCargo" placeholder="Cargo" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Acción correctiva</label>
-              <textarea class="form-input" [(ngModel)]="nuevoHallazgo.accionCorrectiva" rows="2" placeholder="Acción a tomar..."></textarea>
+            <div class="abril-field">
+              <label class="abril-field-label">Acción correctiva</label>
+              <textarea class="abril-field-input" [(ngModel)]="nuevoHallazgo.accionCorrectiva" rows="2" placeholder="Acción a tomar..."></textarea>
             </div>
 
             <!-- Fotos -->
-            <div class="form-group">
-              <label class="form-label">Fotos (máx. 5)</label>
+            <div class="abril-field">
+              <label class="abril-field-label">Fotos (máx. 5)</label>
               @if (nuevoHallazgo.fotosBase64.length < 5) {
                 <label class="btn-foto-add">
                   <i class="ti ti-camera"></i> Agregar foto
@@ -300,8 +310,8 @@
 
     <!-- ═══ PASO 4 — CIERRE ══════════════════════════════════════════ -->
     @if (paso === 4) {
-      <div class="form-section">
-        <h2 class="section-title">
+      <div class="abril-form-section">
+        <h2 class="abril-section-title">
           Fotos del área inspeccionada
           <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
             {{ fotosAreaBase64.length }} / mín. 3
@@ -328,53 +338,54 @@
           }
         </div>
 
-        <h2 class="section-title" style="margin-top: 2rem">Conclusiones</h2>
+        <h2 class="abril-section-title" style="margin-top: 2rem">Conclusiones</h2>
 
-        <div class="form-group">
-          <label class="form-label">Descripción de causas de resultados desfavorables</label>
-          <textarea class="form-input" [(ngModel)]="descripcionCausas" rows="3"
+        <div class="abril-field">
+          <label class="abril-field-label">Descripción de causas de resultados desfavorables</label>
+          <textarea class="abril-field-input" [(ngModel)]="descripcionCausas" rows="3"
             placeholder="Describe las causas de los incumplimientos observados..."></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Conclusiones y recomendaciones</label>
-          <textarea class="form-input" [(ngModel)]="conclusiones" rows="3"
+        <div class="abril-field">
+          <label class="abril-field-label">Conclusiones y recomendaciones</label>
+          <textarea class="abril-field-input" [(ngModel)]="conclusiones" rows="3"
             placeholder="Conclusiones generales de la inspección..."></textarea>
         </div>
 
-        <h2 class="section-title">Inspector</h2>
+        <h2 class="abril-section-title">Inspector</h2>
 
-        <div class="form-group">
-          <label class="form-label">Buscar inspector</label>
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Buscar inspector"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="inspectorId"
             (valueChange)="onInspectorChange($event)">
           </app-search-select>
         </div>
 
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nombre</label>
-            <input type="text" class="form-input" [(ngModel)]="inspectorNombre" />
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="inspectorNombre" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Cargo</label>
-            <input type="text" class="form-input" [(ngModel)]="inspectorCargo" />
+          <div class="abril-field">
+            <label class="abril-field-label">Cargo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="inspectorCargo" />
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Empresa</label>
-          <input type="text" class="form-input" [(ngModel)]="inspectorEmpresa" readonly
+        <div class="abril-field">
+          <label class="abril-field-label">Empresa</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="inspectorEmpresa" readonly
             placeholder="Se completa automáticamente al elegir el inspector" />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Firma del inspector</label>
+        <div class="abril-field">
+          <label class="abril-field-label">Firma del inspector</label>
           <div class="canvas-wrap">
             <canvas #canvasInspector width="360" height="120"
               (mousedown)="startDrawInspector($event)"
@@ -389,33 +400,34 @@
           </div>
         </div>
 
-        <h2 class="section-title">Representante del área (RM 050)</h2>
+        <h2 class="abril-section-title">Representante del área (RM 050)</h2>
 
-        <div class="form-group">
-          <label class="form-label">Buscar representante</label>
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Buscar representante"
             [options]="workers"
             valueField="workerId"
             displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
+            placeholder="Buscar por nombre o DNI..."
             [value]="representanteId"
             (valueChange)="onRepresentanteChange($event)">
           </app-search-select>
         </div>
 
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nombre</label>
-            <input type="text" class="form-input" [(ngModel)]="representanteNombre" />
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="representanteNombre" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Cargo</label>
-            <input type="text" class="form-input" [(ngModel)]="representanteCargo" />
+          <div class="abril-field">
+            <label class="abril-field-label">Cargo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="representanteCargo" />
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Firma del representante</label>
+        <div class="abril-field">
+          <label class="abril-field-label">Firma del representante</label>
           <div class="canvas-wrap">
             <canvas #canvasRepresentante width="360" height="120"
               (mousedown)="startDrawRepresentante($event)"
@@ -435,8 +447,7 @@
 
   </div><!-- /wizard-body -->
 
-  <!-- FOOTER NAV -->
-  <div class="wizard-footer">
+  <div modalFooter>
     <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
     <div class="footer-nav">
       @if (paso > 1) {
@@ -458,4 +469,4 @@
     </div>
   </div>
 
-</div>
+</app-abril-modal-panel>

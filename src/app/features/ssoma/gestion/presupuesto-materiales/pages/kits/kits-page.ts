@@ -12,12 +12,13 @@ import {
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-kits-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './kits-page.html',
   styleUrl: './kits-page.css',
 })
@@ -34,6 +35,10 @@ export class KitsPage implements OnInit {
   kitDetalle: KitDetalleDto | null = null;
   cantidadKits: number | null = null;
   resultado: KitCalculoLineaDto[] = [];
+
+  get kitsOpts(): any[] {
+    return this.kits.map((k) => ({ ...k, _label: `${k.nombre} (${k.nombreTipo})` }));
+  }
 
   // ── Crear kit ────────────────────────────────────────────────────
   mostrarFormCrear = false;

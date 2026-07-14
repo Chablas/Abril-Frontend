@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { SpiBadgeComponent } from '../spi-badge/spi-badge.component';
 import { EjecucionModalComponent } from '../ejecucion-modal/ejecucion-modal.component';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { PasoService } from '../../services/paso.service';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
@@ -19,7 +20,7 @@ interface CategoriaGroup {
 @Component({
   selector: 'app-actividad-tree',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, EjecucionModalComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, EjecucionModalComponent, AbrilModalPanel],
   templateUrl: './actividad-tree.component.html',
   styleUrl: './actividad-tree.component.css',
 })

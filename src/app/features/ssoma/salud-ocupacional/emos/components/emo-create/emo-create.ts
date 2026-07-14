@@ -10,13 +10,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { WorkerSearchInput } from '../../../shared/worker-search-input/worker-search-input';
 import { EmoService } from '../../../services/emo.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
-import { WorkerSearchService } from '../../../services/worker-search.service';
 import {
   ClinicaSimpleDto,
   EmoTipoDto,
@@ -45,7 +44,7 @@ interface ExamenRow extends EmoExamenCreateDto {
 @Component({
   selector: 'app-emo-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './emo-create.html',
   styleUrl: './emo-create.css',
 })
@@ -60,10 +59,7 @@ export class EmoCreate implements OnInit, OnDestroy {
   saving = false;
 
   // Paso 1
-  workerQuery = '';
-  workerResults: WorkerSearchItemDto[] = [];
   workerSelected: WorkerSearchItemDto | null = null;
-  workerSearching = false;
   tipoEmoId = 0;
   empresaOrigenId = 0;
   fechaEmo = '';
@@ -92,13 +88,9 @@ export class EmoCreate implements OnInit, OnDestroy {
   restriccionTipos: RestriccionTipoDto[] = [];
   examenTipos: ExamenTipoDto[] = [];
 
-  private workerQuery$ = new Subject<string>();
-  private destroy$ = new Subject<void>();
-
   constructor(
     private service: EmoService,
     private catalogos: CatalogosSaludService,
-    private workerSearch: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -106,15 +98,9 @@ export class EmoCreate implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCatalogos();
-    this.workerQuery$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((q) => this.runWorkerSearch(q));
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void {}
 
   private loadCatalogos(): void {
     this.catalogos.getEmoTipos().subscribe({
@@ -172,45 +158,14 @@ export class EmoCreate implements OnInit, OnDestroy {
   }
 
   // Worker search
-  onWorkerQueryChange(value: string): void {
-    this.workerQuery = value;
-    if (!value || value.trim().length < 2) {
-      this.workerResults = [];
-      return;
-    }
-    this.workerSearching = true;
-    this.workerQuery$.next(value.trim());
-  }
-
-  private runWorkerSearch(q: string): void {
-    this.workerSearch.search(q).subscribe({
-      next: (res) => {
-        this.workerResults = res;
-        this.workerSearching = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.workerResults = [];
-        this.workerSearching = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  selectWorker(w: WorkerSearchItemDto): void {
+  onWorkerSelectedChange(w: WorkerSearchItemDto | null): void {
     this.workerSelected = w;
-    this.workerQuery = w.apellidoNombre;
-    this.workerResults = [];
-    if (w.empresaActualId && !this.empresaOrigenId) {
+    if (w?.empresaActualId && !this.empresaOrigenId) {
       this.empresaOrigenId = w.empresaActualId;
     }
-  }
-
-  clearWorker(): void {
-    this.workerSelected = null;
-    this.workerQuery = '';
-    this.workerResults = [];
-    this.empresaOrigenId = 0;
+    if (!w) {
+      this.empresaOrigenId = 0;
+    }
   }
 
   // Restricciones

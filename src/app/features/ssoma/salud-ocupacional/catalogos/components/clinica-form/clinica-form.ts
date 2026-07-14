@@ -12,7 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
@@ -27,7 +28,7 @@ interface EmailEntry {
 @Component({
   selector: 'app-clinica-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect],
   templateUrl: './clinica-form.html',
   styleUrl: './clinica-form.css',
 })
@@ -41,6 +42,11 @@ export class ClinicaForm implements OnChanges {
   model: ClinicaUpsertDto = this.empty();
   emails: EmailEntry[] = [];
   saving = false;
+
+  readonly estadoOpts = [
+    { id: true, label: 'Activo' },
+    { id: false, label: 'Inactivo' },
+  ];
 
   private deletedEmailIds: number[] = [];
 

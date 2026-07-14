@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-06-07 — Bug fix commitInlineEdit (change+input en date picker), columna DURACIÓN en tabla, export PDF client-side (jsPDF), campo Duración complementario en modal Nueva Actividad, patch local padresActualizados en crear/editar.
+> **Última actualización**: 2026-07-13 — Paleta corporativa de 10 colores por rama en la tabla de cronograma (`color-mix()` en CSS en vez de precálculo en TS), tratamiento tipo chip para desfase/semáforo/avance, fix de hover en filas nivel 1.
 
 ---
 
@@ -4297,3 +4297,115 @@ Rediseño de `features/ssoma/salud-ocupacional/interconsultas` a pedido del usua
 ### Pendiente
 - El usuario pidió explícitamente no compilar en esta sesión — no se corrió `ng build` ni `tsc` sobre los últimos cambios (categoría/ocupación). Verificar al compilar.
 - Falta que el usuario confirme visualmente en su máquina que el layout de una sola pantalla y los nuevos campos se ven bien.
+
+## Sesión 2026-07-13 — Estandarización de wizards SSOMA (RAC/OPT/Inspección/Accidentes)
+
+Sesión larga de estandarización visual/estructural de los formularios "nuevo"/"crear-editar" de RAC, OPT, Inspección y Accidentes, más limpieza de fondos de página en toda la app. Ver CLAUDE.md sección "UI standard (2026)" para las reglas nuevas que quedaron documentadas.
+
+**1. Fondo de página incorrecto (`--color-abril-page-bg` en vez de blanco)**: ese token es solo para el layout general detrás del header, no para el contenido de una página. Corregido a `#ffffff` en 17 páginas: `opt-nuevo/detalle/dashboard`, `rac-nuevo`, `inspeccion-nueva/detalle/dashboard`, `accidente-crear-editar/detalle`, `paso-lista`, `paso-salud-lista`, `charlas-dashboard.component.css`, `dashboard-acumulado`, `desempeno-supervisor`, `seguimiento-indicadores`, y en clínica/evaluaciones/habilitación (`agenda`, `dashboard`, `interconsultas`, `programaciones`, `asignaciones`, `configuracion-plantilla`, `dashboard-gerencia`, `evaluar-residente`, `control-acceso`, `gestion-hab.component.css`).
+No se tocó `paso-dashboard.component.css` (sistema de diseño propio completo, requiere conversación aparte) ni las páginas de `charlas/pages/{asistencia,evidencia,programa,lista}` (código muerto, sin ruta real).
+
+**2. Header hand-rolled → `app-abril-page-header`**: RAC y OPT (`nuevo` y `opt-detalle`) reinventaban su propio header (`.nuevo-header`/`.back-btn`/`.header-badge`) en vez de usar el componente compartido. Inspección y Accidentes ya lo hacían bien — se usaron como referencia. CSS muerto correspondiente eliminado.
+
+**3. Estándar de wizard de página completa documentado en CLAUDE.md**: un create/edit form solo puede ser página completa (en vez de `app-base-modal`) si es un wizard multi-paso real (varias etapas distintas). Estructura fija: `app-abril-page-header` (nunca hand-rolled) + `.wizard-root`/`.stepper`/`.wizard-body`/`.wizard-footer`.
+
+**4. Estándar de input de hora documentado**: `<input type="time">` nativo para horas sin restricción (ej. Inspección), vs par `app-search-select` HH/MM solo cuando hay restricción real (no permitir hora pasada, retorno ≥ salida). Migrado Gestión de Salidas (`solicitud-salidas/components/create/`) del picker HH/MM viejo al input nativo con `[attr.min]` dinámico — simplificó ~35 líneas de lógica (`horasSalidaOptions`/`minutosSalidaOptions`/etc. eliminados).
+
+**5. Wording de `app-search-select` unificado** (documentado en CLAUDE.md): "Buscar proyecto...", "Buscar por nombre o DNI..." (personas), "Buscar empresa.../Buscar contratista..." (catálogos grandes), "Selecciona {entidad}" (catálogos chicos). Aplicado en RAC/OPT/Inspección/Accidentes — antes había 4 wordings distintos solo para "Proyecto".
+
+**6. RAC migrado de buscador de trabajador custom a `app-search-select`**: RAC tenía su propio widget completo (`WorkerSearchService` + debounce + `.worker-search-wrap`/`.worker-results`/`.worker-chip`) para Observador y Trabajador(es) observado(s), distinto a como lo hacen OPT e Inspección (catálogo precargado vía `TrabajadorHabService` + `app-search-select`). Migrado a ese mismo patrón. El campo "Cargo" (antes 3 cajas separadas Cargo/Categoría/Ocupación) ahora es un solo campo `categoría · ocupación`, igual que OPT — no se perdió ningún dato, solo se unificó la presentación.
+Verificado: OPT e Inspección ya estaban bien (solo tenían CSS muerto de una versión anterior, limpiado). Accidentes usa una fuente de trabajadores distinta a propósito (filtrada por proyecto del evento, no todo el catálogo de la empresa) — correcto, no es una inconsistencia.
+
+### Archivos clave
+- `CLAUDE.md` — sección "UI standard (2026)", reglas nuevas de wizard/hora/placeholders.
+- `src/app/features/ssoma/gestion/rac/pages/nuevo/rac-nuevo.{ts,html,css}` — migración completa.
+- `src/app/features/ssoma/gestion/opt/pages/nuevo/opt-nuevo.{ts,html,css}`, `.../detalle/opt-detalle.{ts,html,css}`.
+- `src/app/features/gestion-administrativa/features/solicitud-salidas/components/create/create.{ts,html}` — hora nativa.
+
+### Pendiente (para la próxima sesión)
+1. **Discutido pero no implementado**: hay 3 patrones visuales distintos para forms de un solo paso (`app-base-modal` centrado, `app-base-modal [fullScreen]="true"` — este último se ve roto/sin chrome, y el panel lateral custom de `ssoma/gestion/amonestaciones/pages/nueva/` que el usuario prefiere visualmente). Recomendación dada: crear un componente compartido de panel lateral (inspirado en el de Amonestaciones), migrar Solicitud de Salidas y Amonestaciones a él, dejar el wizard full-page solo para multi-paso real. Amonestaciones también reinventa su propio buscador de trabajador (mismo problema que tenía RAC) — migrar a `app-search-select` de paso.
+2. Ancho inconsistente entre `.wizard-body` (centrado, max-width) y `.wizard-footer`/`.stepper` (ancho completo de pantalla) en los wizards — se ve como que el footer está "separado" del formulario. No corregido aún.
+3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte.
+4. No se verificó visualmente con navegador en esta sesión (instrucción explícita del usuario). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios).
+
+## Sesión 2026-07-13 (2) — Modal compartido SSOMA + dashboard de Arquitectura Comercial
+
+Continuación de la sesión anterior. Los 4 pendientes de arriba quedaron resueltos (el #1 se hizo distinto a lo recomendado: en vez de panel lateral, terminó siendo un modal centrado — ver abajo). El #3 (módulo PASO) sigue sin tocar.
+
+**1. Nuevo componente compartido `app-abril-modal-panel`** (`shared/components/abril-modal-panel/`): fondo gris + panel centrado redondeado + header de color con ícono + footer fijo. Dos variantes: `variant="teal"` (default, `--color-abril-standard`, para Gestión Administrativa/Salidas — sigue usando `app-base-modal` sin cambios) y `variant="blue"` (`--color-abril-logo-blue`, para SSOMA).
+
+**Decisión importante que cambia lo documentado en la sesión anterior**: ya NO existe la "excepción de wizard de página completa". Todo formulario SSOMA (incluyendo los que tienen stepper multi-paso) va dentro de `app-abril-modal-panel`, nunca como página completa con `app-abril-page-header`. El stepper (círculos 1-2-3-4) se mantiene, pero ahora vive DENTRO del modal como contenido proyectado, no como header de página.
+
+**2. Migrados a `app-abril-modal-panel` (variant blue)**: RAC, OPT, Inspección, Accidentes, Amonestaciones (Amonestaciones fue el piloto — antes tenía su propio `.panel-overlay`/`.panel-container` a mano, ahora usa el shell). Cada uno perdió su header/footer/overlay local (CSS muerto eliminado). Accidentes tiene una particularidad: el botón de guardar quedó en el footer del modal (fuera del `<form>`), así que usa `<form id="accForm">` + `<button form="accForm">` para poder seguir enviando el formulario.
+
+**3. Azul del logo Abril**: se abrió `public/images/abril-logo.png`, no se pudo muestrear el pixel exacto (herramientas de imagen no disponibles en el sandbox), se estimó visualmente y el usuario confirmó el hex real: `#005D9D` → token `--color-abril-logo-blue` (+ `-hover`/`-light`) en `styles.css`. Distinto del teal general (`--color-abril-standard`, `#0F6E56`).
+
+**4. Ajustes menores al mismo modal, iterando con el usuario**: quitó título "Trabajador" redundante en Amonestaciones, separó visualmente "Puntos por infracción" sin darle su propio título de sección (margin-top 20px), corrigió mayúsculas de Inspección (el estándar de case es sentence-case, no uppercase — ya no hay ambigüedad, confirmado contra `solicitud-salidas`), arregló un bug real: `.abril-field` (global, `styles.css`) le faltaba `margin-top: 9px` — por eso un combo (`app-search-select`, que sí tiene ese margen en su propio template) y un campo nativo en la misma fila quedaban desalineados verticalmente. Ya corregido a nivel global, no por página.
+
+**5. Dashboard de Arquitectura Comercial** (`features/arquitectura-comercial/dashboard/`): el usuario lo señaló como el dashboard "que le gusta" visualmente y pidió usarlo de referencia para estandarizar los dashboards de SSOMA — pero antes de propagarlo había que arreglar el dashboard de AC mismo, que no estaba nada estandarizado a nivel de código (40+ colores hex sueltos repetidos inline). Se hizo, con alcance acotado (no se tocó el archivo completo de 1400 líneas, solo KPI cards + alertas + filtros):
+   - Tokens de estado nuevos en `styles.css`: `--color-status-info/-primary/-success/-danger/-warning/-pending` (+ `-light`).
+   - KPI cards: de `style="border-top-color:#hex"` repetido 7 veces → clases `.kpi-card--info/success/primary/danger/pending/teal`.
+   - Alertas clickeables: de bloques con ~10 inline styles cada uno → `.alert-tile` + `.alert-tile--danger/warning/info`.
+   - Filtros: la barra azul con `<select>` nativos + botón "Buscar" → `app-filter-trigger`/`app-filter-modal` + `app-search-select` con auto-búsqueda (mismo patrón que el resto de la app). Se agregó `filtrosAbiertos`, getter `filtrosActivos`, `limpiarFiltros()` en `dashboard.ts`.
+   - De paso se encontró y corrigió un bug real preexistente: había una **segunda definición duplicada y muerta** de `.kpi-card`/`.kpi-sub` más abajo en el CSS que pisaba silenciosamente los estilos reales por orden de cascada (`.kpi-grid`/`.kpi-label`/`.kpi-value`/`.alert-card`/`.alert-clickable` viejos) — eliminada, confirmado que ninguna de esas clases se usa ya en el HTML actual.
+   - **No se tocó** el resto del archivo (rankings, gráficos Chart.js, donut, barras horizontales, modales de detalle) — fuera del alcance acordado con el usuario para esta ronda.
+
+### Archivos clave
+- `src/app/shared/components/abril-modal-panel/{abril-modal-panel.ts,html,css}` — componente nuevo.
+- `src/styles.css` — tokens `--color-abril-logo-blue*` y `--color-status-*`, fix de `margin-top: 9px` en `.abril-field`.
+- `src/app/features/ssoma/gestion/{rac,opt,inspeccion,accidentes-incidentes,amonestaciones}/pages/.../*.{ts,html,css}` — migración a `app-abril-modal-panel`.
+- `src/app/features/arquitectura-comercial/dashboard/{dashboard.ts,html,css}` — tokens + filtros estándar.
+- `CLAUDE.md` — sección "UI standard (2026)" reescrita: ya no hay excepción de página completa, todo es `app-abril-modal-panel` (SSOMA) o `app-base-modal` (resto).
+
+### Pendiente (para la próxima sesión)
+1. **Propagar el patrón de dashboard a SSOMA**: el usuario pidió específicamente seguir con OPT, Inspección u otro dashboard de SSOMA usando el mismo patrón (tokens de estado + `app-filter-modal` + `.kpi-card`) recién validado en Arquitectura Comercial. No se llegó a hacer — se acabaron los tokens de la sesión justo después de terminar AC. Preguntar por cuál dashboard seguir (OPT, Inspección, o Salud Ocupacional, quedó sin decidir).
+2. Auditoría pendiente y no iniciada de "todo lo demás" que el usuario mencionó (Salud Ocupacional, y en general cualquier página fuera de los wizards SSOMA ya migrados) contra los estándares de esta y la sesión anterior — el usuario quiere una pasada completa por la app, no solo los módulos ya tocados.
+3. Módulo PASO (`ssoma/salud-ocupacional/paso`) sigue con su propio sistema de diseño (tipografías propias, teal distinto) — pendiente de decisión de diseño aparte, mencionado en ambas sesiones, nunca resuelto.
+4. Dentro del dashboard de AC quedan sin tokenizar: rankings (barras con gradiente hardcodeado), donut/gráficos Chart.js (colores hardcodeados en `dashboard.ts`, no en el HTML), y los 3 modales de detalle (alertas/carga/hitos) — decidir si vale la pena extender el mismo tratamiento ahí o dejarlo así.
+5. No se verificó visualmente con navegador en ningún momento de esta sesión (instrucción explícita del usuario, la hizo él en su máquina). Solo se verificó con `tsc --noEmit` y `ng build` (ambos limpios) en cada paso.
+
+## Sesión 2026-07-12
+
+### Fix: colores del Gantt agrupados por rama (paleta por rama)
+
+**Síntoma**: en "Ver Gantt", los colores cicleaban fila por fila (azul, verde, naranja, navy...) en vez de agruparse por rama. Bajo cada padre raíz (ej. "Definición de plano Base ARQ") los ~7 hijos directos salían cada uno de un color distinto, cuando debían mantenerse todos en la misma familia de color heredada de su raíz.
+
+**Causa raíz**: el esquema de color en `buildColorMap` estaba desfasado un nivel. En la data de la plantilla las ramas raíz son nodos `hierarchyLevel === 0` / `parentId == null` (hay ~15-20). El código viejo daba a las raíces el tratamiento `NIVEL0_ENTRIES` (fondo blanco + borde) y cicleaba los 4 colores base (`#4080B0`, `#8CC63F`, `#E2672C`, `#102B4E`) sobre las filas `level <= 1`, es decir sobre los **hijos directos** → de ahí el cicleo. Además `findAncestorColorAtLevel` comparaba `parent.hierarchyLevel === targetLevel` con `===` sin coerción (frágil si el nivel venía como string).
+
+**Fix — `cronograma-actividades.ts`**:
+- `buildColorMap` reescrito en 2 pasos: (1) asigna un color base de los 4 **solo a los nodos raíz**, cicleando únicamente entre raíces en orden de aparición; (2) cada descendiente hereda el color base de su raíz vía `findRootColor` (camina por `parentId` hasta el nodo sin padre) y lo aclara según profundidad con `lightenHex`/`darkenHex` (nuevos helpers de mezcla con blanco/negro). Nivel raíz = color sólido + texto blanco (o `#173404` en la rama verde vía `getBranchTextColor`); nivel 1 = base aclarado 80%; nivel 2 = 90%; nivel 3+ = 94%, todos con `border-left` del color base.
+- `findAncestorColorAtLevel` eliminado y reemplazado por `findRootColor` (sin dependencia del valor numérico de nivel, con guard anti-ciclo).
+- Constante `NIVEL0_ENTRIES` eliminada (quedó muerta). `NIVEL0` navy se conserva solo como fallback en `getRowStyle`/`isDarkBg`.
+- Las barras del Gantt dhtmlx (`renderGanttActividades`) y el mini-gantt ya leían `rowStyleMap.color`, así que heredan el color por rama automáticamente.
+
+**Fix — `cronograma-actividades.css`**:
+- `.lvl-deep td:first-child` ahora usa `border-left: 3px solid var(--lvl-border)` (antes gris fijo) → nivel 3+ muestra el color base de la rama.
+- El separador de grupo (`border-top` + `padding-top`) se movió de `.lvl-1` a `.lvl-0`, para que cada familia de rama se lea como un bloque.
+
+**Fix — `src/styles.css`**: reglas `.gantt_task_line` / `.gantt_task_content` para que las barras dhtmlx tomen el color por rama (anula el fondo/texto blanco forzado por defecto).
+
+**Cambio menor — `cronograma-actividades.html`**: el botón "Usar plantilla" del estado vacío ahora también aparece para `tipoCronogramaActivo === 'ANTEPROYECTO'` (antes solo `PROYECTO`).
+
+**Nota**: un cronograma con una sola raíz ahora sale en azul base (antes navy). Si se quiere conservar el navy para raíz única, habría que reintroducirlo como excepción en el paso 1 de `buildColorMap`.
+
+## Sesión 2026-07-13
+
+### Paleta corporativa de 10 colores por rama + tratamiento chip + fix de hover (tabla de cronograma)
+
+Reemplazo de la paleta de 4 colores de rama (sesión 2026-07-12) por 10 tonos corporativos, y reemplazo del precálculo manual de tintes en TS por derivación en CSS con `color-mix()`. Mismo mecanismo de herencia por rama (solo los nodos raíz — `parentId == null` — ciclan la paleta; los descendientes heredan el hex exacto de su raíz vía `findRootColor`).
+
+**`cronograma-actividades.ts`**:
+- `LEVEL1_COLORS`: 10 hex corporativos (indigo, salvia, steel, bronze, clay, slate, amethyst, forest, ochre, graphite) — deben coincidir con las custom properties `--corporate-*` del `.css`.
+- `rowStyleMap` simplificado a `{ color: string; text?: string }`. `color` = hex base de la rama (igual para toda la rama, usado también por las barras del Gantt sin mezclar). `text` solo se puebla para nodos raíz (nivel 1) — blanco u oscuro (`#2C2C2A`) según contraste real calculado, no hardcodeado por índice.
+- `getBranchTextColor` ahora calcula contraste WCAG AA real (`relativeLuminance` + `contrastRatio`, fórmula estándar) contra blanco, con umbral 4.5:1, en vez de un array paralelo de colores de texto por índice. Nota: con esta paleta, **bronze** sí necesita texto oscuro (3.14:1 con blanco) pero **ochre** en realidad pasa el umbral con blanco (4.55:1) — usar oscuro en ochre lo empeoraría (3.08:1) — así que ochre quedó en blanco pese a la intuición inicial de que ambos lo necesitaban.
+- `lightenHex`/`darkenHex` eliminados — la derivación de fondo/borde/texto de niveles hijos ahora vive en CSS (`color-mix()`), no en TS.
+- `getRowStyle()` solo expone `--base-color` (+ `color` inline solo para nivel 1/raíz). Niveles hijos no llevan color inline; lo toman de `--child-text` en CSS.
+
+**`cronograma-actividades.css`**:
+- Custom properties `--corporate-*` (10) agregadas al bloque `:host`.
+- Nivel 1 (raíz): fondo sólido `var(--base-color)`, texto según `getRowStyle`, `font-weight:700`, `border-radius:12px` (solo en `td:first-child`/`td:last-child`, porque la tabla usa `border-collapse:collapse` y no se puede redondear un `<tr>` completo), `box-shadow` con `color-mix(... 25%, transparent)`. Hover: `translateY(-1px)` + shadow más pronunciada — **sin tocar el background**.
+- Niveles 2/3+: `--child-bg`/`--child-border`/`--child-text` derivados con `color-mix()` desde `--base-color` (10%/25%/85%). Solo nivel 3+ (`lvl-2`/`lvl-deep`) lleva el acento `border-left: 4px solid var(--base-color) !important` — antes lo llevaban todos los niveles hijos por igual.
+- **Bug de hover en nivel 1** (reportado en pantalla): el fondo se aclaraba casi a blanco al pasar el cursor, ilegible sobre texto blanco fijo. Causa raíz confirmada por especificidad CSS: la regla genérica `.row-clickable:hover td { background: rgba(0,0,0,0.038) }` (specificity `(0,3,3)`) le ganaba a la regla base `.lvl-0 td { background-color: var(--base-color) }` (`(0,2,3)`) durante el hover, porque la regla de hover específica de nivel 1 nunca re-declaraba `background-color`. Fix: `.lvl-0.row-clickable:hover td` ahora re-declara `background-color: var(--base-color)` explícitamente (specificity `(0,4,3)`, gana a todo lo demás).
+- Chips de fondo propio para DESFASE INI./FIN. (`.desfase-chip`), SEMÁFORO (`.sema-chip`, halo circular) y AVANCE (`.avance-wrap` con padding+radius), todos con `rgba(255,255,255,0.85)` sobre filas `row-dark` y `rgba(0,0,0,0.04)` sobre `row-light` — mismo criterio que ya usaba el badge de ESTADO (no tocado). Los overrides de color por fila en `.avance-pct`/`.avance-bar-bg` se quitaron porque ahora esos elementos viven dentro de un chip de fondo neutro, no directo sobre el color de fila.
+
+**Pendiente / no verificado en vivo**: el border-radius de 12px y el padding de las filas nivel 1/2 no se verificaron visualmente contra las ~81 actividades de la plantilla de Proyecto (sin acceso a browser/credenciales en este entorno) — si se ve muy espaciado en una tabla densa, bajar a 6-8px es un cambio de una sola línea (buscar `border-radius: 12px`, 4 ocurrencias).

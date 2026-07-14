@@ -22,11 +22,14 @@ import { WorkerSearchService } from '../../../../salud-ocupacional/services/work
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 
 @Component({
   selector: 'app-amonestacion-nueva',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './amonestacion-nueva.html',
   styleUrl: './amonestacion-nueva.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -158,12 +161,29 @@ export class AmonestacionNueva implements OnInit, OnDestroy {
       !this.workerSelected?.empresaActual?.toLowerCase().includes('abril');
   }
 
+  /** Catálogos que crecen -> combobox, no <select> nativo (necesitan label combinado). */
+  get tiposSancionOpts(): { id: number; label: string }[] {
+    return (this.init?.tiposSancion ?? []).map((t) => ({ id: t.id, label: `${t.nombre} (${t.nivelGravedad})` }));
+  }
+
+  get racInfraccionesOpts(): { id: number; label: string }[] {
+    const uit = this.init?.uitActual ?? 0;
+    return (this.init?.racInfracciones ?? []).map((ri) => {
+      let label = ri.nombre;
+      if (ri.montoFijo) label += ` — S/ ${ri.montoFijo.toFixed(2)}`;
+      else if (ri.factorUit) label += ` — ${ri.factorUit}xUIT (S/ ${(ri.factorUit * uit).toFixed(2)})`;
+      return { id: ri.id, label };
+    });
+  }
+
   // ── Fotos ─────────────────────────────────────────────────────────
 
-  onFotosChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    const pendientes = files.slice(0, 3 - this.fotosSeleccionadas.length);
+  get fotoPreviews(): string[] {
+    return this.fotosSeleccionadas.map((f) => f.base64);
+  }
+
+  onFotosChange(files: FileList): void {
+    const pendientes = Array.from(files).slice(0, 3 - this.fotosSeleccionadas.length);
     pendientes.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {

@@ -16,6 +16,10 @@ import {
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 type Seccion = 'normalizado' | 'sin-estandarizar' | 'no-ssoma';
 const VARIABLES_BASE = ['HH', 'AREATECHADA', 'TRABAJADORES', 'CALCULADO', 'FIJO', 'METRADO'];
@@ -24,7 +28,7 @@ const VARIABLES_BASE = ['HH', 'AREATECHADA', 'TRABAJADORES', 'CALCULADO', 'FIJO'
   selector: 'app-catalogo-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput, SearchSelect],
   templateUrl: './catalogo-page.html',
   styleUrl: './catalogo-page.css',
 })
@@ -36,6 +40,7 @@ export class CatalogoPage implements OnInit {
   cdr            = inject(ChangeDetectorRef);
 
   readonly variablesBase = VARIABLES_BASE;
+  readonly variableBaseOpts = VARIABLES_BASE.map((v) => ({ id: v, label: v }));
   seccion: Seccion = 'normalizado';
   loading = false;
 
@@ -50,9 +55,15 @@ export class CatalogoPage implements OnInit {
   resultadosPorLinea: Record<number, BuscarItemDto[]> = {};
   seleccionPorLinea: Record<number, number | null> = {};
   private debounceBusqueda?: ReturnType<typeof setTimeout>;
+  filtroPendientes = '';
+  private readonly pendientesPager = new ClientPager<MaterialPendienteGlobalDto>();
 
   // Sección 3
   noSsoma: MaterialNoSsomaDto[] = [];
+  filtroNoSsoma = '';
+  private readonly noSsomaPager = new ClientPager<MaterialNoSsomaDto>();
+
+  private readonly familiasPager = new ClientPager<FamiliaCatalogoDto>();
 
   ngOnInit(): void {
     this.cambiarSeccion('normalizado');
@@ -71,12 +82,56 @@ export class CatalogoPage implements OnInit {
     return this.familias.filter((f) => f.nombre.toLowerCase().includes(q));
   }
 
+  onFiltroFamiliasChange(): void {
+    this.familiasPager.reset();
+  }
+
+  get familiasCurrentPage(): number { return this.familiasPager.currentPage; }
+  get familiasTotalPages(): number { return this.familiasPager.totalPages(this.familiasFiltradas); }
+  get familiasPaged(): FamiliaCatalogoDto[] { return this.familiasPager.page(this.familiasFiltradas); }
+  changeFamiliasPage(page: number): void { this.familiasPager.goTo(page); }
+
+  get pendientesFiltrados(): MaterialPendienteGlobalDto[] {
+    if (!this.filtroPendientes.trim()) return this.pendientes;
+    const q = this.filtroPendientes.toLowerCase();
+    return this.pendientes.filter(
+      (p) => (p.projectDescription ?? '').toLowerCase().includes(q) || (p.recursoCrudo ?? '').toLowerCase().includes(q),
+    );
+  }
+
+  onFiltroPendientesChange(): void {
+    this.pendientesPager.reset();
+  }
+
+  get pendientesCurrentPage(): number { return this.pendientesPager.currentPage; }
+  get pendientesTotalPages(): number { return this.pendientesPager.totalPages(this.pendientesFiltrados); }
+  get pendientesPaged(): MaterialPendienteGlobalDto[] { return this.pendientesPager.page(this.pendientesFiltrados); }
+  changePendientesPage(page: number): void { this.pendientesPager.goTo(page); }
+
+  get noSsomaFiltrados(): MaterialNoSsomaDto[] {
+    if (!this.filtroNoSsoma.trim()) return this.noSsoma;
+    const q = this.filtroNoSsoma.toLowerCase();
+    return this.noSsoma.filter(
+      (n) => (n.projectDescription ?? '').toLowerCase().includes(q) || (n.recursoCrudo ?? '').toLowerCase().includes(q),
+    );
+  }
+
+  onFiltroNoSsomaChange(): void {
+    this.noSsomaPager.reset();
+  }
+
+  get noSsomaCurrentPage(): number { return this.noSsomaPager.currentPage; }
+  get noSsomaTotalPages(): number { return this.noSsomaPager.totalPages(this.noSsomaFiltrados); }
+  get noSsomaPaged(): MaterialNoSsomaDto[] { return this.noSsomaPager.page(this.noSsomaFiltrados); }
+  changeNoSsomaPage(page: number): void { this.noSsomaPager.goTo(page); }
+
   private cargarNormalizado(): void {
     this.loading = true;
     this.loader.show();
     this.svc.listarFamiliasCatalogo().subscribe({
       next: (familias) => {
         this.familias = familias;
+        this.familiasPager.reset();
         this.loading = false;
         this.loader.hide();
         this.cdr.markForCheck();
@@ -124,6 +179,7 @@ export class CatalogoPage implements OnInit {
     this.svc.obtenerSinEstandarizarGlobal().subscribe({
       next: (lineas) => {
         this.pendientes = lineas;
+        this.pendientesPager.reset();
         this.loading = false;
         this.loader.hide();
         this.cdr.markForCheck();
@@ -148,6 +204,13 @@ export class CatalogoPage implements OnInit {
         },
       });
     }, 300);
+  }
+
+  resultadoOpts(lineaId: number): any[] {
+    return (this.resultadosPorLinea[lineaId] ?? []).map((r) => ({
+      ...r,
+      _label: `${r.nombre} (${r.nombreFamilia})`,
+    }));
   }
 
   autorizar(linea: MaterialPendienteGlobalDto): void {
@@ -193,6 +256,7 @@ export class CatalogoPage implements OnInit {
     this.svc.obtenerNoSsoma().subscribe({
       next: (lineas) => {
         this.noSsoma = lineas;
+        this.noSsomaPager.reset();
         this.loading = false;
         this.loader.hide();
         this.cdr.markForCheck();

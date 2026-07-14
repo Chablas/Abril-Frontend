@@ -8,12 +8,13 @@ import {
   ESTADOS_ENTREGABLE,
 } from '../../../accidente-incidente.dtos';
 import { environment } from '../../../../../../../../environments/environment';
+import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-entregables-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './entregables-tab.component.html',
   styleUrl: './entregables-tab.component.css',
 })
@@ -28,6 +29,17 @@ export class EntregablesTabComponent implements OnInit {
   subiendoId?: number;
 
   readonly estadosEntregable = ESTADOS_ENTREGABLE;
+  readonly estadosEntregableOpts = ESTADOS_ENTREGABLE.map((s) => ({ value: s, label: s }));
+  readonly tipoMedidaOpts = [
+    { value: 'Correctiva', label: 'Correctiva' },
+    { value: 'Preventiva', label: 'Preventiva' },
+  ];
+  readonly estadoMedidaOpts = [
+    { value: 'Pendiente', label: 'Pendiente' },
+    { value: 'En proceso', label: 'En proceso' },
+    { value: 'Cumplido', label: 'Cumplido' },
+    { value: 'No aplica', label: 'No aplica' },
+  ];
 
   // ── Medidas de control ─────────────────────────────────────────────────────
   medidas: any[] = [];

@@ -24,7 +24,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 0.95rem;
-  background: #64bc04;
+  background: var(--color-abril-standard);
   color: #ffffff;
   border-radius: 10px;
   font-weight: 600;
@@ -33,5 +33,5 @@
 }
 
 .btn-primary:hover {
-  background: #5aa904;
+  background: var(--color-abril-standard-hover);
 }

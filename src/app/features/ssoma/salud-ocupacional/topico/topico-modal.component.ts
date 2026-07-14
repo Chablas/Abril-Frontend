@@ -1,19 +1,19 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
-  EventEmitter, Input, OnDestroy, OnInit, Output,
+  EventEmitter, Input, OnInit, Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 import { TopicoService } from './topico.service';
 import {
   TopicoAtencionDto, TopicoTipoAtencionDto, CrearTopicoAtencionDto,
   TopicoEvolucionDto, TopicoEvolucionCreateDto,
 } from './topico.dtos';
-import { WorkerSearchService } from '../services/worker-search.service';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -22,11 +22,11 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-topico-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './topico-modal.component.html',
   styleUrl: './topico-modal.component.css',
 })
-export class TopicoModalComponent implements OnInit, OnDestroy {
+export class TopicoModalComponent implements OnInit {
   @Input() atencion: TopicoAtencionDto | null = null;
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
@@ -44,10 +44,7 @@ export class TopicoModalComponent implements OnInit, OnDestroy {
   evGuardando        = false;
 
   // Worker search
-  workerQuery    = '';
-  workerResults  : WorkerSearchItemDto[] = [];
   workerSelected : WorkerSearchItemDto | null = null;
-  workerSearching = false;
 
   // Tipos de atención cargados desde API
   tiposAtencion: TopicoTipoAtencionDto[] = [];
@@ -77,24 +74,16 @@ export class TopicoModalComponent implements OnInit, OnDestroy {
   observaciones       = '';
   archivoInforme      : File | null = null;
 
-  private workerQ$ = new Subject<string>();
-  private destroy$ = new Subject<void>();
-
   get isEdicion(): boolean { return !!this.atencion?.id; }
 
   constructor(
     private svc          : TopicoService,
-    private workerSearch : WorkerSearchService,
     private errorService : ErrorService,
     private loaderService: LoaderService,
     private cdr          : ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.workerQ$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(q => this.runWorkerSearch(q));
-
     // Cargar tipos de atención desde API
     this.svc.getTiposAtencion().subscribe({
       next: tipos => {
@@ -106,8 +95,6 @@ export class TopicoModalComponent implements OnInit, OnDestroy {
 
     if (this.atencion) this.patchForm(this.atencion);
   }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   private patchForm(a: TopicoAtencionDto): void {
     this.fecha              = a.fecha;
@@ -143,36 +130,11 @@ export class TopicoModalComponent implements OnInit, OnDestroy {
         empresaActualId: undefined,
         empresaActual: undefined,
       } as WorkerSearchItemDto;
-      this.workerQuery = this.workerSelected.apellidoNombre;
     }
   }
 
-  // ── Worker search ─────────────────────────────────────────────────────────
-  onWorkerQueryChange(value: string): void {
-    this.workerQuery = value;
-    if (this.workerSelected) this.workerSelected = null;
-    if (!value || value.trim().length < 2) { this.workerResults = []; return; }
-    this.workerSearching = true;
-    this.workerQ$.next(value.trim());
-  }
-
-  private runWorkerSearch(q: string): void {
-    this.workerSearch.search(q).subscribe({
-      next: res => { this.workerResults = res; this.workerSearching = false; this.cdr.detectChanges(); },
-      error: ()  => { this.workerResults = []; this.workerSearching = false; this.cdr.detectChanges(); },
-    });
-  }
-
-  selectWorker(w: WorkerSearchItemDto): void {
+  onWorkerSelectedChange(w: WorkerSearchItemDto | null): void {
     this.workerSelected = w;
-    this.workerQuery    = w.apellidoNombre;
-    this.workerResults  = [];
-  }
-
-  clearWorker(): void {
-    this.workerSelected = null;
-    this.workerQuery    = '';
-    this.workerResults  = [];
   }
 
   onFile(ev: Event): void {

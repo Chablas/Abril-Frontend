@@ -3,6 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  background: #ffffff;
 }
 
 .lista-page {
@@ -163,9 +164,10 @@
 .col-id { color: #718096; font-size: .8rem; width: 40px; }
 .col-fecha { white-space: nowrap; width: 80px; }
 .col-nombre { font-weight: 500; }
+.col-nombre-sub { display: block; font-size: .75rem; font-weight: 400; color: #9ca3af; }
 .col-auditor { color: #4a5568; }
-.col-proyecto { color: #4a5568; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col-actividad { color: #718096; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-proyecto { color: #4a5568; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-actividad { color: #718096; white-space: normal; word-break: break-word; }
 .col-nivel { white-space: nowrap; }
 .col-estado { white-space: nowrap; }
 .col-acc { width: 40px; }
@@ -196,21 +198,8 @@
   color: #276749;
 }
 
-.btn-ver {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background: #f7fafc;
-  color: #4a5568;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .95rem;
-  transition: all .12s;
-}
-.btn-ver:hover { background: #ebf8ff; border-color: #bee3f8; color: #2b6cb0; }
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
 
 /* Paginación */
 .paginacion {

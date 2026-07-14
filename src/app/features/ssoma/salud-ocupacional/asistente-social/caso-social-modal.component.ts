@@ -1,15 +1,15 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
-  EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges,
+  EventEmitter, Input, OnChanges, Output, SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 import { CasoSocialService } from '../services/caso-social.service';
-import { WorkerSearchService } from '../services/worker-search.service';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import {
   CasoSocialDetalleDto,
@@ -38,11 +38,11 @@ const SCTR_ESTADOS = [
   selector: 'app-caso-social-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './caso-social-modal.component.html',
   styleUrl: './caso-social-modal.component.css',
 })
-export class CasoSocialModalComponent implements OnChanges, OnDestroy {
+export class CasoSocialModalComponent implements OnChanges {
   /** null = crear, string UUID = editar/ver */
   @Input() casoId: string | null = null;
   @Output() closed = new EventEmitter<void>();
@@ -54,6 +54,11 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
   readonly prioridadesOpts = ['Alta', 'Media', 'Baja'];
   readonly seguimientoTipos = ['Visita', 'Llamada', 'Entrevista', 'Derivación', 'Cierre', 'Otro'];
 
+  /** Arrays de strings anteriores, mapeados a {id,label} para app-search-select. */
+  get tiposOptsForSelect() { return this.tiposOpts.map(t => ({ id: t, label: t })); }
+  get prioridadesOptsForSelect() { return this.prioridadesOpts.map(p => ({ id: p, label: p })); }
+  get seguimientoTiposForSelect() { return this.seguimientoTipos.map(t => ({ id: t, label: t })); }
+
   tab: TabKey = 'info';
   loading = false;
   saving  = false;
@@ -64,12 +69,7 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
   loadingSctr = false;
 
   // ── Worker search (solo creación) ──────────────────────────────────────────
-  workerQuery    = '';
-  workerResults  : WorkerSearchItemDto[] = [];
   workerSelected : WorkerSearchItemDto | null = null;
-  workerSearching = false;
-  private workerQ$ = new Subject<string>();
-  private destroy$ = new Subject<void>();
 
   // ── Formulario crear/editar ─────────────────────────────────────────────────
   fTipo         = 'Familiar';
@@ -104,7 +104,6 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
 
   constructor(
     private svc: CasoSocialService,
-    private workerSvc: WorkerSearchService,
     private errorSvc: ErrorService,
     private loaderSvc: LoaderService,
     private cdr: ChangeDetectorRef,
@@ -116,30 +115,20 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
       this.tab = 'info';
       if (this.isNuevo) {
         this.resetCreate();
-        this.setupWorkerSearch();
       } else if (this.casoId) {
         this.cargar();
       }
     }
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
-
   private resetCreate(): void {
     this.fTipo = 'Familiar'; this.fPrioridad = 'Media';
     this.fFechaApertura = ''; this.fMotivo = ''; this.fDescripcion = '';
-    this.workerQuery = ''; this.workerResults = []; this.workerSelected = null;
+    this.workerSelected = null;
   }
 
-  private setupWorkerSearch(): void {
-    this.workerQ$.pipe(debounceTime(300), takeUntil(this.destroy$)).subscribe((q) => {
-      if (q.length < 2) { this.workerResults = []; this.cdr.detectChanges(); return; }
-      this.workerSearching = true;
-      this.workerSvc.search(q).subscribe({
-        next: (r) => { this.workerResults = r; this.workerSearching = false; this.cdr.detectChanges(); },
-        error: () => { this.workerSearching = false; this.cdr.detectChanges(); },
-      });
-    });
+  onWorkerSelectedChange(w: WorkerSearchItemDto | null): void {
+    this.workerSelected = w;
   }
 
   cargar(): void {
@@ -183,15 +172,6 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
       },
       error: () => { this.loadingSctr = false; this.cdr.detectChanges(); },
     });
-  }
-
-  onWorkerQuery(q: string): void { this.workerQ$.next(q); }
-
-  selectWorker(w: WorkerSearchItemDto): void {
-    this.workerSelected = w;
-    this.workerQuery = w.apellidoNombre;
-    this.workerResults = [];
-    this.cdr.detectChanges();
   }
 
   guardar(): void {

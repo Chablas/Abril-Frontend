@@ -1,99 +1,119 @@
-<app-base-modal *ngIf="open" title="Nueva convalidación" width="w-[800px]" (closeModal)="close()">
-  <div class="form-wrapper">
-    <h4 class="section-title">Trabajador</h4>
-    <app-worker-search-input [selected]="worker" (selectedChange)="onWorkerSelected($event)"></app-worker-search-input>
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Nueva convalidación"
+  icono="ti-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="close()">
 
-    <ng-container *ngIf="worker">
-      <h4 class="section-title mt-6">EMO origen *</h4>
-      <div *ngIf="loadingEmos" class="hint">Cargando EMOs del trabajador…</div>
+  <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+  <app-worker-search-input
+    color="var(--color-abril-logo-blue)"
+    [selected]="worker"
+    (selectedChange)="onWorkerSelected($event)">
+  </app-worker-search-input>
 
-      <div *ngIf="!loadingEmos && emosDisponibles.length === 0" class="hint text-red-600">
-        Este trabajador no tiene EMOs vigentes que puedan convalidarse.
-      </div>
+  <ng-container *ngIf="worker">
+    <h2 class="paso-title mt-6"><i class="ti ti-stethoscope"></i> EMO origen *</h2>
+    <div *ngIf="loadingEmos" class="hint">Cargando EMOs del trabajador…</div>
 
-      <div *ngIf="!loadingEmos && emosDisponibles.length > 0">
+    <div *ngIf="!loadingEmos && emosDisponibles.length === 0" class="hint text-red-600">
+      Este trabajador no tiene EMOs vigentes que puedan convalidarse.
+    </div>
+
+    <div *ngIf="!loadingEmos && emosDisponibles.length > 0">
+      <div class="abril-field">
         <app-search-select
+          color="var(--color-abril-logo-blue)"
           [options]="emoOrigenOptions"
           valueField="id"
           displayField="display"
           [value]="emoOrigenId"
-          [showLabel]="false"
           placeholder="Selecciona EMO origen"
-          (valueChange)="emoOrigenId = $event"
-        ></app-search-select>
+          (valueChange)="emoOrigenId = $event">
+        </app-search-select>
+      </div>
 
-        <div *ngIf="selectedEmo" class="emo-preview">
-          <div>
-            <div class="ep-title">{{ selectedEmo.tipoEmo }} · {{ selectedEmo.empresa }}</div>
-            <div class="ep-meta">
-              Fecha EMO: {{ selectedEmo.fechaEmo | date: 'dd/MM/yyyy' }}
-              · Vence: {{ selectedEmo.fechaVencimiento | date: 'dd/MM/yyyy' }}
-            </div>
+      <div *ngIf="selectedEmo" class="emo-preview">
+        <div>
+          <div class="ep-title">{{ selectedEmo.tipoEmo }} · {{ selectedEmo.empresa }}</div>
+          <div class="ep-meta">
+            Fecha EMO: {{ selectedEmo.fechaEmo | date: 'dd/MM/yyyy' }}
+            · Vence: {{ selectedEmo.fechaVencimiento | date: 'dd/MM/yyyy' }}
           </div>
-          <span class="badge border" [ngClass]="aptitudClass(selectedEmo.aptitud)">
-            {{ selectedEmo.aptitud }}
-          </span>
         </div>
-      </div>
-    </ng-container>
-
-    <h4 class="section-title mt-6">Datos de la convalidación</h4>
-    <div class="grid-2">
-      <div class="col-span-2">
-        <label class="field-label">Empresa destino *</label>
-        <app-search-select
-          [options]="empresas"
-          valueField="id"
-          displayField="nombre"
-          [value]="empresaDestinoId"
-          [showLabel]="false"
-          placeholder="Selecciona empresa"
-          (valueChange)="empresaDestinoId = $event"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="field-label">Fecha convalidación *</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaConvalidacion" />
-      </div>
-      <div>
-        <label class="field-label">Fecha vencimiento *</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
-      </div>
-      <div>
-        <label class="field-label">Médico</label>
-        <app-search-select
-          [options]="medicos"
-          valueField="id"
-          displayField="apellidoNombre"
-          [value]="medicoId"
-          [showLabel]="false"
-          placeholder="Selecciona médico"
-          (valueChange)="medicoId = $event"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="field-label">Resultado *</label>
-        <app-search-select
-          [options]="resultadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="resultado"
-          [showLabel]="false"
-          placeholder="Selecciona resultado"
-          (valueChange)="resultado = $event"
-        ></app-search-select>
-      </div>
-      <div class="col-span-2">
-        <label class="field-label">Notas</label>
-        <textarea rows="2" class="field-input" [(ngModel)]="notas"></textarea>
+        <span class="badge border" [ngClass]="aptitudClass(selectedEmo.aptitud)">
+          {{ selectedEmo.aptitud }}
+        </span>
       </div>
     </div>
+  </ng-container>
 
-    <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
-      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
-        {{ saving ? 'Guardando…' : 'Registrar convalidación' }}
-      </button>
-    </footer>
+  <h2 class="paso-title mt-6"><i class="ti ti-clipboard-list"></i> Datos de la convalidación</h2>
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Empresa destino *"
+        [options]="empresas"
+        valueField="id"
+        displayField="nombre"
+        [value]="empresaDestinoId"
+        placeholder="Selecciona empresa"
+        (valueChange)="empresaDestinoId = $event">
+      </app-search-select>
+    </div>
   </div>
-</app-base-modal>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha convalidación *</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaConvalidacion" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha vencimiento *</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaVencimiento" />
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Médico"
+        [options]="medicos"
+        valueField="id"
+        displayField="apellidoNombre"
+        [value]="medicoId"
+        placeholder="Selecciona médico"
+        (valueChange)="medicoId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Resultado *"
+        [options]="resultadoOptions"
+        valueField="id"
+        displayField="nombre"
+        [value]="resultado"
+        placeholder="Selecciona resultado"
+        (valueChange)="resultado = $event">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="abril-field">
+    <label class="abril-field-label">Notas</label>
+    <textarea rows="2" class="abril-field-input" [(ngModel)]="notas"></textarea>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Registrar convalidación' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

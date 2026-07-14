@@ -11,7 +11,7 @@
 <section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- Tabla -->
-  <div class="w-full flex-1 min-h-0 overflow-auto">
+  <div class="abril-table-wrap">
       <table class="abril-table">
         <colgroup>
           <col style="width:50px"/>
@@ -99,13 +99,13 @@
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
     </div>
   </div>
 
@@ -133,9 +133,9 @@
     </app-search-select>
   </div>
 
-  <div class="w-full">
-    <label class="abril-filter-label">ID Trabajador</label>
-    <input type="number" class="abril-filter-input" [(ngModel)]="filtros.workerId"
+  <div class="w-full abril-field">
+    <label class="abril-field-label">ID Trabajador</label>
+    <input type="number" class="abril-field-input" [(ngModel)]="filtros.workerId"
       placeholder="Número" (ngModelChange)="onWorkerChange()" />
   </div>
 </app-filter-modal>

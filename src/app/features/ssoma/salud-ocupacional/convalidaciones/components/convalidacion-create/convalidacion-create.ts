@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { WorkerSearchInput } from '../../../shared/worker-search-input/worker-search-input';
 import { ConvalidacionService } from '../../../services/convalidacion.service';
@@ -33,7 +33,7 @@ import { aptitudBadgeClass } from '../../../shared/aptitud.utils';
 @Component({
   selector: 'app-convalidacion-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, WorkerSearchInput],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './convalidacion-create.html',
   styleUrl: './convalidacion-create.css',
 })

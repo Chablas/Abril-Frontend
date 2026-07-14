@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -25,7 +25,7 @@ import {
 @Component({
   selector: 'app-medico-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect],
   templateUrl: './medico-form.html',
   styleUrl: './medico-form.css',
 })
@@ -39,6 +39,11 @@ export class MedicoForm implements OnChanges {
 
   model: MedicoUpsertDto = this.empty();
   saving = false;
+
+  readonly estadoOpts = [
+    { id: true, label: 'Activo' },
+    { id: false, label: 'Inactivo' },
+  ];
 
   constructor(
     private service: CatalogosSaludService,

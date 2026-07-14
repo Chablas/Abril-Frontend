@@ -1,23 +1,31 @@
-<app-base-modal [title]="'Registrar Descanso Médico'" [fullScreen]="fullScreen" (closeModal)="closed.emit()">
-  <div class="modal-body">
+<app-abril-modal-panel
+  titulo="Registrar Descanso Médico"
+  icono="ti-bed"
+  variant="blue"
+  (closeModal)="closed.emit()">
 
-    <div class="field-row">
-      <div class="field">
-        <label class="field-label">Tipo *</label>
-        <select class="field-input" [(ngModel)]="tipo">
-          <option *ngFor="let o of tipoOpts" [value]="o.id">{{ o.label }}</option>
-        </select>
-      </div>
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Tipo *"
+        [options]="tipoOpts"
+        valueField="id"
+        displayField="label"
+        [value]="tipo"
+        placeholder="Selecciona tipo"
+        [allowClear]="false"
+        (valueChange)="tipo = $event">
+      </app-search-select>
     </div>
 
-    <div class="field-row two-cols">
-      <div class="field">
-        <label class="field-label">Fecha inicio *</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaInicio" />
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha inicio *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaInicio" />
       </div>
-      <div class="field">
-        <label class="field-label">Fecha fin *</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaFin" />
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha fin *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaFin" />
       </div>
     </div>
 
@@ -25,24 +33,24 @@
       <span>{{ diasCalculados }} día{{ diasCalculados !== 1 ? 's' : '' }} de descanso</span>
     </div>
 
-    <div class="field">
-      <label class="field-label">Motivo</label>
-      <input type="text" class="field-input" [(ngModel)]="motivo" placeholder="Motivo del descanso" />
+    <div class="abril-field">
+      <label class="abril-field-label">Motivo</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="motivo" placeholder="Motivo del descanso" />
     </div>
 
-    <div class="field-row two-cols">
-      <div class="field">
-        <label class="field-label">Diagnóstico</label>
-        <input type="text" class="field-input" [(ngModel)]="diagnostico" placeholder="Diagnóstico médico" />
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Diagnóstico</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="diagnostico" placeholder="Diagnóstico médico" />
       </div>
-      <div class="field">
-        <label class="field-label">CIE-10</label>
-        <input type="text" class="field-input" [(ngModel)]="diagnosticoCie10" placeholder="Ej. J06.9" />
+      <div class="abril-field">
+        <label class="abril-field-label">CIE-10</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="diagnosticoCie10" placeholder="Ej. J06.9" />
       </div>
     </div>
 
-    <div class="field">
-      <label class="field-label">Certificado médico</label>
+    <div class="abril-field">
+      <label class="abril-field-label">Certificado médico</label>
       <div *ngIf="!documento">
         <app-file-selector
           accept=".pdf,.jpg,.jpeg,.png"
@@ -57,12 +65,11 @@
       </div>
     </div>
 
-  </div>
-
-  <div class="modal-footer" slot="footer">
-    <button class="btn-ghost" (click)="closed.emit()">Cancelar</button>
-    <button class="btn-primary" [disabled]="saving" (click)="guardar()">
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="closed.emit()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="saving" (click)="guardar()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
       {{ saving ? 'Guardando...' : 'Registrar descanso' }}
     </button>
   </div>
-</app-base-modal>
+</app-abril-modal-panel>

@@ -221,6 +221,15 @@ export class AccidenteListaComponent implements OnInit {
     return 'nivel-critico';
   }
 
+  /** Colores del badge de severidad para app-search-select ([badgeStyle]) — mismos umbrales que nivelClass. */
+  nivelBadgeStyle(n?: number): { background: string; color: string } | null {
+    if (!n) return null;
+    if (n <= 2) return { background: '#dcfce7', color: '#166534' };
+    if (n <= 3) return { background: '#fef9c3', color: '#713f12' };
+    if (n <= 4) return { background: '#fee2e2', color: '#991b1b' };
+    return { background: 'var(--color-abril-standard)', color: '#fff' };
+  }
+
   tipoClass(codigo: string): string {
     const map: Record<string, string> = { AC: 'tipo-accidente', IN: 'tipo-incidente', NC: 'tipo-nc', AL: 'tipo-alerta' };
     return map[codigo] ?? 'tipo-incidente';
@@ -243,8 +252,9 @@ export class AccidenteListaComponent implements OnInit {
   }
 
   readonly nivelesSeveridad = [1, 2, 3, 4, 5, 6];
+  readonly nivelesSeveridadOpts = [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: `N${n}` }));
 
-  actualizarSeveridad(item: FlashReportListItemDto, campo: 'real' | 'potencial', valorRaw: string): void {
+  actualizarSeveridad(item: FlashReportListItemDto, campo: 'real' | 'potencial', valorRaw: string | number): void {
     const valor = valorRaw === '' ? undefined : Number(valorRaw);
     const real = campo === 'real' ? valor : item.consecuenciaRealPersonal;
     const potencial = campo === 'potencial' ? valor : item.consecuenciaPotencialPersonal;

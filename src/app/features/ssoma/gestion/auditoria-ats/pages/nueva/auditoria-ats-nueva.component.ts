@@ -3,7 +3,9 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   OnInit,
+  Output,
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,7 +23,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { TrabajadorHabService } from '../../../../../habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
 export interface RespuestaForm {
   preguntaId: number;
@@ -44,11 +46,12 @@ export const SCORE_CONFIG = [
   selector: 'app-auditoria-ats-nueva',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
   templateUrl: './auditoria-ats-nueva.component.html',
   styleUrl: './auditoria-ats-nueva.component.css',
 })
 export class AuditoriaAtsNuevaComponent implements OnInit {
+  @Output() closeModal = new EventEmitter<void>();
   // Catálogos
   workers: WorkerHabilitacionListDto[] = [];
   proyectos: any[] = [];
@@ -61,7 +64,6 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
   auditorNombre = '';
   auditadoId: number | null = null;
   auditadoNombre = '';
-  auditadoEmail = '';
   proyectoId: number | null = null;
   actividad = '';
   lugar = '';
@@ -130,6 +132,14 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
     const w = id ? this.workers.find((x) => x.workerId === id) : null;
     this.auditadoNombre = w?.apellidoNombre ?? '';
     this.cdr.markForCheck();
+  }
+
+  get auditorSeleccionado(): WorkerHabilitacionListDto | null {
+    return this.auditorId ? (this.workers.find((w) => w.workerId === this.auditorId) ?? null) : null;
+  }
+
+  get auditadoSeleccionado(): WorkerHabilitacionListDto | null {
+    return this.auditadoId ? (this.workers.find((w) => w.workerId === this.auditadoId) ?? null) : null;
   }
 
   // ── Fotos ──────────────────────────────────────────────────────────────────
@@ -249,7 +259,6 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
         auditorWorkerId: this.auditorId!,
         auditadoWorkerId: this.auditadoId!,
         proyectoId: this.proyectoId ?? undefined,
-        emailAuditado: this.auditadoEmail || undefined,
         actividad: this.actividad || undefined,
         lugar: this.lugar || undefined,
         observaciones: this.observaciones || undefined,
@@ -273,9 +282,10 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
             cancelButtonText: 'Nueva auditoría',
           }).then((res) => {
             if (res.isConfirmed) {
+              this.closeModal.emit();
               this.router.navigate(['/ssoma/gestion/auditoria-ats', id]);
             } else {
-              this.router.navigate(['/ssoma/gestion/auditoria-ats/nueva']);
+              this.resetForm();
             }
           });
         },
@@ -288,7 +298,30 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
       });
   }
 
+  private resetForm(): void {
+    this.fecha = new Date().toISOString().split('T')[0];
+    this.auditorId = null;
+    this.auditorNombre = '';
+    this.auditadoId = null;
+    this.auditadoNombre = '';
+    this.proyectoId = null;
+    this.actividad = '';
+    this.lugar = '';
+    this.observaciones = '';
+    this.fotosBase64 = [];
+    this.fotosPreview = [];
+    this.respuestas = this.preguntas.map((p) => ({
+      preguntaId: p.id,
+      texto: p.texto,
+      puntaje: null,
+      comentario: '',
+      showComentario: false,
+    }));
+    this.modoEvaluacion = false;
+    this.cdr.markForCheck();
+  }
+
   cancelar(): void {
-    this.router.navigate(['/ssoma/gestion/auditoria-ats/lista']);
+    this.closeModal.emit();
   }
 }

@@ -7,26 +7,49 @@
 
       <div class="f-group">
         <label class="f-label">Proyecto</label>
-        <select class="f-select f-select--wide"
-                [ngModel]="proyectoFiltro()"
-                (ngModelChange)="proyectoFiltro.set($event ? +$event : null)">
-          <option [ngValue]="null">Todos los proyectos</option>
-          <option *ngFor="let p of proyectos()" [value]="p.id">{{ p.nombre }}</option>
-        </select>
+        <app-search-select
+          [options]="proyectos()"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Buscar proyecto..."
+          [value]="proyectoFiltro()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="proyectoFiltro.set($event ? +$event : null)">
+        </app-search-select>
       </div>
 
       <div class="f-group">
         <label class="f-label">Mes</label>
-        <select class="f-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
-          <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
-        </select>
+        <app-search-select
+          [options]="meses"
+          valueField="valor"
+          displayField="nombre"
+          placeholder="Todos los meses"
+          [sortAlpha]="false"
+          [value]="mes()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="mes.set(+$event)">
+        </app-search-select>
       </div>
 
       <div class="f-group">
         <label class="f-label">Año</label>
-        <select class="f-select f-select--xs" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
-          <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-        </select>
+        <app-search-select
+          [options]="anios"
+          valueField="valor"
+          displayField="nombre"
+          placeholder="Todos los años"
+          [sortAlpha]="false"
+          [value]="anio()"
+          [compact]="true"
+          [showLabel]="false"
+          color="var(--color-abril-primary)"
+          (valueChange)="anio.set(+$event)">
+        </app-search-select>
       </div>
 
       <div class="f-sep"></div>

@@ -1,5 +1,11 @@
-<app-base-modal *ngIf="open" title="Revisar convalidación" width="w-[760px]" (closeModal)="close()">
-  <div class="form-wrapper" *ngIf="item">
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Revisar convalidación"
+  icono="ti-check"
+  variant="blue"
+  width="760px"
+  (closeModal)="close()">
+  <ng-container *ngIf="item">
 
     <div class="worker-banner">
       <div class="worker-name">{{ item.workerNombre }}</div>
@@ -13,7 +19,7 @@
       </div>
     </div>
 
-    <h4 class="section-title mt-6">Documentos del EMO</h4>
+    <h2 class="paso-title mt-6"><i class="ti ti-files"></i> Documentos del EMO</h2>
     <div class="doc-grid">
       <div class="doc-card">
         <div class="doc-card-icon resultado-icon">
@@ -102,68 +108,75 @@
       </div>
     </div>
 
-    <h4 class="section-title mt-6">Resolución del médico</h4>
-    <div class="grid-2">
-      <div class="col-span-2">
-        <label class="field-label">Empresa destino *</label>
+    <h2 class="paso-title mt-6"><i class="ti ti-clipboard-check"></i> Resolución del médico</h2>
+    <div class="form-row">
+      <div class="abril-field">
         <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Empresa destino *"
           [options]="empresas"
           valueField="id"
           displayField="nombre"
           [value]="empresaDestinoId"
-          [showLabel]="false"
           placeholder="Seleccionar empresa destino"
-          (valueChange)="empresaDestinoId = $event"
-        ></app-search-select>
+          (valueChange)="empresaDestinoId = $event">
+        </app-search-select>
       </div>
-      <div class="col-span-2">
-        <label class="field-label">Resultado *</label>
+    </div>
+    <div class="form-row">
+      <div class="abril-field">
         <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Resultado *"
           [options]="resultadoOptions"
           valueField="id"
           displayField="nombre"
           [value]="resultado"
-          [showLabel]="false"
           placeholder="Seleccionar resultado"
-          (valueChange)="resultado = $event"
-        ></app-search-select>
+          (valueChange)="resultado = $event">
+        </app-search-select>
       </div>
-      <div>
-        <label class="field-label">Fecha vencimiento{{ fechaVencimientoRequerida ? ' *' : '' }}</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaVencimiento" />
+    </div>
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha vencimiento{{ fechaVencimientoRequerida ? ' *' : '' }}</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fechaVencimiento" />
       </div>
-      <div>
-        <label class="field-label">Médico</label>
+      <div class="abril-field">
         <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Médico"
           [options]="medicos"
           valueField="id"
           displayField="apellidoNombre"
           [value]="medicoId"
-          [showLabel]="false"
           placeholder="Seleccionar médico"
-          (valueChange)="medicoId = $event"
-        ></app-search-select>
+          (valueChange)="medicoId = $event">
+        </app-search-select>
       </div>
     </div>
 
-    <div class="notes-section">
-      <label class="field-label">Notas / Observaciones</label>
+    <div class="abril-field">
+      <label class="abril-field-label">Notas / Observaciones</label>
       <textarea
         rows="4"
-        class="field-input notes-textarea"
+        class="abril-field-input"
         placeholder="Motivo de la decisión, observaciones clínicas, condiciones de la convalidación…"
         [(ngModel)]="notas"
       ></textarea>
     </div>
 
-    <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
-      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
-        {{ saving ? 'Guardando…' : 'Guardar resolución' }}
-      </button>
-    </footer>
+  </ng-container>
+
+  <div modalFooter *ngIf="item">
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar resolución' }}
+    </button>
   </div>
-</app-base-modal>
+
+</app-abril-modal-panel>
 
 <app-document-viewer
   [archivoUrl]="visorUrl"

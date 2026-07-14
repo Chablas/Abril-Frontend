@@ -102,10 +102,14 @@
 
     <div class="oc-field">
       <label class="oc-label">Categoría <span style="color:#ef4444">*</span></label>
-      <select class="oc-select" [(ngModel)]="agregarForm.categoriaId">
-        <option [ngValue]="undefined">— Selecciona —</option>
-        <option *ngFor="let c of categoriasFiltradas" [ngValue]="c.id">{{ c.nombre }}</option>
-      </select>
+      <app-search-select
+        [options]="categoriasFiltradas"
+        valueField="id"
+        displayField="nombre"
+        [value]="agregarForm.categoriaId"
+        placeholder="Selecciona categoría"
+        (valueChange)="agregarForm.categoriaId = $event">
+      </app-search-select>
     </div>
 
     <div class="oc-field">
@@ -120,14 +124,16 @@
 
     <div class="oc-field">
       <label class="oc-label">Frecuencia</label>
-      <select class="oc-select" [(ngModel)]="agregarForm.frecuencia">
-        <option value="Mensual">Mensual</option>
-        <option value="Bimestral">Bimestral</option>
-        <option value="Trimestral">Trimestral</option>
-        <option value="Semestral">Semestral</option>
-        <option value="Anual">Anual</option>
-        <option value="Unica">Única</option>
-      </select>
+      <app-search-select
+        [options]="frecuenciaOpts"
+        valueField="id"
+        displayField="label"
+        [value]="agregarForm.frecuencia"
+        placeholder="Selecciona frecuencia"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        (valueChange)="agregarForm.frecuencia = $event">
+      </app-search-select>
     </div>
 
     <div class="oc-grid2">

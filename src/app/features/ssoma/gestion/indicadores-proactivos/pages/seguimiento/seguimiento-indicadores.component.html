@@ -9,12 +9,30 @@
       <span class="toolbar-count" *ngIf="proyectos().length > 0">{{ proyectos().length }} proyectos activos</span>
     </div>
     <div class="toolbar-right">
-      <select class="tb-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
-        <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
-      </select>
-      <select class="tb-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
-        <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-      </select>
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
       <label class="tb-check">
         <input type="checkbox" [ngModel]="verOcultos()" (ngModelChange)="verOcultos.set($event); cargar()" />
         Ver ocultas

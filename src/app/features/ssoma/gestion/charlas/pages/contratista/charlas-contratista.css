@@ -5,6 +5,7 @@
   padding: 16px;
   max-width: 900px;
   margin: 0 auto;
+  background: #ffffff;
 }
 
 .header h2 {
@@ -133,7 +134,7 @@
 }
 
 .btn-primary {
-  background: #64bc04;
+  background: var(--color-abril-standard);
   color: #fff;
   border: none;
   border-radius: 8px;

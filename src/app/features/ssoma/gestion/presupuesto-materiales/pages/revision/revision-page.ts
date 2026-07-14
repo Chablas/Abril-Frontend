@@ -9,6 +9,7 @@ import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-
 import { MaterialPendienteDto, RevisionDecisionDto } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ProyectoSimple {
   projectId: number;
@@ -18,7 +19,7 @@ interface ProyectoSimple {
 @Component({
   selector: 'app-revision-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './revision-page.html',
   styleUrl: './revision-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

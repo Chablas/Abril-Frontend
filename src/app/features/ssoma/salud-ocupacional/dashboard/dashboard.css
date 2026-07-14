@@ -33,12 +33,12 @@
 
 .dash-shortcut-btn i {
   font-size: 1rem;
-  color: #64bc04;
+  color: var(--color-abril-standard);
 }
 
 .dash-shortcut-btn:hover {
-  background: #e5f7d1;
-  border-color: #64bc04;
+  background: var(--color-abril-standard-light);
+  border-color: var(--color-abril-standard);
   color: #2e7d32;
 }
 
@@ -174,8 +174,8 @@
 }
 
 .quick-action:hover {
-  border-color: #64bc04;
-  box-shadow: 0 2px 8px rgba(100, 188, 4, 0.12);
+  border-color: var(--color-abril-standard);
+  box-shadow: 0 2px 8px rgba(15, 110, 86, 0.12);
 }
 
 .quick-label {

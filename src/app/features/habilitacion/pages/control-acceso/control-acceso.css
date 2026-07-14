@@ -14,7 +14,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--color-abril-page-bg);
+  background: #ffffff;
   font-size: 16px;
 }
 

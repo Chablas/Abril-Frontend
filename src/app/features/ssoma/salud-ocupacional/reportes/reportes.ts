@@ -2,13 +2,14 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { ReporteService } from '../services/reporte.service';
 import { ErrorService } from '../../../../core/services/error.service';
 
 @Component({
   selector: 'app-salud-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './reportes.html',
   styleUrls: ['./reportes.css'],
 })
@@ -33,6 +34,9 @@ export class Reportes {
     { v: 12, l: 'Diciembre' },
   ];
   readonly anios = [2024, 2025, 2026];
+  get aniosOpts(): { id: number; label: string }[] {
+    return this.anios.map(a => ({ id: a, label: String(a) }));
+  }
 
   constructor(
     private svc: ReporteService,

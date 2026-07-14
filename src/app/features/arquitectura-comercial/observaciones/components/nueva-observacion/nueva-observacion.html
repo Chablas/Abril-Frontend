@@ -1,0 +1,74 @@
+<app-base-modal title="Nueva observación" width="w-[720px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+
+  <div class="grid grid-cols-2 gap-[16px] p-[4px]">
+
+    <div>
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar proyecto..."
+        [value]="proyectoId"
+        (valueChange)="proyectoId = $event">
+      </app-search-select>
+      <p *ngIf="submitted && !proyectoId" class="text-xs text-red-600 mt-[4px]">Selecciona un proyecto.</p>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fecha" name="fecha" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Persona que reporta</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="personaReporta" name="personaReporta" placeholder="Nombre" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Empresa que reporta</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="empresaReporta" name="empresaReporta" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Zona / Ambiente</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="lugar" name="lugar" />
+    </div>
+
+    <div>
+      <app-search-select
+        label="Partida reportada"
+        [options]="partidaOptions"
+        valueField="value"
+        displayField="label"
+        placeholder="Selecciona partida"
+        [value]="partidaReportada"
+        (valueChange)="partidaReportada = $event">
+      </app-search-select>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Plazo de levantamiento</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="plazoLevantamiento" name="plazoLevantamiento" />
+    </div>
+
+    <div class="abril-field col-span-2">
+      <label class="abril-field-label">Descripción de la observación</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="descripcion" name="descripcion"></textarea>
+      <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-600 mt-[4px]">Ingresa una descripción.</p>
+    </div>
+
+    <div class="abril-field col-span-2">
+      <label class="abril-field-label">Imagen de observación</label>
+      <input type="file" accept="image/*" (change)="onFotoSelected($event)" />
+      <img *ngIf="fotoPreviewUrl" [src]="fotoPreviewUrl" class="mt-[8px] max-h-[160px] rounded-[var(--radius-standard)] border" style="border-color:var(--color-abril-border)" />
+    </div>
+
+  </div>
+
+  <div class="flex justify-end gap-[8px] mt-[16px]">
+    <button class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button class="btn-primary" (click)="save()">Guardar</button>
+  </div>
+
+</app-base-modal>

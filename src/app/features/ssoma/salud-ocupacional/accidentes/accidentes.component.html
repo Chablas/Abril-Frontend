@@ -15,7 +15,7 @@
 
     <!-- Tabla -->
     <div class="flex flex-col min-h-0">
-      <div class="w-full flex-1 min-h-0 overflow-auto">
+      <div class="abril-table-wrap">
         <table class="abril-table">
           <colgroup>
             <col style="width:50px"/>
@@ -166,13 +166,15 @@
 
                 <dt>Agente de riesgo</dt>
                 <dd>
-                  <select class="field-input" [ngModel]="detalle.agenteRiesgoId ?? ''"
-                    (ngModelChange)="guardarAgenteRiesgo($event)" [disabled]="savingAgenteRiesgo">
-                    <option value="">Sin especificar</option>
-                    @for (ag of agentesRiesgo; track ag.id) {
-                      <option [value]="ag.id">{{ ag.tipo }} — {{ ag.nombre }}</option>
-                    }
-                  </select>
+                  <app-search-select
+                    [options]="agentesRiesgoForSelect"
+                    valueField="id"
+                    displayField="label"
+                    [value]="detalle.agenteRiesgoId ?? null"
+                    placeholder="Sin especificar"
+                    [disabled]="savingAgenteRiesgo"
+                    (valueChange)="guardarAgenteRiesgo($event)">
+                  </app-search-select>
                 </dd>
 
                 @if (detalle.empresaNombre) {
@@ -263,10 +265,14 @@
                   <div class="form-grid-2">
                     <div class="form-field">
                       <label class="filter-label">Tipo <span class="req">*</span></label>
-                      <select class="field-input" [(ngModel)]="formCita.tipoId">
-                        <option [value]="0" disabled>Seleccionar…</option>
-                        <option *ngFor="let t of tiposCita" [value]="t.id">{{ t.nombre }}</option>
-                      </select>
+                      <app-search-select
+                        [options]="tiposCita"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formCita.tipoId"
+                        placeholder="Selecciona tipo"
+                        (valueChange)="formCita.tipoId = $event">
+                      </app-search-select>
                     </div>
                     <div class="form-field">
                       <label class="filter-label">Fecha <span class="req">*</span></label>
@@ -360,10 +366,14 @@
                   <div class="form-grid-2">
                     <div class="form-field">
                       <label class="filter-label">Tipo de equipo <span class="req">*</span></label>
-                      <select class="field-input" [(ngModel)]="formEquipo.tipoEquipoId">
-                        <option [value]="0" disabled>Seleccionar…</option>
-                        <option *ngFor="let t of tiposEquipo" [value]="t.id">{{ t.nombre }}</option>
-                      </select>
+                      <app-search-select
+                        [options]="tiposEquipo"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formEquipo.tipoEquipoId"
+                        placeholder="Selecciona tipo de equipo"
+                        (valueChange)="formEquipo.tipoEquipoId = $event">
+                      </app-search-select>
                     </div>
                     <div class="form-field">
                       <label class="filter-label">Cantidad <span class="req">*</span></label>
@@ -460,10 +470,14 @@
                   <div class="form-grid-2">
                     <div class="form-field">
                       <label class="filter-label">Tipo de alta <span class="req">*</span></label>
-                      <select class="field-input" [(ngModel)]="formAlta.tipoId">
-                        <option [value]="0" disabled>Seleccionar…</option>
-                        <option *ngFor="let t of tiposAlta" [value]="t.id">{{ t.nombre }}</option>
-                      </select>
+                      <app-search-select
+                        [options]="tiposAlta"
+                        valueField="id"
+                        displayField="nombre"
+                        [value]="formAlta.tipoId"
+                        placeholder="Selecciona tipo de alta"
+                        (valueChange)="formAlta.tipoId = $event">
+                      </app-search-select>
                     </div>
                     <div class="form-field">
                       <label class="filter-label">Fecha de alta <span class="req">*</span></label>
@@ -578,13 +592,13 @@
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
     </div>
   </div>
 
@@ -600,9 +614,9 @@
     </app-search-select>
   </div>
 
-  <div class="w-full">
-    <label class="abril-filter-label">ID Trabajador</label>
-    <input type="number" class="abril-filter-input" [(ngModel)]="filtros.workerId"
+  <div class="w-full abril-field">
+    <label class="abril-field-label">ID Trabajador</label>
+    <input type="number" class="abril-field-input" [(ngModel)]="filtros.workerId"
       placeholder="Número" (ngModelChange)="onWorkerChange()" />
   </div>
 </app-filter-modal>

@@ -8,37 +8,12 @@
     { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
     { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' }
   ]">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="dash-root">
-
-  <!-- ══ FILTROS ══ -->
-  <div class="dash-header">
-    <div class="dash-filters">
-      <select class="dash-select" [(ngModel)]="filtro.userId" name="userId">
-        <option [ngValue]="null">Todos los arquitectos</option>
-        <option *ngFor="let a of arquitectos" [ngValue]="a.id">{{ a.nombre }}</option>
-      </select>
-      <select class="dash-select" [(ngModel)]="filtro.semana" name="semana">
-        <option [ngValue]="null">Todas las semanas</option>
-        <option *ngFor="let s of semanas" [ngValue]="s.value">{{ s.label }}</option>
-      </select>
-      <select class="dash-select" [(ngModel)]="filtro.mes" name="mes">
-        <option [ngValue]="null">Todos los meses</option>
-        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
-      </select>
-      <select class="dash-select" [(ngModel)]="filtro.proyectoId" name="proyectoId">
-        <option [ngValue]="null">Todos los proyectos</option>
-        <option *ngFor="let p of proyectos" [ngValue]="p.id">{{ p.nombre }}</option>
-      </select>
-      <button class="dash-search-btn" (click)="buscar()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-          <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z" fill="white"/>
-        </svg>
-        Buscar
-      </button>
-    </div>
-  </div>
 
   <!-- ══ CATEGORÍA PILLS ══ -->
   <div class="cat-pills">
@@ -56,49 +31,69 @@
     </button>
   </div>
 
+  <!-- ══ INDICADOR DE RANGO ══ -->
+  <div class="rango-indicador" *ngIf="rangoUltimasSemanas || semanaActual"
+       style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11px;color:#64748B">
+    <span style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:#EDF4FB;border-radius:6px;font-weight:600;color:#1B3A6B">
+      <i class="ti ti-calendar-week"></i>
+      {{ filtro.semana ? ('Semana filtrada: ' + semanaActual?.label) : rangoUltimasSemanas }}
+    </span>
+    <span *ngIf="!filtro.semana" style="color:#94A3B8">Cards superiores muestran las últimas 2 semanas por defecto · usa el filtro "Semana" para ver otro rango</span>
+    <span *ngIf="semanaActual" style="margin-left:auto;padding:4px 10px;background:#F1F5F9;border-radius:6px;font-weight:600;color:#334155">
+      Progreso global, distribución de carga y ranking: {{ semanaActual.label }}
+    </span>
+  </div>
+
   <!-- ══ KPI BAR ══ -->
   <div class="kpi-bar">
-    <div class="kpi-card" style="border-top-color:#1B3A6B">
-      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-list-check" style="color:#1B3A6B;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.totalActividades }}</span>
-      <span class="kpi-title">Total actividades</span>
-      <span class="kpi-sub">proyecto</span>
+    <div class="kpi-card kpi-card--info">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-list-check"></i></div>
+        <span class="kpi-num">{{ kpis.totalActividades }}</span>
+      </div>
+      <span class="kpi-title">Total actividades <span class="kpi-sub">· proyecto</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#1B6B3A">
-      <div class="kpi-icon-wrap" style="background:#EAF3DE"><i class="ti ti-circle-check" style="color:#1B6B3A;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#1B6B3A">{{ kpis.culminadas }}</span>
-      <span class="kpi-title">Culminadas</span>
-      <span class="kpi-sub">a tiempo</span>
+    <div class="kpi-card kpi-card--success">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-circle-check"></i></div>
+        <span class="kpi-num">{{ kpis.culminadas }}</span>
+      </div>
+      <span class="kpi-title">Culminadas <span class="kpi-sub">· a tiempo</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#2E6DB4">
-      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-player-play" style="color:#2E6DB4;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#2E6DB4">{{ kpis.enProceso }}</span>
-      <span class="kpi-title">En proceso</span>
-      <span class="kpi-sub">activas</span>
+    <div class="kpi-card kpi-card--primary">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-player-play"></i></div>
+        <span class="kpi-num">{{ kpis.enProceso }}</span>
+      </div>
+      <span class="kpi-title">En proceso <span class="kpi-sub">· activas</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#C0392B">
-      <div class="kpi-icon-wrap" style="background:#FDF2F2"><i class="ti ti-alert-circle" style="color:#C0392B;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#C0392B">{{ kpis.vencidas }}</span>
-      <span class="kpi-title">Vencidas</span>
-      <span class="kpi-sub">sin cerrar</span>
+    <div class="kpi-card kpi-card--danger">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-alert-circle"></i></div>
+        <span class="kpi-num">{{ kpis.vencidas }}</span>
+      </div>
+      <span class="kpi-title">Vencidas <span class="kpi-sub">· sin cerrar</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#D4A017">
-      <div class="kpi-icon-wrap" style="background:#FEF9E7"><i class="ti ti-clock" style="color:#D4A017;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#D4A017">{{ kpis.pendientes }}</span>
-      <span class="kpi-title">Pendientes</span>
-      <span class="kpi-sub">sin iniciar</span>
+    <div class="kpi-card kpi-card--pending">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-clock"></i></div>
+        <span class="kpi-num">{{ kpis.pendientes }}</span>
+      </div>
+      <span class="kpi-title">Pendientes <span class="kpi-sub">· sin iniciar</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#0F6E56">
-      <div class="kpi-icon-wrap" style="background:#D1FAE5"><i class="ti ti-gauge" style="color:#0F6E56;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#0F6E56">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
-      <span class="kpi-title">Eficiencia media</span>
-      <span class="kpi-sub" title="Schedule Performance Index · desempeño vs cronograma">SPI real</span>
+    <div class="kpi-card kpi-card--teal">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-gauge"></i></div>
+        <span class="kpi-num">{{ kpis.eficienciaMedia | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Eficiencia media <span class="kpi-sub" title="Schedule Performance Index · desempeño vs cronograma">· SPI real</span></span>
     </div>
-    <div class="kpi-card" style="border-top-color:#1B3A6B">
-      <div class="kpi-icon-wrap" style="background:#EDF4FB"><i class="ti ti-trending-up" style="color:#1B3A6B;font-size:14px"></i></div>
-      <span class="kpi-num" style="color:#1B3A6B">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
-      <span class="kpi-title">Progreso global</span>
-      <span class="kpi-sub">del proyecto</span>
+    <div class="kpi-card kpi-card--info">
+      <div class="kpi-card-top">
+        <div class="kpi-icon-wrap"><i class="ti ti-trending-up"></i></div>
+        <span class="kpi-num">{{ kpis.progresoGlobal | number:'1.0-0' }}%</span>
+      </div>
+      <span class="kpi-title">Progreso global <span class="kpi-sub">· del proyecto</span></span>
     </div>
   </div>
 
@@ -106,52 +101,46 @@
   <div class="alert-grid">
 
     <!-- Vencidas -->
-    <div class="alert-clickable"
-         style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #C0392B;border-left:4px solid #C0392B;background:#fff;cursor:pointer;transition:opacity .15s"
+    <div class="alert-tile alert-tile--danger"
          (click)="abrirModalAlerta('VENCIDA')"
          title="Ver actividades vencidas">
-      <div style="font-size:34px;font-weight:700;color:#C0392B;min-width:52px;text-align:center;line-height:1">{{ alertas.vencidasSinCerrar }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#1E293B;line-height:1.3">Vencidas sin cerrar</div>
-        <div style="font-size:10px;color:#A32D2D;margin-top:2px">Acción inmediata</div>
+      <div class="alert-tile-num">{{ alertas.vencidasSinCerrar }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Vencidas sin cerrar</div>
+        <div class="alert-tile-sub">Acción inmediata</div>
       </div>
     </div>
 
     <!-- Vencen esta semana -->
-    <div class="alert-clickable"
-         style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #D97706;border-left:4px solid #D97706;background:#fff;cursor:pointer;transition:opacity .15s"
+    <div class="alert-tile alert-tile--warning"
          (click)="abrirModalAlerta('VENCE_SEMANA')"
          title="Ver actividades que vencen esta semana">
-      <div style="font-size:34px;font-weight:700;color:#D97706;min-width:52px;text-align:center;line-height:1">{{ alertas.vencenEstaSemana }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#1E293B;line-height:1.3">Vencen esta semana</div>
-        <div style="font-size:10px;color:#9A6B0A;margin-top:2px">Monitorear de cerca</div>
+      <div class="alert-tile-num">{{ alertas.vencenEstaSemana }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Vencen esta semana</div>
+        <div class="alert-tile-sub">Monitorear de cerca</div>
       </div>
     </div>
 
     <!-- Arrancan esta semana -->
-    <div class="alert-clickable"
-         style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #1B3A6B;border-left:4px solid #1B3A6B;background:#fff;cursor:pointer;transition:opacity .15s"
+    <div class="alert-tile alert-tile--info"
          (click)="abrirModalAlerta('ARRANQUE')"
          title="Ver actividades que arrancan esta semana">
-      <div style="font-size:34px;font-weight:700;color:#1B3A6B;min-width:52px;text-align:center;line-height:1">{{ alertas.arrancanEstaSemana }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#1E293B;line-height:1.3">Arrancan esta semana</div>
-        <div style="font-size:10px;color:#185FA5;margin-top:2px">Confirmar asignación</div>
+      <div class="alert-tile-num">{{ alertas.arrancanEstaSemana }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Arrancan esta semana</div>
+        <div class="alert-tile-sub">Confirmar asignación</div>
       </div>
     </div>
 
     <!-- Hitos próximos -->
-    <div class="alert-clickable"
-         style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid #D97706;border-left:4px solid #D97706;background:#fff;cursor:pointer;transition:opacity .15s"
+    <div class="alert-tile alert-tile--warning"
          (click)="abrirModalAlerta('HITO_PROXIMO')"
          title="Ver hitos próximos en 14 días">
-      <div style="display:flex;flex-direction:column;align-items:center;min-width:52px">
-        <div style="font-size:28px;font-weight:700;color:#D97706;line-height:1">{{ alertas.hitosProximos14Dias }}</div>
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#1E293B;line-height:1.3">Hitos próximos 14 días</div>
-        <div style="font-size:10px;color:#9A6B0A;margin-top:2px">Revisar avance</div>
+      <div class="alert-tile-num">{{ alertas.hitosProximos14Dias }}</div>
+      <div class="alert-tile-body">
+        <div class="alert-tile-title">Hitos próximos 14 días</div>
+        <div class="alert-tile-sub">Revisar avance</div>
       </div>
     </div>
 
@@ -168,7 +157,7 @@
         <div class="rank-header">
           <div class="rank-header-left">
             <span class="rank-title-text">RANKING EFICIENCIA</span>
-            <span class="rank-subtitle">IES = culminadas sin retraso ÷ total asignadas</span>
+            <span class="rank-subtitle">IES = culminadas sin retraso ÷ total asignadas · {{ semanaActual?.label }}</span>
           </div>
           <div class="rank-prom-pill" title="Promedio de IES del equipo">
             <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
@@ -195,12 +184,13 @@
                 <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
                 <span class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
               </div>
-              <div class="rank-stats-row">
+              <div class="rank-stats-row" title="Culminadas / asignadas esta semana">
                 <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
                   {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
                 </span>
                 <span class="rank-stat-sep">/</span>
                 <span class="rank-stat-tot">{{ sup.total }}</span>
+                <span class="rank-stat-lbl" style="font-size:9px;color:#94A3B8">culminadas/asignadas</span>
                 <span class="rank-stat-sep">·</span>
                 <span class="rank-stat-ies-lbl" title="Índice de Eficiencia del Supervisor">IES</span>
                 <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
@@ -258,7 +248,7 @@
         <div class="rank-header">
           <div class="rank-header-left">
             <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
-            <span class="rank-subtitle">Actividades asignadas · línea = media del equipo</span>
+            <span class="rank-subtitle">Actividades activas · {{ semanaActual?.label }} · línea = media del equipo</span>
             <span class="rank-subtitle" style="font-size:10px;color:#94A3B8;margin-top:1px">H = Hitos · E = Entregables · C = Consultas</span>
           </div>
           <div class="rank-prom-pill" *ngIf="cargaStats">
@@ -443,7 +433,7 @@
               <div style="font-size:11px;font-weight:600;color:#1B3A6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4"
                    [title]="h.nombre">{{ h.nombre }}</div>
               <div style="font-size:10px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                {{ h.proyecto }}
+                {{ h.proyecto }} <span style="color:#94A3B8">· Sem {{ h.semana }}</span>
               </div>
             </div>
             <!-- Fecha + días -->
@@ -466,6 +456,64 @@
   </div><!-- /dash-body -->
 
 </div><!-- /dash-root -->
+
+<!-- ══ Modal de filtros estándar ══════════════════════════════════════ -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Arquitecto"
+      [options]="arquitectos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtro.userId"
+      [allowClear]="true"
+      placeholder="Buscar arquitecto..."
+      (valueChange)="filtro.userId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtro.proyectoId"
+      [allowClear]="true"
+      placeholder="Buscar proyecto..."
+      (valueChange)="filtro.proyectoId = $event; buscar()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Semana"
+        [options]="semanas"
+        valueField="value"
+        displayField="label"
+        [value]="filtro.semana"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        placeholder="Todas las semanas"
+        (valueChange)="filtro.semana = $event; buscar()">
+      </app-search-select>
+    </div>
+    <div class="flex-1">
+      <app-search-select
+        label="Mes"
+        [options]="meses"
+        valueField="value"
+        displayField="label"
+        [value]="filtro.mes"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        placeholder="Todos los meses"
+        (valueChange)="filtro.mes = $event; buscar()">
+      </app-search-select>
+    </div>
+  </div>
+</app-filter-modal>
 
 <!-- ══ LOADER ══ -->
 <div *ngIf="loader" class="loader-overlay">
@@ -612,14 +660,21 @@
           <input type="checkbox" [(ngModel)]="modalCargaExcluirCulminadas" style="cursor:pointer" />
           Excluir culminadas
         </label>
-        <select [(ngModel)]="modalCargaFiltroEstado"
-                style="font-size:11px;border:1px solid #CBD5E1;border-radius:5px;padding:3px 8px;color:#475569;background:#fff">
-          <option value="">Todos los estados</option>
-          <option value="EN_PROCESO">En proceso</option>
-          <option value="EN_RIESGO">En riesgo</option>
-          <option value="VENCIDO">Vencido</option>
-          <option value="CULMINADO">Culminado</option>
-        </select>
+        <div style="width:180px">
+          <app-search-select
+            label="Estado"
+            [showLabel]="false"
+            [compact]="true"
+            placeholder="Todos los estados"
+            [options]="modalCargaEstadoOptions"
+            valueField="value"
+            displayField="label"
+            [value]="modalCargaFiltroEstado || null"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="modalCargaFiltroEstado = $event || ''">
+          </app-search-select>
+        </div>
         <span style="font-size:11px;color:#94A3B8">{{ modalCargaFiltradas.length }} mostrando</span>
       </div>
     </div>
@@ -723,6 +778,7 @@
               <th>Proyecto</th>
               <th>Estado</th>
               <th>Fecha Límite</th>
+              <th>Semana</th>
               <th>Días</th>
               <th style="width:90px">Alerta</th>
             </tr>
@@ -734,6 +790,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#D97706">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row" (click)="alertarHito(h)">
@@ -751,6 +808,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#2E6DB4">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" [style.color]="getHitoColor(h.diasRestantes)">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row" (click)="alertarHito(h)">
@@ -768,6 +826,7 @@
                 <td class="td-muted">{{ h.proyecto }}</td>
                 <td><span class="estado-badge" style="color:#C0392B">{{ h.estado }}</span></td>
                 <td class="td-muted">{{ h.fechaLimite }}</td>
+                <td class="td-muted">Sem {{ h.semana }}</td>
                 <td><span class="dias-badge" style="color:#C0392B">{{ diasLabel(h.diasRestantes) }}</span></td>
                 <td>
                   <button class="btn-alert-row btn-alert-urgent" (click)="alertarHito(h)">
@@ -782,7 +841,7 @@
             <tr *ngIf="(tabHito==='INICIAR' && hitosIniciar.length===0) ||
                        (tabHito==='VENCER'  && hitosVencer.length===0)  ||
                        (tabHito==='VENCIDOS'&& hitosVencidos.length===0)">
-              <td colspan="6" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
+              <td colspan="7" class="empty-msg" style="padding:24px;text-align:center">Sin hitos en esta categoría</td>
             </tr>
           </tbody>
         </table>

@@ -4,19 +4,33 @@
   <div class="react-toolbar">
     <div class="react-field">
       <label class="react-label">Mes</label>
-      <select class="react-select" [ngModel]="mes()" (ngModelChange)="mes.set($event)">
-        @for (m of meses; track m.valor) {
-          <option [ngValue]="m.valor">{{ m.nombre }}</option>
-        }
-      </select>
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
     </div>
     <div class="react-field">
       <label class="react-label">Año</label>
-      <select class="react-select" [ngModel]="anio()" (ngModelChange)="anio.set($event)">
-        @for (a of anios; track a) {
-          <option [ngValue]="a">{{ a }}</option>
-        }
-      </select>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
     </div>
     <button class="react-btn" (click)="cargar()">
       <i class="ti ti-search"></i> Consultar

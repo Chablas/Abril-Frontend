@@ -42,6 +42,11 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: { titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA', featureKey: 'arquitectura-comercial.plantilla' },
       },
+      {
+        path: 'observaciones',
+        loadChildren: () =>
+          import('./observaciones/observaciones.routes').then((m) => m.OBSERVACIONES_ROUTES),
+      },
     ],
   },
 ];

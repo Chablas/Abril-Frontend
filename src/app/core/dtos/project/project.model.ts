@@ -24,4 +24,5 @@ export interface ProjectGetDTO {
     updatedUserId?: number;
     active: boolean;
     fotoUrl?: string;
+    tieneArquitecturaComercial?: boolean;
 }

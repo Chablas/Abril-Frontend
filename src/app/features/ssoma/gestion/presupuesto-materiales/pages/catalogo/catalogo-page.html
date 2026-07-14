@@ -23,7 +23,7 @@
 
     <!-- Sección 1: catálogo normalizado editable -->
     <div *ngIf="!loading && seccion === 'normalizado'">
-      <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar familia..." class="filtro-input" />
+      <input type="text" [(ngModel)]="filtroTexto" (ngModelChange)="onFiltroFamiliasChange()" placeholder="Buscar familia..." class="filtro-input" />
       <p class="nota-explicativa">
         <i class="ti ti-info-circle"></i>
         Este es el catálogo maestro que usan la estandarización y el cálculo de ratios: el nombre,
@@ -38,17 +38,33 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let f of familiasFiltradas">
+          <tr *ngIf="familiasFiltradas.length === 0"><td colspan="7" class="empty-cell">Sin resultados.</td></tr>
+          <tr *ngFor="let f of familiasPaged">
             <td><input type="text" [(ngModel)]="f.nombre" /></td>
             <td>
-              <select [(ngModel)]="f.tipoId">
-                <option *ngFor="let t of tipos" [ngValue]="t.id">{{ t.nombre }}</option>
-              </select>
+              <app-search-select
+                [options]="tipos"
+                valueField="id"
+                displayField="nombre"
+                [value]="f.tipoId"
+                [compact]="true"
+                [showLabel]="false"
+                placeholder="Selecciona tipo"
+                (valueChange)="f.tipoId = $event">
+              </app-search-select>
             </td>
             <td>
-              <select [(ngModel)]="f.variableBase">
-                <option *ngFor="let v of variablesBase" [ngValue]="v">{{ v }}</option>
-              </select>
+              <app-search-select
+                [options]="variableBaseOpts"
+                valueField="id"
+                displayField="label"
+                [value]="f.variableBase"
+                [compact]="true"
+                [showLabel]="false"
+                [sortAlpha]="false"
+                placeholder="Selecciona variable"
+                (valueChange)="f.variableBase = $event">
+              </app-search-select>
             </td>
             <td><input type="text" [(ngModel)]="f.unidadMedida" style="width:70px" /></td>
             <td class="td-check"><input type="checkbox" [(ngModel)]="f.perteneceSsoma" /></td>
@@ -57,6 +73,14 @@
           </tr>
         </tbody>
       </table>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+        <app-paginator
+          [totalRecords]="familiasFiltradas.length"
+          [currentPage]="familiasCurrentPage"
+          [totalPages]="familiasTotalPages"
+          (pageChange)="changeFamiliasPage($event)">
+        </app-paginator>
+      </div>
     </div>
 
     <!-- Sección 2: sin estandarizar -->
@@ -71,34 +95,51 @@
         <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
         <p>No hay materiales pendientes de estandarizar.</p>
       </div>
-      <table *ngIf="pendientes.length > 0" class="abril-table tabla-catalogo">
-        <thead class="sticky top-0 z-10">
-          <tr><th>Proyecto</th><th>Recurso (S10)</th><th>Cant.</th><th>Precio total</th><th>Sugerido</th><th>Buscar ítem</th><th></th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of pendientes">
-            <td>{{ p.projectDescription }}</td>
-            <td>{{ p.recursoCrudo }}</td>
-            <td>{{ p.cantidad }}</td>
-            <td>{{ p.precioTotal | number:'1.2-2' }}</td>
-            <td>{{ p.nombreItemSugerido || '—' }}</td>
-            <td class="td-buscar">
-              <input type="text" placeholder="Escribe para buscar..."
-                (ngModelChange)="onBuscarItem(p.lineaId, $event)" [ngModel]="busquedaPorLinea[p.lineaId]" />
-              <select *ngIf="resultadosPorLinea[p.lineaId]?.length" [(ngModel)]="seleccionPorLinea[p.lineaId]">
-                <option [ngValue]="null" disabled>Seleccionar...</option>
-                <option *ngFor="let r of resultadosPorLinea[p.lineaId]" [ngValue]="r.id">
-                  {{ r.nombre }} ({{ r.nombreFamilia }})
-                </option>
-              </select>
-            </td>
-            <td class="acciones-cell">
-              <button class="btn-sm btn-primary-sm" (click)="autorizar(p)">Autorizar</button>
-              <button class="btn-sm btn-outline" (click)="rechazar(p)">Rechazar</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <ng-container *ngIf="pendientes.length > 0">
+        <input type="text" [(ngModel)]="filtroPendientes" (ngModelChange)="onFiltroPendientesChange()" placeholder="Buscar por proyecto o recurso..." class="filtro-input" />
+        <table class="abril-table tabla-catalogo">
+          <thead class="sticky top-0 z-10">
+            <tr><th>Proyecto</th><th>Recurso (S10)</th><th>Cant.</th><th>Precio total</th><th>Sugerido</th><th>Buscar ítem</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="pendientesFiltrados.length === 0"><td colspan="7" class="empty-cell">Sin resultados.</td></tr>
+            <tr *ngFor="let p of pendientesPaged">
+              <td>{{ p.projectDescription }}</td>
+              <td>{{ p.recursoCrudo }}</td>
+              <td>{{ p.cantidad }}</td>
+              <td>{{ p.precioTotal | number:'1.2-2' }}</td>
+              <td>{{ p.nombreItemSugerido || '—' }}</td>
+              <td class="td-buscar">
+                <input type="text" placeholder="Escribe para buscar..."
+                  (ngModelChange)="onBuscarItem(p.lineaId, $event)" [ngModel]="busquedaPorLinea[p.lineaId]" />
+                <app-search-select
+                  *ngIf="resultadosPorLinea[p.lineaId]?.length"
+                  [options]="resultadoOpts(p.lineaId)"
+                  valueField="id"
+                  displayField="_label"
+                  [value]="seleccionPorLinea[p.lineaId]"
+                  [compact]="true"
+                  [showLabel]="false"
+                  placeholder="Selecciona ítem"
+                  (valueChange)="seleccionPorLinea[p.lineaId] = $event">
+                </app-search-select>
+              </td>
+              <td class="acciones-cell">
+                <button class="btn-sm btn-primary-sm" (click)="autorizar(p)">Autorizar</button>
+                <button class="btn-sm btn-outline" (click)="rechazar(p)">Rechazar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+          <app-paginator
+            [totalRecords]="pendientesFiltrados.length"
+            [currentPage]="pendientesCurrentPage"
+            [totalPages]="pendientesTotalPages"
+            (pageChange)="changePendientesPage($event)">
+          </app-paginator>
+        </div>
+      </ng-container>
     </div>
 
     <!-- Sección 3: no pertenece a SSOMA -->
@@ -112,18 +153,30 @@
         <i class="ti ti-check" style="font-size: 2rem; color: #16a34a;"></i>
         <p>No hay materiales reportados fuera de SSOMA.</p>
       </div>
-      <table *ngIf="noSsoma.length > 0" class="abril-table tabla-catalogo">
-        <thead class="sticky top-0 z-10"><tr><th>Proyecto</th><th>Recurso (S10)</th><th>Precio total</th><th>Fecha</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr *ngFor="let n of noSsoma">
-            <td>{{ n.projectDescription }}</td>
-            <td>{{ n.recursoCrudo }}</td>
-            <td>{{ n.precioTotal | number:'1.2-2' }}</td>
-            <td>{{ n.fechaGuia | date:'dd/MM/yyyy' }}</td>
-            <td>{{ n.estadoRevision || '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <ng-container *ngIf="noSsoma.length > 0">
+        <input type="text" [(ngModel)]="filtroNoSsoma" (ngModelChange)="onFiltroNoSsomaChange()" placeholder="Buscar por proyecto o recurso..." class="filtro-input" />
+        <table class="abril-table tabla-catalogo">
+          <thead class="sticky top-0 z-10"><tr><th>Proyecto</th><th>Recurso (S10)</th><th>Precio total</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr *ngIf="noSsomaFiltrados.length === 0"><td colspan="5" class="empty-cell">Sin resultados.</td></tr>
+            <tr *ngFor="let n of noSsomaPaged">
+              <td>{{ n.projectDescription }}</td>
+              <td>{{ n.recursoCrudo }}</td>
+              <td>{{ n.precioTotal | number:'1.2-2' }}</td>
+              <td>{{ n.fechaGuia | date:'dd/MM/yyyy' }}</td>
+              <td>{{ n.estadoRevision || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+          <app-paginator
+            [totalRecords]="noSsomaFiltrados.length"
+            [currentPage]="noSsomaCurrentPage"
+            [totalPages]="noSsomaTotalPages"
+            (pageChange)="changeNoSsomaPage($event)">
+          </app-paginator>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

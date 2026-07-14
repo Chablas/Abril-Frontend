@@ -22,16 +22,30 @@
     <h3 style="font-weight:600;margin-bottom:1rem;color:#111827;">Reporte mensual de EMOs</h3>
     <div class="grid-2" style="margin-bottom:1rem;">
       <div>
-        <label class="field-label">Mes</label>
-        <select class="field-input" [(ngModel)]="mes">
-          <option *ngFor="let m of meses" [value]="m.v">{{ m.l }}</option>
-        </select>
+        <app-search-select
+          label="Mes"
+          [options]="meses"
+          valueField="v"
+          displayField="l"
+          [value]="mes"
+          placeholder="Selecciona mes"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="mes = $event">
+        </app-search-select>
       </div>
       <div>
-        <label class="field-label">Año</label>
-        <select class="field-input" [(ngModel)]="anio">
-          <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-        </select>
+        <app-search-select
+          label="Año"
+          [options]="aniosOpts"
+          valueField="id"
+          displayField="label"
+          [value]="anio"
+          placeholder="Selecciona año"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="anio = $event">
+        </app-search-select>
       </div>
     </div>
     <button class="btn-primary" [disabled]="loading" (click)="exportar()">

@@ -24,6 +24,10 @@ import {
   AbrilPageHeaderComponent,
   AbrilPageTab,
 } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ProyectoSimple {
   projectId: number;
@@ -35,7 +39,7 @@ type Tab = 'resumen' | 'plantillas';
 @Component({
   selector: 'app-checklist-main',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput, SearchSelect],
   templateUrl: './checklist-main.html',
   styleUrl: './checklist-main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +73,35 @@ export class ChecklistMainComponent implements OnInit {
   // Activar checklist opcional
   plantillas: ChecklistPlantillaListDto[] = [];
   loadingPlantillas = false;
+
+  plantillasSearchText = '';
+  private readonly plantillasPager = new ClientPager<ChecklistPlantillaListDto>();
+
+  get plantillasFiltradas(): ChecklistPlantillaListDto[] {
+    return this.plantillas.filter(
+      (p) => !this.plantillasSearchText.trim() || SearchInput.matches(p.nombre ?? '', this.plantillasSearchText),
+    );
+  }
+
+  get plantillasCurrentPage(): number {
+    return this.plantillasPager.currentPage;
+  }
+
+  get plantillasTotalPages(): number {
+    return this.plantillasPager.totalPages(this.plantillasFiltradas);
+  }
+
+  get plantillasPaged(): ChecklistPlantillaListDto[] {
+    return this.plantillasPager.page(this.plantillasFiltradas);
+  }
+
+  onPlantillasFilterChange(): void {
+    this.plantillasPager.reset();
+  }
+
+  changePlantillasPage(page: number): void {
+    this.plantillasPager.goTo(page);
+  }
 
   // Ver plantilla como modelo (items) + edición cooperativa
   plantillaDetalleVisible = false;
@@ -223,6 +256,7 @@ export class ChecklistMainComponent implements OnInit {
     this.svc.getPlantillas().subscribe({
       next: (p) => {
         this.plantillas = p;
+        this.plantillasPager.reset();
         this.loadingPlantillas = false;
         this.cdr.markForCheck();
       },

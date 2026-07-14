@@ -17,6 +17,10 @@ import { AbrilPageHeaderComponent } from '../../../../../../shared/components/ab
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
 import Swal from 'sweetalert2';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ProyectoSimple {
   projectId: number;
@@ -27,7 +31,7 @@ interface ProyectoSimple {
   selector: 'app-drivers-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput, SearchSelect],
   templateUrl: './drivers-page.html',
   styleUrl: './drivers-page.css',
 })
@@ -40,9 +44,33 @@ export class DriversPage implements OnInit {
   private router = inject(Router);
   private proyectoHabilitadoSvc = inject(ProyectoHabilitadoService);
 
+  readonly hhFuenteOpts = [
+    { id: 'HH_REAL', label: 'Real (proyecto finalizado)' },
+    { id: 'HH_PROYECTADO', label: 'Proyectado (activo)' },
+    { id: 'HH_CALCULADO_MEDIANA', label: 'Calculado por mediana' },
+  ];
+
   drivers: DriverProyectoDto[] = [];
   loading = false;
   editandoId: number | null = null;
+
+  searchText = '';
+  private readonly pager = new ClientPager<DriverProyectoDto>();
+
+  get driversFiltrados(): DriverProyectoDto[] {
+    return this.drivers.filter(
+      (d) => !this.searchText.trim() || SearchInput.matches(d.projectDescription ?? '', this.searchText),
+    );
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
+  get currentPage(): number { return this.pager.currentPage; }
+  get totalPages(): number { return this.pager.totalPages(this.driversFiltrados); }
+  get driversPaged(): DriverProyectoDto[] { return this.pager.page(this.driversFiltrados); }
+  changePage(page: number): void { this.pager.goTo(page); }
 
   /** Todos los proyectos habilitados para SSOMA, incluyendo los que aún no tienen consumo/drivers
    * cargados (proyectos nuevos en etapa de presupuesto). La tabla de abajo solo muestra los que ya
@@ -81,6 +109,7 @@ export class DriversPage implements OnInit {
     this.svc.getDrivers().subscribe({
       next: (d) => {
         this.drivers = d;
+        this.pager.reset();
         this.loading = false;
         this.loader.hide();
         this.cdr.markForCheck();

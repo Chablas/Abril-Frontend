@@ -46,6 +46,16 @@ export class AbrilPageHeaderComponent {
   @Input() subtitulo = '';
   @Input() pills: SsomaHeaderPill[] = [];
   @Input() tabs: AbrilPageTab[] = [];
+  /**
+   * La página proyecta contenido en tabsExtra (ej. el botón Filtros) aunque no
+   * tenga pestañas. Sin esto, Angular no tiene forma de saber si `<ng-content
+   * select="[tabsExtra]">` recibió algo — se necesita este flag explícito para
+   * no mostrar una barra/borde vacío en páginas sin pestañas NI tabsExtra
+   * (detalle, formularios), pero sí mostrarlo en páginas que solo tienen
+   * tabsExtra (ej. Accidentes lista, Auditoría ATS lista, Proyectos
+   * Habilitados, Control de Semana en su pestaña "Semanas").
+   */
+  @Input() hasExtra = false;
   @Input() tabGroups: AbrilPageTabGroup[] = [];
   @Input() botonPrimario?: SsomaHeaderBtn;
   @Input() botonPrimarioDeshabilitado = false;

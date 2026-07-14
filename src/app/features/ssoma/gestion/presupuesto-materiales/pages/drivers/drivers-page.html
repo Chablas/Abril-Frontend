@@ -12,10 +12,16 @@
     <div class="ir-a-proyecto">
       <label>Ir a la ficha de un proyecto (incluye proyectos nuevos sin datos aún)
         <div class="ir-a-proyecto-fila">
-          <select [(ngModel)]="proyectoSeleccionado">
-            <option [ngValue]="null">Selecciona un proyecto...</option>
-            <option *ngFor="let p of proyectosHabilitados" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-          </select>
+          <app-search-select
+            [options]="proyectosHabilitados"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoSeleccionado"
+            [compact]="true"
+            [showLabel]="false"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoSeleccionado = $event">
+          </app-search-select>
           <button class="btn-primary" (click)="irAProyectoSeleccionado()" [disabled]="!proyectoSeleccionado">
             <i class="ti ti-arrow-right"></i> Ir
           </button>
@@ -24,6 +30,15 @@
     </div>
 
     <div *ngIf="loading" class="loading-msg">Cargando proyectos...</div>
+
+    <div *ngIf="!loading" style="margin-bottom:10px;">
+      <app-search-input
+        placeholder="Buscar proyecto..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="280px">
+      </app-search-input>
+    </div>
 
     <div *ngIf="!loading" class="drivers-table-wrap">
       <table class="abril-table drivers-table">
@@ -40,7 +55,8 @@
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngFor="let d of drivers">
+          <tr *ngIf="driversFiltrados.length === 0"><td colspan="8" class="text-center" style="padding:24px;color:#94a3b8;">Sin resultados.</td></tr>
+          <ng-container *ngFor="let d of driversPaged">
             <!-- Fila normal -->
             <tr *ngIf="editandoId !== d.projectId" class="driver-row">
               <td class="proyecto-cell">
@@ -82,11 +98,18 @@
                       <input type="number" [(ngModel)]="form.trabajadores" min="0" />
                     </label>
                     <label>Fuente HH
-                      <select [(ngModel)]="form.hhFuente">
-                        <option value="HH_REAL">Real (proyecto finalizado)</option>
-                        <option value="HH_PROYECTADO">Proyectado (activo)</option>
-                        <option value="HH_CALCULADO_MEDIANA">Calculado por mediana</option>
-                      </select>
+                      <app-search-select
+                        [options]="hhFuenteOpts"
+                        valueField="id"
+                        displayField="label"
+                        [value]="form.hhFuente"
+                        [compact]="true"
+                        [showLabel]="false"
+                        [allowClear]="false"
+                        [sortAlpha]="false"
+                        placeholder="Selecciona fuente"
+                        (valueChange)="form.hhFuente = $event">
+                      </app-search-select>
                     </label>
                     <label class="check-label">
                       <input type="checkbox" [(ngModel)]="form.recalcularRatios" />
@@ -108,6 +131,14 @@
           </ng-container>
         </tbody>
       </table>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+        <app-paginator
+          [totalRecords]="driversFiltrados.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)">
+        </app-paginator>
+      </div>
     </div>
   </div>
 </div>

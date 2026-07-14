@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { WorkerSearchInput } from '../../../shared/worker-search-input/worker-search-input';
 import { ProgramacionService } from '../../../services/programacion.service';
@@ -24,7 +24,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 @Component({
   selector: 'app-programacion-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, WorkerSearchInput],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './programacion-create.html',
   styleUrl: './programacion-create.css',
 })
@@ -92,7 +92,6 @@ export class ProgramacionCreate implements OnInit {
 
   onTipoEmoChange(id: number): void {
     this.tipoEmoId = id;
-    console.log('tipoEmoId changed:', id);
   }
 
   onClinicaChange(id: number | null): void {

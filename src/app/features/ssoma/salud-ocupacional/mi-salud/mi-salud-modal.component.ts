@@ -1,12 +1,13 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output,
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { FileSelector, SelectedFile } from '../../../../shared/components/file-selector/file-selector';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { MiSaludService } from './mi-salud.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -15,12 +16,11 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-mi-salud-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal, FileSelector],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, FileSelector, SearchSelect],
   templateUrl: './mi-salud-modal.component.html',
   styleUrl: './mi-salud-modal.component.css',
 })
-export class MiSaludModalComponent implements OnDestroy {
-  @Input() fullScreen = false;
+export class MiSaludModalComponent {
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
 
@@ -53,8 +53,6 @@ export class MiSaludModalComponent implements OnDestroy {
     private loaderService: LoaderService,
     private cdr         : ChangeDetectorRef,
   ) {}
-
-  ngOnDestroy(): void {}
 
   onFileSelected(sf: SelectedFile): void {
     this.documento      = sf.file;

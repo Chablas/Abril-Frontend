@@ -2,6 +2,13 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../shared/components/paginator/paginator';
+import { BaseModal } from '../../../shared/components/base-modal/base-modal';
+import { ClientPager } from '../../../shared/utils/client-pager';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import {
@@ -19,7 +26,17 @@ type ActivoFiltro = 'todos' | 'activas' | 'inactivas';
 @Component({
   selector: 'app-arq-comercial-plantilla',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchInput,
+    SearchSelect,
+    Paginator,
+    BaseModal,
+  ],
   templateUrl: './plantilla.html',
   styleUrl: './plantilla.css',
 })
@@ -33,6 +50,21 @@ export class Plantilla implements OnInit {
   tipoFiltro: TipoFiltro = '';
   etapaIdFiltro: number | null = null;
   activoFiltro: ActivoFiltro = 'todos';
+  searchText = '';
+  filtrosAbiertos = false;
+
+  readonly tipoOptions = [
+    { value: 'HITO', label: 'Hito' },
+    { value: 'ENTREGABLE', label: 'Entregable' },
+    { value: 'CONSULTA', label: 'Consulta' },
+  ];
+  readonly activoFiltroOptions: Array<{ value: ActivoFiltro; label: string }> = [
+    { value: 'todos', label: 'Activas e inactivas' },
+    { value: 'activas', label: 'Solo activas' },
+    { value: 'inactivas', label: 'Solo inactivas' },
+  ];
+
+  private readonly pager = new ClientPager<PlantillaActividadDTO>();
 
   loading = false;
 
@@ -69,6 +101,7 @@ export class Plantilla implements OnInit {
     this.service.getPlantilla().subscribe({
       next: data => {
         this.plantilla = data;
+        this.pager.reset();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -82,6 +115,7 @@ export class Plantilla implements OnInit {
 
   get filteredPlantilla(): PlantillaActividadDTO[] {
     return this.plantilla.filter(p => {
+      if (this.searchText.trim() && !p.nombre.toLowerCase().includes(this.searchText.trim().toLowerCase())) return false;
       if (this.tipoFiltro && p.tipo !== this.tipoFiltro) return false;
       if (this.etapaIdFiltro != null && p.etapaId !== this.etapaIdFiltro) return false;
       if (this.activoFiltro === 'activas' && !p.activo) return false;
@@ -90,8 +124,46 @@ export class Plantilla implements OnInit {
     });
   }
 
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.filteredPlantilla);
+  }
+
+  get pagedPlantilla(): PlantillaActividadDTO[] {
+    return this.pager.page(this.filteredPlantilla);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.tipoFiltro) n++;
+    if (this.etapaIdFiltro != null) n++;
+    if (this.activoFiltro !== 'todos') n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.tipoFiltro = '';
+    this.etapaIdFiltro = null;
+    this.activoFiltro = 'todos';
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
   setTipo(t: TipoFiltro): void {
     this.tipoFiltro = t;
+    this.onFilterChange();
   }
 
   patchRow(id: number, body: PatchPlantillaBody): void {

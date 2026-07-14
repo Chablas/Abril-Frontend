@@ -303,10 +303,6 @@
   font-size: 16px;
   flex-shrink: 0;
 }
-::ng-deep .ambito-icon--seg { background: #eff6ff !important; color: #1d4ed8 !important; }
-::ng-deep .ambito-icon--sal { background: #ecfdf5 !important; color: #0a7c52 !important; }
-::ng-deep .ambito-icon--amb { background: #e0f7f4 !important; color: #0a8c80 !important; }
-
 .ambito-meta { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .ambito-name { font-size: 13px; font-weight: 600; color: #2a3350 !important; line-height: 1; }
 .ambito-arrow { font-size: 14px; color: #9aa2bb !important; opacity: 0; transition: opacity .15s, transform .15s; flex-shrink: 0; }

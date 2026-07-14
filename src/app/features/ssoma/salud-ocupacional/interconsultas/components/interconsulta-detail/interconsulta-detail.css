@@ -59,12 +59,17 @@
   color: #111827;
 }
 
-.section-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #374151;
+.paso-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a18;
   margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.paso-title i { color: var(--color-abril-logo-blue); }
 
 .mt-6 {
   margin-top: 1rem;
@@ -102,49 +107,27 @@
 
 .field-input:focus {
   outline: 0;
-  border-color: #64bc04;
-  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
-}
-
-.form-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
-  margin-top: 1rem;
+  border-color: var(--color-abril-standard);
+  box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.18);
 }
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
-  padding: 0.55rem 1.1rem;
-  background: #64bc04;
-  color: #ffffff;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
   font-weight: 600;
-  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #5aa904;
-}
-
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.btn-ghost {
-  padding: 0.55rem 1rem;
-  color: #6b7280;
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.btn-ghost:hover {
-  color: #111827;
-}
+.btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .doc-btn-ver {
   display: inline-flex;

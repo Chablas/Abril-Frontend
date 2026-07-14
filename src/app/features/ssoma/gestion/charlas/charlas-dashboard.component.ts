@@ -17,8 +17,6 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FindDiaPipe } from './pipes/find-dia.pipe';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
-import { AppGenericSelectComponent } from '../../../../shared/components/app-generic-select/app-generic-select.component';
-import { AppGenericSearchComponent } from '../../../../shared/components/app-generic-search/app-generic-search.component';
 import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
 import { SecureImgDirective } from '../../../../shared/directives/secure-img.directive';
 import {
@@ -42,8 +40,6 @@ Chart.register(...registerables);
     FormsModule,
     AbrilPageHeaderComponent,
     SearchSelect,
-    AppGenericSelectComponent,
-    AppGenericSearchComponent,
     FindDiaPipe,
     SecureImgDirective,
     FilterTriggerButton,
@@ -125,6 +121,30 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   motivoRechazo = '';
   showRechazarForm = false;
   filtrosTab4Abiertos = false;
+  filtrosGlobalesAbiertos = false;
+  private readonly mesActual = new Date().getMonth() + 1;
+  private readonly anioActual = new Date().getFullYear();
+
+  get filtrosGlobalesActivos(): number {
+    let n = 0;
+    if (this.mes !== this.mesActual) n++;
+    if (this.anio !== this.anioActual) n++;
+    return n;
+  }
+
+  limpiarFiltrosGlobales(): void {
+    this.mes = this.mesActual;
+    this.anio = this.anioActual;
+    this.loadTab1();
+    this.loadTab2();
+  }
+
+  readonly tab2EstadoOpts = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'Enviado', label: 'Enviado' },
+    { value: 'Aprobado', label: 'Aprobado' },
+    { value: 'Rechazado', label: 'Rechazado' },
+  ];
 
   readonly tab4EstadoOpts = [
     { value: '', label: 'Todos los estados' },
@@ -171,16 +191,42 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
         this.proyectos = proyectos as any[];
         this.mesesData = meses as any[];
         this.aniosData = anios as any[];
-        if (miProyecto) this.proyectoId = (miProyecto as any).proyectoId;
         this.supervisores = supervisores as any[];
         this.loading = false;
         this.cdr.markForCheck();
-        if (this.proyectoId) this.loadAll();
+
+        const miProyectoId = miProyecto ? (miProyecto as any).proyectoId : undefined;
+        const candidatos = [miProyectoId, ...this.proyectos.map(p => p.id)]
+          .filter((id, i, arr) => id != null && arr.indexOf(id) === i);
+        if (candidatos.length) this.elegirPrimerProyectoConDatos(candidatos, 0);
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.errorService.handleError(err);
         this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /**
+   * Prueba "mi proyecto" primero y, si no tiene charlas para el mes actual, recorre el resto
+   * de proyectos en orden hasta encontrar el primero con datos — para no arrancar el dashboard
+   * en un proyecto vacío. Se ejecuta solo en la carga inicial; un cambio manual del combo
+   * Proyecto usa onProyectoChange() normal, sin este fallback.
+   */
+  private elegirPrimerProyectoConDatos(candidatos: number[], i: number): void {
+    const id = candidatos[i];
+    this.svc.getDashPersonal(id, this.mes, this.anio).pipe(catchError(() => of({ dias: [], staff: [] }))).subscribe({
+      next: (d) => {
+        const esUltimo = i === candidatos.length - 1;
+        if (d.staff.length > 0 || esUltimo) {
+          this.proyectoId = id;
+          this.dashPersonalResult = d;
+          this.cdr.markForCheck();
+          this.loadAll();
+        } else {
+          this.elegirPrimerProyectoConDatos(candidatos, i + 1);
+        }
       },
     });
   }

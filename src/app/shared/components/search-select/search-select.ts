@@ -19,6 +19,7 @@ export class SearchSelect {
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
+  /** Trigger más chico (26px alto, texto 11px) para celdas de tabla o filas densas. */
   @Input() compact: boolean = false;
   /** Si es true, muestra el texto completo (sin truncar con "…") tanto en el trigger como en las opciones. */
   @Input() fullText: boolean = false;
@@ -30,6 +31,14 @@ export class SearchSelect {
   @Input() color: string = 'var(--color-abril-standard)';
   /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
   @Input() dark: boolean = false;
+  /**
+   * Fondo/texto tipo "badge" para el trigger, en vez del combobox blanco con borde estándar.
+   * Pasar `{ background: '#fee2e2', color: '#991b1b' }` — pensado para columnas de severidad/estado
+   * dentro de una tabla (ej. nivel de consecuencia), donde el valor seleccionado debe leerse como
+   * una etiqueta de color, no como un campo de formulario. No usar `::ng-deep` por página para esto:
+   * si aparece un caso nuevo, agregar el color acá y listo, reutilizable en cualquier tabla.
+   */
+  @Input() badgeStyle: { background: string; color: string } | null = null;
   /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */
   @Input() disabled: boolean = false;
   /**
@@ -113,6 +122,15 @@ export class SearchSelect {
     const isAllCaps = text === text.toUpperCase() && text !== text.toLowerCase();
     if (!isAllCaps) return text;
     return text.toLowerCase().replace(/(^|[\s\-/])([a-záéíóúñ])/g, (_m, sep, c) => sep + c.toUpperCase());
+  }
+
+  /**
+   * Alto/tipografía del trigger, según `compact`/`dark`. Único origen de verdad para el tamaño —
+   * una página no puede cambiarlo con CSS local, solo forzando estos dos Inputs.
+   */
+  get triggerSizeClasses(): string {
+    if (this.compact) return this.dark ? 'h-[22px] text-[10px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
+    return this.dark ? 'h-[30px] text-[11px] pl-[10px] pr-[8px]' : 'h-[34px] text-[12px] pl-[10px] pr-[8px]';
   }
 
   get hasValue(): boolean {

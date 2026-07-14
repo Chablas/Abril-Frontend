@@ -15,12 +15,13 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 
 @Component({
   selector: 'app-inspeccion-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator],
+  imports: [FabButton, CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchSelect, Paginator, StatusBadge],
   templateUrl: './inspeccion-lista.component.html',
   styleUrl: './inspeccion-lista.component.css',
 })
@@ -197,9 +198,16 @@ export class InspeccionListaComponent implements OnInit {
     return 'estado-borrador';
   }
 
-  ambitoClass(ambito: string): string {
-    if (ambito === 'Seguridad') return 'badge-seguridad';
-    if (ambito === 'Salud') return 'badge-salud';
-    return 'badge-ambiente';
+  /** Colores del badge de ámbito para app-status-badge (modo manual bgColor/textColor). */
+  ambitoBg(ambito: string): string {
+    if (ambito === 'Seguridad') return '#DBEAFE';
+    if (ambito === 'Salud') return '#D1FAE5';
+    return '#DCFCE7';
+  }
+
+  ambitoText(ambito: string): string {
+    if (ambito === 'Seguridad') return '#1E40AF';
+    if (ambito === 'Salud') return '#065F46';
+    return '#166534';
   }
 }

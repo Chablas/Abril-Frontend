@@ -1,4 +1,9 @@
-<app-base-modal title="Detalle EMO" width="w-[900px]" (closeModal)="close()">
+<app-abril-modal-panel
+  titulo="Detalle EMO"
+  icono="ti-stethoscope"
+  variant="blue"
+  width="900px"
+  (closeModal)="close()">
   <div *ngIf="loading && !emo" class="state-msg">Cargando EMO…</div>
 
   <ng-container *ngIf="emo">
@@ -424,4 +429,4 @@
     [nombre]="visorNombre"
     (closed)="onVisorClosed()">
   </app-document-viewer>
-</app-base-modal>
+</app-abril-modal-panel>

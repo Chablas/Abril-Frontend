@@ -11,7 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { EmoService } from '../../../services/emo.service';
 import {
@@ -32,7 +32,7 @@ type TabKey = 'datos' | 'examenes' | 'restricciones' | 'convalidaciones' | 'clin
 @Component({
   selector: 'app-emo-detail',
   standalone: true,
-  imports: [CommonModule, BaseModal, DocumentViewer],
+  imports: [CommonModule, AbrilModalPanel, DocumentViewer],
   templateUrl: './emo-detail.html',
   styleUrl: './emo-detail.css',
 })

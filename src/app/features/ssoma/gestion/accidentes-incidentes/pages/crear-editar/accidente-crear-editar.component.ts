@@ -22,15 +22,15 @@ import {
 } from '../../accidente-incidente.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-accidente-crear-editar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
   templateUrl: './accidente-crear-editar.component.html',
   styleUrl: './accidente-crear-editar.component.css',
 })
@@ -463,4 +463,41 @@ export class AccidenteCrearEditarComponent implements OnInit {
   partidasOpts() {
     return this.partidas.map((p) => ({ id: p.id, nombre: p.nombre }));
   }
+
+  turnosOpts() {
+    return this.turnos.map((t) => ({ value: t, label: t }));
+  }
+
+  readonly tipoContactoOpts = [
+    { value: 'Golpe por objeto en movimiento', label: 'Golpe por objeto en movimiento' },
+    { value: 'Golpe contra objeto fijo', label: 'Golpe contra objeto fijo' },
+    { value: 'Caída al mismo nivel', label: 'Caída al mismo nivel' },
+    { value: 'Caída a distinto nivel', label: 'Caída a distinto nivel' },
+    { value: 'Atrapamiento entre objetos', label: 'Atrapamiento entre objetos' },
+    { value: 'Sobreesfuerzo / esfuerzo ergonómico', label: 'Sobreesfuerzo / esfuerzo ergonómico' },
+    { value: 'Contacto con energía eléctrica', label: 'Contacto con energía eléctrica' },
+    { value: 'Contacto con sustancia química o caliente', label: 'Contacto con sustancia química o caliente' },
+    { value: 'Colisión vehicular', label: 'Colisión vehicular' },
+    { value: 'Daño a equipo / maquinaria', label: 'Daño a equipo / maquinaria' },
+    { value: 'Daño a material o producto', label: 'Daño a material o producto' },
+    { value: 'Daño a infraestructura', label: 'Daño a infraestructura' },
+    { value: 'Derrame de sustancias', label: 'Derrame de sustancias' },
+    { value: 'Incendio / conato de incendio', label: 'Incendio / conato de incendio' },
+    { value: 'Otro', label: 'Otro' },
+  ];
+
+  nivelesRealOpts() {
+    return this.nivelesReal.map((n) => ({ value: n, label: this.nivelesConsecuencia[n] }));
+  }
+
+  nivelesPotencialOpts() {
+    return this.nivelesPotencial.map((n) => ({ value: n, label: this.nivelesConsecuencia[n] }));
+  }
+
+  readonly atencionMedicaOpts = [
+    { value: 'Tópico de obra', label: 'Tópico de obra' },
+    { value: 'Tópico de oficina', label: 'Tópico de oficina' },
+    { value: 'Clínica', label: 'Clínica' },
+    { value: 'Hospital', label: 'Hospital' },
+  ];
 }

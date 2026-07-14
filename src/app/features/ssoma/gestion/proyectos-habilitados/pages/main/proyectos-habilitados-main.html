@@ -1,14 +1,15 @@
 <app-abril-page-header
   badge="SSOMA · Gestión"
   titulo="Proyectos Habilitados SSOMA"
-  subtitulo="Define qué proyectos aparecen en los filtros de todas las funcionalidades de SSOMA">
+  subtitulo="Define qué proyectos aparecen en los filtros de todas las funcionalidades de SSOMA"
+  [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
-  <div class="w-full flex-1 min-h-0 overflow-auto">
+  <div class="abril-table-wrap">
     <table class="abril-table">
       <thead class="sticky top-0 z-10">
         <tr>

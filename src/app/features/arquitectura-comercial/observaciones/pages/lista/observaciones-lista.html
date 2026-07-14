@@ -1,0 +1,302 @@
+<app-abril-page-header
+  [badge]="'ARQUITECTURA COMERCIAL · ' + anioActual"
+  titulo="Observaciones"
+  subtitulo="Observaciones reportadas y su levantamiento por proyecto."
+  [tabs]="[
+    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/observaciones/dashboard' },
+    { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/observaciones/lista' }
+  ]"
+  [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
+  (primaryClick)="showNuevaModal = true">
+
+  <button tabsExtra type="button" title="Gestionar catálogos"
+          class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50"
+          style="border-color:var(--color-abril-border)"
+          (click)="showCatalogoModal = true">
+    <i class="ti ti-list-details"></i> Catálogos
+  </button>
+  <button tabsExtra type="button" title="Proyectos en Arquitectura Comercial"
+          class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50"
+          style="border-color:var(--color-abril-border)"
+          (click)="showProyectosModal = true">
+    <i class="ti ti-building"></i> Proyectos
+  </button>
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── KPIs clickeables (filtran la tabla por estado) ──────────────── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-[10px] shrink-0">
+    <button type="button" (click)="filtrarPorKpi(null)"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === null ? 'var(--color-abril-standard)' : 'var(--color-abril-border)'"
+            [style.background]="estado === null ? 'var(--color-abril-standard-light)' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Reportados</div>
+      <div class="text-[22px] font-bold" style="color:var(--color-abril-standard)">{{ kpiReportados }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('Completado')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'Completado' ? '#065F46' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'Completado' ? '#D1FAE5' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Completados</div>
+      <div class="text-[22px] font-bold text-[#065F46]">{{ kpiCompletados }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('Pendiente')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'Pendiente' ? '#92400E' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'Pendiente' ? '#FEF3C7' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Pendientes</div>
+      <div class="text-[22px] font-bold text-[#92400E]">{{ kpiPendientes }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('En Proceso')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'En Proceso' ? '#1E40AF' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'En Proceso' ? '#DBEAFE' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">En proceso</div>
+      <div class="text-[22px] font-bold text-[#1E40AF]">{{ kpiEnProceso }}</div>
+    </button>
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Código</th>
+          <th>Proyecto</th>
+          <th>Fecha</th>
+          <th>Reportado por</th>
+          <th>Partida</th>
+          <th>Descripción</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Fotos</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="items.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos ? 'Sin resultados.' : 'No hay observaciones registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let o of items; trackBy: trackById" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ o.codigo }}</td>
+          <td class="text-gray-700">{{ o.proyectoNombre }}</td>
+          <td class="text-gray-700 whitespace-nowrap">{{ o.fecha | date: 'dd/MM/yyyy' }}</td>
+
+          <ng-container *ngIf="editandoId === o.id; else filaSoloLectura">
+            <td>
+              <input type="text" [(ngModel)]="editForm.personaReporta"
+                     class="w-full border rounded-[6px] px-[6px] py-[3px] text-sm"
+                     style="border-color:var(--color-abril-standard)" />
+            </td>
+            <td>
+              <app-search-select
+                [options]="partidaOptions"
+                valueField="value"
+                displayField="label"
+                placeholder="Selecciona partida"
+                [value]="editForm.partidaReportada"
+                (valueChange)="editForm.partidaReportada = $event">
+              </app-search-select>
+            </td>
+            <td class="min-w-[220px]">
+              <input type="text" [(ngModel)]="editForm.descripcion"
+                     class="w-full border rounded-[6px] px-[6px] py-[3px] text-sm"
+                     style="border-color:var(--color-abril-standard)" />
+            </td>
+          </ng-container>
+          <ng-template #filaSoloLectura>
+            <td class="text-gray-700">{{ o.personaReporta }}</td>
+            <td class="text-gray-700">{{ o.partidaReportada }}</td>
+            <td class="text-gray-700 max-w-[280px] truncate" [title]="o.descripcion">{{ o.descripcion }}</td>
+          </ng-template>
+
+          <td class="text-center">
+            <span class="inline-block px-[10px] py-[2px] rounded-full text-xs border" [ngClass]="estadoBadgeClass(o.estado)">
+              {{ o.estado }}
+            </span>
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[6px]">
+              <div class="relative" *ngIf="fotoObservacion(o) as url; else sinObs">
+                <img [src]="url"
+                     (click)="abrirLightbox(url)"
+                     title="Ver foto de observación"
+                     class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                     style="border-color:var(--color-abril-border)" />
+                <span class="absolute -top-[6px] -left-[6px] bg-gray-700 text-white text-[8px] font-semibold rounded-full px-[4px] leading-[13px]">Obs</span>
+              </div>
+              <ng-template #sinObs><span class="text-gray-300 text-sm">—</span></ng-template>
+
+              <div class="relative" *ngIf="fotoLevantamiento(o) as urlLevantamiento">
+                <img [src]="urlLevantamiento"
+                     (click)="abrirLightbox(urlLevantamiento)"
+                     title="Ver foto de levantamiento"
+                     class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                     style="border-color:var(--color-abril-standard)" />
+                <span class="absolute -top-[6px] -left-[6px] text-white text-[8px] font-semibold rounded-full px-[4px] leading-[13px]"
+                      style="background:var(--color-abril-standard)">Lev</span>
+                <span *ngIf="fotosLevantamientoExtra(o) > 0"
+                      class="absolute -bottom-[6px] -right-[6px] inline-flex items-center justify-center w-[16px] h-[16px] rounded-full text-[9px] font-semibold text-white bg-gray-500"
+                      [title]="'+' + fotosLevantamientoExtra(o) + ' foto(s) más de levantamiento'">
+                  +{{ fotosLevantamientoExtra(o) }}
+                </span>
+              </div>
+            </div>
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+
+              <ng-container *ngIf="editandoId === o.id; else accionesNormales">
+                <button type="button" (click)="guardarEdicion(o)" [disabled]="guardandoEdicion"
+                        title="Guardar" class="text-sm disabled:opacity-50" style="color:var(--color-abril-standard)">
+                  <i class="ti ti-check"></i>
+                </button>
+                <button type="button" (click)="cancelarEdicion()" title="Cancelar" class="text-sm text-gray-400">
+                  <i class="ti ti-x"></i>
+                </button>
+              </ng-container>
+
+              <ng-template #accionesNormales>
+                <button *ngIf="puedeEditar" type="button" (click)="iniciarEdicion(o)"
+                        title="Editar observación" class="text-sm text-gray-400 hover:text-gray-600">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button
+                  *ngIf="o.estado !== 'Completado'"
+                  (click)="abrirLevantar(o)"
+                  abrilBulkAction="primary">
+                  Levantar
+                </button>
+                <span *ngIf="o.estado === 'Completado'" class="text-xs text-gray-400">—</span>
+              </ng-template>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="total"
+      [currentPage]="pagina"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<app-nueva-observacion
+  *ngIf="showNuevaModal"
+  [proyectos]="filtros.proyectos"
+  [partidas]="partidasCatalogo"
+  (closeModal)="showNuevaModal = false"
+  (saved)="onNuevaGuardada()" />
+
+<app-catalogo-modal
+  *ngIf="showCatalogoModal"
+  tipoInicial="partidas"
+  (closeModal)="showCatalogoModal = false"
+  (saved)="onCatalogoGuardado()" />
+
+<app-proyectos-arquitectura-comercial-modal
+  *ngIf="showProyectosModal"
+  (closeModal)="showProyectosModal = false"
+  (saved)="onProyectosGuardado()" />
+
+<app-levantar-observacion
+  *ngIf="showLevantarModal && observacionParaLevantar"
+  [observacion]="observacionParaLevantar!"
+  (closeModal)="showLevantarModal = false; observacionParaLevantar = null"
+  (saved)="onLevantadaGuardada()" />
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código, descripción o persona..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="filtros.proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="onProyectoFiltroChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      [sortAlpha]="false"
+      valueField="value"
+      displayField="label"
+      placeholder="Selecciona estado"
+      [value]="estado"
+      (valueChange)="estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Partida"
+      [options]="partidaOptions"
+      valueField="value"
+      displayField="label"
+      placeholder="Selecciona partida"
+      [value]="partida"
+      (valueChange)="partida = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full flex gap-[8px]">
+    <div class="flex-1 abril-field">
+      <input type="date" id="obsDesde" class="abril-field-input" placeholder=" "
+             [(ngModel)]="desde" (ngModelChange)="onFilterChange()" [attr.max]="hasta" />
+      <label for="obsDesde" class="abril-field-label">Desde</label>
+    </div>
+    <div class="flex-1 abril-field">
+      <input type="date" id="obsHasta" class="abril-field-input" placeholder=" "
+             [(ngModel)]="hasta" (ngModelChange)="onFilterChange()" [attr.min]="desde" />
+      <label for="obsHasta" class="abril-field-label">Hasta</label>
+    </div>
+  </div>
+
+  <div class="w-full flex gap-[8px]">
+    <button type="button" abrilBulkAction="default" class="flex-1" (click)="filtrarMesActual()">
+      Este mes
+    </button>
+    <button type="button" abrilBulkAction="default" class="flex-1" (click)="filtrarAnioActual()">
+      Este año
+    </button>
+  </div>
+</app-filter-modal>
+
+<!-- ── Lightbox de foto ─────────────────────────────────────────────── -->
+<div *ngIf="lightboxUrl"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+     (click)="cerrarLightbox()">
+  <button type="button"
+          (click)="cerrarLightbox()"
+          class="absolute top-[20px] right-[24px] text-white text-[28px] leading-none cursor-pointer">
+    ✕
+  </button>
+  <img [src]="lightboxUrl"
+       (click)="$event.stopPropagation()"
+       class="max-w-[90vw] max-h-[85vh] rounded-[8px] shadow-2xl object-contain" />
+</div>

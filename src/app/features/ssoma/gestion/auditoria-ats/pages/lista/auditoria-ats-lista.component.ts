@@ -11,7 +11,7 @@ import { forkJoin } from 'rxjs';
 
 import { AuditoriaAtsService } from '../../auditoria-ats.service';
 import { AuditoriaAtsListItemDto } from '../../auditoria-ats.dtos';
-import { SCORE_CONFIG } from '../nueva/auditoria-ats-nueva.component';
+import { SCORE_CONFIG, AuditoriaAtsNuevaComponent } from '../nueva/auditoria-ats-nueva.component';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { TrabajadorHabService } from '../../../../../habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trabajador.model';
@@ -21,16 +21,18 @@ import { FabButton } from '../../../../../../shared/components/fab-button/fab-bu
 import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 
 @Component({
   selector: 'app-auditoria-ats-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FabButton, CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, Paginator],
+  imports: [FabButton, CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, Paginator, AuditoriaAtsNuevaComponent, TitleCasePipe],
   templateUrl: './auditoria-ats-lista.component.html',
   styleUrl: './auditoria-ats-lista.component.css',
 })
 export class AuditoriaAtsListaComponent implements OnInit {
+  nuevaAbierta = false;
   items: AuditoriaAtsListItemDto[] = [];
   loading = false;
   loadingCatalogos = true;
@@ -153,6 +155,13 @@ export class AuditoriaAtsListaComponent implements OnInit {
   }
 
   nueva(): void {
-    this.router.navigate(['/ssoma/gestion/auditoria-ats/nueva']);
+    this.nuevaAbierta = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarNueva(): void {
+    this.nuevaAbierta = false;
+    this.cargar();
+    this.cdr.markForCheck();
   }
 }

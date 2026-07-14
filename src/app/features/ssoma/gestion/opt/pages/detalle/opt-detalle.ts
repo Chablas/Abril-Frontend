@@ -7,12 +7,13 @@ import { OptDetalleDto } from '../../dtos/opt.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 
 @Component({
   selector: 'app-opt-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, DocumentViewer],
+  imports: [CommonModule, DocumentViewer, AbrilPageHeaderComponent],
   templateUrl: './opt-detalle.html',
   styleUrl: './opt-detalle.css',
 })

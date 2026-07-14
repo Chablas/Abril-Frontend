@@ -12,48 +12,11 @@
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="loadAll()">
 
+    <!-- Filtro global Proyecto/Mes/Año: aplica a Dashboard y Capacitaciones. -->
+    <app-filter-trigger *ngIf="activeTab !== 4" tabsExtra [count]="filtrosGlobalesActivos" (open)="filtrosGlobalesAbiertos = true" />
     <!-- Filtro "Estado" de la pestaña Gestión: solo aplica a esa tabla. -->
     <app-filter-trigger *ngIf="activeTab === 4" tabsExtra [count]="filtrosTab4Activos" (open)="filtrosTab4Abiertos = true" />
   </app-abril-page-header>
-
-  <!-- FILTROS GLOBALES -->
-  <div class="filtros-bar">
-    <div class="filtros-bar__filters">
-      <app-search-select
-        [options]="proyectos"
-        displayField="nombre"
-        valueField="id"
-        placeholder="Todos los proyectos"
-        [value]="proyectoId"
-        [compact]="true"
-        [showLabel]="false"
-        color="var(--color-abril-primary)"
-        (valueChange)="proyectoId = $event ? +$event : undefined; onProyectoChange()">
-      </app-search-select>
-      <app-generic-select
-        [options]="mesesData"
-        displayField="nombre"
-        valueField="id"
-        placeholder="Todos los meses"
-        [value]="mes"
-        (valueChange)="mes = +$event; loadTab1(); loadTab2()">
-      </app-generic-select>
-      <app-generic-select
-        [options]="aniosData"
-        displayField="nombre"
-        valueField="id"
-        placeholder="Todos los años"
-        [value]="anio"
-        (valueChange)="anio = +$event; loadTab1(); loadTab2()">
-      </app-generic-select>
-    </div>
-    <button class="filtros-bar__btn-buscar" (click)="loadAll()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-        <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21Z" fill="white"/>
-      </svg>
-      Buscar
-    </button>
-  </div>
 
   <div class="dash-body" [class.dash-body--cap]="activeTab === 2">
 
@@ -137,12 +100,17 @@
           <div class="tab2-filtros">
             <input type="text" class="form-input" style="max-width:220px; height:32px; font-size:12px;"
               placeholder="Buscar por nombre..." [(ngModel)]="tab2Busqueda" />
-            <select class="filtro-input filtro-input--sm" [(ngModel)]="tab2Estado">
-              <option value="">Todos los estados</option>
-              <option value="Enviado">Enviado</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
+            <app-search-select
+              [compact]="true"
+              [showLabel]="false"
+              [options]="tab2EstadoOpts"
+              valueField="value"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="tab2Estado"
+              placeholder="Todos los estados"
+              (valueChange)="tab2Estado = $event">
+            </app-search-select>
             <span class="form-hint" style="margin:0">{{ capacitacionesFiltradas.length }} registros</span>
           </div>
           <div class="dash-card cap-table-card">
@@ -175,11 +143,11 @@
                         <td class="ta-c">
                           @if (c.archivos?.length || c.evidenciaUrl) {
                             <div class="cap-acciones">
-                              <button class="btn-row" title="Ver" (click)="toggleViewer(c.id)">
+                              <button class="abril-action-btn" title="Ver" (click)="toggleViewer(c.id)">
                                 <i class="ti" [class.ti-eye]="viewerCapId !== c.id" [class.ti-eye-off]="viewerCapId === c.id"></i>
                               </button>
                               @if (c.archivos?.length) {
-                                <span class="cap-file-count">{{ c.archivos.length }}</span>
+                                <span class="abril-table-badge">{{ c.archivos.length }}</span>
                               }
                             </div>
                           } @else {
@@ -467,7 +435,7 @@
           @else if (!tab4Items.length) {
             <p class="empty-msg">{{ tab4Estado ? 'Sin resultados.' : 'Sin charlas registradas.' }}</p>
           } @else {
-            <div class="w-full flex-1 min-h-0 overflow-auto">
+            <div class="abril-table-wrap">
               <table class="abril-table">
                 <thead class="sticky top-0 z-10">
                   <tr>
@@ -495,7 +463,7 @@
                       </td>
                       <td class="text-right text-gray-500">{{ item.totalAsistentes }}</td>
                       <td>
-                        <button class="btn-row" (click)="abrirDetalle(item)" title="Ver detalle">
+                        <button class="abril-action-btn" (click)="abrirDetalle(item)" title="Ver detalle">
                           <i class="ti ti-eye"></i>
                         </button>
                       </td>
@@ -650,6 +618,45 @@
       [sortAlpha]="false"
       [value]="tab4Estado"
       (valueChange)="tab4Estado = $event; tab4Page = 1; loadTab4()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ── Modal de filtros globales: Proyecto/Mes/Año (Dashboard y Capacitaciones) ── -->
+<app-filter-modal *ngIf="filtrosGlobalesAbiertos" (closeModal)="filtrosGlobalesAbiertos = false" (clear)="limpiarFiltrosGlobales()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      displayField="nombre"
+      valueField="id"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="proyectoId = $event ? +$event : undefined; onProyectoChange()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Mes"
+      [options]="mesesData"
+      displayField="nombre"
+      valueField="id"
+      [sortAlpha]="false"
+      placeholder="Selecciona mes"
+      [value]="mes"
+      (valueChange)="mes = +$event; loadTab1(); loadTab2()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Año"
+      [options]="aniosData"
+      displayField="nombre"
+      valueField="id"
+      [sortAlpha]="false"
+      placeholder="Selecciona año"
+      [value]="anio"
+      (valueChange)="anio = +$event; loadTab1(); loadTab2()">
     </app-search-select>
   </div>
 </app-filter-modal>

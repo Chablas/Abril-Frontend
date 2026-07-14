@@ -8,12 +8,15 @@ import { CharlaContratistaDto, CharlaContratistaPendienteDto } from '../../dtos/
 import { FileSelector, SelectedFile } from '../../../../../../shared/components/file-selector/file-selector';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 
 @Component({
   selector: 'app-charlas-contratista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, FileSelector],
+  imports: [CommonModule, FormsModule, FileSelector, Paginator, SearchInput],
   templateUrl: './charlas-contratista.html',
   styleUrl: './charlas-contratista.css',
 })
@@ -24,6 +27,35 @@ export class CharlasContratista implements OnInit {
   loadingPendientes = true;
   loadingDiasFaltantes = true;
   loadingHistorial = true;
+
+  historialSearchText = '';
+  private readonly historialPager = new ClientPager<CharlaContratistaDto>();
+
+  get historialFiltrado(): CharlaContratistaDto[] {
+    return this.historial.filter(
+      (h) => !this.historialSearchText.trim() || SearchInput.matches(h.proyectoNombre ?? '', this.historialSearchText) || SearchInput.matches(h.tema ?? '', this.historialSearchText),
+    );
+  }
+
+  get historialCurrentPage(): number {
+    return this.historialPager.currentPage;
+  }
+
+  get historialTotalPages(): number {
+    return this.historialPager.totalPages(this.historialFiltrado);
+  }
+
+  get historialPaged(): CharlaContratistaDto[] {
+    return this.historialPager.page(this.historialFiltrado);
+  }
+
+  onHistorialFilterChange(): void {
+    this.historialPager.reset();
+  }
+
+  changeHistorialPage(page: number): void {
+    this.historialPager.goTo(page);
+  }
 
   proyectoSeleccionado: CharlaContratistaPendienteDto | null = null;
   tema = '';
@@ -87,6 +119,7 @@ export class CharlasContratista implements OnInit {
     this.svc.getHistorial().subscribe({
       next: (res) => {
         this.historial = res ?? [];
+        this.historialPager.reset();
         this.loadingHistorial = false;
         this.cdr.markForCheck();
       },

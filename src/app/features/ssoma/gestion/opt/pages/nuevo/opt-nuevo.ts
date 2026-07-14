@@ -31,6 +31,8 @@ import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-s
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 import Swal from 'sweetalert2';
 
 interface TrabajadorForm {
@@ -60,7 +62,7 @@ interface PasoForm {
   selector: 'app-opt-nuevo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer],
+  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './opt-nuevo.html',
   styleUrl: './opt-nuevo.css',
 })
@@ -126,6 +128,11 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   readonly tiposTrabajador = ['Obrero', 'Operario', 'Capataz', 'Técnico', 'Ingeniero', 'Supervisor', 'Otro'];
   readonly accionesRequeridas = ['Elaborar el PETS', 'Mantener el PETS', 'Modificar el PETS', 'Entrenamiento'];
+  readonly tiposObservacion = [
+    { value: 'Planeada', label: 'Planeada' },
+    { value: 'No Planeada', label: 'No Planeada' },
+  ];
+  readonly accionesRequeridasOptions = this.accionesRequeridas.map((a) => ({ value: a, label: a }));
 
   constructor(
     private optService: OptService,
@@ -463,10 +470,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  onFotoAreaChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files) return;
-    for (let i = 0; i < input.files.length && this.fotosAreaBase64.length < 10; i++) {
+  onFotoAreaChange(files: FileList): void {
+    for (let i = 0; i < files.length && this.fotosAreaBase64.length < 10; i++) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target!.result as string;
@@ -474,9 +479,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
         this.fotosAreaBase64.push(dataUrl.split(',')[1]);
         this.cdr.detectChanges();
       };
-      reader.readAsDataURL(input.files[i]);
+      reader.readAsDataURL(files[i]);
     }
-    input.value = '';
   }
 
   quitarFotoArea(idx: number): void {
@@ -551,6 +555,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
       cuentaConPet: this.cuentaConPet,
       area: this.area || undefined,
       seInformaTrabajador: this.seInformaTrabajador,
+      observadorId: this.observadorId ?? undefined,
       observadorNombre: this.observadorNombre || undefined,
       observadorCargo: this.observadorCargo || undefined,
       firmaObservadorBase64: this.firmaObsBase64 || undefined,

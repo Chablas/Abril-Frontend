@@ -1,5 +1,9 @@
-<app-base-modal [title]="title" width="w-[860px]" (closeModal)="close()">
-  <div class="modal-body">
+<app-abril-modal-panel
+  [titulo]="title"
+  icono="ti-bed"
+  variant="blue"
+  width="860px"
+  (closeModal)="close()">
 
     <!-- ── Loading ── -->
     <div *ngIf="loading" class="loading-row">
@@ -13,82 +17,67 @@
 
       <!-- Trabajador -->
       <div class="section">
-        <h4 class="section-title">Trabajador</h4>
-        <div *ngIf="!workerSelected" class="worker-search">
-          <div class="search-wrap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-            </svg>
-            <input type="text" [ngModel]="workerQuery" (ngModelChange)="onWorkerQueryChange($event)"
-              placeholder="Buscar por nombre o DNI (mín. 2 caracteres)" />
-          </div>
-          <div *ngIf="workerSearching" class="hint">Buscando…</div>
-          <ul *ngIf="workerResults.length > 0" class="worker-results">
-            <li *ngFor="let w of workerResults" (click)="selectWorker(w)">
-              <div>
-                <div class="wr-name">{{ w.apellidoNombre }}</div>
-                <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
-              </div>
-              <span class="wr-btn">Seleccionar</span>
-            </li>
-          </ul>
-          <p *ngIf="workerQuery.length >= 2 && !workerSearching && workerResults.length === 0" class="hint">Sin resultados.</p>
-        </div>
-        <div *ngIf="workerSelected" class="worker-card">
-          <div>
-            <div class="wc-name">{{ workerSelected.apellidoNombre }}</div>
-            <div class="wc-meta">DNI {{ workerSelected.dni }}</div>
-          </div>
-          <button class="btn-ghost-sm" (click)="clearWorker()">Cambiar</button>
-        </div>
+        <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+        <app-worker-search-input
+          color="var(--color-abril-logo-blue)"
+          [selected]="workerSelected"
+          (selectedChange)="onWorkerSelectedChange($event)">
+        </app-worker-search-input>
       </div>
 
       <!-- Datos -->
       <div class="section">
-        <h4 class="section-title">Datos del descanso</h4>
+        <h2 class="paso-title">Datos del descanso</h2>
         <div class="grid-3">
-          <div>
-            <label class="field-label">Tipo *</label>
-            <select class="field-input" [(ngModel)]="cTipo">
-              <option *ngFor="let t of tiposDescanso" [value]="t">{{ t }}</option>
-            </select>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo *"
+              [options]="tiposDescansoOpts"
+              valueField="id"
+              displayField="label"
+              [value]="cTipo"
+              placeholder="Selecciona tipo"
+              [allowClear]="false"
+              (valueChange)="cTipo = $event">
+            </app-search-select>
           </div>
-          <div>
-            <label class="field-label">Fecha inicio *</label>
-            <input type="date" class="field-input" [(ngModel)]="cFechaInicio" />
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha inicio *</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="cFechaInicio" />
           </div>
-          <div>
-            <label class="field-label">Fecha fin *</label>
-            <input type="date" class="field-input" [(ngModel)]="cFechaFin" />
-          </div>
-        </div>
-        <div class="grid-2 mt-2">
-          <div>
-            <label class="field-label">Diagnóstico</label>
-            <input type="text" class="field-input" [(ngModel)]="cDiagnostico" />
-          </div>
-          <div>
-            <label class="field-label">Motivo</label>
-            <input type="text" class="field-input" [(ngModel)]="cMotivo" />
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha fin *</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="cFechaFin" />
           </div>
         </div>
         <div class="grid-2 mt-2">
-          <div>
-            <label class="field-label">Médico que certifica</label>
-            <input type="text" class="field-input" [(ngModel)]="cMedicoCertifica" placeholder="Dr. Apellidos Nombres" />
+          <div class="abril-field">
+            <label class="abril-field-label">Diagnóstico</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="cDiagnostico" />
           </div>
-          <div>
-            <label class="field-label">Establecimiento de salud</label>
-            <input type="text" class="field-input" [(ngModel)]="cEstablecimiento" placeholder="Hospital, clínica..." />
+          <div class="abril-field">
+            <label class="abril-field-label">Motivo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="cMotivo" />
           </div>
         </div>
         <div class="grid-2 mt-2">
-          <div>
-            <label class="field-label">Observaciones</label>
-            <textarea class="field-input" rows="2" [(ngModel)]="cObservaciones"></textarea>
+          <div class="abril-field">
+            <label class="abril-field-label">Médico que certifica</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="cMedicoCertifica" placeholder="Dr. Apellidos Nombres" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Establecimiento de salud</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="cEstablecimiento" placeholder="Hospital, clínica..." />
+          </div>
+        </div>
+        <div class="grid-2 mt-2">
+          <div class="abril-field">
+            <label class="abril-field-label">Observaciones</label>
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="cObservaciones"></textarea>
           </div>
           <div>
-            <label class="field-label">Certificado médico (PDF/imagen)</label>
+            <label class="abril-field-label">Certificado médico (PDF/imagen)</label>
             <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" (change)="onCertificado($event)" />
             <p *ngIf="cArchivoCertificado" class="hint mt-1">{{ cArchivoCertificado.name }}</p>
           </div>
@@ -101,12 +90,13 @@
         </div>
       </div>
 
-      <footer class="modal-footer">
-        <button class="btn-ghost" (click)="close()">Cancelar</button>
-        <button class="btn-primary" [disabled]="!canCreate" (click)="crear()">
+      <div modalFooter>
+        <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+        <button type="button" class="btn-primary" [disabled]="!canCreate" (click)="crear()">
+          <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
           {{ saving ? 'Guardando…' : 'Registrar Descanso' }}
         </button>
-      </footer>
+      </div>
     </ng-container>
 
     <!-- ══════════════════════════════════════════════════════════════════════
@@ -145,7 +135,7 @@
 
         <!-- Info médica -->
         <div class="section">
-          <h4 class="section-title">Información médica</h4>
+          <h2 class="paso-title">Información médica</h2>
           <div class="info-grid">
             <div class="info-row"><span class="info-label">Diagnóstico</span><span>{{ detalle.diagnostico ?? '—' }}</span></div>
             <div class="info-row"><span class="info-label">CIE-10</span><span>{{ detalle.diagnosticoCie10 ?? '—' }}</span></div>
@@ -175,7 +165,7 @@
 
         <!-- Alta (si completado) -->
         <div *ngIf="detalle.fechaAlta" class="section">
-          <h4 class="section-title">Alta médica</h4>
+          <h2 class="paso-title">Alta médica</h2>
           <div class="info-grid">
             <div class="info-row"><span class="info-label">Fecha de alta</span><span>{{ detalle.fechaAlta | date:'dd/MM/yyyy' }}</span></div>
             <div class="info-row" *ngIf="detalle.altaObservaciones"><span class="info-label">Observaciones</span><span>{{ detalle.altaObservaciones }}</span></div>
@@ -184,19 +174,19 @@
 
         <!-- Rechazo (si rechazado) -->
         <div *ngIf="detalle.estado === 'Rechazado' && detalle.motivoRechazo" class="section">
-          <h4 class="section-title">Motivo de rechazo</h4>
+          <h2 class="paso-title">Motivo de rechazo</h2>
           <p class="rejection-note">{{ detalle.motivoRechazo }}</p>
         </div>
 
         <!-- Acciones según estado -->
         <div *ngIf="isPendiente" class="section">
-          <h4 class="section-title">Acción</h4>
+          <h2 class="paso-title">Acción</h2>
           <div class="action-grid">
             <!-- Aprobar -->
             <div class="action-card action-card--green">
               <p class="action-card-title">Aprobar</p>
               <p class="action-card-hint">El trabajador será bloqueado automáticamente en Control de Acceso.</p>
-              <textarea class="field-input mt-1" rows="2" [(ngModel)]="aprobarObs" placeholder="Observaciones (opcional)"></textarea>
+              <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="aprobarObs" placeholder="Observaciones (opcional)"></textarea>
               <button class="btn-green mt-2" [disabled]="saving" (click)="aprobar()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12"/>
@@ -208,7 +198,7 @@
             <div class="action-card action-card--red">
               <p class="action-card-title">Rechazar</p>
               <p class="action-card-hint">Indique el motivo del rechazo.</p>
-              <textarea class="field-input mt-1" rows="2" [(ngModel)]="rechazarMotivo" placeholder="Motivo de rechazo *"></textarea>
+              <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="rechazarMotivo" placeholder="Motivo de rechazo *"></textarea>
               <button class="btn-red mt-2" [disabled]="saving || !rechazarMotivo.trim()" (click)="rechazar()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -221,9 +211,9 @@
 
         <!-- Alta (si aprobado) -->
         <div *ngIf="canAlta" class="section">
-          <h4 class="section-title">Dar de alta</h4>
+          <h2 class="paso-title">Dar de alta</h2>
           <p class="action-card-hint">Al dar de alta se marcará el descanso como Completado y el trabajador será desbloqueado en Control de Acceso.</p>
-          <textarea class="field-input mt-1" rows="2" [(ngModel)]="altaObs" placeholder="Observaciones del alta (opcional)"></textarea>
+          <textarea class="abril-field-input mt-1" rows="2" [(ngModel)]="altaObs" placeholder="Observaciones del alta (opcional)"></textarea>
           <button class="btn-blue mt-2" [disabled]="saving" (click)="darAlta()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -241,25 +231,25 @@
 
         <!-- Formulario de prórroga -->
         <div *ngIf="prorrogaMode" class="section">
-          <h4 class="section-title">Nueva prórroga de descanso</h4>
+          <h2 class="paso-title">Nueva prórroga de descanso</h2>
           <p class="action-card-hint">Se creará un nuevo descanso vinculado a este (#{{ descansoId }}).</p>
           <div class="grid-2 mt-1">
-            <div>
-              <label class="field-label">Fecha inicio *</label>
-              <input type="date" class="field-input" [(ngModel)]="pFechaInicio" />
+            <div class="abril-field">
+              <label class="abril-field-label">Fecha inicio *</label>
+              <input type="date" class="abril-field-input" [(ngModel)]="pFechaInicio" />
             </div>
-            <div>
-              <label class="field-label">Fecha fin *</label>
-              <input type="date" class="field-input" [(ngModel)]="pFechaFin" />
+            <div class="abril-field">
+              <label class="abril-field-label">Fecha fin *</label>
+              <input type="date" class="abril-field-input" [(ngModel)]="pFechaFin" />
             </div>
           </div>
-          <div class="mt-2">
-            <label class="field-label">Motivo</label>
-            <input type="text" class="field-input" [(ngModel)]="pMotivo" placeholder="Motivo de la prórroga" />
+          <div class="abril-field mt-2">
+            <label class="abril-field-label">Motivo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="pMotivo" placeholder="Motivo de la prórroga" />
           </div>
           <div class="mt-2" style="display:flex;gap:.75rem;justify-content:flex-end">
-            <button class="btn-ghost" (click)="cancelarProrroga()">Cancelar</button>
-            <button class="btn-primary" [disabled]="saving || !pFechaInicio || !pFechaFin" (click)="guardarProrroga()">
+            <button type="button" class="btn-ghost" (click)="cancelarProrroga()">Cancelar</button>
+            <button type="button" class="btn-primary" [disabled]="saving || !pFechaInicio || !pFechaFin" (click)="guardarProrroga()">
               {{ saving ? 'Guardando…' : 'Crear prórroga' }}
             </button>
           </div>
@@ -272,25 +262,32 @@
 
         <!-- Formulario nuevo seguimiento -->
         <div class="section" *ngIf="!isCompletado">
-          <h4 class="section-title">Nuevo seguimiento</h4>
+          <h2 class="paso-title">Nuevo seguimiento</h2>
           <div class="grid-2">
-            <div>
-              <label class="field-label">Tipo *</label>
-              <select class="field-input" [(ngModel)]="segTipo">
-                <option *ngFor="let t of tiposSeguimiento" [value]="t">{{ t }}</option>
-              </select>
+            <div class="abril-field">
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                label="Tipo *"
+                [options]="tiposSeguimientoOpts"
+                valueField="id"
+                displayField="label"
+                [value]="segTipo"
+                placeholder="Selecciona tipo"
+                [allowClear]="false"
+                (valueChange)="segTipo = $event">
+              </app-search-select>
             </div>
-            <div>
-              <label class="field-label">Próxima cita</label>
-              <input type="date" class="field-input" [(ngModel)]="segProximaCita" />
+            <div class="abril-field">
+              <label class="abril-field-label">Próxima cita</label>
+              <input type="date" class="abril-field-input" [(ngModel)]="segProximaCita" />
             </div>
           </div>
-          <div class="mt-2">
-            <label class="field-label">Nota *</label>
-            <textarea class="field-input" rows="3" [(ngModel)]="segNota" placeholder="Describe la evolución, indicaciones o próximos pasos…"></textarea>
+          <div class="abril-field mt-2">
+            <label class="abril-field-label">Nota *</label>
+            <textarea class="abril-field-input" rows="3" [(ngModel)]="segNota" placeholder="Describe la evolución, indicaciones o próximos pasos…"></textarea>
           </div>
           <div class="mt-2 text-right">
-            <button class="btn-primary" [disabled]="segGuardando || !segNota.trim()" (click)="guardarSeguimiento()">
+            <button type="button" class="btn-primary" [disabled]="segGuardando || !segNota.trim()" (click)="guardarSeguimiento()">
               {{ segGuardando ? 'Guardando…' : 'Registrar seguimiento' }}
             </button>
           </div>
@@ -298,7 +295,7 @@
 
         <!-- Historial -->
         <div class="section no-border">
-          <h4 class="section-title">Historial</h4>
+          <h2 class="paso-title">Historial</h2>
           <div *ngIf="seguimientos.length === 0" class="empty-row">Sin seguimientos registrados.</div>
           <div class="timeline">
             <div *ngFor="let s of seguimientos" class="timeline-item">
@@ -326,5 +323,4 @@
 
     </ng-container>
 
-  </div>
-</app-base-modal>
+</app-abril-modal-panel>

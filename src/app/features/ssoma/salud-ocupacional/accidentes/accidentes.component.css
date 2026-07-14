@@ -1,4 +1,4 @@
-:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 
 .card {
   background: #fff;
@@ -43,9 +43,9 @@
   height: 32px;
   transition: border-color .15s;
 }
-.field-input:focus { outline: 0; border-color: #64bc04; box-shadow: 0 0 0 2px rgba(100,188,4,.15); }
+.field-input:focus { outline: 0; border-color: var(--color-abril-standard); box-shadow: 0 0 0 2px rgba(15,110,86,.15); }
 
-.btn-link { font-size: .82rem; color: #64bc04; font-weight: 600; }
+.btn-link { font-size: .82rem; color: var(--color-abril-standard); font-weight: 600; }
 .btn-link:hover { text-decoration: underline; }
 
 .table-wrapper { overflow-x: auto; }
@@ -145,7 +145,7 @@
   display: flex; align-items: center; gap: 4px;
   transition: color .1s, border-color .1s;
 }
-.panel-tab.active { color: var(--color-abril-standard); border-bottom-color: #64bc04; }
+.panel-tab.active { color: var(--color-abril-standard); border-bottom-color: var(--color-abril-standard); }
 .panel-tab:hover { color: #374151; }
 
 .tab-badge {
@@ -197,7 +197,7 @@
 .btn-primary:hover { background: #243f30; }
 
 /* Link interno */
-.link-action { color: #64bc04; font-weight: 600; font-size: .8rem; text-decoration: underline; }
+.link-action { color: var(--color-abril-standard); font-weight: 600; font-size: .8rem; text-decoration: underline; }
 
 /* Toolbar de tabs con botón agregar */
 .tab-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }

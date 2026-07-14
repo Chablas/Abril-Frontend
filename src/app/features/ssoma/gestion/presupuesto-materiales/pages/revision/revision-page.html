@@ -11,12 +11,16 @@
   <div class="pres-toolbar">
     <div class="pres-field">
       <label class="pres-label">Proyecto</label>
-      <select class="pres-select" [(ngModel)]="proyectoId" (change)="onProyectoChange()">
-        <option [ngValue]="null">— Seleccionar proyecto —</option>
-        @for (p of proyectos; track p.projectId) {
-          <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-        }
-      </select>
+      <app-search-select
+        class="pres-select"
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="proyectoId"
+        [showLabel]="false"
+        placeholder="Buscar proyecto..."
+        (valueChange)="proyectoId = $event; onProyectoChange()">
+      </app-search-select>
     </div>
   </div>
 

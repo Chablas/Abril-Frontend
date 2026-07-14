@@ -1,4 +1,4 @@
-.page-root { display: flex; flex-direction: column; height: 100%; }
+.page-root { display: flex; flex-direction: column; height: 100%; background: #ffffff; }
 .page-body { padding: 1.5rem; overflow: auto; }
 
 .loading-msg { color: #6b7280; padding: 2rem; text-align: center; }

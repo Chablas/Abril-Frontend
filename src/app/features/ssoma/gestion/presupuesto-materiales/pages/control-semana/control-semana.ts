@@ -15,6 +15,12 @@ import {
   AbrirSemanaDto, RegistrarConsumoLineaDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import Swal from 'sweetalert2';
 
 type TabActiva = 'dashboard' | 'semanas' | 'registro';
@@ -23,7 +29,10 @@ type TabActiva = 'dashboard' | 'semanas' | 'registro';
   selector: 'app-control-semana',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule, FormsModule, AbrilPageHeaderComponent,
+    FilterTriggerButton, FilterModal, SearchInput, SearchSelect, Paginator,
+  ],
   templateUrl: './control-semana.html',
   styleUrl: './control-semana.css',
 })
@@ -46,6 +55,47 @@ export class ControlSemanaPage implements OnInit, OnDestroy {
 
   // Historial de semanas
   semanas: ControlSemanaDto[] = [];
+  searchText = '';
+  estadoFilter: string | null = null;
+  readonly estadoFilterOptions = [
+    { value: null, label: 'Todos' },
+    { value: 'ABIERTO', label: 'Abierto' },
+    { value: 'CERRADO', label: 'Cerrado' },
+  ];
+  filtrosAbiertos = false;
+  private readonly pager = new ClientPager<ControlSemanaDto>();
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.estadoFilter !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.estadoFilter = null;
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+    this.cdr.markForCheck();
+  }
+
+  get filteredSemanas(): ControlSemanaDto[] {
+    return this.semanas.filter((s) => {
+      const texto = `Semana ${s.semanaNum} ${s.observaciones ?? ''}`;
+      const matchesTexto = !this.searchText.trim() || SearchInput.matches(texto, this.searchText);
+      const matchesEstado = this.estadoFilter === null || s.estado === this.estadoFilter;
+      return matchesTexto && matchesEstado;
+    });
+  }
+
+  get currentPage(): number { return this.pager.currentPage; }
+  get totalPages(): number { return this.pager.totalPages(this.filteredSemanas); }
+  get pagedSemanas(): ControlSemanaDto[] { return this.pager.page(this.filteredSemanas); }
+  changePage(page: number): void { this.pager.goTo(page); }
 
   // Registro
   formAbrir: AbrirSemanaDto = { presupuestoId: 0, fechaInicio: '', fechaFin: '' };
@@ -129,7 +179,7 @@ export class ControlSemanaPage implements OnInit, OnDestroy {
 
   loadSemanas(): void {
     this.svc.getSemanasPorPresupuesto(this.presupuestoId).subscribe({
-      next: (s) => { this.semanas = s; this.cdr.markForCheck(); },
+      next: (s) => { this.semanas = s; this.pager.reset(); this.cdr.markForCheck(); },
       error: (err: HttpErrorResponse) => { this.error.handleError(err); },
     });
   }

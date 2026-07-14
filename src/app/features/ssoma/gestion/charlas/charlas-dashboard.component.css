@@ -1,6 +1,6 @@
 :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
-.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--color-abril-page-bg, #f5f3ef); }
+.dash-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 
 .dash-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .dash-body--cap { padding: 8px !important; gap: 0; }
@@ -43,7 +43,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.filtros-bar__btn-buscar:hover { background: #5aa904; }
+.filtros-bar__btn-buscar:hover { background: var(--color-abril-standard-hover); }
 
 .filtro-input {
   height: 36px; border: 0.5px solid #d4d0c8; border-radius: 8px;
@@ -223,21 +223,8 @@
   flex-wrap: wrap;
 }
 
-/* ── CAP FILE COUNT BADGE ────────────────────────── */
-.cap-file-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-abril-standard);
-  color: #fff;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  line-height: 1;
-}
+/* .abril-table-badge es global (src/styles.css) — no reimplementar el
+   badge de conteo aquí. */
 
 /* ── VIEWER TABS ─────────────────────────────────── */
 .viewer-tabs {
@@ -613,13 +600,8 @@
 .link-icon { color: var(--color-abril-standard); font-size: 15px; }
 .link-icon:hover { color: #14432e; }
 
-/* ── BTN ROW ─────────────────────────────────────── */
-.btn-row {
-  display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px;
-  border-radius: 6px; font-size: 11px; font-weight: 600; border: none; cursor: pointer;
-  background: #f0ede8; color: #1a1a18;
-}
-.btn-row:hover { background: #e8e5df; }
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
 
 /* ── PAGINACIÓN ──────────────────────────────────── */
 .paginacion { display: flex; align-items: center; gap: 8px; justify-content: center; padding-top: 10px; }

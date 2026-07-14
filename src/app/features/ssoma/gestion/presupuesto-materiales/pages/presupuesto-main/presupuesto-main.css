@@ -1,4 +1,4 @@
-.pres-wrap { padding: 16px; max-width: 1300px; }
+.pres-wrap { padding: 16px; max-width: 1300px; background: #ffffff; }
 
 .pres-toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
 .pres-field { display: flex; flex-direction: column; gap: 4px; }

@@ -18,6 +18,7 @@ import {
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ProyectoSimple {
   projectId: number;
@@ -27,7 +28,7 @@ interface ProyectoSimple {
 @Component({
   selector: 'app-presupuesto-main',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './presupuesto-main.html',
   styleUrl: './presupuesto-main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

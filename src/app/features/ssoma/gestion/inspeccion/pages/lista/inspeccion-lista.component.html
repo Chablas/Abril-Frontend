@@ -26,7 +26,7 @@
     @if (!loading) {
 
       <!-- TABLA DESKTOP -->
-      <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+      <div class="tabla-wrap abril-table-wrap">
         <table class="abril-table tabla">
           <thead class="sticky top-0 z-10">
             <tr>
@@ -53,7 +53,7 @@
                 <td>
                   <div class="tipo-cell">
                     <span>{{ item.tipoNombre }}</span>
-                    <span class="badge-ambito" [ngClass]="ambitoClass(item.tipoAmbito)">{{ item.tipoAmbito }}</span>
+                    <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
                   </div>
                 </td>
                 <td class="td-inspector">{{ item.inspectorNombre ?? '—' }}</td>
@@ -74,7 +74,7 @@
                   <span class="estado-chip" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
                 </td>
                 <td>
-                  <button type="button" class="btn-ver" (click)="$event.stopPropagation(); irADetalle(item.id)">
+                  <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); irADetalle(item.id)">
                     <i class="ti ti-eye"></i>
                   </button>
                 </td>
@@ -97,7 +97,7 @@
             </div>
             <div class="insp-card__proyecto">{{ item.proyectoNombre }}</div>
             <div class="insp-card__tipo">
-              <span class="badge-ambito" [ngClass]="ambitoClass(item.tipoAmbito)">{{ item.tipoAmbito }}</span>
+              <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
               {{ item.tipoNombre }}
             </div>
             <div class="insp-card__bottom">
@@ -172,13 +172,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
     </div>
   </div>
 </app-filter-modal>

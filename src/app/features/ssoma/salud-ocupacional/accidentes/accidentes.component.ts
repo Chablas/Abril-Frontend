@@ -89,6 +89,11 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   agentesRiesgo: AgenteRiesgoDto[] = [];
   savingAgenteRiesgo = false;
 
+  /** `agentesRiesgo` con label combinado (tipo — nombre) para el combobox. */
+  get agentesRiesgoForSelect(): { id: number; label: string }[] {
+    return this.agentesRiesgo.map((ag) => ({ id: ag.id, label: `${ag.tipo} — ${ag.nombre}` }));
+  }
+
   // --- Formularios inline ---
 
   // Citas

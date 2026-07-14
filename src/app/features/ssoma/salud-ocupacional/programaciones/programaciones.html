@@ -63,7 +63,7 @@
 
   <!-- Vista Lista -->
   <div *ngIf="viewMode === 'list'" class="flex flex-col gap-[10px] flex-1 min-h-0">
-    <div class="w-full flex-1 min-h-0 overflow-auto">
+    <div class="abril-table-wrap">
         <table class="abril-table">
           <thead class="sticky top-0 z-10">
             <tr>
@@ -234,13 +234,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filters.desde" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.desde" (change)="onFilterChange()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filters.hasta" (change)="onFilterChange()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.hasta" (change)="onFilterChange()" />
     </div>
   </div>
 

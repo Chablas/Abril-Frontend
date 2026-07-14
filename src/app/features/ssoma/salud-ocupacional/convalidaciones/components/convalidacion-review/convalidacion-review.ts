@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { ConvalidacionService } from '../../../services/convalidacion.service';
@@ -24,7 +24,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 @Component({
   selector: 'app-convalidacion-review',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DocumentViewer],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, DocumentViewer],
   templateUrl: './convalidacion-review.html',
   styleUrl: './convalidacion-review.css',
 })

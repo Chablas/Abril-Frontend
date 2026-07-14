@@ -20,6 +20,7 @@ import { ProjectService } from '../../../../../../core/services/project.service'
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { PropagArActividadComponent } from '../../components/propagar-actividad/propagar-actividad.component';
 import { environment } from '../../../../../../../environments/environment';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
@@ -28,7 +29,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   standalone: true,
   imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent,
             InstanciarModalComponent, AbrilPageHeaderComponent,
-            EjecucionModalComponent, DocumentViewer, PropagArActividadComponent],
+            EjecucionModalComponent, DocumentViewer, PropagArActividadComponent, SearchSelect],
   templateUrl: './paso-lista.component.html',
   styleUrl: './paso-lista.component.css',
 })
@@ -191,6 +192,19 @@ export class PasoListaComponent implements OnInit {
   get categoriasFiltradas() {
     return this.categorias.filter(c => c.ambito === (this.tabActiva as string));
   }
+
+  get programasFiltradosOpts() {
+    return this.programasFiltrados.map(p => ({ ...p, nombreCompleto: `${p.proyectoNombre ?? p.nombre} · ${p.anio}` }));
+  }
+
+  readonly frecuenciaOpts = [
+    { id: 'Mensual',    label: 'Mensual' },
+    { id: 'Bimestral',  label: 'Bimestral' },
+    { id: 'Trimestral', label: 'Trimestral' },
+    { id: 'Semestral',  label: 'Semestral' },
+    { id: 'Anual',      label: 'Anual' },
+    { id: 'Unica',      label: 'Única' },
+  ];
 
   countTab(tab: TabAmbito): number {
     return this.paso?.actividades?.filter(a =>

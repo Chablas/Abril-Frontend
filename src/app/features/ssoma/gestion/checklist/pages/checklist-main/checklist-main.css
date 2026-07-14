@@ -226,6 +226,11 @@
   border-radius: 10px;
   padding: 12px 14px;
   transition: background 0.15s;
+  /* Sin esto, la tarjeta se estira a los 1200px de .cl-wrap aunque su
+     contenido real (descripción corta + campo de observación de 400px) sea
+     mucho más angosto — dejaba un vacío enorme a la derecha en cada fila,
+     más notorio cuando había pocos ítems. Ancho de formulario, no de tabla. */
+  max-width: 800px;
 }
 .cl-item--completado { background: #f0fdf4; border-color: #bbf7d0; }
 .cl-item-check-col { padding-top: 2px; }

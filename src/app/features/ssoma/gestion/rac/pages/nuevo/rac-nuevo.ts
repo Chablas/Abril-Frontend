@@ -2,19 +2,16 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  OnDestroy,
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, catchError, debounceTime, distinctUntilChanged, forkJoin, of, takeUntil } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import Swal from 'sweetalert2';
 import { RacService } from '../../services/rac.service';
 import { RacCategoriaDto, RacCreateRequest, RacInfraccionDto } from '../../dtos/rac.dtos';
-import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
-import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { CatalogosSaludService } from '../../../../salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../salud-ocupacional/dtos/catalogos.model';
 import { ProjectService } from '../../../../../../core/services/project.service';
@@ -23,16 +20,20 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { compressImages } from '../../../../../../shared/utils/image-compress';
+import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
+import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 
 @Component({
   selector: 'app-rac-nuevo',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './rac-nuevo.html',
   styleUrl: './rac-nuevo.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RacNuevo implements OnInit, OnDestroy {
+export class RacNuevo implements OnInit {
   saving = false;
   loadingCatalogos = true;
 
@@ -49,23 +50,23 @@ export class RacNuevo implements OnInit, OnDestroy {
 
   // Observador (reportante)
   esAnonimoReportante = false;
-  reportanteQuery = '';
-  reportanteResults: WorkerSearchItemDto[] = [];
-  reportanteSelected: WorkerSearchItemDto | null = null;
-  reportanteSearching = false;
+  reportanteId: number | null = null;
+  reportanteCargo = '';
   empresaReportanteId: number | null = null;
 
   // Trabajador(es) observado(s)
   esAnonimoObservado = false;
   esAnonimaEmpresaReportada = false;
-  observadoQuery = '';
-  observadoResults: WorkerSearchItemDto[] = [];
-  observadosSeleccionados: WorkerSearchItemDto[] = [];
-  observadoSearching = false;
+  trabajadorObservadoId: number | null = null;
+  observadosSeleccionados: WorkerHabilitacionListDto[] = [];
   empresaReportadaId: number | null = null;
+
+  // Catálogo de trabajadores (preload, igual que OPT/Inspección)
+  workers: WorkerHabilitacionListDto[] = [];
 
   // Fotos de evidencia
   fotosSeleccionadas: File[] = [];
+  fotoPreviews: string[] = [];
   fotosSubiendo = false;
 
   // Plan de acción
@@ -94,13 +95,9 @@ export class RacNuevo implements OnInit, OnDestroy {
     { value: 'BAJO', label: 'Bajo' },
   ];
 
-  private reportanteQuery$ = new Subject<string>();
-  private observadoQuery$ = new Subject<string>();
-  private destroy$ = new Subject<void>();
-
   constructor(
     private racService: RacService,
-    private workerSearch: WorkerSearchService,
+    private trabajadorHabService: TrabajadorHabService,
     private catalogosSalud: CatalogosSaludService,
     private projectService: ProjectService,
     private loaderService: LoaderService,
@@ -111,17 +108,6 @@ export class RacNuevo implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCatalogos();
-    this.reportanteQuery$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((q) => this.runReportanteSearch(q));
-    this.observadoQuery$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe((q) => this.runObservadoSearch(q));
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   private loadCatalogos(): void {
@@ -130,9 +116,11 @@ export class RacNuevo implements OnInit, OnDestroy {
       infracciones: this.racService.getInfracciones(),
       empresas: this.catalogosSalud.getEmpresas(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, estado: 'ACTIVO' }),
+      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
     }).subscribe({
-      next: ({ categorias, infracciones, empresas, proyectos }) => {
+      next: ({ categorias, infracciones, empresas, proyectos, workers }) => {
         this.categorias = categorias;
+        this.workers = workers.data;
         this.infracciones = infracciones;
         this.empresas = empresas;
         this.proyectos = proyectos.data;
@@ -147,93 +135,44 @@ export class RacNuevo implements OnInit, OnDestroy {
     });
   }
 
-  // ── Observador search ─────────────────────────────────────────────
+  // ── Observador (reportante) ────────────────────────────────────────
 
-  onReportanteQueryChange(value: string): void {
-    this.reportanteQuery = value;
-    if (!value || value.trim().length < 2) {
-      this.reportanteResults = [];
+  onReportanteChange(id: number | null): void {
+    this.reportanteId = id;
+    if (!id) {
+      this.reportanteCargo = '';
       return;
     }
-    this.reportanteSearching = true;
-    this.reportanteQuery$.next(value.trim());
-  }
-
-  private runReportanteSearch(q: string): void {
-    this.workerSearch.search(q).subscribe({
-      next: (res) => {
-        this.reportanteResults = res;
-        this.reportanteSearching = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.reportanteResults = [];
-        this.reportanteSearching = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  selectReportante(w: WorkerSearchItemDto): void {
-    this.reportanteSelected = w;
-    this.reportanteQuery = w.apellidoNombre;
-    this.reportanteResults = [];
-    if (w.empresaActualId && !this.empresaReportanteId) {
-      this.empresaReportanteId = w.empresaActualId;
-    }
-    this.cdr.markForCheck();
-  }
-
-  clearReportante(): void {
-    this.reportanteSelected = null;
-    this.reportanteQuery = '';
-    this.reportanteResults = [];
-    this.cdr.markForCheck();
-  }
-
-  // ── Observado search ──────────────────────────────────────────────
-
-  onObservadoQueryChange(value: string): void {
-    this.observadoQuery = value;
-    if (!value || value.trim().length < 2) {
-      this.observadoResults = [];
-      return;
-    }
-    this.observadoSearching = true;
-    this.observadoQuery$.next(value.trim());
-  }
-
-  private runObservadoSearch(q: string): void {
-    this.workerSearch.search(q).subscribe({
-      next: (res) => {
-        this.observadoResults = res.filter(
-          (r) => !this.observadosSeleccionados.some((s) => s.id === r.id),
-        );
-        this.observadoSearching = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.observadoResults = [];
-        this.observadoSearching = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  addObservado(w: WorkerSearchItemDto): void {
-    if (!this.observadosSeleccionados.some((s) => s.id === w.id)) {
-      this.observadosSeleccionados = [...this.observadosSeleccionados, w];
-      if (w.empresaActualId && !this.empresaReportadaId) {
-        this.empresaReportadaId = w.empresaActualId;
+    const w = this.workers.find((x) => x.workerId === id);
+    if (w) {
+      this.reportanteCargo = [w.categoria, w.ocupacion].filter(Boolean).join(' · ');
+      if (w.empresaId && !this.empresaReportanteId) {
+        this.empresaReportanteId = w.empresaId;
       }
     }
-    this.observadoQuery = '';
-    this.observadoResults = [];
     this.cdr.markForCheck();
   }
 
-  removeObservado(id: number): void {
-    this.observadosSeleccionados = this.observadosSeleccionados.filter((s) => s.id !== id);
+  // ── Trabajador(es) observado(s) ────────────────────────────────────
+
+  onTrabajadorObservadoChange(id: number | null): void {
+    if (!id) return;
+    const w = this.workers.find((x) => x.workerId === id);
+    if (!w) return;
+    if (!this.observadosSeleccionados.some((s) => s.workerId === w.workerId)) {
+      this.observadosSeleccionados = [...this.observadosSeleccionados, w];
+      if (w.empresaId && !this.empresaReportadaId) {
+        this.empresaReportadaId = w.empresaId;
+      }
+    }
+    setTimeout(() => {
+      this.trabajadorObservadoId = null;
+      this.cdr.markForCheck();
+    }, 50);
+  }
+
+  removeObservado(workerId: number): void {
+    this.observadosSeleccionados = this.observadosSeleccionados.filter((s) => s.workerId !== workerId);
     this.cdr.markForCheck();
   }
 
@@ -256,16 +195,21 @@ export class RacNuevo implements OnInit, OnDestroy {
     );
   }
 
-  onFotosChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const seleccionadas = Array.from(input.files ?? []);
-    this.cdr.markForCheck();
+  onFotosSeleccionadas(files: FileList): void {
     // Las fotos de cámara pueden pesar 8-15MB; comprimirlas antes de subir evita
     // que la subida falle por timeout en datos móviles.
-    compressImages(seleccionadas).then((comprimidas) => {
-      this.fotosSeleccionadas = comprimidas;
+    compressImages(Array.from(files)).then((comprimidas) => {
+      this.fotosSeleccionadas = [...this.fotosSeleccionadas, ...comprimidas];
+      this.fotoPreviews = [...this.fotoPreviews, ...comprimidas.map((f) => URL.createObjectURL(f))];
       this.cdr.markForCheck();
     });
+  }
+
+  removeFoto(index: number): void {
+    URL.revokeObjectURL(this.fotoPreviews[index]);
+    this.fotosSeleccionadas = this.fotosSeleccionadas.filter((_, i) => i !== index);
+    this.fotoPreviews = this.fotoPreviews.filter((_, i) => i !== index);
+    this.cdr.markForCheck();
   }
 
   submit(): void {
@@ -277,11 +221,11 @@ export class RacNuevo implements OnInit, OnDestroy {
       categoriaId: this.categoriaId!,
       severidad: this.severidad,
       esAnonimoReportante: this.esAnonimoReportante,
-      reportanteId: this.reportanteSelected?.id,
-      reportanteCargo: this.reportanteSelected?.cargo,
+      reportanteId: this.reportanteId ?? undefined,
+      reportanteCargo: this.reportanteCargo || undefined,
       empresaReportanteId: this.empresaReportanteId ?? undefined,
       esAnonimoObservado: this.esAnonimoObservado,
-      observadoWorkerIds: this.observadosSeleccionados.map((w) => w.id),
+      observadoWorkerIds: this.observadosSeleccionados.map((w) => w.workerId),
       empresaReportadaId: this.empresaReportadaId ?? undefined,
       proyectoPiso: this.proyectoPiso || undefined,
       lugarDescripcion: this.lugarDescripcion || undefined,

@@ -5,11 +5,12 @@ import { IndicadoresProactivosService } from '../../indicadores-proactivos.servi
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { IndicadorProactivoProyectoDto } from '../../indicadores-proactivos.dtos';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-seguimiento-indicadores',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './seguimiento-indicadores.component.html',
   styleUrls: ['./seguimiento-indicadores.component.css'],
 })
@@ -33,7 +34,7 @@ export class SeguimientoIndicadoresComponent implements OnInit {
     { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
   ];
 
-  anios = [2024, 2025, 2026, 2027];
+  anios = [2024, 2025, 2026, 2027].map(a => ({ valor: a, nombre: String(a) }));
 
   ngOnInit(): void {
     this.cargar();

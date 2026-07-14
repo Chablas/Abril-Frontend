@@ -10,7 +10,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--color-abril-page-bg, #f5f3ef);
+  background: #ffffff;
 }
 
 .dash-body {

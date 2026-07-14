@@ -104,9 +104,9 @@
 }
 
 .tl-dot.active {
-  border-color: #64bc04;
-  background: #64bc04;
-  box-shadow: 0 0 0 4px rgba(100, 188, 4, 0.18);
+  border-color: var(--color-abril-standard);
+  background: var(--color-abril-standard);
+  box-shadow: 0 0 0 4px rgba(15, 110, 86, 0.18);
 }
 
 .tl-card {
@@ -141,8 +141,8 @@
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.15rem 0.6rem;
-  background: #e5f7d1;
-  color: #3c7102;
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
   border-radius: 999px;
 }
 
