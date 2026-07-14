@@ -1,28 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ObservacionesService } from '../../../core/services/arquitectura-comercial/observaciones.service';
-import { ErrorService } from '../../../core/services/error.service';
-import { LoaderService } from '../../../core/services/loader.service';
+import { ObservacionesService } from '../../../../../core/services/arquitectura-comercial/observaciones.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+import { LoaderService } from '../../../../../core/services/loader.service';
 import {
   ObservacionListItemDTO,
   ObservacionFiltrosDTO,
   ObservacionDashboardDTO,
-} from '../../../core/dtos/arquitectura-comercial/observaciones.model';
-import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
-import { Paginator } from '../../../shared/components/paginator/paginator';
-import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
-import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
-import { SearchInput } from '../../../shared/components/search-input/search-input';
-import { SearchSelect } from '../../../shared/components/search-select/search-select';
-import { AbrilBulkActionDirective } from '../../../shared/directives/abril-bulk-action.directive';
-import { NuevaObservacion } from './components/nueva-observacion/nueva-observacion';
-import { LevantarObservacion } from './components/levantar-observacion/levantar-observacion';
-import { DEFAULT_PAGE_SIZE } from '../../../shared/constants/pagination';
+} from '../../../../../core/dtos/arquitectura-comercial/observaciones.model';
+import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
+import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
+import { NuevaObservacion } from '../../components/nueva-observacion/nueva-observacion';
+import { LevantarObservacion } from '../../components/levantar-observacion/levantar-observacion';
+import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 
 @Component({
   standalone: true,
-  selector: 'app-arq-comercial-observaciones',
+  selector: 'app-arq-comercial-observaciones-lista',
   imports: [
     CommonModule,
     AbrilPageHeaderComponent,
@@ -35,10 +35,10 @@ import { DEFAULT_PAGE_SIZE } from '../../../shared/constants/pagination';
     NuevaObservacion,
     LevantarObservacion,
   ],
-  templateUrl: './observaciones.html',
+  templateUrl: './observaciones-lista.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
-export class Observaciones implements OnInit {
+export class ObservacionesLista implements OnInit {
   anioActual = new Date().getFullYear();
 
   items: ObservacionListItemDTO[] = [];

@@ -6,7 +6,6 @@ import { Actividades } from './actividades/actividades';
 import { Entregables } from './entregables/entregables';
 import { Gantt } from './gantt/gantt';
 import { Plantilla } from './plantilla/plantilla';
-import { Observaciones } from './observaciones/observaciones';
 
 const routes: Routes = [
   {
@@ -45,9 +44,8 @@ const routes: Routes = [
       },
       {
         path: 'observaciones',
-        component: Observaciones,
-        canActivate: [roleGuard],
-        data: { titulo: 'ARQUITECTURA COMERCIAL - OBSERVACIONES', featureKey: 'arquitectura-comercial.observaciones' },
+        loadChildren: () =>
+          import('./observaciones/observaciones.routes').then((m) => m.OBSERVACIONES_ROUTES),
       },
     ],
   },
