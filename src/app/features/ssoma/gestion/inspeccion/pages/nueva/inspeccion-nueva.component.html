@@ -5,6 +5,13 @@
   width="820px"
   (closeModal)="cancelar()">
 
+  @if (loadingCatalogos) {
+    <div class="loading-catalogos">
+      <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
+    </div>
+  }
+  @if (!loadingCatalogos) {
+
   <!-- STEPPER -->
   <div class="stepper">
     @for (label of pasoLabels; track $index) {
@@ -446,6 +453,7 @@
     }
 
   </div><!-- /wizard-body -->
+  }<!-- /!loadingCatalogos -->
 
   <div modalFooter>
     <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>

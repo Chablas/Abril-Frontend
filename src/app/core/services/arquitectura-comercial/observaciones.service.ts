@@ -9,6 +9,7 @@ import {
   CreateObservacionBody,
   ObservacionListItemDTO,
   ObservacionDashboardDTO,
+  ObservacionStatsDTO,
   UpdateObservacionBody,
 } from '../../dtos/arquitectura-comercial/observaciones.model';
 
@@ -51,6 +52,14 @@ export class ObservacionesService {
     return this.http.get<ObservacionDashboardDTO>(`${this.apiUrl}/dashboard`, { params, headers: this.authHeaders() });
   }
 
+  getStats(desde?: string | null, hasta?: string | null, proyectoId?: number | null): Observable<ObservacionStatsDTO> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    if (proyectoId) params = params.set('proyectoId', proyectoId);
+    return this.http.get<ObservacionStatsDTO>(`${this.apiUrl}/stats`, { params, headers: this.authHeaders() });
+  }
+
   createObservacion(body: CreateObservacionBody, foto: File | null): Observable<ObservacionListItemDTO> {
     const form = new FormData();
     Object.entries(body).forEach(([key, value]) => {
@@ -61,15 +70,38 @@ export class ObservacionesService {
     return this.http.post<ObservacionListItemDTO>(this.apiUrl, form, { headers: this.authHeaders() });
   }
 
-  levantarObservacion(id: number, comentario: string | null, foto: File | null): Observable<ObservacionListItemDTO> {
+  levantarObservacion(
+    id: number,
+    comentario: string | null,
+    foto: File | null,
+    levantaPorWorkerId: number | null,
+  ): Observable<ObservacionListItemDTO> {
     const form = new FormData();
     if (comentario) form.append('comentario', comentario);
     if (foto) form.append('foto', foto);
+    if (levantaPorWorkerId) form.append('levantaPorWorkerId', String(levantaPorWorkerId));
 
     return this.http.post<ObservacionListItemDTO>(`${this.apiUrl}/${id}/levantar`, form, { headers: this.authHeaders() });
   }
 
   updateObservacion(id: number, body: UpdateObservacionBody): Observable<ObservacionListItemDTO> {
     return this.http.put<ObservacionListItemDTO>(`${this.apiUrl}/${id}`, body, { headers: this.authHeaders() });
+  }
+
+  reemplazarFoto(fotoId: number, file: File): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.patch<{ url: string }>(`${this.apiUrl}/fotos/${fotoId}`, form, { headers: this.authHeaders() });
+  }
+
+  /**
+   * URL para un `<img src>` que sirve la foto desde nuestro propio backend en vez de la webUrl
+   * cruda de SharePoint — esa solo cargaba en navegadores con sesión de Microsoft 365 activa
+   * (por eso las miniaturas se veían rotas en celular). Un `<img>` no puede mandar el header
+   * Authorization, así que el token va por query string (el backend lo acepta solo en esta ruta).
+   */
+  fotoContenidoUrl(fotoId: number): string {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return `${this.apiUrl}/fotos/${fotoId}/contenido${token ? `?access_token=${encodeURIComponent(token)}` : ''}`;
   }
 }

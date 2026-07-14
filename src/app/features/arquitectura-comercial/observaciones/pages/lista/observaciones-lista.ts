@@ -9,7 +9,7 @@ import { NavigationService } from '../../../../../core/navigation/navigation.ser
 import {
   ObservacionListItemDTO,
   ObservacionFiltrosDTO,
-  ObservacionDashboardDTO,
+  ObservacionStatsDTO,
 } from '../../../../../core/dtos/arquitectura-comercial/observaciones.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
@@ -55,6 +55,9 @@ export class ObservacionesLista implements OnInit {
   porPagina = DEFAULT_PAGE_SIZE;
 
   filtros: ObservacionFiltrosDTO = { proyectos: [], partidas: [], estados: [] };
+  /** false hasta que loadFiltros() resuelve — evita abrir "Nueva observación" con el combo
+   * de proyectos todavía vacío (llegaba después, por eso hacía falta un segundo click). */
+  filtrosListos = false;
 
   proyectoId: number | null = null;
   estado: string | null = null;
@@ -82,20 +85,20 @@ export class ObservacionesLista implements OnInit {
     return this.navigationService.isFeatureAllowed('arquitectura-comercial.observaciones.editar');
   }
 
-  dashboard: ObservacionDashboardDTO | null = null;
+  stats: ObservacionStatsDTO | null = null;
   lightboxUrl: string | null = null;
 
   get kpiReportados(): number {
-    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalReportadas, 0) ?? 0;
+    return this.stats?.reportados ?? 0;
   }
   get kpiCompletados(): number {
-    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalCompletadas, 0) ?? 0;
+    return this.stats?.completados ?? 0;
   }
   get kpiPendientes(): number {
-    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalPendientes, 0) ?? 0;
+    return this.stats?.pendientes ?? 0;
   }
   get kpiEnProceso(): number {
-    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalEnProceso, 0) ?? 0;
+    return this.stats?.enProceso ?? 0;
   }
 
   filtrarPorKpi(estadoBuscado: string | null): void {
@@ -103,9 +106,9 @@ export class ObservacionesLista implements OnInit {
     this.onFilterChange();
   }
 
-  loadDashboard(): void {
-    this.service.getDashboard(null, null, this.proyectoId).subscribe({
-      next: (data) => { this.dashboard = data; },
+  loadStats(): void {
+    this.service.getStats(null, null, this.proyectoId).subscribe({
+      next: (data) => { this.stats = data; },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
@@ -153,7 +156,7 @@ export class ObservacionesLista implements OnInit {
     this.loadFiltros();
     this.loadPartidasCatalogo();
     this.load();
-    this.loadDashboard();
+    this.loadStats();
   }
 
   loadPartidasCatalogo(): void {
@@ -178,6 +181,7 @@ export class ObservacionesLista implements OnInit {
           ...data,
           proyectos: [...data.proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre)),
         };
+        this.filtrosListos = true;
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -217,7 +221,7 @@ export class ObservacionesLista implements OnInit {
   onProyectoFiltroChange(id: number | null): void {
     this.proyectoId = id;
     this.onFilterChange();
-    this.loadDashboard();
+    this.loadStats();
   }
 
   limpiarFiltros(): void {
@@ -229,7 +233,7 @@ export class ObservacionesLista implements OnInit {
     this.hasta = null;
     this.searchText = '';
     this.onFilterChange();
-    if (proyectoCambio) this.loadDashboard();
+    if (proyectoCambio) this.loadStats();
   }
 
   /** Atajo "Este mes": setea desde/hasta al primer y último día del mes actual. */
@@ -269,16 +273,58 @@ export class ObservacionesLista implements OnInit {
     }
   }
 
+  /** fotoId → timestamp del último reemplazo, para forzar al navegador a repedir la imagen
+   * (la URL de fotoContenidoUrl es la misma antes/después de "cambiar foto"). */
+  private fotoCacheBust = new Map<number, number>();
+
   fotoObservacion(o: ObservacionListItemDTO): string | null {
-    return o.fotos.find((f) => f.tipo === 'Observacion')?.url ?? null;
+    const id = this.fotoObservacionId(o);
+    return id ? this.urlConCacheBust(id) : null;
+  }
+
+  fotoObservacionId(o: ObservacionListItemDTO): number | null {
+    return o.fotos.find((f) => f.tipo === 'Observacion')?.id ?? null;
   }
 
   fotoLevantamiento(o: ObservacionListItemDTO): string | null {
-    return o.fotos.find((f) => f.tipo === 'Levantamiento')?.url ?? null;
+    const id = this.fotoLevantamientoId(o);
+    return id ? this.urlConCacheBust(id) : null;
+  }
+
+  fotoLevantamientoId(o: ObservacionListItemDTO): number | null {
+    return o.fotos.find((f) => f.tipo === 'Levantamiento')?.id ?? null;
+  }
+
+  private urlConCacheBust(fotoId: number): string {
+    const base = this.service.fotoContenidoUrl(fotoId);
+    const v = this.fotoCacheBust.get(fotoId);
+    return v ? `${base}&v=${v}` : base;
   }
 
   fotosLevantamientoExtra(o: ObservacionListItemDTO): number {
     return Math.max(0, o.fotos.filter((f) => f.tipo === 'Levantamiento').length - 1);
+  }
+
+  /** Reemplaza el archivo de una foto ya subida — "me equivoqué de foto". */
+  cambiarFoto(fotoId: number | null, o: ObservacionListItemDTO, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!fotoId || !file) return;
+
+    this.loaderService.show();
+    this.service.reemplazarFoto(fotoId, file).subscribe({
+      next: ({ url }) => {
+        const foto = o.fotos.find((f) => f.id === fotoId);
+        if (foto) foto.url = url;
+        this.fotoCacheBust.set(fotoId, Date.now());
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   abrirLevantar(o: ObservacionListItemDTO): void {
@@ -325,14 +371,21 @@ export class ObservacionesLista implements OnInit {
     this.showNuevaModal = false;
     this.pagina = 1;
     this.load();
-    this.loadDashboard();
+    this.loadStats();
+  }
+
+  /** Modo "añadir otra": el modal sigue abierto, solo refrescamos lista/stats. */
+  onNuevaGuardadaContinuar(): void {
+    this.pagina = 1;
+    this.load();
+    this.loadStats();
   }
 
   onLevantadaGuardada(): void {
     this.showLevantarModal = false;
     this.observacionParaLevantar = null;
     this.load();
-    this.loadDashboard();
+    this.loadStats();
   }
 
   trackById(_: number, o: ObservacionListItemDTO): number {

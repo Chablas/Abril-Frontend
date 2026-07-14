@@ -73,9 +73,12 @@ export class ArquitecturaComercialService {
     });
   }
 
-  getSupervisoresAc(): Observable<SupervisorAcDTO[]> {
+  getSupervisoresAc(soloObreros = false): Observable<SupervisorAcDTO[]> {
+    let params = new HttpParams();
+    if (soloObreros) params = params.set('soloObreros', true);
     return this.http.get<SupervisorAcDTO[]>(`${this.apiUrl}/supervisores-ac`, {
       headers: this.authHeaders(),
+      params,
     });
   }
 

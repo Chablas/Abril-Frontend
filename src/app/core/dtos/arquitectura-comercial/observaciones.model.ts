@@ -22,6 +22,8 @@ export interface ObservacionListItemDTO {
   areaResponsable: string | null;
   ejecutor: string | null;
   origen: string;
+  levantaPorWorkerId: number | null;
+  levantaPorNombre: string | null;
   fotos: ObservacionFotoDTO[];
 }
 
@@ -96,4 +98,11 @@ export interface ObservacionDashboardSupervisorDTO {
 
 export interface ObservacionDashboardDTO {
   supervisores: ObservacionDashboardSupervisorDTO[];
+}
+
+export interface ObservacionStatsDTO {
+  reportados: number;
+  completados: number;
+  pendientes: number;
+  enProceso: number;
 }

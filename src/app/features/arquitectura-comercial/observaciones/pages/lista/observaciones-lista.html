@@ -7,6 +7,8 @@
     { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/observaciones/lista' }
   ]"
   [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
+  [botonPrimarioDeshabilitado]="!filtrosListos"
+  [botonPrimarioTooltip]="!filtrosListos ? 'Cargando proyectos...' : undefined"
   (primaryClick)="showNuevaModal = true">
 
   <button tabsExtra type="button" title="Gestionar catálogos"
@@ -122,17 +124,23 @@
 
           <td class="text-center">
             <div class="flex items-center justify-center gap-[6px]">
-              <div class="relative" *ngIf="fotoObservacion(o) as url; else sinObs">
+              <div class="relative group" *ngIf="fotoObservacion(o) as url; else sinObs">
                 <img [src]="url"
                      (click)="abrirLightbox(url)"
                      title="Ver foto de observación"
                      class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
                      style="border-color:var(--color-abril-border)" />
                 <span class="absolute -top-[6px] -left-[6px] bg-gray-700 text-white text-[8px] font-semibold rounded-full px-[4px] leading-[13px]">Obs</span>
+                <label title="Cambiar foto de observación"
+                       class="absolute -bottom-[6px] -right-[6px] w-[16px] h-[16px] rounded-full bg-white border flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                       style="border-color:var(--color-abril-border)">
+                  <i class="ti ti-pencil text-[9px] text-gray-600"></i>
+                  <input type="file" accept="image/*" class="hidden" (change)="cambiarFoto(fotoObservacionId(o), o, $event)" />
+                </label>
               </div>
               <ng-template #sinObs><span class="text-gray-300 text-sm">—</span></ng-template>
 
-              <div class="relative" *ngIf="fotoLevantamiento(o) as urlLevantamiento">
+              <div class="relative group" *ngIf="fotoLevantamiento(o) as urlLevantamiento">
                 <img [src]="urlLevantamiento"
                      (click)="abrirLightbox(urlLevantamiento)"
                      title="Ver foto de levantamiento"
@@ -145,6 +153,13 @@
                       [title]="'+' + fotosLevantamientoExtra(o) + ' foto(s) más de levantamiento'">
                   +{{ fotosLevantamientoExtra(o) }}
                 </span>
+                <label *ngIf="fotosLevantamientoExtra(o) === 0"
+                       title="Cambiar foto de levantamiento"
+                       class="absolute -bottom-[6px] -right-[6px] w-[16px] h-[16px] rounded-full bg-white border flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                       style="border-color:var(--color-abril-border)">
+                  <i class="ti ti-pencil text-[9px] text-gray-600"></i>
+                  <input type="file" accept="image/*" class="hidden" (change)="cambiarFoto(fotoLevantamientoId(o), o, $event)" />
+                </label>
               </div>
             </div>
           </td>
@@ -198,7 +213,8 @@
   [proyectos]="filtros.proyectos"
   [partidas]="partidasCatalogo"
   (closeModal)="showNuevaModal = false"
-  (saved)="onNuevaGuardada()" />
+  (saved)="onNuevaGuardada()"
+  (savedContinue)="onNuevaGuardadaContinuar()" />
 
 <app-catalogo-modal
   *ngIf="showCatalogoModal"
