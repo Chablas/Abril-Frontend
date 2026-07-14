@@ -8,10 +8,8 @@ import { GaLugarService } from '../services/lugares.service';
 import { GaLugarConfigItemDto } from '../dtos/ga-lugar.dto';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
-import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
@@ -21,12 +19,11 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination
 @Component({
   standalone: true,
   selector: 'app-ga-lugares',
-  imports: [CommonModule, GaLugarCreate, GaLugarEdit, StatusBadge, AbrilPageHeaderComponent, TitleCasePipe, AbrilBulkActionDirective, FilterTriggerButton, FilterModal, SearchInput, Paginator, SearchSelect],
+  imports: [CommonModule, GaLugarCreate, GaLugarEdit, StatusBadge, TitleCasePipe, AbrilBulkActionDirective, FilterModal, SearchInput, Paginator, SearchSelect],
   templateUrl: './lugares.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GaLugares implements OnInit {
-  anioActual = new Date().getFullYear();
   lugares: GaLugarConfigItemDto[] = [];
   showCreateModal = false;
   showEditModal = false;
@@ -115,6 +112,11 @@ export class GaLugares implements OnInit {
         },
       });
     }
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
   }
 
   openEdit(lugar: GaLugarConfigItemDto): void {

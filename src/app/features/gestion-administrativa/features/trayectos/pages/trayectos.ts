@@ -8,12 +8,10 @@ import { GaTrayectoListItemDto } from '../dtos/ga-trayecto.dto';
 import { GaTrayectoCreate } from '../components/create/create';
 import { GaTrayectoEdit } from '../components/edit/edit';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
-import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../shared/utils/client-pager';
-import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -26,11 +24,9 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
     GaTrayectoCreate,
     GaTrayectoEdit,
     StatusBadge,
-    AbrilPageHeaderComponent,
     TitleCasePipe,
     AbrilBulkActionDirective,
     Paginator,
-    FilterTriggerButton,
     FilterModal,
     SearchInput,
     SearchSelect,
@@ -39,7 +35,6 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GaTrayectos implements OnInit {
-  anioActual = new Date().getFullYear();
   trayectos: GaTrayectoListItemDto[] = [];
   showCreateModal = false;
   showEditModal = false;
@@ -137,6 +132,11 @@ export class GaTrayectos implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /** Abre el modal de creación (invocado desde el botón del header del contenedor). */
+  openCreate(): void {
+    this.showCreateModal = true;
   }
 
   openEdit(t: GaTrayectoListItemDto): void {

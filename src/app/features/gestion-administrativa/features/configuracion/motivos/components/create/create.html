@@ -12,6 +12,18 @@
       <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-500">Campo requerido</p>
     </div>
 
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="requiereAdjunto" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Requiere documento adjunto</span>
+        <span class="text-xs text-gray-400">Al solicitar una salida con este motivo se exigirá subir un documento a modo de prueba.</span>
+      </span>
+    </label>
+
     <div class="flex justify-center mt-[4px]">
       <button
         (click)="save()"

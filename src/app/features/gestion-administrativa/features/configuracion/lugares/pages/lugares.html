@@ -1,28 +1,10 @@
-<app-abril-page-header
-  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
-  titulo="Lugares"
-  subtitulo="Lugares de origen y destino disponibles para solicitudes."
-  [tabs]="[
-    { label: 'Solicitud de Salidas', icono: 'ti-file-text',    route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
-    { label: 'Gestión de Salidas',   icono: 'ti-briefcase',    route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
-    { label: 'Lugares',              icono: 'ti-map-pin',      route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
-    { label: 'Motivos',              icono: 'ti-list-details', route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
-    { label: 'Trayectos',            icono: 'ti-route',        route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
-    { label: 'Revisor de Salidas',   icono: 'ti-user-check',   route: '/gestion-administrativa/configuracion/revisor-salidas', featureKey: 'gestion-administrativa.config.revisor-salidas' },
-    { label: 'Visibilidad',          icono: 'ti-eye',          route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' }
-  ]"
-  [botonPrimario]="{ label: 'Nuevo lugar fijo', icono: 'ti-plus' }"
-  (primaryClick)="showCreateModal = true">
-
-  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
-</app-abril-page-header>
-
-<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+<!-- Sección embebida en GaConfiguracion: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
   <div class="abril-table-wrap">
-    <table class="abril-table">
+    <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
           <th>Tipo</th>
@@ -90,11 +72,13 @@
               [textColor]="l.activo ? '#009C87' : '#D30000'" />
           </td>
           <td class="text-center">
-            <button
-              (click)="toggle(l)"
-              [abrilBulkAction]="l.activo ? 'danger' : 'default'">
-              {{ l.activo ? 'Desactivar' : 'Activar' }}
-            </button>
+            <div class="flex items-center justify-center">
+              <button
+                (click)="toggle(l)"
+                [abrilBulkAction]="l.activo ? 'danger' : 'default'">
+                {{ l.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
           </td>
         </tr>
 

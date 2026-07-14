@@ -9,11 +9,9 @@ import { VisibilidadAreaNodeDTO, VisibilidadWorkerItemDTO } from '../dtos/visibi
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { VisibilidadModal } from '../components/visibilidad-modal/visibilidad-modal';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
-import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 
@@ -33,19 +31,15 @@ interface AreaCascadeNode {
     SearchSelect,
     SearchInput,
     Paginator,
-    AbrilPageHeaderComponent,
     VisibilidadModal,
     TitleCasePipe,
     AbrilBulkActionDirective,
-    FilterTriggerButton,
     FilterModal,
   ],
   templateUrl: './visibilidad-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class VisibilidadSalidas implements OnInit {
-  anioActual = new Date().getFullYear();
-
   rows: VisibilidadWorkerItemDTO[] = [];
   searchText = '';
   categoriaFilter: number | null = null;
