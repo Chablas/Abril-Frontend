@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { PasoService } from '../../services/paso.service';
 import { PasoListItemDto, InstanciarPasoDto } from '../../dtos/paso.dtos';
@@ -21,8 +21,9 @@ import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model
 @Component({
   selector: 'app-instanciar-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect],
   templateUrl: './instanciar-modal.component.html',
+  styleUrl: './instanciar-modal.component.css',
 })
 export class InstanciarModalComponent implements OnInit {
   @Input() pasoPlantillaId!: number;

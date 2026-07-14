@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PasoActividadService } from '../../services/paso-actividad.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { PasoActividadDto, PasoListItemDto } from '../../dtos/paso.dtos';
@@ -11,7 +11,7 @@ type Opcion = 'solo_este' | 'solo_plantilla' | 'este_y_plantilla' | 'todos';
 @Component({
   selector: 'app-propagar-actividad',
   standalone: true,
-  imports: [CommonModule, BaseModal],
+  imports: [CommonModule, AbrilModalPanel],
   templateUrl: './propagar-actividad.component.html',
   styleUrl: './propagar-actividad.component.css',
 })
@@ -30,9 +30,7 @@ export class PropagArActividadComponent {
   constructor(
     private actividadService: PasoActividadService,
     private errorService: ErrorService,
-  ) {
-    console.log('PropagArActividadComponent CREADO');
-  }
+  ) {}
 
   get plantilla(): PasoListItemDto | undefined {
     return this.programas.find(p => p.esPlantilla);

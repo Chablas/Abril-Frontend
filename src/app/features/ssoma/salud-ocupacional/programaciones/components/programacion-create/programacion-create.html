@@ -1,57 +1,70 @@
-<app-base-modal *ngIf="open" title="Nueva programación" width="w-[800px]" (closeModal)="close()">
-  <div class="form-wrapper">
-    <h4 class="section-title">Trabajador</h4>
-    <app-worker-search-input [selected]="worker" (selectedChange)="onWorkerSelected($event)"></app-worker-search-input>
+<app-abril-modal-panel
+  *ngIf="open"
+  titulo="Nueva programación"
+  icono="ti-calendar"
+  variant="blue"
+  width="820px"
+  (closeModal)="close()">
 
-    <h4 class="section-title mt-6">Datos de la cita</h4>
-    <div class="grid-2">
-      <div>
-        <label class="field-label">Tipo EMO *</label>
-        <app-search-select
-          [options]="emoTipos"
-          valueField="id"
-          displayField="nombre"
-          [value]="tipoEmoId"
-          [showLabel]="false"
-          placeholder="Selecciona tipo"
-          (valueChange)="onTipoEmoChange($event)"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="field-label">Empresa *</label>
-        <app-search-select
-          [options]="empresas"
-          valueField="id"
-          displayField="nombre"
-          [value]="empresaId"
-          [showLabel]="false"
-          placeholder="Selecciona empresa"
-          (valueChange)="empresaId = $event"
-        ></app-search-select>
-      </div>
-      <div>
-        <label class="field-label">Fecha *</label>
-        <input type="date" class="field-input" [(ngModel)]="fecha" />
-      </div>
-      <div>
-        <label class="field-label">Clínica</label>
-        <app-search-select
-          [options]="clinicas"
-          valueField="id"
-          displayField="nombre"
-          [value]="clinicaId"
-          [showLabel]="false"
-          placeholder="Selecciona clínica"
-          (valueChange)="onClinicaChange($event)"
-        ></app-search-select>
-      </div>
+  <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+  <app-worker-search-input
+    color="var(--color-abril-logo-blue)"
+    [selected]="worker"
+    (selectedChange)="onWorkerSelected($event)">
+  </app-worker-search-input>
+
+  <h2 class="paso-title mt-6"><i class="ti ti-clipboard-list"></i> Datos de la cita</h2>
+  <div class="form-row">
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Tipo EMO *"
+        [options]="emoTipos"
+        valueField="id"
+        displayField="nombre"
+        [value]="tipoEmoId"
+        placeholder="Selecciona tipo"
+        (valueChange)="onTipoEmoChange($event)">
+      </app-search-select>
     </div>
-
-    <footer class="form-footer">
-      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
-      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
-        {{ saving ? 'Guardando…' : 'Registrar programación' }}
-      </button>
-    </footer>
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Empresa *"
+        [options]="empresas"
+        valueField="id"
+        displayField="nombre"
+        [value]="empresaId"
+        placeholder="Selecciona empresa"
+        (valueChange)="empresaId = $event">
+      </app-search-select>
+    </div>
   </div>
-</app-base-modal>
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha *</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+    </div>
+    <div class="abril-field">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Clínica"
+        [options]="clinicas"
+        valueField="id"
+        displayField="nombre"
+        [value]="clinicaId"
+        placeholder="Selecciona clínica"
+        (valueChange)="onClinicaChange($event)">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Registrar programación' }}
+    </button>
+  </div>
+
+</app-abril-modal-panel>

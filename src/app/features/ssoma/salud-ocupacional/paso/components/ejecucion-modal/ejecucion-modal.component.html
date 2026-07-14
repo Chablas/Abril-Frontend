@@ -1,4 +1,9 @@
-<app-base-modal title="Registrar Ejecución" width="w-[700px]" (closeModal)="close()">
+<app-abril-modal-panel
+  titulo="Registrar Ejecución"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="700px"
+  (closeModal)="close()">
 
   <div class="ej-header-info">
     <div class="ej-header-icon">
@@ -64,15 +69,15 @@
     <span>Subiendo evidencia…</span>
   </div>
 
-  <div class="ej-footer">
+  <div modalFooter>
     <button type="button" class="btn-cancel" (click)="close()">Cancelar</button>
     <button type="button" class="btn-save" [disabled]="!canSave || saving" (click)="guardar()">
-      <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-device-floppy'"></i>
+      <i class="ti" [ngClass]="saving ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
       {{ saving ? 'Guardando…' : 'Guardar ejecución' }}
     </button>
   </div>
 
-</app-base-modal>
+</app-abril-modal-panel>
 
 <app-document-viewer
   [archivoUrl]="visorUrl"

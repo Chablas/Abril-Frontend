@@ -7,6 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 
 import { AuditoriaAtsService } from '../../auditoria-ats.service';
 import { AuditoriaAtsDetalleDto } from '../../auditoria-ats.dtos';
@@ -16,7 +17,7 @@ import { SCORE_CONFIG } from '../nueva/auditoria-ats-nueva.component';
   selector: 'app-auditoria-ats-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, AbrilPageHeaderComponent, TitleCasePipe],
   templateUrl: './auditoria-ats-detalle.component.html',
   styleUrl: './auditoria-ats-detalle.component.css',
 })

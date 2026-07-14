@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ObservacionesService } from '../../../../../core/services/arquitectura-comercial/observaciones.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
+import { NavigationService } from '../../../../../core/navigation/navigation.service';
 import {
   ObservacionListItemDTO,
   ObservacionFiltrosDTO,
@@ -22,6 +23,7 @@ import { LevantarObservacion } from '../../components/levantar-observacion/levan
 import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
 import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
+import { ProyectosArquitecturaComercialModal } from '../../../../../shared/components/proyectos-arquitectura-comercial-modal/proyectos-arquitectura-comercial-modal';
 
 @Component({
   standalone: true,
@@ -39,6 +41,7 @@ import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/c
     NuevaObservacion,
     LevantarObservacion,
     CatalogoModal,
+    ProyectosArquitecturaComercialModal,
   ],
   templateUrl: './observaciones-lista.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -64,10 +67,20 @@ export class ObservacionesLista implements OnInit {
   showNuevaModal = false;
   showLevantarModal = false;
   showCatalogoModal = false;
+  showProyectosModal = false;
   observacionParaLevantar: ObservacionListItemDTO | null = null;
 
   /** Catálogo curado de partidas (reemplaza los valores "distintos usados" de filtros.partidas). */
   partidasCatalogo: string[] = [];
+
+  /** Edición inline de una fila — solo disponible con el featureKey .editar. */
+  editandoId: number | null = null;
+  editForm = { personaReporta: '', partidaReportada: '' as string | null, descripcion: '' };
+  guardandoEdicion = false;
+
+  get puedeEditar(): boolean {
+    return this.navigationService.isFeatureAllowed('arquitectura-comercial.observaciones.editar');
+  }
 
   dashboard: ObservacionDashboardDTO | null = null;
   lightboxUrl: string | null = null;
@@ -133,6 +146,7 @@ export class ObservacionesLista implements OnInit {
     private catalogoService: CatalogoService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
+    private navigationService: NavigationService,
   ) {}
 
   ngOnInit(): void {
@@ -151,6 +165,10 @@ export class ObservacionesLista implements OnInit {
 
   onCatalogoGuardado(): void {
     this.loadPartidasCatalogo();
+  }
+
+  onProyectosGuardado(): void {
+    this.loadFiltros();
   }
 
   loadFiltros(): void {
@@ -266,6 +284,41 @@ export class ObservacionesLista implements OnInit {
   abrirLevantar(o: ObservacionListItemDTO): void {
     this.observacionParaLevantar = o;
     this.showLevantarModal = true;
+  }
+
+  iniciarEdicion(o: ObservacionListItemDTO): void {
+    this.editandoId = o.id;
+    this.editForm = {
+      personaReporta: o.personaReporta ?? '',
+      partidaReportada: o.partidaReportada,
+      descripcion: o.descripcion,
+    };
+  }
+
+  cancelarEdicion(): void {
+    this.editandoId = null;
+  }
+
+  guardarEdicion(o: ObservacionListItemDTO): void {
+    if (!this.editForm.descripcion.trim() || this.guardandoEdicion) return;
+    this.guardandoEdicion = true;
+    this.service
+      .updateObservacion(o.id, {
+        personaReporta: this.editForm.personaReporta.trim() || null,
+        partidaReportada: this.editForm.partidaReportada,
+        descripcion: this.editForm.descripcion.trim(),
+      })
+      .subscribe({
+        next: (actualizado) => {
+          Object.assign(o, actualizado);
+          this.editandoId = null;
+          this.guardandoEdicion = false;
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoEdicion = false;
+          this.errorService.handleError(err);
+        },
+      });
   }
 
   onNuevaGuardada(): void {

@@ -8,7 +8,13 @@ export interface AuditoriaAtsListItemDto {
   id: number;
   fecha: string;
   auditorNombre: string;
+  auditorEmpresaNombre?: string;
+  auditorCategoria?: string;
+  auditorOcupacion?: string;
   auditadoNombre: string;
+  auditadoEmpresaNombre?: string;
+  auditadoCategoria?: string;
+  auditadoOcupacion?: string;
   proyectoNombre?: string;
   actividad?: string;
   lugar?: string;
@@ -30,8 +36,14 @@ export interface AuditoriaAtsDetalleDto {
   fecha: string;
   auditorWorkerId: number;
   auditorNombre: string;
+  auditorEmpresaNombre?: string;
+  auditorCategoria?: string;
+  auditorOcupacion?: string;
   auditadoWorkerId: number;
   auditadoNombre: string;
+  auditadoEmpresaNombre?: string;
+  auditadoCategoria?: string;
+  auditadoOcupacion?: string;
   proyectoId?: number;
   proyectoNombre?: string;
   emailAuditado?: string;

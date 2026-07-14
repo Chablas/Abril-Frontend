@@ -141,3 +141,13 @@
 .btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
 .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
 .btn-secondary:hover:not(:disabled) { background: #e5e7eb; }
+.btn-outline {
+  background: #fff;
+  color: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue-light);
+}
+.btn-outline:hover:not(:disabled) { background: var(--color-abril-logo-blue-light); }
+
+/* Separa el último bloque de contenido (fotos) del footer fijo del shell,
+   que ya trae su propio border-top — sin esto quedaban pegados. */
+app-photo-grid-picker { display: block; margin-bottom: 14px; }

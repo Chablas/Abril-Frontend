@@ -41,9 +41,19 @@
             <tr class="tabla-row" (click)="verDetalle(item.id)">
               <td class="col-id">{{ item.id }}</td>
               <td class="col-fecha">{{ item.fecha | date:'dd/MM/yy' }}</td>
-              <td class="col-nombre">{{ item.auditadoNombre }}</td>
-              <td class="col-nombre col-auditor">{{ item.auditorNombre }}</td>
-              <td class="col-proyecto">{{ item.proyectoNombre ?? '—' }}</td>
+              <td class="col-nombre">
+                {{ item.auditadoNombre | titleCase }}
+                @if (item.auditadoEmpresaNombre || item.auditadoCategoria) {
+                  <span class="col-nombre-sub">{{ item.auditadoEmpresaNombre }}{{ item.auditadoEmpresaNombre && item.auditadoCategoria ? ' · ' : '' }}{{ item.auditadoCategoria }}</span>
+                }
+              </td>
+              <td class="col-nombre col-auditor">
+                {{ item.auditorNombre | titleCase }}
+                @if (item.auditorEmpresaNombre || item.auditorCategoria) {
+                  <span class="col-nombre-sub">{{ item.auditorEmpresaNombre }}{{ item.auditorEmpresaNombre && item.auditorCategoria ? ' · ' : '' }}{{ item.auditorCategoria }}</span>
+                }
+              </td>
+              <td class="col-proyecto">{{ (item.proyectoNombre | titleCase) || '—' }}</td>
               <td class="col-actividad">{{ item.actividad ?? '—' }}</td>
               <td class="col-nivel">
                 @if (item.nivel && nivelConfig(item.nivel); as nc) {
@@ -68,21 +78,26 @@
           }
         </tbody>
       </table>
-
-      <!-- Paginación -->
-      <div class="shrink-0 max-w-[440px]">
-        <app-paginator
-          [totalRecords]="total"
-          [currentPage]="page"
-          [totalPages]="totalPaginas"
-          (pageChange)="irPagina($event)">
-        </app-paginator>
-      </div>
     }
   </div>
 
+  @if (!loading && items.length > 0) {
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="total"
+        [currentPage]="page"
+        [totalPages]="totalPaginas"
+        (pageChange)="irPagina($event)">
+      </app-paginator>
+    </div>
+  }
+
   <app-fab label="Nueva auditoría" (clicked)="nueva()"></app-fab>
 </div>
+
+@if (nuevaAbierta) {
+  <app-auditoria-ats-nueva (closeModal)="cerrarNueva()" />
+}
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

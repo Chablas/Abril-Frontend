@@ -1,15 +1,14 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
-  EventEmitter, Input, OnDestroy, OnInit, Output,
+  EventEmitter, Input, OnInit, Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
-import { WorkerSearchService } from '../services/worker-search.service';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import { DescansosService } from './descansos.service';
 import {
@@ -30,11 +29,11 @@ type TabKey = 'detalle' | 'seguimientos';
   selector: 'app-descanso-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
   templateUrl: './descanso-modal.component.html',
   styleUrl: './descanso-modal.component.css',
 })
-export class DescansoModalComponent implements OnInit, OnDestroy {
+export class DescansoModalComponent implements OnInit {
   /** null = modo creación, objeto = modo detalle/gestión */
   @Input() descansoId: number | null = null;
   /** Preselecciona el trabajador (p. ej. al crear desde el detalle de un accidente) y oculta el buscador. */
@@ -54,11 +53,7 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
   seguimientos: DescansoSeguimientoDto[] = [];
 
   // ── Worker search (solo modo creación) ───────────────────────────────────
-  workerQuery    = '';
-  workerResults  : WorkerSearchItemDto[] = [];
   workerSelected : WorkerSearchItemDto | null = null;
-  workerSearching = false;
-  private workerQ$ = new Subject<string>();
 
   // ── Formulario creación ───────────────────────────────────────────────────
   cTipo        = 'Particular';
@@ -90,11 +85,8 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
   readonly tiposDescansoOpts = this.tiposDescanso.map(t => ({ id: t, label: t }));
   readonly tiposSeguimientoOpts = this.tiposSeguimiento.map(t => ({ id: t, label: t }));
 
-  private destroy$ = new Subject<void>();
-
   constructor(
     private svc          : DescansosService,
-    private workerSearch : WorkerSearchService,
     private errorService : ErrorService,
     private loaderService: LoaderService,
     private cdr          : ChangeDetectorRef,
@@ -109,15 +101,9 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
       this.loading = false;
       if (this.presetWorker) {
         this.workerSelected = this.presetWorker;
-        this.workerQuery = this.presetWorker.apellidoNombre;
       }
     }
-
-    // Debounce worker search
-    this.workerQ$.pipe(takeUntil(this.destroy$)).subscribe(q => this.runWorkerSearch(q));
   }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   // ── Carga ────────────────────────────────────────────────────────────────
   private loadDetalle(): void {
@@ -220,29 +206,9 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
   }
 
   // ── Creación ─────────────────────────────────────────────────────────────
-  onWorkerQueryChange(value: string): void {
-    this.workerQuery = value;
-    if (this.workerSelected) this.workerSelected = null;
-    if (!value || value.trim().length < 2) { this.workerResults = []; return; }
-    this.workerSearching = true;
-    // simple debounce
-    setTimeout(() => this.workerQ$.next(value.trim()), 300);
-  }
-
-  private runWorkerSearch(q: string): void {
-    this.workerSearch.search(q).subscribe({
-      next: res => { this.workerResults = res; this.workerSearching = false; this.cdr.detectChanges(); },
-      error: ()  => { this.workerResults = []; this.workerSearching = false; this.cdr.detectChanges(); },
-    });
-  }
-
-  selectWorker(w: WorkerSearchItemDto): void {
+  onWorkerSelectedChange(w: WorkerSearchItemDto | null): void {
     this.workerSelected = w;
-    this.workerQuery    = w.apellidoNombre;
-    this.workerResults  = [];
   }
-
-  clearWorker(): void { this.workerSelected = null; this.workerQuery = ''; this.workerResults = []; }
 
   onCertificado(ev: Event): void {
     const f = (ev.target as HTMLInputElement).files?.[0];

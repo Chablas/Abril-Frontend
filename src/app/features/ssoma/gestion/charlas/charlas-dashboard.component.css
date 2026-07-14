@@ -43,7 +43,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.filtros-bar__btn-buscar:hover { background: #5aa904; }
+.filtros-bar__btn-buscar:hover { background: var(--color-abril-standard-hover); }
 
 .filtro-input {
   height: 36px; border: 0.5px solid #d4d0c8; border-radius: 8px;

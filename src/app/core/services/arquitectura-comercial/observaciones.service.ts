@@ -9,6 +9,7 @@ import {
   CreateObservacionBody,
   ObservacionListItemDTO,
   ObservacionDashboardDTO,
+  UpdateObservacionBody,
 } from '../../dtos/arquitectura-comercial/observaciones.model';
 
 @Injectable({ providedIn: 'root' })
@@ -66,5 +67,9 @@ export class ObservacionesService {
     if (foto) form.append('foto', foto);
 
     return this.http.post<ObservacionListItemDTO>(`${this.apiUrl}/${id}/levantar`, form, { headers: this.authHeaders() });
+  }
+
+  updateObservacion(id: number, body: UpdateObservacionBody): Observable<ObservacionListItemDTO> {
+    return this.http.put<ObservacionListItemDTO>(`${this.apiUrl}/${id}`, body, { headers: this.authHeaders() });
   }
 }

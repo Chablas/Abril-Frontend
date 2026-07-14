@@ -1,5 +1,5 @@
 :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.page-root { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.page-root { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 .page-body { padding: 1.5rem; flex: 1; min-height: 0; overflow: auto; }
 
 .loading-msg { color: #6b7280; padding: 2rem; text-align: center; }

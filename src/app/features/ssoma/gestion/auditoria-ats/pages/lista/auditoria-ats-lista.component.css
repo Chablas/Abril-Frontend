@@ -3,6 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  background: #ffffff;
 }
 
 .lista-page {
@@ -163,9 +164,10 @@
 .col-id { color: #718096; font-size: .8rem; width: 40px; }
 .col-fecha { white-space: nowrap; width: 80px; }
 .col-nombre { font-weight: 500; }
+.col-nombre-sub { display: block; font-size: .75rem; font-weight: 400; color: #9ca3af; }
 .col-auditor { color: #4a5568; }
-.col-proyecto { color: #4a5568; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col-actividad { color: #718096; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-proyecto { color: #4a5568; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-actividad { color: #718096; white-space: normal; word-break: break-word; }
 .col-nivel { white-space: nowrap; }
 .col-estado { white-space: nowrap; }
 .col-acc { width: 40px; }

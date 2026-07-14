@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { InterconsultaService } from '../../../services/interconsulta.service';
 import { InterconsultaDetalleDto } from '../../../dtos/interconsulta.model';
@@ -20,7 +20,7 @@ import { estadoBadgeClass, estadoInterconsultaStyle } from '../../../shared/esta
 @Component({
   selector: 'app-interconsulta-detail',
   standalone: true,
-  imports: [CommonModule, BaseModal, DocumentViewer],
+  imports: [CommonModule, AbrilModalPanel, DocumentViewer],
   templateUrl: './interconsulta-detail.html',
   styleUrl: './interconsulta-detail.css',
 })

@@ -81,4 +81,14 @@ export class ProjectService {
     });
   }
 
+  /** Activa/desactiva rápido si el proyecto aparece en los selectores de Arquitectura Comercial. */
+  toggleArquitecturaComercial(projectId: number): Observable<{ tieneArquitecturaComercial: boolean }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<{ tieneArquitecturaComercial: boolean }>(
+      `${this.apiUrl}/${projectId}/arquitectura-comercial`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
 }

@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { PasoEjecucionService } from '../../services/paso-ejecucion.service';
 import { SharepointUploadService } from '../../../../../habilitacion/services/sharepoint-upload.service';
@@ -20,7 +20,7 @@ import { PasoActividadDto, PasoEjecucionDto, CreateEjecucionDto, PasoEjecucionAr
 @Component({
   selector: 'app-ejecucion-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, DocumentViewer],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, DocumentViewer],
   templateUrl: './ejecucion-modal.component.html',
   styleUrl: './ejecucion-modal.component.css',
 })

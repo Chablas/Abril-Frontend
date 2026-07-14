@@ -1,4 +1,4 @@
-:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #ffffff; }
 
 .card {
   background: #fff;
@@ -43,9 +43,9 @@
   height: 32px;
   transition: border-color .15s;
 }
-.field-input:focus { outline: 0; border-color: #64bc04; box-shadow: 0 0 0 2px rgba(100,188,4,.15); }
+.field-input:focus { outline: 0; border-color: var(--color-abril-standard); box-shadow: 0 0 0 2px rgba(15,110,86,.15); }
 
-.btn-link { font-size: .82rem; color: #64bc04; font-weight: 600; }
+.btn-link { font-size: .82rem; color: var(--color-abril-standard); font-weight: 600; }
 .btn-link:hover { text-decoration: underline; }
 
 .abril-table {

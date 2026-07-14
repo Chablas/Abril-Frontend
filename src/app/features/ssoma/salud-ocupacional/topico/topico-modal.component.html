@@ -1,5 +1,9 @@
-<app-base-modal [title]="isEdicion ? ('Atención #' + atencion!.id) : 'Nueva Atención'" width="w-[860px]" (closeModal)="close()">
-  <div class="modal-body">
+<app-abril-modal-panel
+  [titulo]="isEdicion ? ('Atención #' + atencion!.id) : 'Nueva Atención'"
+  icono="ti-first-aid-kit"
+  variant="blue"
+  width="860px"
+  (closeModal)="close()">
 
     <!-- Tabs (solo en edición) -->
     <div *ngIf="isEdicion" class="tab-bar">
@@ -14,19 +18,19 @@
 
       <!-- Formulario nueva evolución -->
       <div class="section">
-        <h4 class="section-title">Registrar evolución clínica</h4>
-        <div>
-          <label class="field-label">Nota de evolución *</label>
-          <textarea class="field-input" rows="4" [(ngModel)]="evNota"
+        <h2 class="paso-title">Registrar evolución clínica</h2>
+        <div class="abril-field">
+          <label class="abril-field-label">Nota de evolución *</label>
+          <textarea class="abril-field-input" rows="4" [(ngModel)]="evNota"
             placeholder="Descripción del estado actual del paciente, indicaciones, cambio de tratamiento…"></textarea>
         </div>
         <div class="mt-2">
-          <label class="field-label">Evidencia (imagen / PDF)</label>
+          <label class="abril-field-label">Evidencia (imagen / PDF)</label>
           <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" (change)="onEvArchivo($event)" />
           <p *ngIf="evArchivo" class="hint mt-1">{{ evArchivo.name }}</p>
         </div>
         <div class="mt-2 text-right">
-          <button class="btn-primary" [disabled]="evGuardando || !evNota.trim()" (click)="guardarEvolucion()">
+          <button type="button" class="btn-primary" [disabled]="evGuardando || !evNota.trim()" (click)="guardarEvolucion()">
             {{ evGuardando ? 'Guardando…' : 'Registrar evolución' }}
           </button>
         </div>
@@ -34,7 +38,7 @@
 
       <!-- Historial de evoluciones -->
       <div class="section no-border">
-        <h4 class="section-title">Historial de evoluciones</h4>
+        <h2 class="paso-title">Historial de evoluciones</h2>
         <div *ngIf="evLoading" class="loading-row">Cargando…</div>
         <div *ngIf="!evLoading && evoluciones.length === 0" class="empty-row">Sin evoluciones registradas.</div>
         <div class="timeline">
@@ -58,9 +62,9 @@
         </div>
       </div>
 
-      <footer class="modal-footer">
-        <button class="btn-ghost" (click)="close()">Cerrar</button>
-      </footer>
+      <div modalFooter style="justify-content: flex-end;">
+        <button type="button" class="btn-ghost" (click)="close()">Cerrar</button>
+      </div>
     </ng-container>
 
     <!-- Panel formulario (siempre visible en creación; tab "form" en edición) -->
@@ -68,54 +72,29 @@
 
     <!-- === Trabajador === -->
     <div class="section">
-      <h4 class="section-title">Trabajador</h4>
-
-      <div *ngIf="!workerSelected" class="worker-search">
-        <div class="search-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-          </svg>
-          <input type="text" [ngModel]="workerQuery" (ngModelChange)="onWorkerQueryChange($event)"
-            placeholder="Buscar por nombre o DNI (mín. 2 caracteres)" />
-        </div>
-        <div *ngIf="workerSearching" class="hint">Buscando…</div>
-        <ul *ngIf="workerResults.length > 0" class="worker-results">
-          <li *ngFor="let w of workerResults" (click)="selectWorker(w)">
-            <div>
-              <div class="wr-name">{{ w.apellidoNombre }}</div>
-              <div class="wr-meta">DNI {{ w.dni }}<span *ngIf="w.empresaActual"> · {{ w.empresaActual }}</span></div>
-            </div>
-            <span class="wr-btn">Seleccionar</span>
-          </li>
-        </ul>
-        <p *ngIf="workerQuery.length >= 2 && !workerSearching && workerResults.length === 0" class="hint">
-          Sin resultados.
-        </p>
-      </div>
-
-      <div *ngIf="workerSelected" class="worker-card">
-        <div>
-          <div class="wc-name">{{ workerSelected.apellidoNombre }}</div>
-          <div class="wc-meta">DNI {{ workerSelected.dni }}</div>
-        </div>
-        <button class="btn-ghost-sm" (click)="clearWorker()">Cambiar</button>
-      </div>
+      <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+      <app-worker-search-input
+        color="var(--color-abril-logo-blue)"
+        [selected]="workerSelected"
+        (selectedChange)="onWorkerSelectedChange($event)">
+      </app-worker-search-input>
     </div>
 
     <!-- === Datos principales === -->
     <div class="section">
-      <h4 class="section-title">Datos de la atención</h4>
+      <h2 class="paso-title">Datos de la atención</h2>
       <div class="grid-3">
-        <div>
-          <label class="field-label">Fecha *</label>
-          <input type="date" class="field-input" [(ngModel)]="fecha" />
+        <div class="abril-field">
+          <label class="abril-field-label">Fecha *</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
         </div>
-        <div>
-          <label class="field-label">Hora</label>
-          <input type="time" class="field-input" [(ngModel)]="hora" />
+        <div class="abril-field">
+          <label class="abril-field-label">Hora</label>
+          <input type="time" class="abril-field-input" [(ngModel)]="hora" />
         </div>
-        <div>
+        <div class="abril-field">
           <app-search-select
+            color="var(--color-abril-logo-blue)"
             label="Tipo de atención *"
             [options]="tiposAtencion"
             valueField="id"
@@ -126,67 +105,67 @@
           </app-search-select>
         </div>
       </div>
-      <div class="mt-2">
-        <label class="field-label">Motivo de consulta</label>
-        <textarea class="field-input" rows="2" [(ngModel)]="motivo"></textarea>
+      <div class="abril-field mt-2">
+        <label class="abril-field-label">Motivo de consulta</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="motivo"></textarea>
       </div>
     </div>
 
     <!-- === Signos vitales === -->
     <div class="section">
-      <h4 class="section-title">Signos vitales</h4>
+      <h2 class="paso-title">Signos vitales</h2>
       <div class="grid-5">
-        <div>
-          <label class="field-label">Presión arterial</label>
-          <input type="text" class="field-input" [(ngModel)]="presionArterial" placeholder="120/80" />
+        <div class="abril-field">
+          <label class="abril-field-label">Presión arterial</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="presionArterial" placeholder="120/80" />
         </div>
-        <div>
-          <label class="field-label">Temp. (°C)</label>
-          <input type="number" step="0.1" class="field-input" [(ngModel)]="temperatura" placeholder="36.5" />
+        <div class="abril-field">
+          <label class="abril-field-label">Temp. (°C)</label>
+          <input type="number" step="0.1" class="abril-field-input" [(ngModel)]="temperatura" placeholder="36.5" />
         </div>
-        <div>
-          <label class="field-label">F. Cardíaca</label>
-          <input type="number" class="field-input" [(ngModel)]="frecuenciaCardiaca" placeholder="72" />
+        <div class="abril-field">
+          <label class="abril-field-label">F. Cardíaca</label>
+          <input type="number" class="abril-field-input" [(ngModel)]="frecuenciaCardiaca" placeholder="72" />
         </div>
-        <div>
-          <label class="field-label">Saturación O₂</label>
-          <input type="number" step="0.1" class="field-input" [(ngModel)]="saturacionOxigeno" placeholder="98" />
+        <div class="abril-field">
+          <label class="abril-field-label">Saturación O₂</label>
+          <input type="number" step="0.1" class="abril-field-input" [(ngModel)]="saturacionOxigeno" placeholder="98" />
         </div>
-        <div>
-          <label class="field-label">Peso (kg)</label>
-          <input type="number" step="0.1" class="field-input" [(ngModel)]="peso" placeholder="70" />
+        <div class="abril-field">
+          <label class="abril-field-label">Peso (kg)</label>
+          <input type="number" step="0.1" class="abril-field-input" [(ngModel)]="peso" placeholder="70" />
         </div>
       </div>
     </div>
 
     <!-- === Diagnóstico === -->
     <div class="section">
-      <h4 class="section-title">Diagnóstico y tratamiento</h4>
+      <h2 class="paso-title">Diagnóstico y tratamiento</h2>
       <div class="grid-2">
-        <div>
-          <label class="field-label">Diagnóstico</label>
-          <input type="text" class="field-input" [(ngModel)]="diagnostico" />
+        <div class="abril-field">
+          <label class="abril-field-label">Diagnóstico</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="diagnostico" />
         </div>
-        <div>
-          <label class="field-label">CIE-10</label>
-          <input type="text" class="field-input" [(ngModel)]="diagnosticoCie10" placeholder="J06.9" />
+        <div class="abril-field">
+          <label class="abril-field-label">CIE-10</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="diagnosticoCie10" placeholder="J06.9" />
         </div>
       </div>
       <div class="grid-2 mt-2">
-        <div>
-          <label class="field-label">Tratamiento</label>
-          <textarea class="field-input" rows="2" [(ngModel)]="tratamiento"></textarea>
+        <div class="abril-field">
+          <label class="abril-field-label">Tratamiento</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="tratamiento"></textarea>
         </div>
-        <div>
-          <label class="field-label">Medicamentos</label>
-          <textarea class="field-input" rows="2" [(ngModel)]="medicamentos"></textarea>
+        <div class="abril-field">
+          <label class="abril-field-label">Medicamentos</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="medicamentos"></textarea>
         </div>
       </div>
     </div>
 
     <!-- === Flags === -->
     <div class="section">
-      <h4 class="section-title">Seguimiento</h4>
+      <h2 class="paso-title">Seguimiento</h2>
       <div class="flags-grid">
         <!-- Derivación -->
         <label class="check-card" [class.check-card--active]="derivadoClinica">
@@ -205,13 +184,13 @@
         </label>
       </div>
 
-      <div *ngIf="derivadoClinica" class="mt-2">
-        <label class="field-label">Clínica de derivación</label>
-        <input type="text" class="field-input" [(ngModel)]="clinicaDerivacion" placeholder="Nombre de la clínica" />
+      <div *ngIf="derivadoClinica" class="abril-field mt-2">
+        <label class="abril-field-label">Clínica de derivación</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="clinicaDerivacion" placeholder="Nombre de la clínica" />
       </div>
-      <div *ngIf="generaDescanso" class="mt-2" style="max-width:220px">
-        <label class="field-label">Días de descanso *</label>
-        <input type="number" min="1" class="field-input" [(ngModel)]="descansoDias" />
+      <div *ngIf="generaDescanso" class="abril-field mt-2" style="max-width:220px">
+        <label class="abril-field-label">Días de descanso *</label>
+        <input type="number" min="1" class="abril-field-input" [(ngModel)]="descansoDias" />
       </div>
 
       <!-- SCTR -->
@@ -221,9 +200,9 @@
           <span>SCTR activado</span>
         </label>
       </div>
-      <div *ngIf="sctrActivado" class="mt-2" style="max-width:320px">
-        <label class="field-label">Tipo de caso SCTR</label>
-        <input type="text" class="field-input" [(ngModel)]="tipoCasoSctr" placeholder="Ej. Enfermedad Ocupacional" />
+      <div *ngIf="sctrActivado" class="abril-field mt-2" style="max-width:320px">
+        <label class="abril-field-label">Tipo de caso SCTR</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="tipoCasoSctr" placeholder="Ej. Enfermedad Ocupacional" />
       </div>
 
       <!-- Link al descanso generado en modo edición -->
@@ -239,12 +218,12 @@
     <!-- === Extras === -->
     <div class="section no-border">
       <div class="grid-2">
-        <div>
-          <label class="field-label">Observaciones</label>
-          <textarea class="field-input" rows="2" [(ngModel)]="observaciones"></textarea>
+        <div class="abril-field">
+          <label class="abril-field-label">Observaciones</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="observaciones"></textarea>
         </div>
         <div>
-          <label class="field-label">Adjunto (informe / receta)</label>
+          <label class="abril-field-label">Adjunto (informe / receta)</label>
           <input type="file" accept=".pdf,.jpg,.png" class="file-input" (change)="onFile($event)" />
           <p *ngIf="archivoInforme" class="hint">{{ archivoInforme.name }}</p>
         </div>
@@ -252,14 +231,14 @@
     </div>
 
     <!-- Footer -->
-    <footer class="modal-footer">
-      <button class="btn-ghost" (click)="close()">Cancelar</button>
-      <button class="btn-primary" [disabled]="!canSubmit" (click)="guardar()">
+    <div modalFooter>
+      <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!canSubmit" (click)="guardar()">
+        <i class="ti ti-loader-2 spin" *ngIf="saving"></i><i class="ti ti-check" *ngIf="!saving"></i>
         {{ saving ? 'Guardando…' : (isEdicion ? 'Actualizar' : 'Registrar Atención') }}
       </button>
-    </footer>
+    </div>
 
     </ng-container><!-- /form panel -->
 
-  </div>
-</app-base-modal>
+</app-abril-modal-panel>

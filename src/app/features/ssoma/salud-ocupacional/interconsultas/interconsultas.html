@@ -16,15 +16,9 @@
     { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' }
   ]">
 
-  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
-</app-abril-page-header>
-
-<section class="page-container ic-section flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
-
-  <!-- Acción bulk sobre la selección -->
-  <div class="flex flex-wrap items-center gap-2">
-    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+  <!-- Acciones a la altura de las pestañas: bulk (Enviar correos) + Filtros estándar. -->
+  <div tabsExtra class="flex items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
     <button
       type="button"
       abrilBulkAction="primary"
@@ -35,6 +29,10 @@
       Enviar correos<span *ngIf="selectedIds.size > 0"> ({{ selectedIds.size }})</span>
     </button>
   </div>
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<section class="page-container ic-section flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <div class="abril-table-wrap">
       <table class="abril-table">

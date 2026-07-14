@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   EventEmitter,
+  HostBinding,
   Input,
   OnDestroy,
   OnInit,
@@ -24,6 +25,11 @@ export class WorkerSearchInput implements OnInit, OnDestroy {
   @Input() placeholder = 'Buscar por nombre o DNI (mín. 2 caracteres)';
   @Input() selected: WorkerSearchItemDto | null = null;
   @Input() limit = 20;
+  @Input() color = 'var(--color-abril-standard)';
+
+  @HostBinding('style.--ws-accent') get wsAccent(): string {
+    return this.color;
+  }
 
   @Output() selectedChange = new EventEmitter<WorkerSearchItemDto | null>();
 

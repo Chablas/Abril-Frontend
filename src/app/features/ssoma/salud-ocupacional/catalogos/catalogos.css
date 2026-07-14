@@ -3,6 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  background: #ffffff;
 }
 
 .tabs {
@@ -31,7 +32,7 @@
 
 .tabs button.active {
   color: #111827;
-  border-bottom-color: #64bc04;
+  border-bottom-color: var(--color-abril-standard);
 }
 
 .tab-panel {

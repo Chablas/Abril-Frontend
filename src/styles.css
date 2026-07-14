@@ -297,6 +297,29 @@
 textarea.abril-field-input { resize: vertical; }
 select.abril-field-input { cursor: pointer; }
 
+/* ── Footer de app-abril-modal-panel / app-base-modal ─────────────────
+   Global (no scoped) a propósito: el contenido de [modalFooter] se proyecta
+   vía <ng-content>, así que un CSS scoped al componente shell (.amp-footer)
+   nunca llega a estos hijos — cada página tenía que reimplementar el flex de
+   reparto (Cancelar izquierda / acción(es) derecha) a mano, y varias
+   referencias (RAC, Amonestaciones) se quedaron sin hacerlo, quedando los
+   botones apilados en vez de en fila. Con esto queda forzado siempre, sin
+   que ninguna página tenga que declararlo ni pueda olvidarlo. */
+[modalFooter] {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+[modalFooter] .footer-nav,
+[modalFooter] .footer-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 /* ── Botón de acción en tabla (ej. "Ver detalle") y badge de conteo ──
    Cada lista SSOMA (RAC, OPT, Inspección, Accidentes, Charlas) reinventaba
    su propio botón de ícono ".btn-icon"/".btn-ver"/".btn-row", cada uno con

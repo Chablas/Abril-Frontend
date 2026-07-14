@@ -573,7 +573,7 @@ canvas {
   background: #faf9f7;
   transition: border-color .15s;
 }
-.foto-area-add:hover { border-color: #64bc04; color: #3f7500; }
+.foto-area-add:hover { border-color: var(--color-abril-standard); color: #3f7500; }
 .foto-area-add i { font-size: 22px; }
 
 /* ── FOOTER ────────────────────────────────────────────── */

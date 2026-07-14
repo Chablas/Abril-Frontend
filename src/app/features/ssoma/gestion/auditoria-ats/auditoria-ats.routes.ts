@@ -9,12 +9,6 @@ export const AUDITORIA_ATS_ROUTES: Routes = [
     data: { titulo: 'AUDITORÍA DE ATS' },
   },
   {
-    path: 'nueva',
-    loadComponent: () =>
-      import('./pages/nueva/auditoria-ats-nueva.component').then((m) => m.AuditoriaAtsNuevaComponent),
-    data: { titulo: 'NUEVA AUDITORÍA DE ATS' },
-  },
-  {
     path: ':id',
     loadComponent: () =>
       import('./pages/detalle/auditoria-ats-detalle.component').then(

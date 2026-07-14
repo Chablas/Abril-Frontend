@@ -17,8 +17,8 @@
 }
 
 .ws-input:focus-within {
-  border-color: #64bc04;
-  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
+  border-color: var(--ws-accent, var(--color-abril-standard));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 18%, transparent);
 }
 
 .ws-input input {
@@ -62,7 +62,7 @@
 }
 
 .ws-results li:hover {
-  background: #f3fbe2;
+  background: color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 10%, white);
 }
 
 .ws-name {
@@ -78,7 +78,7 @@
 
 .ws-action {
   font-size: 0.78rem;
-  color: #64bc04;
+  color: var(--ws-accent, var(--color-abril-standard));
   font-weight: 600;
 }
 
@@ -88,8 +88,8 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1rem;
-  border: 1px solid #64bc04;
-  background: #f3fbe2;
+  border: 1px solid var(--ws-accent, var(--color-abril-standard));
+  background: color-mix(in srgb, var(--ws-accent, var(--color-abril-standard)) 8%, white);
   border-radius: 10px;
 }
 
@@ -100,7 +100,7 @@
 
 .ws-sel-meta {
   font-size: 0.8rem;
-  color: #3c7102;
+  color: var(--ws-accent, var(--color-abril-standard));
 }
 
 .ws-clear {

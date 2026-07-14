@@ -1,4 +1,9 @@
-<app-base-modal title="Propagar actividad" width="w-[480px]" (closeModal)="cerrado.emit()">
+<app-abril-modal-panel
+  titulo="Propagar actividad"
+  icono="ti-git-branch"
+  variant="blue"
+  width="480px"
+  (closeModal)="cerrado.emit()">
 
   <!-- Chip actividad -->
   <div class="prop-actividad-chip">
@@ -40,12 +45,12 @@
   </div>
 
   <!-- Footer -->
-  <div class="prop-footer">
+  <div modalFooter>
     <button type="button" class="prop-btn-cancel" (click)="cerrado.emit()">Cancelar</button>
     <button type="button" class="prop-btn-apply" [disabled]="saving" (click)="aplicar()">
-      <i class="ti" [ngClass]="saving ? 'ti-loader-2 animate-spin' : 'ti-arrow-right'"></i>
+      <i class="ti" [ngClass]="saving ? 'ti-loader-2 spin' : 'ti-arrow-right'"></i>
       {{ saving ? 'Aplicando…' : 'Aplicar' }}
     </button>
   </div>
 
-</app-base-modal>
+</app-abril-modal-panel>

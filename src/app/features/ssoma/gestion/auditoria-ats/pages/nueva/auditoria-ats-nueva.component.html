@@ -1,15 +1,10 @@
-<!-- ═══ PÁGINA PRINCIPAL ═══════════════════════════════════════════════════ -->
-<div class="ats-page">
-
-  <app-abril-page-header
-    badge="SSOMA"
-    titulo="Nueva Auditoría de ATS"
-    subtitulo="Evaluación de calidad del Análisis de Trabajo Seguro"
-    [botonSecundario]="{ label: 'Cancelar', icono: 'ti-x' }"
-    [botonPrimario]="{ label: guardando ? 'Guardando...' : 'Guardar', icono: guardando ? 'ti-loader-2' : 'ti-device-floppy' }"
-    (secondaryClick)="cancelar()"
-    (primaryClick)="guardar()">
-  </app-abril-page-header>
+<!-- ═══ MODAL: NUEVA AUDITORÍA DE ATS ═══════════════════════════════════════ -->
+<app-abril-modal-panel
+  titulo="Nueva Auditoría de ATS"
+  icono="ti-clipboard-check"
+  variant="blue"
+  width="820px"
+  (closeModal)="cancelar()">
 
   @if (loadingCatalogos) {
     <div class="loading-state">
@@ -17,87 +12,81 @@
     </div>
   } @else {
 
-    <!-- ── Bloque 1: Personas y fecha ──────────────────────────────────── -->
-    <div class="card">
-      <div class="card-grid">
+    <!-- ── Personas y fecha ──────────────────────────────────────────────── -->
+    <div class="abril-section-title">Auditor y auditado</div>
+    <div class="card-grid">
 
-        <div class="form-group">
-          <label class="form-label">Auditor <span class="req">*</span></label>
-          <app-search-select
-            [options]="workers"
-            valueField="workerId"
-            displayField="apellidoNombre"
-            placeholder="Buscar auditor..."
-            [value]="auditorId"
-            (valueChange)="onAuditorChange($event)">
-          </app-search-select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Fecha <span class="req">*</span></label>
-          <input type="date" class="form-input" [(ngModel)]="fecha" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Trabajador auditado <span class="req">*</span></label>
-          <app-search-select
-            [options]="workers"
-            valueField="workerId"
-            displayField="apellidoNombre"
-            placeholder="Buscar trabajador..."
-            [value]="auditadoId"
-            (valueChange)="onAuditadoChange($event)">
-          </app-search-select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Proyecto</label>
-          <app-search-select
-            [options]="proyectos"
-            valueField="projectId"
-            displayField="projectDescription"
-            placeholder="Buscar proyecto..."
-            [value]="proyectoId"
-            (valueChange)="proyectoId = $event">
-          </app-search-select>
-        </div>
-
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Auditor *"
+          [options]="workers"
+          valueField="workerId"
+          displayField="apellidoNombre"
+          placeholder="Buscar por nombre o DNI..."
+          [value]="auditorId"
+          (valueChange)="onAuditorChange($event)">
+        </app-search-select>
+        @if (auditorSeleccionado; as w) {
+          <p class="worker-meta">{{ w.empresaNombre || '—' }} · {{ w.categoria || '—' }} · {{ w.ocupacion || '—' }}</p>
+        }
       </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Fecha *</label>
+        <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
+      </div>
+
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Trabajador auditado *"
+          [options]="workers"
+          valueField="workerId"
+          displayField="apellidoNombre"
+          placeholder="Buscar por nombre o DNI..."
+          [value]="auditadoId"
+          (valueChange)="onAuditadoChange($event)">
+        </app-search-select>
+        @if (auditadoSeleccionado; as w) {
+          <p class="worker-meta">{{ w.empresaNombre || '—' }} · {{ w.categoria || '—' }} · {{ w.ocupacion || '—' }}</p>
+        }
+      </div>
+
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Proyecto"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          placeholder="Buscar proyecto..."
+          [value]="proyectoId"
+          (valueChange)="proyectoId = $event">
+        </app-search-select>
+      </div>
+
     </div>
 
-    <!-- ── Bloque 2: Datos del ATS ─────────────────────────────────────── -->
-    <div class="card">
-      <h3 class="card-title">Datos del ATS auditado</h3>
-      <div class="card-grid">
+    <!-- ── Datos del ATS auditado ───────────────────────────────────────── -->
+    <div class="abril-section-title">Datos del ATS auditado</div>
+    <div class="card-grid">
 
-        <div class="form-group">
-          <label class="form-label">Email del auditado</label>
-          <input type="email" class="form-input" [(ngModel)]="auditadoEmail"
-            placeholder="correo@empresa.pe" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Actividad</label>
-          <input type="text" class="form-input" [(ngModel)]="actividad"
-            placeholder="Actividad descrita en el ATS..." />
-        </div>
-
-        <div class="form-group form-group--full">
-          <label class="form-label">Lugar</label>
-          <input type="text" class="form-input" [(ngModel)]="lugar"
-            placeholder="Lugar de trabajo indicado en el ATS..." />
-        </div>
-
-        <div class="form-group form-group--full">
-          <label class="form-label">Observaciones</label>
-          <textarea class="form-input" [(ngModel)]="observaciones" rows="2"
-            placeholder="Observaciones generales..."></textarea>
-        </div>
-
+      <div class="abril-field">
+        <label class="abril-field-label">Actividad</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="actividad"
+          placeholder="Actividad descrita en el ATS..." />
       </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Lugar</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="lugar"
+          placeholder="Lugar de trabajo indicado en el ATS..." />
+      </div>
+
     </div>
 
-    <!-- ── Bloque 3: Resultado de evaluación ──────────────────────────── -->
+    <!-- ── Resultado de evaluación ───────────────────────────────────────── -->
     @if (evaluacionCompleta) {
       <div class="resultado-card" [style.background]="nivelActual.color">
         <div class="resultado-label" [style.color]="nivelActual.textColor">
@@ -111,7 +100,7 @@
       </div>
     }
 
-    <!-- ── Bloque 4: Botón Evaluar ─────────────────────────────────────── -->
+    <!-- ── Botón Evaluar ─────────────────────────────────────────────────── -->
     <div class="evaluar-section">
       <button type="button" class="btn-evaluar" (click)="abrirEvaluacion()">
         <i class="ti ti-checklist"></i>
@@ -127,36 +116,51 @@
       }
     </div>
 
-    <!-- ── Bloque 5: Fotos ────────────────────────────────────────────── -->
-    <div class="card">
-      <h3 class="card-title">
-        Evidencia fotográfica
-        <span class="fotos-count">{{ fotosBase64.length }}/10</span>
-      </h3>
+    <!-- ── Observaciones (posteriores a la evaluación) ──────────────────── -->
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones</label>
+      <textarea class="abril-field-input" [(ngModel)]="observaciones" rows="2"
+        placeholder="Observaciones generales..."></textarea>
+    </div>
 
-      <div class="fotos-grid">
-        @for (preview of fotosPreview; track $index) {
-          <div class="foto-thumb">
-            <img [src]="preview" alt="Foto {{ $index + 1 }}" />
-            <button type="button" class="foto-remove" (click)="quitarFoto($index)">
-              <i class="ti ti-x"></i>
-            </button>
-          </div>
-        }
-        @if (fotosBase64.length < 10) {
-          <label class="foto-add">
-            <i class="ti ti-camera-plus"></i>
-            <span>Agregar foto</span>
-            <input #fotoInput type="file" accept="image/*" multiple hidden
-              (change)="onFotoChange($event)" />
-          </label>
-        }
-      </div>
+    <!-- ── Fotos ─────────────────────────────────────────────────────────── -->
+    <div class="abril-section-title">
+      Evidencia fotográfica
+      <span class="fotos-count">{{ fotosBase64.length }}/10</span>
+    </div>
+
+    <div class="fotos-grid">
+      @for (preview of fotosPreview; track $index) {
+        <div class="foto-thumb">
+          <img [src]="preview" alt="Foto {{ $index + 1 }}" />
+          <button type="button" class="foto-remove" (click)="quitarFoto($index)">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      }
+      @if (fotosBase64.length < 10) {
+        <label class="foto-add">
+          <i class="ti ti-camera-plus"></i>
+          <span>Agregar foto</span>
+          <input #fotoInput type="file" accept="image/*" multiple hidden
+            (change)="onFotoChange($event)" />
+        </label>
+      }
     </div>
 
   }<!-- /!loadingCatalogos -->
 
-</div><!-- /ats-page -->
+  <div modalFooter>
+    <button type="button" class="btn-cancelar" (click)="cancelar()">
+      <i class="ti ti-x"></i> Cancelar
+    </button>
+    <button type="button" class="btn-guardar" [disabled]="guardando || !puedeGuardar" (click)="guardar()">
+      @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
+      @else { <i class="ti ti-device-floppy"></i> Guardar }
+    </button>
+  </div>
+
+</app-abril-modal-panel>
 
 
 <!-- ═══ OVERLAY DE EVALUACIÓN ══════════════════════════════════════════════ -->
@@ -167,36 +171,33 @@
     <div class="eval-header">
 
       <!-- Preview ATS -->
-      <div class="eval-preview">
-        <div class="preview-chips">
-          @if (auditadoNombre) {
-            <span class="preview-chip">
-              <i class="ti ti-user"></i> {{ auditadoNombre }}
-            </span>
-          }
+      <div class="preview-chips">
+        @if (auditadoNombre) {
           <span class="preview-chip">
-            <i class="ti ti-calendar"></i> {{ fecha }}
+            <i class="ti ti-user"></i> {{ auditadoNombre }}
           </span>
-          @if (actividad) {
-            <span class="preview-chip">
-              <i class="ti ti-tools"></i> {{ actividad }}
-            </span>
-          }
-          @if (lugar) {
-            <span class="preview-chip">
-              <i class="ti ti-map-pin"></i> {{ lugar }}
-            </span>
-          }
-        </div>
+        }
+        <span class="preview-chip">
+          <i class="ti ti-calendar"></i> {{ fecha }}
+        </span>
+        @if (actividad) {
+          <span class="preview-chip">
+            <i class="ti ti-tools"></i> {{ actividad }}
+          </span>
+        }
+        @if (lugar) {
+          <span class="preview-chip">
+            <i class="ti ti-map-pin"></i> {{ lugar }}
+          </span>
+        }
       </div>
 
-      <!-- Escala de puntaje -->
+      <!-- Escala de puntaje (leyenda compacta) -->
       <div class="eval-escala">
         @for (sc of scoreConfig; track sc.valor) {
-          <div class="escala-item" [style.background]="sc.color" [style.color]="sc.textColor">
-            <div class="escala-num">{{ sc.valor }}</div>
-            <div class="escala-lbl">{{ sc.label }}</div>
-          </div>
+          <span class="escala-item" [style.background]="sc.color" [style.color]="sc.textColor">
+            {{ sc.valor }} {{ sc.label }}
+          </span>
         }
       </div>
 

@@ -3,6 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  background: #ffffff;
 }
 
 .card {
@@ -54,8 +55,8 @@
 }
 
 .search-input:focus-within {
-  border-color: #64bc04;
-  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
+  border-color: var(--color-abril-standard);
+  box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.18);
 }
 
 .search-input input {
@@ -72,7 +73,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 0.95rem;
-  background: #64bc04;
+  background: var(--color-abril-standard);
   color: #ffffff;
   border-radius: 10px;
   font-weight: 600;
@@ -80,12 +81,12 @@
 }
 
 .btn-primary:hover {
-  background: #5aa904;
+  background: var(--color-abril-standard-hover);
 }
 
 .btn-link {
   font-size: 0.82rem;
-  color: #64bc04;
+  color: var(--color-abril-standard);
   font-weight: 600;
   cursor: pointer;
 }

@@ -69,6 +69,14 @@ export interface CreateObservacionBody {
   creadoPor?: string | null;
 }
 
+export interface UpdateObservacionBody {
+  lugar?: string | null;
+  descripcion?: string | null;
+  partidaReportada?: string | null;
+  areaResponsable?: string | null;
+  personaReporta?: string | null;
+}
+
 export interface ObservacionPorPartidaDTO {
   partida: string;
   completado: number;
