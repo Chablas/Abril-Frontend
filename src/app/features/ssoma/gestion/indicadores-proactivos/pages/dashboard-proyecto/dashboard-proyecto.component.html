@@ -8,24 +8,47 @@
       <div class="filtros-grid">
         <div class="filtro-group filtro-group--wide">
           <label class="filtro-label">Proyecto</label>
-          <select class="filtro-select"
-                  [ngModel]="proyectoId()"
-                  (ngModelChange)="proyectoId.set($event ? +$event : null)">
-            <option [ngValue]="null">— Seleccione proyecto —</option>
-            <option *ngFor="let p of proyectos()" [value]="p.id">{{ p.nombre }}</option>
-          </select>
+          <app-search-select
+            [options]="proyectos()"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Buscar proyecto..."
+            [value]="proyectoId()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="proyectoId.set($event ? +$event : null)">
+          </app-search-select>
         </div>
         <div class="filtro-group">
           <label class="filtro-label">Mes</label>
-          <select class="filtro-select" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
-            <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
-          </select>
+          <app-search-select
+            [options]="meses"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los meses"
+            [sortAlpha]="false"
+            [value]="mes()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="mes.set(+$event)">
+          </app-search-select>
         </div>
         <div class="filtro-group">
           <label class="filtro-label">Año</label>
-          <select class="filtro-select" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
-            <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-          </select>
+          <app-search-select
+            [options]="anios"
+            valueField="valor"
+            displayField="nombre"
+            placeholder="Todos los años"
+            [sortAlpha]="false"
+            [value]="anio()"
+            [compact]="true"
+            [showLabel]="false"
+            color="var(--color-abril-primary)"
+            (valueChange)="anio.set(+$event)">
+          </app-search-select>
         </div>
         <div class="filtro-action">
           <button type="button" class="btn-cargar" (click)="cargar()" [disabled]="!proyectoId()">

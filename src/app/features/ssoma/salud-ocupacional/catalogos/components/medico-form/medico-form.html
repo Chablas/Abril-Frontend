@@ -34,11 +34,17 @@
         <input type="text" class="field-input" [(ngModel)]="model.celular" />
       </div>
       <div>
-        <label class="field-label">Estado</label>
-        <select class="field-input" [(ngModel)]="model.activo">
-          <option [ngValue]="true">Activo</option>
-          <option [ngValue]="false">Inactivo</option>
-        </select>
+        <app-search-select
+          label="Estado"
+          [options]="estadoOpts"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="model.activo"
+          [allowClear]="false"
+          placeholder="Selecciona estado"
+          (valueChange)="model.activo = $event">
+        </app-search-select>
       </div>
     </div>
 

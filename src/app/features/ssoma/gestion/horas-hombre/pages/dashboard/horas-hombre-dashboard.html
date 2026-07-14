@@ -22,14 +22,28 @@
         (valueChange)="onProyectoChange($event)">
       </app-search-select>
     </div>
-    <select class="hh-select" [(ngModel)]="mes" (change)="onFilter()">
-      <option [ngValue]="null">Todos los meses</option>
-      <option *ngFor="let m of meses" [ngValue]="m.id">{{ m.nombre }}</option>
-    </select>
-    <select class="hh-select" [(ngModel)]="anio" (change)="onFilter()">
-      <option [ngValue]="null">Todos los años</option>
-      <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
-    </select>
+    <app-search-select
+      [compact]="true"
+      [showLabel]="false"
+      [options]="meses"
+      valueField="id"
+      displayField="nombre"
+      [sortAlpha]="false"
+      placeholder="Todos los meses"
+      [value]="mes"
+      (valueChange)="mes = $event; onFilter()">
+    </app-search-select>
+    <app-search-select
+      [compact]="true"
+      [showLabel]="false"
+      [options]="aniosOpciones"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      placeholder="Todos los años"
+      [value]="anio"
+      (valueChange)="anio = $event; onFilter()">
+    </app-search-select>
   </div>
 
   <ng-container *ngIf="data">

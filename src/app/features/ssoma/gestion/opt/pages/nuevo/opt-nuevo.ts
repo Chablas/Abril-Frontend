@@ -127,6 +127,11 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   readonly tiposTrabajador = ['Obrero', 'Operario', 'Capataz', 'Técnico', 'Ingeniero', 'Supervisor', 'Otro'];
   readonly accionesRequeridas = ['Elaborar el PETS', 'Mantener el PETS', 'Modificar el PETS', 'Entrenamiento'];
+  readonly tiposObservacion = [
+    { value: 'Planeada', label: 'Planeada' },
+    { value: 'No Planeada', label: 'No Planeada' },
+  ];
+  readonly accionesRequeridasOptions = this.accionesRequeridas.map((a) => ({ value: a, label: a }));
 
   constructor(
     private optService: OptService,
@@ -552,6 +557,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
       cuentaConPet: this.cuentaConPet,
       area: this.area || undefined,
       seInformaTrabajador: this.seInformaTrabajador,
+      observadorId: this.observadorId ?? undefined,
       observadorNombre: this.observadorNombre || undefined,
       observadorCargo: this.observadorCargo || undefined,
       firmaObservadorBase64: this.firmaObsBase64 || undefined,

@@ -41,21 +41,29 @@
       [compact]="true"
     ></app-search-select>
 
-    <div class="filtro-field">
-      <label>Año</label>
-      <select [(ngModel)]="filtroAnio" (ngModelChange)="onFiltroChange()">
-        <option [ngValue]="null">Todos</option>
-        <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
-      </select>
-    </div>
+    <app-search-select
+      label="Año"
+      placeholder="Todos los años"
+      [options]="aniosOpts"
+      valueField="id"
+      displayField="label"
+      [(value)]="filtroAnio"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+      [sortAlpha]="false"
+    ></app-search-select>
 
-    <div class="filtro-field">
-      <label>Mes</label>
-      <select [(ngModel)]="filtroMes" (ngModelChange)="onFiltroChange()">
-        <option [ngValue]="null">Todos</option>
-        <option *ngFor="let m of meses" [ngValue]="m.id">{{ m.nombre }}</option>
-      </select>
-    </div>
+    <app-search-select
+      label="Mes"
+      placeholder="Todos los meses"
+      [options]="meses"
+      valueField="id"
+      displayField="nombre"
+      [(value)]="filtroMes"
+      (valueChange)="onFiltroChange()"
+      [compact]="true"
+      [sortAlpha]="false"
+    ></app-search-select>
 
     <div class="filtro-field filtro-field--tabs">
       <label>Estado</label>

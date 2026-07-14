@@ -18,12 +18,13 @@ import {
   ESTADOS_ACCION,
 } from '../../../accidente-incidente.dtos';
 import Swal from 'sweetalert2';
+import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-rm050-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './rm050-tab.component.html',
   styleUrl: './rm050-tab.component.css',
 })
@@ -37,6 +38,12 @@ export class Rm050TabComponent implements OnInit {
 
   readonly gravedades = GRAVEDADES_ACCIDENTE;
   readonly estadosAccion = ESTADOS_ACCION;
+  readonly gravedadesOpts = GRAVEDADES_ACCIDENTE.map((g) => ({ value: g, label: g }));
+  readonly estadosAccionOpts = ESTADOS_ACCION.map((e) => ({ value: e, label: e }));
+  readonly tipoAccionOpts = [
+    { value: 'Correctiva', label: 'Correctiva' },
+    { value: 'Preventiva', label: 'Preventiva' },
+  ];
 
   form: GuardarRm050Request = {
     descripcionDetallada: '',

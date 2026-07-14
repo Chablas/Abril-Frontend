@@ -8,6 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { WorkerSearchService } from '../services/worker-search.service';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import { DescansosService } from './descansos.service';
@@ -29,7 +30,7 @@ type TabKey = 'detalle' | 'seguimientos';
   selector: 'app-descanso-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './descanso-modal.component.html',
   styleUrl: './descanso-modal.component.css',
 })
@@ -86,6 +87,8 @@ export class DescansoModalComponent implements OnInit, OnDestroy {
 
   readonly tiposDescanso = ['Particular', 'Ocupacional'];
   readonly tiposSeguimiento = ['Médico', 'Asistenta Social', 'Seguimiento', 'Alta'];
+  readonly tiposDescansoOpts = this.tiposDescanso.map(t => ({ id: t, label: t }));
+  readonly tiposSeguimientoOpts = this.tiposSeguimiento.map(t => ({ id: t, label: t }));
 
   private destroy$ = new Subject<void>();
 

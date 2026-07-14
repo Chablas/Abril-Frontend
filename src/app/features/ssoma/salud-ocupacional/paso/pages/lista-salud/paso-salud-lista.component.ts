@@ -33,6 +33,9 @@ export class PasoSaludListaComponent implements OnInit {
     { id: 10, nombre: 'Octubre' }, { id: 11, nombre: 'Noviembre' }, { id: 12, nombre: 'Diciembre' },
   ];
   readonly anios: number[];
+  get aniosOpts(): { id: number; label: string }[] {
+    return this.anios.map(a => ({ id: a, label: String(a) }));
+  }
 
   proyectos: { projectId: number; projectDescription: string }[] = [];
   categorias: PasoCategoriaDto[] = [];

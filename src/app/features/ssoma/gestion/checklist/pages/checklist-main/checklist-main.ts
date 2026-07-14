@@ -27,6 +27,7 @@ import {
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ProyectoSimple {
   projectId: number;
@@ -38,7 +39,7 @@ type Tab = 'resumen' | 'plantillas';
 @Component({
   selector: 'app-checklist-main',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput, SearchSelect],
   templateUrl: './checklist-main.html',
   styleUrl: './checklist-main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -219,8 +219,16 @@
 
             <div class="form-row">
               <div class="abril-field">
-                <label class="abril-field-label">Responsable</label>
-                <input type="text" class="abril-field-input" [(ngModel)]="nuevoHallazgo.responsableNombre" placeholder="Nombre" />
+                <app-search-select
+                  color="var(--color-abril-logo-blue)"
+                  label="Responsable"
+                  [options]="workers"
+                  valueField="workerId"
+                  displayField="apellidoNombre"
+                  placeholder="Buscar por nombre o DNI..."
+                  [value]="hallazgoResponsableId"
+                  (valueChange)="onHallazgoResponsableChange($event)">
+                </app-search-select>
               </div>
               <div class="abril-field">
                 <label class="abril-field-label">Cargo</label>

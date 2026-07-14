@@ -16,6 +16,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -27,7 +28,7 @@ interface DesempenoSupervisorDto {
 @Component({
   selector: 'app-dashboard-acumulado',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './dashboard-acumulado.component.html',
   styleUrls: ['./dashboard-acumulado.component.css'],
 })
@@ -96,7 +97,7 @@ export class DashboardAcumuladoComponent implements OnInit, AfterViewInit {
     { valor: 9, nombre: 'Septiembre' }, { valor: 10, nombre: 'Octubre' },
     { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
   ];
-  anios = [2024, 2025, 2026, 2027];
+  anios = [2024, 2025, 2026, 2027].map(a => ({ valor: a, nombre: String(a) }));
 
   tablaCombinada = computed(() => {
     const seg = this.seguimiento();

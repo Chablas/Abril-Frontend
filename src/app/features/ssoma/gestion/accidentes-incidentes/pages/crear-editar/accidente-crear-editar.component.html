@@ -42,23 +42,31 @@
         </div>
 
         <div class="abril-field">
-          <label>Tipo de evento *</label>
-          <select class="abril-field-input" [(ngModel)]="form.tipoId" name="tipoId">
-            <option [ngValue]="0" disabled>Seleccionar tipo</option>
-            @for (t of tipos; track t.id) {
-              <option [ngValue]="t.id">{{ t.nombre }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de evento *"
+            [options]="tipos"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona tipo"
+            [value]="form.tipoId"
+            (valueChange)="form.tipoId = $event"
+          />
           @if (errores['tipoId']) { <span class="campo-error">{{ errores['tipoId'] }}</span> }
         </div>
 
         <div class="abril-field">
-          <label>Área de origen *</label>
-          <select class="abril-field-input" [(ngModel)]="form.areaOrigen" name="areaOrigen">
-            @for (a of areasOrigen; track a.value) {
-              <option [ngValue]="a.value">{{ a.label }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Área de origen *"
+            [options]="areasOrigen"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="Selecciona área"
+            [value]="form.areaOrigen"
+            (valueChange)="form.areaOrigen = $event"
+          />
           @if (errores['areaOrigen']) { <span class="campo-error">{{ errores['areaOrigen'] }}</span> }
         </div>
 
@@ -74,41 +82,33 @@
         </div>
 
         <div class="abril-field">
-          <label>Turno</label>
-          <select class="abril-field-input" [(ngModel)]="form.turno" name="turno">
-            <option [ngValue]="undefined">— Sin especificar —</option>
-            @for (t of turnos; track t) {
-              <option [ngValue]="t">{{ t }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Turno"
+            [options]="turnosOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Sin especificar —"
+            [allowClear]="true"
+            [value]="form.turno"
+            (valueChange)="form.turno = $event"
+          />
         </div>
 
         <div class="abril-field">
-          <label>Tipo de contacto / mecanismo</label>
-          <select class="abril-field-input" [(ngModel)]="form.tipoContacto" name="tipoContacto">
-            <option [ngValue]="undefined">— Sin especificar —</option>
-            <optgroup label="Contacto con persona">
-              <option>Golpe por objeto en movimiento</option>
-              <option>Golpe contra objeto fijo</option>
-              <option>Caída al mismo nivel</option>
-              <option>Caída a distinto nivel</option>
-              <option>Atrapamiento entre objetos</option>
-              <option>Sobreesfuerzo / esfuerzo ergonómico</option>
-              <option>Contacto con energía eléctrica</option>
-              <option>Contacto con sustancia química o caliente</option>
-              <option>Colisión vehicular</option>
-            </optgroup>
-            <optgroup label="Daño patrimonial (sin lesión personal)">
-              <option>Daño a equipo / maquinaria</option>
-              <option>Daño a material o producto</option>
-              <option>Daño a infraestructura</option>
-              <option>Derrame de sustancias</option>
-              <option>Incendio / conato de incendio</option>
-            </optgroup>
-            <optgroup label="Otro">
-              <option>Otro</option>
-            </optgroup>
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de contacto / mecanismo"
+            [options]="tipoContactoOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Sin especificar —"
+            [allowClear]="true"
+            [value]="form.tipoContacto"
+            (valueChange)="form.tipoContacto = $event"
+          />
         </div>
 
         <div class="abril-field abril-field--full">
@@ -286,13 +286,17 @@
             </div>
 
             <div class="abril-field">
-              <label>Parte del cuerpo afectada</label>
-              <select class="abril-field-input" [(ngModel)]="trabajadorNuevo.parteAfectadaId" name="tnParte">
-                <option [ngValue]="undefined">— Sin especificar —</option>
-                @for (p of partes; track p.id) {
-                  <option [ngValue]="p.id">{{ p.nombre }}</option>
-                }
-              </select>
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                label="Parte del cuerpo afectada"
+                [options]="partes"
+                valueField="id"
+                displayField="nombre"
+                placeholder="— Sin especificar —"
+                [allowClear]="true"
+                [value]="trabajadorNuevo.parteAfectadaId"
+                (valueChange)="trabajadorNuevo.parteAfectadaId = $event"
+              />
             </div>
 
           </div>
@@ -329,23 +333,35 @@
           @if (esIncidente) {
             <p class="info-hint"><i class="ti ti-info-circle"></i> Incidente: máximo N2 — Primeros auxilios. N3 en adelante es Accidente.</p>
           }
-          <select class="abril-field-input" [(ngModel)]="form.consecuenciaRealPersonal" name="consecReal">
-            <option [ngValue]="undefined">— No aplica —</option>
-            @for (n of nivelesReal; track n) {
-              <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            [showLabel]="false"
+            [options]="nivelesRealOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.consecuenciaRealPersonal"
+            (valueChange)="form.consecuenciaRealPersonal = $event"
+          />
         </div>
 
         <div class="abril-field">
           <label>Consecuencia potencial — Personal</label>
           <p class="info-hint"><i class="ti ti-info-circle"></i> ¿Qué podría haber pasado en otras circunstancias?</p>
-          <select class="abril-field-input" [(ngModel)]="form.consecuenciaPotencialPersonal" name="consecPot">
-            <option [ngValue]="undefined">— No aplica —</option>
-            @for (n of nivelesPotencial; track n) {
-              <option [ngValue]="n">{{ nivelesConsecuencia[n] }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            [showLabel]="false"
+            [options]="nivelesPotencialOpts()"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.consecuenciaPotencialPersonal"
+            (valueChange)="form.consecuenciaPotencialPersonal = $event"
+          />
         </div>
 
         @if ((form.consecuenciaRealPersonal ?? 0) >= 5) {
@@ -388,14 +404,18 @@
       <div class="form-grid">
 
         <div class="abril-field">
-          <label>Tipo de atención</label>
-          <select class="abril-field-input" [(ngModel)]="form.atencionMedica" name="atencionMedica">
-            <option [ngValue]="undefined">— No aplica —</option>
-            <option>Tópico de obra</option>
-            <option>Tópico de oficina</option>
-            <option>Clínica</option>
-            <option>Hospital</option>
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo de atención"
+            [options]="atencionMedicaOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— No aplica —"
+            [allowClear]="true"
+            [value]="form.atencionMedica"
+            (valueChange)="form.atencionMedica = $event"
+          />
         </div>
 
         @if (form.atencionMedica && form.atencionMedica !== 'Ninguna') {

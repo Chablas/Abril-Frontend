@@ -43,12 +43,17 @@
         </div>
         <div class="rm-field">
           <label>Gravedad del accidente laboral</label>
-          <select class="rm-input" [(ngModel)]="form.gravedadAccidente">
-            <option value="">— Seleccionar —</option>
-            @for (g of gravedades; track g) {
-              <option [value]="g">{{ g }}</option>
-            }
-          </select>
+          <app-search-select
+            [showLabel]="false"
+            [options]="gravedadesOpts"
+            valueField="value"
+            displayField="label"
+            [sortAlpha]="false"
+            placeholder="— Seleccionar —"
+            [allowClear]="true"
+            [value]="form.gravedadAccidente"
+            (valueChange)="form.gravedadAccidente = $event"
+          />
         </div>
         <div class="rm-field">
           <label>N° días de descanso médico</label>
@@ -196,20 +201,31 @@
                   <td class="rm-ac-num">{{ i + 1 }}</td>
                   <td><input class="rm-input rm-input--sm" [(ngModel)]="a.descripcion" placeholder="Descripción..." /></td>
                   <td>
-                    <select class="rm-input rm-input--sm" [(ngModel)]="a.tipo">
-                      <option value="Correctiva">Correctiva</option>
-                      <option value="Preventiva">Preventiva</option>
-                    </select>
+                    <app-search-select
+                      [compact]="true"
+                      [showLabel]="false"
+                      [options]="tipoAccionOpts"
+                      valueField="value"
+                      displayField="label"
+                      [sortAlpha]="false"
+                      [value]="a.tipo"
+                      (valueChange)="a.tipo = $event"
+                    />
                   </td>
                   <td><input class="rm-input rm-input--sm" [(ngModel)]="a.responsableNombre" placeholder="Responsable..." /></td>
                   <td><input class="rm-input rm-input--sm" type="date" [(ngModel)]="a.fechaCompromiso" /></td>
                   <td><input class="rm-input rm-input--sm" type="date" [(ngModel)]="a.fechaCumplimiento" /></td>
                   <td>
-                    <select class="rm-input rm-input--sm" [(ngModel)]="a.estado">
-                      @for (e of estadosAccion; track e) {
-                        <option [value]="e">{{ e }}</option>
-                      }
-                    </select>
+                    <app-search-select
+                      [compact]="true"
+                      [showLabel]="false"
+                      [options]="estadosAccionOpts"
+                      valueField="value"
+                      displayField="label"
+                      [sortAlpha]="false"
+                      [value]="a.estado"
+                      (valueChange)="a.estado = $event"
+                    />
                   </td>
                   <td>
                     @if (a.estado === 'Cumplido') {

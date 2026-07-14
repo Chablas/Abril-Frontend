@@ -8,6 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { TopicoService } from './topico.service';
 import {
   TopicoAtencionDto, TopicoTipoAtencionDto, CrearTopicoAtencionDto,
@@ -22,7 +23,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-topico-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './topico-modal.component.html',
   styleUrl: './topico-modal.component.css',
 })

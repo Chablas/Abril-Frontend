@@ -107,6 +107,23 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   hallazgoNextUid = 1;
   mostrarFormHallazgo = false;
   nuevoHallazgo: HallazgoForm = this.emptyHallazgo();
+  hallazgoResponsableId: number | null = null;
+
+  onHallazgoResponsableChange(id: number | null): void {
+    this.hallazgoResponsableId = id;
+    if (!id) {
+      this.nuevoHallazgo.responsableNombre = '';
+      this.nuevoHallazgo.responsableCargo = '';
+    } else {
+      const w = this.workers.find(x => x.workerId === id);
+      if (w) {
+        this.nuevoHallazgo.responsableNombre = w.apellidoNombre;
+        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        this.nuevoHallazgo.responsableCargo = partes.join(' / ');
+      }
+    }
+    this.cdr.markForCheck();
+  }
 
   // Paso 4 — cierre
   inspectorId: number | null = null;
@@ -291,6 +308,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
 
   agregarHallazgo(): void {
     this.nuevoHallazgo = this.emptyHallazgo();
+    this.hallazgoResponsableId = null;
     this.mostrarFormHallazgo = true;
     this.cdr.markForCheck();
   }

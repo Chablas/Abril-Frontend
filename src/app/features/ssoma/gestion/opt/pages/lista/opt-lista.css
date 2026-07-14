@@ -86,6 +86,7 @@
 .col-pet     { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8a8880; }
 .col-obs     { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-trab    { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-empresa-sub { font-size: 10px; color: #8a8880; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-acciones { white-space: nowrap; }
 .ta-c { text-align: center; }
 

@@ -19,6 +19,7 @@ import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 type Seccion = 'normalizado' | 'sin-estandarizar' | 'no-ssoma';
 const VARIABLES_BASE = ['HH', 'AREATECHADA', 'TRABAJADORES', 'CALCULADO', 'FIJO', 'METRADO'];
@@ -27,7 +28,7 @@ const VARIABLES_BASE = ['HH', 'AREATECHADA', 'TRABAJADORES', 'CALCULADO', 'FIJO'
   selector: 'app-catalogo-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, Paginator, SearchInput, SearchSelect],
   templateUrl: './catalogo-page.html',
   styleUrl: './catalogo-page.css',
 })
@@ -39,6 +40,7 @@ export class CatalogoPage implements OnInit {
   cdr            = inject(ChangeDetectorRef);
 
   readonly variablesBase = VARIABLES_BASE;
+  readonly variableBaseOpts = VARIABLES_BASE.map((v) => ({ id: v, label: v }));
   seccion: Seccion = 'normalizado';
   loading = false;
 
@@ -202,6 +204,13 @@ export class CatalogoPage implements OnInit {
         },
       });
     }, 300);
+  }
+
+  resultadoOpts(lineaId: number): any[] {
+    return (this.resultadosPorLinea[lineaId] ?? []).map((r) => ({
+      ...r,
+      _label: `${r.nombre} (${r.nombreFamilia})`,
+    }));
   }
 
   autorizar(linea: MaterialPendienteGlobalDto): void {

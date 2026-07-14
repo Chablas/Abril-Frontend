@@ -10,12 +10,30 @@
       </div>
     </div>
     <div class="dt-controls no-print">
-      <select class="dt-sel" [ngModel]="mes()" (ngModelChange)="mes.set(+$event)">
-        <option *ngFor="let m of meses" [value]="m.valor">{{ m.nombre }}</option>
-      </select>
-      <select class="dt-sel dt-sel--xs" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)">
-        <option *ngFor="let a of anios" [value]="a">{{ a }}</option>
-      </select>
+      <app-search-select
+        [options]="meses"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los meses"
+        [sortAlpha]="false"
+        [value]="mes()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="mes.set(+$event)">
+      </app-search-select>
+      <app-search-select
+        [options]="anios"
+        valueField="valor"
+        displayField="nombre"
+        placeholder="Todos los años"
+        [sortAlpha]="false"
+        [value]="anio()"
+        [compact]="true"
+        [showLabel]="false"
+        color="var(--color-abril-primary)"
+        (valueChange)="anio.set(+$event)">
+      </app-search-select>
       <button class="dt-btn" (click)="cargar()"><i class="ti ti-refresh"></i> Actualizar</button>
       <button class="dt-btn dt-btn--ghost" (click)="imprimir()"><i class="ti ti-printer"></i> Exportar PDF</button>
     </div>

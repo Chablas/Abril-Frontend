@@ -19,19 +19,23 @@
       [class.cursor-pointer]="!disabled"
       [class.cursor-not-allowed]="disabled"
       [class.opacity-60]="disabled"
+      [style.background]="badgeStyle ? badgeStyle.background : null"
+      [style.color]="badgeStyle ? badgeStyle.color : null"
+      [style.border-color]="badgeStyle ? 'transparent' : null"
       [ngClass]="dark ? [
         'rounded-[7px] pl-[10px] pr-[8px] h-[30px] text-[11px] font-medium',
         'border border-[rgba(255,255,255,0.2)]',
         isOpen ? 'bg-[#2a4a71]' : 'bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)]'
       ] : [
-        'rounded-[7px] bg-white pl-[10px] pr-[8px] h-[34px] text-[12px] font-medium border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
-        isOpen ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : 'border-[#e2e8f0]'
+        'rounded-[7px] pl-[10px] pr-[8px] h-[34px] text-[12px] font-medium border focus:ring-1 focus:ring-[var(--ss-accent)]/20',
+        badgeStyle ? '' : 'bg-white',
+        isOpen && !badgeStyle ? 'border-[var(--ss-accent)] ring-1 ring-[var(--ss-accent)]/30' : (badgeStyle ? '' : 'border-[#e2e8f0]')
       ]"
     >
       <span
         class="ss-trigger-label"
         [class.ss-full]="fullText"
-        [ngClass]="dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-500')"
+        [ngClass]="badgeStyle ? '' : (dark ? 'text-white' : (hasValue ? 'text-gray-800' : 'text-gray-500'))"
       >
         {{ selectedLabel }}
       </span>

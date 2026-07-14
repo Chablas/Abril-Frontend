@@ -3,10 +3,16 @@
 
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Tipo *</label>
-        <select class="field-input" [(ngModel)]="tipo">
-          <option *ngFor="let o of tipoOpts" [value]="o.id">{{ o.label }}</option>
-        </select>
+        <app-search-select
+          label="Tipo *"
+          [options]="tipoOpts"
+          valueField="id"
+          displayField="label"
+          [value]="tipo"
+          placeholder="Selecciona tipo"
+          [allowClear]="false"
+          (valueChange)="tipo = $event">
+        </app-search-select>
       </div>
     </div>
 

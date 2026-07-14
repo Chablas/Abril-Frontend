@@ -12,7 +12,7 @@
     (secondaryClick)="load()">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-    <app-filter-trigger tabsExtra [count]="hayFiltrosActivos ? 1 : 0" (open)="filtrosAbiertos = true" />
+    <app-filter-trigger tabsExtra [count]="hayFiltrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <div class="lista-body">
@@ -54,11 +54,19 @@
                     {{ item.tipoObservacion }}
                   </span>
                 </td>
-                <td class="col-obs">{{ item.observadorNombre ?? '—' }}</td>
+                <td class="col-obs">
+                  {{ item.observadorNombre ?? '—' }}
+                  @if (item.observadorEmpresaNombre) {
+                    <div class="col-empresa-sub">{{ item.observadorEmpresaNombre }}</div>
+                  }
+                </td>
                 <td class="col-trab">
                   {{ item.trabajadoresPrincipal }}
                   @if (item.totalTrabajadores > 1) {
                     <span class="trab-badge">+{{ item.totalTrabajadores - 1 }}</span>
+                  }
+                  @if (item.trabajadorPrincipalEmpresaNombre) {
+                    <div class="col-empresa-sub">{{ item.trabajadorPrincipalEmpresaNombre }}</div>
                   }
                 </td>
                 <td class="ta-c">
@@ -103,7 +111,19 @@
               <i class="ti ti-user"></i>
               {{ item.trabajadoresPrincipal }}
               @if (item.totalTrabajadores > 1) { <span class="trab-badge">+{{ item.totalTrabajadores - 1 }}</span> }
+              @if (item.trabajadorPrincipalEmpresaNombre) {
+                <span class="col-empresa-sub">· {{ item.trabajadorPrincipalEmpresaNombre }}</span>
+              }
             </div>
+            @if (item.observadorNombre) {
+              <div class="card-trab">
+                <i class="ti ti-eye"></i>
+                {{ item.observadorNombre }}
+                @if (item.observadorEmpresaNombre) {
+                  <span class="col-empresa-sub">· {{ item.observadorEmpresaNombre }}</span>
+                }
+              </div>
+            }
             @if (item.accionRequerida && item.accionRequerida !== 'Ninguna') {
               <div class="card-accion">
                 <i class="ti ti-alert-triangle"></i> {{ item.accionRequerida }}
@@ -146,12 +166,72 @@
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="w-full">
     <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="filtroProyectoId"
+      (valueChange)="filtroProyectoId = $event; load()"
+      placeholder="Todos los proyectos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
       label="Tipo"
       [options]="tipoFilterOptions"
       valueField="value"
       displayField="label"
       [value]="filtroTipo"
       (valueChange)="filtroTipo = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="PET"
+      [options]="pets"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroPetId"
+      (valueChange)="filtroPetId = $event; load()"
+      placeholder="Todos los PET">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Observador"
+      [options]="workers"
+      valueField="workerId"
+      displayField="apellidoNombre"
+      [value]="filtroTrabajadorId"
+      (valueChange)="filtroTrabajadorId = $event; load()"
+      placeholder="Buscar por nombre o DNI...">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa del observador"
+      [options]="empresas"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEmpresaObservadorId"
+      (valueChange)="filtroEmpresaObservadorId = $event; load()"
+      placeholder="Todas las empresas">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa del trabajador"
+      [options]="empresas"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEmpresaTrabajadorId"
+      (valueChange)="filtroEmpresaTrabajadorId = $event; load()"
+      placeholder="Todas las empresas">
     </app-search-select>
   </div>
 

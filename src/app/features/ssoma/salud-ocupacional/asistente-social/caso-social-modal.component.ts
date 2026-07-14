@@ -8,6 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { CasoSocialService } from '../services/caso-social.service';
 import { WorkerSearchService } from '../services/worker-search.service';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
@@ -38,7 +39,7 @@ const SCTR_ESTADOS = [
   selector: 'app-caso-social-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './caso-social-modal.component.html',
   styleUrl: './caso-social-modal.component.css',
 })
@@ -53,6 +54,11 @@ export class CasoSocialModalComponent implements OnChanges, OnDestroy {
   readonly tiposOpts = ['Familiar', 'Económico', 'Salud Mental', 'Legal', 'Laboral', 'Otro'];
   readonly prioridadesOpts = ['Alta', 'Media', 'Baja'];
   readonly seguimientoTipos = ['Visita', 'Llamada', 'Entrevista', 'Derivación', 'Cierre', 'Otro'];
+
+  /** Arrays de strings anteriores, mapeados a {id,label} para app-search-select. */
+  get tiposOptsForSelect() { return this.tiposOpts.map(t => ({ id: t, label: t })); }
+  get prioridadesOptsForSelect() { return this.prioridadesOpts.map(p => ({ id: p, label: p })); }
+  get seguimientoTiposForSelect() { return this.seguimientoTipos.map(t => ({ id: t, label: t })); }
 
   tab: TabKey = 'info';
   loading = false;

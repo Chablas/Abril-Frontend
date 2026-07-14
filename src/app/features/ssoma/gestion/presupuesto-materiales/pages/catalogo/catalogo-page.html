@@ -42,14 +42,29 @@
           <tr *ngFor="let f of familiasPaged">
             <td><input type="text" [(ngModel)]="f.nombre" /></td>
             <td>
-              <select [(ngModel)]="f.tipoId">
-                <option *ngFor="let t of tipos" [ngValue]="t.id">{{ t.nombre }}</option>
-              </select>
+              <app-search-select
+                [options]="tipos"
+                valueField="id"
+                displayField="nombre"
+                [value]="f.tipoId"
+                [compact]="true"
+                [showLabel]="false"
+                placeholder="Selecciona tipo"
+                (valueChange)="f.tipoId = $event">
+              </app-search-select>
             </td>
             <td>
-              <select [(ngModel)]="f.variableBase">
-                <option *ngFor="let v of variablesBase" [ngValue]="v">{{ v }}</option>
-              </select>
+              <app-search-select
+                [options]="variableBaseOpts"
+                valueField="id"
+                displayField="label"
+                [value]="f.variableBase"
+                [compact]="true"
+                [showLabel]="false"
+                [sortAlpha]="false"
+                placeholder="Selecciona variable"
+                (valueChange)="f.variableBase = $event">
+              </app-search-select>
             </td>
             <td><input type="text" [(ngModel)]="f.unidadMedida" style="width:70px" /></td>
             <td class="td-check"><input type="checkbox" [(ngModel)]="f.perteneceSsoma" /></td>
@@ -97,12 +112,17 @@
               <td class="td-buscar">
                 <input type="text" placeholder="Escribe para buscar..."
                   (ngModelChange)="onBuscarItem(p.lineaId, $event)" [ngModel]="busquedaPorLinea[p.lineaId]" />
-                <select *ngIf="resultadosPorLinea[p.lineaId]?.length" [(ngModel)]="seleccionPorLinea[p.lineaId]">
-                  <option [ngValue]="null" disabled>Seleccionar...</option>
-                  <option *ngFor="let r of resultadosPorLinea[p.lineaId]" [ngValue]="r.id">
-                    {{ r.nombre }} ({{ r.nombreFamilia }})
-                  </option>
-                </select>
+                <app-search-select
+                  *ngIf="resultadosPorLinea[p.lineaId]?.length"
+                  [options]="resultadoOpts(p.lineaId)"
+                  valueField="id"
+                  displayField="_label"
+                  [value]="seleccionPorLinea[p.lineaId]"
+                  [compact]="true"
+                  [showLabel]="false"
+                  placeholder="Selecciona ítem"
+                  (valueChange)="seleccionPorLinea[p.lineaId] = $event">
+                </app-search-select>
               </td>
               <td class="acciones-cell">
                 <button class="btn-sm btn-primary-sm" (click)="autorizar(p)">Autorizar</button>

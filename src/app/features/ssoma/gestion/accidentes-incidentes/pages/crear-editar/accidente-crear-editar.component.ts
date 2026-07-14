@@ -463,4 +463,41 @@ export class AccidenteCrearEditarComponent implements OnInit {
   partidasOpts() {
     return this.partidas.map((p) => ({ id: p.id, nombre: p.nombre }));
   }
+
+  turnosOpts() {
+    return this.turnos.map((t) => ({ value: t, label: t }));
+  }
+
+  readonly tipoContactoOpts = [
+    { value: 'Golpe por objeto en movimiento', label: 'Golpe por objeto en movimiento' },
+    { value: 'Golpe contra objeto fijo', label: 'Golpe contra objeto fijo' },
+    { value: 'Caída al mismo nivel', label: 'Caída al mismo nivel' },
+    { value: 'Caída a distinto nivel', label: 'Caída a distinto nivel' },
+    { value: 'Atrapamiento entre objetos', label: 'Atrapamiento entre objetos' },
+    { value: 'Sobreesfuerzo / esfuerzo ergonómico', label: 'Sobreesfuerzo / esfuerzo ergonómico' },
+    { value: 'Contacto con energía eléctrica', label: 'Contacto con energía eléctrica' },
+    { value: 'Contacto con sustancia química o caliente', label: 'Contacto con sustancia química o caliente' },
+    { value: 'Colisión vehicular', label: 'Colisión vehicular' },
+    { value: 'Daño a equipo / maquinaria', label: 'Daño a equipo / maquinaria' },
+    { value: 'Daño a material o producto', label: 'Daño a material o producto' },
+    { value: 'Daño a infraestructura', label: 'Daño a infraestructura' },
+    { value: 'Derrame de sustancias', label: 'Derrame de sustancias' },
+    { value: 'Incendio / conato de incendio', label: 'Incendio / conato de incendio' },
+    { value: 'Otro', label: 'Otro' },
+  ];
+
+  nivelesRealOpts() {
+    return this.nivelesReal.map((n) => ({ value: n, label: this.nivelesConsecuencia[n] }));
+  }
+
+  nivelesPotencialOpts() {
+    return this.nivelesPotencial.map((n) => ({ value: n, label: this.nivelesConsecuencia[n] }));
+  }
+
+  readonly atencionMedicaOpts = [
+    { value: 'Tópico de obra', label: 'Tópico de obra' },
+    { value: 'Tópico de oficina', label: 'Tópico de oficina' },
+    { value: 'Clínica', label: 'Clínica' },
+    { value: 'Hospital', label: 'Hospital' },
+  ];
 }

@@ -17,6 +17,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -36,7 +37,7 @@ interface MesSerieDto {
 @Component({
   selector: 'app-dashboard-proyecto',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './dashboard-proyecto.component.html',
   styleUrls: ['./dashboard-proyecto.component.css'],
 })
@@ -80,7 +81,7 @@ export class DashboardProyectoComponent implements OnInit, AfterViewInit {
     { valor: 9, nombre: 'Septiembre' }, { valor: 10, nombre: 'Octubre' },
     { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
   ];
-  anios = [2024, 2025, 2026, 2027];
+  anios = [2024, 2025, 2026, 2027].map(a => ({ valor: a, nombre: String(a) }));
 
   ngOnInit(): void {
     this.http.get<SelectOption[]>(`${environment.apiUrl}api/v1/shared-filters/proyectos`)

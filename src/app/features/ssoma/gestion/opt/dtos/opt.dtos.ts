@@ -43,6 +43,7 @@ export interface CrearOptRequest {
   cuentaConPet: boolean;
   area?: string;
   seInformaTrabajador: boolean;
+  observadorId?: number;
   observadorNombre?: string;
   observadorCargo?: string;
   firmaObservadorBase64?: string;
@@ -67,7 +68,9 @@ export interface OptListItemDto {
   tipoObservacion: string;
   area?: string;
   observadorNombre?: string;
+  observadorEmpresaNombre?: string;
   trabajadoresPrincipal: string;
+  trabajadorPrincipalEmpresaNombre?: string;
   totalTrabajadores: number;
   scorePct?: number;
   accionRequerida?: string;
@@ -90,6 +93,8 @@ export interface OptListQuery {
   fechaDesde?: string;
   fechaHasta?: string;
   trabajadorId?: number;
+  empresaObservadorId?: number;
+  empresaTrabajadorId?: number;
   page?: number;
   pageSize?: number;
 }
@@ -104,6 +109,8 @@ export interface OptTrabajadorDto {
   tiempoEnObra?: string;
   aniosExperiencia?: string;
   firmaTrabajadorUrl?: string;
+  empresaId?: number;
+  empresaNombre?: string;
 }
 
 export interface OptVerificacionDto {
@@ -134,8 +141,11 @@ export interface OptDetalleDto {
   cuentaConPet: boolean;
   area?: string;
   seInformaTrabajador: boolean;
+  observadorId?: number;
   observadorNombre?: string;
   observadorCargo?: string;
+  observadorEmpresaId?: number;
+  observadorEmpresaNombre?: string;
   firmaObservadorUrl?: string;
   seFelicito: boolean;
   seRecibieronComentarios: boolean;

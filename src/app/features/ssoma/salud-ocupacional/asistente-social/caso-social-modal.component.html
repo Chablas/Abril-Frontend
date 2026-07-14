@@ -41,16 +41,30 @@
 
       <!-- Tipo + Prioridad -->
       <div>
-        <label class="form-label">Tipo de caso *</label>
-        <select class="field-input" [(ngModel)]="fTipo">
-          @for (t of tiposOpts; track t) { <option [value]="t">{{ t }}</option> }
-        </select>
+        <app-search-select
+          label="Tipo de caso *"
+          [options]="tiposOptsForSelect"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="fTipo"
+          [allowClear]="false"
+          placeholder="Selecciona tipo"
+          (valueChange)="fTipo = $event">
+        </app-search-select>
       </div>
       <div>
-        <label class="form-label">Prioridad *</label>
-        <select class="field-input" [(ngModel)]="fPrioridad">
-          @for (p of prioridadesOpts; track p) { <option [value]="p">{{ p }}</option> }
-        </select>
+        <app-search-select
+          label="Prioridad *"
+          [options]="prioridadesOptsForSelect"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="fPrioridad"
+          [allowClear]="false"
+          placeholder="Selecciona prioridad"
+          (valueChange)="fPrioridad = $event">
+        </app-search-select>
       </div>
 
       <!-- Fecha apertura -->
@@ -146,16 +160,30 @@
         <summary>Editar datos del caso</summary>
         <div class="form-grid mt-3">
           <div>
-            <label class="form-label">Tipo</label>
-            <select class="field-input" [(ngModel)]="fTipo">
-              @for (t of tiposOpts; track t) { <option [value]="t">{{ t }}</option> }
-            </select>
+            <app-search-select
+              label="Tipo"
+              [options]="tiposOptsForSelect"
+              valueField="id"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="fTipo"
+              [allowClear]="false"
+              placeholder="Selecciona tipo"
+              (valueChange)="fTipo = $event">
+            </app-search-select>
           </div>
           <div>
-            <label class="form-label">Prioridad</label>
-            <select class="field-input" [(ngModel)]="fPrioridad">
-              @for (p of prioridadesOpts; track p) { <option [value]="p">{{ p }}</option> }
-            </select>
+            <app-search-select
+              label="Prioridad"
+              [options]="prioridadesOptsForSelect"
+              valueField="id"
+              displayField="label"
+              [sortAlpha]="false"
+              [value]="fPrioridad"
+              [allowClear]="false"
+              placeholder="Selecciona prioridad"
+              (valueChange)="fPrioridad = $event">
+            </app-search-select>
           </div>
           <div>
             <label class="form-label">Fecha apertura</label>
@@ -244,10 +272,17 @@
               <input class="field-input" type="date" [(ngModel)]="sgFecha" />
             </div>
             <div>
-              <label class="form-label">Tipo *</label>
-              <select class="field-input" [(ngModel)]="sgTipo">
-                @for (t of seguimientoTipos; track t) { <option [value]="t">{{ t }}</option> }
-              </select>
+              <app-search-select
+                label="Tipo *"
+                [options]="seguimientoTiposForSelect"
+                valueField="id"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="sgTipo"
+                [allowClear]="false"
+                placeholder="Selecciona tipo"
+                (valueChange)="sgTipo = $event">
+              </app-search-select>
             </div>
             <div class="form-col-full">
               <label class="form-label">Descripción</label>
@@ -324,12 +359,17 @@
         <!-- Formulario SCTR -->
         <div class="form-grid">
           <div>
-            <label class="form-label">Estado *</label>
-            <select class="field-input" [(ngModel)]="sctrEstadoId">
-              @for (e of sctrEstados; track e.id) {
-                <option [value]="e.id">{{ e.nombre }}</option>
-              }
-            </select>
+            <app-search-select
+              label="Estado *"
+              [options]="sctrEstados"
+              valueField="id"
+              displayField="nombre"
+              [sortAlpha]="false"
+              [value]="sctrEstadoId"
+              [allowClear]="false"
+              placeholder="Selecciona estado"
+              (valueChange)="sctrEstadoId = $event">
+            </app-search-select>
           </div>
           <div>
             <label class="form-label">N° siniestro</label>

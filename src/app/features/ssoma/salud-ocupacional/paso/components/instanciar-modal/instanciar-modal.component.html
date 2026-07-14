@@ -13,12 +13,14 @@
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">Proyecto destino <span class="text-red-500">*</span></label>
           <div *ngIf="loadingProyectos" class="text-sm text-gray-400 py-2">Cargando proyectos...</div>
-          <select *ngIf="!loadingProyectos"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
-            [(ngModel)]="proyectoId">
-            <option [ngValue]="null">— Selecciona un proyecto —</option>
-            <option *ngFor="let p of proyectos" [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-          </select>
+          <app-search-select *ngIf="!loadingProyectos"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoId"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoId = $event">
+          </app-search-select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">Año <span class="text-red-500">*</span></label>
@@ -26,11 +28,17 @@
             [(ngModel)]="anio" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Mes de inicio <span class="text-red-500">*</span></label>
-          <select class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-400"
-            [(ngModel)]="mesInicio">
-            <option *ngFor="let m of meses" [ngValue]="m.valor">{{ m.nombre }}</option>
-          </select>
+          <app-search-select
+            label="Mes de inicio *"
+            [options]="meses"
+            valueField="valor"
+            displayField="nombre"
+            [value]="mesInicio"
+            placeholder="Selecciona mes"
+            [allowClear]="false"
+            [sortAlpha]="false"
+            (valueChange)="mesInicio = $event">
+          </app-search-select>
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-4 mt-2 border-t border-gray-100">

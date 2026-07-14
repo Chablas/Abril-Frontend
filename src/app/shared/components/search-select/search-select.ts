@@ -30,6 +30,14 @@ export class SearchSelect {
   @Input() color: string = 'var(--color-abril-standard)';
   /** Modo oscuro: fondo #354E6F, texto blanco. Para barras de filtros en dashboards. */
   @Input() dark: boolean = false;
+  /**
+   * Fondo/texto tipo "badge" para el trigger, en vez del combobox blanco con borde estándar.
+   * Pasar `{ background: '#fee2e2', color: '#991b1b' }` — pensado para columnas de severidad/estado
+   * dentro de una tabla (ej. nivel de consecuencia), donde el valor seleccionado debe leerse como
+   * una etiqueta de color, no como un campo de formulario. No usar `::ng-deep` por página para esto:
+   * si aparece un caso nuevo, agregar el color acá y listo, reutilizable en cualquier tabla.
+   */
+  @Input() badgeStyle: { background: string; color: string } | null = null;
   /** Si es true, el desplegable queda bloqueado: no se abre, no se limpia y no se puede cambiar. */
   @Input() disabled: boolean = false;
   /**

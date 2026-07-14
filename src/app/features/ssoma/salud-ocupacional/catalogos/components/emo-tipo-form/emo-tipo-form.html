@@ -15,22 +15,34 @@
         />
       </div>
       <div>
-        <label class="field-label">Requiere nuevo</label>
-        <select class="field-input" [(ngModel)]="model.requiereNuevo">
-          <option [ngValue]="false">No</option>
-          <option [ngValue]="true">Sí</option>
-        </select>
+        <app-search-select
+          label="Requiere nuevo"
+          [options]="siNoOpts"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="model.requiereNuevo"
+          [allowClear]="false"
+          placeholder="Selecciona"
+          (valueChange)="model.requiereNuevo = $event">
+        </app-search-select>
       </div>
       <div class="col-span-2">
         <label class="field-label">Descripción</label>
         <textarea rows="3" class="field-input" [(ngModel)]="model.descripcion"></textarea>
       </div>
       <div>
-        <label class="field-label">Estado</label>
-        <select class="field-input" [(ngModel)]="model.activo">
-          <option [ngValue]="true">Activo</option>
-          <option [ngValue]="false">Inactivo</option>
-        </select>
+        <app-search-select
+          label="Estado"
+          [options]="estadoOpts"
+          valueField="id"
+          displayField="label"
+          [sortAlpha]="false"
+          [value]="model.activo"
+          [allowClear]="false"
+          placeholder="Selecciona estado"
+          (valueChange)="model.activo = $event">
+        </app-search-select>
       </div>
     </div>
 

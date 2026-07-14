@@ -12,11 +12,12 @@ import {
   ProgInspeccionResumenDto,
 } from '../../indicadores-proactivos.dtos';
 import { SharedFiltersService, SelectOption } from '../../../../../../shared/services/shared-filters.service';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 @Component({
   selector: 'app-prog-inspeccion',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './prog-inspeccion.component.html',
   styleUrls: ['./prog-inspeccion.component.css'],
 })
@@ -49,7 +50,7 @@ export class ProgInspeccionComponent implements OnInit {
     { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
   ];
 
-  anios = [2024, 2025, 2026, 2027];
+  anios = [2024, 2025, 2026, 2027].map(a => ({ valor: a, nombre: String(a) }));
 
   // Agrupación de tipos de inspección por categoría para mostrarlos mejor
   gruposTipos = computed(() => {

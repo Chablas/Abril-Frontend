@@ -43,11 +43,16 @@
 
         <!-- Tipo -->
         <div class="abril-field">
-          <label class="abril-field-label">Tipo *</label>
-          <select class="abril-field-input" [(ngModel)]="tipo">
-            <option value="">— Seleccionar —</option>
-            <option *ngFor="let t of TIPO_OPCIONES" [value]="t.value">{{ t.label }}</option>
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Tipo *"
+            [options]="TIPO_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="tipo"
+            placeholder="Selecciona tipo"
+            (valueChange)="tipo = $event"
+          ></app-search-select>
         </div>
 
         <!-- Categoría RAC -->
@@ -66,11 +71,17 @@
 
         <!-- Severidad -->
         <div class="abril-field">
-          <label class="abril-field-label">Severidad *</label>
-          <select class="abril-field-input" [(ngModel)]="severidad">
-            <option value="">— Seleccionar —</option>
-            <option *ngFor="let s of SEVERIDAD_OPCIONES" [value]="s.value">{{ s.label }}</option>
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Severidad *"
+            [options]="SEVERIDAD_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="severidad"
+            placeholder="Selecciona severidad"
+            [sortAlpha]="false"
+            (valueChange)="severidad = $event"
+          ></app-search-select>
         </div>
 
         <!-- Piso/Nivel -->

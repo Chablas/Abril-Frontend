@@ -130,7 +130,7 @@
                 </svg>
               </button>
               <button
-                *ngIf="isAdmin() || isContratista()"
+                *ngIf="(isAdmin() || isContratista()) && w.estadoWorker !== 'RETIRADO'"
                 class="icon-btn"
                 title="Cambiar obra"
                 (click)="$event.stopPropagation(); abrirCambiarObra(w)"

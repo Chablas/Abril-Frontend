@@ -193,11 +193,12 @@
 .badge-primary  { background: var(--color-abril-primary-light);  color: var(--color-abril-primary-dark); }
 
 /* ── Tabla estándar ─────────────────────────────────────────── */
+/* El color de thead (teal, --color-abril-standard*) lo define el bloque
+   ".abril-table thead" más abajo — no redeclarar background/color acá:
+   ".thead tr" tiene más especificidad que ".thead" y le ganaba siempre,
+   pintando el encabezado verde (--color-abril-primary) en vez de teal en
+   TODA tabla de la app, sin importar el orden de las reglas en el archivo. */
 .abril-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
-.abril-table thead tr {
-  background: var(--color-abril-primary-light);
-  color: var(--color-abril-primary-dark);
-}
 .abril-table th {
   text-align: left; padding: 10px 16px;
   font-weight: 600; font-size: 0.8rem;

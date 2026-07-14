@@ -11,6 +11,7 @@ import { SpiBadgeComponent } from '../../components/spi-badge/spi-badge.componen
 import { ActividadTreeComponent } from '../../components/actividad-tree/actividad-tree.component';
 import { InstanciarModalComponent } from '../../components/instanciar-modal/instanciar-modal.component';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
@@ -19,7 +20,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 @Component({
   selector: 'app-paso-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, InstanciarModalComponent, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, SpiBadgeComponent, ActividadTreeComponent, InstanciarModalComponent, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './paso-detalle.component.html',
   styleUrl: './paso-detalle.component.css',
 })
@@ -38,6 +39,15 @@ export class PasoDetalleComponent implements OnInit {
   exportOpen = false;
 
   tabs: TabAmbito[] = ['Seguridad', 'Salud', 'Ambiente'];
+
+  readonly frecuenciaOpts = [
+    { id: 'Mensual',    label: 'Mensual' },
+    { id: 'Bimestral',  label: 'Bimestral' },
+    { id: 'Trimestral', label: 'Trimestral' },
+    { id: 'Semestral',  label: 'Semestral' },
+    { id: 'Anual',      label: 'Anual' },
+    { id: 'Unica',      label: 'Única' },
+  ];
 
   constructor(
     private route: ActivatedRoute,

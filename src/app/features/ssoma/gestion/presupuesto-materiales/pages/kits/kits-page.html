@@ -17,19 +17,32 @@
           <input type="text" [(ngModel)]="nuevoKitNombre" placeholder="Ej. Botiquín tipo A" />
         </label>
         <label>Tipo de material
-          <select [(ngModel)]="nuevoKitTipoId">
-            <option [ngValue]="null" disabled>Seleccionar tipo...</option>
-            <option *ngFor="let t of tipos" [ngValue]="t.id">{{ t.nombre }}</option>
-          </select>
+          <app-search-select
+            [options]="tipos"
+            valueField="id"
+            displayField="nombre"
+            [value]="nuevoKitTipoId"
+            [compact]="true"
+            [showLabel]="false"
+            placeholder="Selecciona tipo"
+            (valueChange)="nuevoKitTipoId = $event">
+          </app-search-select>
         </label>
       </div>
 
       <h4 class="items-titulo">Materiales del kit (BOM)</h4>
       <div class="item-row" *ngFor="let item of nuevoKitItems; let i = index">
-        <select [(ngModel)]="item.familiaId" class="item-familia">
-          <option [ngValue]="0" disabled>Seleccionar material...</option>
-          <option *ngFor="let f of familias" [ngValue]="f.id">{{ f.nombre }}</option>
-        </select>
+        <app-search-select
+          class="item-familia"
+          [options]="familias"
+          valueField="id"
+          displayField="nombre"
+          [value]="item.familiaId"
+          [compact]="true"
+          [showLabel]="false"
+          placeholder="Selecciona material"
+          (valueChange)="item.familiaId = $event">
+        </app-search-select>
         <input type="number" min="0.01" step="0.01" [(ngModel)]="item.cantidadPorKit" placeholder="Cantidad" class="item-cantidad" />
         <label class="item-consumible">
           <input type="checkbox" [(ngModel)]="item.esConsumible" /> Consumible
@@ -54,10 +67,16 @@
 
     <div *ngIf="!loading" class="form-row">
       <label>Kit
-        <select [(ngModel)]="kitSeleccionadoId" (ngModelChange)="onSeleccionarKit()">
-          <option [ngValue]="null" disabled>Seleccionar kit...</option>
-          <option *ngFor="let k of kits" [ngValue]="k.id">{{ k.nombre }} ({{ k.nombreTipo }})</option>
-        </select>
+        <app-search-select
+          [options]="kitsOpts"
+          valueField="id"
+          displayField="_label"
+          [value]="kitSeleccionadoId"
+          [compact]="true"
+          [showLabel]="false"
+          placeholder="Selecciona kit"
+          (valueChange)="kitSeleccionadoId = $event; onSeleccionarKit()">
+        </app-search-select>
       </label>
 
       <label *ngIf="kitDetalle">Cantidad de kits

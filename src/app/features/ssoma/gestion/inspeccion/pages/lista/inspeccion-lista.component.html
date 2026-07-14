@@ -53,7 +53,7 @@
                 <td>
                   <div class="tipo-cell">
                     <span>{{ item.tipoNombre }}</span>
-                    <span class="badge-ambito" [ngClass]="ambitoClass(item.tipoAmbito)">{{ item.tipoAmbito }}</span>
+                    <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
                   </div>
                 </td>
                 <td class="td-inspector">{{ item.inspectorNombre ?? '—' }}</td>
@@ -97,7 +97,7 @@
             </div>
             <div class="insp-card__proyecto">{{ item.proyectoNombre }}</div>
             <div class="insp-card__tipo">
-              <span class="badge-ambito" [ngClass]="ambitoClass(item.tipoAmbito)">{{ item.tipoAmbito }}</span>
+              <app-status-badge [text]="item.tipoAmbito" [bgColor]="ambitoBg(item.tipoAmbito)" [textColor]="ambitoText(item.tipoAmbito)" />
               {{ item.tipoNombre }}
             </div>
             <div class="insp-card__bottom">

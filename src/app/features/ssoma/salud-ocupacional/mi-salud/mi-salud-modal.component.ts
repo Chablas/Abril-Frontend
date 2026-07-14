@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
 import { FileSelector, SelectedFile } from '../../../../shared/components/file-selector/file-selector';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { MiSaludService } from './mi-salud.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -15,7 +16,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   selector: 'app-mi-salud-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BaseModal, FileSelector],
+  imports: [CommonModule, FormsModule, BaseModal, FileSelector, SearchSelect],
   templateUrl: './mi-salud-modal.component.html',
   styleUrl: './mi-salud-modal.component.css',
 })

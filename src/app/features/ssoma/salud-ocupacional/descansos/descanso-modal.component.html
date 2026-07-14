@@ -48,10 +48,16 @@
         <h4 class="section-title">Datos del descanso</h4>
         <div class="grid-3">
           <div>
-            <label class="field-label">Tipo *</label>
-            <select class="field-input" [(ngModel)]="cTipo">
-              <option *ngFor="let t of tiposDescanso" [value]="t">{{ t }}</option>
-            </select>
+            <app-search-select
+              label="Tipo *"
+              [options]="tiposDescansoOpts"
+              valueField="id"
+              displayField="label"
+              [value]="cTipo"
+              placeholder="Selecciona tipo"
+              [allowClear]="false"
+              (valueChange)="cTipo = $event">
+            </app-search-select>
           </div>
           <div>
             <label class="field-label">Fecha inicio *</label>
@@ -275,10 +281,16 @@
           <h4 class="section-title">Nuevo seguimiento</h4>
           <div class="grid-2">
             <div>
-              <label class="field-label">Tipo *</label>
-              <select class="field-input" [(ngModel)]="segTipo">
-                <option *ngFor="let t of tiposSeguimiento" [value]="t">{{ t }}</option>
-              </select>
+              <app-search-select
+                label="Tipo *"
+                [options]="tiposSeguimientoOpts"
+                valueField="id"
+                displayField="label"
+                [value]="segTipo"
+                placeholder="Selecciona tipo"
+                [allowClear]="false"
+                (valueChange)="segTipo = $event">
+              </app-search-select>
             </div>
             <div>
               <label class="field-label">Próxima cita</label>

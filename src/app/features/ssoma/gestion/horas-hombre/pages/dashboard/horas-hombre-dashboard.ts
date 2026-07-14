@@ -53,6 +53,7 @@ export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
     { id: 10, nombre: 'Octubre' }, { id: 11, nombre: 'Noviembre' }, { id: 12, nombre: 'Diciembre' },
   ];
   readonly anios = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
+  readonly aniosOpciones = this.anios.map((a) => ({ value: a, label: String(a) }));
 
   loading = false;
   data: HorasHombreDashboardDto | null = null;

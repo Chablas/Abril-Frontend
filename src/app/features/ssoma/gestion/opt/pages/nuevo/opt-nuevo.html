@@ -58,23 +58,31 @@
             <input type="date" class="abril-field-input" [(ngModel)]="fecha" />
           </div>
           <div class="abril-field">
-            <label class="abril-field-label">Tipo de observación *</label>
-            <select class="abril-field-input" [(ngModel)]="tipoObservacion">
-              <option value="">Seleccionar...</option>
-              <option value="Planeada">Planeada</option>
-              <option value="No Planeada">No Planeada</option>
-            </select>
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo de observación *"
+              [options]="tiposObservacion"
+              valueField="value"
+              displayField="label"
+              [value]="tipoObservacion"
+              placeholder="Selecciona tipo"
+              [allowClear]="false"
+              (valueChange)="tipoObservacion = $event">
+            </app-search-select>
           </div>
         </div>
 
         <div class="abril-field">
-          <label class="abril-field-label">PET asociado</label>
-          <select class="abril-field-input" [(ngModel)]="petId" (ngModelChange)="onPetChange()">
-            <option [value]="null">Sin PET</option>
-            @for (p of pets; track p.id) {
-              <option [value]="p.id">{{ p.nombre }}</option>
-            }
-          </select>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="PET asociado"
+            [options]="pets"
+            valueField="id"
+            displayField="nombre"
+            [value]="petId"
+            placeholder="Sin PET"
+            (valueChange)="petId = $event ? +$event : null; onPetChange()">
+          </app-search-select>
           @if (petSeleccionado?.sharepointUrl) {
             <div class="pet-actions">
               <button type="button" class="btn-ver-pdf" (click)="abrirVisorPet()">
@@ -316,13 +324,17 @@
 
         <div class="form-row" style="margin-top:16px">
           <div class="abril-field">
-            <label class="abril-field-label">Acción requerida</label>
-            <select class="abril-field-input" [(ngModel)]="accionRequerida">
-              <option value="">Sin acción requerida</option>
-              @for (a of accionesRequeridas; track a) {
-                <option [value]="a">{{ a }}</option>
-              }
-            </select>
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Acción requerida"
+              [options]="accionesRequeridasOptions"
+              valueField="value"
+              displayField="label"
+              [value]="accionRequerida"
+              placeholder="Sin acción requerida"
+              [allowClear]="true"
+              (valueChange)="accionRequerida = $event">
+            </app-search-select>
           </div>
         </div>
 

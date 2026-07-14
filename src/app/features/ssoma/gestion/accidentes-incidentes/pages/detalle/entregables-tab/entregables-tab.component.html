@@ -21,11 +21,16 @@
 
           @if (editandoId === e.id) {
             <td>
-              <select class="ent-input" [(ngModel)]="editForm.estado">
-                @for (s of estadosEntregable; track s) {
-                  <option [value]="s">{{ s }}</option>
-                }
-              </select>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="estadosEntregableOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="editForm.estado"
+                (valueChange)="editForm.estado = $event"
+              />
             </td>
             <td>
               <input type="date" class="ent-input" [(ngModel)]="editForm.fechaLimite" />
@@ -103,16 +108,30 @@
           <tr class="ent-editing">
             <td><input class="ent-input" [(ngModel)]="medidaForm.descripcion" placeholder="Descripción" /></td>
             <td>
-              <select class="ent-input" [(ngModel)]="medidaForm.tipo">
-                <option>Correctiva</option><option>Preventiva</option>
-              </select>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="tipoMedidaOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="medidaForm.tipo"
+                (valueChange)="medidaForm.tipo = $event"
+              />
             </td>
             <td><input class="ent-input" [(ngModel)]="medidaForm.responsableNombre" placeholder="Responsable" /></td>
             <td><input type="date" class="ent-input" [(ngModel)]="medidaForm.fechaCompromiso" /></td>
             <td>
-              <select class="ent-input" [(ngModel)]="medidaForm.estado">
-                <option>Pendiente</option><option>En proceso</option><option>Cumplido</option><option>No aplica</option>
-              </select>
+              <app-search-select
+                [compact]="true"
+                [showLabel]="false"
+                [options]="estadoMedidaOpts"
+                valueField="value"
+                displayField="label"
+                [sortAlpha]="false"
+                [value]="medidaForm.estado"
+                (valueChange)="medidaForm.estado = $event"
+              />
             </td>
             <td class="ent-acciones">
               <button class="btn-ent btn-ent--save" (click)="guardarMedida(m)" [disabled]="guardandoMedida">Guardar</button>

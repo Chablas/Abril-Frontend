@@ -40,6 +40,11 @@ export class MedicoForm implements OnChanges {
   model: MedicoUpsertDto = this.empty();
   saving = false;
 
+  readonly estadoOpts = [
+    { id: true, label: 'Activo' },
+    { id: false, label: 'Inactivo' },
+  ];
+
   constructor(
     private service: CatalogosSaludService,
     private loaderService: LoaderService,

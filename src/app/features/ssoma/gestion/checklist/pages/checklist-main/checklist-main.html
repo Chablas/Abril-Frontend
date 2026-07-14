@@ -14,13 +14,15 @@
     <!-- Selector de proyecto -->
     <div class="cl-toolbar">
       <div class="cl-toolbar-left">
-        <label class="cl-label">Proyecto</label>
-        <select class="cl-select" [(ngModel)]="proyectoId" (change)="onProyectoChange()">
-          <option [ngValue]="null">— Seleccionar proyecto —</option>
-          @for (p of proyectos; track p.projectId) {
-            <option [ngValue]="p.projectId">{{ p.projectDescription }}</option>
-          }
-        </select>
+        <app-search-select
+          label="Proyecto"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event; onProyectoChange()">
+        </app-search-select>
       </div>
       @if (proyectoId && checklistCards.length > 0) {
         <button class="cl-btn-refresh" (click)="loadResumen()" title="Refrescar">

@@ -115,11 +115,15 @@
           <input type="time" class="field-input" [(ngModel)]="hora" />
         </div>
         <div>
-          <label class="field-label">Tipo de atención *</label>
-          <select class="field-input" [(ngModel)]="tipoAtencionId">
-            <option [value]="0" disabled>Seleccionar…</option>
-            <option *ngFor="let t of tiposAtencion" [value]="t.id">{{ t.nombre }}</option>
-          </select>
+          <app-search-select
+            label="Tipo de atención *"
+            [options]="tiposAtencion"
+            valueField="id"
+            displayField="nombre"
+            [value]="tipoAtencionId"
+            placeholder="Selecciona tipo de atención"
+            (valueChange)="tipoAtencionId = $event">
+          </app-search-select>
         </div>
       </div>
       <div class="mt-2">
