@@ -25,16 +25,14 @@ export class MiSaludService {
     });
   }
 
-  createDescanso(dto: CrearMiDescansoDto, documento?: File | null): Observable<{ id: number; message: string }> {
+  createDescanso(dto: CrearMiDescansoDto, documentos: File[] = []): Observable<{ id: number; message: string }> {
     const fd = new FormData();
-    fd.append('tipo', dto.tipo);
     fd.append('fechaInicio', dto.fechaInicio);
     fd.append('fechaFin', dto.fechaFin);
     if (dto.dias != null)          fd.append('dias', dto.dias.toString());
-    if (dto.motivo)                fd.append('motivo', dto.motivo);
+    if (dto.motivoId != null)      fd.append('motivoId', dto.motivoId.toString());
     if (dto.diagnostico)           fd.append('diagnostico', dto.diagnostico);
-    if (dto.diagnosticoCie10)      fd.append('diagnosticoCie10', dto.diagnosticoCie10);
-    if (documento)                 fd.append('documento', documento, documento.name);
+    for (const doc of documentos)  fd.append('documentos', doc, doc.name);
 
     return this.http.post<{ id: number; message: string }>(`${this.base}/descansos`, fd, {
       headers: buildAuthHeaders(),

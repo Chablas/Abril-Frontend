@@ -5,7 +5,7 @@
 
 .dias-badge   { display:inline-flex; align-items:center; padding:.3rem .8rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:999px; font-size:.82rem; font-weight:600; color:#16a34a; margin-bottom: 14px; }
 
-.file-chip    { display:flex; align-items:center; gap:8px; padding:.5rem .75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; }
+.file-chip    { display:flex; align-items:center; gap:8px; padding:.5rem .75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; margin-top:8px; }
 .file-chip__name   { flex:1; font-size:.82rem; color:#374151; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .file-chip__remove { color:#9ca3af; font-size:.85rem; transition:color .12s; flex-shrink:0; }
 .file-chip__remove:hover { color:#dc2626; }

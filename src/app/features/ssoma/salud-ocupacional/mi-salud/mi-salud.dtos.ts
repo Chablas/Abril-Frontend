@@ -1,3 +1,8 @@
+export interface DescansoMotivoDto {
+  id: number;
+  nombre: string;
+}
+
 export interface MiSaludResumenDto {
   workerId: number;
   workerNombre: string | null;
@@ -11,6 +16,12 @@ export interface MiSaludResumenDto {
   restriccionesVigentes: string[];
   ultimoDescansoEstado: string | null;
   ultimoDescansoFechaFin: string | null;
+  motivosDescanso: DescansoMotivoDto[];
+}
+
+export interface MiDescansoAdjuntoDto {
+  url: string;
+  nombre: string | null;
 }
 
 export interface MiDescansoDto {
@@ -21,20 +32,18 @@ export interface MiDescansoDto {
   dias: number | null;
   motivo: string | null;
   diagnostico: string | null;
-  diagnosticoCie10: string | null;
   estado: string | null;
   motivoRechazo: string | null;
   urlCertificado: string | null;
   urlDocumento: string | null;
+  adjuntos: MiDescansoAdjuntoDto[];
   createdAt: string;
 }
 
 export interface CrearMiDescansoDto {
-  tipo: string;
   fechaInicio: string;
   fechaFin: string;
   dias?: number | null;
-  motivo?: string | null;
+  motivoId?: number | null;
   diagnostico?: string | null;
-  diagnosticoCie10?: string | null;
 }
