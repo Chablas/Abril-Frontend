@@ -9,6 +9,12 @@
   [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
   (primaryClick)="showNuevaModal = true">
 
+  <button tabsExtra type="button" title="Gestionar catálogos"
+          class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50"
+          style="border-color:var(--color-abril-border)"
+          (click)="showCatalogoModal = true">
+    <i class="ti ti-list-details"></i> Catálogos
+  </button>
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
@@ -140,9 +146,15 @@
 <app-nueva-observacion
   *ngIf="showNuevaModal"
   [proyectos]="filtros.proyectos"
-  [partidas]="filtros.partidas.length ? filtros.partidas : ['Pintura', 'Limpieza', 'Accesorios', 'Otros']"
+  [partidas]="partidasCatalogo"
   (closeModal)="showNuevaModal = false"
   (saved)="onNuevaGuardada()" />
+
+<app-catalogo-modal
+  *ngIf="showCatalogoModal"
+  tipoInicial="partidas"
+  (closeModal)="showCatalogoModal = false"
+  (saved)="onCatalogoGuardado()" />
 
 <app-levantar-observacion
   *ngIf="showLevantarModal && observacionParaLevantar"

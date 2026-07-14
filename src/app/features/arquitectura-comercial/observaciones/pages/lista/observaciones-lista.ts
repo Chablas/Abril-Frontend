@@ -20,6 +20,8 @@ import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril
 import { NuevaObservacion } from '../../components/nueva-observacion/nueva-observacion';
 import { LevantarObservacion } from '../../components/levantar-observacion/levantar-observacion';
 import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
+import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
+import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
 
 @Component({
   standalone: true,
@@ -36,6 +38,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
     AbrilBulkActionDirective,
     NuevaObservacion,
     LevantarObservacion,
+    CatalogoModal,
   ],
   templateUrl: './observaciones-lista.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -60,7 +63,11 @@ export class ObservacionesLista implements OnInit {
 
   showNuevaModal = false;
   showLevantarModal = false;
+  showCatalogoModal = false;
   observacionParaLevantar: ObservacionListItemDTO | null = null;
+
+  /** Catálogo curado de partidas (reemplaza los valores "distintos usados" de filtros.partidas). */
+  partidasCatalogo: string[] = [];
 
   dashboard: ObservacionDashboardDTO | null = null;
   lightboxUrl: string | null = null;
@@ -118,19 +125,32 @@ export class ObservacionesLista implements OnInit {
   }
 
   get partidaOptions(): { value: string; label: string }[] {
-    return this.filtros.partidas.map((p) => ({ value: p, label: p }));
+    return this.partidasCatalogo.map((p) => ({ value: p, label: p }));
   }
 
   constructor(
     private service: ObservacionesService,
+    private catalogoService: CatalogoService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
   ) {}
 
   ngOnInit(): void {
     this.loadFiltros();
+    this.loadPartidasCatalogo();
     this.load();
     this.loadDashboard();
+  }
+
+  loadPartidasCatalogo(): void {
+    this.catalogoService.getItems('partidas').subscribe({
+      next: (items) => { this.partidasCatalogo = items.map((i) => i.nombre); },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  onCatalogoGuardado(): void {
+    this.loadPartidasCatalogo();
   }
 
   loadFiltros(): void {
