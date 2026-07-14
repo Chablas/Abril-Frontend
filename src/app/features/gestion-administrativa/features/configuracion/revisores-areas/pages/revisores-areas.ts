@@ -4,6 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RevisoresAreasService } from '../services/revisores-areas.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import {
   AreaRevisorAsignadoDTO,
   AreaRevisorItemDTO,
@@ -56,11 +58,21 @@ export class RevisoresAreas implements OnInit {
   /** Área con el modal de edición abierto. null = cerrado. */
   editando: AreaRevisorItemDTO | null = null;
 
+  /**
+   * Solo el ADMINISTRADOR DE SOLICITUD DE SALIDAS ve todas las áreas y puede
+   * editar revisores. Los Jefe/Coordinador/Gerente solo ven su área (el
+   * backend filtra) y el resto no ve ninguna.
+   */
+  readonly esAdminSalidas: boolean;
+
   constructor(
     private service: RevisoresAreasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-  ) {}
+    authService: AuthService,
+  ) {
+    this.esAdminSalidas = authService.hasRole(Roles.ADMINISTRADOR_SOLICITUD_SALIDAS);
+  }
 
   ngOnInit(): void {
     this.load();

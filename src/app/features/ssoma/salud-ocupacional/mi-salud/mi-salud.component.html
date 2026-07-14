@@ -118,13 +118,24 @@
               <span class="badge" [ngClass]="estadoClass(d.estado)">{{ d.estado ?? '—' }}</span>
             </td>
             <td>
-              <a *ngIf="d.urlCertificado || d.urlDocumento"
-                 [href]="d.urlCertificado ?? d.urlDocumento"
-                 target="_blank"
-                 class="row-action btn-link-icon"
-                 title="Ver certificado">
-                <i class="ti ti-file-download"></i>
-              </a>
+              <ng-container *ngIf="d.adjuntos.length > 0; else certificadoLegado">
+                <a *ngFor="let adj of d.adjuntos"
+                   [href]="adj.url"
+                   target="_blank"
+                   class="row-action btn-link-icon"
+                   [title]="adj.nombre ?? 'Ver certificado'">
+                  <i class="ti ti-file-download"></i>
+                </a>
+              </ng-container>
+              <ng-template #certificadoLegado>
+                <a *ngIf="d.urlCertificado || d.urlDocumento"
+                   [href]="d.urlCertificado ?? d.urlDocumento"
+                   target="_blank"
+                   class="row-action btn-link-icon"
+                   title="Ver certificado">
+                  <i class="ti ti-file-download"></i>
+                </a>
+              </ng-template>
             </td>
           </tr>
           <tr *ngIf="!loadingDescansos && descansos.length === 0">
@@ -149,6 +160,7 @@
 
 <app-mi-salud-modal
   *ngIf="modalVisible"
+  [motivos]="resumen?.motivosDescanso ?? []"
   (closed)="cerrarModal()"
   (saved)="onGuardado()">
 </app-mi-salud-modal>

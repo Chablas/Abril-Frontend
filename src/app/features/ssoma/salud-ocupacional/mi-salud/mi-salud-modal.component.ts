@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output,
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel
 import { FileSelector, SelectedFile } from '../../../../shared/components/file-selector/file-selector';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { MiSaludService } from './mi-salud.service';
+import { DescansoMotivoDto } from './mi-salud.dtos';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 
@@ -21,24 +22,18 @@ import { LoaderService } from '../../../../core/services/loader.service';
   styleUrl: './mi-salud-modal.component.css',
 })
 export class MiSaludModalComponent {
+  /** Catálogo de motivos (ss_descanso_motivo); llega con el resumen para no hacer otra petición. */
+  @Input() motivos: DescansoMotivoDto[] = [];
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
 
   saving = false;
 
-  tipo             = 'Particular';
-  fechaInicio      = new Date().toISOString().slice(0, 10);
-  fechaFin         = new Date().toISOString().slice(0, 10);
-  motivo           = '';
-  diagnostico      = '';
-  diagnosticoCie10 = '';
-  documento        : File | null = null;
-  documentoNombre  = '';
-
-  readonly tipoOpts = [
-    { id: 'Particular',  label: 'Particular' },
-    { id: 'Ocupacional', label: 'Ocupacional' },
-  ];
+  fechaInicio = new Date().toISOString().slice(0, 10);
+  fechaFin    = new Date().toISOString().slice(0, 10);
+  motivoId    : number | null = null;
+  diagnostico = '';
+  documentos  : File[] = [];
 
   get diasCalculados(): number {
     const ini = new Date(this.fechaInicio);
@@ -55,14 +50,12 @@ export class MiSaludModalComponent {
   ) {}
 
   onFileSelected(sf: SelectedFile): void {
-    this.documento      = sf.file;
-    this.documentoNombre = sf.file.name;
+    this.documentos = [...this.documentos, sf.file];
     this.cdr.detectChanges();
   }
 
-  quitarDocumento(): void {
-    this.documento      = null;
-    this.documentoNombre = '';
+  quitarDocumento(index: number): void {
+    this.documentos = this.documentos.filter((_, i) => i !== index);
     this.cdr.detectChanges();
   }
 
@@ -80,14 +73,12 @@ export class MiSaludModalComponent {
     this.loaderService.show();
 
     this.svc.createDescanso({
-      tipo: this.tipo,
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
       dias: this.diasCalculados,
-      motivo: this.motivo || null,
+      motivoId: this.motivoId,
       diagnostico: this.diagnostico || null,
-      diagnosticoCie10: this.diagnosticoCie10 || null,
-    }, this.documento).subscribe({
+    }, this.documentos).subscribe({
       next: (res) => {
         this.saving = false;
         this.loaderService.hide();

@@ -41,7 +41,7 @@
               <button (click)="openDetalle(r)" abrilBulkAction="default">
                 Ver
               </button>
-              <button (click)="openEdit(r)" abrilBulkAction="default">
+              <button *ngIf="esAdminSalidas" (click)="openEdit(r)" abrilBulkAction="default">
                 Editar
               </button>
             </div>
@@ -50,7 +50,13 @@
 
         <tr *ngIf="filteredRows.length === 0">
           <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
-            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay áreas de tipo Área Estándar.' }}
+            {{
+              filtrosActivos > 0
+                ? 'Sin resultados.'
+                : esAdminSalidas
+                  ? 'No hay áreas de tipo Área Estándar.'
+                  : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven los revisores de su área.'
+            }}
           </td>
         </tr>
       </tbody>
