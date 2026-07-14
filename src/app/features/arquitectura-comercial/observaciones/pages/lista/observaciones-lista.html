@@ -85,19 +85,30 @@
 
           <td class="text-center">
             <div class="flex items-center justify-center gap-[6px]">
-              <img *ngIf="fotoObservacion(o) as url"
-                   [src]="url"
-                   (click)="abrirLightbox(url)"
-                   title="Ver foto de observación"
-                   class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
-                   style="border-color:var(--color-abril-border)" />
-              <span *ngIf="!fotoObservacion(o)" class="text-gray-300 text-sm">—</span>
-              <span *ngIf="fotosLevantamiento(o) > 0"
-                    class="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-[10px] font-semibold text-white"
-                    style="background:var(--color-abril-standard)"
-                    title="Fotos de levantamiento">
-                {{ fotosLevantamiento(o) }}
-              </span>
+              <div class="relative" *ngIf="fotoObservacion(o) as url; else sinObs">
+                <img [src]="url"
+                     (click)="abrirLightbox(url)"
+                     title="Ver foto de observación"
+                     class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                     style="border-color:var(--color-abril-border)" />
+                <span class="absolute -top-[6px] -left-[6px] bg-gray-700 text-white text-[8px] font-semibold rounded-full px-[4px] leading-[13px]">Obs</span>
+              </div>
+              <ng-template #sinObs><span class="text-gray-300 text-sm">—</span></ng-template>
+
+              <div class="relative" *ngIf="fotoLevantamiento(o) as urlLevantamiento">
+                <img [src]="urlLevantamiento"
+                     (click)="abrirLightbox(urlLevantamiento)"
+                     title="Ver foto de levantamiento"
+                     class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                     style="border-color:var(--color-abril-standard)" />
+                <span class="absolute -top-[6px] -left-[6px] text-white text-[8px] font-semibold rounded-full px-[4px] leading-[13px]"
+                      style="background:var(--color-abril-standard)">Lev</span>
+                <span *ngIf="fotosLevantamientoExtra(o) > 0"
+                      class="absolute -bottom-[6px] -right-[6px] inline-flex items-center justify-center w-[16px] h-[16px] rounded-full text-[9px] font-semibold text-white bg-gray-500"
+                      [title]="'+' + fotosLevantamientoExtra(o) + ' foto(s) más de levantamiento'">
+                  +{{ fotosLevantamientoExtra(o) }}
+                </span>
+              </div>
             </div>
           </td>
 
@@ -184,6 +195,28 @@
       [value]="partida"
       (valueChange)="partida = $event; onFilterChange()">
     </app-search-select>
+  </div>
+
+  <div class="w-full flex gap-[8px]">
+    <div class="flex-1 abril-field">
+      <input type="date" id="obsDesde" class="abril-field-input" placeholder=" "
+             [(ngModel)]="desde" (ngModelChange)="onFilterChange()" [attr.max]="hasta" />
+      <label for="obsDesde" class="abril-field-label">Desde</label>
+    </div>
+    <div class="flex-1 abril-field">
+      <input type="date" id="obsHasta" class="abril-field-input" placeholder=" "
+             [(ngModel)]="hasta" (ngModelChange)="onFilterChange()" [attr.min]="desde" />
+      <label for="obsHasta" class="abril-field-label">Hasta</label>
+    </div>
+  </div>
+
+  <div class="w-full flex gap-[8px]">
+    <button type="button" abrilBulkAction="default" class="flex-1" (click)="filtrarMesActual()">
+      Este mes
+    </button>
+    <button type="button" abrilBulkAction="default" class="flex-1" (click)="filtrarAnioActual()">
+      Este año
+    </button>
   </div>
 </app-filter-modal>
 

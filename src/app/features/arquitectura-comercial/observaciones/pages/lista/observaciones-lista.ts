@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ObservacionesService } from '../../../../../core/services/arquitectura-comercial/observaciones.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -25,6 +26,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
   selector: 'app-arq-comercial-observaciones-lista',
   imports: [
     CommonModule,
+    FormsModule,
     AbrilPageHeaderComponent,
     Paginator,
     FilterTriggerButton,
@@ -51,6 +53,8 @@ export class ObservacionesLista implements OnInit {
   proyectoId: number | null = null;
   estado: string | null = null;
   partida: string | null = null;
+  desde: string | null = null;
+  hasta: string | null = null;
   searchText = '';
   filtrosAbiertos = false;
 
@@ -99,6 +103,8 @@ export class ObservacionesLista implements OnInit {
     if (this.proyectoId) n++;
     if (this.estado) n++;
     if (this.partida) n++;
+    if (this.desde) n++;
+    if (this.hasta) n++;
     if (this.searchText.trim()) n++;
     return n;
   }
@@ -146,6 +152,8 @@ export class ObservacionesLista implements OnInit {
         proyectoId: this.proyectoId,
         estado: this.estado,
         partida: this.partida,
+        desde: this.desde,
+        hasta: this.hasta,
         search: this.searchText || null,
         pagina: this.pagina,
         porPagina: this.porPagina,
@@ -179,9 +187,35 @@ export class ObservacionesLista implements OnInit {
     this.proyectoId = null;
     this.estado = null;
     this.partida = null;
+    this.desde = null;
+    this.hasta = null;
     this.searchText = '';
     this.onFilterChange();
     if (proyectoCambio) this.loadDashboard();
+  }
+
+  /** Atajo "Este mes": setea desde/hasta al primer y último día del mes actual. */
+  filtrarMesActual(): void {
+    const hoy = new Date();
+    const primero = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const ultimo = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    this.desde = this.toDateInput(primero);
+    this.hasta = this.toDateInput(ultimo);
+    this.onFilterChange();
+  }
+
+  /** Atajo "Este año": setea desde/hasta al primer y último día del año actual. */
+  filtrarAnioActual(): void {
+    const anio = new Date().getFullYear();
+    this.desde = this.toDateInput(new Date(anio, 0, 1));
+    this.hasta = this.toDateInput(new Date(anio, 11, 31));
+    this.onFilterChange();
+  }
+
+  private toDateInput(d: Date): string {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
   }
 
   changePage(page: number): void {
@@ -201,8 +235,12 @@ export class ObservacionesLista implements OnInit {
     return o.fotos.find((f) => f.tipo === 'Observacion')?.url ?? null;
   }
 
-  fotosLevantamiento(o: ObservacionListItemDTO): number {
-    return o.fotos.filter((f) => f.tipo === 'Levantamiento').length;
+  fotoLevantamiento(o: ObservacionListItemDTO): string | null {
+    return o.fotos.find((f) => f.tipo === 'Levantamiento')?.url ?? null;
+  }
+
+  fotosLevantamientoExtra(o: ObservacionListItemDTO): number {
+    return Math.max(0, o.fotos.filter((f) => f.tipo === 'Levantamiento').length - 1);
   }
 
   abrirLevantar(o: ObservacionListItemDTO): void {
