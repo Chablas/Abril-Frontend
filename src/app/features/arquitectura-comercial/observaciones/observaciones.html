@@ -17,7 +17,39 @@
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
-  <div class="w-full flex-1 min-h-0 overflow-auto">
+  <!-- ── KPIs clickeables (filtran la tabla por estado) ──────────────── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-[10px] shrink-0">
+    <button type="button" (click)="filtrarPorKpi(null)"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === null ? 'var(--color-abril-standard)' : 'var(--color-abril-border)'"
+            [style.background]="estado === null ? 'var(--color-abril-standard-light)' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Reportados</div>
+      <div class="text-[22px] font-bold" style="color:var(--color-abril-standard)">{{ kpiReportados }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('Completado')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'Completado' ? '#065F46' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'Completado' ? '#D1FAE5' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Completados</div>
+      <div class="text-[22px] font-bold text-[#065F46]">{{ kpiCompletados }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('Pendiente')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'Pendiente' ? '#92400E' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'Pendiente' ? '#FEF3C7' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Pendientes</div>
+      <div class="text-[22px] font-bold text-[#92400E]">{{ kpiPendientes }}</div>
+    </button>
+    <button type="button" (click)="filtrarPorKpi('En Proceso')"
+            class="text-left rounded-[10px] border px-[16px] py-[12px] transition-colors"
+            [style.borderColor]="estado === 'En Proceso' ? '#1E40AF' : 'var(--color-abril-border)'"
+            [style.background]="estado === 'En Proceso' ? '#DBEAFE' : '#fff'">
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">En proceso</div>
+      <div class="text-[22px] font-bold text-[#1E40AF]">{{ kpiEnProceso }}</div>
+    </button>
+  </div>
+
+  <div class="abril-table-wrap">
     <table class="abril-table">
       <thead class="sticky top-0 z-10">
         <tr>
@@ -54,9 +86,22 @@
             </span>
           </td>
 
-          <td class="text-center text-gray-500 text-sm">
-            <span *ngIf="fotoObservacion(o)" class="mr-[6px]" title="Foto de observación">📷</span>
-            <span *ngIf="fotosLevantamiento(o) > 0" title="Fotos de levantamiento">🛠️ {{ fotosLevantamiento(o) }}</span>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[6px]">
+              <img *ngIf="fotoObservacion(o) as url"
+                   [src]="url"
+                   (click)="abrirLightbox(url)"
+                   title="Ver foto de observación"
+                   class="w-[32px] h-[32px] rounded-[6px] object-cover cursor-pointer border hover:opacity-80 transition-opacity"
+                   style="border-color:var(--color-abril-border)" />
+              <span *ngIf="!fotoObservacion(o)" class="text-gray-300 text-sm">—</span>
+              <span *ngIf="fotosLevantamiento(o) > 0"
+                    class="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-[10px] font-semibold text-white"
+                    style="background:var(--color-abril-standard)"
+                    title="Fotos de levantamiento">
+                {{ fotosLevantamiento(o) }}
+              </span>
+            </div>
           </td>
 
           <td class="text-center">
@@ -115,7 +160,7 @@
       displayField="nombre"
       placeholder="Buscar proyecto..."
       [value]="proyectoId"
-      (valueChange)="proyectoId = $event; onFilterChange()">
+      (valueChange)="onProyectoFiltroChange($event)">
     </app-search-select>
   </div>
 
@@ -144,3 +189,17 @@
     </app-search-select>
   </div>
 </app-filter-modal>
+
+<!-- ── Lightbox de foto ─────────────────────────────────────────────── -->
+<div *ngIf="lightboxUrl"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+     (click)="cerrarLightbox()">
+  <button type="button"
+          (click)="cerrarLightbox()"
+          class="absolute top-[20px] right-[24px] text-white text-[28px] leading-none cursor-pointer">
+    ✕
+  </button>
+  <img [src]="lightboxUrl"
+       (click)="$event.stopPropagation()"
+       class="max-w-[90vw] max-h-[85vh] rounded-[8px] shadow-2xl object-contain" />
+</div>

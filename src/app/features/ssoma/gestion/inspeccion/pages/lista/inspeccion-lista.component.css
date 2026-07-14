@@ -194,21 +194,8 @@
 .estado-proceso  { background: #fef3c7; color: #92400e; }
 .estado-cerrada  { background: var(--color-abril-standard-light); color: var(--color-abril-standard); }
 
-.btn-ver {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  border: 0.5px solid #e8e5df;
-  background: #fff;
-  cursor: pointer;
-  color: #5a5850;
-  font-size: 14px;
-}
-
-.btn-ver:hover { background: #f0ede8; }
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
 
 /* ── CARDS MOBILE ─────────────────────────────────────── */
 .cards-mobile { display: flex; flex-direction: column; gap: 8px; }

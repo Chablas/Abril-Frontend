@@ -23,8 +23,8 @@
   <form id="accForm" class="flash-form" (ngSubmit)="guardar()" #frm="ngForm">
 
     <!-- ══════════════════════ DATOS DEL EVENTO ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-info-circle"></i> Datos del evento</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-info-circle"></i> Datos del evento</h3>
       <div class="form-grid">
 
         <div class="abril-field">
@@ -71,13 +71,13 @@
         </div>
 
         <div class="abril-field">
-          <label>Fecha *</label>
+          <label class="abril-field-label">Fecha *</label>
           <input type="date" class="abril-field-input" [(ngModel)]="form.fecha" name="fecha" />
           @if (errores['fecha']) { <span class="campo-error">{{ errores['fecha'] }}</span> }
         </div>
 
         <div class="abril-field">
-          <label>Hora</label>
+          <label class="abril-field-label">Hora</label>
           <input type="time" class="abril-field-input" [(ngModel)]="form.hora" name="hora" />
         </div>
 
@@ -112,7 +112,7 @@
         </div>
 
         <div class="abril-field abril-field--full">
-          <label>Lugar exacto *</label>
+          <label class="abril-field-label">Lugar exacto *</label>
           <input type="text" class="abril-field-input" [(ngModel)]="form.lugarExacto" name="lugarExacto"
             placeholder="Ej: Sótano 2, eje C-D, zona de excavación" />
           @if (errores['lugarExacto']) { <span class="campo-error">{{ errores['lugarExacto'] }}</span> }
@@ -150,12 +150,12 @@
     </section>
 
     <!-- ══════════════════════ EMPRESA INVOLUCRADA ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-building"></i> Empresa involucrada</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-building"></i> Empresa involucrada</h3>
       <div class="form-grid">
 
         <div class="abril-field abril-field--full">
-          <label>Tipo de empresa</label>
+          <label class="abril-field-label">Tipo de empresa</label>
           <div class="radio-group">
             <label class="radio-label">
               <input type="radio" name="tipoEmpresa" value="abril" [(ngModel)]="tipoEmpresa" (ngModelChange)="onEmpresaChange()" />
@@ -218,8 +218,8 @@
     </section>
 
     <!-- ══════════════════════ TRABAJADORES AFECTADOS ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-users"></i> Trabajadores afectados</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-users"></i> Trabajadores afectados</h3>
 
       @if (esIncidente) {
         @if (form.consecuenciaRealPersonal === 2) {
@@ -260,28 +260,28 @@
             </div>
 
             <div class="abril-field abril-field--full">
-              <label>Nombre completo</label>
+              <label class="abril-field-label">Nombre completo</label>
               <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.trabajadorNombre" name="tnNombre"
                 placeholder="Nombre completo" />
             </div>
 
             <div class="abril-field">
-              <label>Puesto de trabajo</label>
+              <label class="abril-field-label">Puesto de trabajo</label>
               <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.puestoTrabajo" name="tnPuesto" />
             </div>
 
             <div class="abril-field">
-              <label>Edad</label>
+              <label class="abril-field-label">Edad</label>
               <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.edad" name="tnEdad" min="18" max="80" />
             </div>
 
             <div class="abril-field">
-              <label>Años experiencia</label>
+              <label class="abril-field-label">Años experiencia</label>
               <input type="number" class="abril-field-input" [(ngModel)]="trabajadorNuevo.aniosExperiencia" name="tnAnios" min="0" />
             </div>
 
             <div class="abril-field">
-              <label>Celular</label>
+              <label class="abril-field-label">Celular</label>
               <input type="text" class="abril-field-input" [(ngModel)]="trabajadorNuevo.celularTrabajador" name="tnCelular" placeholder="9XXXXXXXX" />
             </div>
 
@@ -309,8 +309,8 @@
     </section>
 
     <!-- ══════════════════════ DAÑOS Y CONSECUENCIAS ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-alert-triangle"></i> Daños y consecuencias</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-alert-triangle"></i> Daños y consecuencias</h3>
       <div class="form-grid">
 
         <div class="abril-field abril-field--full">
@@ -322,14 +322,14 @@
 
         @if (form.danioProcesFlag) {
           <div class="abril-field abril-field--full">
-            <label>Descripción del daño al proceso / equipo / material</label>
+            <label class="abril-field-label">Descripción del daño al proceso / equipo / material</label>
             <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.danoProceso" name="danoProceso" rows="2"
               placeholder="Describa el daño a proceso, equipo o material"></textarea>
           </div>
         }
 
         <div class="abril-field">
-          <label>Consecuencia real — Personal</label>
+          <label class="abril-field-label">Consecuencia real — Personal</label>
           @if (esIncidente) {
             <p class="info-hint"><i class="ti ti-info-circle"></i> Incidente: máximo N2 — Primeros auxilios. N3 en adelante es Accidente.</p>
           }
@@ -348,7 +348,7 @@
         </div>
 
         <div class="abril-field">
-          <label>Consecuencia potencial — Personal</label>
+          <label class="abril-field-label">Consecuencia potencial — Personal</label>
           <p class="info-hint"><i class="ti ti-info-circle"></i> ¿Qué podría haber pasado en otras circunstancias?</p>
           <app-search-select
             color="var(--color-abril-logo-blue)"
@@ -375,8 +375,8 @@
     </section>
 
     <!-- ══════════════════════ DESCRIPCIÓN ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-file-text"></i> Descripción del evento</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-file-text"></i> Descripción del evento</h3>
       <div class="form-grid">
         <div class="abril-field abril-field--full">
           <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.descripcion" name="descripcion" rows="5"
@@ -387,8 +387,8 @@
     </section>
 
     <!-- ══════════════════════ ACCIONES INMEDIATAS ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-bolt"></i> Acciones inmediatas</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-bolt"></i> Acciones inmediatas</h3>
       <div class="form-grid">
         <div class="abril-field abril-field--full">
           <textarea class="abril-field-input campo-textarea" [(ngModel)]="form.accionesInmediatas" name="acciones" rows="4"
@@ -399,8 +399,8 @@
     </section>
 
     <!-- ══════════════════════ ATENCIÓN MÉDICA ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-medical-cross"></i> Atención médica</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-medical-cross"></i> Atención médica</h3>
       <div class="form-grid">
 
         <div class="abril-field">
@@ -420,7 +420,7 @@
 
         @if (form.atencionMedica && form.atencionMedica !== 'Ninguna') {
           <div class="abril-field">
-            <label>Centro de atención</label>
+            <label class="abril-field-label">Centro de atención</label>
             <input type="text" class="abril-field-input" [(ngModel)]="form.centroAtencion" name="centroAtencion"
               placeholder="Nombre del centro de atención" />
           </div>
@@ -430,8 +430,8 @@
     </section>
 
     <!-- ══════════════════════ FOTOGRAFÍAS ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-camera"></i> Fotografías</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-camera"></i> Fotografías</h3>
       <div class="fotos-grid">
 
         <div class="foto-slot">
@@ -468,8 +468,8 @@
     </section>
 
     <!-- ══════════════════════ ELABORADO POR ══════════════════════ -->
-    <section class="flash-section">
-      <h3 class="flash-section__title"><i class="ti ti-pen"></i> Elaborado por</h3>
+    <section class="abril-form-section">
+      <h3 class="abril-section-title"><i class="ti ti-pen"></i> Elaborado por</h3>
       <div class="form-grid">
 
         <div class="abril-field abril-field--full">
@@ -487,22 +487,22 @@
         </div>
 
         <div class="abril-field">
-          <label>Nombre</label>
+          <label class="abril-field-label">Nombre</label>
           <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorNombre" name="elaboradoNombre" />
         </div>
 
         <div class="abril-field">
-          <label>Cargo</label>
+          <label class="abril-field-label">Cargo</label>
           <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorCargo" name="elaboradoCargo" />
         </div>
 
         <div class="abril-field">
-          <label>Email</label>
+          <label class="abril-field-label">Email</label>
           <input type="email" class="abril-field-input" [(ngModel)]="form.elaboradoPorEmail" name="elaboradoEmail" />
         </div>
 
         <div class="abril-field">
-          <label>Teléfono</label>
+          <label class="abril-field-label">Teléfono</label>
           <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorTelefono" name="elaboradoTel" />
         </div>
 
@@ -512,7 +512,7 @@
   </form>
   }
 
-  <div modalFooter class="modal-footer-row">
+  <div modalFooter>
     <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
     <button type="submit" form="accForm" class="btn-guardar" [disabled]="guardando || cargando">
       @if (guardando) { <i class="ti ti-loader-2 spin"></i> }

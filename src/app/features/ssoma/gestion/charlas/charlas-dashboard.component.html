@@ -143,11 +143,11 @@
                         <td class="ta-c">
                           @if (c.archivos?.length || c.evidenciaUrl) {
                             <div class="cap-acciones">
-                              <button class="btn-row" title="Ver" (click)="toggleViewer(c.id)">
+                              <button class="abril-action-btn" title="Ver" (click)="toggleViewer(c.id)">
                                 <i class="ti" [class.ti-eye]="viewerCapId !== c.id" [class.ti-eye-off]="viewerCapId === c.id"></i>
                               </button>
                               @if (c.archivos?.length) {
-                                <span class="cap-file-count">{{ c.archivos.length }}</span>
+                                <span class="abril-table-badge">{{ c.archivos.length }}</span>
                               }
                             </div>
                           } @else {
@@ -435,7 +435,7 @@
           @else if (!tab4Items.length) {
             <p class="empty-msg">{{ tab4Estado ? 'Sin resultados.' : 'Sin charlas registradas.' }}</p>
           } @else {
-            <div class="w-full flex-1 min-h-0 overflow-auto">
+            <div class="abril-table-wrap">
               <table class="abril-table">
                 <thead class="sticky top-0 z-10">
                   <tr>
@@ -463,7 +463,7 @@
                       </td>
                       <td class="text-right text-gray-500">{{ item.totalAsistentes }}</td>
                       <td>
-                        <button class="btn-row" (click)="abrirDetalle(item)" title="Ver detalle">
+                        <button class="abril-action-btn" (click)="abrirDetalle(item)" title="Ver detalle">
                           <i class="ti ti-eye"></i>
                         </button>
                       </td>

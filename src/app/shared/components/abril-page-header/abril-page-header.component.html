@@ -55,9 +55,14 @@
   </button>
 </div>
 
-<div class="abril-tabs" *ngIf="visibleTabs.length">
+<!-- *ngIf ahora también contempla hasExtra: si la página no tiene pestañas
+     pero sí proyecta algo en tabsExtra (ej. el botón de Filtros), esta barra
+     debe mostrarse igual — antes, sin pestañas, tabsExtra quedaba anidado
+     dentro de un bloque que nunca se renderizaba y el botón desaparecía en
+     silencio (bug real: Accidentes, Auditoría ATS, Proyectos Habilitados). -->
+<div class="abril-tabs" *ngIf="visibleTabs.length || hasExtra">
   <div class="abril-tabs__row">
-    <nav class="abril-tabs__nav">
+    <nav class="abril-tabs__nav" *ngIf="visibleTabs.length">
       <ng-container *ngFor="let tab of visibleTabs">
         <a *ngIf="tab.route"
            class="abril-tabs__tab"
@@ -77,5 +82,4 @@
       <ng-content select="[tabsExtra]"></ng-content>
     </div>
   </div>
-  <div style="height:1px; background:#e5e7eb; width:100%;"></div>
 </div>

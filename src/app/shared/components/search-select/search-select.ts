@@ -19,6 +19,7 @@ export class SearchSelect {
   @Input() showLabel: boolean = true;
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
+  /** Trigger más chico (26px alto, texto 11px) para celdas de tabla o filas densas. */
   @Input() compact: boolean = false;
   /** Si es true, muestra el texto completo (sin truncar con "…") tanto en el trigger como en las opciones. */
   @Input() fullText: boolean = false;
@@ -121,6 +122,15 @@ export class SearchSelect {
     const isAllCaps = text === text.toUpperCase() && text !== text.toLowerCase();
     if (!isAllCaps) return text;
     return text.toLowerCase().replace(/(^|[\s\-/])([a-záéíóúñ])/g, (_m, sep, c) => sep + c.toUpperCase());
+  }
+
+  /**
+   * Alto/tipografía del trigger, según `compact`/`dark`. Único origen de verdad para el tamaño —
+   * una página no puede cambiarlo con CSS local, solo forzando estos dos Inputs.
+   */
+  get triggerSizeClasses(): string {
+    if (this.compact) return this.dark ? 'h-[22px] text-[10px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
+    return this.dark ? 'h-[30px] text-[11px] pl-[10px] pr-[8px]' : 'h-[34px] text-[12px] pl-[10px] pr-[8px]';
   }
 
   get hasValue(): boolean {

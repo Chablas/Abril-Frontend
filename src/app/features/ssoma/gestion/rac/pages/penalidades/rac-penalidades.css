@@ -231,26 +231,8 @@
 .pen-aplicada    { background: #fef2f2; color: #b91c1c; }
 .pen-anulada     { background: #f0fdf4; color: #0a7c52; }
 
-/* ── BOTÓN ICONO ─────────────────────────────────────────── */
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #374151;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btn-icon:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-}
+/* .abril-action-btn es global (src/styles.css) — no reimplementar el botón
+   de acción de tabla aquí. */
 
 /* ── EMPTY STATE ─────────────────────────────────────────── */
 .empty-state {

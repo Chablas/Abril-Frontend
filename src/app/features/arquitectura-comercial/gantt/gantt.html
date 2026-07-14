@@ -15,22 +15,40 @@
 
   <!-- ══ BARRA DE CONTROL ══ -->
   <div class="gp-bar" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:10px 18px;background:#fff;border-bottom:1px solid #E5E7EB;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-shrink:0;min-height:52px;position:sticky;top:0;z-index:100">
-    <div class="gp-project">
+    <div class="gp-project" style="width:220px">
       <i class="ti ti-building-skyscraper" style="color:#9CA3AF;font-size:15px"></i>
-      <select [(ngModel)]="selectedProyectoId" (ngModelChange)="onProyectoChange()" class="gp-psel">
-        <option [ngValue]="null">Todos los proyectos</option>
-        <option *ngFor="let p of proyectosConActividades; trackBy: trackByProyecto" [ngValue]="p.id">{{ p.nombre }}</option>
-      </select>
+      <app-search-select
+        label="Proyecto"
+        [showLabel]="false"
+        [compact]="true"
+        placeholder="Todos los proyectos"
+        [options]="proyectosConActividades"
+        valueField="id"
+        displayField="nombre"
+        [value]="selectedProyectoId"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="onProyectoChange($event)">
+      </app-search-select>
     </div>
 
     <div class="gp-sep"></div>
 
-    <div class="gp-project">
+    <div class="gp-project" style="width:220px">
       <i class="ti ti-user" style="color:#9CA3AF;font-size:15px"></i>
-      <select [(ngModel)]="filtroSupervisorId" (ngModelChange)="onSupervisorChange()" class="gp-psel">
-        <option [ngValue]="null">Todos los supervisores</option>
-        <option *ngFor="let s of supervisores" [ngValue]="s.id">{{ s.apellidoNombre }}</option>
-      </select>
+      <app-search-select
+        label="Supervisor"
+        [showLabel]="false"
+        [compact]="true"
+        placeholder="Todos los supervisores"
+        [options]="supervisores"
+        valueField="id"
+        displayField="apellidoNombre"
+        [value]="filtroSupervisorId"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="onSupervisorChange($event)">
+      </app-search-select>
     </div>
 
     <div class="gp-sep"></div>
@@ -44,10 +62,21 @@
 
     <div class="gp-sep"></div>
 
-    <select [(ngModel)]="etapaNombreFiltro" (change)="onFiltroChange()" class="gp-sel">
-      <option [ngValue]="null">Todas las etapas</option>
-      <option *ngFor="let e of etapasFijas" [ngValue]="e">{{ e }}</option>
-    </select>
+    <div style="width:180px">
+      <app-search-select
+        label="Etapa"
+        [showLabel]="false"
+        [compact]="true"
+        placeholder="Todas las etapas"
+        [options]="etapaOptions"
+        valueField="value"
+        displayField="label"
+        [value]="etapaNombreFiltro"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="etapaNombreFiltro = $event; onFiltroChange()">
+      </app-search-select>
+    </div>
 
     <label class="gp-toggle">
       <input type="checkbox" [(ngModel)]="excluirCulminadas" (change)="onFiltroChange()" />

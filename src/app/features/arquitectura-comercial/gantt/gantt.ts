@@ -7,6 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import {
   GanttActividadDTO,
@@ -74,7 +75,7 @@ export interface TimeCell { label: string; width: number; minor?: boolean; isCur
 @Component({
   selector: 'app-arq-comercial-gantt',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './gantt.html',
   styleUrl: './gantt.css',
 })
@@ -87,6 +88,9 @@ export class Gantt implements OnInit {
 
   anioActual = new Date().getFullYear();
   readonly etapasFijas = ['PREVENTA','OBRA','EDIFICIO ENTREGADO','POST VENTA Y EXPERIENCIA','ALMACEN'];
+  get etapaOptions(): Array<{ value: string; label: string }> {
+    return this.etapasFijas.map(e => ({ value: e, label: e }));
+  }
 
   proyectos: ProyectoConActividadesDTO[] = [];
   supervisores: SupervisorAcDTO[] = [];
@@ -149,8 +153,8 @@ export class Gantt implements OnInit {
     });
   }
 
-  onProyectoChange(): void { this.filtroSupervisorId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
-  onSupervisorChange(): void { this.selectedProyectoId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
+  onProyectoChange(id: number | null): void { this.selectedProyectoId = id; this.filtroSupervisorId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
+  onSupervisorChange(id: number | null): void { this.filtroSupervisorId = id; this.selectedProyectoId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
   setTipo(t: TipoFiltro): void { this.tipoFiltro = t; this.loadGantt(); }
   onFiltroChange(): void { this.loadGantt(); }
 

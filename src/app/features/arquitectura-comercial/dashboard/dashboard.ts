@@ -129,6 +129,12 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalCargaExcluirCulminadas  = true;
   modalCargaFiltroEstado       = '';
   modalCargaStats              = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
+  readonly modalCargaEstadoOptions = [
+    { value: 'EN_PROCESO', label: 'En proceso' },
+    { value: 'EN_RIESGO', label: 'En riesgo' },
+    { value: 'VENCIDO', label: 'Vencido' },
+    { value: 'CULMINADO', label: 'Culminado' },
+  ];
 
   private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
   private pd(iso: string): Date { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }

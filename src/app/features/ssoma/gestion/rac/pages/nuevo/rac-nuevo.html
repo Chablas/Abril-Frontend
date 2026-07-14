@@ -14,8 +14,8 @@
   <div *ngIf="!loadingCatalogos" class="paso-body">
 
     <!-- ■ 1. DATOS DEL EVENTO ──────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-clipboard-list"></i> Datos del Evento
       </h2>
 
@@ -100,8 +100,8 @@
     </section>
 
     <!-- ■ 2. OBSERVADOR ──────────────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-user-circle"></i> Observador (Reportante)
       </h2>
 
@@ -146,8 +146,8 @@
     </section>
 
     <!-- ■ 3. TRABAJADOR(ES) OBSERVADO(S) ─────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-users"></i> Trabajador(es) Observado(s)
       </h2>
 
@@ -205,8 +205,8 @@
     </section>
 
     <!-- ■ 4. DESCRIPCIÓN ─────────────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-file-description"></i> Descripción del Acto / Condición
       </h2>
       <div class="form-grid">
@@ -218,20 +218,19 @@
     </section>
 
     <!-- ■ 5. FOTOS DE EVIDENCIA ─────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-camera"></i> Fotos de evidencia *
       </h2>
-      <input type="file" class="abril-field-input" accept="image/*" multiple
-             (change)="onFotosChange($event)" />
+      <app-photo-grid-picker
+        color="var(--color-abril-logo-blue)"
+        [previews]="fotoPreviews"
+        [max]="10"
+        (filesSelected)="onFotosSeleccionadas($event)"
+        (remove)="removeFoto($event)"
+      ></app-photo-grid-picker>
       <div *ngIf="fotosSubiendo" class="search-hint">
         <i class="ti ti-loader spin"></i> Subiendo fotos...
-      </div>
-      <div class="fotos-preview-grid" *ngIf="fotosSeleccionadas.length > 0 && !fotosSubiendo">
-        <span class="foto-ok">
-          <i class="ti ti-circle-check"></i>
-          {{ fotosSeleccionadas.length }} foto(s) lista(s) para subir
-        </span>
       </div>
       <span class="form-hint" *ngIf="fotosSeleccionadas.length === 0">
         Debes adjuntar al menos una foto de evidencia
@@ -239,8 +238,8 @@
     </section>
 
     <!-- ■ 6. PLAN DE ACCIÓN ──────────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-checklist"></i> Plan de Acción
       </h2>
       <div class="form-grid">
@@ -259,8 +258,8 @@
     </section>
 
     <!-- ■ 6. PENALIDAD ───────────────────────────────────────────────── -->
-    <section class="form-section">
-      <h2 class="section-title">
+    <section class="abril-form-section">
+      <h2 class="abril-section-title">
         <i class="ti ti-receipt-tax"></i> Penalidad
       </h2>
 

@@ -207,6 +207,27 @@
 }
 .abril-table td { padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border); color: var(--color-abril-body); }
 .abril-table tbody tr { transition: background 0.1s; cursor: pointer; }
+
+/* ── Wrapper de tabla estándar ──────────────────────────────────────
+   Antes: `<div class="w-full flex-1 min-h-0 overflow-auto">` (flex-1)
+   alrededor de cada <table>. flex-1 fuerza el wrapper a estirarse y llenar
+   TODO el espacio sobrante del contenedor padre sin importar cuántas filas
+   tenga la tabla — con pocos resultados, eso deja un hueco enorme entre la
+   última fila y la paginación (que queda pegada al fondo del viewport en
+   vez de justo debajo de la tabla). Bug real, no solo estético: se veía
+   "flotando" con cualquier lista corta.
+   flex: 0 1 auto (no crece más allá de su contenido, sí se achica si hace
+   falta) + min-height:0 mantiene el mismo comportamiento de scroll interno
+   para listas largas (sigue cabiendo en el alto disponible del contenedor
+   padre), pero con pocas filas el wrapper ahora abraza su contenido y la
+   paginación queda inmediatamente debajo, no varias pantallas más abajo.
+   Uso: <div class="abril-table-wrap"><table class="abril-table">...</table></div> */
+.abril-table-wrap {
+  width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .abril-table tbody tr:hover { background: var(--color-abril-bg-alt); }
 
 /* ── Input estándar ─────────────────────────────────────────── */
@@ -231,29 +252,6 @@
   font-size: 0.78rem; font-weight: 600;
   color: var(--color-abril-primary-dark);
   text-transform: uppercase; letter-spacing: 0.04em;
-}
-
-/* ── Filtro estándar (2026): label + input nativo dentro de app-filter-modal,
-   dimensionado igual al combobox (app-search-select) para que ambos convivan
-   sin saltar visualmente — usar en vez de .abril-label/.abril-input, que son
-   más grandes y de otro color (legado, previos al estándar 2026). ────────── */
-.abril-filter-label {
-  display: block; margin-bottom: 4px;
-  font-size: 11px; font-weight: 600;
-  color: var(--color-abril-muted, #4B5563);
-}
-.abril-filter-input {
-  height: 34px; padding: 0 10px; width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--radius-standard, 7px);
-  font-size: 12px; font-weight: 500; color: var(--color-abril-body, #374151);
-  background: var(--color-abril-surface, #fff);
-  transition: border-color 0.15s, box-shadow 0.15s;
-  outline: none;
-}
-.abril-filter-input:focus {
-  border-color: var(--color-abril-standard);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-abril-standard) 30%, transparent);
 }
 
 /* ── Campo de wizard estándar (2026): label flotante que corta el borde
@@ -299,7 +297,80 @@
 textarea.abril-field-input { resize: vertical; }
 select.abril-field-input { cursor: pointer; }
 
+/* ── Botón de acción en tabla (ej. "Ver detalle") y badge de conteo ──
+   Cada lista SSOMA (RAC, OPT, Inspección, Accidentes, Charlas) reinventaba
+   su propio botón de ícono ".btn-icon"/".btn-ver"/".btn-row", cada uno con
+   tamaño/color/hover distinto, y su propio badge de conteo (uno en teal
+   genérico en vez del azul SSOMA). Único origen de verdad ahora.
+   Uso: <button class="abril-action-btn" title="Ver"><i class="ti ti-eye"></i></button>
+        <span class="abril-table-badge">3</span> */
+.abril-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 0.5px solid var(--color-abril-border-strong, #e8e5df);
+  background: #fff;
+  color: #5a5850;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.abril-action-btn:hover { background: #f0ede8; }
+.abril-action-btn--danger { color: #991b1b; }
+.abril-action-btn--danger:hover { background: #fee2e2; border-color: #fca5a5; }
+.abril-action-btn--primary { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); border-color: #a9c9e6; }
+.abril-action-btn--primary:hover { background: #d3e6f5; }
+
+.abril-table-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ── Sección de formulario dentro de app-abril-modal-panel (2026) ────
+   Plana, sin caja (sin fondo/borde/radius) — RAC y Accidentes tenían cada
+   uno su propia versión con fondo blanco + borde + border-radius (una
+   "caja" visible), distinta entre sí y distinta de OPT/Inspección/
+   Amonestaciones, que siempre fueron planas. Único origen de verdad ahora:
+   ningún formulario puede volver a envolver una sección en una caja sin
+   forzarlo explícitamente con CSS propio.
+   Uso: <section class="abril-form-section"><h2/h3 class="abril-section-title">
+   <i class="ti ..."></i> Título</h2>...campos...</section> */
+.abril-form-section { display: flex; flex-direction: column; gap: 10px; }
+.abril-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a18;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 0.5px solid #e8e5df;
+}
+.abril-section-title i { color: var(--color-abril-logo-blue); }
+
 /* ── Page layout ────────────────────────────────────────────── */
+/* ── Footer de app-abril-modal-panel: agrupa botones a la derecha ────
+   Uso: <div class="footer-nav"> dentro del modalFooter proyectado, para
+   Anterior/Siguiente o Guardar borrador/Registrar. El propio shell
+   (.amp-footer, space-between) ya separa esto del Cancelar de la izquierda
+   sin que la página tenga que declarar nada más. Global porque el CSS
+   scoped de app-abril-modal-panel no llega al contenido proyectado vía
+   ng-content (encapsulación de Angular). ─────────────────────────────── */
+.footer-nav { display: flex; gap: 8px; }
+
 /* Uso: <div class="page-wrapper"> + <app-abril-page-header> + <div class="page-body"> */
 .page-wrapper {
   display: flex;

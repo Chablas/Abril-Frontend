@@ -28,7 +28,7 @@
 
     <!-- TABLA DESKTOP -->
     @if (!loading && (result?.data?.length ?? 0) > 0) {
-      <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+      <div class="tabla-wrap abril-table-wrap">
         <table class="abril-table tabla-opt">
           <thead class="sticky top-0 z-10">
             <tr>
@@ -236,13 +236,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
     </div>
   </div>
 </app-filter-modal>

@@ -7,6 +7,7 @@ import { LoaderService } from '../../../core/services/loader.service';
 import {
   ObservacionListItemDTO,
   ObservacionFiltrosDTO,
+  ObservacionDashboardDTO,
 } from '../../../core/dtos/arquitectura-comercial/observaciones.model';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../shared/components/paginator/paginator';
@@ -57,6 +58,42 @@ export class Observaciones implements OnInit {
   showLevantarModal = false;
   observacionParaLevantar: ObservacionListItemDTO | null = null;
 
+  dashboard: ObservacionDashboardDTO | null = null;
+  lightboxUrl: string | null = null;
+
+  get kpiReportados(): number {
+    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalReportadas, 0) ?? 0;
+  }
+  get kpiCompletados(): number {
+    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalCompletadas, 0) ?? 0;
+  }
+  get kpiPendientes(): number {
+    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalPendientes, 0) ?? 0;
+  }
+  get kpiEnProceso(): number {
+    return this.dashboard?.supervisores.reduce((sum, s) => sum + s.totalEnProceso, 0) ?? 0;
+  }
+
+  filtrarPorKpi(estadoBuscado: string | null): void {
+    this.estado = estadoBuscado;
+    this.onFilterChange();
+  }
+
+  loadDashboard(): void {
+    this.service.getDashboard(null, null, this.proyectoId).subscribe({
+      next: (data) => { this.dashboard = data; },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  abrirLightbox(url: string): void {
+    this.lightboxUrl = url;
+  }
+
+  cerrarLightbox(): void {
+    this.lightboxUrl = null;
+  }
+
   get filtrosActivos(): number {
     let n = 0;
     if (this.proyectoId) n++;
@@ -87,6 +124,7 @@ export class Observaciones implements OnInit {
   ngOnInit(): void {
     this.loadFiltros();
     this.load();
+    this.loadDashboard();
   }
 
   loadFiltros(): void {
@@ -130,12 +168,20 @@ export class Observaciones implements OnInit {
     this.load();
   }
 
+  onProyectoFiltroChange(id: number | null): void {
+    this.proyectoId = id;
+    this.onFilterChange();
+    this.loadDashboard();
+  }
+
   limpiarFiltros(): void {
+    const proyectoCambio = this.proyectoId !== null;
     this.proyectoId = null;
     this.estado = null;
     this.partida = null;
     this.searchText = '';
     this.onFilterChange();
+    if (proyectoCambio) this.loadDashboard();
   }
 
   changePage(page: number): void {
@@ -168,12 +214,14 @@ export class Observaciones implements OnInit {
     this.showNuevaModal = false;
     this.pagina = 1;
     this.load();
+    this.loadDashboard();
   }
 
   onLevantadaGuardada(): void {
     this.showLevantarModal = false;
     this.observacionParaLevantar = null;
     this.load();
+    this.loadDashboard();
   }
 
   trackById(_: number, o: ObservacionListItemDTO): number {

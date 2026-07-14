@@ -661,14 +661,21 @@
           <input type="checkbox" [(ngModel)]="modalCargaExcluirCulminadas" style="cursor:pointer" />
           Excluir culminadas
         </label>
-        <select [(ngModel)]="modalCargaFiltroEstado"
-                style="font-size:11px;border:1px solid #CBD5E1;border-radius:5px;padding:3px 8px;color:#475569;background:#fff">
-          <option value="">Todos los estados</option>
-          <option value="EN_PROCESO">En proceso</option>
-          <option value="EN_RIESGO">En riesgo</option>
-          <option value="VENCIDO">Vencido</option>
-          <option value="CULMINADO">Culminado</option>
-        </select>
+        <div style="width:180px">
+          <app-search-select
+            label="Estado"
+            [showLabel]="false"
+            [compact]="true"
+            placeholder="Todos los estados"
+            [options]="modalCargaEstadoOptions"
+            valueField="value"
+            displayField="label"
+            [value]="modalCargaFiltroEstado || null"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="modalCargaFiltroEstado = $event || ''">
+          </app-search-select>
+        </div>
         <span style="font-size:11px;color:#94A3B8">{{ modalCargaFiltradas.length }} mostrando</span>
       </div>
     </div>

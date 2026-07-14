@@ -45,7 +45,10 @@
           Este proyecto todavía no tiene actividades. Genera las 159 actividades base desde la plantilla.
         </p>
         <button (click)="generarActividades(selectedProyecto)"
-                class="bg-[#64BC04] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#5aa903] shadow">
+                class="text-white px-6 py-3 rounded-lg font-medium shadow transition-colors"
+                style="background: var(--color-abril-standard);"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
           + Generar actividades desde plantilla
         </button>
       </div>
@@ -68,19 +71,23 @@
         <!-- Tabs tipo (pills) -->
         <div class="flex gap-1.5">
           <button (click)="setTipo('')"
-                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === '' ? 'var(--color-abril-standard)' : null">
             Todos
           </button>
           <button (click)="setTipo('ENTREGABLE')"
-                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'ENTREGABLE' ? 'var(--color-abril-standard)' : null">
             Entregable
           </button>
           <button (click)="setTipo('HITO')"
-                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'HITO' ? 'var(--color-abril-standard)' : null">
             Hito
           </button>
           <button (click)="setTipo('CONSULTA')"
-                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
+                  [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+                  [style.background]="tipoFiltro === 'CONSULTA' ? 'var(--color-abril-standard)' : null">
             Consulta
           </button>
         </div>
@@ -88,45 +95,58 @@
         <button
           *ngIf="tipoFiltro === 'CONSULTA'"
           (click)="mostrarNuevaConsulta = true"
-          class="px-3.5 py-1.5 text-sm rounded-lg bg-[#1a4731] text-white font-medium hover:bg-[#143824] transition-colors whitespace-nowrap"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
         >
           + Nueva Consulta
         </button>
         <button
           *ngIf="tipoFiltro === 'HITO'"
           (click)="mostrarNuevoHito = true"
-          class="px-3.5 py-1.5 text-sm rounded-lg bg-[#1a4731] text-white font-medium hover:bg-[#143824] transition-colors whitespace-nowrap"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
         >
           + Nuevo Hito
         </button>
         <button
           *ngIf="tipoFiltro === 'ENTREGABLE'"
           (click)="mostrarNuevoEntregable = true"
-          class="px-3.5 py-1.5 text-sm rounded-lg bg-[#1a4731] text-white font-medium hover:bg-[#143824] transition-colors whitespace-nowrap"
+          class="px-3.5 py-1.5 text-sm rounded-lg text-white font-medium transition-colors whitespace-nowrap"
+          style="background: var(--color-abril-standard);"
+          onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+          onmouseout="this.style.background='var(--color-abril-standard)'"
         >
           + Nuevo Entregable
         </button>
 
         <span *ngIf="loading" class="text-xs text-gray-500 whitespace-nowrap">Cargando...</span>
 
-        <div class="flex items-center gap-2 ml-auto">
-          <label class="text-sm text-gray-600 whitespace-nowrap">Responsable 1:</label>
-          <select [value]="selectedProyecto.responsableArqComId ?? ''"
-                  (change)="onEncargadoChange($event)"
-                  class="text-sm px-3 py-1.5 border border-[#D1D5DB] rounded-lg bg-white">
-            <option value="">—</option>
-            <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [value]="s.id">
-              {{ s.apellidoNombre }}
-            </option>
-          </select>
+        <div class="flex items-center gap-2 ml-auto w-[240px]">
+          <app-search-select
+            label="Responsable 1"
+            [showLabel]="false"
+            [compact]="true"
+            placeholder="Responsable 1"
+            [options]="supervisores"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="selectedProyecto.responsableArqComId ?? null"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="onEncargadoChange($event)">
+          </app-search-select>
         </div>
       </div>
 
       <!-- Tabla -->
       <div class="flex-1 overflow-auto">
-        <table class="w-full text-xs">
-          <thead class="bg-[#1a4731] sticky top-0 z-10">
-            <tr class="text-left text-white uppercase tracking-wide text-[11px]">
+        <table class="abril-table w-full text-xs">
+          <thead class="sticky top-0 z-10">
+            <tr class="text-left">
               <th class="p-2 w-8"></th>
               <th class="p-2 w-10">#</th>
               <th class="p-2 min-w-[220px]">Actividad</th>
@@ -238,14 +258,21 @@
                 <td class="px-2 py-1.5 text-gray-700 truncate" [title]="a.encargado1 || ''">
                   {{ a.encargado1 || '—' }}
                 </td>
-                <td class="px-2 py-1.5">
-                  <select [ngModel]="a.userId2"
-                          (ngModelChange)="onResponsable2Change(a, $event)"
-                          [disabled]="!a.activo"
-                          class="w-full text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1 disabled:bg-gray-100">
-                    <option [ngValue]="null">— sin responsable —</option>
-                    <option *ngFor="let s of supervisores; trackBy: trackBySupervisor" [ngValue]="s.id">{{ s.apellidoNombre }}</option>
-                  </select>
+                <td class="px-2 py-1.5 min-w-[180px]">
+                  <app-search-select
+                    label="Responsable 2"
+                    [showLabel]="false"
+                    [compact]="true"
+                    placeholder="— sin responsable —"
+                    [options]="supervisores"
+                    valueField="id"
+                    displayField="apellidoNombre"
+                    [value]="a.userId2"
+                    [allowClear]="true"
+                    [sortAlpha]="false"
+                    [disabled]="!a.activo"
+                    (valueChange)="onResponsable2Change(a, $event)">
+                  </app-search-select>
                 </td>
                 <td class="px-2 py-1.5">
                   <input type="text"
@@ -264,7 +291,7 @@
                   <button
                     (click)="$event.stopPropagation(); onEditarActividad(a)"
                     title="Editar"
-                    class="inline-flex items-center justify-center w-6 h-6 rounded border border-[#D1D5DB] bg-white hover:bg-[#F0FDF4] hover:border-[#64BC04] text-gray-400 hover:text-[#15803D] transition-colors">
+                    class="inline-flex items-center justify-center w-6 h-6 rounded border border-[#D1D5DB] bg-white hover:bg-[var(--color-abril-standard-light)] hover:border-[var(--color-abril-standard)] text-gray-400 hover:text-[var(--color-abril-standard)] transition-colors">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <path d="M12 20h9"/>
                       <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
@@ -322,7 +349,7 @@
   </label>
 
   <a routerLink="/configuracion/proyectos"
-     class="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-[#64BC04] transition-colors -mt-[6px]">
+     class="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-[var(--color-abril-standard)] transition-colors -mt-[6px]">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
     </svg>

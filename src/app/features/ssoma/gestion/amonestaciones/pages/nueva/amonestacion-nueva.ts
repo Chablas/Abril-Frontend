@@ -24,11 +24,12 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 
 @Component({
   selector: 'app-amonestacion-nueva',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './amonestacion-nueva.html',
   styleUrl: './amonestacion-nueva.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -177,10 +178,12 @@ export class AmonestacionNueva implements OnInit, OnDestroy {
 
   // ── Fotos ─────────────────────────────────────────────────────────
 
-  onFotosChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    const pendientes = files.slice(0, 3 - this.fotosSeleccionadas.length);
+  get fotoPreviews(): string[] {
+    return this.fotosSeleccionadas.map((f) => f.base64);
+  }
+
+  onFotosChange(files: FileList): void {
+    const pendientes = Array.from(files).slice(0, 3 - this.fotosSeleccionadas.length);
     pendientes.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {

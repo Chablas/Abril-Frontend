@@ -318,13 +318,11 @@ export class Actividades implements OnInit {
     this.patchField(id, 'observaciones', value || null);
   }
 
-  onEncargadoChange(event: Event): void {
+  onEncargadoChange(nuevoId: number | null): void {
     if (!this.selectedProyectoId) return;
     const proyecto = this.selectedProyecto;
     if (!proyecto) return;
 
-    const raw = (event.target as HTMLSelectElement).value;
-    const nuevoId = raw === '' ? null : Number(raw);
     const proyectoId = this.selectedProyectoId;
 
     this.service.patchProyecto(proyectoId, { responsableArqComId: nuevoId }).subscribe({

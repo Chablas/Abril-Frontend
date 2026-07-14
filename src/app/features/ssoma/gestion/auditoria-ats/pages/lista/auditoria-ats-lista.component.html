@@ -3,14 +3,15 @@
   <app-abril-page-header
     badge="SSOMA"
     titulo="Auditoría de ATS"
-    subtitulo="Registro y evaluación de calidad de ATS">
+    subtitulo="Registro y evaluación de calidad de ATS"
+    [hasExtra]="true">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <!-- Tabla -->
-  <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+  <div class="tabla-wrap abril-table-wrap">
     @if (loading) {
       <div class="loading-row">
         <i class="ti ti-loader-2 spin"></i> Cargando...
@@ -59,7 +60,7 @@
                 </span>
               </td>
               <td class="col-acc">
-                <button type="button" class="btn-ver" (click)="$event.stopPropagation(); verDetalle(item.id)">
+                <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); verDetalle(item.id)">
                   <i class="ti ti-eye"></i>
                 </button>
               </td>
@@ -110,13 +111,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Fecha desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="buscar()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="buscar()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Fecha hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="buscar()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Fecha hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="buscar()" />
     </div>
   </div>
 

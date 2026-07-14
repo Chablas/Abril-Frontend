@@ -4,7 +4,10 @@
     [titulo]="tituloProyecto"
     subtitulo="Control de consumo semanal"
     [botonSecundario]="{ label: 'Volver al presupuesto', icono: 'ti-arrow-left' }"
+    [hasExtra]="tab === 'semanas'"
     (secondaryClick)="volver()">
+    <!-- Filtro solo tiene sentido en la pestaña Semanas (historial) -->
+    <app-filter-trigger *ngIf="tab === 'semanas'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <!-- Tabs internos -->
@@ -149,7 +152,11 @@
         <p>No hay semanas registradas aún.</p>
       </div>
 
-      <div *ngFor="let s of semanas" class="semana-card">
+      <div *ngIf="semanas.length > 0 && filteredSemanas.length === 0" class="empty-state">
+        <p>Sin resultados con los filtros aplicados.</p>
+      </div>
+
+      <div *ngFor="let s of pagedSemanas" class="semana-card">
         <div class="semana-header">
           <span class="semana-num">Semana #{{ s.semanaNum }}</span>
           <span class="semana-fechas">{{ s.fechaInicio | date:'dd/MM/yyyy' }} – {{ s.fechaFin | date:'dd/MM/yyyy' }}</span>
@@ -162,6 +169,15 @@
           </button>
         </div>
         <p *ngIf="s.observaciones" class="semana-obs">{{ s.observaciones }}</p>
+      </div>
+
+      <div *ngIf="filteredSemanas.length > 0" class="shrink-0 max-w-[440px]">
+        <app-paginator
+          [totalRecords]="filteredSemanas.length"
+          [currentPage]="currentPage"
+          [totalPages]="totalPages"
+          (pageChange)="changePage($event)">
+        </app-paginator>
       </div>
     </ng-container>
 
@@ -222,4 +238,25 @@
     </ng-container>
 
   </div>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por N° de semana u observaciones..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="100%">
+      </app-search-input>
+    </div>
+    <div class="w-full">
+      <app-search-select
+        label="Estado"
+        [options]="estadoFilterOptions"
+        valueField="value"
+        displayField="label"
+        [value]="estadoFilter"
+        (valueChange)="estadoFilter = $event; onFilterChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
 </div>

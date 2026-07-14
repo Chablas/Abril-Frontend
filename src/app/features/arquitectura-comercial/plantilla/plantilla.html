@@ -11,93 +11,63 @@
   ]"
   [botonPrimario]="{ label: 'Nueva actividad', icono: 'ti-plus' }"
   (primaryClick)="openModal()">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<div class="flex flex-col flex-1 min-h-0 overflow-y-auto bg-[#F5F7FA]">
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
-  <!-- Filtros -->
-  <div class="px-5 py-3 border-b border-[#E5E7EB] bg-[#F8FAFC] flex flex-wrap items-center gap-3">
-    <div class="flex gap-1.5">
-      <button (click)="setTipo('')"
-              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
-        Todos
-      </button>
-      <button (click)="setTipo('HITO')"
-              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
-        Hito
-      </button>
-      <button (click)="setTipo('ENTREGABLE')"
-              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
-        Entregable
-      </button>
-      <button (click)="setTipo('CONSULTA')"
-              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'bg-[#1a4731] text-white font-medium' : 'text-gray-700 hover:bg-gray-200')">
-        Consulta
-      </button>
-    </div>
-
-    <select [(ngModel)]="etapaIdFiltro"
-            class="text-sm border border-[#D1D5DB] rounded-lg px-3 py-1.5 bg-white">
-      <option [ngValue]="null">Todas las etapas</option>
-      <option *ngFor="let e of etapas" [ngValue]="e.id">{{ e.nombre }}</option>
-    </select>
-
-    <select [(ngModel)]="activoFiltro"
-            class="text-sm border border-[#D1D5DB] rounded-lg px-3 py-1.5 bg-white">
-      <option value="todos">Activas e inactivas</option>
-      <option value="activas">Solo activas</option>
-      <option value="inactivas">Solo inactivas</option>
-    </select>
-
-    <span *ngIf="loading" class="text-xs text-gray-500 ml-auto">Cargando...</span>
-  </div>
-
-  <!-- Tabla -->
-  <div class="flex-1 overflow-auto">
-    <table class="w-full text-xs">
-      <thead class="bg-[#1a4731] sticky top-0 z-10">
-        <tr class="text-left text-white uppercase tracking-wide text-[11px]">
-          <th class="p-2 w-16">Orden</th>
-          <th class="p-2 min-w-[260px]">Nombre</th>
-          <th class="p-2 w-32">Tipo</th>
-          <th class="p-2 w-40">Etapa</th>
-          <th class="p-2 min-w-[160px]">Categoría</th>
-          <th class="p-2 min-w-[160px]">Especialidad</th>
-          <th class="p-2 w-24">Activa</th>
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th class="w-16">Orden</th>
+          <th class="min-w-[260px]">Nombre</th>
+          <th>Tipo</th>
+          <th>Etapa</th>
+          <th>Categoría</th>
+          <th>Especialidad</th>
+          <th class="text-center">Activa</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let p of filteredPlantilla; let i = index; trackBy: trackByRow"
-            [class]="'border-b border-[#E5E7EB] ' + (i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]') + ' hover:bg-[#F0FDF4]'">
-          <td class="px-2 py-1.5">
+
+        <tr *ngIf="pagedPlantilla.length === 0">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos ? 'Sin resultados.' : 'No hay actividades de plantilla registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of pagedPlantilla; trackBy: trackByRow" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td>
             <input type="number"
                    [value]="p.orden ?? ''"
                    (blur)="onOrdenBlur(p, $event)"
                    class="w-14 text-[12px] border border-[#D1D5DB] rounded-[6px] px-2 py-1" />
           </td>
-          <td class="px-2 py-1.5 text-gray-800">
+          <td class="text-gray-800">
             <input type="text"
                    [value]="p.nombre"
                    (blur)="onNombreBlur(p, $event)"
-                   class="w-full text-[12px] border border-transparent hover:border-[#D1D5DB] focus:border-[#1a4731] rounded-[6px] px-2 py-1 bg-transparent focus:bg-white" />
+                   class="w-full text-[12px] border border-transparent hover:border-[#D1D5DB] focus:border-[var(--color-abril-standard)] rounded-[6px] px-2 py-1 bg-transparent focus:bg-white" />
           </td>
-          <td class="px-2 py-1.5">
+          <td>
             <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + tipoClass(p.tipo)">
               {{ p.tipo || '—' }}
             </span>
           </td>
-          <td class="px-2 py-1.5">
+          <td>
             <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-semibold border ' + etapaClass(p.etapaNombre)">
               {{ p.etapaNombre || '—' }}
             </span>
           </td>
-          <td class="px-2 py-1.5 text-gray-700 truncate" [title]="p.categoriaNombre || ''">
+          <td class="text-gray-700 truncate" [title]="p.categoriaNombre || ''">
             {{ p.categoriaNombre || '—' }}
           </td>
-          <td class="px-2 py-1.5 text-gray-700 truncate" [title]="p.especialidadNombre || ''">
+          <td class="text-gray-700 truncate" [title]="p.especialidadNombre || ''">
             {{ p.especialidadNombre || '—' }}
           </td>
-          <td class="px-2 py-1.5">
+          <td class="text-center">
             <button (click)="onActivoToggle(p)"
                     [class]="p.activo ? 'inline-block px-3 py-1 rounded-full text-xs font-semibold border bg-[#D1FAE5] text-[#065F46] border-[#A7F3D0]' : 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E5E7EB] text-[#6B7280]'">
               {{ p.activo ? 'SÍ' : 'NO' }}
@@ -105,92 +75,160 @@
           </td>
         </tr>
 
-        <tr *ngIf="!loading && filteredPlantilla.length === 0">
-          <td colspan="7" class="text-center py-8 text-gray-400">
-            No hay actividades con los filtros aplicados.
-          </td>
-        </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Modal Nueva Actividad -->
-  <div *ngIf="showModal"
-       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-       (click)="closeModal()">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
-         (click)="$event.stopPropagation()">
-      <h2 class="text-lg font-bold text-gray-800 mb-4">Nueva actividad de plantilla</h2>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
-          <input type="text" [(ngModel)]="form.nombre"
-                 class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
-            <select [(ngModel)]="form.tipo"
-                    class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
-              <option [ngValue]="null">—</option>
-              <option value="HITO">Hito</option>
-              <option value="ENTREGABLE">Entregable</option>
-              <option value="CONSULTA">Consulta</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Orden</label>
-            <input type="number" [(ngModel)]="form.orden"
-                   class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2" />
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Etapa</label>
-          <select [(ngModel)]="form.etapaId"
-                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let e of etapas" [ngValue]="e.id">{{ e.nombre }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
-          <select [(ngModel)]="form.categoriaId"
-                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Especialidad</label>
-          <select [(ngModel)]="form.especialidadId"
-                  class="w-full text-sm border border-[#D1D5DB] rounded-lg px-3 py-2 bg-white">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let s of especialidades" [ngValue]="s.id">{{ s.nombre }}</option>
-          </select>
-        </div>
-
-        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-          <input type="checkbox" [(ngModel)]="form.activo" class="rounded border-gray-300" />
-          Activa
-        </label>
-      </div>
-
-      <div class="flex justify-end gap-2 mt-6">
-        <button (click)="closeModal()"
-                class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
-          Cancelar
-        </button>
-        <button (click)="submitForm()"
-                class="bg-[#1a4731] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#143524]">
-          Crear
-        </button>
-      </div>
-    </div>
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredPlantilla.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
   </div>
 
 </div>
+
+<app-base-modal *ngIf="showModal" [title]="'NUEVA ACTIVIDAD DE PLANTILLA'" width="w-[480px]" (closeModal)="closeModal()">
+
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nombre</label>
+      <input type="text" [(ngModel)]="form.nombre"
+             class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <app-search-select
+        label="Tipo"
+        placeholder="Selecciona tipo"
+        [options]="tipoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="form.tipo"
+        [allowClear]="true"
+        [sortAlpha]="false"
+        (valueChange)="form.tipo = $event">
+      </app-search-select>
+
+      <div class="flex flex-col gap-[4px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Orden</label>
+        <input type="number" [(ngModel)]="form.orden"
+               class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      </div>
+    </div>
+
+    <app-search-select
+      label="Etapa"
+      placeholder="Selecciona etapa"
+      [options]="etapas"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.etapaId"
+      [allowClear]="true"
+      (valueChange)="form.etapaId = $event">
+    </app-search-select>
+
+    <app-search-select
+      label="Categoría"
+      placeholder="Selecciona categoría"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.categoriaId"
+      [allowClear]="true"
+      (valueChange)="form.categoriaId = $event">
+    </app-search-select>
+
+    <app-search-select
+      label="Especialidad"
+      placeholder="Selecciona especialidad"
+      [options]="especialidades"
+      valueField="id"
+      displayField="nombre"
+      [value]="form.especialidadId"
+      [allowClear]="true"
+      (valueChange)="form.especialidadId = $event">
+    </app-search-select>
+
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input type="checkbox" [(ngModel)]="form.activo" class="rounded border-gray-300" />
+      Activa
+    </label>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="submitForm()"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <p class="text-white text-base font-medium text-center">Crear</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <div class="flex gap-1.5 flex-wrap">
+      <button (click)="setTipo('')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === '' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === '' ? 'var(--color-abril-standard)' : null">
+        Todos
+      </button>
+      <button (click)="setTipo('HITO')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'HITO' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'HITO' ? 'var(--color-abril-standard)' : null">
+        Hito
+      </button>
+      <button (click)="setTipo('ENTREGABLE')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'ENTREGABLE' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'ENTREGABLE' ? 'var(--color-abril-standard)' : null">
+        Entregable
+      </button>
+      <button (click)="setTipo('CONSULTA')"
+              [class]="'px-3.5 py-1.5 text-sm rounded-full transition-colors ' + (tipoFiltro === 'CONSULTA' ? 'text-white font-medium' : 'text-gray-700 hover:bg-gray-200')"
+              [style.background]="tipoFiltro === 'CONSULTA' ? 'var(--color-abril-standard)' : null">
+        Consulta
+      </button>
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Etapa"
+      placeholder="Todas las etapas"
+      [options]="etapas"
+      valueField="id"
+      displayField="nombre"
+      [value]="etapaIdFiltro"
+      [allowClear]="true"
+      (valueChange)="etapaIdFiltro = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      placeholder="Selecciona estado"
+      [options]="activoFiltroOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="activoFiltro"
+      (valueChange)="activoFiltro = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

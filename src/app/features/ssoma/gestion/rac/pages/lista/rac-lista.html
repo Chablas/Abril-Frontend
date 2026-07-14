@@ -80,15 +80,15 @@
             </td>
             <td class="col-fecha">{{ item.fechaReporte | date:'dd/MM/yyyy' }}</td>
             <td class="col-acciones" (click)="$event.stopPropagation()">
-              <button type="button" class="btn-icon" title="Descargar PDF" (click)="descargarPdf(item.id)">
+              <button type="button" class="abril-action-btn" title="Descargar PDF" (click)="descargarPdf(item.id)">
                 <i class="ti ti-file-type-pdf"></i>
               </button>
               <button *ngIf="puedeVerBotonCerrar(item)"
-                      type="button" class="btn-icon btn-icon--danger" title="Cerrar"
+                      type="button" class="abril-action-btn abril-action-btn--danger" title="Cerrar"
                       (click)="irACerrar(item.id)">
                 <i class="ti ti-lock"></i>
               </button>
-              <button type="button" class="btn-icon btn-icon--primary" title="Ver detalle" (click)="irADetalle(item.id)">
+              <button type="button" class="abril-action-btn abril-action-btn--primary" title="Ver detalle" (click)="irADetalle(item.id)">
                 <i class="ti ti-eye"></i>
               </button>
             </td>

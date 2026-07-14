@@ -7,29 +7,8 @@
 }
 
 /* ── Sección ─────────────────────────────────────────── */
-.flash-section {
-  background: #fff;
-  border: 0.5px solid #e8e5df;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.flash-section__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-abril-logo-blue);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  border-bottom: 0.5px solid #f0ede8;
-  padding-bottom: 10px;
-}
-
-.flash-section__title i { font-size: 15px; }
+/* .abril-form-section / .abril-section-title son globales (src/styles.css)
+   — no reimplementar la caja/título de sección aquí. */
 
 /* ── Grid ────────────────────────────────────────────── */
 .form-grid {
@@ -38,11 +17,17 @@
   gap: 12px;
 }
 
-/* .abril-field / .abril-field-input son globales (src/styles.css). Aquí solo
-   el layout propio del grid y el label directo (que la clase global no cubre
-   porque estos campos no usan <label class="abril-field-label">, usan un
-   <label> plano — se apunta por combinador > en vez de por clase). */
+/* .abril-field-label / .abril-field-input son globales (src/styles.css) —
+   no reimplementar el label flotante aquí. .abril-field local SÍ hace falta
+   (a diferencia de otras páginas) porque acá cada campo apila un mensaje de
+   error (.campo-error) debajo del input, algo que la clase global no cubre;
+   pero antes le faltaba position:relative, así que el label absoluto de
+   cada campo se posicionaba contra el ancestro posicionado más cercano
+   fuera de ese campo — bug real: labels superpuestos con contenido de otros
+   campos (ver Consecuencia potencial). */
 .abril-field {
+  position: relative;
+  margin-top: 9px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -50,37 +35,6 @@
 
 .abril-field--full { grid-column: 1 / -1; }
 .abril-field--flex { flex: 1; }
-
-.abril-field > label {
-  position: absolute;
-  top: -8px;
-  left: 9px;
-  z-index: 1;
-  background: var(--color-abril-surface, #fff);
-  padding: 0 4px;
-  line-height: 1;
-  pointer-events: none;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #5a5850;
-}
-
-/* .checkbox-label es una fila completa clickeable (checkbox + texto), no un
-   label flotando sobre un input — se resetea la posición, igual que
-   .toggle-label en OPT. */
-.abril-field > label.checkbox-label {
-  position: static;
-  top: auto;
-  left: auto;
-  z-index: auto;
-  background: transparent;
-  padding: 0;
-  pointer-events: auto;
-  text-transform: none;
-  letter-spacing: normal;
-}
 
 .campo-textarea { resize: vertical; min-height: 80px; }
 

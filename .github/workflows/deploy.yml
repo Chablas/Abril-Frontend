@@ -22,6 +22,7 @@ jobs:
       - run: npm install -g npm@11.7.0
 
       - run: npm ci           # si falla por falta de package-lock.json, cámbialo por: npm install
+      - run: npm run lint:standards   # bloquea <select> nativo y ::ng-deep fuera de shared/
       - run: npm run build    # genera dist/Abril/browser con el apiUrl de producción
 
       - name: Subir estáticos al VPS

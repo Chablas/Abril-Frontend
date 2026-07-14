@@ -349,39 +349,8 @@
 
 .btn-inline--danger:hover { background: #fbdada; }
 
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  border: 0.5px solid var(--rac-border-strong);
-  background: #f5f3ef;
-  color: #5a5850;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.12s;
-  margin-right: 3px;
-}
-
-.btn-icon:hover { background: var(--rac-bg-hover); }
-
-.btn-icon--primary {
-  background: var(--rac-primary-soft);
-  color: var(--rac-primary);
-  border-color: #c1dac8;
-}
-
-.btn-icon--primary:hover { background: #d4ead9; }
-
-.btn-icon--danger {
-  background: var(--rac-danger-soft);
-  color: var(--rac-danger);
-  border-color: #f5bebe;
-}
-
-.btn-icon--danger:hover { background: #fbdada; }
+/* .abril-action-btn / --primary / --danger son globales (src/styles.css)
+   — no reimplementar el botón de acción de tabla aquí. */
 
 /* ── CARDS MOBILE (visible en mobile, ocultas en desktop) ── */
 .cards-mobile {

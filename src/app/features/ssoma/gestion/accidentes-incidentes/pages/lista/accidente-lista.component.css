@@ -256,24 +256,8 @@
 /* ── ACCIONES ─────────────────────────────────────────── */
 .acciones { display: flex; gap: 4px; }
 
-.btn-ver, .btn-del {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 0.5px solid #e8e5df;
-  background: #fff;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.btn-ver { color: #5a5850; }
-.btn-ver:hover { background: #f0ede8; }
-
-.btn-del { color: #991b1b; }
-.btn-del:hover { background: #fee2e2; border-color: #fca5a5; }
+/* .abril-action-btn / .abril-action-btn--danger son globales
+   (src/styles.css) — no reimplementar el botón de acción de tabla aquí. */
 
 /* ── CARDS MOBILE ─────────────────────────────────────── */
 .cards-mobile { display: flex; flex-direction: column; gap: 8px; }

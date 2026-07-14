@@ -7,18 +7,10 @@
   font-size: 14px;
 }
 
-/* Secciones */
-.section-title {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--color-abril-logo-blue);
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 4px;
-  margin: 18px 0 12px;
-}
-.section-title:first-child { margin-top: 0; }
+/* .abril-section-title es global (src/styles.css) — no reimplementar el
+   título de sección aquí. */
+.abril-section-title:first-child { margin-top: 0; }
+.abril-section-title { margin-top: 18px; }
 
 /* .abril-field / .abril-field-label / .abril-field-input son globales
    (src/styles.css) — no reimplementar el label flotante aquí. */
@@ -133,62 +125,6 @@
   font-weight: 500;
 }
 .form-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-abril-logo-blue); }
-
-/* Fotos */
-.fotos-preview {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-.foto-thumb {
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-.foto-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-}
-.foto-remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 11px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.foto-upload-btn {
-  width: 80px;
-  height: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  border: 1.5px dashed #c8c4bc;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-abril-logo-blue);
-  text-align: center;
-  transition: border-color 0.15s, background 0.15s;
-}
-.foto-upload-btn:hover { border-color: var(--color-abril-logo-blue); background: var(--color-abril-logo-blue-light); }
-.foto-upload-btn i { font-size: 20px; }
 
 /* Botones */
 .btn {

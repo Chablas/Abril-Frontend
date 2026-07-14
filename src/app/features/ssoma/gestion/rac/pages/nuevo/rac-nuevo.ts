@@ -23,11 +23,12 @@ import { compressImages } from '../../../../../../shared/utils/image-compress';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 
 @Component({
   selector: 'app-rac-nuevo',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './rac-nuevo.html',
   styleUrl: './rac-nuevo.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +66,7 @@ export class RacNuevo implements OnInit {
 
   // Fotos de evidencia
   fotosSeleccionadas: File[] = [];
+  fotoPreviews: string[] = [];
   fotosSubiendo = false;
 
   // Plan de acción
@@ -193,16 +195,21 @@ export class RacNuevo implements OnInit {
     );
   }
 
-  onFotosChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const seleccionadas = Array.from(input.files ?? []);
-    this.cdr.markForCheck();
+  onFotosSeleccionadas(files: FileList): void {
     // Las fotos de cámara pueden pesar 8-15MB; comprimirlas antes de subir evita
     // que la subida falle por timeout en datos móviles.
-    compressImages(seleccionadas).then((comprimidas) => {
-      this.fotosSeleccionadas = comprimidas;
+    compressImages(Array.from(files)).then((comprimidas) => {
+      this.fotosSeleccionadas = [...this.fotosSeleccionadas, ...comprimidas];
+      this.fotoPreviews = [...this.fotoPreviews, ...comprimidas.map((f) => URL.createObjectURL(f))];
       this.cdr.markForCheck();
     });
+  }
+
+  removeFoto(index: number): void {
+    URL.revokeObjectURL(this.fotoPreviews[index]);
+    this.fotosSeleccionadas = this.fotosSeleccionadas.filter((_, i) => i !== index);
+    this.fotoPreviews = this.fotoPreviews.filter((_, i) => i !== index);
+    this.cdr.markForCheck();
   }
 
   submit(): void {

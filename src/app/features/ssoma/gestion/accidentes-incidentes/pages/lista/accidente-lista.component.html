@@ -3,7 +3,8 @@
   <app-abril-page-header
     badge="SSOMA"
     titulo="Flash Reports — Accidentes e Incidentes"
-    subtitulo="Registro, seguimiento y envío de Flash Reports">
+    subtitulo="Registro, seguimiento y envío de Flash Reports"
+    [hasExtra]="true">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
@@ -22,7 +23,7 @@
     @if (!loading) {
 
       <!-- TABLA DESKTOP -->
-      <div class="tabla-wrap w-full flex-1 min-h-0 overflow-auto">
+      <div class="tabla-wrap abril-table-wrap">
         <table class="abril-table tabla">
           <thead class="sticky top-0 z-10">
             <tr>
@@ -116,11 +117,11 @@
                 </td>
                 <td>
                   <div class="acciones">
-                    <button type="button" class="btn-ver" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
+                    <button type="button" class="abril-action-btn" (click)="$event.stopPropagation(); irADetalle(item.id)" title="Ver detalle">
                       <i class="ti ti-eye"></i>
                     </button>
                     @if (!item.enviado) {
-                      <button type="button" class="btn-del" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
+                      <button type="button" class="abril-action-btn abril-action-btn--danger" (click)="confirmarEliminar($event, item.id)" title="Eliminar">
                         <i class="ti ti-trash"></i>
                       </button>
                     }
@@ -223,13 +224,13 @@
   </div>
 
   <div class="flex gap-3">
-    <div class="flex-1">
-      <label class="abril-filter-label">Desde</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaDesde" (change)="load()" />
     </div>
-    <div class="flex-1">
-      <label class="abril-filter-label">Hasta</label>
-      <input type="date" class="abril-filter-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filtroFechaHasta" (change)="load()" />
     </div>
   </div>
 </app-filter-modal>

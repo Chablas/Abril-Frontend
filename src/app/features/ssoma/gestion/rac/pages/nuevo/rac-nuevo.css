@@ -26,32 +26,12 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 22px;
 }
 
 /* ── SECTION ─────────────────────────────────────────────── */
-.form-section {
-  background: #fff;
-  border: 0.5px solid #e8e5df;
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1a1a18;
-  margin: 0 0 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-bottom: 10px;
-  border-bottom: 0.5px solid #f0ede8;
-}
-.section-title i { color: var(--color-abril-logo-blue); }
+/* .abril-form-section / .abril-section-title son globales (src/styles.css)
+   — no reimplementar la caja/título de sección aquí. */
 
 /* ── FORM ────────────────────────────────────────────────── */
 /* .abril-field / .abril-field-label / .abril-field-input son globales
@@ -116,7 +96,8 @@
 
 /* ── FOOTER ──────────────────────────────────────────────── */
 /* El contenedor del footer (fondo, borde, padding) vive en el shared shell
-   app-abril-modal-panel (.amp-footer) — acá solo quedan los botones. */
+   app-abril-modal-panel (.amp-footer) — .modal-footer-row solo reparte
+   Cancelar (izquierda) del botón primario (derecha) dentro de ese footer. */
 .btn-ghost {
   padding: 9px 14px;
   border-radius: 9px;

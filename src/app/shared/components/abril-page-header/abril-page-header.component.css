@@ -135,12 +135,15 @@
 .abril-tabs {
   background: #ffffff;
   flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 .abril-tabs__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
+  min-height: 40px;
+  padding: 6px 0;
 }
 .abril-tabs__nav {
   display: flex;
@@ -150,6 +153,12 @@
 .abril-tabs__extra {
   display: flex;
   align-items: center;
+  /* margin-left:auto en vez de justify-content:space-between en la fila: así
+     tabsExtra (ej. el botón Filtros) siempre queda a la derecha, sea que
+     haya pestañas al lado o no. Antes, sin pestañas, space-between con un
+     solo hijo lo dejaba pegado a la izquierda, como un botón suelto sin
+     relación visual con nada (bug real: Proyectos Habilitados SSOMA). */
+  margin-left: auto;
   padding-right: 12px;
   flex-shrink: 0;
 }

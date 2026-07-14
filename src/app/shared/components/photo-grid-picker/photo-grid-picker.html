@@ -1,0 +1,17 @@
+<div class="pgp-grid">
+  @for (preview of previews; track $index) {
+    <div class="pgp-thumb">
+      <img [src]="preview" alt="Adjunto {{ $index + 1 }}" />
+      <button type="button" class="pgp-remove" (click)="removeAt($index)">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+  }
+  @if (previews.length < max) {
+    <label class="pgp-add" [style.--pgp-accent]="color">
+      <i class="ti" [ngClass]="addIcon"></i>
+      <span>{{ addLabel }}</span>
+      <input type="file" [accept]="accept" [multiple]="multiple" hidden (change)="onFilesSelected($event)" />
+    </label>
+  }
+</div>

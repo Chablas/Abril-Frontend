@@ -64,9 +64,18 @@
   padding: 20px;
 }
 
+/* space-between, no flex-end: el primer hijo proyectado (Cancelar) siempre
+   queda a la izquierda y el resto (acción primaria, o un grupo .footer-nav
+   con Anterior/Siguiente) a la derecha. Esto reemplaza la clase local
+   .modal-footer-row que cada página tenía que recordar declarar — ahora es
+   automático y no se puede omitir por accidente (era el bug real: RAC y
+   Amonestaciones se quedaron sin ella). Si algún día un formulario necesita
+   un solo botón centrado o a la derecha, eso es la excepción y debe forzarse
+   explícitamente desde esa página, no ser el default. */
 .amp-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
   padding: 14px 20px;
   border-top: 1px solid #e5e7eb;

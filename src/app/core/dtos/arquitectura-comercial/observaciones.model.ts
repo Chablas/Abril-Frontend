@@ -81,6 +81,7 @@ export interface ObservacionDashboardSupervisorDTO {
   totalReportadas: number;
   totalCompletadas: number;
   totalPendientes: number;
+  totalEnProceso: number;
   pctAvance: number;
   porPartida: ObservacionPorPartidaDTO[];
 }

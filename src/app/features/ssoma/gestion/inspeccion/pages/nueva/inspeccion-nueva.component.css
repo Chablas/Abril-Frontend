@@ -76,26 +76,14 @@
 .wizard-body {
   flex: 1;
   overflow-y: auto;
+  padding: 16px;
   display: flex;
   flex-direction: column;
 }
 
 /* ── FORM ─────────────────────────────────────────────── */
-.form-section {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1a1a18;
-  margin: 0;
-  padding-bottom: 6px;
-  border-bottom: 0.5px solid #e8e5df;
-}
+/* .abril-form-section / .abril-section-title son globales (src/styles.css)
+   — no reimplementar la caja/título de sección aquí. */
 
 /* .abril-field / .abril-field-label / .abril-field-input son globales
    (src/styles.css) — no reimplementar el label flotante aquí. */
@@ -591,16 +579,6 @@ canvas {
 /* ── FOOTER ────────────────────────────────────────────── */
 /* El chrome del footer vive en el shared shell app-abril-modal-panel — esto
    solo reparte Cancelar a la izquierda y Anterior/Siguiente a la derecha. */
-.modal-footer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 8px;
-}
-
-.footer-nav { display: flex; gap: 8px; }
-
 .btn-cancelar {
   padding: 10px 14px;
   border: 0.5px solid #e8e5df;
@@ -668,7 +646,7 @@ canvas {
 
 /* ── RESPONSIVE ≥768px ─────────────────────────────────── */
 @media (min-width: 768px) {
-  .form-section { padding: 20px 24px; max-width: 720px; margin: 0 auto; width: 100%; }
+  .wizard-body  { padding: 20px 24px; max-width: 720px; margin: 0 auto; width: 100%; }
   .form-row     { grid-template-columns: 1fr 1fr 1fr; }
   .stepper      { padding: 14px 24px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 }
