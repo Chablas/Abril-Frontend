@@ -264,6 +264,17 @@ export class AuthService {
     }
   }
 
+  /** Nombre del usuario logueado — `fullName` en login interno, `displayName` en login de Microsoft. */
+  getUserName(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user.fullName ?? user.displayName ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Trabajador de Abril que ve el boletín "Vive Abril": entra por el login de
    * Microsoft (correo `@abril.pe`) y tiene el rol `USUARIO DE ABRIL`. Se usa para

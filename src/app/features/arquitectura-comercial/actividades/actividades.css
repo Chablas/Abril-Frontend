@@ -32,6 +32,9 @@ tbody tr {
   right: 0;
   background: #1a4731;
   z-index: 2;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 0.04em;
 }
 
 .td-actions-sticky {

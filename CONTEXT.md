@@ -4409,3 +4409,36 @@ Reemplazo de la paleta de 4 colores de rama (sesión 2026-07-12) por 10 tonos co
 - Chips de fondo propio para DESFASE INI./FIN. (`.desfase-chip`), SEMÁFORO (`.sema-chip`, halo circular) y AVANCE (`.avance-wrap` con padding+radius), todos con `rgba(255,255,255,0.85)` sobre filas `row-dark` y `rgba(0,0,0,0.04)` sobre `row-light` — mismo criterio que ya usaba el badge de ESTADO (no tocado). Los overrides de color por fila en `.avance-pct`/`.avance-bar-bg` se quitaron porque ahora esos elementos viven dentro de un chip de fondo neutro, no directo sobre el color de fila.
 
 **Pendiente / no verificado en vivo**: el border-radius de 12px y el padding de las filas nivel 1/2 no se verificaron visualmente contra las ~81 actividades de la plantilla de Proyecto (sin acceso a browser/credenciales en este entorno) — si se ve muy espaciado en una tabla densa, bajar a 6-8px es un cambio de una sola línea (buscar `border-radius: 12px`, 4 ocurrencias).
+
+## Sesión 2026-07-14 — Observaciones (Arquitectura Comercial): estandarización de modales, quién-levanta, fotos en celular
+
+Módulo `arquitectura-comercial/observaciones` revisado a fondo a pedido del usuario, en varias rondas.
+
+**Performance**: la Lista llamaba a `getDashboard()` (endpoint pesado, pensado para el desglose por supervisor) solo para calcular 4 totales. Ahora usa `getStats()` (nuevo, liviano) — ver sesión de backend del mismo día.
+
+**Estandarización de modales** — `nueva-observacion` y `levantar-observacion` usaban `app-base-modal` con markup ad-hoc (`.form-group`/`.form-label`/`.form-input`, `<input type="file">` pelado, scroll de página en vez de interno). Migrados a `app-abril-modal-panel` (`variant="teal"`, no `"blue"` — ese es solo para SSOMA) + `app-photo-grid-picker` (mismo componente que ya usa RAC) para adjuntar fotos. `levantar-observacion.html` también se alineó a `.abril-field` (antes tenía las clases viejas, inconsistente con `nueva-observacion` que sí las usaba bien).
+
+**"Persona que reporta"**: dejó de ser texto libre. Se autocompleta con el nombre del usuario logueado (`AuthService.getUserName()`, campo bloqueado) — **excepto** cuando la sesión es la cuenta de campo compartida (`operarioscomercial@abril.pe`, constante `CUENTAS_COMPARTIDAS` en `nueva-observacion.ts`, fácil de ampliar si hay más correos compartidos), donde sí se muestra un `app-search-select` sobre el catálogo de obreros. Se quitó "Empresa que reporta" del formulario ("todos somos Abril").
+
+**"Quién levanta"**: mismo catálogo de obreros, ahora también obligatorio en el modal de Levantar. Ver la sesión de backend del mismo día para el detalle de cómo se determinó el criterio correcto (proyecto actual = proyecto literalmente llamado "Arquitectura Comercial", vía `worker_vinculaciones` — no `Subarea`, no `ObraOficina`, no el flag `TieneArquitecturaComercial`).
+
+**Flujo "varias observaciones seguidas"**: se descartó el checkbox "guardar y agregar otra" (no convencía al usuario) — ahora, tras guardar, un `Swal.fire` pregunta "¿Desea añadir otra?"; si confirma, el modal sigue abierto con Proyecto/Fecha/Persona prellenados (los "fijos") y solo limpia Zona/Partida/Descripción/Foto/Levantamiento.
+
+**Crear + levantar de una**: checkbox/botón "Adjuntar foto de levantamiento (ya se levantó)" en el modal de creación — si se marca, `save()` encadena `createObservacion` → `levantarObservacion` en el mismo submit (con `switchMap`, tolera que el levantamiento falle sin perder la observación ya creada).
+
+**Botón Guardar deshabilitado hasta completar lo obligatorio**: getter `puedeGuardar()` (Proyecto + Descripción + Persona si es cuenta compartida + Quién-levanta si se activó el toggle) — ya no se guarda con campos vacíos mostrando error en rojo después.
+
+**Fotos rotas en celular**: las miniaturas usaban la `webUrl` cruda de SharePoint en `<img src>`, que solo carga con sesión de Microsoft 365 activa en el navegador (por eso funcionaba en escritorio de oficina, no en celular). `ObservacionesService.fotoContenidoUrl(fotoId)` ahora apunta a un proxy del backend (`.../fotos/{fotoId}/contenido`, con el JWT por query string porque un `<img>` no manda headers). Se agregó cache-busting manual (`fotoCacheBust` Map por fotoId) para que "cambiar foto" (paso previo) se refresque al toque en vez de quedar pegado a la versión vieja en caché del navegador.
+
+**Cambiar foto ya subida**: lápiz en hover sobre cada thumbnail de la Lista (`cambiarFoto()`), llama a `reemplazarFoto()` — oculto cuando hay más de una foto de levantamiento (ambigüedad de cuál reemplazar, sin resolver aún).
+
+### Archivos clave
+- `features/arquitectura-comercial/observaciones/components/{nueva-observacion,levantar-observacion}/*`
+- `features/arquitectura-comercial/observaciones/pages/lista/observaciones-lista.{ts,html}`
+- `core/services/arquitectura-comercial/observaciones.service.ts`, `core/services/arquitectura-comercial.service.ts` (`getSupervisoresAc(soloObreros)`)
+- `core/services/auth.service.ts` (`getUserName()` nuevo)
+
+### Pendiente
+- Verificar en celular real que las miniaturas ya cargan tras el proxy.
+- Decidir cómo reemplazar una foto de levantamiento específica cuando hay varias (hoy el lápiz se oculta en ese caso).
+- Si "Quién levanta" sale vacío para alguien que debería aparecer, revisar si tiene fila vigente en `worker_vinculaciones` (ver nota en CONTEXT.md del backend, sesión del mismo día).

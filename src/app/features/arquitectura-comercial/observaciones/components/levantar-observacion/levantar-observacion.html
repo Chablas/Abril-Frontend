@@ -1,28 +1,50 @@
-<app-base-modal title="Levantar observación" width="w-[560px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+<app-abril-modal-panel titulo="Levantar observación" icono="ti-check" width="560px" (closeModal)="closeModal.emit()">
 
-  <div class="flex flex-col gap-[12px] p-[4px]">
+  <div class="paso-body">
 
-    <div class="text-sm text-gray-600">
+    <div class="obs-resumen">
       <p><span class="font-medium">{{ observacion.codigo }}</span> — {{ observacion.proyectoNombre }}</p>
       <p class="mt-[4px]">{{ observacion.descripcion }}</p>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Comentario del levantamiento</label>
-      <textarea class="form-input" rows="3" [(ngModel)]="comentario" name="comentario"></textarea>
+    <div>
+      <app-search-select
+        label="Quién levanta"
+        [options]="trabajadores"
+        valueField="id"
+        displayField="apellidoNombre"
+        placeholder="Buscar trabajador..."
+        [value]="levantaPorWorkerId"
+        (valueChange)="levantaPorWorkerId = $event">
+      </app-search-select>
+      <p *ngIf="submitted && !levantaPorWorkerId" class="text-xs text-red-600 mt-[4px]">Selecciona quién levanta la observación.</p>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Imagen del levantamiento</label>
-      <input type="file" accept="image/*" (change)="onFotoSelected($event)" />
-      <img *ngIf="fotoPreviewUrl" [src]="fotoPreviewUrl" class="mt-[8px] max-h-[160px] rounded-[var(--radius-standard)] border" style="border-color:var(--color-abril-border)" />
+    <div class="abril-field">
+      <label class="abril-field-label">Comentario del levantamiento</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="comentario" name="comentario"></textarea>
+    </div>
+
+    <div>
+      <h3 class="foto-label"><i class="ti ti-camera"></i> Foto de levantamiento</h3>
+      <app-photo-grid-picker
+        [previews]="fotoPreview"
+        [max]="1"
+        [multiple]="false"
+        addLabel="Adjuntar foto"
+        (filesSelected)="onFotoSeleccionada($event)"
+        (remove)="quitarFoto()">
+      </app-photo-grid-picker>
     </div>
 
   </div>
 
-  <div class="flex justify-end gap-[8px] mt-[16px]">
-    <button class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
-    <button class="btn-primary" (click)="save()">Confirmar levantamiento</button>
+  <div modalFooter>
+    <button type="button" class="btn-ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="guardando" (click)="save()">
+      <i class="ti ti-device-floppy"></i>
+      {{ guardando ? 'Guardando…' : 'Confirmar levantamiento' }}
+    </button>
   </div>
 
-</app-base-modal>
+</app-abril-modal-panel>
