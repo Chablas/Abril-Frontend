@@ -32,10 +32,28 @@ export interface EficienciaSemanalDTO {
 }
 
 export interface SupervisorProgresoDTO {
+  userId: number;
   nombre: string;
   progreso: number;
   total: number;
   completadas: number;
+  /** Actividades vencidas de semanas anteriores que el supervisor aún arrastra sin cerrar.
+   * Informativo — ya no penaliza el IES (que ahora solo mide la semana en control). */
+  deudaAnterior: number;
+  /** true si no tenía nada que vencer ni arrancar esta semana — no entra al IES ni al promedio. */
+  sinCompromisos: boolean;
+}
+
+export interface SupervisorHistoricoDTO {
+  nombre: string;
+  totalActividades: number;
+  culminadas: number;
+  enProceso: number;
+  vencidas: number;
+  pendientes: number;
+  eficienciaHistorica: number;
+  spiPromedio: number;
+  tendenciaSemanal: EficienciaSemanalDTO[];
 }
 
 export interface HitoCriticoDTO {

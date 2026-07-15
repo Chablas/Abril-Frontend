@@ -476,6 +476,7 @@ export class Empresa implements OnInit {
     if (norm === 'aprobado') return 'dot-aprobado';
     if (norm === 'rechazado') return 'dot-falta';
     if (norm === 'enviado') return 'dot-enviado';
+    if (norm === 'en plazo') return 'dot-renovando';
     return 'dot-no-aplica';
   }
 
@@ -484,6 +485,7 @@ export class Empresa implements OnInit {
       case 'Aprobado': return 'chip-green';
       case 'Enviado': return 'chip-orange';
       case 'Rechazado': return 'chip-red';
+      case 'En Plazo': return 'chip-blue';
       case 'No Aplica': return 'chip-gray';
       default: return 'chip-gray';
     }
@@ -931,6 +933,11 @@ export class Empresa implements OnInit {
       return;
     }
 
+    if (nuevoEstado === 'En Plazo') {
+      this.ponerEnPlazoMesEspecifico(mes);
+      return;
+    }
+
     this.loaderService.show();
     this.habEmpresaService.aprobarMes(this.empresaId, mes.id, { estado: nuevoEstado }).subscribe({
       next: () => {
@@ -965,6 +972,41 @@ export class Empresa implements OnInit {
         next: () => {
           this.loaderService.hide();
           Swal.fire({ icon: 'success', title: 'Mes aprobado', timer: 1500, showConfirmButton: false });
+          this.recargarEntregables();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  ponerEnPlazoMesEspecifico(mes: EntregableMesDto): void {
+    if (!this.selectedEntregable || !this.empresaId) return;
+    const hoy = new Date().toISOString().substring(0, 10);
+    Swal.fire({
+      icon: 'question',
+      title: `Poner en plazo ${this.mesesNombres[mes.mes - 1]} ${mes.anio}`,
+      input: 'date',
+      inputLabel: 'Fecha límite acordada',
+      inputAttributes: { min: hoy },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+      inputValidator: (v) => (!v ? 'Debes indicar la fecha límite' : null),
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.empresaId) return;
+      this.loaderService.show();
+      this.habEmpresaService.aprobarMes(this.empresaId, mes.id, {
+        estado: 'En Plazo',
+        vigencia: res.value,
+      }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Puesto en plazo', timer: 1500, showConfirmButton: false });
           this.recargarEntregables();
         },
         error: (err: HttpErrorResponse) => {
