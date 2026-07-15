@@ -22,6 +22,8 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { TrabajadorHabService } from '../../../../../habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trabajador.model';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
+import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
@@ -58,10 +60,14 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
   preguntas: AuditoriaAtsPreguntaDto[] = [];
   loadingCatalogos = true;
 
-  // Cabecera
+  // Cabecera. Auditor: fijo, resuelto del usuario logueado (no editable)
   fecha = new Date().toISOString().split('T')[0];
   auditorId: number | null = null;
   auditorNombre = '';
+  auditorCargo = '';
+  observadorActual: WorkerSearchItemDto | null = null;
+  resolviendoObservador = true;
+  sinWorkerVinculado = false;
   auditadoId: number | null = null;
   auditadoNombre = '';
   proyectoId: number | null = null;
@@ -86,6 +92,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
     private service: AuditoriaAtsService,
     private projectService: ProjectService,
     private trabajadorService: TrabajadorHabService,
+    private workerSearchService: WorkerSearchService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private router: Router,
@@ -111,6 +118,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
         }));
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
+        this.resolverAuditorActual();
       },
       error: () => {
         this.loadingCatalogos = false;
@@ -119,13 +127,33 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
     });
   }
 
-  // ── Selección de personas ──────────────────────────────────────────────────
-
-  onAuditorChange(id: number | null): void {
-    this.auditorId = id;
-    this.auditorNombre = id ? (this.workers.find((w) => w.workerId === id)?.apellidoNombre ?? '') : '';
-    this.cdr.markForCheck();
+  /**
+   * El Auditor ya no es un campo editable: se resuelve siempre desde el trabajador
+   * vinculado al usuario logueado (Abril vía Person, contratista vía ss_contratista_usuario).
+   * Si no hay vínculo, se bloquea el formulario completo.
+   */
+  private resolverAuditorActual(): void {
+    this.resolviendoObservador = true;
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        this.observadorActual = me;
+        this.sinWorkerVinculado = false;
+        this.resolviendoObservador = false;
+        this.auditorId = me.id;
+        this.auditorNombre = me.apellidoNombre;
+        this.auditorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.observadorActual = null;
+        this.sinWorkerVinculado = true;
+        this.resolviendoObservador = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
+
+  // ── Selección de personas ──────────────────────────────────────────────────
 
   onAuditadoChange(id: number | null): void {
     this.auditadoId = id;
@@ -241,6 +269,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
 
   get puedeGuardar(): boolean {
     return (
+      !this.sinWorkerVinculado &&
       !!this.auditorId &&
       !!this.auditadoId &&
       !!this.fecha &&
@@ -300,8 +329,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
 
   private resetForm(): void {
     this.fecha = new Date().toISOString().split('T')[0];
-    this.auditorId = null;
-    this.auditorNombre = '';
+    // El auditor es el usuario logueado y no se limpia entre auditorías.
     this.auditadoId = null;
     this.auditadoNombre = '';
     this.proyectoId = null;

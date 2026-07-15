@@ -19,6 +19,63 @@
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── BLOQUEO: sin worker vinculado ──────────────────────────── */
+.bloqueo-sin-worker {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 16px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.bloqueo-sin-worker i {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bloqueo-sin-worker__titulo {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.bloqueo-sin-worker__texto {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── OBSERVADOR/INSPECTOR FIJO (no editable) ────────────────── */
+.observador-fijo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-standard);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.observador-fijo i {
+  font-size: 18px;
+  color: var(--color-abril-logo-blue);
+}
+
+.observador-fijo__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.observador-fijo__cargo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
 /* ── STEPPER ──────────────────────────────────────────── */
 .stepper {
   display: flex;

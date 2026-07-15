@@ -6,12 +6,25 @@
   (closeModal)="cancelar()">
 
   <!-- ── LOADING ───────────────────────────────────────────────────── -->
-  <div *ngIf="loadingCatalogos" class="loading-catalogos">
+  <div *ngIf="loadingCatalogos || (!loadingCatalogos && resolviendoObservador)" class="loading-catalogos">
     <i class="ti ti-loader spin"></i> Cargando catálogos…
   </div>
 
+  <!-- ── BLOQUEO: usuario sin trabajador vinculado ────────────────────── -->
+  <div *ngIf="!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado" class="bloqueo-sin-worker">
+    <i class="ti ti-alert-triangle"></i>
+    <div>
+      <div class="bloqueo-sin-worker__titulo">No puedes registrar un RAC</div>
+      <div class="bloqueo-sin-worker__texto">
+        Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+        Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+        antes de poder reportar.
+      </div>
+    </div>
+  </div>
+
   <!-- ── BODY ──────────────────────────────────────────────────────── -->
-  <div *ngIf="!loadingCatalogos" class="paso-body">
+  <div *ngIf="!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado" class="paso-body">
 
     <!-- ■ 1. DATOS DEL EVENTO ──────────────────────────────────────── -->
     <section class="abril-form-section">
@@ -107,38 +120,14 @@
 
       <ng-container>
 
-        <div class="abril-field">
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Observador *"
-            [options]="workers"
-            valueField="workerId"
-            displayField="apellidoNombre"
-            [value]="reportanteId"
-            placeholder="Buscar por nombre o DNI..."
-            [allowClear]="true"
-            (valueChange)="onReportanteChange($event)"
-          ></app-search-select>
-        </div>
-        <div class="abril-field">
-          <label class="abril-field-label">Cargo del observador</label>
-          <input type="text" class="abril-field-input" [(ngModel)]="reportanteCargo"
-            [disabled]="!!reportanteId" placeholder="Se autocompleta al seleccionar observador" />
-        </div>
-
-        <!-- Empresa -->
-        <div class="form-grid">
-          <div class="col-2">
-            <app-search-select
-            color="var(--color-abril-logo-blue)"
-              label="Empresa del Observador *"
-              [options]="empresas"
-              valueField="id"
-              displayField="nombre"
-              [value]="empresaReportanteId"
-              placeholder="Buscar empresa..."
-              (valueChange)="empresaReportanteId = $event"
-            ></app-search-select>
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ observadorActual?.apellidoNombre }}</div>
+            <div class="observador-fijo__cargo">
+              {{ reportanteCargo || '—' }}
+              <span *ngIf="empresaReportanteNombre"> · {{ empresaReportanteNombre }}</span>
+            </div>
           </div>
         </div>
 
@@ -286,9 +275,10 @@
 
   </div><!-- /paso-body -->
 
-  <div modalFooter *ngIf="!loadingCatalogos">
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
     <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
     <button
+      *ngIf="!sinWorkerVinculado"
       type="button"
       class="btn-primary"
       [disabled]="!canSubmit || saving"

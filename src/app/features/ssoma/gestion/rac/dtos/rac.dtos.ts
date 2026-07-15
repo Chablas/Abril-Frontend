@@ -120,6 +120,8 @@ export interface RacDetalleDto {
   estado: string;
   fechaCierre?: string;
   cierreDescripcion?: string;
+  cerradoPorNombre?: string;
+  cerradoPorCargo?: string;
   aplicaPenalidad: boolean;
   pdfUrl?: string;
   createdAt: string;

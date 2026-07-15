@@ -17,4 +17,10 @@ export class WorkerSearchService {
       headers: buildAuthHeaders(),
     });
   }
+
+  getMe(): Observable<WorkerSearchItemDto> {
+    return this.http.get<WorkerSearchItemDto>(`${this.apiUrl}/me`, {
+      headers: buildAuthHeaders(),
+    });
+  }
 }

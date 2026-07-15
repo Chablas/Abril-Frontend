@@ -7,13 +7,15 @@ import { RacService } from '../../services/rac.service';
 import { RacDetalleDto, RacCerrarRequest } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-rac-cerrar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, PhotoGridPicker],
   templateUrl: './rac-cerrar.html',
   styleUrl: './rac-cerrar.css',
 })
@@ -74,9 +76,12 @@ export class RacCerrar implements OnInit {
       && !this.guardando;
   }
 
-  seleccionarFoto(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+  get fotoCierrePreviews(): string[] {
+    return this.fotoCierrePreview ? [this.fotoCierrePreview] : [];
+  }
+
+  onFotoSeleccionada(files: FileList): void {
+    const file = files[0];
     if (!file) return;
     this.fotoCierre = file;
     this.fotoCierreUrl = null;
@@ -87,6 +92,13 @@ export class RacCerrar implements OnInit {
     };
     reader.readAsDataURL(file);
     this.subirFotoCierre();
+  }
+
+  quitarFotoCierre(): void {
+    this.fotoCierre = null;
+    this.fotoCierrePreview = null;
+    this.fotoCierreUrl = null;
+    this.cdr.markForCheck();
   }
 
   subirFotoCierre(): void {

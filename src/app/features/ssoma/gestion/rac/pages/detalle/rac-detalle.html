@@ -145,6 +145,12 @@
           <span class="detalle-campo__label">Fecha de cierre</span>
           <span class="detalle-campo__valor">{{ formatFecha(rac.fechaCierre) }}</span>
         </div>
+        <div class="detalle-campo" *ngIf="rac.cerradoPorNombre">
+          <span class="detalle-campo__label">Cerrado por</span>
+          <span class="detalle-campo__valor">
+            {{ rac.cerradoPorNombre }}<span *ngIf="rac.cerradoPorCargo"> · {{ rac.cerradoPorCargo }}</span>
+          </span>
+        </div>
       </div>
       <p class="detalle-parrafo" style="margin-top:8px">
         {{ rac.cierreDescripcion || '—' }}

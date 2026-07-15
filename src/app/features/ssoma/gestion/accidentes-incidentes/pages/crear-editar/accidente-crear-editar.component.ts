@@ -24,6 +24,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -59,6 +60,10 @@ export class AccidenteCrearEditarComponent implements OnInit {
   elaboradoPorWorkerId?: number;
   sinTrabajadorAfectado = false;
 
+  // "Elaborado por" — fijo, resuelto del usuario logueado (solo al crear; no aplica en edición)
+  resolviendoObservador = true;
+  sinWorkerVinculado = false;
+
   trabajadorNuevo: TrabajadorAfectadoRequest = { trabajadorNombre: '' };
 
   readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
@@ -93,6 +98,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private service: AccidenteIncidenteService,
+    private workerSearchService: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -121,11 +127,13 @@ export class AccidenteCrearEditarComponent implements OnInit {
         this.proyectoContratistas = init.proyectoContratistas ?? [];
 
         if (this.modoEditar) {
+          this.resolviendoObservador = false;
           this.cargarDetalle();
         } else {
           this.cargando = false;
           this.loaderService.hide();
           this.cdr.detectChanges();
+          this.resolverElaboradoPorActual();
         }
       },
       error: () => {
@@ -311,18 +319,29 @@ export class AccidenteCrearEditarComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ── Elaborado por ──────────────────────────────────────────────────────────
-
-  onElaboradoPorSelect(id: number | undefined): void {
-    this.elaboradoPorWorkerId = id;
-    if (id) {
-      const w = this.trabajadores.find((t) => t.id === id);
-      if (w) {
-        this.form.elaboradoPorNombre = w.nombreCompleto;
-        this.form.elaboradoPorCargo = w.cargo ?? this.form.elaboradoPorCargo;
-      }
-    }
-    this.cdr.detectChanges();
+  /**
+   * "Elaborado por" ya no es un campo editable: se resuelve siempre desde el trabajador
+   * vinculado al usuario logueado (Abril vía Person, contratista vía ss_contratista_usuario).
+   * Si no hay vínculo, se bloquea el formulario completo. Solo aplica al crear — en edición
+   * el dato ya viene guardado desde el registro original.
+   */
+  private resolverElaboradoPorActual(): void {
+    this.resolviendoObservador = true;
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        this.sinWorkerVinculado = false;
+        this.resolviendoObservador = false;
+        this.elaboradoPorWorkerId = me.id;
+        this.form.elaboradoPorNombre = me.apellidoNombre;
+        this.form.elaboradoPorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.sinWorkerVinculado = true;
+        this.resolviendoObservador = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Validación y guardado ──────────────────────────────────────────────────
@@ -353,6 +372,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
   }
 
   guardar(): void {
+    if (this.sinWorkerVinculado) return;
     if (!this.validar()) { this.cdr.detectChanges(); return; }
 
     // Un único trabajador afectado por Flash Report (SSO-FO-035: un reporte por accidentado)
@@ -451,13 +471,6 @@ export class AccidenteCrearEditarComponent implements OnInit {
       ? this.trabajadores.filter((w) => w.contributorId === contributorId)
       : this.trabajadores;
     return workers.map((w) => ({ id: w.id, label: `${w.nombreCompleto}${w.cargo ? ' — ' + w.cargo : ''}` }));
-  }
-
-  elaboradoPorOpts() {
-    return this.trabajadores.map((w) => ({
-      id: w.id,
-      label: `${w.nombreCompleto}${w.cargo ? ' — ' + w.cargo : ''}`,
-    }));
   }
 
   partidasOpts() {
