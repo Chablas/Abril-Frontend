@@ -1,29 +1,25 @@
-<div class="cerrar-root">
-
-  <!-- HEADER -->
-  <div class="rac-header">
-    <div class="rac-header__left">
-      <button type="button" class="btn-back" (click)="cancelar()" title="Volver al detalle">
-        <i class="ti ti-arrow-left"></i>
-      </button>
-      <div>
-        <span class="rac-badge" *ngIf="rac">{{ rac.codigo }}</span>
-        <h1 class="rac-titulo">Cerrar RAC</h1>
-      </div>
-    </div>
-  </div>
+<app-abril-modal-panel
+  titulo="Cerrar RAC"
+  icono="ti-lock"
+  variant="blue"
+  (closeModal)="cancelar()">
 
   <!-- SKELETON -->
-  <div *ngIf="loading" class="skeleton-wrap">
-    <div class="skeleton-row" style="width:50%;height:20px;border-radius:6px"></div>
-    <div class="skeleton-row" style="width:100%;height:80px;border-radius:8px;margin-top:12px"></div>
-    <div class="skeleton-row" style="width:100%;height:120px;border-radius:8px;margin-top:12px"></div>
-  </div>
+  @if (loading) {
+    <div class="skeleton-wrap">
+      <div class="skeleton-row" style="width:50%;height:20px;border-radius:6px"></div>
+      <div class="skeleton-row" style="width:100%;height:80px;border-radius:8px;margin-top:12px"></div>
+      <div class="skeleton-row" style="width:100%;height:120px;border-radius:8px;margin-top:12px"></div>
+    </div>
+  }
 
   <!-- CONTENIDO -->
-  <ng-container *ngIf="rac && !loading">
+  @if (rac && !loading) {
 
     <!-- RESUMEN DEL RAC -->
+    <div class="abril-section-title">
+      <span class="rac-badge">{{ rac.codigo }}</span>
+    </div>
     <div class="resumen-card">
       <div class="resumen-fila">
         <span class="resumen-label">Proyecto</span>
@@ -51,57 +47,47 @@
       </div>
     </div>
 
-    <!-- FORMULARIO DE CIERRE -->
-    <div class="cierre-form">
-      <div class="form-group">
-        <label class="form-label">
-          Descripción del cierre *
-          <span class="char-count">{{ cierreDescripcion.length }}/500</span>
-        </label>
-        <textarea
-          class="form-control"
-          [(ngModel)]="cierreDescripcion"
-          rows="5"
-          maxlength="500"
-          placeholder="Describe las acciones tomadas para levantar el hallazgo observado...">
-        </textarea>
-        <span class="form-hint"
-              *ngIf="cierreDescripcion.length > 0 && cierreDescripcion.trim().length < 10">
-          Mínimo 10 caracteres
-        </span>
-      </div>
+    <!-- DESCRIPCIÓN DEL CIERRE -->
+    <div class="abril-field">
+      <label class="abril-field-label">
+        Descripción del cierre * <span class="char-count">{{ cierreDescripcion.length }}/500</span>
+      </label>
+      <textarea
+        class="abril-field-input"
+        [(ngModel)]="cierreDescripcion"
+        rows="5"
+        maxlength="500"
+        placeholder="Describe las acciones tomadas para levantar el hallazgo observado...">
+      </textarea>
+      @if (cierreDescripcion.length > 0 && cierreDescripcion.trim().length < 10) {
+        <span class="form-hint">Mínimo 10 caracteres</span>
+      }
     </div>
 
     <!-- FOTO DE CIERRE -->
-    <div class="cierre-form">
-      <div class="form-group">
-        <label class="form-label">Foto del levantamiento *</label>
-        <input type="file"
-               class="form-control"
-               accept="image/*"
-               (change)="seleccionarFoto($event)" />
+    <div class="abril-section-title">Foto del levantamiento *</div>
+    <app-photo-grid-picker
+      color="var(--color-abril-logo-blue)"
+      [previews]="fotoCierrePreviews"
+      [max]="1"
+      [multiple]="false"
+      addLabel="Agregar foto"
+      (filesSelected)="onFotoSeleccionada($event)"
+      (remove)="quitarFotoCierre()"
+    ></app-photo-grid-picker>
 
-        <div class="foto-preview" *ngIf="fotoCierrePreview">
-          <img [src]="fotoCierrePreview" alt="Vista previa" />
-        </div>
+    @if (subiendoFoto) {
+      <span class="foto-subiendo"><i class="ti ti-loader-2 spin"></i> Subiendo foto...</span>
+    }
+    @if (fotoCierreUrl) {
+      <span class="foto-ok"><i class="ti ti-circle-check"></i> Foto subida correctamente</span>
+    }
+    @if (!fotoCierreUrl && !fotoCierre) {
+      <span class="form-hint-error">Debes adjuntar y subir una foto del levantamiento para cerrar el RAC</span>
+    }
 
-        <span class="foto-subiendo" *ngIf="subiendoFoto">
-          <i class="ti ti-loader-2 spin"></i> Subiendo foto...
-        </span>
-
-        <span class="foto-ok" *ngIf="fotoCierreUrl">
-          <i class="ti ti-circle-check"></i> Foto subida correctamente
-        </span>
-
-        <span class="form-hint-error" *ngIf="!fotoCierreUrl && !fotoCierre">
-          Debes adjuntar y subir una foto del levantamiento para cerrar el RAC
-        </span>
-      </div>
-    </div>
-
-    <!-- FOOTER -->
-    <div class="cierre-footer">
-      <button type="button" class="btn-ghost" (click)="cancelar()">
+    <div modalFooter class="modal-footer-row">
+      <button type="button" class="btn btn-secondary" (click)="cancelar()">
         Cancelar
       </button>
       <button type="button"
@@ -113,5 +99,6 @@
       </button>
     </div>
 
-  </ng-container>
-</div>
+  }
+
+</app-abril-modal-panel>

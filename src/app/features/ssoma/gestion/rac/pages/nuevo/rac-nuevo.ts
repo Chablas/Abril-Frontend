@@ -22,6 +22,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { compressImages } from '../../../../../../shared/utils/image-compress';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
+import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
@@ -49,11 +50,15 @@ export class RacNuevo implements OnInit {
   descripcion = '';
   descripcionOcurrido = '';
 
-  // Observador (reportante)
+  // Observador (reportante) — fijo, resuelto desde el usuario logueado (no editable)
   esAnonimoReportante = false;
   reportanteId: number | null = null;
   reportanteCargo = '';
   empresaReportanteId: number | null = null;
+  empresaReportanteNombre = '';
+  observadorActual: WorkerSearchItemDto | null = null;
+  resolviendoObservador = true;
+  sinWorkerVinculado = false;
 
   // Trabajador(es) observado(s)
   esAnonimoObservado = false;
@@ -128,7 +133,7 @@ export class RacNuevo implements OnInit {
         this.proyectos = proyectos.data;
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
-        this.prefillObservador();
+        this.resolverObservadorActual();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCatalogos = false;
@@ -140,35 +145,34 @@ export class RacNuevo implements OnInit {
 
   // ── Observador (reportante) ────────────────────────────────────────
 
-  /** Autocompleta el Observador con el trabajador vinculado al usuario logueado (si existe). */
-  private prefillObservador(): void {
-    if (this.reportanteId) return;
+  /**
+   * El Observador ya no es un campo editable: se resuelve siempre desde el trabajador
+   * vinculado al usuario logueado (Abril vía Person, contratista vía ss_contratista_usuario).
+   * Si no hay vínculo, se bloquea el formulario completo — no tiene sentido dejar reportar
+   * a nombre de "nadie".
+   */
+  private resolverObservadorActual(): void {
+    this.resolviendoObservador = true;
     this.workerSearchService.getMe().subscribe({
       next: (me) => {
-        if (this.workers.some((w) => w.workerId === me.id)) {
-          this.onReportanteChange(me.id);
+        this.observadorActual = me;
+        this.sinWorkerVinculado = false;
+        this.resolviendoObservador = false;
+        this.reportanteId = me.id;
+        this.reportanteCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        if (me.empresaActualId) {
+          this.empresaReportanteId = me.empresaActualId;
+          this.empresaReportanteNombre = me.empresaActual || '';
         }
+        this.cdr.markForCheck();
       },
       error: () => {
-        // Usuario sin Worker vinculado: se deja el buscador manual como está.
+        this.observadorActual = null;
+        this.sinWorkerVinculado = true;
+        this.resolviendoObservador = false;
+        this.cdr.markForCheck();
       },
     });
-  }
-
-  onReportanteChange(id: number | null): void {
-    this.reportanteId = id;
-    if (!id) {
-      this.reportanteCargo = '';
-      return;
-    }
-    const w = this.workers.find((x) => x.workerId === id);
-    if (w) {
-      this.reportanteCargo = [w.categoria, w.ocupacion].filter(Boolean).join(' · ');
-      if (w.empresaId && !this.empresaReportanteId) {
-        this.empresaReportanteId = w.empresaId;
-      }
-    }
-    this.cdr.markForCheck();
   }
 
   // ── Trabajador(es) observado(s) ────────────────────────────────────
@@ -198,6 +202,8 @@ export class RacNuevo implements OnInit {
 
   get canSubmit(): boolean {
     return !!(
+      !this.sinWorkerVinculado &&
+      !this.resolviendoObservador &&
       this.proyectoId &&
       this.fechaReporte &&
       this.tipo &&

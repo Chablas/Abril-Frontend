@@ -92,9 +92,12 @@ export class OptNuevo implements OnInit, AfterViewInit {
   petVisorUrl = '';
   petVisorNombre = '';
 
-  // Observador
+  // Observador — fijo, resuelto desde el usuario logueado (no editable)
   workersObservador: WorkerHabilitacionListDto[] = [];
   observadorId: number | null = null;
+  observadorActual: WorkerSearchItemDto | null = null;
+  resolviendoObservador = true;
+  sinWorkerVinculado = false;
 
   // PASO 2
   trabajadores: TrabajadorForm[] = [];
@@ -166,7 +169,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
         }));
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
-        this.prefillObservador();
+        this.resolverObservadorActual();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCatalogos = false;
@@ -176,17 +179,28 @@ export class OptNuevo implements OnInit, AfterViewInit {
     });
   }
 
-  /** Autocompleta el Observador con el trabajador vinculado al usuario logueado (si existe). */
-  private prefillObservador(): void {
-    if (this.observadorId) return;
+  /**
+   * El Observador ya no es un campo editable: se resuelve siempre desde el trabajador
+   * vinculado al usuario logueado (Abril vía Person, contratista vía ss_contratista_usuario).
+   * Si no hay vínculo, se bloquea el formulario completo.
+   */
+  private resolverObservadorActual(): void {
+    this.resolviendoObservador = true;
     this.workerSearchService.getMe().subscribe({
       next: (me) => {
-        if (this.workersObservador.some((w) => w.workerId === me.id)) {
-          this.onObservadorChange(me.id);
-        }
+        this.observadorActual = me;
+        this.sinWorkerVinculado = false;
+        this.resolviendoObservador = false;
+        this.observadorId = me.id;
+        this.observadorNombre = me.apellidoNombre;
+        this.observadorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.cdr.markForCheck();
       },
       error: () => {
-        // Usuario sin Worker vinculado: se deja el buscador manual como está.
+        this.observadorActual = null;
+        this.sinWorkerVinculado = true;
+        this.resolviendoObservador = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -217,23 +231,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
   cerrarVisorPet(): void {
     this.petVisorUrl = '';
     this.petVisorNombre = '';
-    this.cdr.markForCheck();
-  }
-
-  // ── OBSERVADOR ────────────────────────────────────────────────────────────
-  onObservadorChange(id: number | null): void {
-    this.observadorId = id;
-    if (!id) {
-      this.observadorNombre = '';
-      this.observadorCargo = '';
-    } else {
-      const w = this.workersObservador.find((x) => x.workerId === id);
-      if (w) {
-        this.observadorNombre = w.apellidoNombre;
-        const partes = [w.categoria, w.ocupacion].filter(Boolean);
-        this.observadorCargo = partes.join(' · ') || '';
-      }
-    }
     this.cdr.markForCheck();
   }
 
@@ -456,6 +453,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   // ── NAVEGACIÓN WIZARD ────────────────────────────────────────────────────
   get puedeAvanzar(): boolean {
+    if (this.sinWorkerVinculado || this.resolviendoObservador) return false;
     switch (this.paso) {
       case 1:
         return (

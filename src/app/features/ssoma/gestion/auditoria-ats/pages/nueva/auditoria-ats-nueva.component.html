@@ -6,9 +6,21 @@
   width="820px"
   (closeModal)="cancelar()">
 
-  @if (loadingCatalogos) {
+  @if (loadingCatalogos || resolviendoObservador) {
     <div class="loading-state">
       <i class="ti ti-loader-2 spin"></i> Cargando...
+    </div>
+  } @else if (sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar una Auditoría ATS</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
     </div>
   } @else {
 
@@ -17,19 +29,13 @@
     <div class="card-grid">
 
       <div>
-        <app-search-select
-          color="var(--color-abril-logo-blue)"
-          label="Auditor *"
-          [options]="workers"
-          valueField="workerId"
-          displayField="apellidoNombre"
-          placeholder="Buscar por nombre o DNI..."
-          [value]="auditorId"
-          (valueChange)="onAuditorChange($event)">
-        </app-search-select>
-        @if (auditorSeleccionado; as w) {
-          <p class="worker-meta">{{ w.empresaNombre || '—' }} · {{ w.categoria || '—' }} · {{ w.ocupacion || '—' }}</p>
-        }
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ auditorNombre }}</div>
+            <div class="observador-fijo__cargo">{{ auditorCargo || '—' }}</div>
+          </div>
+        </div>
       </div>
 
       <div class="abril-field">
@@ -150,11 +156,11 @@
 
   }<!-- /!loadingCatalogos -->
 
-  <div modalFooter>
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
     <button type="button" class="btn-cancelar" (click)="cancelar()">
       <i class="ti ti-x"></i> Cancelar
     </button>
-    <button type="button" class="btn-guardar" [disabled]="guardando || !puedeGuardar" (click)="guardar()">
+    <button *ngIf="!sinWorkerVinculado" type="button" class="btn-guardar" [disabled]="guardando || !puedeGuardar" (click)="guardar()">
       @if (guardando) { <i class="ti ti-loader-2 spin"></i> Guardando... }
       @else { <i class="ti ti-device-floppy"></i> Guardar }
     </button>

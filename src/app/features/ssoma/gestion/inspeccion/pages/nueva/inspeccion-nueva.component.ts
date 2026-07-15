@@ -28,6 +28,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
+import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import Swal from 'sweetalert2';
@@ -126,12 +127,15 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     this.cdr.markForCheck();
   }
 
-  // Paso 4 — cierre
+  // Paso 4 — cierre. Inspector: fijo, resuelto del usuario logueado (no editable)
   inspectorId: number | null = null;
   inspectorNombre = '';
   inspectorCargo = '';
   inspectorEmpresa = '';
   inspectorEmpresaId: number | null = null;
+  observadorActual: WorkerSearchItemDto | null = null;
+  resolviendoObservador = true;
+  sinWorkerVinculado = false;
   representanteId: number | null = null;
   representanteNombre = '';
   representanteCargo = '';
@@ -182,7 +186,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
         this.workers = workers.data;
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
-        this.prefillInspector();
+        this.resolverInspectorActual();
       },
       error: () => {
         this.loadingCatalogos = false;
@@ -191,17 +195,30 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     });
   }
 
-  /** Autocompleta el Inspector con el trabajador vinculado al usuario logueado (si existe). */
-  private prefillInspector(): void {
-    if (this.inspectorId) return;
+  /**
+   * El Inspector ya no es un campo editable: se resuelve siempre desde el trabajador
+   * vinculado al usuario logueado (Abril vía Person, contratista vía ss_contratista_usuario).
+   * Si no hay vínculo, se bloquea el formulario completo.
+   */
+  private resolverInspectorActual(): void {
+    this.resolviendoObservador = true;
     this.workerSearchService.getMe().subscribe({
       next: (me) => {
-        if (this.workers.some((w) => w.workerId === me.id)) {
-          this.onInspectorChange(me.id);
-        }
+        this.observadorActual = me;
+        this.sinWorkerVinculado = false;
+        this.resolviendoObservador = false;
+        this.inspectorId = me.id;
+        this.inspectorNombre = me.apellidoNombre;
+        this.inspectorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' / ');
+        this.inspectorEmpresa = me.empresaActual || '';
+        this.inspectorEmpresaId = me.empresaActualId ?? null;
+        this.cdr.markForCheck();
       },
       error: () => {
-        // Usuario sin Worker vinculado: se deja el buscador manual como está.
+        this.observadorActual = null;
+        this.sinWorkerVinculado = true;
+        this.resolviendoObservador = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -220,6 +237,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   }
 
   get puedeAvanzar(): boolean {
+    if (this.sinWorkerVinculado || this.resolviendoObservador) return false;
     if (this.paso === 1) {
       return (this.proyectoId ?? 0) > 0 && !!this.tipoId && !!this.fecha;
     }
@@ -382,26 +400,6 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   quitarFoto(h: HallazgoForm, idx: number): void {
     h.fotosBase64.splice(idx, 1);
     h.fotosPreview.splice(idx, 1);
-    this.cdr.markForCheck();
-  }
-
-  onInspectorChange(id: number | null): void {
-    this.inspectorId = id;
-    if (!id) {
-      this.inspectorNombre = '';
-      this.inspectorCargo = '';
-      this.inspectorEmpresa = '';
-      this.inspectorEmpresaId = null;
-    } else {
-      const w = this.workers.find(x => x.workerId === id);
-      if (w) {
-        this.inspectorNombre = w.apellidoNombre;
-        const partes = [w.categoria, w.ocupacion].filter(Boolean);
-        this.inspectorCargo = partes.join(' / ');
-        this.inspectorEmpresa = w.empresaNombre ?? '';
-        this.inspectorEmpresaId = w.empresaId ?? null;
-      }
-    }
     this.cdr.markForCheck();
   }
 

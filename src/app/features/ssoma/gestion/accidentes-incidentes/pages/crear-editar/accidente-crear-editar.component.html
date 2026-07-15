@@ -5,13 +5,27 @@
   width="820px"
   (closeModal)="cancelar()">
 
-  @if (cargando) {
+  @if (cargando || resolviendoObservador) {
     <div class="skeleton-form">
       @for (_ of [1,2,3,4,5]; track $index) { <div class="skeleton-row"></div> }
     </div>
   }
 
-  @if (!cargando) {
+  @if (!cargando && !resolviendoObservador && sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar un Flash Report</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!cargando && !resolviendoObservador && !sinWorkerVinculado) {
 
   @if (yaEnviado) {
     <div class="info-hint" style="margin-bottom:16px">
@@ -473,27 +487,13 @@
       <div class="form-grid">
 
         <div class="abril-field abril-field--full">
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Buscar trabajador"
-            [options]="elaboradoPorOpts()"
-            valueField="id"
-            displayField="label"
-            placeholder="Buscar por nombre o DNI..."
-            [allowClear]="true"
-            [value]="elaboradoPorWorkerId"
-            (valueChange)="onElaboradoPorSelect($event)"
-          />
-        </div>
-
-        <div class="abril-field">
-          <label class="abril-field-label">Nombre</label>
-          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorNombre" name="elaboradoNombre" />
-        </div>
-
-        <div class="abril-field">
-          <label class="abril-field-label">Cargo</label>
-          <input type="text" class="abril-field-input" [(ngModel)]="form.elaboradoPorCargo" name="elaboradoCargo" />
+          <div class="observador-fijo">
+            <i class="ti ti-user-check"></i>
+            <div>
+              <div class="observador-fijo__nombre">{{ form.elaboradoPorNombre }}</div>
+              <div class="observador-fijo__cargo">{{ form.elaboradoPorCargo || '—' }}</div>
+            </div>
+          </div>
         </div>
 
         <div class="abril-field">
@@ -514,7 +514,7 @@
 
   <div modalFooter>
     <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
-    <button type="submit" form="accForm" class="btn-guardar" [disabled]="guardando || cargando">
+    <button *ngIf="!sinWorkerVinculado" type="submit" form="accForm" class="btn-guardar" [disabled]="guardando || cargando || resolviendoObservador">
       @if (guardando) { <i class="ti ti-loader-2 spin"></i> }
       @else { <i class="ti ti-device-floppy"></i> }
       {{ guardando ? 'Guardando...' : 'Guardar borrador' }}

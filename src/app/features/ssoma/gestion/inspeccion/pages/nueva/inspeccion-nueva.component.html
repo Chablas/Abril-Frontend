@@ -5,12 +5,25 @@
   width="820px"
   (closeModal)="cancelar()">
 
-  @if (loadingCatalogos) {
+  @if (loadingCatalogos || resolviendoObservador) {
     <div class="loading-catalogos">
       <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
     </div>
   }
-  @if (!loadingCatalogos) {
+  @if (!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado) {
+    <div class="bloqueo-sin-worker">
+      <i class="ti ti-alert-triangle"></i>
+      <div>
+        <div class="bloqueo-sin-worker__titulo">No puedes registrar una Inspección</div>
+        <div class="bloqueo-sin-worker__texto">
+          Tu usuario no está vinculado a una ficha de trabajador dentro de la plataforma.
+          Comunícate con el área de SSOMA o Administración para que te asocien como trabajador
+          antes de poder reportar.
+        </div>
+      </div>
+    </div>
+  }
+  @if (!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado) {
 
   <!-- STEPPER -->
   <div class="stepper">
@@ -361,34 +374,15 @@
 
         <h2 class="abril-section-title">Inspector</h2>
 
-        <div class="abril-field">
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Buscar inspector"
-            [options]="workers"
-            valueField="workerId"
-            displayField="apellidoNombre"
-            placeholder="Buscar por nombre o DNI..."
-            [value]="inspectorId"
-            (valueChange)="onInspectorChange($event)">
-          </app-search-select>
-        </div>
-
-        <div class="form-row">
-          <div class="abril-field">
-            <label class="abril-field-label">Nombre</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="inspectorNombre" />
+        <div class="observador-fijo">
+          <i class="ti ti-user-check"></i>
+          <div>
+            <div class="observador-fijo__nombre">{{ inspectorNombre }}</div>
+            <div class="observador-fijo__cargo">
+              {{ inspectorCargo || '—' }}
+              <span *ngIf="inspectorEmpresa"> · {{ inspectorEmpresa }}</span>
+            </div>
           </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Cargo</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="inspectorCargo" />
-          </div>
-        </div>
-
-        <div class="abril-field">
-          <label class="abril-field-label">Empresa</label>
-          <input type="text" class="abril-field-input" [(ngModel)]="inspectorEmpresa" readonly
-            placeholder="Se completa automáticamente al elegir el inspector" />
         </div>
 
         <div class="abril-field">
@@ -455,9 +449,9 @@
   </div><!-- /wizard-body -->
   }<!-- /!loadingCatalogos -->
 
-  <div modalFooter>
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
     <button type="button" class="btn-cancelar" (click)="cancelar()">Cancelar</button>
-    <div class="footer-nav">
+    <div class="footer-nav" *ngIf="!sinWorkerVinculado">
       @if (paso > 1) {
         <button type="button" class="btn-anterior" (click)="anterior()">
           <i class="ti ti-arrow-left"></i> Anterior
