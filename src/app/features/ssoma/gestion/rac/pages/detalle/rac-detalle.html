@@ -181,7 +181,7 @@
       <div class="detalle-seccion__titulo">Fotos</div>
       <div class="fotos-grid" *ngIf="rac.fotos.length > 0">
         <div class="foto-item" *ngFor="let foto of rac.fotos">
-          <img [src]="fotoUrl(foto.url)" [alt]="foto.nombreArchivo ?? 'foto'" loading="lazy" />
+          <app-draggable-image [src]="fotoUrl(foto.url)" />
           <span class="foto-badge">{{ foto.tipo }}</span>
         </div>
       </div>

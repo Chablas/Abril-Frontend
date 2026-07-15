@@ -6,13 +6,14 @@ import { RacService } from '../../services/rac.service';
 import { RacDetalleDto } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-rac-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, DraggableImage],
   templateUrl: './rac-detalle.html',
   styleUrl: './rac-detalle.css',
 })
