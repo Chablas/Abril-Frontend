@@ -24,6 +24,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -93,6 +94,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private service: AccidenteIncidenteService,
+    private workerSearchService: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -126,6 +128,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
           this.cargando = false;
           this.loaderService.hide();
           this.cdr.detectChanges();
+          this.prefillElaboradoPor();
         }
       },
       error: () => {
@@ -309,6 +312,21 @@ export class AccidenteCrearEditarComponent implements OnInit {
       }
     }
     this.cdr.detectChanges();
+  }
+
+  /** Autocompleta "Elaborado por" con el trabajador vinculado al usuario logueado (si existe). */
+  private prefillElaboradoPor(): void {
+    if (this.elaboradoPorWorkerId) return;
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        if (this.trabajadores.some((t) => t.id === me.id)) {
+          this.onElaboradoPorSelect(me.id);
+        }
+      },
+      error: () => {
+        // Usuario sin Worker vinculado: se deja el buscador manual como está.
+      },
+    });
   }
 
   // ── Elaborado por ──────────────────────────────────────────────────────────

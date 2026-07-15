@@ -22,6 +22,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { TrabajadorHabService } from '../../../../../habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../habilitacion/dtos/trabajador.model';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
@@ -86,6 +87,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
     private service: AuditoriaAtsService,
     private projectService: ProjectService,
     private trabajadorService: TrabajadorHabService,
+    private workerSearchService: WorkerSearchService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
     private router: Router,
@@ -111,10 +113,26 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
         }));
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
+        this.prefillAuditor();
       },
       error: () => {
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Autocompleta el Auditor con el trabajador vinculado al usuario logueado (si existe). */
+  private prefillAuditor(): void {
+    if (this.auditorId) return;
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        if (this.workers.some((w) => w.workerId === me.id)) {
+          this.onAuditorChange(me.id);
+        }
+      },
+      error: () => {
+        // Usuario sin Worker vinculado: se deja el buscador manual como está.
       },
     });
   }

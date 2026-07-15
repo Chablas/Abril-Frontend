@@ -30,6 +30,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
 import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
@@ -138,6 +139,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
     private optService: OptService,
     private projectService: ProjectService,
     private trabajadorHabService: TrabajadorHabService,
+    private workerSearchService: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -164,11 +166,27 @@ export class OptNuevo implements OnInit, AfterViewInit {
         }));
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
+        this.prefillObservador();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCatalogos = false;
         this.errorService.handleError(err);
         this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Autocompleta el Observador con el trabajador vinculado al usuario logueado (si existe). */
+  private prefillObservador(): void {
+    if (this.observadorId) return;
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        if (this.workersObservador.some((w) => w.workerId === me.id)) {
+          this.onObservadorChange(me.id);
+        }
+      },
+      error: () => {
+        // Usuario sin Worker vinculado: se deja el buscador manual como está.
       },
     });
   }
