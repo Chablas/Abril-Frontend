@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
@@ -40,7 +40,7 @@ export interface AbrilPageTabGroup {
   templateUrl: './abril-page-header.component.html',
   styleUrl: './abril-page-header.component.css',
 })
-export class AbrilPageHeaderComponent {
+export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
   @Input() badge = '';
   @Input() titulo = '';
   @Input() subtitulo = '';
@@ -107,6 +107,17 @@ export class AbrilPageHeaderComponent {
     const fallback = group.tabs.find((t) => t.route)?.route;
     const ruta = primeraPermitida?.route ?? fallback;
     if (ruta) this.router.navigateByUrl(ruta);
+  }
+
+  ngOnInit(): void {
+    // Avisa al layout que esta página tiene su propio hamburguesa integrado, para
+    // que el layout no muestre además su botón flotante de fallback (evita el
+    // solape de dos hamburguesas en móvil).
+    this.layoutService.registerPageHeader();
+  }
+
+  ngOnDestroy(): void {
+    this.layoutService.unregisterPageHeader();
   }
 
   onHamburgerClick(): void {

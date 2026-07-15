@@ -13,8 +13,10 @@ export interface GestionSalidaListItemDto {
   estadoRendicion: string;
   createdAt: string;
   puedeRendirse: boolean;
-  /** Hora real registrada por recepción ("HH:mm:ss") — dato extra. */
+  /** Hora real de salida registrada por recepción ("HH:mm:ss") — dato extra. */
   horaSalidaReal: string | null;
+  /** Hora real de retorno registrada por recepción ("HH:mm:ss") — dato extra. */
+  horaRetornoReal: string | null;
   /**
    * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
    * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.

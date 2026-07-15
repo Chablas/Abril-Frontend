@@ -85,6 +85,7 @@ Contiene componentes Angular standalone reutilizables por cualquier feature:
 | `view-toggle` | `app-view-toggle` | Toggle de modos de vista (tabla/tarjetas) con íconos SVG |
 | `paginator` | `app-paginator` | Paginador genérico con eventos de cambio de página |
 | `date-picker` | `app-date-picker` | Selector de fecha con calendario desplegable; valor `YYYY-MM-DD` como el input nativo y color de acento configurable (default `--color-abril-lime`) |
+| `time-picker` | `app-time-picker` | Selector de hora con desplegable estilizado (columnas de hora/minuto); valor `HH:mm` 24h como el input nativo y color de acento configurable (default `--color-abril-standard`) |
 entre muchos otros más.
 Para agregar un componente compartido, crear la carpeta en
 `shared/components/{nombre}/` con sus archivos `.ts`, `.html` y `.css`.

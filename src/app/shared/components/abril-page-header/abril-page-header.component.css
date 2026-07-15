@@ -127,9 +127,29 @@
   .ssoma-fab span { display: inline; }
 }
 
-/* ── Hamburger (hidden on desktop) ── */
+/* ── Hamburger ── */
+/* Solo visible por debajo del breakpoint `sm` (640px), que es exactamente
+   donde se oculta el sidebar de escritorio (app-sidebar usa `hidden sm:block`).
+   Así el hamburguesa y el sidebar fijo nunca coexisten: entre 640–768px se
+   muestra el sidebar y NO el hamburguesa (antes aparecía a 768px y se montaba
+   el drawer encima del sidebar). */
 .hamburger-btn {
   display: none;
+}
+@media (max-width: 639.98px) {
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+  }
+  .hamburger-btn i { font-size: 16px; color: #374151; }
 }
 
 /* ── Tabs ── */
@@ -229,20 +249,6 @@
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .ssoma-hero { padding: 8px 12px; }
-
-  .hamburger-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    border: none;
-    cursor: pointer;
-  }
-  .hamburger-btn i { font-size: 16px; color: #374151; }
 
   .ssoma-hero__badge,
   .ssoma-hero__vline { display: none; }

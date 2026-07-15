@@ -68,6 +68,15 @@ export class GestionSalidasService {
     );
   }
 
+  /** Registra (o limpia si hora=null) la hora real de retorno. Solo para rol USUARIO DE RECEPCIÓN. */
+  setHoraRetornoReal(id: number, hora: string | null): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${id}/hora-retorno-real`,
+      { horaRetornoReal: hora },
+      { headers: this.headers },
+    );
+  }
+
   rechazar(id: number): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/rechazar`, {}, {
       headers: this.headers,

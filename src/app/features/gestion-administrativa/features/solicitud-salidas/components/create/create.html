@@ -3,12 +3,12 @@
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
     <!-- ── Fecha ─────────────────────────────────────────────────────── -->
-    <div class="relative mt-[9px] w-fit">
-      <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Fecha de salida</label>
-      <input
-        type="date"
-        [(ngModel)]="fechaSalida"
-        class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[150px]" />
+    <div class="w-[170px]">
+      <app-date-picker
+        label="Fecha de salida"
+        color="var(--color-abril-standard)"
+        [allowClear]="false"
+        [(value)]="fechaSalida" />
       <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
     </div>
 
@@ -30,18 +30,22 @@
 
       <!-- Horas -->
       <div class="flex flex-wrap gap-[24px]">
-        <div class="relative mt-[9px] w-fit">
-          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Hora de salida</label>
-          <input type="time" [(ngModel)]="t.horaSalida" [attr.min]="minHoraSalida(t)"
-            class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[130px]" />
+        <div class="w-[130px]">
+          <app-time-picker
+            label="Hora de salida"
+            color="var(--color-abril-standard)"
+            [allowClear]="false"
+            [(value)]="t.horaSalida" />
           <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
         </div>
 
-        <div class="relative mt-[9px] w-fit">
-          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Hora de retorno</label>
-          <input type="time" [(ngModel)]="t.horaRetorno" [attr.min]="minHoraRetorno(t)" [disabled]="t.sinRetorno"
-            class="border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none w-[130px]"
-            [class.opacity-50]="t.sinRetorno" />
+        <div class="w-[130px]">
+          <app-time-picker
+            label="Hora de retorno"
+            color="var(--color-abril-standard)"
+            [allowClear]="false"
+            [disabled]="t.sinRetorno"
+            [(value)]="t.horaRetorno" />
           <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
             <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
             <span class="text-[12px] text-gray-600">Sin retorno</span>

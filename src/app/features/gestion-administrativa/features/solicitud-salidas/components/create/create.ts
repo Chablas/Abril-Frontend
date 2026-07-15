@@ -5,6 +5,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
+import { TimePicker } from '../../../../../../shared/components/time-picker/time-picker';
 import { FileSelector, SelectedFile } from '../../../../../../shared/components/file-selector/file-selector';
 import { SolicitudSalidasService } from '../../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -36,7 +38,7 @@ interface TrayectoForm {
 @Component({
   standalone: true,
   selector: 'app-solicitud-salida-create',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, FileSelector],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, DatePicker, TimePicker, FileSelector],
   templateUrl: './create.html',
   styleUrl: './create.css',
 })
@@ -170,19 +172,7 @@ export class SolicitudSalidaCreate implements OnInit {
     return match ? match.monto : null;
   }
 
-  // ── Restricciones de hora (input nativo type="time" con min/max) ────
-
-  /** Hora mínima seleccionable para "salida": ahora mismo, solo si la fecha es hoy y es el primer trayecto. */
-  minHoraSalida(t: TrayectoForm): string | null {
-    if (this.fechaSalida !== this.todayStr || t !== this.trayectos[0]) return null;
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  }
-
-  /** Hora mínima seleccionable para "retorno": la hora de salida del mismo trayecto. */
-  minHoraRetorno(t: TrayectoForm): string | null {
-    return t.horaSalida || null;
-  }
+  // ── Manejo de horas ────────────────────────────────────────────────
 
   onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
     t.sinRetorno = checked;
@@ -240,8 +230,8 @@ export class SolicitudSalidaCreate implements OnInit {
 
     if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
     if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
-    const minSalida = this.minHoraSalida(t);
-    if (t.horaSalida && minSalida && t.horaSalida < minSalida) errs.push(`${pref}: la hora de salida ya pasó`);
+    // La hora de salida ya no está restringida a ser posterior a la hora actual:
+    // puede solicitarse un permiso para cualquier hora en cualquier fecha.
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);

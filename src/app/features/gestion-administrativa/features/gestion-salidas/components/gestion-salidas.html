@@ -130,14 +130,18 @@
           </th>
           <th *ngIf="esRecepcion"
               title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
-            Hora real
+            Hora real salida
+          </th>
+          <th *ngIf="esRecepcion"
+              title="Solo visible para usuarios con rol USUARIO DE RECEPCIÓN">
+            Hora real retorno
           </th>
         </tr>
       </thead>
       <tbody>
 
         <tr *ngIf="salidas.length === 0">
-          <td [attr.colspan]="esRecepcion ? 13 : 12" class="text-center py-[40px] text-gray-400 text-sm">
+          <td [attr.colspan]="esRecepcion ? 14 : 12" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -259,15 +263,26 @@
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
 
-          <!-- Hora real (recepción) -->
+          <!-- Hora real de salida (recepción) -->
           <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
-            <input
-              type="time"
-              [value]="horaRealInput(s)"
-              (change)="guardarHoraReal(s, $any($event.target).value)"
-              class="rounded-md px-2 py-1 text-xs text-gray-700 focus:outline-none w-[110px]"
-              style="border: 1.5px solid var(--color-abril-border)"
-              title="Registra la hora real en que la persona salió" />
+            <div class="w-[120px]" title="Registra la hora real en que la persona salió">
+              <app-time-picker
+                [showLabel]="false"
+                color="var(--color-abril-standard)"
+                [value]="horaSalidaRealInput(s)"
+                (valueChange)="guardarHoraSalidaReal(s, $event)" />
+            </div>
+          </td>
+
+          <!-- Hora real de retorno (recepción) -->
+          <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
+            <div class="w-[120px]" title="Registra la hora real en que la persona retornó">
+              <app-time-picker
+                [showLabel]="false"
+                color="var(--color-abril-standard)"
+                [value]="horaRetornoRealInput(s)"
+                (valueChange)="guardarHoraRetornoReal(s, $event)" />
+            </div>
           </td>
 
         </tr>

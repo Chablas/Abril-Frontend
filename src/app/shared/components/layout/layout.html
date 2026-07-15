@@ -1,7 +1,11 @@
 <div class="flex h-screen" style="background: var(--color-abril-surface);">
   <app-sidebar class="hidden sm:block shrink-0"></app-sidebar>
   <app-sidebar-mobile [(menuOpen)]="mobileMenuOpen"></app-sidebar-mobile>
+  <!-- Fallback: solo para páginas SIN app-abril-page-header (que no tienen su
+       propio hamburguesa). En páginas con header, este botón no se monta y así
+       no se solapan dos hamburguesas en móvil. -->
   <button
+    *ngIf="!hasPageHeader"
     type="button"
     class="layout-mobile-menu-btn sm:hidden"
     (click)="mobileMenuOpen = true"

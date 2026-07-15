@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 import { GestionSalidasService } from '../services/gestion-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -17,6 +17,7 @@ import {
 } from '../dtos/gestion-salida.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { TimePicker } from '../../../../../shared/components/time-picker/time-picker';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { GestionSalidaDetalleModal } from './gestion-salida-detalle-modal/gestion-salida-detalle-modal';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -36,7 +37,7 @@ interface AreaCascadeNode {
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './gestion-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -131,16 +132,40 @@ export class GestionSalidas implements OnInit {
     return this.authService.hasRole(Roles.USUARIO_RECEPCION);
   }
 
-  guardarHoraReal(s: GestionSalidaListItemDto, valor: string, ev?: Event): void {
-    ev?.stopPropagation();
-    // input type="time" devuelve "HH:mm" o "" si está vacío. El backend acepta null para limpiar.
+  guardarHoraSalidaReal(s: GestionSalidaListItemDto, valor: string | null): void {
+    this.guardarHoraReal(
+      s, valor, s.horaSalidaReal,
+      (id, hora) => this.service.setHoraSalidaReal(id, hora),
+      (hora) => (s.horaSalidaReal = hora),
+    );
+  }
+
+  guardarHoraRetornoReal(s: GestionSalidaListItemDto, valor: string | null): void {
+    this.guardarHoraReal(
+      s, valor, s.horaRetornoReal,
+      (id, hora) => this.service.setHoraRetornoReal(id, hora),
+      (hora) => (s.horaRetornoReal = hora),
+    );
+  }
+
+  /**
+   * Guarda (o limpia) una hora real. app-time-picker emite "HH:mm" o null al limpiar; el backend
+   * acepta null para limpiar. Genérico para las columnas de salida y retorno (solo recepción).
+   */
+  private guardarHoraReal(
+    s: GestionSalidaListItemDto,
+    valor: string | null,
+    actual: string | null,
+    persistir: (id: number, hora: string | null) => Observable<{ message: string }>,
+    aplicar: (hora: string | null) => void,
+  ): void {
     const hora = valor && valor.trim() !== '' ? valor : null;
-    if ((s.horaSalidaReal ?? '').substring(0, 5) === (hora ?? '')) return; // sin cambio
+    if ((actual ?? '').substring(0, 5) === (hora ?? '')) return; // sin cambio
 
     this.loaderService.show();
-    this.service.setHoraSalidaReal(s.id, hora).subscribe({
+    persistir(s.id, hora).subscribe({
       next: (res) => {
-        s.horaSalidaReal = hora;
+        aplicar(hora);
         this.loaderService.hide();
         Swal.fire({
           title: res.message,
@@ -156,9 +181,14 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  /** Devuelve "HH:mm" listo para el input type="time" (el backend devuelve "HH:mm:ss"). */
-  horaRealInput(s: GestionSalidaListItemDto): string {
+  /** Devuelve "HH:mm" listo para app-time-picker (el backend devuelve "HH:mm:ss"). */
+  horaSalidaRealInput(s: GestionSalidaListItemDto): string {
     return s.horaSalidaReal ? s.horaSalidaReal.substring(0, 5) : '';
+  }
+
+  /** Devuelve "HH:mm" listo para app-time-picker (el backend devuelve "HH:mm:ss"). */
+  horaRetornoRealInput(s: GestionSalidaListItemDto): string {
+    return s.horaRetornoReal ? s.horaRetornoReal.substring(0, 5) : '';
   }
 
   ngOnInit(): void {

@@ -18,6 +18,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class Layout implements OnDestroy {
   mobileMenuOpen = false;
+  /** true cuando la página actual monta un app-abril-page-header (que ya trae su
+   *  propio hamburguesa). En ese caso el layout NO muestra el botón flotante. */
+  hasPageHeader = false;
 
   private layoutService = inject(LayoutService);
   private sessionRefresh = inject(SessionRefreshService);
@@ -27,6 +30,10 @@ export class Layout implements OnDestroy {
     this.layoutService.openMobileMenu$
       .pipe(takeUntilDestroyed())
       .subscribe(() => (this.mobileMenuOpen = true));
+
+    this.layoutService.hasPageHeader$
+      .pipe(takeUntilDestroyed())
+      .subscribe((has) => (this.hasPageHeader = has));
 
     // Mientras el usuario está en la zona autenticada:
     // - refresco periódico del token (red de seguridad),
