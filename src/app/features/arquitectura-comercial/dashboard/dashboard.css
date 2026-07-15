@@ -551,6 +551,7 @@
 }
 .rank-item:hover { border-color:#A0AABC; }
 .rank-item-crit { background:#FBF7F7; border-color:#DBBEBE; }
+.rank-item-empty { background:#FAFBFC; opacity:.75; }
 
 /* Acento izquierdo */
 .rank-accent {
@@ -586,6 +587,13 @@
 .rank-nombre { font-size:11px; font-weight:700; color:#0F172A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:165px; letter-spacing:.02em; }
 .rank-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 2px rgba(255,255,255,.6); }
 .rank-badge { font-size:8px; font-weight:600; padding:2px 8px; border-radius:20px; flex-shrink:0; }
+.rank-badges-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.rank-badge-deuda {
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:8px; font-weight:700; padding:2px 8px; border-radius:20px;
+  background:#FDEAEA; color:#C0392B; white-space:nowrap;
+}
+.rank-badge-deuda .ti { font-size:9px; }
 
 /* Stats */
 .rank-stats-row { display:flex; align-items:center; gap:4px; }

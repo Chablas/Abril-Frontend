@@ -30,6 +30,7 @@ import {
   CategoriaItemDTO,
   CategoriaDashboardItemDTO,
   SemanaDashboardDTO,
+  SupervisorHistoricoDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
   ActividadListItemDTO,
@@ -213,16 +214,24 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalHitosVisible = false;
   tabHito           : TabHito = 'VENCER';
 
+  // ─── modal histórico de supervisor ──────────────────────────────
+  modalHistoricoVisible   = false;
+  cargandoHistorico       = false;
+  historicoSupervisor     : SupervisorHistoricoDTO | null = null;
+  historicoSupervisorNombre = '';
+
   distribucionTipos: ChartItemDTO[] = [];
 
   // ─── charts ───────────────────────────────────────────────────
   private avanceChart    ?: Chart;
   private eficienciaChart?: Chart;
   private tiposChart     ?: Chart;
+  private historicoChart ?: Chart;
 
   @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
   @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('tiposCanvas')      tiposRef     !: ElementRef<HTMLCanvasElement>;
+  @ViewChild('historicoCanvas')  historicoRef ?: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private service     : ArquitecturaComercialService,
@@ -297,6 +306,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.avanceChart?.destroy();
     this.eficienciaChart?.destroy();
     this.tiposChart?.destroy();
+    this.historicoChart?.destroy();
   }
 
   private renderCharts() {
@@ -316,29 +326,37 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           {
             label: 'Programado',
             data: data.map(s => s.programado),
-            borderColor: '#5B8DC9',
-            backgroundColor: 'rgba(91,141,201,0.12)',
-            borderWidth: 3,
-            borderDash: [6, 4],
-            pointRadius: 3,
-            pointBackgroundColor: '#5B8DC9',
+            borderColor: '#94A3B8',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [5, 4],
+            pointRadius: 2.5,
+            pointBackgroundColor: '#94A3B8',
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
-            tension: 0.3,
-            fill: true,
+            cubicInterpolationMode: 'monotone' as const,
+            fill: false,
           },
           {
             label: 'Real',
             data: data.map(s => s.real),
-            borderColor: '#1B3A6B',
-            backgroundColor: 'rgba(27,58,107,0.10)',
-            borderWidth: 3.5,
-            pointRadius: 4,
-            pointBackgroundColor: '#1B3A6B',
+            borderColor: '#2563EB',
+            backgroundColor: (ctx: any) => {
+              const { chart } = ctx;
+              const { ctx: c, chartArea } = chart;
+              if (!chartArea) return 'rgba(37,99,235,0.08)';
+              const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(37,99,235,0.22)');
+              gradient.addColorStop(1, 'rgba(37,99,235,0.01)');
+              return gradient;
+            },
+            borderWidth: 2.5,
+            pointRadius: 3.5,
+            pointBackgroundColor: '#2563EB',
             pointBorderColor: '#fff',
-            pointBorderWidth: 2,
+            pointBorderWidth: 1.5,
             fill: true,
-            tension: 0.4,
+            cubicInterpolationMode: 'monotone' as const,
           },
         ],
       },
@@ -347,11 +365,15 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         interaction: { mode: 'index' as const, intersect: false },
         plugins: {
           datalabels: { display: false },
-          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
-          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
+          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: {
+            backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
+            titleFont: { size: 10, weight: 'bold' as const }, bodyFont: { size: 10 },
+            callbacks: { label: (item: any) => ` ${item.dataset.label}: ${Number(item.raw).toFixed(1)}%` },
+          },
         },
         scales: {
-          y: { beginAtZero: true, max: 100, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          y: { beginAtZero: true, max: 100, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
           x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
@@ -371,38 +393,53 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           {
             label: 'Esperado',
             data: esperado,
-            borderColor: '#94A3B8',
+            borderColor: '#CBD5E1',
             backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [6, 4],
+            borderWidth: 1.5,
+            borderDash: [5, 4],
             pointRadius: 0,
             fill: false,
-            tension: 0,
+            cubicInterpolationMode: 'monotone' as const,
           },
           {
             label: 'Logrado',
             data: vals,
-            borderColor: '#27AE60',
-            backgroundColor: 'rgba(39,174,96,0.08)',
-            borderWidth: 3,
-            pointRadius: 4,
-            pointBackgroundColor: vals.map(v => v >= 95 ? '#1B6B3A' : v >= 80 ? '#D4A017' : '#C0392B'),
+            borderColor: '#0EA36C',
+            backgroundColor: (ctx: any) => {
+              const { chart } = ctx;
+              const { ctx: c, chartArea } = chart;
+              if (!chartArea) return 'rgba(14,163,108,0.08)';
+              const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(14,163,108,0.20)');
+              gradient.addColorStop(1, 'rgba(14,163,108,0.01)');
+              return gradient;
+            },
+            borderWidth: 2.5,
+            pointRadius: 3.5,
+            pointBackgroundColor: vals.map(v => v >= 95 ? '#0F7A4E' : v >= 80 ? '#C4860A' : '#C94040'),
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
             fill: true,
-            tension: 0.4,
+            // 'monotone' evita que la curva "se pase" del valor real entre puntos cuando
+            // los datos suben y bajan fuerte semana a semana (con tension normal, el bezier
+            // sobrepasaba el pico/valle real y el gráfico se veía descuadrado).
+            cubicInterpolationMode: 'monotone' as const,
           },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          datalabels: { display: (ctx) => ctx.datasetIndex === 1, anchor: 'end' as const, align: 'end' as const, offset: 2, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
-          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true } },
-          tooltip: { backgroundColor: '#1E293B', titleFont: { size: 10 }, bodyFont: { size: 10 } },
+          datalabels: { display: (ctx) => ctx.datasetIndex === 1, anchor: 'end' as const, align: 'end' as const, offset: 6, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
+          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: {
+            backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
+            titleFont: { size: 10, weight: 'bold' as const }, bodyFont: { size: 10 },
+            callbacks: { label: (item: any) => ` ${item.dataset.label}: ${Number(item.raw).toFixed(1)}%` },
+          },
         },
         scales: {
-          y: { min: 50, max: 130, grid: { color: 'rgba(200,206,220,0.3)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          y: { min: 0, max: 110, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
           x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
@@ -607,6 +644,81 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   abrirModalHitos() { this.modalHitosVisible = true; }
   cerrarModalHitos() { this.modalHitosVisible = false; }
 
+  // ─── modal histórico de supervisor ──────────────────────────
+  abrirHistoricoSupervisor(sup: SupervisorProgresoDTO): void {
+    this.modalHistoricoVisible   = true;
+    this.historicoSupervisorNombre = sup.nombre;
+    this.historicoSupervisor     = null;
+    this.cargandoHistorico       = true;
+    this.service.getSupervisorHistorico(sup.userId).subscribe({
+      next: (h) => {
+        this.historicoSupervisor = h;
+        this.cargandoHistorico   = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.renderHistoricoChart());
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoHistorico = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  cerrarModalHistorico(): void {
+    this.modalHistoricoVisible = false;
+    this.historicoChart?.destroy();
+    this.historicoChart = undefined;
+    this.historicoSupervisor = null;
+  }
+
+  private renderHistoricoChart(): void {
+    if (!this.historicoRef?.nativeElement || !this.historicoSupervisor) return;
+    this.historicoChart?.destroy();
+    const data = this.historicoSupervisor.tendenciaSemanal;
+    this.historicoChart = new Chart(this.historicoRef.nativeElement, {
+      type: 'line',
+      data: {
+        labels: data.map(s => s.semana),
+        datasets: [{
+          label: 'Tasa de cierre',
+          data: data.map(s => s.valor),
+          borderColor: '#2563EB',
+          backgroundColor: (ctx: any) => {
+            const { chart } = ctx;
+            const { ctx: c, chartArea } = chart;
+            if (!chartArea) return 'rgba(37,99,235,0.10)';
+            const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            gradient.addColorStop(0, 'rgba(37,99,235,0.20)');
+            gradient.addColorStop(1, 'rgba(37,99,235,0.01)');
+            return gradient;
+          },
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#2563EB',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1.5,
+          fill: true,
+          cubicInterpolationMode: 'monotone' as const,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          datalabels: { display: false },
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
+            callbacks: { label: (item: any) => ` Tasa de cierre: ${Number(item.raw).toFixed(1)}%` },
+          },
+        },
+        scales: {
+          y: { min: 0, max: 100, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
+        },
+      },
+    });
+  }
+
   get hitosIniciar(): HitoCriticoDTO[] {
     return this.hitosCriticos.filter(h => h.diasRestantes >= 0 && h.diasRestantes <= 7);
   }
@@ -643,14 +755,22 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   // ─── helpers UI ──────────────────────────────────────────────
+  /** Supervisores con compromisos esta semana — los "sin compromisos" no participan
+   * de ningún promedio/insight agregado (no tiene sentido promediar un IES que no existe). */
+  private get supervisoresConCompromisos(): SupervisorProgresoDTO[] {
+    return this.supervisores.filter(s => !s.sinCompromisos);
+  }
+
   get promedioEficiencia(): number {
-    if (!this.supervisores.length) return 0;
-    return Math.round(this.supervisores.reduce((s, x) => s + x.progreso, 0) / this.supervisores.length);
+    const activos = this.supervisoresConCompromisos;
+    if (!activos.length) return 0;
+    return Math.round(activos.reduce((s, x) => s + x.progreso, 0) / activos.length);
   }
 
   get rankingInsights(): string[] {
-    if (!this.supervisores.length) return [];
-    const sorted = [...this.supervisores].sort((a, b) => b.progreso - a.progreso);
+    const activos = this.supervisoresConCompromisos;
+    if (!activos.length) return [];
+    const sorted = [...activos].sort((a, b) => b.progreso - a.progreso);
     const mejor = sorted[0];
     const peor  = sorted[sorted.length - 1];
     const out: string[] = [];
@@ -666,8 +786,9 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   get equipoEquilibrado(): boolean {
-    if (this.supervisores.length < 2) return true;
-    const v = this.supervisores.map(s => s.progreso);
+    const activos = this.supervisoresConCompromisos;
+    if (activos.length < 2) return true;
+    const v = activos.map(s => s.progreso);
     return Math.max(...v) - Math.min(...v) <= 30;
   }
 

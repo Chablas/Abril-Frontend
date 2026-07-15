@@ -6,6 +6,7 @@ import {
   ArqComercialDashboardDTO,
   ArqComercialFiltersDTO,
   ArqComercialSelectedFilters,
+  SupervisorHistoricoDTO,
 } from '../dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
   DashboardFiltroDTO,
@@ -220,6 +221,12 @@ export class ArquitecturaComercialService {
 
   enviarAlertasActividades(req: EnviarAlertaRequestDTO): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/alertas/enviar`, req, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getSupervisorHistorico(userId: number): Observable<SupervisorHistoricoDTO> {
+    return this.http.get<SupervisorHistoricoDTO>(`${this.apiUrl}/dashboard/supervisor/${userId}/historico`, {
       headers: this.authHeaders(),
     });
   }

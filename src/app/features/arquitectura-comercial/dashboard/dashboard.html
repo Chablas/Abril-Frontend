@@ -157,7 +157,7 @@
         <div class="rank-header">
           <div class="rank-header-left">
             <span class="rank-title-text">RANKING EFICIENCIA</span>
-            <span class="rank-subtitle">IES = culminadas sin retraso ÷ total asignadas · {{ semanaActual?.label }}</span>
+            <span class="rank-subtitle">IES = cierre + ritmo (SPI) de lo que vencía en {{ semanaActual?.label }}, más puntualidad de lo que arrancaba esa semana</span>
           </div>
           <div class="rank-prom-pill" title="Promedio de IES del equipo">
             <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
@@ -167,45 +167,66 @@
         <div class="rank-list">
           <div *ngFor="let sup of supervisores"
                class="rank-item"
-               [class.rank-item-crit]="sup.progreso < 50"
-               [style.borderColor]="getAvatarColor(sup.progreso) + '55'"
-               [title]="sup.nombre">
+               [class.rank-item-crit]="!sup.sinCompromisos && sup.progreso < 50"
+               [class.rank-item-empty]="sup.sinCompromisos"
+               [style.borderColor]="sup.sinCompromisos ? '#E2E8F0' : getAvatarColor(sup.progreso) + '55'"
+               style="cursor:pointer"
+               (click)="abrirHistoricoSupervisor(sup)"
+               [title]="sup.nombre + ' · ver histórico'">
             <div class="rank-accent"
-                 [style.background]="sup.progreso >= 75 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
+                 [style.background]="sup.sinCompromisos ? '#CBD5E1'
+                   : sup.progreso >= 75 ? 'linear-gradient(180deg,#4ADE80,#16A34A)'
                    : sup.progreso >= 60 ? 'linear-gradient(180deg,#60A5FA,#2563EB)'
                    : sup.progreso >= 45 ? 'linear-gradient(180deg,#FCD34D,#B45309)'
                    : 'linear-gradient(180deg,#F87171,#DC2626)'">
             </div>
-            <div class="sup-avatar" [style.background]="getAvatarBg(sup.progreso)" [style.color]="getAvatarColor(sup.progreso)">
+            <div class="sup-avatar"
+                 [style.background]="sup.sinCompromisos ? '#F1F5F9' : getAvatarBg(sup.progreso)"
+                 [style.color]="sup.sinCompromisos ? '#94A3B8' : getAvatarColor(sup.progreso)">
               {{ getInitials(sup.nombre) }}
             </div>
             <div class="rank-info">
               <div class="rank-nombre-row">
                 <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
-                <span class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
-              </div>
-              <div class="rank-stats-row" title="Culminadas / asignadas esta semana">
-                <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
-                  {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
-                </span>
-                <span class="rank-stat-sep">/</span>
-                <span class="rank-stat-tot">{{ sup.total }}</span>
-                <span class="rank-stat-lbl" style="font-size:9px;color:#94A3B8">culminadas/asignadas</span>
-                <span class="rank-stat-sep">·</span>
-                <span class="rank-stat-ies-lbl" title="Índice de Eficiencia del Supervisor">IES</span>
-                <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
-              </div>
-              <div class="rank-bar-row">
-                <div class="rank-bar-track">
-                  <div class="rank-bar-fill"
-                       [style.width.%]="sup.progreso"
-                       [style.background]="sup.progreso >= 75 ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
-                         : sup.progreso >= 60 ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
-                         : sup.progreso >= 45 ? 'linear-gradient(90deg,#FCD34D,#B45309)'
-                         : 'linear-gradient(90deg,#F87171,#DC2626)'">
-                  </div>
+                <div class="rank-badges-right">
+                  <span *ngIf="sup.deudaAnterior > 0" class="rank-badge rank-badge-deuda"
+                        [title]="sup.deudaAnterior + ' actividad(es) vencidas de semanas anteriores a esta, aún sin cerrar. No afecta el IES de esta semana.'">
+                    <i class="ti ti-alert-triangle"></i> {{ sup.deudaAnterior }} atrasada{{ sup.deudaAnterior > 1 ? 's' : '' }}
+                  </span>
+                  <span *ngIf="!sup.sinCompromisos" class="rank-badge" [style.background]="getComentarioBg(sup)" [style.color]="getComentarioColor(sup)">{{ getComentario(sup) }}</span>
+                  <span *ngIf="sup.sinCompromisos" class="rank-badge" style="background:#F1F5F9;color:#94A3B8">Sin compromisos</span>
                 </div>
               </div>
+
+              <ng-container *ngIf="!sup.sinCompromisos; else sinCompromisosRow">
+                <div class="rank-stats-row" title="Culminadas / asignadas esta semana">
+                  <span [class]="sup.completadas > 0 ? 'rank-stat-ok' : 'rank-stat-fail'" [style.color]="sup.completadas > 0 ? getAvatarColor(sup.progreso) : '#E05252'">
+                    {{ sup.completadas > 0 ? '✓' : '✗' }} {{ sup.completadas }}
+                  </span>
+                  <span class="rank-stat-sep">/</span>
+                  <span class="rank-stat-tot">{{ sup.total }}</span>
+                  <span class="rank-stat-lbl" style="font-size:9px;color:#94A3B8">culminadas/asignadas</span>
+                  <span class="rank-stat-sep">·</span>
+                  <span class="rank-stat-ies-lbl" title="Índice de Eficiencia del Supervisor">IES</span>
+                  <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
+                </div>
+                <div class="rank-bar-row">
+                  <div class="rank-bar-track">
+                    <div class="rank-bar-fill"
+                         [style.width.%]="sup.progreso"
+                         [style.background]="sup.progreso >= 75 ? 'linear-gradient(90deg,#4ADE80,#16A34A)'
+                           : sup.progreso >= 60 ? 'linear-gradient(90deg,#60A5FA,#2563EB)'
+                           : sup.progreso >= 45 ? 'linear-gradient(90deg,#FCD34D,#B45309)'
+                           : 'linear-gradient(90deg,#F87171,#DC2626)'">
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #sinCompromisosRow>
+                <div class="rank-stats-row" style="color:#94A3B8;font-size:11px">
+                  No tenía actividades por vencer ni por arrancar esta semana
+                </div>
+              </ng-template>
             </div>
           </div>
           <p *ngIf="supervisores.length === 0" class="empty-msg">Sin datos</p>
@@ -420,8 +441,8 @@
       <div *ngIf="hitosCriticos.length > 0"
            style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1px;background:#E2E8F0">
         <div *ngFor="let h of hitosCriticos"
-             style="display:flex;align-items:stretch;cursor:pointer;min-height:40px"
-             (click)="alertarHito(h)" [title]="h.nombre">
+             style="display:flex;align-items:stretch;min-height:40px"
+             [title]="h.nombre">
           <!-- Barra lateral de urgencia -->
           <div style="width:4px;flex-shrink:0"
                [style.background]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#2E6DB4'">
@@ -447,6 +468,11 @@
                 {{ diasLabel(h.diasRestantes) }}
               </span>
             </div>
+            <!-- Enviar alerta de este hito puntual -->
+            <button type="button" title="Enviar alerta de este hito" (click)="alertarHito(h)"
+                    style="flex-shrink:0;border:none;background:transparent;color:#94A3B8;cursor:pointer;padding:4px;font-size:13px">
+              <i class="ti ti-mail-forward"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -850,6 +876,79 @@
 
     <div class="modal-footer">
       <button class="btn-cancelar" (click)="cerrarModalHitos()">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL HISTÓRICO DE SUPERVISOR ══ -->
+<div *ngIf="modalHistoricoVisible" class="modal-backdrop" (click)="cerrarModalHistorico()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3V21H21M7 15L11 10L14 13L20 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">{{ historicoSupervisorNombre }}</h2>
+          <p class="modal-sub">Eficiencia a lo largo del tiempo</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalHistorico()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <p *ngIf="cargandoHistorico" class="empty-msg" style="padding:24px 0">Cargando...</p>
+
+      <ng-container *ngIf="!cargandoHistorico && historicoSupervisor as h">
+        <!-- KPIs históricos -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
+          <div style="background:#F8FAFC;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#1E293B">{{ h.totalActividades }}</div>
+            <div style="font-size:9px;color:#94A3B8;text-transform:uppercase;font-weight:600">Total histórico</div>
+          </div>
+          <div style="background:#EAF3DE;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#1B6B3A">{{ h.culminadas }}</div>
+            <div style="font-size:9px;color:#4D7C0F;text-transform:uppercase;font-weight:600">Culminadas</div>
+          </div>
+          <div style="background:#EDF4FB;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#2E6DB4">{{ h.enProceso }}</div>
+            <div style="font-size:9px;color:#2E6DB4;text-transform:uppercase;font-weight:600">En proceso</div>
+          </div>
+          <div style="background:#FEF9E7;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#B45309">{{ h.pendientes }}</div>
+            <div style="font-size:9px;color:#B45309;text-transform:uppercase;font-weight:600">Pendientes</div>
+          </div>
+          <div style="background:#FDF2F2;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:#C0392B">{{ h.vencidas }}</div>
+            <div style="font-size:9px;color:#C0392B;text-transform:uppercase;font-weight:600">Vencidas</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-bottom:14px">
+          <span style="font-size:12px;color:#64748B">
+            Eficiencia histórica (culminadas ÷ total): <b [style.color]="h.eficienciaHistorica >= 75 ? '#16A34A' : h.eficienciaHistorica >= 50 ? '#B45309' : '#C0392B'">{{ h.eficienciaHistorica | number:'1.0-1' }}%</b>
+          </span>
+          <span style="font-size:12px;color:#64748B">
+            SPI promedio: <b>{{ h.spiPromedio | number:'1.2-2' }}</b>
+          </span>
+        </div>
+
+        <!-- Tendencia semanal -->
+        <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:6px">
+          Tasa de cierre semanal (últimas 8 semanas)
+        </div>
+        <div style="height:180px">
+          <canvas #historicoCanvas></canvas>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalHistorico()">Cerrar</button>
     </div>
 
   </div>
