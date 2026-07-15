@@ -28,33 +28,7 @@
         </button>
       </div>
 
-      <!-- Horas -->
-      <div class="flex flex-wrap gap-[24px]">
-        <div class="w-[130px]">
-          <app-time-picker
-            label="Hora de salida"
-            color="var(--color-abril-standard)"
-            [allowClear]="false"
-            [(value)]="t.horaSalida" />
-          <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
-        </div>
-
-        <div class="w-[130px]">
-          <app-time-picker
-            label="Hora de retorno"
-            color="var(--color-abril-standard)"
-            [allowClear]="false"
-            [disabled]="t.sinRetorno"
-            [(value)]="t.horaRetorno" />
-          <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
-            <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
-            <span class="text-[12px] text-gray-600">Sin retorno</span>
-          </label>
-          <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
-        </div>
-      </div>
-
-      <!-- Motivo -->
+      <!-- Motivo (se elige primero: define la etiqueta y habilita las horas) -->
       <div class="flex flex-col gap-[4px]">
         <ng-container *ngIf="!t.motivoLibreOn">
           <app-search-select label="Motivo" placeholder="Selecciona el motivo" [options]="formData.motivos"
@@ -112,6 +86,39 @@
           (fileSelected)="onAdjuntoSelected(t, $event)" />
 
         <p *ngIf="submitted && t.adjuntos.length === 0" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+
+      <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él) -->
+      <div class="flex flex-col gap-[4px]">
+        <div class="flex flex-wrap gap-[24px]">
+          <div class="w-[130px]">
+            <app-time-picker
+              label="Hora de salida"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [disabled]="!motivoElegido(t)"
+              [(value)]="t.horaSalida" />
+            <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+
+          <div class="w-[170px]">
+            <app-time-picker
+              [label]="labelHoraRetorno(t)"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [disabled]="t.sinRetorno || !motivoElegido(t)"
+              [(value)]="t.horaRetorno" />
+            <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
+              <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)"
+                [disabled]="!motivoElegido(t)" style="accent-color:var(--color-abril-primary)" />
+              <span class="text-[12px] text-gray-600">Sin retorno</span>
+            </label>
+            <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+        </div>
+        <p *ngIf="!motivoElegido(t)" class="text-[11px] text-gray-400 italic">
+          Selecciona primero el motivo para definir las horas.
+        </p>
       </div>
 
       <!-- Origen + Destino -->

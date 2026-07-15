@@ -18,6 +18,11 @@ export interface GestionSalidaListItemDto {
   /** Hora real de retorno registrada por recepción ("HH:mm:ss") — dato extra. */
   horaRetornoReal: string | null;
   /**
+   * True cuando todos los trayectos tienen motivos con "es hora estimada": las horas declaradas
+   * son estimadas y recepción no registra la hora real de salida/retorno para esta solicitud.
+   */
+  esHoraEstimada: boolean;
+  /**
    * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
    * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.
    */

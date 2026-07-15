@@ -97,6 +97,12 @@ export class SolicitudSalidaCreate implements OnInit {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
+  /** Hora actual en formato "HH:mm" (comparable con los valores de app-time-picker). */
+  private get nowStr(): string {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
   private nuevoTrayecto(esPrimero: boolean): TrayectoForm {
     const now = new Date();
     return {
@@ -194,6 +200,26 @@ export class SolicitudSalidaCreate implements OnInit {
     return this.formData.motivos.find((m) => m.id === t.motivoId)?.requiereAdjunto ?? false;
   }
 
+  /**
+   * true si el trayecto ya tiene un motivo definido (del catálogo o la vía "Otro motivo").
+   * Las horas se habilitan recién cuando hay motivo — su etiqueta depende de él.
+   */
+  motivoElegido(t: TrayectoForm): boolean {
+    return t.motivoId != null || t.motivoLibreOn;
+  }
+
+  /** true si el motivo elegido es de hora estimada. Motivo libre cuenta como hora exacta. */
+  motivoEsHoraEstimada(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return false;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.esHoraEstimada ?? false;
+  }
+
+  /** Etiqueta de la hora de retorno según el motivo: estimada / exacta (neutra sin motivo aún). */
+  labelHoraRetorno(t: TrayectoForm): string {
+    if (!this.motivoElegido(t)) return 'Hora de retorno';
+    return this.motivoEsHoraEstimada(t) ? 'Hora de retorno estimada' : 'Hora de retorno exacta';
+  }
+
   onMotivoChange(t: TrayectoForm, motivoId: number | null): void {
     t.motivoId = motivoId;
     // Los adjuntos pertenecen al motivo elegido: al cambiarlo se descartan.
@@ -230,8 +256,15 @@ export class SolicitudSalidaCreate implements OnInit {
 
     if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
     if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
-    // La hora de salida ya no está restringida a ser posterior a la hora actual:
-    // puede solicitarse un permiso para cualquier hora en cualquier fecha.
+    // Las horas solo se restringen contra la hora actual cuando la salida es HOY;
+    // para fechas futuras se acepta cualquier hora.
+    if (this.fechaSalida === this.todayStr) {
+      const ahora = this.nowStr;
+      if (t.horaSalida && t.horaSalida < ahora)
+        errs.push(`${pref}: la hora de salida no puede ser anterior a la hora actual (${ahora})`);
+      if (!t.sinRetorno && t.horaRetorno && t.horaRetorno < ahora)
+        errs.push(`${pref}: la hora de retorno no puede ser anterior a la hora actual (${ahora})`);
+    }
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);
@@ -248,6 +281,16 @@ export class SolicitudSalidaCreate implements OnInit {
     this.submitted = true;
     if (!this.fechaSalida) {
       Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#64BC04' });
+      return;
+    }
+    // Solo validación de frontend: la fecha de salida no puede ser anterior a hoy.
+    if (this.fechaSalida < this.todayStr) {
+      Swal.fire({
+        title: 'Fecha inválida',
+        text: 'La fecha de salida no puede ser anterior a hoy.',
+        icon: 'warning',
+        confirmButtonColor: '#64BC04',
+      });
       return;
     }
 

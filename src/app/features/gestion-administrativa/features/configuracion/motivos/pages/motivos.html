@@ -9,6 +9,7 @@
         <tr>
           <th>Descripción</th>
           <th class="text-center">Doc. adjunto</th>
+          <th class="text-center">Hora estimada</th>
           <th class="text-center">Estado</th>
           <th class="text-center">Acciones</th>
         </tr>
@@ -16,7 +17,7 @@
       <tbody>
 
         <tr *ngIf="filteredMotivos.length === 0">
-          <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
             {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay motivos registrados.' }}
           </td>
         </tr>
@@ -31,6 +32,15 @@
               Requerido
             </span>
             <span *ngIf="!m.requiereAdjunto" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="m.esHoraEstimada"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF3C7] text-[#B45309] font-medium whitespace-nowrap"
+                  title="Las horas declaradas son estimadas: recepción no registra la hora real de salida/retorno">
+              Estimada
+            </span>
+            <span *ngIf="!m.esHoraEstimada" class="text-gray-300">—</span>
           </td>
 
           <td class="text-center">

@@ -3,6 +3,8 @@ export interface MotivoSalidaDto {
   descripcion: string;
   /** Si true, al elegir este motivo se exige subir un documento adjunto. */
   requiereAdjunto: boolean;
+  /** Si true, las horas declaradas con este motivo son estimadas (cambia la etiqueta de la hora de retorno). */
+  esHoraEstimada: boolean;
 }
 
 export interface LugarSalidaDto {

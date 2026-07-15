@@ -22,6 +22,7 @@ export class GaMotivoEdit implements OnInit {
 
   descripcion = '';
   requiereAdjunto = false;
+  esHoraEstimada = false;
   submitted = false;
 
   constructor(
@@ -33,6 +34,7 @@ export class GaMotivoEdit implements OnInit {
   ngOnInit(): void {
     this.descripcion = this.motivo.descripcion;
     this.requiereAdjunto = this.motivo.requiereAdjunto;
+    this.esHoraEstimada = this.motivo.esHoraEstimada;
   }
 
   save(): void {
@@ -44,6 +46,7 @@ export class GaMotivoEdit implements OnInit {
       .edit(this.motivo.id, {
         descripcion: this.descripcion.trim(),
         requiereAdjunto: this.requiereAdjunto,
+        esHoraEstimada: this.esHoraEstimada,
       })
       .subscribe({
       next: (res) => {

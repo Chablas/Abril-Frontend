@@ -20,6 +20,7 @@ export class GaMotivoCreate {
 
   descripcion = '';
   requiereAdjunto = false;
+  esHoraEstimada = false;
   submitted = false;
 
   constructor(
@@ -34,7 +35,11 @@ export class GaMotivoCreate {
 
     this.loaderService.show();
     this.service
-      .create({ descripcion: this.descripcion.trim(), requiereAdjunto: this.requiereAdjunto })
+      .create({
+        descripcion: this.descripcion.trim(),
+        requiereAdjunto: this.requiereAdjunto,
+        esHoraEstimada: this.esHoraEstimada,
+      })
       .subscribe({
       next: (res) => {
         this.loaderService.hide();
