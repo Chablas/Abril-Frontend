@@ -373,7 +373,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           },
         },
         scales: {
-          y: { beginAtZero: true, max: 100, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          // Sin max fijo: ahora son deltas semanales (avance de esa semana), no % acumulado 0-100.
+          y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
           x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
