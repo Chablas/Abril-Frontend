@@ -11,7 +11,7 @@
     <label class="pgp-add" [style.--pgp-accent]="color">
       <i class="ti" [ngClass]="addIcon"></i>
       <span>{{ addLabel }}</span>
-      <input type="file" [accept]="accept" [multiple]="multiple" hidden (change)="onFilesSelected($event)" />
+      <input type="file" [accept]="accept" [attr.capture]="capture" [multiple]="multiple" hidden (change)="onFilesSelected($event)" />
     </label>
   }
 </div>

@@ -57,6 +57,11 @@ import { ProyectosArquitecturaComercialModal } from '../../../../../shared/compo
     @media (max-width: 768px) {
       .abril-table-wrap { display: none; }
       .rev-cards-mobile { display: block; }
+      /* .page-container tiene overflow-hidden para que .abril-table-wrap scrollee
+       * internamente en desktop; en mobile esa tabla está oculta y .rev-cards-mobile
+       * no es su propio contenedor de scroll, así que el overflow-hidden recortaba
+       * las cards que no entraban en pantalla. */
+      .page-container { overflow: visible; }
     }
   `],
 })

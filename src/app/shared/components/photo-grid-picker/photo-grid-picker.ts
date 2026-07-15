@@ -12,6 +12,7 @@ export class PhotoGridPicker {
   @Input() previews: string[] = [];
   @Input() max = 10;
   @Input() accept = 'image/*';
+  @Input() capture: string | null = 'environment';
   @Input() multiple = true;
   @Input() addLabel = 'Agregar foto';
   @Input() addIcon = 'ti-camera-plus';
