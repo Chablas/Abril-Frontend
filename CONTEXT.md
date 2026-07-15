@@ -4442,3 +4442,42 @@ Módulo `arquitectura-comercial/observaciones` revisado a fondo a pedido del usu
 - Verificar en celular real que las miniaturas ya cargan tras el proxy.
 - Decidir cómo reemplazar una foto de levantamiento específica cuando hay varias (hoy el lápiz se oculta en ese caso).
 - Si "Quién levanta" sale vacío para alguien que debería aparecer, revisar si tiene fila vigente en `worker_vinculaciones` (ver nota en CONTEXT.md del backend, sesión del mismo día).
+
+## Sesión 2026-07-15 — Módulo Gestión de Revisiones (nuevo, frontend) + mobile Observaciones + fixes de change detection
+
+**Módulo nuevo `arquitectura-comercial/revisiones`**, clon casi 1:1 de Observaciones (mismo componente `nueva-observacion`/`levantar-observacion`/lista/dashboard) con una capa extra: antes de reportar una observación hay que elegir una **Revisión** (catálogo Proyecto+Tipo+Lugar → nombre autogenerado, ver backend). Piezas nuevas:
+- `revision-catalogo-modal` — el popup "Agrega las revisiones que requieras" (réplica de la app legacy en Power Apps que el usuario mostró en captura): Proyecto, Tipo (`R1|R2|R1-AC|R2-AC|RF-AC`), Lugar (catálogo o "Otro lugar" manual), lista de revisiones con eliminar.
+- `nueva-revision-observacion` — Proyecto → Revisión (se puebla según proyecto elegido), Zona/Ambiente, Partida, Descripción, y las fotos de **Observación y Levantamiento lado a lado desde el inicio** (a pedido explícito del usuario, distinto del checkbox-toggle que usa Observaciones) — adjuntar la de levantamiento ES la señal de que se registra el levantamiento, no hay checkbox separado.
+- Catálogo "Lugar a revisar" integrado al `app-catalogo-modal` genérico compartido (nueva pestaña, tipo `lugares-revision`) — reutiliza el mismo CRUD que Partidas/Áreas responsables en vez de duplicar componente.
+- Rutas (`revisiones.routes.ts`), entrada en `navigation.service.ts` ("Gestión de Revisiones"), y `layout.ts` (`isFullPage()`).
+
+**Vista de cards en mobile** (a pedido del usuario, primero en Observaciones y después clonada a Revisiones): en pantallas ≤768px la tabla se reemplaza por una lista de cards — Código/Revisión + Estado arriba, Proyecto+Fecha y Reportado-por+Partida en pares de 2 columnas, Descripción abajo, y **Observación/Levantamiento lado a lado en dos contenedores propios con fotos más grandes** (56px vs 32px de la tabla) — si no hay foto de levantamiento aparece directo el botón "Levantar" dentro de ese mismo contenedor. CSS vive en el `styles` inline del propio componente (encapsulado, no global) — **decisión explícita**: por ahora queda scopeado solo a estas dos páginas; si funciona bien se promueve a componente compartido para toda la app (hay un comentario en el código marcando esto).
+
+**Bug real encontrado y arreglado — layout duplicado en mobile**: había una barra gris duplicada arriba en mobile (hamburger + avatar) porque `app-header` (componente legacy, con su propio `<app-sidebar-mobile>` interno) estaba montado sin condición en `layout.html`, duplicando lo que `app-abril-page-header` ya resuelve. Se sacó del layout entero — afecta a toda la app, no solo Revisiones. Causa raíz específica de por qué Observaciones lo mostraba: la ruta no estaba en la lista `isFullPage()` de `layout.ts` (a diferencia de `/arquitectura-comercial/dashboard` y `/actividades`, que sí estaban) — se agregó junto con `/revisiones`.
+
+**Bug real — "doble clic" para que aparezca contenido en modales compartidos**: `CatalogoModal`, `ProyectosArquitecturaComercialModal` y el nuevo `RevisionCatalogoModal` no llamaban `cdr.markForCheck()` tras sus callbacks async — con Zone.js + `provideHttpClient(withFetch())`, a veces la respuesta llegaba pero Angular no repintaba hasta el próximo evento de usuario (el "clic extra" que reportó el usuario). Se agregó `ChangeDetectorRef` + `markForCheck()` en **todos** los callbacks async de esos 3 componentes, y por el mismo motivo también en `ObservacionesLista` y `RevisionesLista` completas (filtros, lista, stats, partidas, fotos, edición) — antes solo lo tenían los dashboards y `nueva-observacion.ts`. **No confirmado si esto resuelve del todo** la demora percibida al cargar "Nueva observación" — quedó pendiente de verificar con el usuario, la sesión se cortó por límite de tokens antes de esa confirmación.
+
+**Resiliencia**: si `/filtros` falla, antes el FAB "Nueva observación" quedaba deshabilitado para siempre con el tooltip "Cargando proyectos..." (en ambos módulos) — ahora se habilita igual aunque el request falle.
+
+**Otros ajustes UI** (aplicados primero en Observaciones, algunos son globales):
+- Botón "Filtros" (`app-filter-trigger`, compartido en TODA la app) pasó del estilo chico (26px alto) al mismo look que Catálogos/Proyectos (12px/7px padding) — cambia en cualquier página que lo use, no solo Arquitectura Comercial.
+- `gap: 8px` agregado a `.abril-tabs__extra` en `abril-page-header.component.css` (global) — antes los botones de header quedaban pegados sin espacio.
+- En mobile, los botones proyectados en `tabsExtra` (Catálogos/Proyectos/Filtros/Revisiones) quedan solo con ícono — el texto se envuelve en `<span class="btn-label">` y una regla `@media` en `abril-page-header.component.css` lo oculta (global, pero requiere que cada página envuelva su texto en ese span para que aplique).
+- Cards KPI (Reportados/Completados/Pendientes/En Proceso): pasaron de grid 2×2 a una sola fila de 4, padding y tipografía más chicos — solo en Observaciones/Revisiones.
+- Lista abre con filtro `Estado = Pendiente` por defecto en ambos módulos.
+- Nueva foto "Observación" sin reemplazar: endpoint `POST .../{id}/fotos` (antes solo existía reemplazar una ya subida) — botón de upload en la lista donde antes solo se veía "—".
+
+### Archivos clave (sesión 2026-07-15)
+- `features/arquitectura-comercial/revisiones/**` (módulo completo nuevo)
+- `core/dtos/arquitectura-comercial/revisiones.model.ts`, `core/services/arquitectura-comercial/revisiones.service.ts`
+- `features/arquitectura-comercial/observaciones/pages/lista/observaciones-lista.{ts,html}` (cards mobile, markForCheck, KPIs)
+- `shared/components/layout/{layout.html,layout.ts}` (barra gris duplicada, isFullPage)
+- `shared/components/{catalogo-modal,proyectos-arquitectura-comercial-modal,filter-trigger}/*`
+- `shared/components/abril-page-header/abril-page-header.component.css` (gap, btn-label mobile)
+- `core/navigation/navigation.service.ts` (entrada "Gestión de Revisiones", fix bug real: módulo `habilitacion` ignoraba `featureKey` para usuarios staff)
+
+### Pendiente
+- **Confirmar si el fix de `markForCheck()` resolvió la demora real al abrir "Nueva observación"** — no se verificó tras el último cambio, sesión cortada por tokens.
+- **Falta migrar el historial completo de observaciones de Revisiones** (`RevisionesArqCom.csv`, ~1000 filas) a `ac_revision_observaciones` — solo se importó el catálogo de revisiones (22 filas), no las observaciones dentro de cada una. Ver CONTEXT.md del backend para el detalle del bug de mapeo de `proyecto_id` (SharePoint vs Abril) a tener en cuenta para ese import.
+- No se probó de punta a punta en el navegador el flujo completo de Revisiones (crear revisión → nueva observación → levantar) tras el último fix de timestamps del backend.
+- Evaluar si conviene desacoplar el FAB "Nueva observación" de que `/filtros` haya resuelto (hoy el botón depende de `filtrosListos`), en vez de solo mitigar con `markForCheck()`.
