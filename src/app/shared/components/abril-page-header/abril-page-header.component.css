@@ -153,6 +153,7 @@
 .abril-tabs__extra {
   display: flex;
   align-items: center;
+  gap: 8px;
   /* margin-left:auto en vez de justify-content:space-between en la fila: así
      tabsExtra (ej. el botón Filtros) siempre queda a la derecha, sea que
      haya pestañas al lado o no. Antes, sin pestañas, space-between con un
@@ -275,4 +276,18 @@
     flex-wrap: nowrap;
   }
   .abril-tabs__nav::-webkit-scrollbar { display: none; }
+
+  /* Botones proyectados en tabsExtra (Catálogos, Proyectos, Filtros, etc.):
+     en mobile quedan solo con el ícono — el texto ocupaba demasiado ancho y
+     empujaba las pestañas fuera de la vista (bug real: Observaciones AC). */
+  .abril-tabs__extra {
+    gap: 4px;
+    padding-right: 6px;
+  }
+  .abril-tabs__extra ::ng-deep button {
+    padding: 6px 8px !important;
+  }
+  .abril-tabs__extra ::ng-deep button .btn-label {
+    display: none;
+  }
 }

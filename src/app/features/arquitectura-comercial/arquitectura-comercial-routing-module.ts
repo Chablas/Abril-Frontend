@@ -47,6 +47,11 @@ const routes: Routes = [
         loadChildren: () =>
           import('./observaciones/observaciones.routes').then((m) => m.OBSERVACIONES_ROUTES),
       },
+      {
+        path: 'revisiones',
+        loadChildren: () =>
+          import('./revisiones/revisiones.routes').then((m) => m.REVISIONES_ROUTES),
+      },
     ],
   },
 ];

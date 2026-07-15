@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -32,6 +32,7 @@ export class CatalogoModal implements OnInit {
   readonly tabs: CatalogoTab[] = [
     { tipo: 'partidas', label: 'Partidas' },
     { tipo: 'areas-responsables', label: 'Áreas responsables' },
+    { tipo: 'lugares-revision', label: 'Lugar a revisar' },
   ];
 
   tipoActivo: CatalogoTipo = 'partidas';
@@ -45,6 +46,7 @@ export class CatalogoModal implements OnInit {
   constructor(
     private service: CatalogoService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -66,10 +68,12 @@ export class CatalogoModal implements OnInit {
       next: (items) => {
         this.items = items;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.errorService.handleError(err);
+        this.cdr.markForCheck();
       },
     });
   }
@@ -84,10 +88,12 @@ export class CatalogoModal implements OnInit {
         this.nuevoNombre = '';
         this.guardandoNuevo = false;
         this.saved.emit();
+        this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.guardandoNuevo = false;
         this.errorService.handleError(err);
+        this.cdr.markForCheck();
       },
     });
   }
@@ -109,8 +115,12 @@ export class CatalogoModal implements OnInit {
         item.nombre = actualizado.nombre;
         this.editandoId = null;
         this.saved.emit();
+        this.cdr.markForCheck();
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -120,8 +130,12 @@ export class CatalogoModal implements OnInit {
       next: () => {
         item.activo = nuevoActivo;
         this.saved.emit();
+        this.cdr.markForCheck();
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -138,8 +152,12 @@ export class CatalogoModal implements OnInit {
         next: () => {
           this.items = this.items.filter((i) => i.id !== item.id);
           this.saved.emit();
+          this.cdr.markForCheck();
         },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+        error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
       });
     });
   }

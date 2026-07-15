@@ -127,6 +127,7 @@ export class NavigationService {
       items: [
         { label: 'Gestión de Actividades',   route: '/arquitectura-comercial/dashboard', featureKey: 'arquitectura-comercial.dashboard' },
         { label: 'Gestión de Observaciones', route: '/arquitectura-comercial/observaciones/dashboard', featureKey: 'arquitectura-comercial.observaciones.dashboard' },
+        { label: 'Gestión de Revisiones',    route: '/arquitectura-comercial/revisiones/dashboard', featureKey: 'arquitectura-comercial.revisiones.dashboard' },
       ],
       groups: [],
     },
@@ -302,12 +303,16 @@ export class NavigationService {
       .map((m): NavModule | null => {
         if (m.key === 'habilitacion') {
           if (isContratista && modulos === 'SSOMA') return null;
-          const route = isContratista
-            ? '/habilitacion/dashboard-contratista'
-            : '/habilitacion/gestion';
+          if (isContratista) {
+            return {
+              ...m,
+              items: [{ label: m.items[0].label, route: '/habilitacion/dashboard-contratista' }],
+              groups: this.filterGroups(m.groups),
+            };
+          }
           return {
             ...m,
-            items: [{ label: m.items[0].label, route }],
+            items: this.filterItems(m.items),
             groups: this.filterGroups(m.groups),
           };
         }

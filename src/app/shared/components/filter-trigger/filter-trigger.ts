@@ -15,13 +15,14 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <button type="button" (click)="open.emit()"
-      class="relative flex items-center gap-1.5 h-[26px] px-[10px] rounded-[6px] border border-[#e2e8f0] text-[11px] font-medium text-gray-600 cursor-pointer hover:bg-[var(--color-abril-standard-light)] hover:border-[var(--color-abril-standard-border)]">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      class="relative flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
+      style="border-color:var(--color-abril-border)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 12h10M10 18h4"/>
       </svg>
-      Filtros
+      <span class="btn-label">Filtros</span>
       <span *ngIf="count > 0"
-        class="inline-flex items-center justify-center min-w-[15px] h-[15px] px-[3px] rounded-full text-[9px] font-semibold text-white"
+        class="inline-flex items-center justify-center min-w-[16px] h-[16px] px-[4px] rounded-full text-[10px] font-semibold text-white"
         style="background:var(--color-abril-standard)">{{ count }}</span>
     </button>
   `,

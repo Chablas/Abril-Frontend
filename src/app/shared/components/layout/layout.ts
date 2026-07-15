@@ -1,7 +1,6 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Sidebar } from '../sidebar/sidebar';
-import { Header } from '../header/header';
 import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
@@ -13,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, Header, SidebarMobile, NgIf],
+  imports: [RouterOutlet, Sidebar, SidebarMobile, NgIf],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
@@ -46,6 +45,8 @@ export class Layout implements OnDestroy {
       this.router.url.includes('/habilitacion/trabajadores') ||
       this.router.url.includes('/arquitectura-comercial/dashboard') ||
       this.router.url.includes('/arquitectura-comercial/actividades') ||
+      this.router.url.includes('/arquitectura-comercial/observaciones') ||
+      this.router.url.includes('/arquitectura-comercial/revisiones') ||
       this.router.url.includes('/arquitectura-comercial/gantt') ||
       this.router.url.includes('/arquitectura-comercial/plantilla') ||
       this.router.url.includes('/clinica/dashboard') ||

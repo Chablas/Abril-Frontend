@@ -1,4 +1,4 @@
-export type CatalogoTipo = 'partidas' | 'areas-responsables';
+export type CatalogoTipo = 'partidas' | 'areas-responsables' | 'lugares-revision';
 
 export interface CatalogoItemDTO {
   id: number;

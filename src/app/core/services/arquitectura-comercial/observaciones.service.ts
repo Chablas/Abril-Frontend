@@ -88,6 +88,12 @@ export class ObservacionesService {
     return this.http.put<ObservacionListItemDTO>(`${this.apiUrl}/${id}`, body, { headers: this.authHeaders() });
   }
 
+  agregarFotoObservacion(observacionId: number, file: File): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/${observacionId}/fotos`, form, { headers: this.authHeaders() });
+  }
+
   reemplazarFoto(fotoId: number, file: File): Observable<{ url: string }> {
     const form = new FormData();
     form.append('file', file);

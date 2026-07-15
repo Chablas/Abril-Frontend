@@ -95,7 +95,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
   ngOnInit(): void {
     forkJoin({
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.trabajadorService.getTrabajadores({ pageSize: 9999 }),
+      workers: this.trabajadorService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
       preguntas: this.service.getPreguntas(),
     }).subscribe({
       next: ({ proyectos, workers, preguntas }) => {

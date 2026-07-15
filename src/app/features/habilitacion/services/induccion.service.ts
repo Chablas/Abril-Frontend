@@ -70,4 +70,10 @@ export class InduccionService {
     });
   }
 
+  rechazar(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/rechazar`, {}, {
+      headers: buildHabHeaders(),
+    });
+  }
+
 }

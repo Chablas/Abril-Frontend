@@ -272,6 +272,11 @@
                 (click)="aprobarGrupo(grupo)">
           Aprobar seleccionados ({{ grupo.seleccionados.size }})
         </button>
+        <button type="button" class="btn-chip chip-red" style="padding:0.5rem 1rem"
+                [disabled]="grupo.seleccionados.size === 0"
+                (click)="rechazarGrupo(grupo)">
+          Rechazar seleccionados
+        </button>
       </div>
 
     </div>

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -31,6 +31,7 @@ export class ProyectosArquitecturaComercialModal implements OnInit {
   constructor(
     private projectService: ProjectService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -51,10 +52,12 @@ export class ProyectosArquitecturaComercialModal implements OnInit {
       next: (res) => {
         this.proyectos = res.data;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.errorService.handleError(err);
+        this.cdr.markForCheck();
       },
     });
   }
@@ -67,10 +70,12 @@ export class ProyectosArquitecturaComercialModal implements OnInit {
         p.tieneArquitecturaComercial = res.tieneArquitecturaComercial;
         this.togglingId = null;
         this.saved.emit();
+        this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.togglingId = null;
         this.errorService.handleError(err);
+        this.cdr.markForCheck();
       },
     });
   }

@@ -62,7 +62,7 @@ export class OptLista implements OnInit {
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999 }),
+      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
       empresas: this.authService.getEmpresasContratistas(),
     }).subscribe({
       next: ({ catalogos, proyectos, workers, empresas }) => {

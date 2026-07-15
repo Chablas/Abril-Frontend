@@ -2,15 +2,16 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ObservacionesService } from '../../../../../core/services/arquitectura-comercial/observaciones.service';
+import { RevisionesService } from '../../../../../core/services/arquitectura-comercial/revisiones.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { NavigationService } from '../../../../../core/navigation/navigation.service';
 import {
-  ObservacionListItemDTO,
-  ObservacionFiltrosDTO,
-  ObservacionStatsDTO,
-} from '../../../../../core/dtos/arquitectura-comercial/observaciones.model';
+  RevisionObservacionListItemDTO,
+  RevisionFiltrosDTO,
+  RevisionObservacionStatsDTO,
+  RevisionDTO,
+} from '../../../../../core/dtos/arquitectura-comercial/revisiones.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
@@ -18,8 +19,9 @@ import { FilterModal } from '../../../../../shared/components/filter-modal/filte
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-import { NuevaObservacion } from '../../components/nueva-observacion/nueva-observacion';
-import { LevantarObservacion } from '../../components/levantar-observacion/levantar-observacion';
+import { NuevaRevisionObservacion } from '../../components/nueva-revision-observacion/nueva-revision-observacion';
+import { LevantarRevisionObservacion } from '../../components/levantar-revision-observacion/levantar-revision-observacion';
+import { RevisionCatalogoModal } from '../../components/revision-catalogo-modal/revision-catalogo-modal';
 import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
 import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
@@ -27,7 +29,7 @@ import { ProyectosArquitecturaComercialModal } from '../../../../../shared/compo
 
 @Component({
   standalone: true,
-  selector: 'app-arq-comercial-observaciones-lista',
+  selector: 'app-arq-comercial-revisiones-lista',
   imports: [
     CommonModule,
     FormsModule,
@@ -38,45 +40,40 @@ import { ProyectosArquitecturaComercialModal } from '../../../../../shared/compo
     SearchInput,
     SearchSelect,
     AbrilBulkActionDirective,
-    NuevaObservacion,
-    LevantarObservacion,
+    NuevaRevisionObservacion,
+    LevantarRevisionObservacion,
+    RevisionCatalogoModal,
     CatalogoModal,
     ProyectosArquitecturaComercialModal,
   ],
-  templateUrl: './observaciones-lista.html',
+  templateUrl: './revisiones-lista.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
-    /* Vista de cards en mobile (en vez de forzar la tabla): permite agrupar 2
-     * campos por fila y mostrar Observación/Levantamiento lado a lado con
-     * fotos más grandes — cosas que una conversión tabla→bloque no permite
-     * bien. Encapsulado a este componente a propósito (por ahora solo
-     * Observaciones); si el patrón funciona bien se promueve a un componente
-     * compartido para toda la app, incluyendo el futuro módulo "Gestión de
-     * Revisiones". */
-    .obs-cards-mobile { display: none; }
+    /* Vista de cards en mobile — mismo patrón encapsulado que Observaciones
+     * (ver observaciones-lista.ts). Si funciona bien acá también, se promueve
+     * a componente compartido para toda la app. */
+    .rev-cards-mobile { display: none; }
     @media (max-width: 768px) {
       .abril-table-wrap { display: none; }
-      .obs-cards-mobile { display: block; }
+      .rev-cards-mobile { display: block; }
     }
   `],
 })
-export class ObservacionesLista implements OnInit {
+export class RevisionesLista implements OnInit {
   anioActual = new Date().getFullYear();
 
-  items: ObservacionListItemDTO[] = [];
+  items: RevisionObservacionListItemDTO[] = [];
   total = 0;
   pagina = 1;
   porPagina = DEFAULT_PAGE_SIZE;
 
-  filtros: ObservacionFiltrosDTO = { proyectos: [], partidas: [], estados: [] };
-  /** false hasta que loadFiltros() resuelve — evita abrir "Nueva observación" con el combo
-   * de proyectos todavía vacío (llegaba después, por eso hacía falta un segundo click). */
+  filtros: RevisionFiltrosDTO = { proyectos: [], partidas: [], estados: [], tipos: [] };
   filtrosListos = false;
 
   proyectoId: number | null = null;
-  /** Por defecto se muestran las observaciones Pendientes — es lo que el
-   * equipo de campo necesita ver primero al entrar a la lista. */
+  revisionId: number | null = null;
+  revisionesDelProyecto: RevisionDTO[] = [];
   estado: string | null = 'Pendiente';
   partida: string | null = null;
   desde: string | null = null;
@@ -87,36 +84,27 @@ export class ObservacionesLista implements OnInit {
   showNuevaModal = false;
   showLevantarModal = false;
   showCatalogoModal = false;
+  showRevisionCatalogoModal = false;
   showProyectosModal = false;
-  observacionParaLevantar: ObservacionListItemDTO | null = null;
+  observacionParaLevantar: RevisionObservacionListItemDTO | null = null;
 
-  /** Catálogo curado de partidas (reemplaza los valores "distintos usados" de filtros.partidas). */
   partidasCatalogo: string[] = [];
 
-  /** Edición inline de una fila — solo disponible con el featureKey .editar. */
   editandoId: number | null = null;
-  editForm = { personaReporta: '', partidaReportada: '' as string | null, descripcion: '' };
+  editForm = { personaReporta: '', partidaReportada: '' as string | null, descripcion: '', zonaAmbiente: '' };
   guardandoEdicion = false;
 
   get puedeEditar(): boolean {
-    return this.navigationService.isFeatureAllowed('arquitectura-comercial.observaciones.editar');
+    return this.navigationService.isFeatureAllowed('arquitectura-comercial.revisiones.editar');
   }
 
-  stats: ObservacionStatsDTO | null = null;
+  stats: RevisionObservacionStatsDTO | null = null;
   lightboxUrl: string | null = null;
 
-  get kpiReportados(): number {
-    return this.stats?.reportados ?? 0;
-  }
-  get kpiCompletados(): number {
-    return this.stats?.completados ?? 0;
-  }
-  get kpiPendientes(): number {
-    return this.stats?.pendientes ?? 0;
-  }
-  get kpiEnProceso(): number {
-    return this.stats?.enProceso ?? 0;
-  }
+  get kpiReportados(): number { return this.stats?.reportados ?? 0; }
+  get kpiCompletados(): number { return this.stats?.completados ?? 0; }
+  get kpiPendientes(): number { return this.stats?.pendientes ?? 0; }
+  get kpiEnProceso(): number { return this.stats?.enProceso ?? 0; }
 
   filtrarPorKpi(estadoBuscado: string | null): void {
     this.estado = estadoBuscado;
@@ -136,17 +124,13 @@ export class ObservacionesLista implements OnInit {
     });
   }
 
-  abrirLightbox(url: string): void {
-    this.lightboxUrl = url;
-  }
-
-  cerrarLightbox(): void {
-    this.lightboxUrl = null;
-  }
+  abrirLightbox(url: string): void { this.lightboxUrl = url; }
+  cerrarLightbox(): void { this.lightboxUrl = null; }
 
   get filtrosActivos(): number {
     let n = 0;
     if (this.proyectoId) n++;
+    if (this.revisionId) n++;
     if (this.estado) n++;
     if (this.partida) n++;
     if (this.desde) n++;
@@ -155,9 +139,7 @@ export class ObservacionesLista implements OnInit {
     return n;
   }
 
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.total / this.porPagina));
-  }
+  get totalPages(): number { return Math.max(1, Math.ceil(this.total / this.porPagina)); }
 
   get estadoOptions(): { value: string; label: string }[] {
     return this.filtros.estados.map((e) => ({ value: e, label: e }));
@@ -168,7 +150,7 @@ export class ObservacionesLista implements OnInit {
   }
 
   constructor(
-    private service: ObservacionesService,
+    private service: RevisionesService,
     private catalogoService: CatalogoService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
@@ -196,12 +178,11 @@ export class ObservacionesLista implements OnInit {
     });
   }
 
-  onCatalogoGuardado(): void {
-    this.loadPartidasCatalogo();
-  }
-
-  onProyectosGuardado(): void {
+  onCatalogoGuardado(): void { this.loadPartidasCatalogo(); }
+  onProyectosGuardado(): void { this.loadFiltros(); }
+  onRevisionCatalogoGuardado(): void {
     this.loadFiltros();
+    if (this.proyectoId) this.loadRevisionesDelProyecto(this.proyectoId);
   }
 
   loadFiltros(): void {
@@ -215,7 +196,23 @@ export class ObservacionesLista implements OnInit {
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
+        // Sin esto, si /filtros falla el FAB "Nueva observación" queda deshabilitado para
+        // siempre con el tooltip "Cargando proyectos..." — mejor dejarlo habilitado (el modal
+        // ya maneja un combo de proyectos vacío) que trabado sin explicación.
         this.filtrosListos = true;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  loadRevisionesDelProyecto(proyectoId: number): void {
+    this.service.getCatalogo(proyectoId).subscribe({
+      next: (data) => {
+        this.revisionesDelProyecto = data;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
@@ -226,6 +223,7 @@ export class ObservacionesLista implements OnInit {
     this.loaderService.show();
     this.service
       .getObservaciones({
+        revisionId: this.revisionId,
         proyectoId: this.proyectoId,
         estado: this.estado,
         partida: this.partida,
@@ -257,13 +255,23 @@ export class ObservacionesLista implements OnInit {
 
   onProyectoFiltroChange(id: number | null): void {
     this.proyectoId = id;
+    this.revisionId = null;
+    this.revisionesDelProyecto = [];
+    if (id) this.loadRevisionesDelProyecto(id);
     this.onFilterChange();
     this.loadStats();
+  }
+
+  onRevisionFiltroChange(id: number | null): void {
+    this.revisionId = id;
+    this.onFilterChange();
   }
 
   limpiarFiltros(): void {
     const proyectoCambio = this.proyectoId !== null;
     this.proyectoId = null;
+    this.revisionId = null;
+    this.revisionesDelProyecto = [];
     this.estado = null;
     this.partida = null;
     this.desde = null;
@@ -273,7 +281,6 @@ export class ObservacionesLista implements OnInit {
     if (proyectoCambio) this.loadStats();
   }
 
-  /** Atajo "Este mes": setea desde/hasta al primer y último día del mes actual. */
   filtrarMesActual(): void {
     const hoy = new Date();
     const primero = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -283,7 +290,6 @@ export class ObservacionesLista implements OnInit {
     this.onFilterChange();
   }
 
-  /** Atajo "Este año": setea desde/hasta al primer y último día del año actual. */
   filtrarAnioActual(): void {
     const anio = new Date().getFullYear();
     this.desde = this.toDateInput(new Date(anio, 0, 1));
@@ -310,25 +316,23 @@ export class ObservacionesLista implements OnInit {
     }
   }
 
-  /** fotoId → timestamp del último reemplazo, para forzar al navegador a repedir la imagen
-   * (la URL de fotoContenidoUrl es la misma antes/después de "cambiar foto"). */
   private fotoCacheBust = new Map<number, number>();
 
-  fotoObservacion(o: ObservacionListItemDTO): string | null {
+  fotoObservacion(o: RevisionObservacionListItemDTO): string | null {
     const id = this.fotoObservacionId(o);
     return id ? this.urlConCacheBust(id) : null;
   }
 
-  fotoObservacionId(o: ObservacionListItemDTO): number | null {
+  fotoObservacionId(o: RevisionObservacionListItemDTO): number | null {
     return o.fotos.find((f) => f.tipo === 'Observacion')?.id ?? null;
   }
 
-  fotoLevantamiento(o: ObservacionListItemDTO): string | null {
+  fotoLevantamiento(o: RevisionObservacionListItemDTO): string | null {
     const id = this.fotoLevantamientoId(o);
     return id ? this.urlConCacheBust(id) : null;
   }
 
-  fotoLevantamientoId(o: ObservacionListItemDTO): number | null {
+  fotoLevantamientoId(o: RevisionObservacionListItemDTO): number | null {
     return o.fotos.find((f) => f.tipo === 'Levantamiento')?.id ?? null;
   }
 
@@ -338,12 +342,32 @@ export class ObservacionesLista implements OnInit {
     return v ? `${base}&v=${v}` : base;
   }
 
-  fotosLevantamientoExtra(o: ObservacionListItemDTO): number {
+  fotosLevantamientoExtra(o: RevisionObservacionListItemDTO): number {
     return Math.max(0, o.fotos.filter((f) => f.tipo === 'Levantamiento').length - 1);
   }
 
-  /** Reemplaza el archivo de una foto ya subida — "me equivoqué de foto". */
-  cambiarFoto(fotoId: number | null, o: ObservacionListItemDTO, event: Event): void {
+  agregarFoto(o: RevisionObservacionListItemDTO, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+
+    this.loaderService.show();
+    this.service.agregarFotoObservacion(o.id, file).subscribe({
+      next: () => {
+        this.load();
+        this.loaderService.hide();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cambiarFoto(fotoId: number | null, o: RevisionObservacionListItemDTO, event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     input.value = '';
@@ -366,47 +390,24 @@ export class ObservacionesLista implements OnInit {
     });
   }
 
-  /** Sube la primera foto de "Observacion" cuando la observación se creó sin ella. */
-  agregarFoto(o: ObservacionListItemDTO, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
-    if (!file) return;
-
-    this.loaderService.show();
-    this.service.agregarFotoObservacion(o.id, file).subscribe({
-      next: () => {
-        this.load();
-        this.loaderService.hide();
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  abrirLevantar(o: ObservacionListItemDTO): void {
+  abrirLevantar(o: RevisionObservacionListItemDTO): void {
     this.observacionParaLevantar = o;
     this.showLevantarModal = true;
   }
 
-  iniciarEdicion(o: ObservacionListItemDTO): void {
+  iniciarEdicion(o: RevisionObservacionListItemDTO): void {
     this.editandoId = o.id;
     this.editForm = {
       personaReporta: o.personaReporta ?? '',
       partidaReportada: o.partidaReportada,
       descripcion: o.descripcion,
+      zonaAmbiente: o.zonaAmbiente ?? '',
     };
   }
 
-  cancelarEdicion(): void {
-    this.editandoId = null;
-  }
+  cancelarEdicion(): void { this.editandoId = null; }
 
-  guardarEdicion(o: ObservacionListItemDTO): void {
+  guardarEdicion(o: RevisionObservacionListItemDTO): void {
     if (!this.editForm.descripcion.trim() || this.guardandoEdicion) return;
     this.guardandoEdicion = true;
     this.service
@@ -414,6 +415,7 @@ export class ObservacionesLista implements OnInit {
         personaReporta: this.editForm.personaReporta.trim() || null,
         partidaReportada: this.editForm.partidaReportada,
         descripcion: this.editForm.descripcion.trim(),
+        zonaAmbiente: this.editForm.zonaAmbiente.trim() || null,
       })
       .subscribe({
         next: (actualizado) => {
@@ -437,7 +439,6 @@ export class ObservacionesLista implements OnInit {
     this.loadStats();
   }
 
-  /** Modo "añadir otra": el modal sigue abierto, solo refrescamos lista/stats. */
   onNuevaGuardadaContinuar(): void {
     this.pagina = 1;
     this.load();
@@ -451,7 +452,7 @@ export class ObservacionesLista implements OnInit {
     this.loadStats();
   }
 
-  trackById(_: number, o: ObservacionListItemDTO): number {
+  trackById(_: number, o: RevisionObservacionListItemDTO): number {
     return o.id;
   }
 }

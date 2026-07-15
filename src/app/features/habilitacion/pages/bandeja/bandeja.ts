@@ -324,6 +324,40 @@ export class Bandeja implements OnInit, OnDestroy {
     });
   }
 
+  rechazarGrupo(grupo: InduccionGrupo): void {
+    const asistentes = grupo.items.filter((i) => i.ingresoConfirmado && grupo.seleccionados.has(i.id));
+    if (asistentes.length === 0) return;
+    const ids = asistentes.map((i) => i.id);
+    Swal.fire({
+      icon: 'warning',
+      title: `¿Rechazar ${ids.length} inducción(es)?`,
+      html: `<div style="text-align:left;font-size:0.9rem">
+              <strong>${grupo.proyectoNombre}</strong><br/>
+              <span style="color:#6b7280">${grupo.empresaNombre} · ${grupo.fechaProgramada.substring(0, 10)}</span><br/>
+              <span style="color:#6b7280">El trabajador quedará libre para volver a programarse.</span>
+            </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.loaderService.show();
+      forkJoin(ids.map((id) => this.induccionService.rechazar(id))).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'Rechazados', timer: 1500, showConfirmButton: false });
+          this.loadInducciones();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
   // ── Selección masiva ──────────────────────────────────────
 
   toggleSelect(id: number): void {

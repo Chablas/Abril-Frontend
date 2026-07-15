@@ -76,7 +76,7 @@ export class AuditoriaAtsListaComponent implements OnInit {
   ngOnInit(): void {
     forkJoin({
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.trabajadorService.getTrabajadores({ pageSize: 9999 }),
+      workers: this.trabajadorService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
     }).subscribe({
       next: ({ proyectos, workers }) => {
         this.proyectos = [...proyectos.data].sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));

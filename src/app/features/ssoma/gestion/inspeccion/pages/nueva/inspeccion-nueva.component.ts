@@ -172,7 +172,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     forkJoin({
       catalogos: this.inspeccionService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999 }),
+      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
     }).subscribe({
       next: ({ catalogos, proyectos, workers }) => {
         this.tipos = catalogos.tipos;
