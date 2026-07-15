@@ -4,7 +4,7 @@ Contexto operativo para sesiones de Claude Code. Complementa a `CLAUDE.md` (que 
 
 > **Convenciones**: rutas tipo `path/file.ts:NN` apuntan al archivo y línea referida.
 > El idioma de la UI es **español (es-PE)**; títulos en `route.data.titulo` van en MAYÚSCULAS.
-> **Última actualización**: 2026-07-13 — Paleta corporativa de 10 colores por rama en la tabla de cronograma (`color-mix()` en CSS en vez de precálculo en TS), tratamiento tipo chip para desfase/semáforo/avance, fix de hover en filas nivel 1.
+> **Última actualización**: 2026-07-15 — Movido el componente "Cronograma de Hitos" (`milestone-schedule`) de Proyectos a Mejora Continua: nueva ruta `/mejora-continua/milestone-schedule`, featureKey renombrado, menú y 8 tab-bars actualizados.
 
 ---
 
@@ -4373,3 +4373,26 @@ Reemplazo de la paleta de 4 colores de rama (sesión 2026-07-12) por 10 tonos co
 - Chips de fondo propio para DESFASE INI./FIN. (`.desfase-chip`), SEMÁFORO (`.sema-chip`, halo circular) y AVANCE (`.avance-wrap` con padding+radius), todos con `rgba(255,255,255,0.85)` sobre filas `row-dark` y `rgba(0,0,0,0.04)` sobre `row-light` — mismo criterio que ya usaba el badge de ESTADO (no tocado). Los overrides de color por fila en `.avance-pct`/`.avance-bar-bg` se quitaron porque ahora esos elementos viven dentro de un chip de fondo neutro, no directo sobre el color de fila.
 
 **Pendiente / no verificado en vivo**: el border-radius de 12px y el padding de las filas nivel 1/2 no se verificaron visualmente contra las ~81 actividades de la plantilla de Proyecto (sin acceso a browser/credenciales en este entorno) — si se ve muy espaciado en una tabla densa, bajar a 6-8px es un cambio de una sola línea (buscar `border-radius: 12px`, 4 ocurrencias).
+
+## Sesión 2026-07-15
+
+### Movido "Cronograma de Hitos" de Proyectos a Mejora Continua
+
+Reubicación completa del feature `milestone-schedule`, precedida de una fase de investigación (ubicación/estructura, referencias cruzadas, esquema de BD `feature`/`module`/`role_feature`, uso puntual en SSOMA) antes de tocar nada.
+
+**Movido con `git mv`** (conserva historial) de `src/app/features/projects/milestone-schedule/` a `src/app/features/mejora-continua/milestone-schedule/` — los 4 archivos del componente (`.ts`/`.html`/`.css`/`.spec.ts`) más `services/milestone-schedule-projects.service.ts`. Los imports internos no necesitaron tocarse: ambas rutas (`features/projects/...` y `features/mejora-continua/...`) tienen la misma profundidad, así que las referencias relativas a `core/` y `shared/` siguen resolviendo igual. Los DTOs/services compartidos (`core/services/milestoneSchedule.service.ts`, `milestoneScheduleHistory.service.ts`, `milestone.service.ts`, `core/dtos/milestone*`) **no se movieron** — siguen en `core/`, los sigue usando también SSOMA (ver abajo).
+
+**Routing**: removida la ruta de `features/projects/proyectos.routes.ts` (y su import eager de `MilestoneSchedule`). Agregada como primera entrada de `features/mejora-continua/mejora-continua.routes.ts`, con `loadComponent` lazy (siguiendo el estilo ya establecido en ese archivo, a diferencia del import eager que tenía en `proyectos.routes.ts`) → `/mejora-continua/milestone-schedule`. `featureKey` renombrado de `projects.milestone-schedule` a `mejora-continua.milestone-schedule`. Sin redirect de la ruta vieja — dejó de existir.
+
+**`core/navigation/navigation.service.ts`**: entrada movida del módulo `proyectos` al de `mejora-continua`, como primer ítem del submenú (antes de "Dashboard" y "Lecciones aprendidas"), con el featureKey nuevo.
+
+**8 tab-bars actualizadas** (`app-abril-page-header [tabs]` hardcodeaba `/projects/milestone-schedule` en cada una): el propio `milestone-schedule.html` (nueva ubicación), `report-response-control.html`, `actas-reunion.html`, `cronograma-actividades/proyectos-cronograma-list.html` (no `cronograma-actividades.html` — ese no tenía la referencia), `resident-monitoring-measurement.html`, `projects-dashboard.html`, `ivt-control.html`, `construction-logbook-control.html`, `configuration/pages/milestones/milestones.html`.
+
+**SSOMA — `ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`**: tiene una tabla propia de cronograma (lee/escribe contra los mismos services de `core/`, sin Gantt) con un botón "Ver Gantt" (`irACronograma()`) que navegaba a la ruta vieja — actualizado a `/mejora-continua/milestone-schedule`. Comentarios textuales en `.ts:30,90,388` y `.html:13,31` también actualizados. No se tocó la tabla propia de SSOMA ni la lógica de `queryParams` que le pasa al componente destino — **bug preexistente sin relación**: `MilestoneSchedule` nunca leyó `ActivatedRoute.queryParams`, así que `projectId`/`projectDescription` viajan pero no hacen nada; queda para otra sesión si se decide arreglarlo.
+
+**Build**: `ng build` limpio (0 errores, mismos warnings preexistentes de siempre — bundle budget, deps CommonJS no-ESM, NG8102/NG8107 en otros módulos).
+
+### Pendiente / fuera de alcance de esta sesión
+1. **BD**: la fila del feature en la tabla `feature` (columna `feature_key` = `projects.milestone-schedule`) sigue apuntando al módulo/key viejo — falta correr en BD algo como `UPDATE feature SET feature_key = 'mejora-continua.milestone-schedule', module_id = (SELECT module_id FROM module WHERE module_name = 'Mejora Continua') WHERE feature_key = 'projects.milestone-schedule'`, y verificar cuántas filas en `role_feature` apuntan a ese `feature_id` (se confirmó el esquema por código fuente de `Abril_Backend`, pero no se pudo ejecutar el SELECT real — no hay tool de conexión a BD en este entorno).
+2. El bug de `queryParams` muertos en `irACronograma()` (SSOMA) mencionado arriba, no arreglado a propósito (fuera de alcance pedido por el usuario).
+3. No se verificó visualmente en navegador (sin credenciales/acceso en este entorno) — solo se validó con `ng build`.
