@@ -7,7 +7,11 @@ import { SearchSelect } from '../../../../../../../shared/components/search-sele
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
 import { RevisoresAreasService } from '../../services/revisores-areas.service';
-import { AreaRevisorItemDTO, AreaRevisorOptionDTO } from '../../dtos/areaRevisor.model';
+import {
+  AreaRevisorAsignadoDTO,
+  AreaRevisorItemDTO,
+  AreaRevisorOptionDTO,
+} from '../../dtos/areaRevisor.model';
 
 /** Fila editable: la posición en la lista define la prioridad (1 = primera). */
 interface RevisorRow {
@@ -29,10 +33,22 @@ interface RevisorRow {
 export class RevisoresAreasEditar implements OnInit {
   @Input() area!: AreaRevisorItemDTO;
   @Input() options: AreaRevisorOptionDTO[] = [];
+  /** null = revisores a nivel de área; con valor = revisores del proyecto dentro del área. */
+  @Input() projectId: number | null = null;
+  /** Nombre del proyecto (para el título) cuando se edita el alcance de un proyecto. */
+  @Input() projectName?: string;
+  /** Revisores iniciales del alcance editado. Por defecto los revisores de área. */
+  @Input() revisoresIniciales?: AreaRevisorAsignadoDTO[];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   rows: RevisorRow[] = [];
+
+  get titulo(): string {
+    return this.projectName
+      ? 'EDITAR REVISORES · ' + this.projectName
+      : 'EDITAR REVISORES · ' + (this.area.areaName || 'Área');
+  }
 
   constructor(
     private service: RevisoresAreasService,
@@ -41,7 +57,8 @@ export class RevisoresAreasEditar implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.rows = [...(this.area.revisores ?? [])]
+    const iniciales = this.revisoresIniciales ?? this.area.revisores ?? [];
+    this.rows = [...iniciales]
       .sort((a, b) => a.ordenPrioridad - b.ordenPrioridad)
       .map((r) => ({ revisorWorkerId: r.revisorWorkerId, active: r.active }));
     if (this.rows.length === 0) this.agregar();
@@ -84,6 +101,7 @@ export class RevisoresAreasEditar implements OnInit {
     this.loaderService.show();
     this.service
       .updateRevisores(this.area.areaScopeId, {
+        projectId: this.projectId,
         // La posición define la prioridad: 1 = primera fila.
         revisores: validas.map((r, i) => ({
           revisorWorkerId: r.revisorWorkerId!,

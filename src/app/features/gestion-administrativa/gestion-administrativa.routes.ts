@@ -28,6 +28,18 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKey: 'gestion-administrativa.gestion-salidas',
     },
   },
+  {
+    path: 'delegacion-revision',
+    loadComponent: () =>
+      import('./features/delegacion-revision/components/delegacion-revision').then(
+        (m) => m.DelegacionRevision,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'DELEGACIÓN DE REVISIÓN',
+      featureKey: 'gestion-administrativa.delegacion-revision',
+    },
+  },
   // Contenedor de configuración: cada sección conserva su ruta, featureKey y
   // roleGuard, pero todas renderizan GaConfiguracion (que conmuta la sección
   // activa con app-section-tabs a partir de data.seccion).

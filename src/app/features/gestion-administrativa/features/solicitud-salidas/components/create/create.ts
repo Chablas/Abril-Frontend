@@ -29,8 +29,8 @@ interface TrayectoForm {
   lugarDestinoId: number | null;
   lugarDestinoLibre: string | null;
   destinoLibre: boolean;
-  /** Documento adjunto (prueba) — obligatorio cuando el motivo elegido lo requiere. */
-  adjunto: SelectedFile | null;
+  /** Documentos adjuntos (prueba) — al menos uno obligatorio cuando el motivo elegido lo requiere. */
+  adjuntos: SelectedFile[];
 }
 
 @Component({
@@ -111,7 +111,7 @@ export class SolicitudSalidaCreate implements OnInit {
       lugarDestinoId: null,
       lugarDestinoLibre: null,
       destinoLibre: false,
-      adjunto: null,
+      adjuntos: [],
     };
   }
 
@@ -193,7 +193,7 @@ export class SolicitudSalidaCreate implements OnInit {
     t.motivoLibreOn = checked;
     t.motivoId = null;
     t.motivoLibre = null;
-    t.adjunto = null;
+    t.adjuntos = [];
   }
 
   // ── Documento adjunto por motivo ───────────────────────────────────
@@ -206,16 +206,17 @@ export class SolicitudSalidaCreate implements OnInit {
 
   onMotivoChange(t: TrayectoForm, motivoId: number | null): void {
     t.motivoId = motivoId;
-    // El adjunto pertenece al motivo elegido: al cambiarlo se descarta.
-    t.adjunto = null;
+    // Los adjuntos pertenecen al motivo elegido: al cambiarlo se descartan.
+    t.adjuntos = [];
   }
 
+  /** El file-selector emite un evento por archivo; los acumulamos en el trayecto. */
   onAdjuntoSelected(t: TrayectoForm, file: SelectedFile): void {
-    t.adjunto = file;
+    t.adjuntos.push(file);
   }
 
-  quitarAdjunto(t: TrayectoForm): void {
-    t.adjunto = null;
+  quitarAdjunto(t: TrayectoForm, index: number): void {
+    t.adjuntos.splice(index, 1);
   }
 
   onOrigenLibreChange(t: TrayectoForm, checked: boolean): void {
@@ -248,8 +249,8 @@ export class SolicitudSalidaCreate implements OnInit {
     if (!t.lugarDestinoId && !t.lugarDestinoLibre?.trim()) errs.push(`${pref}: lugar de destino`);
     if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
       errs.push(`${pref}: origen y destino no pueden ser iguales`);
-    if (this.motivoRequiereAdjunto(t) && !t.adjunto)
-      errs.push(`${pref}: el motivo seleccionado requiere un documento adjunto`);
+    if (this.motivoRequiereAdjunto(t) && t.adjuntos.length === 0)
+      errs.push(`${pref}: el motivo seleccionado requiere al menos un documento adjunto`);
     return errs;
   }
 
@@ -286,10 +287,11 @@ export class SolicitudSalidaCreate implements OnInit {
       })),
     };
 
-    // Documento adjunto por índice de trayecto (solo los que tienen archivo).
-    const adjuntos = this.trayectos
-      .map((t, i) => ({ trayectoIndex: i, file: t.adjunto?.file }))
-      .filter((a): a is { trayectoIndex: number; file: File } => !!a.file);
+    // Documentos adjuntos por índice de trayecto (N por trayecto). Se aplana:
+    // cada archivo repite el índice de su trayecto.
+    const adjuntos = this.trayectos.flatMap((t, i) =>
+      t.adjuntos.map((a) => ({ trayectoIndex: i, file: a.file })),
+    );
 
     this.loaderService.show();
     this.service.create(payload, adjuntos).subscribe({

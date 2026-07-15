@@ -7,9 +7,11 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { Roles } from '../../../../../../core/constants/roles';
 import {
+  AreaProyectoRevisoresDTO,
   AreaRevisorAsignadoDTO,
   AreaRevisorItemDTO,
   AreaRevisorOptionDTO,
+  ProyectoOptionDTO,
 } from '../dtos/areaRevisor.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
@@ -41,6 +43,8 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
 export class RevisoresAreas implements OnInit {
   rows: AreaRevisorItemDTO[] = [];
   options: AreaRevisorOptionDTO[] = [];
+  /** Todos los proyectos activos (para armar las subfilas de las áreas filtradas por proyecto). */
+  proyectos: ProyectoOptionDTO[] = [];
 
   searchText = '';
   /** Filtro por revisor asignado: workerId del revisor o null = todos. */
@@ -57,6 +61,10 @@ export class RevisoresAreas implements OnInit {
   detalleDe: AreaRevisorItemDTO | null = null;
   /** Área con el modal de edición abierto. null = cerrado. */
   editando: AreaRevisorItemDTO | null = null;
+  /** Contexto de proyecto de los modales (null = alcance de área). */
+  scopeProjectId: number | null = null;
+  scopeProjectName: string | undefined;
+  scopeRevisores: AreaRevisorAsignadoDTO[] | undefined;
 
   /**
    * Solo el ADMINISTRADOR DE SOLICITUD DE SALIDAS ve todas las áreas y puede
@@ -84,6 +92,7 @@ export class RevisoresAreas implements OnInit {
       next: (data) => {
         this.rows = data.areas;
         this.options = data.options;
+        this.proyectos = data.proyectos ?? [];
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -96,11 +105,41 @@ export class RevisoresAreas implements OnInit {
   // ── Modales ───────────────────────────────────────────────────────────
 
   openDetalle(item: AreaRevisorItemDTO): void {
+    this.clearScope();
     this.detalleDe = item;
   }
 
   openEdit(item: AreaRevisorItemDTO): void {
+    this.clearScope();
     this.editando = item;
+  }
+
+  /** Abre el detalle de un proyecto dentro de un área filtrada por proyecto. */
+  openDetalleProyecto(item: AreaRevisorItemDTO, proj: AreaProyectoRevisoresDTO): void {
+    this.scopeProjectId = proj.projectId;
+    this.scopeProjectName = proj.projectName;
+    this.scopeRevisores = proj.revisores;
+    this.detalleDe = item;
+  }
+
+  /** Abre la edición de un proyecto dentro de un área filtrada por proyecto. */
+  openEditProyecto(item: AreaRevisorItemDTO, proj: AreaProyectoRevisoresDTO): void {
+    this.scopeProjectId = proj.projectId;
+    this.scopeProjectName = proj.projectName;
+    this.scopeRevisores = proj.revisores;
+    this.editando = item;
+  }
+
+  private clearScope(): void {
+    this.scopeProjectId = null;
+    this.scopeProjectName = undefined;
+    this.scopeRevisores = undefined;
+  }
+
+  closeModales(): void {
+    this.detalleDe = null;
+    this.editando = null;
+    this.clearScope();
   }
 
   onSaved(): void {
@@ -108,16 +147,43 @@ export class RevisoresAreas implements OnInit {
     this.load();
   }
 
+  // ── Filtrar por proyecto ──────────────────────────────────────────────
+
+  toggleFiltroProyecto(item: AreaRevisorItemDTO): void {
+    const nuevo = !item.filtraPorProyecto;
+    this.loaderService.show();
+    this.service.setFiltroProyecto(item.areaScopeId, { filtraPorProyecto: nuevo }).subscribe({
+      next: () => {
+        item.filtraPorProyecto = nuevo;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Subfilas de proyecto de un área filtrada: un proyecto por cada proyecto activo, con sus revisores. */
+  proyectosDeArea(item: AreaRevisorItemDTO): AreaProyectoRevisoresDTO[] {
+    const asignados = new Map<number, AreaProyectoRevisoresDTO>();
+    for (const p of item.proyectos ?? []) asignados.set(p.projectId, p);
+    return this.proyectos.map(
+      (p) =>
+        asignados.get(p.projectId) ?? { projectId: p.projectId, projectName: p.projectName, revisores: [] },
+    );
+  }
+
   // ── Celda "Revisores" ─────────────────────────────────────────────────
 
   /** Revisores ordenados por prioridad. */
-  revisoresOrdenados(item: AreaRevisorItemDTO): AreaRevisorAsignadoDTO[] {
-    return [...(item.revisores ?? [])].sort((a, b) => a.ordenPrioridad - b.ordenPrioridad);
+  revisoresOrdenados(revisores: AreaRevisorAsignadoDTO[]): AreaRevisorAsignadoDTO[] {
+    return [...(revisores ?? [])].sort((a, b) => a.ordenPrioridad - b.ordenPrioridad);
   }
 
   /** Primer revisor activo (el que recibe las solicitudes hoy). */
-  revisorPrincipal(item: AreaRevisorItemDTO): AreaRevisorAsignadoDTO | undefined {
-    return this.revisoresOrdenados(item).find((r) => r.active);
+  revisorPrincipal(revisores: AreaRevisorAsignadoDTO[]): AreaRevisorAsignadoDTO | undefined {
+    return this.revisoresOrdenados(revisores).find((r) => r.active);
   }
 
   // ── Filtros ───────────────────────────────────────────────────────────

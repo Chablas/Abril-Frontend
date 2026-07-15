@@ -15,4 +15,6 @@ export interface SolicitudSalidaListItemDto {
   estadoAprobacion: string;
   estadoRendicion: string;
   createdAt: string;
+  /** True si todos los trayectos tienen capturas (o catálogo TI) — habilita la rendición. */
+  puedeRendirse: boolean;
 }

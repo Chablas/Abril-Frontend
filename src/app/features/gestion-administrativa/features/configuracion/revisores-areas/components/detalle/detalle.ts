@@ -18,10 +18,21 @@ import { AreaRevisorAsignadoDTO, AreaRevisorItemDTO } from '../../dtos/areaRevis
 })
 export class RevisoresAreasDetalle {
   @Input() area!: AreaRevisorItemDTO;
+  /** Nombre del proyecto cuando se muestra el alcance de un proyecto (para el título). */
+  @Input() projectName?: string;
+  /** Revisores a mostrar. Por defecto los revisores de área. */
+  @Input() revisoresOverride?: AreaRevisorAsignadoDTO[];
   @Output() closeModal = new EventEmitter<void>();
 
+  get titulo(): string {
+    return this.projectName
+      ? 'REVISORES · ' + this.projectName
+      : 'REVISORES · ' + (this.area?.areaName || 'Área');
+  }
+
   get revisores(): AreaRevisorAsignadoDTO[] {
-    return [...(this.area?.revisores ?? [])].sort((a, b) => a.ordenPrioridad - b.ordenPrioridad);
+    const base = this.revisoresOverride ?? this.area?.revisores ?? [];
+    return [...base].sort((a, b) => a.ordenPrioridad - b.ordenPrioridad);
   }
 
   /** true si ningún revisor está activo → las solicitudes van al área de GTH. */

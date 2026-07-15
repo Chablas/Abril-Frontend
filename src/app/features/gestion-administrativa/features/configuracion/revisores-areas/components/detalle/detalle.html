@@ -1,13 +1,12 @@
 <app-base-modal
-  [title]="'REVISORES · ' + (area.areaName || 'Área')"
+  [title]="titulo"
   width="w-[640px]"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[14px] mt-[12px]">
 
     <p class="text-xs text-gray-500 leading-relaxed">
-      Estos revisores aplican a los trabajadores del área que <b>no</b> tienen revisores
-      propios en Revisores de Trabajadores. Las solicitudes se envían al primer revisor
+      Las solicitudes se envían al primer revisor
       <b>activo</b> según el orden de prioridad; si ninguno está activo (o no hay
       revisores), la solicitud se envía al área de <b>GTH</b>.
     </p>

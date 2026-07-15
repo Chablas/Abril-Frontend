@@ -15,6 +15,11 @@ export interface GestionSalidaListItemDto {
   puedeRendirse: boolean;
   /** Hora real registrada por recepción ("HH:mm:ss") — dato extra. */
   horaSalidaReal: string | null;
+  /**
+   * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
+   * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.
+   */
+  puedeDecidir: boolean;
 }
 
 /** Respuesta paginada genérica del backend (PagedResult<T>). */
@@ -69,6 +74,11 @@ export interface GestionSalidaCapturaDto {
   uploadedAt: string;
 }
 
+export interface GestionSalidaAdjuntoDto {
+  url: string;
+  filename: string;
+}
+
 export interface GestionSalidaTrayectoDto {
   id: number;
   orden: number;
@@ -77,9 +87,8 @@ export interface GestionSalidaTrayectoDto {
   motivo: string;
   lugarOrigen: string | null;
   lugarDestino: string | null;
-  /** webUrl del documento adjunto del trayecto (motivos que requieren documento). */
-  adjuntoUrl: string | null;
-  adjuntoFilename: string | null;
+  /** Documentos adjuntos del trayecto (motivos que requieren documento). Vacío si no tiene. */
+  adjuntos: GestionSalidaAdjuntoDto[];
   capturas: GestionSalidaCapturaDto[];
   /** Monto del catálogo ga_trayecto (solo trabajador TI con match). */
   montoCatalogo: number | null;

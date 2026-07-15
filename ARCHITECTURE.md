@@ -132,4 +132,7 @@ Para saber los roles del usuario puedes usar getRoles ubicado en src\app\core\se
 ## Consideraciones sobre la creación de peticiones HTTP a el backend.
 Se debe de priorizar el uso óptimo de conexiones que brinda la base de datos. Por tal motivo en el caso del frontend, se deberán hacer la menor cantidad posible de peticiones HTTP al backend. Si por ejemplo al entrar a una funcionalidad se tienen que cargar los datos de los filtros y los datos de una tabla, pues se deberá hacer una sola petición HTTP que traiga esos datos. Al entrar a ver un detalle de algo se deberá hacer otra petición HTTP que traiga de una vez todos los detalles y no hacer peticiones HTTP innecesarias. Al entrar a un dashboard se deberán traer todos los datos de todos los gráficos en una sola petición HTTP. Solo se pueden hacer excepciones si es que la funcionalidad lo requiere o en funcionalidades muy especiales/específicas.
 Cada acción de la página que traiga datos debe de traer los datos justos y necesarios. Por ejemplo al cargar un componente/página se deben de traer en una sola petición HTTP todos los datos (como los datos de filtros y los datos de una tabla), pero si el usuario va a usar los filtros pues se debe de llamar a otro endpoint que solo llame los datos de la tabla filtrados (puesto que ya no es necesario traer los datos de los filtros de nuevo).
+
+## Consideraciones para pruebas
+Cuando termines de hacer/escribir código buildea el proyecto para buscar posibles errores y corrígelos. No hagas previews, yo testearé para verificar si está bien o no.
 ```

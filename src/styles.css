@@ -42,6 +42,11 @@
   --color-abril-logo-blue-hover:  #004A7D;
   --color-abril-logo-blue-light:  #E6F0F8;
 
+  /* Azul del título del encabezado de página (app-abril-page-header), tomado
+     del mockup 2026. Distinto del azul del logo: este es el color del texto
+     del título ("Configuración", etc.) que antes era casi negro con serif. */
+  --color-abril-header-title:     #1D62A0;
+
   /* ── Colores de estado para dashboards (2026) ───────
      Extraídos del dashboard de Arquitectura Comercial, que tenía estos
      mismos 5 colores repetidos como hex suelto en 40+ lugares (KPI cards,

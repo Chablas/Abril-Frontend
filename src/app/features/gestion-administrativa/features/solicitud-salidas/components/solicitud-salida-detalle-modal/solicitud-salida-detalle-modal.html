@@ -82,17 +82,21 @@
             <div class="text-xs text-gray-500 uppercase">Destino</div>
             <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
           </div>
-          <div *ngIf="t.adjuntoUrl" class="col-span-2">
-            <div class="text-xs text-gray-500 uppercase">Documento adjunto</div>
-            <a [href]="t.adjuntoUrl" target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 hover:underline text-sm font-medium break-all"
-               style="color:var(--color-abril-standard)">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
-              </svg>
-              {{ t.adjuntoFilename || 'Ver documento' }}
-            </a>
+          <div *ngIf="t.adjuntos.length > 0" class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">
+              {{ t.adjuntos.length > 1 ? 'Documentos adjuntos' : 'Documento adjunto' }}
+            </div>
+            <div class="flex flex-col gap-1 mt-0.5">
+              <a *ngFor="let a of t.adjuntos" [href]="a.url" target="_blank" rel="noopener noreferrer"
+                 class="inline-flex items-center gap-1.5 hover:underline text-sm font-medium break-all"
+                 style="color:var(--color-abril-standard)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+                </svg>
+                {{ a.filename || 'Ver documento' }}
+              </a>
+            </div>
           </div>
         </div>
 
@@ -112,6 +116,25 @@
           Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
           <span class="text-gray-500 ml-1">— no requieres subir captura.</span>
         </div>
+      </div>
+    </div>
+
+    <!-- ── Planilla rendida ──────────────────────────────────────────── -->
+    <div *ngIf="detalle.rendicion" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+      <div class="text-xs text-gray-500 uppercase">Planilla de rendición</div>
+      <a
+        [href]="detalle.rendicion.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ detalle.rendicion.pdfFilename }}
+      </a>
+      <div class="text-xs text-gray-400">
+        Rendido el {{ detalle.rendicion.rendidoAt | date:'dd/MM/yyyy HH:mm' }}
       </div>
     </div>
 

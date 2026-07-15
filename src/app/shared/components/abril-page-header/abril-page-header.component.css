@@ -33,8 +33,9 @@
 .ssoma-hero__title {
   font-size: 1.35rem;
   font-weight: 700;
-  font-family: 'Playfair Display', Georgia, serif;
-  color: #0f172a;
+  /* Misma familia tipográfica que el subtítulo (fuente base sans-serif del
+     sistema, heredada) en lugar del serif Playfair. Color azul del mockup. */
+  color: var(--color-abril-header-title);
   margin: 0;
 }
 .ssoma-hero__sub { font-size: 0.8rem; color: #64748b; margin: 0; }

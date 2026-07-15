@@ -7,6 +7,7 @@
   [tabs]="[
     { label: 'Solicitud de Salidas', icono: 'ti-file-text', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
     { label: 'Gestión de Salidas',   icono: 'ti-briefcase', route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+    { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
     { label: 'Configuración',        icono: 'ti-settings',  route: '/gestion-administrativa/configuracion',     featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.revisor-salidas','gestion-administrativa.config.revisores-areas','gestion-administrativa.config.visibilidad-salidas','gestion-administrativa.config.carpeta-adjuntos'] }
   ]">
 
@@ -26,22 +27,24 @@
       type="button"
       abrilBulkAction="default"
       (click)="aprobarBulk()"
-      [disabled]="selectedPendientes.length === 0">
+      [disabled]="!puedeDecidirSeleccion"
+      [title]="seleccionIncluyePropia ? 'No puedes aprobar tus propias salidas — deselecciona las tuyas' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
-      Aprobar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
+      Aprobar<span *ngIf="puedeDecidirSeleccion"> ({{ selectedPendientes.length }})</span>
     </button>
 
     <button
       type="button"
       abrilBulkAction="danger"
       (click)="rechazarBulk()"
-      [disabled]="selectedPendientes.length === 0">
+      [disabled]="!puedeDecidirSeleccion"
+      [title]="seleccionIncluyePropia ? 'No puedes rechazar tus propias salidas — deselecciona las tuyas' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
       </svg>
-      Rechazar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
+      Rechazar<span *ngIf="puedeDecidirSeleccion"> ({{ selectedPendientes.length }})</span>
     </button>
 
     <button

@@ -325,6 +325,7 @@ export class GestionSalidas implements OnInit {
   // ── Acciones bulk: aprobar / rechazar ────────────────────────────────
   /** Aprueba en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
   async aprobarBulk(): Promise<void> {
+    if (!this.puedeDecidirSeleccion) return;
     const items = this.selectedPendientes;
     if (items.length === 0) return;
 
@@ -355,6 +356,7 @@ export class GestionSalidas implements OnInit {
 
   /** Rechaza en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
   async rechazarBulk(): Promise<void> {
+    if (!this.puedeDecidirSeleccion) return;
     const items = this.selectedPendientes;
     if (items.length === 0) return;
 
@@ -447,9 +449,23 @@ export class GestionSalidas implements OnInit {
     return this.salidas.filter((s) => this.selectedIds.has(s.id));
   }
 
-  /** Seleccionadas en estado Pendiente (aplican a Aprobar / Rechazar). */
+  /** Seleccionadas en estado Pendiente (objetivo de Aprobar / Rechazar). */
   get selectedPendientes(): GestionSalidaListItemDto[] {
     return this.selectedSalidas.filter((s) => s.estadoAprobacion === 'Pendiente');
+  }
+
+  /**
+   * True si alguna pendiente seleccionada es propia y no decidible. Nadie aprueba/rechaza lo suyo
+   * (salvo Gerente), y si se mezcla una propia con otras, se bloquea toda la acción — hay que
+   * deseleccionar la propia primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida.
+   */
+  get seleccionIncluyePropia(): boolean {
+    return this.selectedPendientes.some((s) => !s.puedeDecidir);
+  }
+
+  /** True si se puede aprobar/rechazar la selección: hay pendientes y NINGUNA es propia. */
+  get puedeDecidirSeleccion(): boolean {
+    return this.selectedPendientes.length > 0 && !this.seleccionIncluyePropia;
   }
 
   /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */

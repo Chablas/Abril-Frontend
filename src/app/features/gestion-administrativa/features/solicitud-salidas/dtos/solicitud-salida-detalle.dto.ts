@@ -6,6 +6,11 @@ export interface SolicitudSalidaCapturaDto {
   uploadedAt: string;
 }
 
+export interface TrayectoAdjuntoDto {
+  url: string;
+  filename: string;
+}
+
 export interface TrayectoDetalleDto {
   id: number;
   orden: number;
@@ -14,14 +19,20 @@ export interface TrayectoDetalleDto {
   motivo: string;
   lugarOrigen: string | null;
   lugarDestino: string | null;
-  /** webUrl del documento adjunto del trayecto (motivos que requieren documento). */
-  adjuntoUrl: string | null;
-  adjuntoFilename: string | null;
+  /** Documentos adjuntos del trayecto (motivos que requieren documento). Vacío si no tiene. */
+  adjuntos: TrayectoAdjuntoDto[];
   capturas: SolicitudSalidaCapturaDto[];
   /** Monto del catálogo ga_trayecto (solo trabajador TI con match origen+destino). */
   montoCatalogo: number | null;
   /** Monto efectivo: suma de capturas si hay; sino montoCatalogo; sino 0. */
   montoTotal: number;
+}
+
+export interface SolicitudSalidaRendicionDto {
+  id: number;
+  pdfUrl: string;
+  pdfFilename: string;
+  rendidoAt: string;
 }
 
 export interface SolicitudSalidaDetalleDto {
@@ -31,5 +42,7 @@ export interface SolicitudSalidaDetalleDto {
   estadoRendicion: string;
   createdAt: string;
   motivoRechazo: string | null;
+  /** PDF de la planilla de rendición. Null si la solicitud aún no fue rendida. */
+  rendicion: SolicitudSalidaRendicionDto | null;
   trayectos: TrayectoDetalleDto[];
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { SolicitudSalidaFormDataDto } from '../dtos/solicitud-salida-form-data.dto';
@@ -70,6 +70,22 @@ export class SolicitudSalidasService {
     return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
       headers: this.headers,
     });
+  }
+
+  /**
+   * El trabajador rinde sus propias solicitudes seleccionadas Y descarga la planilla de gasto
+   * por movilidad. El backend responde con un PDF; el conteo viene en el header X-Rendidas-Count.
+   */
+  marcarRendidasBulk(ids: number[]): Observable<HttpResponse<Blob>> {
+    return this.http.patch(
+      `${this.apiUrl}/marcar-rendidas`,
+      { ids },
+      {
+        headers: this.headers,
+        responseType: 'blob',
+        observe: 'response',
+      },
+    );
   }
 
   /** Sube capturas asociadas a un trayecto específico. */
