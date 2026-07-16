@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Sistema de diseño
+Todo componente visual nuevo debe seguir estrictamente DESIGN-VICTOR.md en la raíz del proyecto.
+
 ## Commands
 
 - `npm start` — dev server at `http://localhost:4200` (alias for `ng serve --port 4200`).
