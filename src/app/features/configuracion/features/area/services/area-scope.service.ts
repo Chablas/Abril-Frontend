@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
-import { AreaScopeTreeDto, AreaScopeBranchDto } from '../dtos/areaScope.model';
+import { AreaScopeTreeDto, AreaScopeBranchDto, AreaScopeWorkerDto } from '../dtos/areaScope.model';
 
 @Injectable({ providedIn: 'root' })
 export class AreaScopeService {
@@ -18,6 +18,12 @@ export class AreaScopeService {
 
   getTree(): Observable<AreaScopeTreeDto[]> {
     return this.http.get<AreaScopeTreeDto[]>(`${this.apiUrl}/tree`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getWorkers(areaScopeId: number): Observable<AreaScopeWorkerDto[]> {
+    return this.http.get<AreaScopeWorkerDto[]>(`${this.apiUrl}/${areaScopeId}/workers`, {
       headers: this.authHeaders(),
     });
   }

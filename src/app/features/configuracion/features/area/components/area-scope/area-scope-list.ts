@@ -8,6 +8,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { AreaScopeService } from '../../services/area-scope.service';
 import { AreaScopeTreeDto } from '../../dtos/areaScope.model';
 import { AreaScopeBranch } from './area-scope-branch';
+import { AreaScopeWorkers } from './area-scope-workers';
 
 interface BranchSegment {
   name: string;
@@ -16,18 +17,21 @@ interface BranchSegment {
 
 interface BranchRow {
   leafScopeId: number;
+  leafName: string;
+  workersCount: number;
   segments: BranchSegment[];
 }
 
 @Component({
   selector: 'app-area-scope-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, AreaScopeBranch],
+  imports: [CommonModule, FormsModule, AreaScopeBranch, AreaScopeWorkers],
   templateUrl: './area-scope-list.html',
 })
 export class AreaScopeList implements OnInit {
   rows: BranchRow[] = [];
   showBranchModal = false;
+  workersRow: BranchRow | null = null;
 
   constructor(
     private service: AreaScopeService,
@@ -59,7 +63,12 @@ export class AreaScopeList implements OnInit {
     const walk = (node: AreaScopeTreeDto, ancestors: BranchSegment[]) => {
       const segments = [...ancestors, { name: node.areaItemName, areaTypeName: node.areaTypeName }];
       // Incluir cualquier nodo, no solo las hojas: un nodo intermedio también es una rama válida.
-      result.push({ leafScopeId: node.areaScopeId, segments });
+      result.push({
+        leafScopeId: node.areaScopeId,
+        leafName: node.areaItemName,
+        workersCount: node.workersCount ?? 0,
+        segments,
+      });
       for (const child of node.children ?? []) walk(child, segments);
     };
     for (const root of tree) walk(root, []);
@@ -68,6 +77,14 @@ export class AreaScopeList implements OnInit {
 
   openCreateBranch(): void {
     this.showBranchModal = true;
+  }
+
+  openWorkers(row: BranchRow): void {
+    this.workersRow = row;
+  }
+
+  rutaRama(row: BranchRow): string {
+    return row.segments.map((s) => s.name).join(' › ');
   }
 
   onBranchSaved(): void {
