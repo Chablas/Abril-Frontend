@@ -31,6 +31,7 @@ interface EditModel {
   documentIdentityTypeId: number | null;
   numeroDocumento: string;
   cumpleanos: string; // 'YYYY-MM-DD'
+  emailCorporativo: string;
   categoria: string;
   ocupacion: string;
   ocupacionId: number | null;
@@ -105,6 +106,7 @@ export class WorkerEditForm implements OnChanges {
       documentIdentityTypeId: null,
       numeroDocumento: '',
       cumpleanos: '',
+      emailCorporativo: '',
       categoria: '',
       ocupacion: '',
       ocupacionId: null,
@@ -123,6 +125,7 @@ export class WorkerEditForm implements OnChanges {
       documentIdentityTypeId: this.worker.documentIdentityTypeId ?? null,
       numeroDocumento: this.worker.dni ?? '',
       cumpleanos: (this.worker.cumpleanos ?? '').slice(0, 10),
+      emailCorporativo: this.worker.emailCorporativo ?? '',
       categoria: this.worker.categoria ?? '',
       ocupacion: this.worker.ocupacion ?? '',
       ocupacionId: this.worker.ocupacionId ?? null,
@@ -294,6 +297,7 @@ export class WorkerEditForm implements OnChanges {
       documentIdentityTypeId: this.model.documentIdentityTypeId || null,
       numeroDocumento: this.model.numeroDocumento?.trim() || null,
       cumpleanos: this.model.cumpleanos || null,
+      emailCorporativo: this.model.emailCorporativo?.trim() || null,
       categoria: this.model.categoria?.trim() || null,
       ocupacion: this.model.ocupacion?.trim() || null,
       ocupacionId: this.model.ocupacionId ?? null,

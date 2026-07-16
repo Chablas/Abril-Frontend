@@ -226,6 +226,8 @@ export interface WorkerDatosBasicosDto {
   areaScopeId?: number | null;
   /** Categoría normalizada (workers.worker_category_id, catálogo workers_category). */
   workerCategoryId?: number | null;
+  /** Correo corporativo (workers.email_corporativo). Null/vacío = sin correo. */
+  emailCorporativo?: string | null;
 }
 
 export interface WorkerUpsertDto {

@@ -21,9 +21,19 @@
         <input type="text" class="field-input" [(ngModel)]="model.numeroDocumento" maxlength="15" />
       </div>
 
-      <div class="col-span-2">
+      <div>
         <label class="field-label">Cumpleaños</label>
         <input type="date" class="field-input" [(ngModel)]="model.cumpleanos" />
+      </div>
+
+      <div>
+        <label class="field-label">Correo corporativo</label>
+        <input
+          type="email"
+          class="field-input"
+          [(ngModel)]="model.emailCorporativo"
+          placeholder="usuario@abril.pe"
+        />
       </div>
 
       <div>
