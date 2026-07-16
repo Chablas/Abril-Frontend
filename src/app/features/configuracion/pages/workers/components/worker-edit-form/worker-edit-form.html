@@ -63,6 +63,39 @@
           placeholder="Se autocompleta con Categoría + Ocupación"
         />
       </div>
+
+      <div class="col-span-2">
+        <label class="field-label">Categoría (Salidas/Lecciones)</label>
+        <app-search-select
+          [options]="workerCategories"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.workerCategoryId"
+          [showLabel]="false"
+          placeholder="Selecciona categoría"
+          [allowClear]="true"
+          (valueChange)="model.workerCategoryId = $event"
+        />
+      </div>
+
+      <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
+        <label class="field-label">{{ i === 0 ? 'Área' : 'Área (nivel ' + (i + 1) + ')' }}</label>
+        <app-search-select
+          [options]="level.options"
+          valueField="areaScopeId"
+          displayField="areaItemName"
+          [value]="level.selected"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Selecciona área"
+          [allowClear]="true"
+          (valueChange)="onAreaLevelChange(i, $event)"
+        />
+      </div>
+
+      <p class="area-path-hint col-span-2" *ngIf="areaPathLabel">
+        Se guardará en: <b>{{ areaPathLabel }}</b>
+      </p>
     </div>
 
     <footer class="form-footer">

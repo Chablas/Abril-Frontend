@@ -5,8 +5,8 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AreaScopeService } from '../../services/area-scope.service';
-import { AreaScopeWorkerDto } from '../../dtos/areaScope.model';
+import { AreaScopeService } from '../../../../shared/services/area-scope.service';
+import { AreaScopeWorkerDto } from '../../../../shared/dtos/areaScope.model';
 
 @Component({
   selector: 'app-area-scope-workers',

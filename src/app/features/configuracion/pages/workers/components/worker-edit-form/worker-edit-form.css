@@ -36,6 +36,17 @@
   margin-bottom: 0.35rem;
 }
 
+.area-path-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.area-path-hint b {
+  color: #374151;
+  font-weight: 600;
+}
+
 .field-input {
   width: 100%;
   border: 1px solid #d6dee5;

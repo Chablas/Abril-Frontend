@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../../../environments/environment';
-import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
+import { environment } from '../../../../../environments/environment';
+import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
 import { AreaScopeTreeDto, AreaScopeBranchDto, AreaScopeWorkerDto } from '../dtos/areaScope.model';
 
 @Injectable({ providedIn: 'root' })

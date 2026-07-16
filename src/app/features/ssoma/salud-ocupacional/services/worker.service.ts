@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
-import { DocumentTypeDto, WorkerDatosBasicosDto, WorkerUpsertDto } from '../dtos/emo.model';
+import {
+  DocumentTypeDto,
+  WorkerCategoryDto,
+  WorkerDatosBasicosDto,
+  WorkerUpsertDto,
+} from '../dtos/emo.model';
 
 @Injectable({ providedIn: 'root' })
 export class WorkerService {
@@ -21,6 +26,13 @@ export class WorkerService {
   /** Catálogo de tipos de documento para el select del modal de edición. */
   getDocumentTypes(): Observable<DocumentTypeDto[]> {
     return this.http.get<DocumentTypeDto[]>(`${this.apiUrl}/document-types`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Catálogo workers_category (categoría normalizada) para el select del modal de edición. */
+  getWorkerCategories(): Observable<WorkerCategoryDto[]> {
+    return this.http.get<WorkerCategoryDto[]>(`${this.apiUrl}/worker-categories`, {
       headers: buildAuthHeaders(),
     });
   }

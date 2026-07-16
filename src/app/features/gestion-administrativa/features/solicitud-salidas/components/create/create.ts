@@ -97,6 +97,12 @@ export class SolicitudSalidaCreate implements OnInit {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
+  /** Hora actual en formato "HH:mm" (comparable con los valores de app-time-picker). */
+  private get nowStr(): string {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
   private nuevoTrayecto(esPrimero: boolean): TrayectoForm {
     const now = new Date();
     return {
@@ -250,8 +256,14 @@ export class SolicitudSalidaCreate implements OnInit {
 
     if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
     if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
-    // Las horas NO se restringen contra la hora actual: se permite registrar una
-    // salida de hoy que ya ocurrió. La fecha sí debe ser hoy o futura (ver save()).
+    // La salida no puede ser de un tiempo pasado: la fecha debe ser hoy o futura
+    // (ver save()) y, cuando la salida es HOY, la hora de salida debe ser igual o
+    // posterior a la hora actual. Para fechas futuras se acepta cualquier hora.
+    if (this.fechaSalida === this.todayStr) {
+      const ahora = this.nowStr;
+      if (t.horaSalida && t.horaSalida < ahora)
+        errs.push(`${pref}: la hora de salida no puede ser anterior a la hora actual (${ahora})`);
+    }
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);

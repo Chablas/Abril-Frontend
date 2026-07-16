@@ -5,8 +5,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { AreaScopeService } from '../../services/area-scope.service';
-import { AreaScopeTreeDto } from '../../dtos/areaScope.model';
+import { AreaScopeService } from '../../../../shared/services/area-scope.service';
+import { AreaScopeTreeDto } from '../../../../shared/dtos/areaScope.model';
 import { AreaScopeBranch } from './area-scope-branch';
 import { AreaScopeWorkers } from './area-scope-workers';
 
