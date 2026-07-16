@@ -14,7 +14,12 @@
 - Diseño para **desktop 1440px** — responsive no requerido.
 - **No** usar librerías de componentes UI externas (sin PrimeNG, Angular Material, 
   etc.) salvo las ya instaladas: `sweetalert2`, `chart.js`, `dhtmlx-gantt`, `jspdf`, 
-  `xlsx`.
+  `xlsx`, `flatpickr`, `@tabler/icons-webfont`.
+- **Tailwind CSS v4 sí es parte legítima del stack** (config CSS-first en 
+  `src/styles.css`, bloque `@theme` con los tokens de marca) — la restricción de 
+  arriba es sobre librerías de *componentes* prearmados, no sobre el framework de 
+  utilidades. Se usa de forma extendida (~62% de los `.html` del proyecto) 
+  combinado con CSS plano por componente.
 
 ---
 
@@ -84,13 +89,39 @@ y replicar la regla de nivel 3+ (fondo fijo + borde) en el árbol de Hitos.
 
 ## 3. Tipografía
 
-- **Font family:** Inter (fallback: sans-serif del sistema).
+> **Actualizado con la realidad del código (no lo que se documentó antes).** 
+> La variable `--font-sans: 'Inter'...` existe en `src/styles.css` pero es 
+> **aspiracional, no efectiva** — no hay ningún `<link>` cargando la fuente 
+> Inter real, así que el fallback `system-ui` es lo que realmente se renderiza 
+> donde no hay una fuente explícita. Esto no se corrige acá: queda como 
+> **pendiente de decisión** (ver nota al final de esta sección).
+
+**Lo que realmente se ve hoy en pantalla:**
+
+| Dónde | Fuente real | Archivo |
+|---|---|---|
+| Títulos de página (casi toda la app protegida) | **Playfair Display**, serif — decisión de marca explícita, no accidente | `abril-page-header.component.css` |
+| Login | **Kumbh Sans** | `login.css` |
+| Boletín / Birthday Club | **Kumbh Sans** ("identidad compartida con el boletín", comentario explícito en el código) | `boletin.css`, `birthday-club.css` |
+| Resto del cuerpo (body, sin fuente explícita) | `system-ui` (fallback real: Segoe UI en Windows, San Francisco en Mac) | — |
+| Declarado pero no cargado | `Inter` (token `--font-sans` en `styles.css`) | No tiene efecto real hoy |
+
+**Escalas (aplican sobre la fuente que corresponda en cada contexto):**
 - KPI value: `32px bold`, color de acento según contexto.
 - KPI label: `11px uppercase`, `letter-spacing: 0.5px`, `#64748B`.
-- Heading de página: `24px bold`, `#1E3A5F`.
+- Heading de página: `24px bold`, `#1E3A5F` (con Playfair Display donde aplica 
+  el header estándar).
 - Subheading: `14px`, `#64748B`.
 - Body / tabla: `13–14px regular`.
 - Badge / label: `11px uppercase bold`.
+
+**Pendiente de decisión (no resolver ahora):** ¿se unifica toda la app a Inter 
+de una vez, se mantiene Playfair Display/Kumbh Sans como identidad de marca 
+intencional en sus contextos actuales, o se documenta oficialmente esta 
+convivencia de 3 fuentes como el sistema real? Antes de tocar código, vale la 
+pena confirmar con el equipo por qué se eligió Playfair Display para 
+`abril-page-header` — dado que ese componente se usa en casi toda la app, es 
+un cambio de alto impacto visual, no un ajuste aislado.
 
 ---
 
