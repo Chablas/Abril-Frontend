@@ -27,7 +27,7 @@ interface FilaPersonalHito extends PersonalHitoItemInputDto {
   total: number;
 }
 
-/** Fila editable de la tabla de cronograma — misma data que /projects/milestone-schedule,
+/** Fila editable de la tabla de cronograma — misma data que /mejora-continua/milestone-schedule,
  * mostrada aquí como tabla simple (sin Gantt) para poder llenar fechas rápido. */
 interface FilaHito {
   milestoneId: number | null;
@@ -87,7 +87,7 @@ export class ProyectoPage implements OnInit {
   loadingRatios = false;
   mostrarRatios = false;
 
-  // ── Cronograma de hitos (tabla simple, misma data que /projects/milestone-schedule) ──
+  // ── Cronograma de hitos (tabla simple, misma data que /mejora-continua/milestone-schedule) ──
   hitosSchedule: FilaHito[] = [];
   loadingSchedule = false;
   guardandoSchedule = false;
@@ -385,11 +385,11 @@ export class ProyectoPage implements OnInit {
     });
   }
 
-  /** Abre la pantalla real de Cronograma de Hitos (/projects/milestone-schedule) ya posicionada
+  /** Abre la pantalla real de Cronograma de Hitos (/mejora-continua/milestone-schedule) ya posicionada
    * en este proyecto, saltándose la lista de tarjetas. Es la misma pantalla que se usa en
    * producción — no hay un formulario duplicado dentro de SSOMA. */
   irACronograma(): void {
-    this.router.navigate(['/projects/milestone-schedule'], {
+    this.router.navigate(['/mejora-continua/milestone-schedule'], {
       queryParams: { projectId: this.projectId, projectDescription: this.proyectNombre },
     });
   }

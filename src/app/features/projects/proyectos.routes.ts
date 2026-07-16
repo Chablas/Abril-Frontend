@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/guards/role.guard';
-import { MilestoneSchedule } from './milestone-schedule/milestone-schedule';
 import { IvtControl } from './ivt-control/ivt-control';
 import { ConstructionLogbookControl } from './construction-logbook-control/construction-logbook-control';
 import { ReportResponseControl } from './report-response-control/report-response-control';
@@ -57,12 +56,6 @@ export const PROJECTS_ROUTES: Routes = [
     component: ReunionDetail,
     canActivate: [roleGuard],
     data: { titulo: 'ACTA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
-  },
-  {
-    path: 'milestone-schedule',
-    component: MilestoneSchedule,
-    canActivate: [roleGuard],
-    data: { titulo: 'CRONOGRAMA DE HITOS', featureKey: 'projects.milestone-schedule' },
   },
   {
     path: 'technical-inspection-visit',
