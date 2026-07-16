@@ -3,6 +3,14 @@ import { roleGuard } from '../../core/guards/role.guard';
 
 export const MEJORA_CONTINUA_ROUTES: Routes = [
   {
+    path: 'milestone-schedule',
+    loadComponent: () =>
+      import('./milestone-schedule/milestone-schedule')
+        .then((m) => m.MilestoneSchedule),
+    canActivate: [roleGuard],
+    data: { titulo: 'CRONOGRAMA DE HITOS', featureKey: 'mejora-continua.milestone-schedule' },
+  },
+  {
     path: 'lessons-learned',
     loadComponent: () =>
       import('./features/lessons-learned/components/lecciones-aprendidas')
