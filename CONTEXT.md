@@ -4573,3 +4573,5 @@ En esta misma sesión se hizo un inventario exacto (pedido aparte del usuario, s
 - No tiene footer propio (todo proyectado vía `<ng-content>`) — alineación/estilo de botones queda 100% a criterio de cada consumidor, sin estandarizar.
 - **Sin `@Input` de color** — los colores están hardcodeados en el template; la única forma de override es `::ng-deep` desde el componente padre. Único caso existente en todo el repo: `milestone-schedule.css` (agregado en la sesión anterior, 2026-07-15/16), que empuja el título a `24px #1E3A5F` y la X a `#64748B` — parche local, no cambia el componente compartido.
 - **Pendiente de decisión del usuario**: si vale la pena modificar `app-base-modal` para acercarlo a §6.8 globalmente (impactaría ~100+ pantallas) o dejarlo como está y seguir parchando por instancia vía `::ng-deep` cuando haga falta.
+
+**Merge a master (2026-07-17)**: se mergeó `victor-frontend` → `master` sin conflictos (incluye esta sesión + trabajo previo de la rama: creación de `DESIGN-VICTOR.md`, rediseño de color jerárquico de Cronograma de Actividades, ajustes de tabs de Mejora Continua). `ng build` limpio tras el merge.
