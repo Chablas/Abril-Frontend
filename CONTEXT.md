@@ -4396,3 +4396,47 @@ Reubicación completa del feature `milestone-schedule`, precedida de una fase de
 1. **BD**: la fila del feature en la tabla `feature` (columna `feature_key` = `projects.milestone-schedule`) sigue apuntando al módulo/key viejo — falta correr en BD algo como `UPDATE feature SET feature_key = 'mejora-continua.milestone-schedule', module_id = (SELECT module_id FROM module WHERE module_name = 'Mejora Continua') WHERE feature_key = 'projects.milestone-schedule'`, y verificar cuántas filas en `role_feature` apuntan a ese `feature_id` (se confirmó el esquema por código fuente de `Abril_Backend`, pero no se pudo ejecutar el SELECT real — no hay tool de conexión a BD en este entorno).
 2. El bug de `queryParams` muertos en `irACronograma()` (SSOMA) mencionado arriba, no arreglado a propósito (fuera de alcance pedido por el usuario).
 3. No se verificó visualmente en navegador (sin credenciales/acceso en este entorno) — solo se validó con `ng build`.
+
+## Sesión 2026-07-16
+
+### Fix: tab-bar de Mejora Continua sin "Cronograma de Hitos" en 4 de 5 páginas
+
+Al mover `milestone-schedule` a Mejora Continua (sesión 2026-07-15) solo se agregó el tab "Cronograma de Hitos" al array `[tabs]` de `milestone-schedule.html`; las otras 4 páginas del feature (`lessons-dashboard.html`, `lecciones-aprendidas.html`, `lesson-reminders.html`, `lecciones-configuracion.html`) tenían el `[tabs]` hardcodeado sin ese tab, así que al navegar entre ellas el tab desaparecía/reaparecía. Se agregó la misma entrada (`route: '/mejora-continua/milestone-schedule'`, `featureKey: 'mejora-continua.milestone-schedule'`) como primer ítem en los 5 arrays, mismo orden en los 5 archivos.
+
+### DESIGN-VICTOR.md agregado a la raíz + referencia en CLAUDE.md
+
+El usuario agregó `DESIGN-VICTOR.md` (sistema de diseño: colores, tipografía, espaciado, componentes, sistema unificado de color jerárquico) y pidió commitearlo + referenciarlo desde `CLAUDE.md` (sección nueva "## Sistema de diseño", apunta a `DESIGN-VICTOR.md` como referencia obligatoria para trabajo visual). Se corrigió después: la sección de tipografía documentaba `Inter` como font-family pero no hay ningún `<link>` que la cargue — se investigó el código real y se documentó lo que efectivamente se renderiza (ver inventario abajo).
+
+**Inventario del stack visual actual** (investigación pura, sin cambios de código, para decidir si integrar la propuesta externa): Tailwind v4 vía `@tailwindcss/postcss`, CSS-first (`@import 'tailwindcss'` + `@theme` en `src/styles.css`, sin `tailwind.config.js`), usado en ~62% de los 373 `.html` del proyecto. Tipografía real: `--font-sans: 'Inter'` declarado pero **no cargado** (sin `<link>`/`@font-face`) → fallback real `system-ui`; lo que sí se carga vía Google Fonts (`src/index.html`) es **Kumbh Sans** (login, boletín, birthday-club) y **Playfair Display** (títulos de página vía `abril-page-header.component.css`, o sea casi toda la app). `@angular/material`/`@angular/cdk` están instalados pero con 0 imports reales en `src/` (dependencia muerta, a confirmar con el equipo). 259 `.css` de componente: 112 usan los tokens centralizados de `styles.css` (`--color-abril-*`), pero 184 tienen hex hardcodeado (8,386 ocurrencias totales) — mezcla de tokens centralizados + mucho valor suelto por componente.
+
+### Rediseño completo del sistema de color jerárquico — Cronograma de Actividades
+
+Reemplazo total de la paleta corporativa de 10 colores + `color-mix()` uniforme (sesión 2026-07-13) por un sistema de badge de fase + línea conectora de árbol + acentos por `border-left`, sobre la misma paleta de 10 colores y el mismo mecanismo de asignación por rama (`buildColorMap()`/`findRootColor()`, sin tocar — solo raíces ciclan la paleta, descendientes heredan).
+
+**`cronograma-actividades.ts`**:
+- `getRowStyle()`: variable CSS renombrada `--base-color` → `--branch-color`; ya no inyecta `color` inline en nivel 1 (el fondo sólido que necesitaba ese contraste ya no existe).
+- `isDarkBg()` ahora siempre `return false` — ningún nivel tiene fondo oscuro sólido en el nuevo esquema; se mantiene el método (sin borrar) porque `getBadgeStyle`/`getFechaRealStyle`/el template lo siguen llamando.
+- `getChevronStyle()` eliminado (forzaba texto blanco al chevron contra un fondo sólido que ya no existe).
+- Nuevo `getNivelClase(act)`: única fuente de verdad para la clase de nivel (`lvl-0/1/2/deep`), con `Number()` defensivo — cualquier valor que no sea exactamente 0/1/2 cae en `lvl-deep`, nunca deja una fila sin clase (la plantilla "Proyecto" real llega a `hierarchyLevel` 4).
+- Nuevo `esUltimoDeRama(act)`: determina si el tronco de la línea conectora sigue de largo hacia la fila siguiente o se corta a la mitad de la fila actual (último descendiente visible de la rama).
+- Nuevo `phaseIndexMap` + `getFaseIndex(act)`: número de fase para el badge de nivel 1 (1ª, 2ª, 3ª rama raíz), poblado con el mismo `rootIdx` de `buildColorMap()` — **bug encontrado y corregido en esta sesión**: el badge usaba `getDisplayIndex(act)` (posición de fila en las 81 actividades, ej. 1/9/22/27/75) en vez del índice de fase (1/2/3/4/5).
+- `badgeHalfWidth = 10` (mitad del badge de 20px) — usado solo para el ancho del codo horizontal del conector (`.tree-elbow`), no la posición x del tronco (esa vive hardcodeada en el `.css`, ver abajo).
+
+**`cronograma-actividades.html`**:
+- Badge de fase circular (`.phase-badge`, `{{ getFaseIndex(act) }}`) — solo en nivel 1 (`*ngIf="getNivelClase(act) === 'lvl-0'"`).
+- Línea conectora del árbol (`.tree-trunk` + `.tree-elbow`) en filas de nivel 2+ — técnica de segmentos por fila (tabla `<tr>` plana, sin contenedor `.activity-group` por rama): cada fila dibuja su propio tramo de tronco + codo en L; filas consecutivas de la misma rama comparten la misma x de tronco y en conjunto se ven como una línea continua.
+
+**`cronograma-actividades.css`** — estructura final de los 3 niveles (grosor y padding del acento **unificados** tras un ajuste posterior en la misma sesión, por pedido del usuario):
+- Nivel 1 (`.lvl-0`): sin fondo sólido, `border-left: 6px solid var(--branch-color)` en `.td-actividad` (no en `td:first-child` = columna de orden — quedaba a 114px del badge).
+- Nivel 2 (`.lvl-1`): `background-color: color-mix(...4%...)`, `border` de 1px a `12%` en top/right/bottom, `border-left: 6px solid var(--branch-color)` (mismo grosor que nivel 1), `color: color-mix(in srgb, var(--branch-color) 80%, #1E3A5F)`.
+- Nivel 3+ (`.lvl-2`/`.lvl-deep`): `background: transparent`, `color: #64748B` fijo, `border-left: 6px solid color-mix(...25%...)` (mismo grosor, menor opacidad).
+- `padding-left: 0.5rem` uniforme en `.td-actividad` los 3 niveles (antes 1rem, y antes de eso variaba por nivel).
+- Sin box-shadow ni hover en ningún nivel (flat, consistente con el resto de la app).
+- Línea conectora: `.tree-trunk`/`.tree-elbow` en `left: 18px` (= 8px de padding-left de `.td-actividad` + 10px de mitad del badge) — recalculado tras unificar el padding, porque `position:absolute` no hereda el padding del contenedor (se mide desde el borde, no desde donde termina el padding); si el padding-left vuelve a cambiar, hay que recalcular este valor a mano (queda documentado en el comentario del `.css`).
+
+**Build**: `ng build` limpio en cada iteración (0 errores nuevos, mismos warnings preexistentes). No se verificó visualmente en navegador en ningún punto de esta sesión (sin acceso a browser/BD/credenciales en este entorno) — todo el trabajo de diagnóstico (ej. el bug de nivel 3+ sin colorear, resuelto confirmando que la plantilla "Proyecto" real tiene 5 niveles de profundidad vía el JSON seed del backend) se hizo por lectura de código, no por inspección visual.
+
+### Pendiente / fuera de alcance de esta sesión
+1. El grosor de 6px de nivel 1 quedó sin escalar a 8px (la alternativa que el usuario pidió probar si 6px se veía débil) — no hubo forma de verificarlo visualmente en este entorno.
+2. La línea conectora del árbol es de un solo tronco por rama (ancla en el badge de nivel 1), no un sistema recursivo multinivel tipo VSCode con una guía por cada generación intermedia — simplificación deliberada, documentada en su momento, no confirmada con el usuario.
+3. `@angular/material`/`@angular/cdk` parecen dependencias muertas (0 imports en `src/`) — señalado en el inventario, no removido, pendiente de confirmar con el equipo antes de tocar `package.json`.
