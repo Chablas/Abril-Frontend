@@ -69,6 +69,8 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   ganttModalAct: ActividadDto | null = null;
   private parentIds = new Set<number>();
   private rowStyleMap = new Map<number, { color: string; text?: string }>();
+  /** Posición de cada rama raíz entre las ramas raíz (1ª, 2ª, 3ª...) — para el badge de fase, no confundir con getDisplayIndex() (posición de fila en el árbol completo). */
+  private phaseIndexMap = new Map<number, number>();
   private avanceMap = new Map<number, number>();
 
   // Drag & Drop
@@ -252,24 +254,30 @@ export class CronogramaActividades implements OnInit, OnDestroy {
 
   private buildColorMap(): void {
     this.rowStyleMap.clear();
+    this.phaseIndexMap.clear();
 
     // ── Paso 1: color base por rama ──────────────────────────────────────────
     // Cada nodo raíz (sin padre) recibe uno de los 10 colores base, cicleando
     // SOLO entre raíces en el orden en que aparecen. Sus descendientes heredan
-    // ESE mismo color base; nunca uno nuevo del ciclo.
+    // ESE mismo color base; nunca uno nuevo del ciclo. rootIdx también es la
+    // base del número de fase del badge (.phase-badge, ver getFaseIndex) —
+    // 1ª, 2ª, 3ª rama raíz, NO getDisplayIndex() (que es la posición de fila
+    // en el árbol completo, el bug que se reportó: mostraba fila 1/9/22/27/75
+    // en vez de fase 1/2/3/4/5).
     let rootIdx = 0;
     for (const act of this.actividades) {
       if (act.parentId == null) {
         const color = this.LEVEL1_COLORS[rootIdx % this.LEVEL1_COLORS.length];
         this.rowStyleMap.set(act.projectActivityId, { color, text: this.getBranchTextColor(color) });
+        this.phaseIndexMap.set(act.projectActivityId, rootIdx + 1);
         rootIdx++;
       }
     }
 
     // ── Paso 2: descendientes heredan el color base de su raíz ────────────────
-    // Los tonos de fondo/borde/texto de los niveles hijos ya no se precalculan
-    // aquí: se derivan en CSS con color-mix() a partir de --base-color
-    // (ver getRowStyle y las reglas .lvl-1/.lvl-2/.lvl-deep en el .css).
+    // Los tonos de nivel 2/3+ (fondo/borde/texto) y la línea conectora del
+    // árbol se derivan en CSS con color-mix() a partir de --branch-color (ver
+    // getRowStyle y las reglas .lvl-0/.lvl-1/.lvl-2/.lvl-deep/.tree-* en el .css).
     for (const act of this.actividades) {
       if (act.parentId == null) continue;
       const base = this.findRootColor(act) ?? '#415a77';
@@ -318,19 +326,69 @@ export class CronogramaActividades implements OnInit, OnDestroy {
     if (!info) {
       // Fallback: nivel 0 aún no está en el mapa (p.ej. llamado antes de que corra buildColorMap)
       if ((act.hierarchyLevel ?? 0) <= 0 && act.parentId == null) {
-        return { '--base-color': this.NIVEL0.bg, color: this.NIVEL0.text };
+        return { '--branch-color': this.NIVEL0.bg };
       }
       return {};
     }
-    const style: Record<string, string> = { '--base-color': info.color };
-    if (info.text) style['color'] = info.text; // solo nivel 1 (raíz) trae texto explícito
-    return style;
+    return { '--branch-color': info.color };
   }
 
-  isDarkBg(act: ActividadDto): boolean {
-    const info = this.rowStyleMap.get(act.projectActivityId);
-    if (info) return info.text === '#ffffff';
-    return (act.hierarchyLevel ?? 0) <= 0 && act.parentId == null;
+  /**
+   * Ningún nivel usa fondo sólido en el sistema de color jerárquico actual
+   * (línea conectora + badge de fase, acentos vía border-left) — se mantiene
+   * el método porque `getBadgeStyle`/`getFechaRealStyle`/el template siguen
+   * llamándolo, pero siempre toma la variante clara.
+   */
+  isDarkBg(_act: ActividadDto): boolean {
+    return false;
+  }
+
+  /**
+   * Clase de nivel para la fila, única fuente de verdad para el CSS jerárquico
+   * (.lvl-0/.lvl-1/.lvl-2/.lvl-deep). Coerciona a Number() por si el valor llega
+   * como string desde el backend, y cualquier valor que no sea exactamente 0/1/2
+   * (incluido NaN, null u hondos >2) cae en 'lvl-deep' — nunca deja una fila sin
+   * clase de nivel, sin importar cuán profundo sea el árbol real (la plantilla
+   * "Proyecto" ya llega a hierarchyLevel 4).
+   */
+  /** Número de fase para el badge de nivel 1 (.phase-badge): 1ª, 2ª, 3ª rama raíz — no la posición de fila (ver phaseIndexMap en buildColorMap). */
+  getFaseIndex(act: ActividadDto): number {
+    return this.phaseIndexMap.get(act.projectActivityId) ?? 0;
+  }
+
+  getNivelClase(act: ActividadDto): 'lvl-0' | 'lvl-1' | 'lvl-2' | 'lvl-deep' {
+    const nivel = Number(act.hierarchyLevel);
+    if (nivel === 0) return 'lvl-0';
+    if (nivel === 1) return 'lvl-1';
+    if (nivel === 2) return 'lvl-2';
+    return 'lvl-deep';
+  }
+
+  /**
+   * Mitad del ancho del badge de fase (20px de diámetro → 10px), usada solo
+   * para calcular el ancho del codo horizontal del conector (.tree-elbow en
+   * el .html). La posición x del tronco en sí (18px = padding-left de
+   * .td-actividad + esta mitad) vive hardcodeada en el .css (.tree-trunk/
+   * .tree-elbow) porque position:absolute no hereda el padding del
+   * contenedor — ver el comentario ahí si hay que recalcularla.
+   */
+  readonly badgeHalfWidth = 10;
+
+  /**
+   * true si `act` es el último descendiente VISIBLE de su rama (no hay otro
+   * descendiente visible más abajo antes de que empiece la siguiente rama).
+   * Determina si el tronco vertical de la línea conectora sigue de largo
+   * (hacia la fila siguiente) o se detiene a la mitad de esta fila — nunca
+   * "cuelga" más allá del último hijo real.
+   */
+  esUltimoDeRama(act: ActividadDto): boolean {
+    const idx = this.actividades.findIndex((a) => a.projectActivityId === act.projectActivityId);
+    for (let i = idx + 1; i < this.actividades.length; i++) {
+      const siguiente = this.actividades[i];
+      if (siguiente.hierarchyLevel === 0) return true; // arrancó una rama nueva
+      if (this.isVisible(siguiente)) return false; // sigue habiendo descendientes visibles en esta rama
+    }
+    return true;
   }
 
   getBadgeStyle(act: ActividadDto): Record<string, string> {
@@ -345,11 +403,6 @@ export class CronogramaActividades implements OnInit, OnDestroy {
       return { 'background-color': s.bg, color: s.fg };
     }
     return {};
-  }
-
-  getChevronStyle(act: ActividadDto): Record<string, string> {
-    const info = this.rowStyleMap.get(act.projectActivityId);
-    return info?.text ? { color: info.text } : {};
   }
 
   getFechaRealStyle(act: ActividadDto): Record<string, string> {
