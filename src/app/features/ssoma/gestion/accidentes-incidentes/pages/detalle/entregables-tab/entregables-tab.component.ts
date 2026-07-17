@@ -7,14 +7,14 @@ import {
   ActualizarEntregableRequest,
   ESTADOS_ENTREGABLE,
 } from '../../../accidente-incidente.dtos';
-import { environment } from '../../../../../../../../environments/environment';
 import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
+import { DocumentViewer } from '../../../../../../../shared/components/document-viewer/document-viewer';
 
 @Component({
   selector: 'app-entregables-tab',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer],
   templateUrl: './entregables-tab.component.html',
   styleUrl: './entregables-tab.component.css',
 })
@@ -27,6 +27,8 @@ export class EntregablesTabComponent implements OnInit {
   editForm: Partial<ActualizarEntregableRequest> = {};
   guardando = false;
   subiendoId?: number;
+  visorUrl = '';
+  visorNombre = '';
 
   readonly estadosEntregable = ESTADOS_ENTREGABLE;
   readonly estadosEntregableOpts = ESTADOS_ENTREGABLE.map((s) => ({ value: s, label: s }));
@@ -130,13 +132,19 @@ export class EntregablesTabComponent implements OnInit {
     input.value = '';
   }
 
-  verArchivo(url: string): void {
-    const token = localStorage.getItem('access_token');
-    fetch(`${environment.apiUrl}api/v1/habilitacion/archivos/ver?url=${encodeURIComponent(url)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.blob())
-      .then((blob) => window.open(URL.createObjectURL(new Blob([blob], { type: blob.type || 'application/pdf' })), '_blank'));
+  verArchivo(url: string, nombre: string): void {
+    this.visorUrl = url;
+    this.visorNombre = nombre;
+  }
+
+  onVisorClosed(): void {
+    this.visorUrl = '';
+    this.visorNombre = '';
+  }
+
+  eliminarArchivo(archivoId: number): void {
+    if (!confirm('¿Eliminar este archivo?')) return;
+    this.service.eliminarArchivoEntregable(archivoId).subscribe({ next: () => this.cargar() });
   }
 
   estadoClass(estado: string): string {

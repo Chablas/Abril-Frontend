@@ -152,10 +152,26 @@ export class Rm050TabComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  private aFechaValida(v: string | undefined): string | undefined {
+    return v && v.trim() ? v : undefined;
+  }
+
+  private construirPayload(): GuardarRm050Request {
+    return {
+      ...this.form,
+      elaboradoPorFecha: this.aFechaValida(this.form.elaboradoPorFecha),
+      accionesCorrectivas: this.form.accionesCorrectivas.map((a) => ({
+        ...a,
+        fechaCompromiso: this.aFechaValida(a.fechaCompromiso),
+        fechaCumplimiento: this.aFechaValida(a.fechaCumplimiento),
+      })),
+    };
+  }
+
   guardar(): void {
     this.guardando = true;
     this.cdr.detectChanges();
-    this.service.guardarRm050(this.accidenteId, this.form).subscribe({
+    this.service.guardarRm050(this.accidenteId, this.construirPayload()).subscribe({
       next: () => {
         this.guardando = false;
         Swal.fire({ icon: 'success', title: 'Guardado', text: 'Investigación RM-050 guardada.', timer: 1500, showConfirmButton: false });
