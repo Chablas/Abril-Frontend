@@ -214,6 +214,16 @@ export class SolicitudSalidaCreate implements OnInit {
     return this.formData.motivos.find((m) => m.id === t.motivoId)?.esHoraEstimada ?? false;
   }
 
+  /**
+   * El recordatorio de recuperación de horas solo aplica a motivos de hora exacta:
+   * se oculta únicamente cuando TODOS los trayectos tienen motivo de hora estimada
+   * (misma regla multi-trayecto que gestión de salidas). El backend replica esta
+   * regla para omitir el recordatorio en los correos.
+   */
+  get mostrarRecordatorioRecuperacion(): boolean {
+    return this.trayectos.some((t) => !this.motivoEsHoraEstimada(t));
+  }
+
   /** Etiqueta de la hora de retorno según el motivo: estimada / exacta (neutra sin motivo aún). */
   labelHoraRetorno(t: TrayectoForm): string {
     if (!this.motivoElegido(t)) return 'Hora de retorno';
