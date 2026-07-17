@@ -43,15 +43,16 @@
 
 ### 2.2 Sistema unificado de color jerárquico (reemplaza a BCS)
 
-> **Estado: implementado en Cronograma de Actividades** 
-> (`cronograma-actividades.css` / `.ts`). Unifica la vieja paleta BCS (4 colores 
-> de rama, buena regla de profundidad) con la paleta de 10 colores del Gantt de 
-> Actividades (buena cantidad de ramas, pero sin regla de profundidad clara). 
-> Se queda con la cantidad de la segunda y la regla de profundidad de la 
-> primera. Estilo **flat** — se quitó el efecto premium (sombras + hover 
-> elevado) que tenía el Gantt. Cronograma de Hitos/BCS **no** se migró — sigue 
-> con su esquema propio de 4 colores por decisión explícita (ver nota al final 
-> de esta sección).
+> **Estado: implementado, versión final (tercera iteración)** — probado en 
+> pantalla y confirmado por el usuario. `cronograma-actividades.css` / `.ts`. 
+> Pasó por 3 rediseños: (1) paleta BCS de 4 colores con regla de profundidad; 
+> (2) paleta de 10 colores + `color-mix()` uniforme sin distinguir nivel, con 
+> fondo sólido en nivel 1 y efecto "premium" (sombras + hover elevado); (3) — 
+> **esta versión** — sin fondo sólido en ningún nivel, acento por `border-left` 
+> uniforme en los 3 niveles, badge de fase circular y línea conectora tipo 
+> árbol. Estilo **flat** en las 3 iteraciones. Cronograma de Hitos/BCS **no** 
+> se migró — sigue con su esquema propio de 4 colores por decisión explícita 
+> (ver nota al final de esta sección).
 
 **Pool de color raíz (hasta 10 ramas sin repetir color):**
 
@@ -59,31 +60,69 @@
 indigo · salvia · steel · bronze · clay · slate · amethyst · forest · ochre · graphite
 ```
 
-**Regla de profundidad implementada (`buildColorMap()` en Cronograma de 
-Actividades):**
+**Ningún nivel usa fondo sólido de color.** El acento es siempre un 
+`border-left` en `.td-actividad` (no en `td:first-child` = columna de orden, 
+que queda a 114px del contenido — pegar el acento ahí lo aislaba del 
+badge/texto). Grosor y `padding-left` del acento están **unificados en los 3 
+niveles** — antes variaban por nivel (4px/3px/1.5px), ahora es un solo valor:
 
-| Nivel | Regla |
-|---|---|
-| Nivel 1 (`.lvl-0`, raíz de rama) | Color raíz de la rama, uno de los 10 — asignado por rama (`rootIdx++` solo en nodos con `parentId == null`), nunca por índice de fila. Sin sombra, sin hover. |
-| Nivel 2 (`.lvl-1`, hijos directos) | Derivado en vivo del color de su raíz vía `color-mix()` (10% / 25% / 85% según la variante usada — fondo/texto/borde) |
-| Nivel 3+ (`.lvl-2` y `.lvl-deep`, unificados en una sola regla) | Fondo fijo `#f8fafc` + texto fijo `#4a6580` + `border-left: 3px` con `color-mix(in srgb, var(--base-color) 25%, transparent)` — el mismo valor que usa el borde de nivel 2, no una tonalidad nueva por generación (así queda visualmente "heredado", no derivado otra vez) |
+| Nivel | Fondo | `border-left` | `padding-left` (borde→contenido) | Texto |
+|---|---|---|---|---|
+| Nivel 1 (`.lvl-0`, raíz de rama) | Sin fondo | **6px** solid `var(--branch-color)` (100%, color sólido de rama) | `0.5rem` (8px) | Heredado de `.td-actividad` (`#111827`), `font-weight:700` |
+| Nivel 2 (`.lvl-1`, hijos directos) | `color-mix(in srgb, var(--branch-color) 4%, transparent)` | **6px** solid `var(--branch-color)` (100%, mismo grosor que nivel 1) — más un `border` de 1px al 12% en top/right/bottom (caja sutil) | `0.5rem` (8px) | `color-mix(in srgb, var(--branch-color) 80%, #1E3A5F)` |
+| Nivel 3+ (`.lvl-2` y `.lvl-deep`, unificados en una sola regla) | Sin fondo (evita "cajas anidadas" dentro de la caja de nivel 2) | **6px** solid `color-mix(in srgb, var(--branch-color) 25%, transparent)` (mismo grosor, menor opacidad) | `0.5rem` (8px) | `#64748B` fijo, sin mezclar |
 
-No hay nodo de "nivel 0" superior en este árbol (las 10 ramas son la raíz real), 
-así que esa fila de la regla original no aplicó — se omitió en la 
+No hay nodo de "nivel 0" superior en este árbol (las 10 ramas son la raíz 
+real), así que esa fila de la regla original no aplicó — se omitió en la 
 implementación.
 
-**Reglas duras respetadas:**
+**Badge de fase (`.phase-badge`, solo nivel 1):** circular, `20px` de 
+diámetro, `border-radius: 50%`, fondo `color-mix(in srgb, var(--branch-color) 
+12%, transparent)`, texto al **100%** del color de rama (`color: 
+var(--branch-color)`), `font-size: 0.68rem`, `font-weight: 700`. Muestra el 
+**índice de fase** (1ª, 2ª, 3ª rama raíz — no la posición de la fila en el 
+árbol completo) vía `getFaseIndex(act)` / `phaseIndexMap`, poblado reutilizando 
+el mismo `rootIdx` que ya cuenta las ramas en `buildColorMap()` (sin lógica de 
+conteo duplicada). **Bug ya corregido:** el badge llamaba por error a 
+`getDisplayIndex(act)` (posición de fila entre las 81 actividades — ej. 
+mostraba 1/9/22/27/75) en vez del índice de fase (1/2/3/4/5).
+
+**Línea conectora de árbol (`.tree-trunk` + `.tree-elbow`, nivel 2+):** no hay 
+contenedor `.activity-group` por rama (es una `<table>`, no divs anidados) — 
+cada fila descendiente dibuja su propio tramo: un tronco vertical a una x fija 
+por rama + un codo horizontal en L hacia su propio contenido. Filas 
+consecutivas de la misma rama comparten la misma x de tronco, así que en 
+conjunto se leen como una línea continua que nace en el badge del padre y 
+llega hasta el último hijo visible (el tronco se corta a la mitad de esa fila 
+final, nunca "cuelga" de más). Color: `color-mix(in srgb, var(--branch-color) 
+20%, #E2E8F0)`. **Alcance actual — decisión abierta:** un solo tronco por rama 
+completa (ancla en el badge de nivel 1), **no** un sistema de guías anidadas 
+por cada nivel intermedio (tipo VSCode). Simplificación deliberada, pendiente 
+de evaluación en pantalla si se decide ir a un esquema multinivel.
+
+**Limpieza de código muerto en esta iteración:** `isDarkBg()` ahora siempre 
+devuelve `false` (ningún nivel tiene fondo oscuro sólido que requiera 
+contraste especial; el método se mantiene porque otros helpers de badges de 
+estado/fecha real todavía lo llaman). `getChevronStyle()` se eliminó por 
+completo (forzaba texto blanco al chevron contra un fondo sólido que ya no 
+existe).
+
+**Reglas duras respetadas (sin cambios en esta iteración):**
 - Asignación de color **siempre por rama**, nunca por índice de fila plano — 
   verificado en `buildColorMap()`: los descendientes heredan el hex exacto de 
   su raíz vía `findRootColor()`.
 - Sin sombras, sin `box-shadow` de elevación, sin hover que cambie fondo en 
   ningún nivel.
+- Sin `border-radius` nuevo fuera de la escala documentada (sección 4: 
+  `6px`/`10px`/`4px`) — el badge circular (`border-radius: 50%`) es una 
+  **forma** (círculo), no una excepción a esa escala de esquinas.
 
 **Nota — Cronograma de Hitos (BCS) no migrado:** por decisión explícita, este 
 sistema unificado solo vive en Cronograma de Actividades por ahora. BCS sigue 
 con sus 4 colores de rama (1a–1d) tal como está documentado en el historial del 
 proyecto. Si en el futuro se decide unificar también ahí, actualizar esta nota 
-y replicar la regla de nivel 3+ (fondo fijo + borde) en el árbol de Hitos.
+y replicar el sistema completo (border-left uniforme + badge de fase + línea 
+conectora) en el árbol de Hitos.
 
 ---
 
