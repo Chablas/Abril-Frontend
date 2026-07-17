@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerService } from '../../../../../ssoma/salud-ocupacional/services/worker.service';
@@ -56,7 +57,7 @@ interface AreaLevel {
 @Component({
   selector: 'app-worker-edit-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker],
   templateUrl: './worker-edit-form.html',
   styleUrl: './worker-edit-form.css',
 })

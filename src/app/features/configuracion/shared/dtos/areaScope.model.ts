@@ -16,6 +16,13 @@ export interface AreaScopeWorkerDto {
   workerId: number;
   fullName: string | null;
   emailCorporativo: string | null;
+  /** Nombre de la categoría (workers.worker_category_id → workers_category.name). */
+  categoryName: string | null;
+}
+
+/** Reasignación del padre de un nodo. null = mover a la raíz. */
+export interface AreaScopeUpdateParentDto {
+  newParentAreaScopeId: number | null;
 }
 
 export interface AreaScopeBranchNodeDto {
