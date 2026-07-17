@@ -214,6 +214,16 @@ export class SolicitudSalidaCreate implements OnInit {
     return this.formData.motivos.find((m) => m.id === t.motivoId)?.esHoraEstimada ?? false;
   }
 
+  /**
+   * El recordatorio de recuperación de horas solo aplica a motivos de hora exacta:
+   * se oculta únicamente cuando TODOS los trayectos tienen motivo de hora estimada
+   * (misma regla multi-trayecto que gestión de salidas). El backend replica esta
+   * regla para omitir el recordatorio en los correos.
+   */
+  get mostrarRecordatorioRecuperacion(): boolean {
+    return this.trayectos.some((t) => !this.motivoEsHoraEstimada(t));
+  }
+
   /** Etiqueta de la hora de retorno según el motivo: estimada / exacta (neutra sin motivo aún). */
   labelHoraRetorno(t: TrayectoForm): string {
     if (!this.motivoElegido(t)) return 'Hora de retorno';
@@ -256,14 +266,13 @@ export class SolicitudSalidaCreate implements OnInit {
 
     if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
     if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
-    // Las horas solo se restringen contra la hora actual cuando la salida es HOY;
-    // para fechas futuras se acepta cualquier hora.
+    // La salida no puede ser de un tiempo pasado: la fecha debe ser hoy o futura
+    // (ver save()) y, cuando la salida es HOY, la hora de salida debe ser igual o
+    // posterior a la hora actual. Para fechas futuras se acepta cualquier hora.
     if (this.fechaSalida === this.todayStr) {
       const ahora = this.nowStr;
       if (t.horaSalida && t.horaSalida < ahora)
         errs.push(`${pref}: la hora de salida no puede ser anterior a la hora actual (${ahora})`);
-      if (!t.sinRetorno && t.horaRetorno && t.horaRetorno < ahora)
-        errs.push(`${pref}: la hora de retorno no puede ser anterior a la hora actual (${ahora})`);
     }
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);

@@ -1,0 +1,241 @@
+<app-abril-page-header
+  [badge]="'SSOMA · ' + anioActual"
+  titulo="Revisión de Descansos"
+  subtitulo="Aprobación de solicitudes de descanso médico reportadas por los trabajadores."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Acciones bulk sobre la selección ────────────────────────────── -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="aprobarBulk()"
+      [disabled]="selectedPendientes.length === 0"
+      title="Aprobar las solicitudes pendientes seleccionadas">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="rechazarBulk()"
+      [disabled]="selectedPendientes.length === 0"
+      title="Rechazar las solicitudes pendientes seleccionadas">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+      Rechazar<span *ngIf="selectedPendientes.length > 0"> ({{ selectedPendientes.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ──────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="solicitudes.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todo" />
+          </th>
+          <th>#</th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
+            <span class="inline-flex items-center gap-1">Trabajador
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('area')" title="Ordenar por área">
+            <span class="inline-flex items-center gap-1">Área
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('area')">{{ sortDirOf('area') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('fechaInicio')" title="Ordenar por fecha de inicio">
+            <span class="inline-flex items-center gap-1">Inicio
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('fechaInicio')">{{ sortDirOf('fechaInicio') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th>Fin</th>
+          <th class="cursor-pointer select-none text-center" (click)="toggleSort('dias')" title="Ordenar por días">
+            <span class="inline-flex items-center gap-1">Días
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('dias')">{{ sortDirOf('dias') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th>Motivo</th>
+          <th class="text-center">Adjuntos</th>
+          <th class="cursor-pointer select-none text-center" (click)="toggleSort('estado')" title="Ordenar por estado">
+            <span class="inline-flex items-center gap-1">Estado
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estado')">{{ sortDirOf('estado') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de solicitud">
+            <span class="inline-flex items-center gap-1">Solicitada
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('createdAt')">{{ sortDirOf('createdAt') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="solicitudes.length === 0">
+          <td colspan="11" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados con los filtros aplicados.' : 'No hay solicitudes de descanso médico registradas.' }}
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let s of solicitudes; let i = index"
+          (click)="onRowClick($event, i)"
+          title="Ver detalle (Shift+clic para seleccionar)"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          style="border-color:var(--color-abril-border)">
+
+          <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
+          <td class="select-none" (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(s.id)"
+              class="cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+          </td>
+
+          <td class="text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+
+          <td class="whitespace-nowrap">
+            <div class="worker-cell">
+              <span class="worker-name">{{ (s.workerNombre | titleCase) ?? '—' }}</span>
+              <span class="worker-dni">{{ s.workerDni }}</span>
+            </div>
+          </td>
+
+          <td class="text-gray-700">{{ (s.areaNombre | titleCase) || '—' }}</td>
+
+          <td class="text-gray-700 whitespace-nowrap">{{ s.fechaInicio + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-gray-700 whitespace-nowrap">{{ s.fechaFin + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-center">{{ s.dias }}</td>
+
+          <td class="text-gray-700">{{ (s.motivo | titleCase) || '—' }}</td>
+
+          <td class="text-center">
+            <span *ngIf="s.adjuntosCount > 0"
+                  class="inline-flex items-center gap-1 text-xs text-gray-600"
+                  [title]="s.adjuntosCount + ' archivo(s) adjunto(s)'">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+              {{ s.adjuntosCount }}
+            </span>
+            <span *ngIf="s.adjuntosCount === 0" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="s.estado"
+              [bgColor]="estadoColors(s.estado).bg"
+              [textColor]="estadoColors(s.estado).text" />
+          </td>
+
+          <td class="text-gray-400 whitespace-nowrap">
+            {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Paginador ──────────────────────────────────────────────────── -->
+  <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ─────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          (valueChange)="onAreaNodeChange(i, $event); onSearch()"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+        ></app-search-select>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador"
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="filters.estado"
+      (valueChange)="filters.estado = $event; onSearch()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Inicio desde</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.fechaDesde" (change)="onSearch()" />
+    </div>
+    <div class="flex-1 abril-field">
+      <label class="abril-field-label">Inicio hasta</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="filters.fechaHasta" (change)="onSearch()" />
+    </div>
+  </div>
+
+</app-filter-modal>
+
+<!-- ── Modal detalle de la solicitud ─────────────────────────────────── -->
+<app-revision-descanso-detalle-modal
+  *ngIf="detalle"
+  [detalle]="detalle"
+  (close)="cerrarDetalle()"
+  (aprobar)="aprobarDesdeDetalle($event)"
+  (rechazar)="rechazarDesdeDetalle($event)" />

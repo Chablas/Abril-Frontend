@@ -229,7 +229,6 @@ export class ContractorRegistration implements OnInit {
     if (!this.form.contributorProvince?.trim())           errors.push('Provincia');
     if (!this.form.contributorDepartment?.trim())         errors.push('Departamento');
     if (!this.form.economicActivityDescription?.trim())   errors.push('Actividad económica');
-    if (!this.logoFile)                                   errors.push('Logo / imagen de la empresa');
 
     // Representante legal
     // Se acepta el DNI si fue consultado (form) o simplemente escrito (dniInput)
@@ -243,7 +242,7 @@ export class ContractorRegistration implements OnInit {
       if (!item.email?.trim())
         errors.push(`Correo ${i + 1}`);
       else if (!isValidContractorEmail(item.email))
-        errors.push(`Correo ${i + 1} (solo letras, números, "@" y ".", sin empezar con símbolos)`);
+        errors.push(`Correo ${i + 1} (solo letras, números, "@", ".", "_" y "-", sin empezar ni terminar con símbolos)`);
       else if (item.personTypeId == null)
         errors.push(`Clasificación del correo ${i + 1}`);
     });

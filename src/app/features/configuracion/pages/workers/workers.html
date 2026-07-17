@@ -17,32 +17,40 @@
     <div class="filters-grid">
       <div class="filter-search">
         <label class="filter-label">Buscar</label>
-        <div class="search-input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Nombre o DNI"
-            [ngModel]="filters.search"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </div>
+        <app-search-input
+          placeholder="Buscar por nombre o DNI..."
+          width="100%"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)"
+        />
       </div>
 
       <div>
         <label class="filter-label">Aptitud</label>
-        <select class="field-input" [(ngModel)]="filters.aptitud" (change)="onFilterChange()">
-          <option *ngFor="let opt of aptitudOptions" [value]="opt.id">{{ opt.nombre }}</option>
-        </select>
+        <app-search-select
+          [options]="aptitudOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.aptitud || null"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Todas las aptitudes"
+          (valueChange)="onAptitudChange($event)"
+        />
       </div>
 
       <div>
         <label class="filter-label">Estado EMO</label>
-        <select class="field-input" [(ngModel)]="filters.estado" (change)="onFilterChange()">
-          <option *ngFor="let opt of estadoOptions" [value]="opt.id">{{ opt.nombre }}</option>
-        </select>
+        <app-search-select
+          [options]="estadoOptions"
+          valueField="id"
+          displayField="nombre"
+          [value]="filters.estado || null"
+          [showLabel]="false"
+          [sortAlpha]="false"
+          placeholder="Todos los estados"
+          (valueChange)="onEstadoChange($event)"
+        />
       </div>
     </div>
 

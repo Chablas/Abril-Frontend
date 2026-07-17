@@ -61,8 +61,15 @@ export class TimePicker implements OnChanges, OnDestroy {
   readonly horas: string[] = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   minutos: string[] = [];
 
-  /** Handler de scroll (capturing) usado para cerrar el panel si algún ancestro hace scroll. */
-  private readonly onAncestorScroll = () => this.close();
+  /**
+   * Handler de scroll (capturing) usado para cerrar el panel si algún ancestro hace scroll.
+   * Los scrolls que se originan dentro del propio componente (las columnas de hora/minuto
+   * son scrolleables) no deben cerrarlo — solo los de ancestros reales.
+   */
+  private readonly onAncestorScroll = (event?: Event) => {
+    if (event?.target instanceof Node && this.el.nativeElement.contains(event.target)) return;
+    this.close();
+  };
 
   constructor(private el: ElementRef) {
     this.recalcMinutos();
@@ -150,12 +157,21 @@ export class TimePicker implements OnChanges, OnDestroy {
     this.panelTop = rect.bottom + 4;
   }
 
+  /**
+   * Centra la opción seleccionada scrolleando solo su columna (`scrollTop` directo).
+   * No usar `scrollIntoView`: también scrollea contenedores ancestros de la página,
+   * y ese scroll externo cerraría el panel vía `onAncestorScroll`.
+   */
   private scrollSeleccionadoAlCentro() {
     if (typeof document === 'undefined') return;
     const seleccionados = this.el.nativeElement.querySelectorAll('.tp-opt.tp-selected');
-    seleccionados.forEach((btn: Element) =>
-      (btn as HTMLElement).scrollIntoView({ block: 'center' }),
-    );
+    seleccionados.forEach((btn: Element) => {
+      const col = btn.parentElement;
+      if (!col) return;
+      const opt = btn as HTMLElement;
+      // offsetTop se mide contra el panel (offsetParent), no contra la columna (static).
+      col.scrollTop = opt.offsetTop - col.offsetTop - (col.clientHeight - opt.offsetHeight) / 2;
+    });
   }
 
   seleccionarHora(h: string) {

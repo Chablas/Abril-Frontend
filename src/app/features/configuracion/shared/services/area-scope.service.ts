@@ -1,9 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../../../environments/environment';
-import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
-import { AreaScopeTreeDto, AreaScopeBranchDto } from '../dtos/areaScope.model';
+import { environment } from '../../../../../environments/environment';
+import { ApiMessageDTO } from '../../../../core/dtos/api/ApiMessage.model';
+import {
+  AreaScopeTreeDto,
+  AreaScopeBranchDto,
+  AreaScopeWorkerDto,
+  AreaScopeUpdateParentDto,
+} from '../dtos/areaScope.model';
 
 @Injectable({ providedIn: 'root' })
 export class AreaScopeService {
@@ -22,8 +27,20 @@ export class AreaScopeService {
     });
   }
 
+  getWorkers(areaScopeId: number): Observable<AreaScopeWorkerDto[]> {
+    return this.http.get<AreaScopeWorkerDto[]>(`${this.apiUrl}/${areaScopeId}/workers`, {
+      headers: this.authHeaders(),
+    });
+  }
+
   createBranch(dto: AreaScopeBranchDto): Observable<ApiMessageDTO> {
     return this.http.post<ApiMessageDTO>(`${this.apiUrl}/branch`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  updateParent(areaScopeId: number, dto: AreaScopeUpdateParentDto): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${areaScopeId}/parent`, dto, {
       headers: this.authHeaders(),
     });
   }

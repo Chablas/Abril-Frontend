@@ -183,6 +183,10 @@ export interface EmoPorTrabajadorDto {
   ocupacionId?: number;
   /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
   puesto?: string;
+  /** Nodo del árbol de áreas asignado al trabajador (workers.area_scope_id). */
+  areaScopeId?: number | null;
+  /** Categoría normalizada (workers.worker_category_id, catálogo workers_category). */
+  workerCategoryId?: number | null;
   area?: string;
   subarea?: string;
   contrataCasa?: string;
@@ -200,6 +204,12 @@ export interface DocumentTypeDto {
   descripcion: string;
 }
 
+/** Catálogo workers_category (categoría normalizada, usada por Salidas y Lecciones). */
+export interface WorkerCategoryDto {
+  id: number;
+  nombre: string;
+}
+
 /** Edición mínima de datos de identidad del trabajador (modal Configuración). */
 export interface WorkerDatosBasicosDto {
   nombreCompleto: string;
@@ -212,6 +222,12 @@ export interface WorkerDatosBasicosDto {
   ocupacionId?: number | null;
   /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
   puesto?: string | null;
+  /** Nodo del árbol de áreas asignado al trabajador (workers.area_scope_id). */
+  areaScopeId?: number | null;
+  /** Categoría normalizada (workers.worker_category_id, catálogo workers_category). */
+  workerCategoryId?: number | null;
+  /** Correo corporativo (workers.email_corporativo). Null/vacío = sin correo. */
+  emailCorporativo?: string | null;
 }
 
 export interface WorkerUpsertDto {

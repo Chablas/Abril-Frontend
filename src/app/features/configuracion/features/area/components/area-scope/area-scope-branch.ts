@@ -15,8 +15,8 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AreaItemService } from '../../services/area-item.service';
-import { AreaScopeService } from '../../services/area-scope.service';
-import { AreaScopeBranchNodeDto } from '../../dtos/areaScope.model';
+import { AreaScopeService } from '../../../../shared/services/area-scope.service';
+import { AreaScopeBranchNodeDto } from '../../../../shared/dtos/areaScope.model';
 
 interface FlatArea {
   areaItemId: number;

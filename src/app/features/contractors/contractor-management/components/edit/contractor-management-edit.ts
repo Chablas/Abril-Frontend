@@ -189,7 +189,7 @@ export class ContractorManagementEdit implements OnInit {
     const email = this.newEmail.trim();
     if (!email) return;
     if (!isValidContractorEmail(email)) {
-      Swal.fire({ icon: 'error', title: 'Correo inválido', text: 'El correo solo puede contener letras, números, "@" y ".", y no puede empezar con un símbolo.', confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'error', title: 'Correo inválido', text: 'El correo solo puede contener letras, números, "@", ".", "_" y "-", y no puede empezar ni terminar con un símbolo.', confirmButtonColor: '#64BC04' });
       return;
     }
     if (this.emails.some(e => e.email === email)) {   // duplicado exacto (case-sensitive)
@@ -270,7 +270,7 @@ export class ContractorManagementEdit implements OnInit {
     // Validar formato de todos los correos (pueden editarse en línea)
     const invalidEmail = this.emails.find(e => e.email.trim() && !isValidContractorEmail(e.email));
     if (invalidEmail) {
-      Swal.fire({ icon: 'error', title: 'Correo inválido', text: `El correo "${invalidEmail.email.trim()}" no es válido. Solo puede contener letras, números, "@" y ".", y no puede empezar con un símbolo.`, confirmButtonColor: '#64BC04' });
+      Swal.fire({ icon: 'error', title: 'Correo inválido', text: `El correo "${invalidEmail.email.trim()}" no es válido. Solo puede contener letras, números, "@", ".", "_" y "-", y no puede empezar ni terminar con un símbolo.`, confirmButtonColor: '#64BC04' });
       return;
     }
 

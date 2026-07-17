@@ -53,9 +53,9 @@
                     [disabled]="doc?.estado === 'NA'"
                   />
                 </label>
-                @if (doc?.estado !== 'NA') {
+                @if (doc?.estado !== 'NA' && doc?.estado !== 'Subido') {
                   <button type="button" class="btn-na" (click)="marcarNa(tipo)">N/A</button>
-                } @else {
+                } @else if (doc?.estado === 'NA') {
                   <button type="button" class="btn-na btn-na--revert" (click)="marcarNa(tipo)">
                     <i class="ti ti-rotate-clockwise-2"></i> Revertir
                   </button>

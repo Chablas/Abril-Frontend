@@ -51,6 +51,39 @@
         <p *ngIf="submitted && !t.motivoId && !t.motivoLibre?.trim()" class="text-xs text-red-500">Campo requerido</p>
       </div>
 
+      <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él) -->
+      <div class="flex flex-col gap-[4px]">
+        <div class="flex flex-wrap gap-[24px]">
+          <div class="w-[130px]">
+            <app-time-picker
+              label="Hora de salida"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [disabled]="!motivoElegido(t)"
+              [(value)]="t.horaSalida" />
+            <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+
+          <div class="w-[170px]">
+            <app-time-picker
+              [label]="labelHoraRetorno(t)"
+              color="var(--color-abril-standard)"
+              [allowClear]="false"
+              [disabled]="t.sinRetorno || !motivoElegido(t)"
+              [(value)]="t.horaRetorno" />
+            <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
+              <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)"
+                [disabled]="!motivoElegido(t)" style="accent-color:var(--color-abril-primary)" />
+              <span class="text-[12px] text-gray-600">Sin retorno</span>
+            </label>
+            <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+          </div>
+        </div>
+        <p *ngIf="!motivoElegido(t)" class="text-[11px] text-gray-400 italic">
+          Selecciona primero el motivo para definir las horas.
+        </p>
+      </div>
+
       <!-- Documentos adjuntos (solo motivos que lo requieren) -->
       <div *ngIf="motivoRequiereAdjunto(t)" class="flex flex-col gap-[6px]">
         <label class="text-[12px] font-semibold text-gray-600">
@@ -86,39 +119,6 @@
           (fileSelected)="onAdjuntoSelected(t, $event)" />
 
         <p *ngIf="submitted && t.adjuntos.length === 0" class="text-xs text-red-500">Campo requerido</p>
-      </div>
-
-      <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él) -->
-      <div class="flex flex-col gap-[4px]">
-        <div class="flex flex-wrap gap-[24px]">
-          <div class="w-[130px]">
-            <app-time-picker
-              label="Hora de salida"
-              color="var(--color-abril-standard)"
-              [allowClear]="false"
-              [disabled]="!motivoElegido(t)"
-              [(value)]="t.horaSalida" />
-            <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
-          </div>
-
-          <div class="w-[170px]">
-            <app-time-picker
-              [label]="labelHoraRetorno(t)"
-              color="var(--color-abril-standard)"
-              [allowClear]="false"
-              [disabled]="t.sinRetorno || !motivoElegido(t)"
-              [(value)]="t.horaRetorno" />
-            <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
-              <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)"
-                [disabled]="!motivoElegido(t)" style="accent-color:var(--color-abril-primary)" />
-              <span class="text-[12px] text-gray-600">Sin retorno</span>
-            </label>
-            <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
-          </div>
-        </div>
-        <p *ngIf="!motivoElegido(t)" class="text-[11px] text-gray-400 italic">
-          Selecciona primero el motivo para definir las horas.
-        </p>
       </div>
 
       <!-- Origen + Destino -->
@@ -230,8 +230,9 @@
       </p>
     </div>
 
-    <!-- Recordatorio permanente de recuperación de horas -->
-    <div class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
+    <!-- Recordatorio de recuperación de horas: se oculta si todos los trayectos tienen motivo de hora estimada -->
+    <div *ngIf="mostrarRecordatorioRecuperacion"
+         class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="#92400E"/>
       </svg>

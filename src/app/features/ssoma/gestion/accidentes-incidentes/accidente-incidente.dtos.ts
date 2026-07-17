@@ -242,6 +242,13 @@ export interface EntregableResponsableDto {
   nombre: string;
 }
 
+export interface EntregableArchivoDto {
+  id: number;
+  urlArchivo: string;
+  nombreArchivo: string;
+  createdAt: string;
+}
+
 export interface EntregableDto {
   id: number;
   tipoId: number;
@@ -249,11 +256,10 @@ export interface EntregableDto {
   orden: number;
   estado: string;
   fechaLimite?: string;
-  urlArchivo?: string;
-  nombreArchivo?: string;
   observacion?: string;
   updatedAt?: string;
   responsables: EntregableResponsableDto[];
+  archivos: EntregableArchivoDto[];
 }
 
 export interface ActualizarEntregableRequest {
