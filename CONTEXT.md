@@ -4440,3 +4440,28 @@ Reemplazo total de la paleta corporativa de 10 colores + `color-mix()` uniforme 
 1. El grosor de 6px de nivel 1 quedó sin escalar a 8px (la alternativa que el usuario pidió probar si 6px se veía débil) — no hubo forma de verificarlo visualmente en este entorno.
 2. La línea conectora del árbol es de un solo tronco por rama (ancla en el badge de nivel 1), no un sistema recursivo multinivel tipo VSCode con una guía por cada generación intermedia — simplificación deliberada, documentada en su momento, no confirmada con el usuario.
 3. `@angular/material`/`@angular/cdk` parecen dependencias muertas (0 imports en `src/`) — señalado en el inventario, no removido, pendiente de confirmar con el equipo antes de tocar `package.json`.
+
+## Sesión 2026-07-17 — Cronograma de Hitos: edición de característica del proyecto
+
+**Contexto**: en `features/mejora-continua/milestone-schedule/` (confirmado que el feature vive físicamente ahí desde el movimiento del 2026-07-15 — no hubo ninguna referencia a una ruta "UnidadDeProyectosModule" equivocada en el código Angular que corregir), la tarjeta de cada proyecto en el listado mostraba `levelDescription` ("característica del proyecto") y `residentFullNames` en solo lectura. Se agregó edición SOLO de `levelDescription`, sin tocar la visualización del ingeniero residente (sigue leyendo de `ProjectResident` sin cambios).
+
+**Endpoint reusado**: `PUT /api/v1/project` (`ProjectEditDto`) — el mismo que usa hoy el módulo Proyectos. Como este PUT sobreescribe el DTO completo (no un patch parcial), no había forma de armar el payload solo con los campos que trae la tarjeta del listado (`ProjectGetDTO`, que no incluye `contributorId`, fechas, métricas físicas, etc.) — la única fuente que sí trae el objeto completo es `ProyectoService.getPaged()` (feature `configuracion/features/proyectos`, `ProjectDto`), así que el modal hace: 1) GET filtrado por `projectDescription` exacto + match de `projectId` en el cliente (no existe endpoint `getById` para proyecto en ningún lado del código), 2) spread del objeto completo + solo `levelDescription` sobreescrito, 3) PUT. Esto cruza el límite de features (`mejora-continua` importa `ProyectoService`/`ProjectDto`/`ProjectEditDto` de `configuracion/features/proyectos`) — decisión deliberada por falta de un endpoint `getById` de proyecto en `core/`, no una preferencia de estilo.
+
+**Archivos tocados**:
+- `milestone-schedule.html` — ícono de lápiz junto a `levelDescription` en cada card (con `stopPropagation` para no disparar la navegación al Gantt), modal nuevo `app-base-modal` "EDITAR CARACTERÍSTICA DEL PROYECTO" con skeleton (F8) mientras carga el `ProjectDto` completo.
+- `milestone-schedule.ts` — estado (`showEditProjectModal`, `editProjectLoading`, `editProjectSaving`, `editProjectFull`, `editProjectLevelDescription`) + `openEditProject` / `closeEditProjectModal` / `saveEditProjectLevelDescription`. Errores (GET o PUT) van por el `error()` ya existente del componente (F9, Swal). Al guardar, actualiza `levelDescription` directo en el array `schedules` en memoria (mismo patrón que `onProjectImageChange`) en vez de un segundo GET de refresh.
+- `milestone-schedule.css` — `.skeleton-line`/`@keyframes skeleton-shimmer` (paleta `#dde5ef`/`#eaeff6` de DESIGN-VICTOR §7) y estilo del botón lápiz.
+- `shared/utils/sweetalert-udp.ts` (nuevo) — preset `swalUdpSuccess`/`swalUdpError` (DESIGN-VICTOR §6.9, verde `#1B6B3A` / rojo `#C0392B`). Primer y único consumidor por ahora; el resto de la app sigue con `Swal.fire()` sin este preset.
+- `styles.css` — clases globales `.swal-udp-popup`/`.swal-udp-title`/`.swal-udp-text` + overrides de color de ícono, consumidas por el preset anterior.
+
+**Build**: `ng build` limpio (0 errores nuevos, mismos warnings preexistentes de `canvg`/`flatpickr`). No se probó visualmente en navegador (sin acceso a browser/BD/credenciales en este entorno).
+
+### Auditoría de `app-base-modal` vs. DESIGN-VICTOR §6.8 (solo lectura, sin cambios)
+En esta misma sesión se hizo un inventario exacto (pedido aparte del usuario, sin tocar código) de `shared/components/base-modal/`:
+- Overlay real: `rgba(0,0,0,0.4)` (negro), no el navy `rgba(13,27,42,0.4)` de §6.8.
+- `border-radius` real: `14px` (clase `rounded-lg` → `var(--radius-lg)`, remapeado por el `@theme` del proyecto — confirmado en CSS compilado, **no** es el default de Tailwind de 8px), vs `10px` en la spec.
+- Header: `18px bold #0F6E56` (teal `--color-abril-standard`) vs `24px bold #1E3A5F` (navy) de la spec.
+- X de cerrar: `#64BC04` (verde lima), sin estado hover definido — la spec pide `#64748B` con hover a `#1E3A5F`.
+- No tiene footer propio (todo proyectado vía `<ng-content>`) — alineación/estilo de botones queda 100% a criterio de cada consumidor, sin estandarizar.
+- **Sin `@Input` de color** — los colores están hardcodeados en el template; la única forma de override es `::ng-deep` desde el componente padre. Único caso existente en todo el repo: `milestone-schedule.css` (agregado en la sesión anterior, 2026-07-15/16), que empuja el título a `24px #1E3A5F` y la X a `#64748B` — parche local, no cambia el componente compartido.
+- **Pendiente de decisión del usuario**: si vale la pena modificar `app-base-modal` para acercarlo a §6.8 globalmente (impactaría ~100+ pantallas) o dejarlo como está y seguir parchando por instancia vía `::ng-deep` cuando haga falta.
