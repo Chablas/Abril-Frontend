@@ -104,6 +104,10 @@ export class AccidenteIncidenteService {
     return this.http.post<{ url: string; message: string }>(`${this.base}/entregables/${entregableId}/archivo`, form, { headers: new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('access_token') ?? ''}` }) });
   }
 
+  eliminarArchivoEntregable(archivoId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/entregables/archivo/${archivoId}`, { headers: this.authHeaders() });
+  }
+
   getRm050(accidenteId: number): Observable<Rm050Dto> {
     return this.http.get<Rm050Dto>(`${this.base}/${accidenteId}/rm050`, { headers: this.authHeaders() });
   }
