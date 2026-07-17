@@ -243,3 +243,23 @@
 :host ::ng-deep app-base-modal button.absolute svg path {
   stroke: #64748B;
 }
+
+/* ── Modal "Editar característica del proyecto" ─────────────────────────── */
+
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #dde5ef 25%, #eaeff6 50%, #dde5ef 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.edit-caracteristica-btn {
+  color: #94a3b8;
+  transition: color .15s ease;
+}
+.edit-caracteristica-btn:hover { color: var(--color-abril-accent); }

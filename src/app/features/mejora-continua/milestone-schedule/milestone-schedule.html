@@ -1,16 +1,13 @@
 <app-abril-page-header
-  [badge]="'PROYECTOS · ' + anioActual"
+  [badge]="'MEJORA CONTINUA · ' + anioActual"
   titulo="Cronograma de Hitos"
   subtitulo="Gestión del cronograma de hitos por proyecto."
   [tabs]="[
-    { label: 'Dashboard',              icono: 'ti-layout-dashboard', route: '/projects/projects-dashboard' },
-    { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades' },
-    { label: 'Cronograma de Hitos',    icono: 'ti-flag',             route: '/mejora-continua/milestone-schedule' },
-    { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit' },
-    { label: 'Cuaderno de Obra',       icono: 'ti-notebook',         route: '/projects/construction-logbook' },
-    { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control' },
-    { label: 'Residentes',             icono: 'ti-users',            route: '/projects/resident-monitoring-measurement' },
-    { label: 'Hitos',                  icono: 'ti-settings',         route: '/projects/configuration/milestones' }
+    { label: 'Cronograma de Hitos', icono: 'ti-flag',             route: '/mejora-continua/milestone-schedule',      featureKey: 'mejora-continua.milestone-schedule' },
+    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard',               featureKey: 'mejora-continua.dashboard' },
+    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned',         featureKey: 'mejora-continua.lessons-learned' },
+    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
+    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' }
   ]">
 </app-abril-page-header>
 
@@ -71,9 +68,18 @@
                     <p class="text-sm text-gray-500 truncate" [title]="item.residentFullNames[0]">
                         {{ item.residentFullNames[0] }}
                     </p>
-                    <p class="text-xs text-gray-400 truncate" [title]="item.levelDescription">
-                        {{ item.levelDescription }}
-                    </p>
+                    <div class="flex items-center gap-1">
+                        <p class="text-xs text-gray-400 truncate flex-1" [title]="item.levelDescription">
+                            {{ item.levelDescription }}
+                        </p>
+                        <button type="button" class="edit-caracteristica-btn cursor-pointer shrink-0" title="Editar característica del proyecto"
+                            (click)="openEditProject(item, $event)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -462,6 +468,35 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: editar característica del proyecto -->
+<app-base-modal *ngIf="showEditProjectModal" title="EDITAR CARACTERÍSTICA DEL PROYECTO"
+    width="w-[480px]" (closeModal)="closeEditProjectModal()">
+    <div class="flex flex-col gap-[15px]">
+        <ng-container *ngIf="editProjectLoading; else editProjectForm">
+            <div class="skeleton-line" style="width:40%;height:12px;"></div>
+            <div class="skeleton-line" style="width:100%;height:70px;"></div>
+        </ng-container>
+        <ng-template #editProjectForm>
+            <div class="flex flex-col">
+                <p class="text-sm mb-[4px]" style="color:var(--color-abril-primary)">Característica del proyecto</p>
+                <textarea [(ngModel)]="editProjectLevelDescription" rows="3"
+                    class="border rounded-lg p-[8px] resize-none outline-none" style="border-color:var(--color-abril-border)"
+                    placeholder="Ej. 5 pisos + 2 sótanos"></textarea>
+            </div>
+            <div class="flex justify-end gap-[10px]">
+                <button type="button" (click)="closeEditProjectModal()"
+                    class="py-[6px] px-[16px] rounded-lg border cursor-pointer" style="border-color:var(--color-abril-border);color:var(--color-abril-body)">
+                    Cancelar
+                </button>
+                <button type="button" (click)="saveEditProjectLevelDescription()" [disabled]="editProjectSaving"
+                    class="py-[6px] px-[16px] rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style="background:var(--color-abril-primary)">
+                    <span class="text-white text-sm">{{ editProjectSaving ? 'Guardando...' : 'Guardar' }}</span>
+                </button>
+            </div>
+        </ng-template>
+    </div>
+</app-base-modal>
 
 <div *ngIf="loader" class="loader-overlay">
   <div class="loader"></div>

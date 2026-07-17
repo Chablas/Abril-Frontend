@@ -746,3 +746,35 @@ app-layout .full-page-wrapper app-header img[alt="Logo"],
 app-layout .full-page-wrapper app-header .sm\:hidden {
   display: none !important;
 }
+
+/* ── SweetAlert2 preset paleta UDP (DESIGN-VICTOR.md §6.9) ────────────
+   Usado por shared/utils/sweetalert-udp.ts. No repetir colores sueltos
+   en llamadas a Swal.fire(): agregar aquí si se necesita un nuevo ícono. */
+.swal-udp-popup {
+  border-radius: 10px !important;
+  font-family: var(--font-sans);
+}
+.swal-udp-title {
+  font-size: 18px !important;
+  color: #1E3A5F !important;
+}
+.swal-udp-text {
+  font-size: 14px !important;
+  color: #64748B !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success {
+  border-color: #1B6B3A !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #1B6B3A !important;
+}
+.swal-udp-popup .swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(27,107,58,0.3) !important;
+}
+.swal-udp-popup .swal2-icon.swal2-error {
+  border-color: #C0392B !important;
+  color: #C0392B !important;
+}
+.swal-udp-popup .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: #C0392B !important;
+}

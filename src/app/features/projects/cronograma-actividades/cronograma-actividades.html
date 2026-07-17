@@ -210,11 +210,11 @@
               class="row-clickable"
               [class.row-dark]="isDarkBg(act)"
               [class.row-light]="!isDarkBg(act)"
-              [class.row-bordered]="act.hierarchyLevel >= 3"
-              [class.lvl-0]="act.hierarchyLevel === 0"
-              [class.lvl-1]="act.hierarchyLevel === 1"
-              [class.lvl-2]="act.hierarchyLevel === 2"
-              [class.lvl-deep]="act.hierarchyLevel >= 3"
+              [class.row-bordered]="getNivelClase(act) === 'lvl-deep'"
+              [class.lvl-0]="getNivelClase(act) === 'lvl-0'"
+              [class.lvl-1]="getNivelClase(act) === 'lvl-1'"
+              [class.lvl-2]="getNivelClase(act) === 'lvl-2'"
+              [class.lvl-deep]="getNivelClase(act) === 'lvl-deep'"
               [class.row-dragging]="dragActId === act.projectActivityId"
               [class.drop-above]="dropTargetId === act.projectActivityId && dropPosition === 'before'"
               [class.drop-below]="dropTargetId === act.projectActivityId && dropPosition === 'after'"
@@ -281,11 +281,18 @@
                 </div>
               </td>
               <td class="td-actividad">
+                <!-- Línea conectora del árbol: cada fila descendiente dibuja su propio tramo
+                     (tronco vertical a x fija + codo horizontal hacia su propio contenido); en
+                     conjunto, filas consecutivas de la misma rama se ven como una sola línea. -->
+                <ng-container *ngIf="getNivelClase(act) !== 'lvl-0'">
+                  <span class="tree-trunk" [class.tree-trunk-end]="esUltimoDeRama(act)"></span>
+                  <span class="tree-elbow" [style.width.px]="act.hierarchyLevel * 20 - badgeHalfWidth"></span>
+                </ng-container>
                 <div class="actividad-cell" [style.padding-left.px]="act.hierarchyLevel * 20">
+                  <span *ngIf="getNivelClase(act) === 'lvl-0'" class="phase-badge">{{ getFaseIndex(act) }}</span>
                   <button
                     *ngIf="hasChildren(act)"
                     class="btn-chevron"
-                    [ngStyle]="getChevronStyle(act)"
                     (click)="toggleCollapse(act, $event)"
                     [title]="collapsedIds.has(act.projectActivityId) ? 'Expandir' : 'Colapsar'"
                   >
