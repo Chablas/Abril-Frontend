@@ -306,75 +306,60 @@
 
 .data-table tbody tr:last-child td { border-bottom: none; }
 
-/* ── Nivel 1 (raíz de rama) — color sólido, tarjeta elevada ────────────────
-   El color base llega por fila vía --base-color (ver getRowStyle en el .ts).
-   El texto (blanco u oscuro, según contraste WCAG AA) también llega inline.
-   El padding-top extra separa visualmente cada rama de la anterior. */
+/* ── Acento lateral uniforme (los 3 niveles) — mismo grosor (6px) y mismo
+   padding-left (0.5rem) entre el borde y el contenido (badge/texto) en
+   nivel 1/2/3+; lo único que cambia por nivel es el color/opacidad del
+   borde (ver border-left-color en cada bloque de nivel, más abajo). Va en
+   .td-actividad, no en td:first-child (columna de orden): ahí vive el badge
+   de fase / el texto, así el borde queda pegado al contenido en vez de
+   aislado a 114px de distancia (ancho de .col-order). */
+.data-table tbody tr.lvl-0 .td-actividad,
+.data-table tbody tr.lvl-1 .td-actividad,
+.data-table tbody tr.lvl-2 .td-actividad,
+.data-table tbody tr.lvl-deep .td-actividad {
+  border-left-width: 6px;
+  border-left-style: solid;
+  padding-left: 0.5rem;
+}
+
+/* ── Nivel 1 (raíz de rama) — sin fondo sólido, solo acento de borde ───────
+   El color de rama llega por fila vía --branch-color (ver getRowStyle en el
+   .ts — buildColorMap()/findRootColor() sin cambios). El badge circular de
+   fase (.phase-badge, en .actividad-cell) es el ancla visual de la línea
+   conectora del árbol (.tree-trunk/.tree-elbow, más abajo). Fondo limpio,
+   sin sombra, sin hover: plano. El padding-top extra separa cada rama. */
 .data-table tbody tr.lvl-0 td {
   padding-top: 1rem;
-  background-color: var(--base-color);
   font-weight: 700;
-  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--base-color) 25%, transparent);
-  transition: box-shadow 0.15s ease, transform 0.15s ease, background 0.13s ease;
 }
-.data-table tbody tr.lvl-0 td:first-child {
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-}
-.data-table tbody tr.lvl-0 td:last-child {
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-.data-table tbody tr.lvl-0.row-clickable:hover td {
-  /* Sin esto, la regla genérica .row-clickable:hover td (más específica que
-     la base .lvl-0 td) gana el "background" y sustituye el color sólido por
-     un negro casi transparente que deja ver el blanco de la tarjeta detrás,
-     apagando el contraste del texto blanco fijo de nivel 1. */
-  background-color: var(--base-color);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px -1px color-mix(in srgb, var(--base-color) 35%, transparent);
+.data-table tbody tr.lvl-0 .td-actividad {
+  border-left-color: var(--branch-color);
 }
 
-/* ── Niveles 2, 3+ (hijos) — variantes derivadas del color base con color-mix() ── */
-.data-table tbody tr.lvl-1 td,
+/* ── Nivel 2 (hijos directos) — caja sutil derivada de --branch-color ─────── */
+.data-table tbody tr.lvl-1 td {
+  background-color: color-mix(in srgb, var(--branch-color) 4%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--branch-color) 12%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--branch-color) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--branch-color) 12%, transparent);
+  color: color-mix(in srgb, var(--branch-color) 80%, #1E3A5F);
+  font-weight: 500;
+}
+.data-table tbody tr.lvl-1 .td-actividad {
+  border-left-color: var(--branch-color);
+}
+
+/* ── Nivel 3+ (nietos y más profundo) — sin fondo, para evitar "cajas
+   anidadas" dentro de la caja de nivel 2: solo un acento lateral tenue. ──── */
 .data-table tbody tr.lvl-2 td,
 .data-table tbody tr.lvl-deep td {
-  --child-bg: color-mix(in srgb, var(--base-color) 10%, transparent);
-  --child-border: color-mix(in srgb, var(--base-color) 25%, transparent);
-  --child-text: color-mix(in srgb, var(--base-color) 85%, white);
-  --child-border-left: var(--base-color);
-  background-color: var(--child-bg);
-  border-top: 1px solid var(--child-border);
-  border-bottom: 1px solid var(--child-border);
-  color: var(--child-text);
+  background: transparent;
+  color: #64748B;
   font-weight: 500;
-  transition: background 0.13s ease, border-color 0.13s ease;
 }
-.data-table tbody tr.lvl-1 td:first-child,
-.data-table tbody tr.lvl-2 td:first-child,
-.data-table tbody tr.lvl-deep td:first-child {
-  border-left: 1px solid var(--child-border);
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-}
-.data-table tbody tr.lvl-1 td:last-child,
-.data-table tbody tr.lvl-2 td:last-child,
-.data-table tbody tr.lvl-deep td:last-child {
-  border-right: 1px solid var(--child-border);
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-.data-table tbody tr.lvl-1.row-clickable:hover td,
-.data-table tbody tr.lvl-2.row-clickable:hover td,
-.data-table tbody tr.lvl-deep.row-clickable:hover td {
-  background-color: color-mix(in srgb, var(--base-color) 16%, transparent);
-  border-color: color-mix(in srgb, var(--base-color) 40%, transparent);
-}
-
-/* ── Acento lateral — solo nivel 3+ (nietos y más profundo) ───────────────── */
-.data-table tbody tr.lvl-2 td:first-child,
-.data-table tbody tr.lvl-deep td:first-child {
-  border-left: 4px solid var(--child-border-left) !important;
+.data-table tbody tr.lvl-2 .td-actividad,
+.data-table tbody tr.lvl-deep .td-actividad {
+  border-left-color: color-mix(in srgb, var(--branch-color) 25%, transparent);
 }
 
 /* ── Column widths ────────────────────────────────────────────────────────── */
@@ -421,9 +406,9 @@
    ahora es un chip de fondo neutro (ver más abajo), así que usa el color base
    de .avance-pct (#374151) sobre cualquier rama. */
 
-/* ── Hover genérico (fallback para filas sin clase de nivel) ──────────────── */
+/* ── Sin cambio visual en hover: fondo y sombra se mantienen fijos en todos
+   los niveles (nivel 1/2/3+). Solo cursor pointer como afordancia de clic. */
 .data-table tbody tr.row-clickable { cursor: pointer; }
-.data-table tbody tr.row-clickable:hover td { background: rgba(0, 0, 0, 0.038); }
 
 /* ── Peso de fuente y espaciado del nombre de actividad por nivel ─────────── */
 .data-table tbody tr.lvl-0 .td-actividad { letter-spacing: 0.01em; }
@@ -479,6 +464,7 @@
 .td-order { color: #9ca3af; font-size: 0.82rem; }
 
 .td-actividad {
+  position: relative;
   color: #111827;
   min-width: 500px;
 }
@@ -488,6 +474,59 @@
   align-items: center;
   gap: 0.3rem;
   min-width: 0;
+}
+
+/* ── Badge de fase (nivel 1) — ancla visual de la línea conectora ─────────── */
+.phase-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--branch-color) 12%, transparent);
+  color: var(--branch-color);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ── Línea conectora del árbol ──────────────────────────────────────────────
+   No hay contenedor de grupo por rama (es una <table>, no divs anidados): el
+   tronco vertical vive a una x FIJA (centro del badge de nivel 1) y cada fila
+   descendiente dibuja su propio tramo de tronco + un codo horizontal hacia su
+   contenido. Filas consecutivas de la misma rama comparten la misma x de
+   tronco, así que en conjunto se leen como una sola línea continua que nace
+   en el badge del padre y llega hasta el último hijo (el tronco se corta a
+   la mitad de la fila final vía .tree-trunk-end, nunca "cuelga" de más).
+
+   x del tronco = 18px = padding-left de .td-actividad (0.5rem = 8px, ver
+   arriba) + mitad del badge de fase (20px de diámetro → 10px). position:
+   absolute se mide desde el borde de .td-actividad (position:relative),
+   NO desde donde termina su padding — por eso hay que sumar el padding acá
+   a mano en vez de heredarlo gratis. Si el padding-left de .td-actividad
+   vuelve a cambiar, este valor hay que recalcularlo (padding + 10). El ancho
+   del codo (.tree-elbow, ver [style.width.px] en el .html) sí resta solo la
+   mitad del badge (10, = badgeHalfWidth en el .ts) porque ese cálculo parte
+   del propio indent de la fila, no del borde de la celda. */
+.tree-trunk {
+  position: absolute;
+  left: 18px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--branch-color) 20%, #E2E8F0);
+  pointer-events: none;
+}
+.tree-trunk.tree-trunk-end { bottom: 50%; }
+
+.tree-elbow {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  height: 1px;
+  background: color-mix(in srgb, var(--branch-color) 20%, #E2E8F0);
+  pointer-events: none;
 }
 
 .actividad-cell span:last-child {
