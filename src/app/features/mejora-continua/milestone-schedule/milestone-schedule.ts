@@ -31,6 +31,10 @@ import { MilestoneScheduleProjectsService } from './services/milestone-schedule-
 import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { ProyectoService } from '../../configuracion/features/proyectos/services/proyecto.service';
+import { ProjectDto } from '../../configuracion/features/proyectos/dtos/project.dto';
+import { ProjectEditDto } from '../../configuracion/features/proyectos/dtos/project-edit.dto';
+import { swalUdpSuccess } from '../../../shared/utils/sweetalert-udp';
 
 @Component({
   selector: 'app-milestone-schedule',
@@ -101,6 +105,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   private _showEditModal = false;
   get showEditModal() { return this._showEditModal; }
   set showEditModal(v: boolean) { this._showEditModal = v; this.updateTodayLineVisibility(); }
+
+  // ── Editar característica del proyecto (levelDescription) ────────────────
+  showEditProjectModal = false;
+  editProjectLoading = false;
+  editProjectSaving = false;
+  editProjectFull: ProjectDto | null = null;
+  editProjectLevelDescription = '';
 
   formdata: ScheduleFormData = {
     projects: [],
@@ -329,6 +340,76 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * El PUT /api/v1/project sobreescribe el DTO completo — por eso se lee el proyecto
+   * completo (ProjectDto, con todos los campos de ProjectEditDto) antes de abrir el modal,
+   * en vez de mandar solo levelDescription. La tarjeta del listado (ProjectGetDTO) no trae
+   * esos campos, así que hace falta esta llamada aparte pese a la regla de 1 HTTP por acción.
+   */
+  openEditProject(item: ProjectGetDTO, event: MouseEvent): void {
+    event.stopPropagation();
+    this.editProjectFull = null;
+    this.editProjectLevelDescription = '';
+    this.editProjectLoading = true;
+    this.showEditProjectModal = true;
+    this.cdr.detectChanges();
+
+    this.proyectoService
+      .getPaged({ page: 1, ruc: '', razonSocial: '', projectDescription: item.projectDescription })
+      .subscribe({
+        next: (response) => {
+          const full = response.data.find((p) => p.projectId === item.projectId) ?? null;
+          if (!full) {
+            this.showEditProjectModal = false;
+            this.editProjectLoading = false;
+            this.cdr.detectChanges();
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la información del proyecto.' });
+            return;
+          }
+          this.editProjectFull = full;
+          this.editProjectLevelDescription = full.levelDescription ?? '';
+          this.editProjectLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.showEditProjectModal = false;
+          this.error(err);
+        },
+      });
+  }
+
+  closeEditProjectModal(): void {
+    this.showEditProjectModal = false;
+    this.editProjectFull = null;
+    this.editProjectLevelDescription = '';
+  }
+
+  saveEditProjectLevelDescription(): void {
+    const full = this.editProjectFull;
+    if (!full || this.editProjectSaving) return;
+
+    this.editProjectSaving = true;
+    const dto: ProjectEditDto = {
+      ...full,
+      levelDescription: this.editProjectLevelDescription.trim() || undefined,
+    };
+
+    this.proyectoService.edit(dto).subscribe({
+      next: () => {
+        const target = this.schedules.find((p) => p.projectId === full.projectId);
+        if (target) target.levelDescription = dto.levelDescription;
+        this.editProjectSaving = false;
+        this.closeEditProjectModal();
+        this.cdr.detectChanges();
+        swalUdpSuccess('Característica actualizada exitosamente');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.editProjectSaving = false;
+        this.error(err);
+      },
+    });
+  }
+
   constructor(
     private milestoneScheduleService: MilestoneScheduleService,
     private cdr: ChangeDetectorRef,
@@ -338,6 +419,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     private milestoneScheduleHistoryService: MilestoneScheduleHistoryService,
     private milestoneService: MilestoneService,
     public authService: AuthService,
+    private proyectoService: ProyectoService,
   ) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
   }
