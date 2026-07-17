@@ -9,6 +9,7 @@ import { AreaScopeService } from '../../../../shared/services/area-scope.service
 import { AreaScopeTreeDto } from '../../../../shared/dtos/areaScope.model';
 import { AreaScopeBranch } from './area-scope-branch';
 import { AreaScopeWorkers } from './area-scope-workers';
+import { AreaScopeEditParent } from './area-scope-edit-parent';
 
 interface BranchSegment {
   name: string;
@@ -25,13 +26,15 @@ interface BranchRow {
 @Component({
   selector: 'app-area-scope-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, AreaScopeBranch, AreaScopeWorkers],
+  imports: [CommonModule, FormsModule, AreaScopeBranch, AreaScopeWorkers, AreaScopeEditParent],
   templateUrl: './area-scope-list.html',
 })
 export class AreaScopeList implements OnInit {
   rows: BranchRow[] = [];
+  tree: AreaScopeTreeDto[] = [];
   showBranchModal = false;
   workersRow: BranchRow | null = null;
+  editParentRow: BranchRow | null = null;
 
   constructor(
     private service: AreaScopeService,
@@ -47,6 +50,7 @@ export class AreaScopeList implements OnInit {
     this.loaderService.show();
     this.service.getTree().subscribe({
       next: (tree) => {
+        this.tree = tree;
         this.rows = this.computeBranches(tree);
         this.loaderService.hide();
       },
@@ -81,6 +85,15 @@ export class AreaScopeList implements OnInit {
 
   openWorkers(row: BranchRow): void {
     this.workersRow = row;
+  }
+
+  openEditParent(row: BranchRow): void {
+    this.editParentRow = row;
+  }
+
+  onParentSaved(): void {
+    this.editParentRow = null;
+    this.load();
   }
 
   rutaRama(row: BranchRow): string {

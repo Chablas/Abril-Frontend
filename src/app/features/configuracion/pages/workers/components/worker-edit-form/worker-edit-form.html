@@ -23,7 +23,11 @@
 
       <div>
         <label class="field-label">Cumpleaños</label>
-        <input type="date" class="field-input" [(ngModel)]="model.cumpleanos" />
+        <app-date-picker
+          [showLabel]="false"
+          [value]="model.cumpleanos || null"
+          (valueChange)="model.cumpleanos = $event ?? ''"
+        />
       </div>
 
       <div>

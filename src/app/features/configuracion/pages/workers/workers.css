@@ -56,48 +56,6 @@
   margin-bottom: 0.35rem;
 }
 
-.search-input {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #ffffff;
-  border: 1px solid #d6dee5;
-  border-radius: var(--radius-md);
-  padding: 0.55rem 0.75rem;
-  color: #9ca3af;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.search-input:focus-within {
-  border-color: #64bc04;
-  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
-}
-
-.search-input input {
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #111827;
-  font-size: 0.9rem;
-}
-
-.field-input {
-  width: 100%;
-  border: 1px solid #d6dee5;
-  border-radius: var(--radius-md);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.9rem;
-  color: #111827;
-  background: #ffffff;
-}
-
-.field-input:focus {
-  outline: 0;
-  border-color: #64bc04;
-  box-shadow: 0 0 0 3px rgba(100, 188, 4, 0.18);
-}
-
 .btn-link {
   font-size: 0.82rem;
   color: #64bc04;

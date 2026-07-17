@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EmoService } from '../../../ssoma/salud-ocupacional/services/emo.service';
@@ -25,7 +27,15 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 @Component({
   selector: 'app-config-workers',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, AbrilPageHeaderComponent, WorkerEditForm],
+  imports: [
+    CommonModule,
+    FormsModule,
+    Paginator,
+    SearchInput,
+    SearchSelect,
+    AbrilPageHeaderComponent,
+    WorkerEditForm,
+  ],
   templateUrl: './workers.html',
   styleUrl: './workers.css',
 })
@@ -44,8 +54,8 @@ export class Workers implements OnInit, OnDestroy {
   currentPage = 1;
   loading = false;
 
+  // Sin opción sentinela "Todas/Todos": limpiar el desplegable (valueChange null) equivale a no filtrar.
   aptitudOptions = [
-    { id: '', nombre: 'Todas las aptitudes' },
     { id: 'Apto', nombre: 'Apto' },
     { id: 'Apto con Restricciones', nombre: 'Apto con Restricciones' },
     { id: 'No Apto', nombre: 'No Apto' },
@@ -54,7 +64,6 @@ export class Workers implements OnInit, OnDestroy {
   ];
 
   estadoOptions = [
-    { id: '', nombre: 'Todos los estados' },
     { id: 'Vigente', nombre: 'Vigente' },
     { id: 'Por Vencer', nombre: 'Por Vencer' },
     { id: 'Vencido', nombre: 'Vencido' },
@@ -123,7 +132,13 @@ export class Workers implements OnInit, OnDestroy {
     this.searchChange$.next(value);
   }
 
-  onFilterChange(): void {
+  onAptitudChange(value: string | null): void {
+    this.filters.aptitud = value ?? '';
+    this.load(1);
+  }
+
+  onEstadoChange(value: string | null): void {
+    this.filters.estado = value ?? '';
     this.load(1);
   }
 
