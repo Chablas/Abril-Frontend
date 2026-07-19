@@ -4465,3 +4465,57 @@ En esta misma sesión se hizo un inventario exacto (pedido aparte del usuario, s
 - No tiene footer propio (todo proyectado vía `<ng-content>`) — alineación/estilo de botones queda 100% a criterio de cada consumidor, sin estandarizar.
 - **Sin `@Input` de color** — los colores están hardcodeados en el template; la única forma de override es `::ng-deep` desde el componente padre. Único caso existente en todo el repo: `milestone-schedule.css` (agregado en la sesión anterior, 2026-07-15/16), que empuja el título a `24px #1E3A5F` y la X a `#64748B` — parche local, no cambia el componente compartido.
 - **Pendiente de decisión del usuario**: si vale la pena modificar `app-base-modal` para acercarlo a §6.8 globalmente (impactaría ~100+ pantallas) o dejarlo como está y seguir parchando por instancia vía `::ng-deep` cuando haga falta.
+
+## Sesión 2026-07-18 — Tab-bar de Proyectos: unificación, Dashboard UDP, "Proyectos Activos" y pase de diseño
+
+**Contexto de arranque**: el tab-bar horizontal del feature Proyectos (`app-abril-page-header` `[tabs]`) estaba hardcodeado de forma independiente en cada una de las 8 páginas del feature (mismo patrón de bug ya corregido antes en Mejora Continua: `milestone-schedule`, `lessons-dashboard`, `lecciones-aprendidas`, `lesson-reminders`, `lecciones-configuracion`), así que quedaba desincronizado cada vez que se movía o renombraba una feature.
+
+### 1. Fix del tab-bar (8 páginas + Dashboard UDP sin tab-bar)
+- Corregido el array `[tabs]` en `projects-dashboard`, `cronograma-actividades` (`proyectos-cronograma-list.html`), `ivt-control`, `construction-logbook-control`, `report-response-control`, `resident-monitoring-measurement`, `actas-reunion`, `configuration/pages/milestones` — quitado el tab "Cronograma de Hitos" (apuntaba por error a `/mejora-continua/milestone-schedule`), agregado "Dashboard UDP" (faltaba) y unificado "Actas de Reunión" en las 8.
+- `cronograma-dashboard.html` ("Dashboard UDP") no usaba `app-abril-page-header` — tenía su propio header hecho a mano sin tab-bar, era la única página del feature sin navegación de vuelta. Migrado a `app-abril-page-header` con el mismo set de 9 tabs; el botón "Ir al Cronograma" se conservó como `botonSecundario`; la fecha actual se reubicó dentro de la tarjeta de filtros (antes vivía en el header manual).
+
+### 2. Bug "Actas de Reunión" no navegaba (root cause: BD, no código)
+`routerLink`/`featureKey` eran correctos en las 3 capas (F6 cumplido) — el bloqueo era silencioso vía `roleGuard`: la tabla `feature` en BD local (`abril`, `localhost:5544`) sí tenía la fila (`feature_id=166`), pero `role_feature` solo la otorgaba al rol "USUARIO DE ACTAS DE REUNION" (67), no a "ADMINISTRADOR DE UDP"/"USUARIO DE UDP" (2/3) como el resto de features de Proyectos. Aplicado en local (no en producción, pendiente de túnel SSH):
+```sql
+INSERT INTO role_feature (role_id, feature_id)
+SELECT r.role_id, f.feature_id FROM role r CROSS JOIN feature f
+WHERE f.feature_key = 'projects.actas-reunion' AND r.role_id IN (2, 3)
+ON CONFLICT DO NOTHING;
+```
+No hay cliente `psql` en este entorno — se usó `pg` (npm) vía scripts Node ad-hoc en el scratchpad de la sesión, leyendo la connection string de `Abril_Backend/appsettings.Development.json`.
+
+### 3. Auditoría de dropdowns "Proyecto" — filtran por `Active`?
+Pedido explícito de reportar antes de tocar backend. Resultado: **4 lugares no filtran por `Project.Active`** (quedó sin corregir, pendiente de coordinar con la terminal de backend):
+- Dashboard de Proyectos → `ProjectsDashboardRepository.GetFiltersDataFactory()`
+- Cronograma de Actividades → `CronogramaActividadesRepository.GetProyectosAsync()`
+- Control de IVTs / Cuaderno de Obra / Residentes (comparten método) → `ProjectResidentRepository.GetProjectsDescription()` (filtra `ProjectResident.Active`, no `Project.Active`)
+- Lessons Dashboard (Mejora Continua) → `LessonsDashboardRepository.GetFiltersAsync()` (solo incluye proyectos con ≥1 lección activa)
+
+Ya filtran correctamente (no tocar): create-modal de IVT/Cuaderno (`GetProjectByResidentUserId`), Milestone Schedule (`ProjectsRepository.GetPagedWithResidents`), Lecciones Aprendidas (`LessonRepository`).
+
+**No verificable**: Actas de Reunión — no se encontró ningún controlador/repositorio de "actas-reunion"/"reunion" en el checkout local de `Abril_Backend` (rama `victor-backend`, limpia y al día con origin). Puede vivir en una rama sin mergear.
+
+### 4. Nueva pestaña interna "Proyectos Activos" en Configuración de Hitos
+`configuration/pages/milestones/` no tenía sistema de tabs internas — se agregó un switcher simple (`activeTab: 'hitos' | 'proyectos'`) sin tocar la tabla/modales existentes de hitos (solo envueltos en `*ngIf`). La pestaña nueva lista **todos** los proyectos vía `ProyectoService.getPaged()` (reusa el service de `features/configuracion/features/proyectos/`, el mismo que ya usa `milestone-schedule.ts` para editar "característica del proyecto" — `GET /api/v1/project/paged` ya devuelve activos e inactivos, solo filtra por `State`, no por `Active`, así que no hizo falta cambio de backend) con un switch por fila que llama `toggleProyectoActive()` → arma `ProjectEditDto` completo (`{ ...item, active: !item.active }`) y hace `PUT /api/v1/project`, con toast SweetAlert2 inmediato (éxito) y el `error()` ya existente del componente (modal, nunca silencioso — F9). Skeleton shimmer mientras carga (F8). FAB "Nuevo hito" del header ahora condicional a `activeTab === 'hitos'`.
+
+### 5. Rename "Hitos" → "Configuraciones" (solo label, featureKey intacto)
+`route.data.titulo` en `configuracion-routing-module.ts` → `'CONFIGURACIONES'` (F11). Tab del feature-bar renombrado en las 9 páginas. `navigation.service.ts` no tenía entrada para esta página (no está en el sidebar) — nada que tocar ahí.
+
+### 6. Pase de diseño de ambas pestañas contra DESIGN-VICTOR.md
+La página (heredada, no de esta sesión) usaba los tokens `--color-abril-primary/-accent/-border/-primary-light/-dark` (sistema de los shared components 2026, `#4CAF50`/`#00897B`/`#E5E7EB`...) en vez de la paleta UDP documentada (`#1E3A5F`/`#2E6DB4`/`#1B6B3A`/`#E2E8F0`...), más colores sueltos que no calzaban con ningún sistema (`#D7FAF4`/`#009C87` en el badge de hitos, `#E2E2E2` en los inputs del modal). Corregido en ambas pestañas y sus 2 modales (crear/editar hito):
+- Badges unificados en `.milestones-badge` con la paleta exacta §6.3.
+- Tabla: header sin fondo teñido, uppercase/11px/`#64748B`/border-bottom, hover de fila `#F8FAFC` (§6.7, no existía antes).
+- Radios de borde a la escala real (§4): `10px` cards/modal, `6px` botones/inputs/switcher.
+- Modal: overlay `rgba(13,27,42,0.4)` (era `black/40`), sombra sutil `0 4px 12px rgba(0,0,0,0.08)` (era `shadow-xl`), padding/gap normalizados a la escala de 4px, título `24px bold #1E3A5F`, botón cerrar `#64748B`→hover `#1E3A5F` (§6.8).
+- Inputs/select: borde `#E2E8F0`, `6px` radius, `14px`, foco `#2E6DB4` + glow (§6.6, no existía foco antes).
+- Botón "Guardar": `#1E3A5F`, `6px` radius, hover con `color-mix()`, foco visible (§6.2).
+- Switcher de tabs internas y switch Activo/Inactivo (armados en la sesión anterior): recoloreados a `#1E3A5F`/`#1B6B3A` con `focus-visible`.
+
+**Sin componente documentado en DESIGN-VICTOR.md** (no se editó el archivo, queda para decisión del usuario): el switcher de tabs internas de página y el switch Activo/Inactivo no tienen sección propia — se aplicó la paleta UDP por criterio, pendiente de documentar si se van a reusar en otras pantallas.
+
+**Build**: `ng build` limpio en cada iteración (0 errores nuevos, mismos warnings preexistentes de `canvg`/`flatpickr`). No se probó visualmente en navegador (sin acceso a browser en este entorno).
+
+### Pendiente / fuera de alcance de esta sesión
+1. Los 4 dropdowns de filtro "Proyecto" que no respetan `Active` (sección 3) — requiere cambio de backend, coordinar con la otra terminal.
+2. SQL de `role_feature` para "Actas de Reunión" — aplicado solo en local, falta aplicar en producción (túnel SSH) y avisar al usuario de prueba que cierre sesión después (regla D4).
+3. Backend de "Actas de Reunión" no localizado en el checkout de `Abril_Backend` — puede estar en una rama sin mergear, sin confirmar.
