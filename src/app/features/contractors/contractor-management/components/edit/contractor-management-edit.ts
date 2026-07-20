@@ -14,6 +14,9 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import Swal from 'sweetalert2';
 
+/** Documentos adjuntos editables (clave usada por el drag & drop). */
+type EditDocKey = 'logo' | 'brochure' | 'fichaRuc' | 'references';
+
 @Component({
   selector: 'app-contractor-management-edit',
   standalone: true,
@@ -211,37 +214,75 @@ export class ContractorManagementEdit implements OnInit {
 
   // ── Archivos ────────────────────────────────────────────────────────────────
 
-  onLogoSelected(event: Event): void {
+  /** Documento sobre el que se está arrastrando un archivo (para el overlay de drop). */
+  dragDoc: EditDocKey | null = null;
+
+  /**
+   * Contador dragenter/dragleave por documento. Necesario porque al mover el mouse sobre
+   * los hijos de la tarjeta el navegador dispara dragleave del padre seguido de dragenter,
+   * y usar solo dragover/dragleave produce un parpadeo del overlay.
+   */
+  private dragEnterCount: Record<string, number> = {};
+
+  onDocDragEnter(key: EditDocKey, event: DragEvent): void {
+    event.preventDefault();
+    this.dragEnterCount[key] = (this.dragEnterCount[key] ?? 0) + 1;
+    this.dragDoc = key;
+  }
+
+  onDocDragOver(_key: EditDocKey, event: DragEvent): void {
+    // Necesario para permitir el drop; el estado visual lo maneja dragenter/dragleave.
+    event.preventDefault();
+  }
+
+  onDocDragLeave(key: EditDocKey, event: DragEvent): void {
+    event.preventDefault();
+    const remaining = (this.dragEnterCount[key] ?? 1) - 1;
+    this.dragEnterCount[key] = Math.max(remaining, 0);
+    if (this.dragEnterCount[key] === 0 && this.dragDoc === key) this.dragDoc = null;
+  }
+
+  onDocDrop(key: EditDocKey, event: DragEvent): void {
+    event.preventDefault();
+    this.dragEnterCount[key] = 0;
+    this.dragDoc = null;
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.setFile(key, file);
+  }
+
+  onLogoSelected(event: Event): void       { this.pickFromInput('logo', event); }
+  onBrochureSelected(event: Event): void   { this.pickFromInput('brochure', event); }
+  onFichaRucSelected(event: Event): void   { this.pickFromInput('fichaRuc', event); }
+  onReferencesSelected(event: Event): void { this.pickFromInput('references', event); }
+
+  private pickFromInput(key: EditDocKey, event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.logoFile = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.logoPreviewUrl = e.target?.result as string;
-      this.cdr.detectChanges();
-    };
-    reader.readAsDataURL(file);
+    if (file) this.setFile(key, file);
+  }
+
+  /** Asigna el archivo (venga del input o de drag & drop) al campo correspondiente. */
+  private setFile(key: EditDocKey, file: File): void {
+    switch (key) {
+      case 'logo': {
+        this.logoFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.logoPreviewUrl = e.target?.result as string;
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(file);
+        break;
+      }
+      case 'brochure':   this.brochureFile = file;   break;
+      case 'fichaRuc':   this.fichaRucFile = file;   break;
+      case 'references': this.referencesFile = file; break;
+    }
   }
 
   clearLogo(): void {
     this.logoFile = null;
     this.logoPreviewUrl = null;
     this.logoInput.nativeElement.value = '';
-  }
-
-  onBrochureSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.brochureFile = file;
-  }
-
-  onFichaRucSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.fichaRucFile = file;
-  }
-
-  onReferencesSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.referencesFile = file;
   }
 
   clearBrochure(): void {

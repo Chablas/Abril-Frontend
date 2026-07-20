@@ -1,7 +1,11 @@
 <app-abril-page-header
   badge="CONTRATISTAS"
   titulo="Homologación de Contratistas"
-  subtitulo="Gestión y evaluación de empresas contratistas habilitadas.">
+  subtitulo="Gestión y evaluación de empresas contratistas habilitadas."
+  [tabs]="[
+    { label: 'Registro de contratistas',     icono: 'ti-file-plus',       route: '/contractors/registro-interno', featureKey: 'contractors.registro' },
+    { label: 'Homologación de contratistas', icono: 'ti-clipboard-check', route: '/contractors/management',        featureKey: 'contractors.management' }
+  ]">
 </app-abril-page-header>
 
 <div class="bg-white rounded-lg p-5 flex-1 min-h-0 flex flex-col gap-3">

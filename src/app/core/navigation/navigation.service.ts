@@ -88,7 +88,9 @@ export class NavigationService {
       behavior: 'expand',
       landing: '/contractors/management',
       items: [
-        { label: 'Registro de contratistas',    route: '/contractors/registro', featureKey: 'contractors.registro' },
+        // Apunta a la ruta INTERNA (dentro del shell, logo opcional), no a la pública
+        // /contractors/registro (esa es solo para contratistas externos vía login).
+        { label: 'Registro de contratistas',    route: '/contractors/registro-interno', featureKey: 'contractors.registro' },
         { label: 'Homologación de contratistas', route: '/contractors/management', featureKey: 'contractors.management' },
       ],
     },

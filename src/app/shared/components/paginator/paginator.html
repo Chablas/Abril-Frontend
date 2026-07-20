@@ -1,10 +1,7 @@
+<!-- Controles alineados a la IZQUIERDA: el FAB flotante (agregar nuevo) vive fijo abajo
+     a la derecha y tapaba los botones de paginación cuando estaban a la derecha. -->
 <div
-  class="flex w-full flex-wrap items-center justify-between gap-3 rounded-[7px] border border-[#e2e8f0] bg-white px-3 py-[3px]">
-  <span class="text-[11px] font-medium text-gray-500">
-    <span class="font-semibold text-gray-700">{{ totalRecords }}</span>
-    {{ totalRecords === 1 ? 'registro' : 'registros' }}
-  </span>
-
+  class="flex w-full flex-wrap items-center justify-start gap-3 rounded-[7px] border border-[#e2e8f0] bg-white px-3 py-[3px]">
   <div class="flex items-center gap-1">
     <button
       type="button"
@@ -63,4 +60,9 @@
       </svg>
     </button>
   </div>
+
+  <span class="text-[11px] font-medium text-gray-500">
+    <span class="font-semibold text-gray-700">{{ totalRecords }}</span>
+    {{ totalRecords === 1 ? 'registro' : 'registros' }}
+  </span>
 </div>

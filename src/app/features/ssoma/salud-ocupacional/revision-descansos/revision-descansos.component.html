@@ -8,7 +8,7 @@
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
-<div class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Acciones bulk sobre la selección ────────────────────────────── -->
   <div class="flex flex-wrap items-center gap-2">
@@ -41,7 +41,7 @@
 
   <!-- ── Tabla ──────────────────────────────────────────────────────── -->
   <div class="abril-table-wrap">
-    <table class="abril-table">
+    <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
           <th>
