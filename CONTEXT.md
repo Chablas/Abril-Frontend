@@ -4575,3 +4575,26 @@ En esta misma sesión se hizo un inventario exacto (pedido aparte del usuario, s
 - **Pendiente de decisión del usuario**: si vale la pena modificar `app-base-modal` para acercarlo a §6.8 globalmente (impactaría ~100+ pantallas) o dejarlo como está y seguir parchando por instancia vía `::ng-deep` cuando haga falta.
 
 **Merge a master (2026-07-17)**: se mergeó `victor-frontend` → `master` sin conflictos (incluye esta sesión + trabajo previo de la rama: creación de `DESIGN-VICTOR.md`, rediseño de color jerárquico de Cronograma de Actividades, ajustes de tabs de Mejora Continua). `ng build` limpio tras el merge.
+
+## Sesión 2026-07-20 — Cronograma de Hitos: edición restringida a RESIDENTE
+
+**Contexto**: se pidió que en `features/mejora-continua/milestone-schedule/` solo el rol `RESIDENTE` pueda editar el cronograma (crear nueva versión, agregar/editar/eliminar hitos, marcar culminado, marcar crítico); el resto de roles con acceso a la página debe quedar en solo lectura. Antes de tocar código se hizo un reporte de solo lectura sobre el modelo de permisos actual (contenido de `core/constants/roles.ts`, uso de `AuthService.hasRole()` en otros features, y cómo se obtiene el rol en runtime desde el JWT) — confirmado que el patrón `*ngIf="authService.hasRole(Roles.X)"` ya existe en varios lugares (ej. `gestion-salidas.ts:131`, `report-response-control/list/list.html:64,75`) y no requería nada nuevo fuera del feature.
+
+**Nota de arquitectura descubierta en el reporte (no modificada)**: el acceso a la *página* `milestone-schedule` (ruta + ítem de sidebar) no se controla con `data.roles` sino con `data.featureKey: 'mejora-continua.milestone-schedule'` (`mejora-continua.routes.ts`, `navigation.service.ts`) — el `roleGuard` revisa primero `featureKey` contra `localStorage['allowed_features']` (asignación dinámica por usuario en BD) y solo cae a `data.roles`/JWT como fallback. O sea, qué roles *ven* la página hoy se decide en BD/backend, no en el frontend. Lo que se gateó en esta sesión es distinto: los controles de *edición dentro* de la página, vía `AuthService.hasRole(Roles.RESIDENTE)` en el template — independiente del featureKey de acceso a la ruta.
+
+**Cambios**:
+- `milestone-schedule.ts` — import de `Roles` (`core/constants/roles`) + campo público `readonly Roles = Roles;` para exponerlo al template (mismo patrón que `report-response-control/list/list.ts:11,22`). `AuthService` ya estaba inyectado como `public authService` desde antes.
+- `milestone-schedule.html` — 6 puntos gateados con `authService.hasRole(Roles.RESIDENTE)`:
+  1. Botón "Agregar nueva versión de cronograma".
+  2. `*ngIf="showEditButton"` del header de acciones del Gantt (Nuevo hito/Guardar sin cambios/Guardar) — combinado con la condición existente, no reemplazado (`showEditButton` también distingue modo ver vs. modo crear/editar).
+  3. Hint "Usa 'Nuevo hito'..." del estado vacío — combinado igual.
+  4. `*ngIf="showEditButton"` de los botones Editar/Marcar culminado/Eliminar del modal de detalle (incluye el trigger de `toggleCulminar`).
+  5. Checkbox "Crítico" de la vista de plantilla (`toggleCritico`) — sin condición previa, se agregó `*ngIf` directo.
+  6. Botón "Marcar/Quitar hito crítico ⭐" (`toggleCriticoGuardado`) — combinado con la condición existente `selectedTask?.milestoneScheduleId != null`.
+
+**Build**: `ng build` limpio (0 errores, mismos warnings preexistentes de `canvg`/`flatpickr`). No se verificó visualmente en navegador (sin acceso a browser/BD/credenciales en este entorno).
+
+### Pendiente / fuera de alcance de esta sesión
+1. El checkbox "Rango" (`toggleRango`) y los controles "+ Agregar hito personalizado"/eliminar hito de plantilla/inputs de fecha de la tabla de plantilla **no se gatearon** — no fue pedido explícitamente (solo culminar/crítico) y esa vista completa hoy solo es alcanzable a través del botón ya oculto en el punto 1, así que queda inaccesible en la UI para no-RESIDENTE de todas formas. Si se pide blindaje explícito ahí también, falta agregarlo.
+2. El texto informativo bajo el botón de crítico ("Los hitos críticos son los que cortan una etapa constructiva real...") se dejó visible para todos los roles — es explicativo, no una acción de edición.
+3. `MilestoneSchedule.openProjectGantt()` (`milestone-schedule.ts`) llama a `openCreateMilestoneSchedule()` directo pero no está invocado desde ningún template — código muerto/no cableado, no se tocó ni se investigó su origen.
