@@ -211,7 +211,27 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
         <!-- Logo -->
-        <div class="border border-[#E2E2E2] rounded-lg p-3 flex flex-col gap-2">
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'logo' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'logo' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'logo' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('logo', $event)"
+          (dragover)="onDocDragOver('logo', $event)"
+          (dragleave)="onDocDragLeave('logo', $event)"
+          (drop)="onDocDrop('logo', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'logo'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ logoFile || item.logoFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
           <p class="text-xs font-medium text-gray-600">Logo</p>
 
           <!-- Preview actual -->
@@ -239,7 +259,27 @@
         </div>
 
         <!-- Brochure -->
-        <div class="border border-[#E2E2E2] rounded-lg p-3 flex flex-col gap-2">
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'brochure' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'brochure' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'brochure' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('brochure', $event)"
+          (dragover)="onDocDragOver('brochure', $event)"
+          (dragleave)="onDocDragLeave('brochure', $event)"
+          (drop)="onDocDrop('brochure', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'brochure'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ brochureFile || item.brochureFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
           <p class="text-xs font-medium text-gray-600">Brochure</p>
 
           <a *ngIf="item.brochureFileUrl && !brochureFile" [href]="item.brochureFileUrl" target="_blank"
@@ -262,7 +302,27 @@
         </div>
 
         <!-- Ficha RUC -->
-        <div class="border border-[#E2E2E2] rounded-lg p-3 flex flex-col gap-2">
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'fichaRuc' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'fichaRuc' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'fichaRuc' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('fichaRuc', $event)"
+          (dragover)="onDocDragOver('fichaRuc', $event)"
+          (dragleave)="onDocDragLeave('fichaRuc', $event)"
+          (drop)="onDocDrop('fichaRuc', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'fichaRuc'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ fichaRucFile || item.fichaRucFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
           <p class="text-xs font-medium text-gray-600">Ficha RUC</p>
 
           <a *ngIf="item.fichaRucFileUrl && !fichaRucFile" [href]="item.fichaRucFileUrl" target="_blank"
@@ -285,7 +345,27 @@
         </div>
 
         <!-- Lista de referencias -->
-        <div class="border border-[#E2E2E2] rounded-lg p-3 flex flex-col gap-2">
+        <div class="relative border rounded-lg p-3 flex flex-col gap-2 transition-colors"
+          [style.borderColor]="dragDoc === 'references' ? '#64BC04' : '#E2E2E2'"
+          [style.borderStyle]="dragDoc === 'references' ? 'dashed' : 'solid'"
+          [style.background]="dragDoc === 'references' ? '#F7FBF3' : 'transparent'"
+          (dragenter)="onDocDragEnter('references', $event)"
+          (dragover)="onDocDragOver('references', $event)"
+          (dragleave)="onDocDragLeave('references', $event)"
+          (drop)="onDocDrop('references', $event)">
+
+          <!-- Overlay: se muestra mientras se arrastra un archivo sobre la tarjeta -->
+          <div *ngIf="dragDoc === 'references'"
+            class="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none"
+            style="background:#F7FBF3; opacity:0.95">
+            <span class="flex items-center gap-2 text-sm font-semibold text-[#64BC04]">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Suelta aquí para {{ referencesFile || item.referencesListFileUrl ? 'reemplazar' : 'subir' }}
+            </span>
+          </div>
+
           <p class="text-xs font-medium text-gray-600">Lista de referencias</p>
 
           <a *ngIf="item.referencesListFileUrl && !referencesFile" [href]="item.referencesListFileUrl" target="_blank"

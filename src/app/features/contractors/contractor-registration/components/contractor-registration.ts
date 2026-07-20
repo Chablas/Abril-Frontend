@@ -1,8 +1,12 @@
-import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { AbrilPageHeaderComponent, AbrilPageTab } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FileSelector, SelectedFile } from '../../../../shared/components/file-selector/file-selector';
+import { FilePreview, FilePreviewItem } from '../../../../shared/components/file-preview/file-preview';
+import { ImagePreview } from '../../../../shared/components/image-preview/image-preview';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ContractorService } from '../services/contractor.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -14,14 +18,37 @@ import { ContractorPersonTypeDTO } from '../../shared/contractorPersonType.model
 import { isValidContractorEmail } from '../../shared/email-validation';
 import Swal from 'sweetalert2';
 
+/** Campos de archivo del formulario (uno por campo). */
+type FileField = 'logoFile' | 'brochureFile' | 'fichaRucFile' | 'referencesListFile';
+
 @Component({
   selector: 'app-contractor-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, AbrilPageHeaderComponent, FileSelector, FilePreview, ImagePreview],
   templateUrl: './contractor-registration.html',
+  styleUrl: './contractor-registration.css',
 })
 export class ContractorRegistration implements OnInit {
   readonly currentYear = new Date().getFullYear();
+
+  /**
+   * "Modo interno": la ruta /contractors/registro-interno (dentro del shell) fija
+   * data.modoInterno=true. En ese modo el formulario se muestra con el header de
+   * pestañas del shell y el logo es OPCIONAL (lo usa el personal del sistema).
+   * En la ruta pública /contractors/registro (contratista externo vía login) el
+   * flag viene ausente → modo público, standalone, con el logo OBLIGATORIO.
+   */
+  modoInterno = false;
+  logoRequerido = true;
+
+  /** Marca en el <host> la clase que activa el layout flex del shell (solo modo interno). */
+  @HostBinding('class.registro-shell') get esModoInterno() { return this.modoInterno; }
+
+  /** Pestañas del header en modo interno (mismas que Homologación). */
+  readonly contractorTabs: AbrilPageTab[] = [
+    { label: 'Registro de contratistas',     icono: 'ti-file-plus',       route: '/contractors/registro-interno', featureKey: 'contractors.registro' },
+    { label: 'Homologación de contratistas', icono: 'ti-clipboard-check', route: '/contractors/management',        featureKey: 'contractors.management' },
+  ];
 
   // Person types (clasificaciones de correo)
   personTypes: ContractorPersonTypeDTO[] = [];
@@ -51,14 +78,23 @@ export class ContractorRegistration implements OnInit {
   // Emails con clasificación
   emailItems: EmailContactItem[] = [{ email: '', personTypeId: null }];
 
-  // Logo
+  // Archivos (un solo archivo por campo)
   logoFile: File | null = null;
-  logoPreviewUrl: string | null = null;
-
-  // Otros archivos
   brochureFile: File | null = null;
   fichaRucFile: File | null = null;
   referencesListFile: File | null = null;
+
+  /** Items para app-file-preview (0 o 1 por campo), en paralelo a los File de arriba.
+   *  El logo NO usa file-preview sino app-image-preview (logoPreviews) para ver la imagen. */
+  fileItems: Record<FileField, FilePreviewItem[]> = {
+    logoFile: [],
+    brochureFile: [],
+    fichaRucFile: [],
+    referencesListFile: [],
+  };
+
+  /** URL(s) de vista previa del logo para app-image-preview (0 o 1). */
+  logoPreviews: string[] = [];
 
   constructor(
     private contractorService: ContractorService,
@@ -66,9 +102,13 @@ export class ContractorRegistration implements OnInit {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.modoInterno = this.route.snapshot.data['modoInterno'] === true;
+    this.logoRequerido = !this.modoInterno;
+
     this.loaderService.show();
     this.contractorService.getPersonTypes().subscribe({
       next: (types) => {
@@ -187,34 +227,29 @@ export class ContractorRegistration implements OnInit {
     return index;
   }
 
-  // ── Logo ─────────────────────────────────────────────────────────
-  onLogoChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
-    if (!file) return;
-    this.logoFile = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.logoPreviewUrl = e.target?.result as string;
-      this.cdr.detectChanges();
-    };
-    reader.readAsDataURL(file);
+  // ── Archivos (logo, brochure, ficha RUC, lista de referencias) ────
+  // Todos usan el componente compartido app-file-selector + app-file-preview.
+  // Cada campo admite un solo archivo: al seleccionar se reemplaza el anterior.
+  onFileSelected(sel: SelectedFile, field: FileField): void {
+    this[field] = sel.file;
+    this.fileItems[field] = [{ name: sel.file.name, size: this.formatFileSize(sel.file.size) }];
+    // El logo se muestra como imagen (app-image-preview), no como fila de archivo.
+    if (field === 'logoFile') this.logoPreviews = [sel.preview];
   }
 
-  clearLogo(inputEl: HTMLInputElement): void {
-    this.logoFile = null;
-    this.logoPreviewUrl = null;
-    inputEl.value = '';
-  }
-
-  // ── Files ────────────────────────────────────────────────────────
-  onFileChange(event: Event, field: 'brochureFile' | 'fichaRucFile' | 'referencesListFile'): void {
-    const input = event.target as HTMLInputElement;
-    this[field] = input.files?.[0] ?? null;
-  }
-
-  clearFile(field: 'brochureFile' | 'fichaRucFile' | 'referencesListFile', inputEl: HTMLInputElement): void {
+  removeFile(field: FileField): void {
+    if (field === 'logoFile') {
+      if (this.logoPreviews[0]) URL.revokeObjectURL(this.logoPreviews[0]);
+      this.logoPreviews = [];
+    }
     this[field] = null;
-    inputEl.value = '';
+    this.fileItems[field] = [];
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   }
 
   // ── Validation ───────────────────────────────────────────────────
@@ -246,6 +281,9 @@ export class ContractorRegistration implements OnInit {
       else if (item.personTypeId == null)
         errors.push(`Clasificación del correo ${i + 1}`);
     });
+
+    // Logo: obligatorio para el contratista (ruta pública), opcional en modo interno.
+    if (this.logoRequerido && !this.logoFile) errors.push('Logo de la empresa');
 
     // Documentos
     if (!this.brochureFile)       errors.push('Brochure');

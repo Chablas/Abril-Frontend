@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SunatContributorDTO } from '../../shared/sunatCompany.model';
 import { ReniecPersonDTO } from '../../shared/reniecPerson.model';
@@ -14,6 +14,18 @@ export class ContractorService {
   private readonly apiUrl = `${environment.apiUrl}api/v1/contractorRegistration`;
 
   constructor(private http: HttpClient) {}
+
+  /**
+   * Header Authorization SOLO si hay sesión activa. El contratista externo (ruta
+   * pública) no tiene token → no se manda header → el backend lo ve como anónimo y
+   * exige el logo. El personal del sistema (ruta interna) sí tiene token → el backend
+   * lee su userId y exime el logo. El endpoint es [AllowAnonymous] de facto (sin
+   * [Authorize]), así que mandar/no mandar el header nunca lo rechaza.
+   */
+  private authHeaders(): { headers: HttpHeaders } | {} {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return token ? { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) } : {};
+  }
 
   getPersonTypes(): Observable<ContractorPersonTypeDTO[]> {
     return this.http.get<ContractorPersonTypeDTO[]>(`${this.apiUrl}/person-types`);
@@ -37,6 +49,6 @@ export class ContractorService {
   }
 
   register(formData: FormData): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, formData);
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}`, formData, this.authHeaders());
   }
 }
