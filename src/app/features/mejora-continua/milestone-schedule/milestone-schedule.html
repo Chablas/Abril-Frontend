@@ -95,7 +95,7 @@
     <app-base-modal *ngIf="showMilestoneScheduleHistory" title="VER HISTORIAL DE CRONOGRAMA DE HITOS"
         width="w-[800px]" (closeModal)="showMilestoneScheduleHistory = false">
             <div class="flex flex-col gap-[15px] items-center">
-                <button (click)="openCreateMilestoneSchedule()"
+                <button *ngIf="authService.hasRole(Roles.RESIDENTE)" (click)="openCreateMilestoneSchedule()"
                     class="historial-btn-primary self-start">
                     <div class="flex items-center gap-[10px]">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -164,7 +164,7 @@
             <span *ngIf="noMilestones && undatedTasks.length > 0" class="chip-plantilla">PLANTILLA</span>
         </div>
 
-        <div *ngIf="showEditButton" class="flex gap-[8px] shrink-0">
+        <div *ngIf="showEditButton && authService.hasRole(Roles.RESIDENTE)" class="flex gap-[8px] shrink-0">
             <button *ngIf="!noMilestones" (click)="openCreateMilestoneScheduleModal()" [disabled]="loader"
                 class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:var(--color-abril-lime-light);border-color:var(--color-abril-lime);color:var(--color-abril-lime)">
                 <div class="flex items-center gap-[6px]">
@@ -275,7 +275,7 @@
                     <td class="td-num">{{ i + 1 }}</td>
                     <td class="td-nombre">{{ hito.text }}</td>
                     <td class="td-badge">
-                        <input type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" />
+                        <input *ngIf="authService.hasRole(Roles.RESIDENTE)" type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" />
                     </td>
                     <td class="td-badge">
                         <input type="checkbox" [checked]="hito.esRango" (change)="toggleRango(hito)" [disabled]="hito.esCritico" />
@@ -316,7 +316,7 @@
                 stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <p class="text-base">No hay hitos registrados para este proyecto</p>
-        <p *ngIf="showEditButton" class="text-sm text-gray-400">Usa "Nuevo hito" para agregar el primero</p>
+        <p *ngIf="showEditButton && authService.hasRole(Roles.RESIDENTE)" class="text-sm text-gray-400">Usa "Nuevo hito" para agregar el primero</p>
     </div>
 
     <!-- Contenedor Gantt — se mantiene en el DOM con [hidden] para que el ViewChild esté disponible -->
@@ -387,7 +387,7 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="showEditButton" class="flex gap-[10px] justify-center mt-2">
+        <div *ngIf="showEditButton && authService.hasRole(Roles.RESIDENTE)" class="flex gap-[10px] justify-center mt-2">
             <button
                 (click)="editTask(selectedTask.id); showDetailModal = false"
                 class="px-5 py-2 rounded-lg border cursor-pointer hover:bg-[var(--color-abril-primary-light)]" style="border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
@@ -406,7 +406,7 @@
                 Eliminar
             </button>
         </div>
-        <div *ngIf="selectedTask?.milestoneScheduleId != null" class="flex gap-[10px] justify-center mt-2">
+        <div *ngIf="selectedTask?.milestoneScheduleId != null && authService.hasRole(Roles.RESIDENTE)" class="flex gap-[10px] justify-center mt-2">
             <button
                 (click)="toggleCriticoGuardado(selectedTask.id)"
                 [class]="selectedTask['esHitoCritico']

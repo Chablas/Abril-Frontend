@@ -27,6 +27,7 @@ import { MilestoneScheduleGetDTO } from '../../../core/dtos/milestoneSchedule/mi
 import { MilestoneService } from '../../../core/services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from '../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { Roles } from '../../../core/constants/roles';
 import { MilestoneScheduleProjectsService } from './services/milestone-schedule-projects.service';
 import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
@@ -35,7 +36,7 @@ import { ProyectoService } from '../../configuracion/features/proyectos/services
 import { ProjectDto } from '../../configuracion/features/proyectos/dtos/project.dto';
 import { ProjectEditDto } from '../../configuracion/features/proyectos/dtos/project-edit.dto';
 import { swalUdpSuccess } from '../../../shared/utils/sweetalert-udp';
-
+
 import { MEJORA_CONTINUA_TABS } from '../shared/mejora-continua-tabs';
 @Component({
   selector: 'app-milestone-schedule',
@@ -45,6 +46,7 @@ import { MEJORA_CONTINUA_TABS } from '../shared/mejora-continua-tabs';
   styleUrl: './milestone-schedule.css',
 })
 export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
+  readonly Roles = Roles;
   readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
 
