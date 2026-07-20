@@ -40,7 +40,8 @@ import {
   DashboardFiltroDTO,
   EnviarAlertaRequestDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model';
-
+
+import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
 // ─── tipos locales ───────────────────────────────────────────────
@@ -55,6 +56,7 @@ type TabHito    = 'INICIAR' | 'VENCER' | 'VENCIDOS';
   styleUrl   : './dashboard.css',
 })
 export class Dashboard implements AfterViewInit, OnDestroy {
+  readonly tabs = AC_TABS;
 
   anioActual = new Date().getFullYear();
 

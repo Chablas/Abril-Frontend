@@ -4,7 +4,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { buildAuthHeaders, buildParams } from '../services/http-base';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
-import { MiSaludResumenDto, MiDescansoDto, CrearMiDescansoDto } from './mi-salud.dtos';
+import {
+  MiSaludResumenDto,
+  MiDescansoDto,
+  CrearMiDescansoDto,
+  MiDescansoCorreoConfigDto,
+} from './mi-salud.dtos';
 
 @Injectable({ providedIn: 'root' })
 export class MiSaludService {
@@ -37,5 +42,20 @@ export class MiSaludService {
     return this.http.post<{ id: number; message: string }>(`${this.base}/descansos`, fd, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  // ── Configuración: correos del descanso médico ──
+  getCorreoConfigs(): Observable<MiDescansoCorreoConfigDto[]> {
+    return this.http.get<MiDescansoCorreoConfigDto[]>(`${this.base}/configuracion/correos`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  setCorreoConfigActive(id: number, active: boolean): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/configuracion/correos/${id}`,
+      { active },
+      { headers: buildAuthHeaders() },
+    );
   }
 }

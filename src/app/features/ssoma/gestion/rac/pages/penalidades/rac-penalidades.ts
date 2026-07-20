@@ -21,7 +21,8 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-
+
+import { RAC_TABS } from '../../rac-tabs';
 @Component({
   selector: 'app-rac-penalidades',
   standalone: true,
@@ -31,6 +32,7 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
   styleUrl: './rac-penalidades.css',
 })
 export class RacPenalidades implements OnInit {
+  readonly tabs = RAC_TABS;
   result: RacPagedResult<PenalidadListItemDto> | null = null;
   loading = false;
 

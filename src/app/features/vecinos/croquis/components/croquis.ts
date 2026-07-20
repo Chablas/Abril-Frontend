@@ -13,6 +13,7 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { CroquisService } from '../services/croquis.service';
 import { ProjectCroquisItemDTO } from '../dtos/croquis.dto';
 
+import { VECINOS_TABS } from '../../shared/vecinos-tabs';
 @Component({
   selector: 'app-croquis',
   standalone: true,
@@ -20,6 +21,7 @@ import { ProjectCroquisItemDTO } from '../dtos/croquis.dto';
   templateUrl: './croquis.html',
 })
 export class Croquis implements OnInit {
+  readonly tabs = VECINOS_TABS;
   items: ProjectCroquisItemDTO[] = [];
   searchText = '';
 

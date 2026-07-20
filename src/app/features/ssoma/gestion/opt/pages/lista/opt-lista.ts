@@ -17,7 +17,8 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-
+
+import { OPT_TABS } from '../../opt-tabs';
 @Component({
   selector: 'app-opt-lista',
   standalone: true,
@@ -27,6 +28,7 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
   styleUrl: './opt-lista.css',
 })
 export class OptLista implements OnInit {
+  readonly tabs = OPT_TABS;
   result: OptPagedResult | null = null;
   loading = false;
   query: OptListQuery = { page: 1, pageSize: 20 };

@@ -18,6 +18,7 @@ import {
 } from '../dtos/delegacion.model';
 import { DelegacionEditar } from './editar/editar';
 
+import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /**
  * "Delegación de Revisión" (usuario final). Muestra las áreas/proyectos donde el usuario
  * es revisor y le permite designar suplentes de su área y activarse/desactivarse
@@ -40,6 +41,7 @@ import { DelegacionEditar } from './editar/editar';
   templateUrl: './delegacion-revision.html',
 })
 export class DelegacionRevision implements OnInit {
+  readonly tabs = GESTION_ADMINISTRATIVA_TABS;
   anioActual = new Date().getFullYear();
 
   currentWorkerId = 0;

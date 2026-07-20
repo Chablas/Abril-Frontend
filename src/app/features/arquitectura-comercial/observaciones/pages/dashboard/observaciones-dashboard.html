@@ -2,10 +2,7 @@
   [badge]="'ARQ. COMERCIAL · ' + anioActual"
   titulo="Reporte de Observaciones"
   subtitulo="Avance de levantamiento de observaciones por supervisor y partida."
-  [tabs]="[
-    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/observaciones/dashboard' },
-    { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/observaciones/lista' }
-  ]"
+  [tabs]="tabs"
   [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
   (secondaryClick)="load()">
 

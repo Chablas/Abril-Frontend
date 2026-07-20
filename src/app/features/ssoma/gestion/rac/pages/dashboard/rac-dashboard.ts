@@ -6,7 +6,8 @@ import { RacDashboardDto } from '../../dtos/rac.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 import { AuthService } from '../../../../../../core/services/auth.service';
-
+
+import { RAC_TABS } from '../../rac-tabs';
 @Component({
   selector: 'app-rac-dashboard',
   standalone: true,
@@ -16,6 +17,7 @@ import { AuthService } from '../../../../../../core/services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RacDashboard implements OnInit {
+  readonly tabs = RAC_TABS;
   data: RacDashboardDto | null = null;
   loading = true;
   error = '';

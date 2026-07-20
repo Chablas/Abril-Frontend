@@ -14,6 +14,7 @@ import { CompanyEditForm } from './components/company-edit-form/company-edit-for
 import { CompanyCreateForm } from './components/company-create-form/company-create-form';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { CONFIGURACION_TABS } from '../../shared/configuracion-tabs';
 @Component({
   selector: 'app-config-companies',
   standalone: true,
@@ -22,6 +23,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
   styleUrl: './companies.css',
 })
 export class Companies implements OnInit, OnDestroy {
+  readonly tabs = CONFIGURACION_TABS;
   readonly pageSize = 15;
 
   filters = { search: '', estado: '' as '' | 'activo' | 'inactivo' };

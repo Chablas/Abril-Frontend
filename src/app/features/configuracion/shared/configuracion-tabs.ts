@@ -1,0 +1,11 @@
+import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril-page-header.component';
+
+/** Pestañas del header de Configuración — única fuente para todas sus páginas.
+ *  Cada featureKey coincide con el del roleGuard de su ruta (configuracion-module.ts). */
+export const CONFIGURACION_TABS: AbrilPageTab[] = [
+  { label: 'Proyectos',                       icono: 'ti-folder',   route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
+  { label: 'Áreas',                           icono: 'ti-layout',   route: '/configuracion/area',      featureKey: 'configuracion.area' },
+  { label: 'Razones Sociales',                icono: 'ti-building', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
+  { label: 'Trabajadores',                    icono: 'ti-users',    route: '/configuracion/workers',   featureKey: 'configuracion.workers' },
+  { label: 'Feriados y Días no Laborables',   icono: 'ti-calendar', route: '/configuracion/feriados',  featureKey: 'configuracion.feriados' },
+];

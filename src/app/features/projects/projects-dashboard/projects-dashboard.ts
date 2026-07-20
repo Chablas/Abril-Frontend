@@ -21,6 +21,7 @@ import {
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { PROJECTS_TABS } from '../shared/projects-tabs';
 Chart.register(...registerables, ChartDataLabels);
 declare const gantt: any;
 
@@ -32,6 +33,7 @@ declare const gantt: any;
   styleUrl: './projects-dashboard.css',
 })
 export class ProjectsDashboard implements OnInit, OnDestroy {
+  readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
 
   @ViewChild('donutCanvas') donutCanvasRef?: ElementRef<HTMLCanvasElement>;

@@ -23,6 +23,7 @@ import { ProjectStaffList } from './project-staff-list/project-staff-list';
 import { JefeList } from './jefe-list/jefe-list';
 import { WorkerRevisorList } from './worker-revisor-list/worker-revisor-list';
 
+import { MEJORA_CONTINUA_TABS } from '../../../../shared/mejora-continua-tabs';
 type ReminderSection = 'users' | 'staff' | 'jefes' | 'revisores';
 
 @Component({
@@ -46,6 +47,7 @@ type ReminderSection = 'users' | 'staff' | 'jefes' | 'revisores';
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LessonReminders implements OnInit {
+  readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
   activeSection: ReminderSection = 'users';
   readonly sectionTabs: SectionTab[] = [

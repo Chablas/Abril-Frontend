@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -17,8 +17,12 @@ import { MiSaludResumenDto, MiDescansoDto } from './mi-salud.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-import { SSOMA_TABS } from '../topico/topico.component';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
+import { NavigationService } from '../../../../core/navigation/navigation.service';
+
+/** Feature que habilita el botón "Configuración" de Mi Salud (rol ADMINISTRADOR DEL SISTEMA). */
+const FEATURE_CONFIGURACION = 'ssoma.salud-ocupacional.mi-salud.configuracion';
 
 @Component({
   selector: 'app-mi-salud',
@@ -43,6 +47,9 @@ export class MiSaludComponent implements OnInit, OnDestroy {
 
   modalVisible = false;
 
+  /** El botón "Configuración" del header se habilita solo con esta feature. */
+  puedeConfigurar = false;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -51,9 +58,12 @@ export class MiSaludComponent implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private cdr         : ChangeDetectorRef,
     private route       : ActivatedRoute,
+    private router      : Router,
+    private navigationService: NavigationService,
   ) {}
 
   ngOnInit(): void {
+    this.puedeConfigurar = this.navigationService.isFeatureAllowed(FEATURE_CONFIGURACION);
     this.loadResumen();
     this.loadDescansos(1);
     // Atajo desde el boletín (?nuevo=1): abre el formulario directo, sin pasos extra.
@@ -103,6 +113,11 @@ export class MiSaludComponent implements OnInit, OnDestroy {
   }
 
   onPageChange(p: number): void { this.loadDescansos(p); }
+
+  irAConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/ssoma/salud-ocupacional/mi-salud/configuracion']);
+  }
 
   abrirModal(): void  { this.modalVisible = true;  this.cdr.detectChanges(); }
   cerrarModal(): void { this.modalVisible = false; this.cdr.detectChanges(); }

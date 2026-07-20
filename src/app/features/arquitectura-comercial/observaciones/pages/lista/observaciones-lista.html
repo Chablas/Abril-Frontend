@@ -2,10 +2,7 @@
   [badge]="'ARQUITECTURA COMERCIAL · ' + anioActual"
   titulo="Observaciones"
   subtitulo="Observaciones reportadas y su levantamiento por proyecto."
-  [tabs]="[
-    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/observaciones/dashboard' },
-    { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/observaciones/lista' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
   [botonPrimarioDeshabilitado]="!filtrosListos"
   [botonPrimarioTooltip]="!filtrosListos ? 'Cargando proyectos...' : undefined"

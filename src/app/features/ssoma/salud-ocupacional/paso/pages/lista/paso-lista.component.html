@@ -3,11 +3,7 @@
     badge="SSOMA · PASO"
     titulo="Programas PASO"
     subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
-    [tabs]="[
-      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/paso/dashboard' },
-      { label: 'Programas', icono: 'ti-list',             route: '/ssoma/gestion/paso/lista' },
-      { label: 'Alertas',   icono: 'ti-bell',             route: '/ssoma/gestion/paso/alertas' }
-    ]"
+    [tabs]="headerTabs"
     [botonSecundario]="{ label: 'Exportar', icono: 'ti-download' }"
     (secondaryClick)="exportOpen = !exportOpen">
   </app-abril-page-header>

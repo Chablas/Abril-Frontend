@@ -285,18 +285,43 @@ export class NavigationService {
     return this.getAllowedFeatures().includes(featureKey);
   }
 
-  private isItemAllowed(item: NavItem): boolean {
-    if (!item.featureKey && !item.roles?.length) return true;
-    if (item.featureKey && this.getAllowedFeatures().includes(item.featureKey)) return true;
-    if (item.roles?.length) {
+  /**
+   * Regla ÚNICA de visibilidad para cualquier entrada de navegación: items del
+   * sidebar y pestañas del header por igual. Una entrada es visible si:
+   *  - no declara restricción alguna (sin featureKey/featureKeys ni roles), o
+   *  - el usuario tiene acceso a su `featureKey`, o
+   *  - tiene acceso a AL MENOS UNO de sus `featureKeys` (pestañas "contenedor"
+   *    tipo Configuración, que agrupan varias sub-secciones), o
+   *  - cumple alguno de sus `roles` (incluye los centinelas CONTRATISTA/CLINICA,
+   *    cuyas sesiones no viajan con allowed_features y se resuelven por tipo).
+   *
+   * Al declarar una entrada hay que usar la MISMA clave/roles que el roleGuard de
+   * la ruta destino: así la visibilidad de la entrada coincide exactamente con la
+   * accesibilidad de la ruta y nunca aparece algo que, al hacer clic, redirija al
+   * inicio/boletín.
+   */
+  isNavEntryAllowed(entry: { featureKey?: string; featureKeys?: string[]; roles?: string[] }): boolean {
+    const hasRestriction =
+      !!entry.featureKey || !!entry.featureKeys?.length || !!entry.roles?.length;
+    if (!hasRestriction) return true;
+
+    const allowed = this.getAllowedFeatures();
+    if (entry.featureKey && allowed.includes(entry.featureKey)) return true;
+    if (entry.featureKeys?.some((k) => allowed.includes(k))) return true;
+
+    if (entry.roles?.length) {
       // Centinelas por tipo de sesión: CONTRATISTA/CLINICA no viajan en el claim role_id
       // (usan un JWT propio), así que se resuelven por el tipo guardado en localStorage.
-      if (item.roles.includes('CONTRATISTA') && this.authService.isContratista()) return true;
-      if (item.roles.includes('CLINICA') && this.authService.isClinica()) return true;
+      if (entry.roles.includes('CONTRATISTA') && this.authService.isContratista()) return true;
+      if (entry.roles.includes('CLINICA') && this.authService.isClinica()) return true;
       // Roles de staff: se comparan por ID (constantes de roles.ts) contra getRoles().
-      if (item.roles.some((r) => this.authService.hasRole(r))) return true;
+      if (entry.roles.some((r) => this.authService.hasRole(r))) return true;
     }
     return false;
+  }
+
+  private isItemAllowed(item: NavItem): boolean {
+    return this.isNavEntryAllowed(item);
   }
 
   getModules(): NavModule[] {

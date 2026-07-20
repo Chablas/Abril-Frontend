@@ -21,6 +21,7 @@ import { PaymentMethodSimpleDTO } from '../dtos/paymentMethodSimple.model';
 import { ProjectSubContractorStatusSimpleDTO } from '../dtos/projectSubContractorStatusSimple.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { COSTS_TABS } from '../../../shared/costs-tabs';
 @Component({
   standalone: true,
   selector: 'app-adjudicaciones',
@@ -29,6 +30,7 @@ import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril
   styleUrl: './adjudicaciones.css',
 })
 export class Adjudicaciones implements OnInit {
+  readonly tabs = COSTS_TABS;
   items: ProjectSubContractorDTO[] = [];
   currentPage = 1;
   totalPages = 0;

@@ -13,6 +13,7 @@ import { CreateModalData } from "../../../core/models/ivtControl/createModalData
 import { DomSanitizer } from '@angular/platform-browser';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { PROJECTS_TABS } from '../shared/projects-tabs';
 @Component({
   selector: 'app-ivt-control',
   imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
@@ -21,6 +22,7 @@ import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-
   styleUrl: './ivt-control.css',
 })
 export class IvtControl {
+  readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
 
   /*ivtControls: IvtControlPagedDTO = {

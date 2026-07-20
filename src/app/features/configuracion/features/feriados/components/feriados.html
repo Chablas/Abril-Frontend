@@ -2,13 +2,7 @@
   badge="CONFIGURACIÓN"
   titulo="Feriados y Días no Laborables"
   subtitulo="Gestión de feriados y días no laborables del sistema."
-  [tabs]="[
-    { label: 'Proyectos', icono: 'ti-folder', route: '/configuracion/proyectos' },
-    { label: 'Áreas', icono: 'ti-layout', route: '/configuracion/area' },
-    { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
-    { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' },
-    { label: 'Feriados y Días no Laborables', icono: 'ti-calendar', route: '/configuracion/feriados' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nuevo', icono: 'ti-plus' }"
   (primaryClick)="openCreate()">
 </app-abril-page-header>

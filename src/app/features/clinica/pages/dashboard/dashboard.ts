@@ -10,6 +10,7 @@ import { InterconsultaService } from '../../../ssoma/salud-ocupacional/services/
 import { DashboardSaludService } from '../../../ssoma/salud-ocupacional/services/dashboard-salud.service';
 import { ProximoVencerDto } from '../../../ssoma/salud-ocupacional/dtos/dashboard-salud.model';
 
+import { CLINICA_TABS } from '../../shared/clinica-tabs';
 @Component({
   selector: 'app-clinica-dashboard',
   standalone: true,
@@ -18,6 +19,7 @@ import { ProximoVencerDto } from '../../../ssoma/salud-ocupacional/dtos/dashboar
   styleUrls: ['./dashboard.css'],
 })
 export class ClinicaDashboard implements OnInit {
+  readonly tabs = CLINICA_TABS;
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);

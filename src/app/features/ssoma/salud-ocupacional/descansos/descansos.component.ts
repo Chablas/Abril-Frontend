@@ -9,7 +9,7 @@ import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
-import { SSOMA_TABS } from '../topico/topico.component';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { DescansosService } from './descansos.service';
 import { DescansoModalComponent } from './descanso-modal.component';
 import { DescansoMedicoListItemDto, DescansoFilterDto } from './descansos.dtos';

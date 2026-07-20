@@ -21,20 +21,7 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
-export const SSOMA_TABS = [
-  { label: 'Dashboard',      icono: 'ti-layout-dashboard',  route: '/ssoma/salud-ocupacional/dashboard' },
-  { label: 'EMOs',           icono: 'ti-stethoscope',       route: '/ssoma/salud-ocupacional/emos' },
-  { label: 'Programaciones', icono: 'ti-calendar',          route: '/ssoma/salud-ocupacional/programaciones' },
-  { label: 'Interconsultas', icono: 'ti-arrows-right-left', route: '/ssoma/salud-ocupacional/interconsultas' },
-  { label: 'Convalidaciones',icono: 'ti-check',             route: '/ssoma/salud-ocupacional/convalidaciones' },
-  { label: 'Tópico Médico',  icono: 'ti-first-aid-kit',     route: '/ssoma/salud-ocupacional/topico' },
-  { label: 'Accidentes',     icono: 'ti-alert-triangle',    route: '/ssoma/salud-ocupacional/accidentes' },
-  { label: 'Descansos',      icono: 'ti-bed',               route: '/ssoma/salud-ocupacional/descansos' },
-  { label: 'Revisión Descansos', icono: 'ti-checkup-list',  route: '/ssoma/salud-ocupacional/revision-descansos', featureKey: 'ssoma.salud-ocupacional.revision-descansos' },
-  { label: 'Asistente Social', icono: 'ti-heart-handshake', route: '/ssoma/salud-ocupacional/asistente-social' },
-  { label: 'PASO', icono: 'ti-clipboard-check', route: '/ssoma/salud-ocupacional/paso', featureKey: 'ssoma.salud-ocupacional.paso' },
-  { label: 'Mi Salud', icono: 'ti-user-heart', route: '/ssoma/salud-ocupacional/mi-salud', featureKey: 'ssoma.salud-ocupacional.mi-salud' },
-];
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 @Component({
   selector: 'app-salud-topico',

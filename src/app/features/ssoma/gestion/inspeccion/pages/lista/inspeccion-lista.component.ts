@@ -16,7 +16,8 @@ import { FilterModal } from '../../../../../../shared/components/filter-modal/fi
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
-
+
+import { INSPECCION_TABS } from '../../inspeccion-tabs';
 @Component({
   selector: 'app-inspeccion-lista',
   standalone: true,
@@ -26,6 +27,7 @@ import { StatusBadge } from '../../../../../../shared/components/status-badge/st
   styleUrl: './inspeccion-lista.component.css',
 })
 export class InspeccionListaComponent implements OnInit {
+  readonly tabs = INSPECCION_TABS;
   items: InspeccionListItemDto[] = [];
   loading = true;
   total = 0;

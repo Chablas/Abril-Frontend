@@ -7,6 +7,7 @@ import { ProgramacionClinicaDto } from '../../dtos/clinica.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 
+import { CLINICA_TABS } from '../../shared/clinica-tabs';
 @Component({
   selector: 'app-clinica-programaciones',
   standalone: true,
@@ -15,6 +16,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
   styleUrls: ['./programaciones.css'],
 })
 export class ProgramacionesClinica implements OnInit {
+  readonly tabs = CLINICA_TABS;
   items: ProgramacionClinicaDto[] = [];
   loading = false;
   filtroEstado = '';

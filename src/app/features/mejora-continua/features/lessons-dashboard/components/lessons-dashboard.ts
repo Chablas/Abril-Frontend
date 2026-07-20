@@ -31,6 +31,7 @@ import {
   LessonAreaSegmentDto,
 } from '../../configuration/lesson-areas/dtos/lesson-area.dto';
 
+import { MEJORA_CONTINUA_TABS } from '../../../shared/mejora-continua-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
 /** Nodo del árbol de áreas para el filtro en cascada (misma lógica que Lecciones Aprendidas). */
@@ -50,6 +51,7 @@ interface AreaTreeNode {
   styleUrl: './lessons-dashboard.css',
 })
 export class LessonsDashboard implements AfterViewInit {
+  readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
   trendChart?: Chart;
   barChart?: Chart;

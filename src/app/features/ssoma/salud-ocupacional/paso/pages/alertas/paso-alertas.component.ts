@@ -8,7 +8,8 @@ import { EjecucionModalComponent } from '../../components/ejecucion-modal/ejecuc
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-
+
+import { PASO_TABS } from '../../paso-tabs';
 @Component({
   selector: 'app-paso-alertas',
   standalone: true,
@@ -17,6 +18,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
   styleUrl: './paso-alertas.component.css',
 })
 export class PasoAlertasComponent implements OnInit {
+  readonly headerTabs = PASO_TABS;
   alertas: PasoAlertaDto[] = [];
   loading = false;
   tabActiva: 'vencidas' | 'proximas' = 'vencidas';

@@ -2,13 +2,7 @@
   [badge]="'MEJORA CONTINUA · ' + anioActual"
   titulo="Lecciones Aprendidas"
   subtitulo="Registro y gestión de lecciones aprendidas por proyecto."
-  [tabs]="[
-    { label: 'Cronograma de Hitos', icono: 'ti-flag',             route: '/mejora-continua/milestone-schedule',      featureKey: 'mejora-continua.milestone-schedule' },
-    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard',               featureKey: 'mejora-continua.dashboard' },
-    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned',         featureKey: 'mejora-continua.lessons-learned' },
-    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
-    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nuevo registro', icono: 'ti-plus' }"
   [botonPrimarioDeshabilitado]="!canUpload"
   [botonPrimarioTooltip]="canUpload ? '' : uploadBlockedMessage"

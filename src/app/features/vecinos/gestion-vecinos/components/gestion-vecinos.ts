@@ -23,6 +23,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 
+import { VECINOS_TABS } from '../../shared/vecinos-tabs';
 @Component({
   selector: 'app-gestion-vecinos',
   standalone: true,
@@ -42,6 +43,7 @@ import { ErrorService } from '../../../../core/services/error.service';
   templateUrl: './gestion-vecinos.html',
 })
 export class GestionVecinos implements OnInit {
+  readonly tabs = VECINOS_TABS;
   vecinos: VecinoListItemDTO[] = [];
   options: VecinoFormOptionsDTO = { projects: [], colindancias: [], tiposConstruccion: [], usos: [], relacionTipos: [] };
 

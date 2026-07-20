@@ -2,10 +2,7 @@
   [badge]="'ARQ. COMERCIAL · ' + anioActual"
   titulo="Reporte de Revisiones"
   subtitulo="Avance de levantamiento de observaciones por revisión y partida."
-  [tabs]="[
-    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/revisiones/dashboard' },
-    { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/revisiones/lista' }
-  ]"
+  [tabs]="tabs"
   [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
   (secondaryClick)="load()">
 

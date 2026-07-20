@@ -12,6 +12,7 @@ import { AreaItemCreate } from './area-item/area-item-create';
 import { AreaScopeList } from './area-scope/area-scope-list';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { CONFIGURACION_TABS } from '../../../shared/configuracion-tabs';
 type AreaSection = 'items' | 'scope' | 'types';
 
 @Component({
@@ -32,6 +33,7 @@ type AreaSection = 'items' | 'scope' | 'types';
   styleUrl: './area.css',
 })
 export class Area {
+  readonly tabs = CONFIGURACION_TABS;
   @ViewChild(AreaTypeList) typeList!: AreaTypeList;
   @ViewChild(AreaItemList) itemList!: AreaItemList;
   @ViewChild(AreaScopeList) scopeList!: AreaScopeList;

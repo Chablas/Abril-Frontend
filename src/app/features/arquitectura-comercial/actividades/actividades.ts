@@ -19,7 +19,8 @@ import { NuevaConsulta } from './components/nueva-consulta/nueva-consulta';
 import { EditarActividad } from './components/editar-actividad/editar-actividad';
 import { NuevoHito } from './components/nuevo-hito/nuevo-hito';
 import { NuevoEntregable } from './components/nuevo-entregable/nuevo-entregable';
-
+
+import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 type TipoFiltro = '' | 'ENTREGABLE' | 'HITO' | 'CONSULTA';
 
 interface EtapaGroup {
@@ -37,6 +38,7 @@ interface EtapaGroup {
   styleUrl: './actividades.css',
 })
 export class Actividades implements OnInit {
+  readonly tabs = AC_TABS;
   anioActual = new Date().getFullYear();
   readonly etapasFijas = ['PREVENTA', 'OBRA', 'EDIFICIO ENTREGADO', 'POST VENTA Y EXPERIENCIA', 'ALMACEN'];
 

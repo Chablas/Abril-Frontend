@@ -6,6 +6,7 @@ import { SectionTabs, SectionTab } from '../../../../shared/components/section-t
 import { InvoiceFolder } from './invoiceFolder/components/invoice-folder';
 import { ManagerSignature } from './managerSignature/components/manager-signature';
 
+import { CONTABILIDAD_TABS } from '../../shared/contabilidad-tabs';
 type ConfigSection = 'carpeta-facturas' | 'firma-gg';
 
 /**
@@ -23,6 +24,7 @@ type ConfigSection = 'carpeta-facturas' | 'firma-gg';
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class ContabilidadConfiguracion implements OnInit {
+  readonly tabs = CONTABILIDAD_TABS;
   anioActual = new Date().getFullYear();
   activeSection: ConfigSection = 'carpeta-facturas';
 

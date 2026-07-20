@@ -2,7 +2,11 @@
   [badge]="'SSOMA · ' + anioActual"
   titulo="Mi Salud"
   subtitulo="Tu resumen de salud ocupacional y descansos médicos."
-  [tabs]="tabs">
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Configuración', icono: 'ti-settings' }"
+  [botonSecundarioDeshabilitado]="!puedeConfigurar"
+  [botonSecundarioTooltip]="puedeConfigurar ? 'Configuración de Mi Salud' : 'Solo el Administrador del Sistema puede acceder a la configuración'"
+  (secondaryClick)="irAConfiguracion()">
 </app-abril-page-header>
 
 <section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-hidden">

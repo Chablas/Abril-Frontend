@@ -9,6 +9,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
+import { INSPECCION_TABS } from '../../inspeccion-tabs';
 @Component({
   selector: 'app-inspeccion-dashboard',
   standalone: true,
@@ -18,6 +19,7 @@ import { FabButton } from '../../../../../../shared/components/fab-button/fab-bu
   styleUrl: './inspeccion-dashboard.component.css',
 })
 export class InspeccionDashboardComponent implements OnInit {
+  readonly tabs = INSPECCION_TABS;
   data: InspeccionDashboardDto | null = null;
   loading = true;
   readonly anioActual = new Date().getFullYear();

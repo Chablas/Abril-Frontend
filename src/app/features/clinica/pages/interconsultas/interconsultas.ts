@@ -12,7 +12,8 @@ import {
 } from '../../../ssoma/salud-ocupacional/dtos/interconsulta.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-
+
+import { CLINICA_TABS } from '../../shared/clinica-tabs';
 interface LevantamientoData {
   fechaAtencion: string;
   resultado: string;
@@ -41,6 +42,7 @@ interface EditandoData {
   styleUrls: ['./interconsultas.css'],
 })
 export class InterconsultasClinica implements OnInit {
+  readonly tabs = CLINICA_TABS;
   items: InterconsultaListDto[] = [];
   loading = false;
   filtroEstado = 'Pendiente';

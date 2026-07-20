@@ -13,7 +13,7 @@ import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-import { SSOMA_TABS } from '../topico/topico.component';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { RevisionDescansosService } from './revision-descansos.service';
 import { RevisionDescansoDetalleModalComponent } from './revision-descanso-detalle-modal.component';
 import {

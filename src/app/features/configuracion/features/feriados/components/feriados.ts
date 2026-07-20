@@ -14,6 +14,7 @@ import { HolidayDto, HolidayEditDto, HolidayTypeSimpleDto } from '../dtos/holida
 import { FeriadoCreate } from './feriado-create';
 import { FeriadoEdit } from './feriado-edit';
 
+import { CONFIGURACION_TABS } from '../../../shared/configuracion-tabs';
 @Component({
   selector: 'app-feriados',
   standalone: true,
@@ -21,6 +22,7 @@ import { FeriadoEdit } from './feriado-edit';
   templateUrl: './feriados.html',
 })
 export class Feriados implements OnInit {
+  readonly tabs = CONFIGURACION_TABS;
   readonly pageSize = 10;
 
   types: HolidayTypeSimpleDto[] = [];

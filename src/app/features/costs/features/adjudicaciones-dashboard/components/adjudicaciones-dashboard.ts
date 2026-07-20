@@ -21,6 +21,7 @@ import {
   AdjDashboardFilterValues,
 } from '../dtos/adjudicaciones-dashboard.dto';
 
+import { COSTS_TABS } from '../../../shared/costs-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
 @Component({
@@ -30,6 +31,7 @@ Chart.register(...registerables, ChartDataLabels);
   templateUrl: './adjudicaciones-dashboard.html',
 })
 export class AdjudicacionesDashboard implements AfterViewInit {
+  readonly tabs = COSTS_TABS;
   data?: AdjudicacionesDashboardDTO;
 
   /** Catálogos de los filtros (se cargan una sola vez en la primera petición). */

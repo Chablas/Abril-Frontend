@@ -4,11 +4,7 @@
     [badge]="'SSOMA · ' + anioActual"
     titulo="Actos &amp; Condiciones Subestándar"
     subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
-    [tabs]="[
-      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/rac/dashboard' },
-      { label: 'Lista',     icono: 'ti-list',             route: '/ssoma/gestion/rac/lista' },
-      { label: 'Penalidades', icono: 'ti-alert-triangle', route: '/ssoma/gestion/rac/penalidades' }
-    ]"
+    [tabs]="tabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
   </app-abril-page-header>

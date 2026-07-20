@@ -20,6 +20,7 @@ import { EditarEmoModal } from '../../../../shared/components/editar-emo-modal/e
 import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo-modal/documentos-emo-modal';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { CLINICA_TABS } from '../../shared/clinica-tabs';
 interface FilterOption {
   id: string;
   nombre: string;
@@ -33,6 +34,7 @@ interface FilterOption {
   styleUrl: './emos.css',
 })
 export class ClinicaEmos implements OnInit, OnDestroy {
+  readonly tabs = CLINICA_TABS;
   readonly pageSize = 50;
 
   filters = {

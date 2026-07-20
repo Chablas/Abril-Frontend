@@ -4,6 +4,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { CatalogoClinicas } from './components/catalogo-clinicas/catalogo-clinicas';
 import { CatalogoMedicos } from './components/catalogo-medicos/catalogo-medicos';
 import { CatalogoEmoTipos } from './components/catalogo-emo-tipos/catalogo-emo-tipos';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 type CatalogoTab = 'clinicas' | 'medicos' | 'emo-tipos';
 
@@ -15,6 +16,7 @@ type CatalogoTab = 'clinicas' | 'medicos' | 'emo-tipos';
   styleUrl: './catalogos.css',
 })
 export class Catalogos {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   activeTab: CatalogoTab = 'clinicas';
 

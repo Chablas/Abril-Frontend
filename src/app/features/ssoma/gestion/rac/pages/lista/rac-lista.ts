@@ -17,7 +17,8 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-
+
+import { RAC_TABS } from '../../rac-tabs';
 @Component({
   selector: 'app-rac-lista',
   standalone: true,
@@ -27,6 +28,7 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
   styleUrl: './rac-lista.css',
 })
 export class RacLista implements OnInit {
+  readonly tabs = RAC_TABS;
   result: RacPagedResult<RacListItemDto> | null = null;
   loading = false;
   query: RacListQuery = { page: 1, pageSize: 20 };

@@ -2,11 +2,7 @@
   [badge]="'CONTABILIDAD · ' + anioActual"
   titulo="Configuración"
   subtitulo="Carpetas de OneDrive y demás ajustes del módulo de Contabilidad."
-  [tabs]="[
-    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/contabilidad/dashboard',     featureKey: 'accounting.dashboard' },
-    { label: 'Facturas',      icono: 'ti-file-invoice',     route: '/contabilidad/facturas',      featureKey: 'accounting.invoices' },
-    { label: 'Configuración', icono: 'ti-settings',         route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
-  ]">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">

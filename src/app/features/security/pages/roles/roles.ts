@@ -8,6 +8,7 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import { RoleDto } from './dtos/role.model';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { SECURITY_TABS } from '../../shared/security-tabs';
 @Component({
   selector: 'app-roles',
   imports: [CommonModule, RoleList, RoleCreate, RoleEdit, Paginator, AbrilPageHeaderComponent],
@@ -15,6 +16,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
   styleUrl: './roles.css',
 })
 export class Roles {
+  readonly tabs = SECURITY_TABS;
   showCreateModal = false;
   selectedRoleForEdit: RoleDto | null = null;
   currentPage = 1;

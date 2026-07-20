@@ -14,6 +14,7 @@ import {
   DashboardEstadoDTO,
 } from '../dtos/dashboard-vecinos.dto';
 
+import { VECINOS_TABS } from '../../shared/vecinos-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
 @Component({
@@ -23,6 +24,7 @@ Chart.register(...registerables, ChartDataLabels);
   templateUrl: './dashboard-vecinos.html',
 })
 export class DashboardVecinos implements AfterViewInit {
+  readonly tabs = VECINOS_TABS;
   data?: VecinosDashboardDTO;
 
   constructor(

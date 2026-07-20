@@ -4,10 +4,7 @@
     badge="SSOMA"
     titulo="Inspecciones"
     subtitulo="Gestión de inspecciones de seguridad"
-    [tabs]="[
-      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/inspeccion/dashboard' },
-      { label: 'Inspecciones', icono: 'ti-list', route: '/ssoma/gestion/inspeccion/lista' }
-    ]">
+    [tabs]="tabs">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />

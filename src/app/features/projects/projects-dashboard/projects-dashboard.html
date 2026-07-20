@@ -2,16 +2,7 @@
   [badge]="'PROYECTOS · ' + anioActual"
   titulo="Dashboard de Proyectos"
   subtitulo="Estado general y métricas de todos los proyectos."
-  [tabs]="[
-    { label: 'Dashboard',              icono: 'ti-layout-dashboard', route: '/projects/projects-dashboard' },
-    { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades' },
-    { label: 'Cronograma de Hitos',    icono: 'ti-flag',             route: '/mejora-continua/milestone-schedule' },
-    { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit' },
-    { label: 'Cuaderno de Obra',       icono: 'ti-notebook',         route: '/projects/construction-logbook' },
-    { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control' },
-    { label: 'Residentes',             icono: 'ti-users',            route: '/projects/resident-monitoring-measurement' },
-    { label: 'Hitos',                  icono: 'ti-settings',         route: '/projects/configuration/milestones' }
-  ]">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <div class="page-wrapper flex-1 overflow-y-auto">

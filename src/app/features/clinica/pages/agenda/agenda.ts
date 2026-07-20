@@ -11,7 +11,8 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
 import { environment } from '../../../../../environments/environment';
-
+
+import { CLINICA_TABS } from '../../shared/clinica-tabs';
 type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado' | 'No se presentó';
 
 @Component({
@@ -22,6 +23,7 @@ type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención'
   styleUrls: ['./agenda.css'],
 })
 export class Agenda implements OnInit {
+  readonly tabs = CLINICA_TABS;
   items: ProgramacionClinicaDto[] = [];
   loading = false;
   accionando: number | null = null;

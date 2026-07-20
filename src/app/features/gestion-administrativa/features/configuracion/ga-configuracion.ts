@@ -13,6 +13,7 @@ import { RevisoresAreas } from './revisores-areas/pages/revisores-areas';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 
+import { GESTION_ADMINISTRATIVA_TABS } from '../../shared/gestion-administrativa-tabs';
 /** Definición de una sección de configuración de Gestión Administrativa. */
 interface ConfigSectionDef {
   id: string;
@@ -59,6 +60,7 @@ interface ConfigSectionDef {
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GaConfiguracion implements OnInit {
+  readonly tabs = GESTION_ADMINISTRATIVA_TABS;
   /** Todas las secciones de configuración, en orden de visualización. */
   private readonly allSections: ConfigSectionDef[] = [
     {

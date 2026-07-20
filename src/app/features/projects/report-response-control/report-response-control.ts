@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Roles } from '../../../core/constants/roles';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { PROJECTS_TABS } from '../shared/projects-tabs';
 @Component({
   selector: 'app-report-response-control',
   imports: [CommonModule, ReportResponseControlCreate, List, Paginator, AbrilPageHeaderComponent],
@@ -16,6 +17,7 @@ import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-
   styleUrl: './report-response-control.css',
 })
 export class ReportResponseControl {
+  readonly tabs = PROJECTS_TABS;
   readonly Roles = Roles;
   anioActual = new Date().getFullYear();
   showCreateModal = false;

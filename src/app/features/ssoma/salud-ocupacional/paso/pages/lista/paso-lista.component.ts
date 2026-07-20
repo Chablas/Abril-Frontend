@@ -21,7 +21,8 @@ import { DocumentViewer } from '../../../../../../shared/components/document-vie
 import { PropagArActividadComponent } from '../../components/propagar-actividad/propagar-actividad.component';
 import { environment } from '../../../../../../../environments/environment';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-
+
+import { PASO_TABS } from '../../paso-tabs';
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
 @Component({
@@ -34,6 +35,7 @@ type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
   styleUrl: './paso-lista.component.css',
 })
 export class PasoListaComponent implements OnInit {
+  readonly headerTabs = PASO_TABS;
   programas: PasoListItemDto[] = [];
   selectedPasoId: number | null = null;
 

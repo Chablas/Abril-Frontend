@@ -25,6 +25,10 @@ export interface AbrilPageTab {
    *  features. Útil para pestañas "contenedor" (p. ej. Configuración) que
    *  agrupan varias sub-secciones con su propio featureKey. */
   featureKeys?: string[];
+  /** Roles que también habilitan la pestaña (incluye los centinelas CONTRATISTA/
+   *  CLINICA), igual que en los items del sidebar. Necesario para pestañas cuya
+   *  sesión no viaja con allowed_features y se resuelve por rol (p. ej. Clínica). */
+  roles?: string[];
 }
 
 export interface AbrilPageTabGroup {
@@ -61,6 +65,8 @@ export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
   @Input() botonPrimarioDeshabilitado = false;
   @Input() botonPrimarioTooltip?: string;
   @Input() botonSecundario?: SsomaHeaderBtn;
+  @Input() botonSecundarioDeshabilitado = false;
+  @Input() botonSecundarioTooltip?: string;
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();
   @Output() menuClick = new EventEmitter<void>();
@@ -70,30 +76,45 @@ export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
   private navigationService = inject(NavigationService);
   private router = inject(Router);
 
+  /**
+   * Grupos con al menos una pestaña accesible (sus `tabs` ya vienen filtrados por
+   * acceso). Un grupo cuyas pestañas el usuario no puede ver no debe aparecer en el
+   * selector de grupos ni ser navegable: así se evita el botón de grupo que, al
+   * hacer clic, redirige al inicio/boletín.
+   */
+  get visibleGroups(): AbrilPageTabGroup[] {
+    return this.tabGroups
+      .map((g) => ({ ...g, tabs: g.tabs.filter((t) => this.navigationService.isNavEntryAllowed(t)) }))
+      .filter((g) => g.tabs.length > 0);
+  }
+
   get hasGroups(): boolean {
-    return this.tabGroups.length > 1;
+    return this.visibleGroups.length > 1;
   }
 
   get activeGroupIndex(): number {
     const url = this.router.url;
     const matchesRoute = (route: string) => url === route || url.startsWith(route + '/');
-    const idx = this.tabGroups.findIndex(g =>
-      g.tabs.some(t => t.route && matchesRoute(t.route))
+    const idx = this.visibleGroups.findIndex((g) =>
+      g.tabs.some((t) => t.route && matchesRoute(t.route)),
     );
     return idx >= 0 ? idx : 0;
   }
 
   get resolvedTabs(): AbrilPageTab[] {
-    return this.hasGroups ? (this.tabGroups[this.activeGroupIndex]?.tabs ?? []) : this.tabs;
+    // Página con grupos → pestañas del grupo activo (aunque quede uno solo visible,
+    // se muestran sus pestañas sin selector). Página sin grupos → lista plana `tabs`.
+    const groups = this.visibleGroups;
+    if (groups.length === 0) return this.tabs;
+    return (groups[this.activeGroupIndex] ?? groups[0]).tabs;
   }
 
   get visibleTabs(): AbrilPageTab[] {
-    return this.resolvedTabs.filter((t) => {
-      if (t.featureKeys?.length) {
-        return t.featureKeys.some((k) => this.navigationService.isFeatureAllowed(k));
-      }
-      return !t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey);
-    });
+    // Misma regla que el sidebar (NavigationService): una pestaña se ve solo si el
+    // usuario tiene acceso a su featureKey/featureKeys o cumple sus roles. Así una
+    // pestaña visible siempre lleva a una ruta accesible y nunca redirige al inicio.
+    // (Para páginas con grupos, `resolvedTabs` ya viene filtrado; el filtro es idempotente.)
+    return this.resolvedTabs.filter((t) => this.navigationService.isNavEntryAllowed(t));
   }
 
   navigateToGroup(group: AbrilPageTabGroup): void {
@@ -102,7 +123,7 @@ export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
     // restringido) no le corresponde, lo mandaría a "/" vía roleGuard aunque sí
     // tenga acceso a otras pestañas del mismo grupo (ej. "Evaluar").
     const primeraPermitida = group.tabs.find(
-      (t) => t.route && (!t.featureKey || this.navigationService.isFeatureAllowed(t.featureKey)),
+      (t) => t.route && this.navigationService.isNavEntryAllowed(t),
     );
     const fallback = group.tabs.find((t) => t.route)?.route;
     const ruta = primeraPermitida?.route ?? fallback;

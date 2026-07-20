@@ -2,13 +2,7 @@
   badge="CONFIGURACIÓN"
   titulo="Proyectos"
   subtitulo="Gestión de proyectos registrados en el sistema."
-  [tabs]="[
-    { label: 'Proyectos', icono: 'ti-folder', route: '/configuracion/proyectos' },
-    { label: 'Áreas', icono: 'ti-layout', route: '/configuracion/area' },
-    { label: 'Razones Sociales', icono: 'ti-building', route: '/configuracion/companies' },
-    { label: 'Trabajadores', icono: 'ti-users', route: '/configuracion/workers' },
-    { label: 'Feriados y Días no Laborables', icono: 'ti-calendar', route: '/configuracion/feriados' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nuevo Proyecto', icono: 'ti-plus' }"
   (primaryClick)="showCreateModal = true">
 </app-abril-page-header>

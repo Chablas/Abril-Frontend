@@ -13,7 +13,8 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
-
+
+import { OPT_TABS } from '../../opt-tabs';
 @Component({
   selector: 'app-opt-dashboard',
   standalone: true,
@@ -23,6 +24,7 @@ import { FabButton } from '../../../../../../shared/components/fab-button/fab-bu
   styleUrl: './opt-dashboard.css',
 })
 export class OptDashboard implements OnInit {
+  readonly tabs = OPT_TABS;
   data: OptDashboardDto | null = null;
   loading = true;
   readonly anioActual = new Date().getFullYear();

@@ -3,10 +3,7 @@
   <app-abril-page-header
     titulo="Horas Hombre"
     subtitulo="Detalle diario por proyecto y empresa."
-    [tabs]="[
-      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/ssoma/gestion/horas-hombre/dashboard' },
-      { label: 'Tabla',     icono: 'ti-table',     route: '/ssoma/gestion/horas-hombre/tabla' }
-    ]">
+    [tabs]="tabs">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />

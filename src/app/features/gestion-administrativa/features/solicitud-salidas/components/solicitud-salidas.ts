@@ -18,7 +18,8 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-
+
+import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
@@ -27,6 +28,7 @@ import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class SolicitudSalidas implements OnInit {
+  readonly tabs = GESTION_ADMINISTRATIVA_TABS;
   anioActual = new Date().getFullYear();
   solicitudes: SolicitudSalidaListItemDto[] = [];
   showModal = false;

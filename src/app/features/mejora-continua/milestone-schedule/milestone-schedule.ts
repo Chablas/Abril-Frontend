@@ -35,7 +35,8 @@ import { ProyectoService } from '../../configuracion/features/proyectos/services
 import { ProjectDto } from '../../configuracion/features/proyectos/dtos/project.dto';
 import { ProjectEditDto } from '../../configuracion/features/proyectos/dtos/project-edit.dto';
 import { swalUdpSuccess } from '../../../shared/utils/sweetalert-udp';
-
+
+import { MEJORA_CONTINUA_TABS } from '../shared/mejora-continua-tabs';
 @Component({
   selector: 'app-milestone-schedule',
   standalone: true,
@@ -44,6 +45,7 @@ import { swalUdpSuccess } from '../../../shared/utils/sweetalert-udp';
   styleUrl: './milestone-schedule.css',
 })
 export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
+  readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
 
   escalaGantt: 'dia' | 'semana' | 'mes' = 'semana';

@@ -14,6 +14,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { DashboardSaludService } from '../services/dashboard-salud.service';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { DashboardSaludOcupacionalDto } from '../dtos/dashboard-salud.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -38,6 +39,7 @@ Chart.register(...registerables, ChartDataLabels);
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   data: DashboardSaludOcupacionalDto | null = null;
   loading = false;

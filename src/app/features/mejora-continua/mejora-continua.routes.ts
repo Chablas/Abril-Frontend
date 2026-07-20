@@ -32,7 +32,20 @@ export const MEJORA_CONTINUA_ROUTES: Routes = [
       import('./features/configuration/lecciones-configuracion/lecciones-configuracion')
         .then((m) => m.LeccionesConfiguracion),
     canActivate: [roleGuard],
-    data: { titulo: 'CONFIGURACIÓN DE LECCIONES', featureKey: 'mejora-continua.config.lecciones-configuracion' },
+    // Shell contenedor: accesible con la feature paraguas O con cualquier
+    // sub-feature de sus secciones. El componente filtra las secciones visibles
+    // según el acceso del usuario y cae a la primera accesible.
+    data: {
+      titulo: 'CONFIGURACIÓN DE LECCIONES',
+      featureKeys: [
+        'mejora-continua.config.lecciones-configuracion',
+        'mejora-continua.config.areas',
+        'mejora-continua.config.area-relations',
+        'mejora-continua.config.templates',
+        'mejora-continua.config.catalog-types',
+        'mejora-continua.config.catalog-items',
+      ],
+    },
   },
   {
     path: 'configuration/areas',

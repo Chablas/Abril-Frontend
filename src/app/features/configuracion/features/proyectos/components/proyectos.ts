@@ -15,6 +15,7 @@ import { ProyectoEmails } from './emails/proyecto-emails';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 
+import { CONFIGURACION_TABS } from '../../../shared/configuracion-tabs';
 @Component({
   selector: 'app-proyectos-config',
   imports: [CommonModule, FormsModule, ProyectoCreate, ProyectoEdit, ProyectoEmails, AbrilPageHeaderComponent, SearchInput],
@@ -22,6 +23,7 @@ import { SearchInput } from '../../../../../shared/components/search-input/searc
   styleUrl: './proyectos.css',
 })
 export class Proyectos implements OnInit {
+  readonly tabs = CONFIGURACION_TABS;
   projects: PagedResponseDTO<ProjectDto> = {
     page: 0,
     pageSize: 0,

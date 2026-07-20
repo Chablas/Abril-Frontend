@@ -2,11 +2,7 @@
   [badge]="'CONTABILIDAD · ' + anioActual"
   titulo="Dashboard"
   subtitulo="Indicadores de facturas de proveedores."
-  [tabs]="[
-    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/contabilidad/dashboard',     featureKey: 'accounting.dashboard' },
-    { label: 'Facturas',      icono: 'ti-file-invoice',     route: '/contabilidad/facturas',      featureKey: 'accounting.invoices' },
-    { label: 'Configuración', icono: 'ti-settings',         route: '/contabilidad/configuracion', featureKey: 'accounting.configuration' }
-  ]">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <div class="bg-white rounded-lg flex flex-col flex-1 min-h-0 overflow-y-auto p-5 gap-4">

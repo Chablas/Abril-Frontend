@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { PROJECTS_TABS } from '../../../shared/projects-tabs';
 @Component({
   selector: 'app-milestones',
   imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
@@ -20,6 +21,7 @@ import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril
   styleUrl: './milestones.css',
 })
 export class Milestones implements OnInit {
+  readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
 
   milestones: PagedResponseDTO<MilestoneGetDTO> = {

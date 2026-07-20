@@ -6,11 +6,7 @@
     { icono: 'ti-layout-grid', texto: (data?.programasActivos ?? 0) + ' activos' },
     { icono: 'ti-alert-triangle', texto: alertas.length + ' alertas', warn: alertas.length > 0 }
   ]"
-  [tabs]="[
-    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/paso/dashboard' },
-    { label: 'Programas', icono: 'ti-list', route: '/ssoma/gestion/paso/lista' },
-    { label: 'Alertas', icono: 'ti-bell', route: '/ssoma/gestion/paso/alertas' }
-  ]"
+  [tabs]="headerTabs"
   [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
   (secondaryClick)="load()">
 </app-abril-page-header>

@@ -2,11 +2,7 @@
   badge="COSTOS"
   titulo="Dashboard de Adjudicaciones"
   subtitulo="Estado del pipeline de adjudicaciones de subcontratistas, montos y distribución por proyecto."
-  [tabs]="[
-    { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/costs/dashboard',      featureKey: 'costs.dashboard' },
-    { label: 'Adjudicaciones', icono: 'ti-list',            route: '/costs/adjudicaciones', featureKey: 'costs.adjudicaciones' },
-    { label: 'Configuración',  icono: 'ti-settings',        route: '/costs/configuration',  featureKeys: ['costs.config.work-item','costs.config.work-item-category','costs.config.work-specialty','costs.config.staff-project-email','costs.config.project-link','costs.config.adjudicacion-folder','costs.config.costos-presupuestos-email'] }
-  ]"
+  [tabs]="tabs"
   [botonSecundario]="{ label: 'Exportar PDF', icono: 'ti-file-download' }"
   (secondaryClick)="downloadPDF()">
 </app-abril-page-header>

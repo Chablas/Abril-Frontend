@@ -14,7 +14,8 @@ import {
   ProyectoConActividadesDTO,
   SupervisorAcDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
-
+
+import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 type TipoFiltro = '' | 'HITO' | 'ENTREGABLE' | 'CONSULTA';
 type ZoomLevel  = 'day' | 'week' | 'month' | 'quarter';
 type Status     = 'CULMINADO' | 'EN_PROCESO' | 'VENCIDO' | 'EN_RIESGO' | 'PENDIENTE';
@@ -80,6 +81,7 @@ export interface TimeCell { label: string; width: number; minor?: boolean; isCur
   styleUrl: './gantt.css',
 })
 export class Gantt implements OnInit {
+  readonly tabs = AC_TABS;
   // Fuerza el host como flex column con altura finita — evita que main sea el scroll container
   @HostBinding('style.display')       readonly _d  = 'flex';
   @HostBinding('style.flexDirection') readonly _fd = 'column';

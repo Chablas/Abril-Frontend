@@ -5,6 +5,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { ReporteService } from '../services/reporte.service';
 import { ErrorService } from '../../../../core/services/error.service';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 @Component({
   selector: 'app-salud-reportes',
@@ -14,6 +15,7 @@ import { ErrorService } from '../../../../core/services/error.service';
   styleUrls: ['./reportes.css'],
 })
 export class Reportes {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   mes = new Date().getMonth() + 1;
   anio = new Date().getFullYear();

@@ -27,6 +27,7 @@ import {
   LessonAreaSegmentDto,
 } from '../../configuration/lesson-areas/dtos/lesson-area.dto';
 
+import { MEJORA_CONTINUA_TABS } from '../../../shared/mejora-continua-tabs';
 /** Nodo del árbol de áreas para el filtro de área (misma lógica que el formulario de creación). */
 interface AreaTreeNode {
   id: number;
@@ -44,6 +45,7 @@ interface AreaTreeNode {
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LeccionesAprendidas implements OnInit {
+  readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
   currentUserId = 0;
   apiUrl = environment.apiUrl;

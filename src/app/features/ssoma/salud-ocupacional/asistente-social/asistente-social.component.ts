@@ -18,7 +18,7 @@ import { CasoSocialListItemDto, CasoSocialFilterDto } from '../dtos/caso-social.
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-import { SSOMA_TABS } from '../topico/topico.component';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { CasoSocialModalComponent } from './caso-social-modal.component';
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';

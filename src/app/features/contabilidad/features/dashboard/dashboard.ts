@@ -21,6 +21,7 @@ import {
   InvoiceChartItemDto,
 } from '../facturas/dtos/invoice.dtos';
 
+import { CONTABILIDAD_TABS } from '../../shared/contabilidad-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
 @Component({
@@ -31,6 +32,7 @@ Chart.register(...registerables, ChartDataLabels);
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class FacturasDashboard implements OnInit, OnDestroy {
+  readonly tabs = CONTABILIDAD_TABS;
   anioActual = new Date().getFullYear();
 
   filters: InvoiceFilterDto = {

@@ -2,10 +2,7 @@
   badge="SEGURIDAD"
   titulo="Roles"
   subtitulo="Administración de roles y permisos del sistema."
-  [tabs]="[
-    { label: 'Usuarios', icono: 'ti-users', route: '/security/users', featureKey: 'security.users' },
-    { label: 'Roles', icono: 'ti-shield', route: '/security/roles', featureKey: 'security.roles' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nuevo Rol', icono: 'ti-plus' }"
   (primaryClick)="showCreateModal = true">
 </app-abril-page-header>

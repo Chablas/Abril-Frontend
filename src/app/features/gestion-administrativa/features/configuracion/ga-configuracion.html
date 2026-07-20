@@ -2,12 +2,7 @@
   badge="GESTIÓN ADMINISTRATIVA · CONFIGURACIÓN"
   titulo="Configuración"
   [subtitulo]="subtitulo"
-  [tabs]="[
-    { label: 'Solicitud de Salidas', icono: 'ti-file-text', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
-    { label: 'Gestión de Salidas',   icono: 'ti-briefcase', route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
-    { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
-    { label: 'Configuración',        icono: 'ti-settings',  route: '/gestion-administrativa/configuracion',     featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.revisor-salidas','gestion-administrativa.config.revisores-areas','gestion-administrativa.config.visibilidad-salidas','gestion-administrativa.config.carpeta-adjuntos'] }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="botonPrimario"
   (primaryClick)="onCreate()">
 

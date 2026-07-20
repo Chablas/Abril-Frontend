@@ -32,6 +32,7 @@ import { FilterTriggerButton } from '../../../../shared/components/filter-trigge
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 interface FilterOption {
   id: string;
@@ -62,6 +63,7 @@ interface FilterOption {
   styleUrl: './emos.css',
 })
 export class Emos implements OnInit, OnDestroy {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   readonly pageSize = 50;
 

@@ -26,7 +26,8 @@ import { FabButton } from '../../../../../shared/components/fab-button/fab-butto
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-
+
+import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
   areaScopeId: number;
@@ -42,6 +43,7 @@ interface AreaCascadeNode {
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GestionSalidas implements OnInit {
+  readonly tabs = GESTION_ADMINISTRATIVA_TABS;
   anioActual = new Date().getFullYear();
   salidas: GestionSalidaListItemDto[] = [];
 

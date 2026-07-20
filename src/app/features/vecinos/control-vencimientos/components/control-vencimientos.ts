@@ -10,6 +10,7 @@ import { LicenciaDetail } from './licencia-detail/licencia-detail';
 import { ControlVencimientosService } from '../services/control-vencimientos.service';
 import { VecinoLicenciaDTO } from '../dtos/control-vencimientos.dto';
 
+import { VECINOS_TABS } from '../../shared/vecinos-tabs';
 @Component({
   selector: 'app-control-vencimientos',
   standalone: true,
@@ -17,6 +18,7 @@ import { VecinoLicenciaDTO } from '../dtos/control-vencimientos.dto';
   templateUrl: './control-vencimientos.html',
 })
 export class ControlVencimientos implements OnInit {
+  readonly tabs = VECINOS_TABS;
   licencias: VecinoLicenciaDTO[] = [];
   showAddModal = false;
   selectedLicencia: VecinoLicenciaDTO | null = null;

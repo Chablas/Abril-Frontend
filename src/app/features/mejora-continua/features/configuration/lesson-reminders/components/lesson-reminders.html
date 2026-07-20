@@ -2,13 +2,7 @@
   [badge]="'MEJORA CONTINUA · ' + anioActual"
   titulo="Recordatorios"
   subtitulo="Configuración de recordatorios de lecciones aprendidas."
-  [tabs]="[
-    { label: 'Cronograma de Hitos', icono: 'ti-flag',             route: '/mejora-continua/milestone-schedule',      featureKey: 'mejora-continua.milestone-schedule' },
-    { label: 'Dashboard',           icono: 'ti-layout-dashboard', route: '/mejora-continua/dashboard',               featureKey: 'mejora-continua.dashboard' },
-    { label: 'Lecciones Aprendidas',icono: 'ti-list',             route: '/mejora-continua/lessons-learned',         featureKey: 'mejora-continua.lessons-learned' },
-    { label: 'Configuración',       icono: 'ti-settings',         route: '/mejora-continua/lecciones-configuracion', featureKey: 'mejora-continua.config.lecciones-configuracion' },
-    { label: 'Recordatorios',       icono: 'ti-bell',             route: '/mejora-continua/configuration/reminders', featureKey: 'mejora-continua.config.reminders' }
-  ]">
+  [tabs]="tabs">
 </app-abril-page-header>
 
 <div class="bg-white flex-1 overflow-y-auto p-[20px] flex flex-col gap-5">

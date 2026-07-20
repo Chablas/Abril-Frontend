@@ -23,6 +23,8 @@
     <button *ngIf="botonSecundario"
             type="button"
             class="ssoma-hero__btn ssoma-hero__btn--ghost"
+            [disabled]="botonSecundarioDeshabilitado"
+            [title]="botonSecundarioTooltip || botonSecundario.label"
             (click)="secondaryClick.emit()">
       <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
       <span>{{ botonSecundario.label }}</span>
@@ -46,7 +48,7 @@
 <!-- Group selector — solo aparece cuando hay múltiples grupos -->
 <div class="abril-tab-groups" *ngIf="hasGroups">
   <button
-    *ngFor="let g of tabGroups; let i = index"
+    *ngFor="let g of visibleGroups; let i = index"
     class="atg-btn"
     [class.atg-btn--active]="i === activeGroupIndex"
     (click)="navigateToGroup(g)">

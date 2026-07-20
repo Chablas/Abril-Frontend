@@ -12,6 +12,7 @@ import { ProjectLink } from './projectLink/components/project-link';
 import { AdjudicacionFolder } from './adjudicacionFolder/components/adjudicacion-folder';
 import { CostosPresupuestosEmail } from './costosPresupuestosEmail/components/costos-presupuestos-email';
 
+import { COSTS_TABS } from '../../shared/costs-tabs';
 /** Definición de una sección de configuración de costos. */
 interface ConfigSectionDef {
   id: string;
@@ -53,6 +54,7 @@ interface ConfigSectionDef {
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class CostsConfiguration implements OnInit {
+  readonly tabs = COSTS_TABS;
   /** Todas las secciones de configuración, en orden de visualización. */
   private readonly allSections: ConfigSectionDef[] = [
     { id: 'work-item',                 label: 'Partidas',         route: '/costs/configuration/work-item',                 featureKey: 'costs.config.work-item' },

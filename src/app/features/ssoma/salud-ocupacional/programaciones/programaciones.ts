@@ -31,6 +31,7 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 interface DiaCalendario {
   fecha: Date;
@@ -65,6 +66,7 @@ interface FilterOption {
   styleUrl: './programaciones.css',
 })
 export class Programaciones implements OnInit, OnDestroy {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 

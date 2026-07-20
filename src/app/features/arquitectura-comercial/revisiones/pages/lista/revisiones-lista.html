@@ -2,10 +2,7 @@
   [badge]="'ARQUITECTURA COMERCIAL · ' + anioActual"
   titulo="Revisiones"
   subtitulo="Observaciones reportadas y su levantamiento por revisión."
-  [tabs]="[
-    { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/revisiones/dashboard' },
-    { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/revisiones/lista' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nueva observación', icono: 'ti-plus' }"
   [botonPrimarioDeshabilitado]="!filtrosListos"
   [botonPrimarioTooltip]="!filtrosListos ? 'Cargando proyectos...' : undefined"

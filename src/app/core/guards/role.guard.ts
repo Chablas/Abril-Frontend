@@ -11,6 +11,7 @@ export const roleGuard: CanActivateFn = (route) => {
   if (!isPlatformBrowser(platformId)) return true;
 
   const featureKey    = route.data?.['featureKey']    as string | undefined;
+  const featureKeys   = route.data?.['featureKeys']   as string[] | undefined;
   const allowedRoles  = route.data?.['roles']         as string[] | undefined;
   const tiposBloqueados = route.data?.['blockedTipos'] as string[] | undefined;
 
@@ -29,11 +30,15 @@ export const roleGuard: CanActivateFn = (route) => {
     }
   }
 
-  // Verificación por feature key (sistema dinámico desde BD)
-  if (featureKey) {
+  // Verificación por feature key(s) (sistema dinámico desde BD). Una ruta puede
+  // declarar `featureKey` (una sola) o `featureKeys` (basta tener AL MENOS UNA):
+  // esto último para rutas "contenedor" como el shell de configuración, accesible
+  // con la feature paraguas o con cualquier sub-feature de sus secciones.
+  if (featureKey || featureKeys?.length) {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('allowed_features') : null;
     const allowedFeatures: string[] = raw ? JSON.parse(raw) : [];
-    if (allowedFeatures.includes(featureKey)) return true;
+    if (featureKey && allowedFeatures.includes(featureKey)) return true;
+    if (featureKeys?.some((k) => allowedFeatures.includes(k))) return true;
   }
 
   // Fallback por rol JWT (rutas de CONTRATISTA u otros roles especiales)

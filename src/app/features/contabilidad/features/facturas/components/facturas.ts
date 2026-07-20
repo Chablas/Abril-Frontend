@@ -34,6 +34,7 @@ import { FacturaEdit } from './edit/edit';
 import { FacturaAttach } from './attach/attach';
 import { FacturaObserve } from './observe/observe';
 
+import { CONTABILIDAD_TABS } from '../../../shared/contabilidad-tabs';
 @Component({
   selector: 'app-facturas',
   standalone: true,
@@ -42,6 +43,7 @@ import { FacturaObserve } from './observe/observe';
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class Facturas implements OnInit {
+  readonly tabs = CONTABILIDAD_TABS;
   anioActual = new Date().getFullYear();
 
   invoices: InvoiceDto[] = [];

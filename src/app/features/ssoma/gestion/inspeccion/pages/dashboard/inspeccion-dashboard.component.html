@@ -4,10 +4,7 @@
     badge="SSOMA"
     titulo="Inspecciones"
     subtitulo="Gestión de inspecciones de seguridad"
-    [tabs]="[
-      { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/ssoma/gestion/inspeccion/dashboard' },
-      { label: 'Inspecciones', icono: 'ti-list', route: '/ssoma/gestion/inspeccion/lista' }
-    ]"
+    [tabs]="tabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
   </app-abril-page-header>

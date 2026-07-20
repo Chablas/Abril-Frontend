@@ -47,3 +47,14 @@ export interface CrearMiDescansoDto {
   motivoId?: number | null;
   diagnostico?: string | null;
 }
+
+/** Destinatario del correo de descanso médico (pantalla de Configuración). */
+export interface MiDescansoCorreoConfigDto {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string | null;
+  /** true = se envía el correo a este destinatario; false = no se envía. */
+  active: boolean;
+  orden: number;
+}

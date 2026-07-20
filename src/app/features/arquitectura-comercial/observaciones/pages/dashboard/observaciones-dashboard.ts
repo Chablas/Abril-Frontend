@@ -11,7 +11,8 @@ import {
 } from '../../../../../core/dtos/arquitectura-comercial/observaciones.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
-
+
+import { AC_OBSERVACIONES_TABS } from '../../../shared/arquitectura-comercial-tabs';
 @Component({
   selector: 'app-arq-comercial-observaciones-dashboard',
   standalone: true,
@@ -21,6 +22,7 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ObservacionesDashboard implements OnInit {
+  readonly tabs = AC_OBSERVACIONES_TABS;
   anioActual = new Date().getFullYear();
 
   data: ObservacionDashboardDTO | null = null;

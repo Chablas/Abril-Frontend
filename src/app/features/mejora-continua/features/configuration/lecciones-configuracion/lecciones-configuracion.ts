@@ -1,14 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { NavigationService } from '../../../../../core/navigation/navigation.service';
 import { LessonAreas } from '../lesson-areas/lesson-areas';
 import { Areas } from '../areas-subareas/components/areas';
 import { Templates } from '../templates/components/templates';
 import { CatalogTypes } from '../catalog-types/catalog-types';
 import { CatalogItems } from '../catalog-items/catalog-items';
 
+import { MEJORA_CONTINUA_TABS } from '../../../shared/mejora-continua-tabs';
 type ConfigSection = 'areas' | 'area-relations' | 'templates' | 'catalog-types' | 'catalog-items';
 
 /**
@@ -39,10 +41,23 @@ type ConfigSection = 'areas' | 'area-relations' | 'templates' | 'catalog-types' 
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class LeccionesConfiguracion implements OnInit {
+  readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
   activeSection: ConfigSection = 'areas';
 
-  readonly sectionTabs: SectionTab[] = [
+  private readonly nav = inject(NavigationService);
+
+  /** featureKey que gobierna cada sección (coincide con el roleGuard de su ruta
+   *  individual en mejora-continua.routes.ts). */
+  private readonly sectionFeatureKey: Record<ConfigSection, string> = {
+    'areas': 'mejora-continua.config.areas',
+    'area-relations': 'mejora-continua.config.area-relations',
+    'templates': 'mejora-continua.config.templates',
+    'catalog-types': 'mejora-continua.config.catalog-types',
+    'catalog-items': 'mejora-continua.config.catalog-items',
+  };
+
+  private readonly allSectionTabs: SectionTab[] = [
     { id: 'areas', label: 'Áreas' },
     { id: 'area-relations', label: 'Relaciones por área' },
     { id: 'templates', label: 'Plantillas' },
@@ -50,7 +65,20 @@ export class LeccionesConfiguracion implements OnInit {
     { id: 'catalog-items', label: 'Ítems de catálogo' },
   ];
 
-  private readonly validSections = this.sectionTabs.map((t) => t.id);
+  /** La feature paraguas (`lecciones-configuracion`) da acceso a TODAS las
+   *  secciones (comportamiento previo); sin ella, se muestran solo las secciones
+   *  cuya sub-feature tiene el usuario. */
+  private get tieneParaguas(): boolean {
+    return this.nav.isFeatureAllowed('mejora-continua.config.lecciones-configuracion');
+  }
+
+  /** Secciones visibles según el acceso del usuario (fuente para el section-tabs). */
+  get sectionTabs(): SectionTab[] {
+    const paraguas = this.tieneParaguas;
+    return this.allSectionTabs.filter(
+      (t) => paraguas || this.nav.isFeatureAllowed(this.sectionFeatureKey[t.id as ConfigSection]),
+    );
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -58,10 +86,14 @@ export class LeccionesConfiguracion implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Solo se puede activar una sección a la que el usuario tenga acceso; si el
+    // query param apunta a una no permitida (o no viene), cae a la primera visible.
+    const visibles = this.sectionTabs.map((t) => t.id) as ConfigSection[];
     const seccion = this.route.snapshot.queryParamMap.get('seccion');
-    if (seccion && this.validSections.includes(seccion)) {
-      this.activeSection = seccion as ConfigSection;
-    }
+    this.activeSection =
+      seccion && visibles.includes(seccion as ConfigSection)
+        ? (seccion as ConfigSection)
+        : (visibles[0] ?? 'areas');
   }
 
   onSectionChange(id: string): void {

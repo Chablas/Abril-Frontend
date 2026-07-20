@@ -11,6 +11,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
 
+import { PASO_TABS } from '../../paso-tabs';
 @Component({
   selector: 'app-paso-dashboard',
   standalone: true,
@@ -20,6 +21,7 @@ import { FabButton } from '../../../../../../shared/components/fab-button/fab-bu
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PasoDashboardComponent implements OnInit, OnDestroy {
+  readonly headerTabs = PASO_TABS;
   data: PasoDashboardDto | null = null;
   alertas: PasoAlertaDto[] = [];
   loading = false;

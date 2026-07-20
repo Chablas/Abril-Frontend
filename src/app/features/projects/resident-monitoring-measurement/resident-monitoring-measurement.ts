@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { PROJECTS_TABS } from '../shared/projects-tabs';
 type ViewMode = 'cards' | 'table';
 
 export interface SelectedFilters {
@@ -27,6 +28,7 @@ export interface SelectedFilters {
   styleUrl: './resident-monitoring-measurement.css',
 })
 export class ResidentMonitoringMeasurement implements OnInit {
+  readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
 
   residentMonitoringData: TrackingResultDto = {

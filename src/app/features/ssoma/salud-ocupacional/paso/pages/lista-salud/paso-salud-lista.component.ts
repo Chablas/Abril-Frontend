@@ -14,6 +14,7 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { SSOMA_TABS } from '../../../shared/salud-ocupacional-tabs';
 
 type FiltroCumplida = 'todas' | 'cumplidas' | 'nocumplidas';
 
@@ -25,6 +26,7 @@ type FiltroCumplida = 'todas' | 'cumplidas' | 'nocumplidas';
   styleUrl: './paso-salud-lista.component.css',
 })
 export class PasoSaludListaComponent implements OnInit {
+  readonly tabs = SSOMA_TABS;
   readonly anioActual = new Date().getFullYear();
   readonly meses = [
     { id: 1, nombre: 'Enero' }, { id: 2, nombre: 'Febrero' }, { id: 3, nombre: 'Marzo' },

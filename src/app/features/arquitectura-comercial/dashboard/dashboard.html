@@ -2,12 +2,7 @@
   [badge]="'ARQ. COMERCIAL · ' + anioActual"
   titulo="Dashboard"
   subtitulo="Vista general de actividades, hitos y eficiencia por arquitecto."
-  [tabs]="[
-    { label: 'Dashboard',   icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/dashboard' },
-    { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades' },
-    { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
-    { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' }
-  ]">
+  [tabs]="tabs">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />

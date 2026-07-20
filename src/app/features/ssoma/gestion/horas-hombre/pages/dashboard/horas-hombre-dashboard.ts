@@ -12,7 +12,8 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { HorasHombreService } from '../../services/horas-hombre.service';
 import { HorasHombreDashboardDto } from '../../dtos/horas-hombre.model';
-
+
+import { HORAS_HOMBRE_TABS } from '../../horas-hombre-tabs';
 Chart.register(...registerables);
 
 interface OpcionSimple { id: number; nombre: string; }
@@ -31,6 +32,7 @@ interface RankingItem {
   styleUrl: './horas-hombre-dashboard.css',
 })
 export class HorasHombreDashboard implements OnInit, AfterViewInit, OnDestroy {
+  readonly tabs = HORAS_HOMBRE_TABS;
   @ViewChild('chartSerie') chartSerieRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartSplit') chartSplitRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartProyecto') chartProyectoRef?: ElementRef<HTMLCanvasElement>;

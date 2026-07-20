@@ -29,6 +29,7 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
 interface FilterOption {
   id: string;
@@ -55,6 +56,7 @@ interface FilterOption {
   styleUrl: './convalidaciones.css',
 })
 export class Convalidaciones implements OnInit, OnDestroy {
+  readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 

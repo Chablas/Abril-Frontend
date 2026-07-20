@@ -2,12 +2,7 @@
   [badge]="'ARQ. COMERCIAL · ' + anioActual"
   titulo="Plantilla de Actividades"
   subtitulo="Configuración de la plantilla base de actividades por etapa."
-  [tabs]="[
-    { label: 'Dashboard',   icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/dashboard' },
-    { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades' },
-    { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt' },
-    { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla' }
-  ]"
+  [tabs]="tabs"
   [botonPrimario]="{ label: 'Nueva actividad', icono: 'ti-plus' }"
   (primaryClick)="openModal()">
 

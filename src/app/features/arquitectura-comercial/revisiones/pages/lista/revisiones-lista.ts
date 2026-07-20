@@ -26,7 +26,8 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
 import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
 import { ProyectosArquitecturaComercialModal } from '../../../../../shared/components/proyectos-arquitectura-comercial-modal/proyectos-arquitectura-comercial-modal';
-
+
+import { AC_REVISIONES_TABS } from '../../../shared/arquitectura-comercial-tabs';
 @Component({
   standalone: true,
   selector: 'app-arq-comercial-revisiones-lista',
@@ -66,6 +67,7 @@ import { ProyectosArquitecturaComercialModal } from '../../../../../shared/compo
   `],
 })
 export class RevisionesLista implements OnInit {
+  readonly tabs = AC_REVISIONES_TABS;
   anioActual = new Date().getFullYear();
 
   items: RevisionObservacionListItemDTO[] = [];

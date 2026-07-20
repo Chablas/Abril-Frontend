@@ -19,7 +19,8 @@ import {
   AcEspecialidadDTO,
   AcEtapaDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
-
+
+import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 type TipoFiltro = '' | 'HITO' | 'ENTREGABLE' | 'CONSULTA';
 type ActivoFiltro = 'todos' | 'activas' | 'inactivas';
 
@@ -41,6 +42,7 @@ type ActivoFiltro = 'todos' | 'activas' | 'inactivas';
   styleUrl: './plantilla.css',
 })
 export class Plantilla implements OnInit {
+  readonly tabs = AC_TABS;
   anioActual = new Date().getFullYear();
   plantilla: PlantillaActividadDTO[] = [];
   categorias: AcCategoriaDTO[] = [];

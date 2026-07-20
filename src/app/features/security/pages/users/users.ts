@@ -9,6 +9,7 @@ import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model'
 import { UserListItemDto } from '../../../../core/dtos/user/userListItem.model';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 
+import { SECURITY_TABS } from '../../shared/security-tabs';
 @Component({
   selector: 'app-users',
   imports: [CommonModule, UserList, UserCreate, AbrilWorkerCreate, UserEditForm, Paginator, AbrilPageHeaderComponent],
@@ -16,6 +17,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
   styleUrl: './users.css',
 })
 export class Users {
+  readonly tabs = SECURITY_TABS;
   showCreateModal = false;
   showAbrilWorkerModal = false;
   formOpen = false;

@@ -9,7 +9,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
-import { SSOMA_TABS } from '../topico/topico.component';
+import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { AccidentesService } from './accidentes.service';
 import { DescansoModalComponent } from '../descansos/descanso-modal.component';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
