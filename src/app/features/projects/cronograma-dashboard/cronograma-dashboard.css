@@ -8,64 +8,20 @@
   min-height: 100%;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
-.header-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.header-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1e3a5f;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.header-subtitle {
-  font-size: 13px;
-  color: #64748b;
-  margin: 3px 0 0;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.fecha-actual {
-  font-size: 13px;
-  color: #64748b;
-  text-transform: capitalize;
-}
-
-.btn-outline {
-  padding: 7px 16px;
-  border: 1.5px solid #1e3a5f;
-  color: #1e3a5f;
-  background: transparent;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.btn-outline:hover {
-  background: #1e3a5f;
-  color: #fff;
-}
-
 /* ── Filtros ─────────────────────────────────────────────────────────────── */
 .filter-card {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-controls-wrap {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -86,6 +42,13 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.fecha-actual {
+  font-size: 13px;
+  color: #64748b;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .filter-select {

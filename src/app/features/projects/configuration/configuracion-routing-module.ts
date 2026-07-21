@@ -8,7 +8,7 @@ const routes: Routes = [
     path: 'milestones',
     component: Milestones,
     canActivate: [roleGuard],
-    data: { titulo: 'HITOS', featureKey: 'projects.config.milestones' },
+    data: { titulo: 'CONFIGURACIONES', featureKey: 'projects.config.milestones' },
   },
   { path: '', redirectTo: 'milestones', pathMatch: 'full' },
 ];

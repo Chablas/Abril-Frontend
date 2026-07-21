@@ -12,6 +12,11 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { ProyectoService } from '../../../../configuracion/features/proyectos/services/proyecto.service';
+import { ProjectDto } from '../../../../configuracion/features/proyectos/dtos/project.dto';
+import { ProjectEditDto } from '../../../../configuracion/features/proyectos/dtos/project-edit.dto';
+
+type MilestonesTab = 'hitos' | 'proyectos';
 
 import { PROJECTS_TABS } from '../../../shared/projects-tabs';
 @Component({
@@ -23,6 +28,8 @@ import { PROJECTS_TABS } from '../../../shared/projects-tabs';
 export class Milestones implements OnInit {
   readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
+
+  activeTab: MilestonesTab = 'hitos';
 
   milestones: PagedResponseDTO<MilestoneGetDTO> = {
     page: 0,
@@ -51,14 +58,108 @@ export class Milestones implements OnInit {
   showCreateModal = false;
   showEditModal = false;
 
+  // ── Pestaña "Proyectos Activos" ──────────────────────────────────────────
+  proyectos: PagedResponseDTO<ProjectDto> = {
+    page: 0,
+    pageSize: 0,
+    totalRecords: 0,
+    totalPages: 0,
+    data: [],
+  };
+  proyectosLoading = false;
+  proyectosCurrentPage = 1;
+  proyectosTotalPages = 0;
+  proyectosTotalRecords = 0;
+  togglingProjectId: number | null = null;
+
   constructor(
     private milestoneService: MilestoneService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private proyectoService: ProyectoService,
   ) {}
 
   ngOnInit(): void {
     this.loadMilestones(1);
+  }
+
+  setTab(tab: MilestonesTab): void {
+    this.activeTab = tab;
+    if (tab === 'proyectos' && this.proyectos.data.length === 0 && !this.proyectosLoading) {
+      this.loadProyectos(1);
+    }
+  }
+
+  loadProyectos(page: number = 1): void {
+    this.proyectosLoading = true;
+    this.cdr.detectChanges();
+
+    this.proyectoService
+      .getPaged({ page, ruc: '', razonSocial: '', projectDescription: '' })
+      .subscribe({
+        next: (response) => {
+          this.proyectos = response;
+          this.proyectosCurrentPage = response.page;
+          this.proyectosTotalPages = response.totalPages;
+          this.proyectosTotalRecords = response.totalRecords;
+          this.proyectosLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.proyectosLoading = false;
+          this.error(err);
+        },
+      });
+  }
+
+  toggleProyectoActive(item: ProjectDto): void {
+    if (this.togglingProjectId != null) return;
+
+    this.togglingProjectId = item.projectId;
+    const nuevoEstado = !item.active;
+    const dto: ProjectEditDto = { ...item, active: nuevoEstado };
+
+    this.proyectoService.edit(dto).subscribe({
+      next: () => {
+        item.active = nuevoEstado;
+        this.togglingProjectId = null;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: nuevoEstado ? 'Proyecto activado' : 'Proyecto desactivado',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.togglingProjectId = null;
+        this.error(err);
+      },
+    });
+  }
+
+  prevProyectosPage(): void {
+    if (this.proyectosCurrentPage > 1) {
+      this.loadProyectos(this.proyectosCurrentPage - 1);
+    }
+  }
+
+  nextProyectosPage(): void {
+    if (this.proyectosCurrentPage < this.proyectosTotalPages) {
+      this.loadProyectos(this.proyectosCurrentPage + 1);
+    }
+  }
+
+  goToProyectosPage(page: number): void {
+    if (page >= 1 && page <= this.proyectosTotalPages) {
+      this.loadProyectos(page);
+    }
+  }
+
+  get proyectosPages(): number[] {
+    return this.computePages(this.proyectosCurrentPage, this.proyectosTotalPages);
   }
 
   openCreateModal(event: MouseEvent) {
@@ -129,23 +230,27 @@ export class Milestones implements OnInit {
   }
 
   get pages(): number[] {
+    return this.computePages(this.currentPage, this.totalPages);
+  }
+
+  private computePages(currentPage: number, totalPages: number): number[] {
     const maxButtons = 5;
 
-    if (this.totalPages <= maxButtons) {
-      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
 
-    let start = this.currentPage - Math.floor(maxButtons / 2);
-    let end = this.currentPage + Math.floor(maxButtons / 2);
+    let start = currentPage - Math.floor(maxButtons / 2);
+    let end = currentPage + Math.floor(maxButtons / 2);
 
     if (start < 1) {
       start = 1;
       end = maxButtons;
     }
 
-    if (end > this.totalPages) {
-      end = this.totalPages;
-      start = this.totalPages - maxButtons + 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - maxButtons + 1;
     }
 
     const pages: number[] = [];
