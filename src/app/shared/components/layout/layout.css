@@ -18,6 +18,21 @@
   font-size: 20px;
 }
 
+/*
+ * El botón flotante es SOLO para móvil (<640px): en escritorio el sidebar fijo
+ * ya provee la navegación. La utilidad `sm:hidden` del template no basta porque
+ * la regla `.layout-mobile-menu-btn { display: flex }` de arriba, al estar
+ * encapsulada por Angular, tiene mayor especificidad que `.sm\:hidden` de
+ * Tailwind y la anula — dejando el hamburguesa visible en escritorio (bug
+ * observado en /inicio y demás páginas sin app-abril-page-header). Este media
+ * query, con la misma especificidad y fuente posterior, lo oculta en escritorio.
+ */
+@media (min-width: 640px) {
+  .layout-mobile-menu-btn {
+    display: none;
+  }
+}
+
 .layout-content {
   border-left: 1px solid #e5e7eb;
 }

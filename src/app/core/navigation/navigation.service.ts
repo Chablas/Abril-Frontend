@@ -29,6 +29,7 @@ export class NavigationService {
             { label: 'Revisores de Áreas', route: '/gestion-administrativa/configuracion/revisores-areas', featureKey: 'gestion-administrativa.config.revisores-areas' },
             { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
+            { label: 'Correos', route: '/gestion-administrativa/configuracion/correos', featureKey: 'gestion-administrativa.config.correos' },
           ],
         },
       ],

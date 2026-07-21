@@ -129,4 +129,15 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'carpeta-adjuntos',
     },
   },
+  {
+    path: 'configuracion/correos',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.correos',
+      seccion: 'correos',
+    },
+  },
 ];

@@ -12,6 +12,7 @@ import { RevisorSalidas } from './revisor-salidas/pages/revisor-salidas';
 import { RevisoresAreas } from './revisores-areas/pages/revisores-areas';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
+import { GaCorreos } from './correos/pages/correos';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../shared/gestion-administrativa-tabs';
 /** Definición de una sección de configuración de Gestión Administrativa. */
@@ -55,6 +56,7 @@ interface ConfigSectionDef {
     RevisoresAreas,
     VisibilidadSalidas,
     GaCarpetaAdjuntos,
+    GaCorreos,
   ],
   templateUrl: './ga-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -119,6 +121,14 @@ export class GaConfiguracion implements OnInit {
       subtitulo:
         'Carpeta de SharePoint/OneDrive donde se guardan los documentos adjuntos de las solicitudes de salida (motivos que requieren documento).',
     },
+    {
+      id: 'correos',
+      label: 'Correos',
+      route: '/gestion-administrativa/configuracion/correos',
+      featureKey: 'gestion-administrativa.config.correos',
+      subtitulo:
+        'Define, por cada correo del flujo de salidas, a quién se le envía y a quién nunca (la exclusión gana). Cada destinatario puede ser un trabajador, un área (se envía a sus miembros) o un correo escrito a mano.',
+    },
   ];
 
   /** Secciones a las que el usuario tiene acceso (las que se muestran como pestañas). */
@@ -134,6 +144,7 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(RevisoresAreas) private revisoresAreasCmp?: RevisoresAreas;
   @ViewChild(VisibilidadSalidas) private visibilidadCmp?: VisibilidadSalidas;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
+  @ViewChild(GaCorreos) private correosCmp?: GaCorreos;
 
   constructor(
     private route: ActivatedRoute,
@@ -187,6 +198,7 @@ export class GaConfiguracion implements OnInit {
     | RevisoresAreas
     | VisibilidadSalidas
     | GaCarpetaAdjuntos
+    | GaCorreos
     | undefined {
     switch (this.activeSection) {
       case 'lugares': return this.lugaresCmp;
@@ -196,6 +208,7 @@ export class GaConfiguracion implements OnInit {
       case 'revisores-areas': return this.revisoresAreasCmp;
       case 'visibilidad-salidas': return this.visibilidadCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
+      case 'correos': return this.correosCmp;
       default: return undefined;
     }
   }
