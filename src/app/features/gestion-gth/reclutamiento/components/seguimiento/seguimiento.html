@@ -1,0 +1,133 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-timeline-event-text"
+  titulo="Estado del reclutamiento"
+  [subtitulo]="subtitulo"
+  width="760px"
+  (closeModal)="closeModal.emit()">
+
+  @if (seguimiento) {
+    <div class="flex flex-col gap-[18px]">
+
+      <!-- ── Tarjetas resumen ─────────────────────────────────────────── -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-[12px]">
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado actual</p>
+          <div class="mt-[6px]">
+            <app-status-badge
+              [text]="seguimiento.estadoNombre"
+              bgColor="var(--color-abril-logo-blue-light)"
+              textColor="var(--color-abril-logo-blue)" />
+          </div>
+        </div>
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobación GG</p>
+          <p class="mt-[6px] text-[14px] font-semibold text-gray-700">{{ aprobacionGgLabel }}</p>
+        </div>
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Proyecto / Obra</p>
+          <p class="mt-[6px] text-[14px] font-semibold text-gray-700 truncate" [title]="seguimiento.proyectoObra || ''">
+            {{ (seguimiento.proyectoObra | titleCase) || '—' }}
+          </p>
+        </div>
+
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Adjunto sustento</p>
+          @if (seguimiento.sustentoUrl) {
+            <a [href]="seguimiento.sustentoUrl" target="_blank" rel="noopener"
+               class="mt-[6px] flex items-center gap-[6px] text-[13px] font-medium hover:underline truncate"
+               style="color:var(--color-abril-logo-blue)"
+               [title]="seguimiento.sustentoNombre || 'Ver documento'">
+              <i class="ti ti-paperclip text-[15px] shrink-0"></i>
+              <span class="truncate">{{ seguimiento.sustentoNombre || 'Ver documento' }}</span>
+            </a>
+          } @else {
+            <p class="mt-[6px] text-[13px] text-gray-400">Sin adjunto</p>
+          }
+        </div>
+
+      </div>
+
+      <!-- ── Fase del reclutamiento (timeline vertical) ───────────────── -->
+      <div class="rounded-[10px] border p-[18px]" style="border-color:var(--color-abril-border)">
+
+        <div class="flex items-center justify-between mb-[14px]">
+          <h3 class="text-[14px] font-bold text-gray-800">Fase del reclutamiento</h3>
+          <span class="text-[11px] text-gray-400">Seguimiento vertical del requerimiento</span>
+        </div>
+
+        <div class="flex flex-col">
+          @for (fase of seguimiento.fases; track fase.codigo; let last = $last) {
+            <div class="flex gap-[14px]">
+
+              <!-- Columna del ícono + conector -->
+              <div class="flex flex-col items-center shrink-0">
+                <div class="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px] font-bold"
+                     [ngClass]="{
+                       'text-white': fase.estado !== 'pending',
+                       'text-gray-400 bg-white border border-gray-300': fase.estado === 'pending'
+                     }"
+                     [style.background]="fase.estado === 'pending' ? '' : 'var(--color-abril-logo-blue)'">
+                  @if (fase.estado === 'done') {
+                    <i class="ti ti-check text-[16px]"></i>
+                  } @else {
+                    {{ fase.orden }}
+                  }
+                </div>
+                @if (!last) {
+                  <div class="w-[2px] flex-1 min-h-[18px] my-[2px]"
+                       [style.background]="fase.estado === 'pending' ? '#e5e7eb' : 'var(--color-abril-logo-blue)'"></div>
+                }
+              </div>
+
+              <!-- Texto de la fase -->
+              <div [class]="last ? 'pb-[2px]' : 'pb-[16px]'">
+                <div class="flex items-center gap-[8px] flex-wrap">
+                  <p class="text-[13.5px] font-bold"
+                     [ngClass]="fase.estado === 'pending' ? 'text-gray-400' : 'text-gray-800'"
+                     [style.color]="fase.estado === 'pending' ? '' : 'var(--color-abril-logo-blue)'">
+                    {{ fase.nombre }}
+                  </p>
+                  @if (fase.estado === 'current') {
+                    <span class="text-[10px] font-semibold px-[8px] py-[2px] rounded-full"
+                          style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue)">
+                      Fase actual
+                    </span>
+                  }
+                </div>
+                @if (fase.descripcion) {
+                  <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">{{ fase.descripcion }}</p>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Siguiente paso ───────────────────────────────────────────── -->
+      @if (seguimiento.siguientePaso) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
+          <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:var(--color-abril-logo-blue)">Siguiente paso:</b> {{ seguimiento.siguientePaso }}
+          </p>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- Footer: un solo botón "Cerrar" a la derecha. -->
+  <div modalFooter class="w-full flex justify-end">
+    <button type="button" (click)="closeModal.emit()"
+      class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      Cerrar
+    </button>
+  </div>
+
+</app-abril-modal-panel>

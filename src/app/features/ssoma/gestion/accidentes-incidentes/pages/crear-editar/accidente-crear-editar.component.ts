@@ -64,6 +64,14 @@ export class AccidenteCrearEditarComponent implements OnInit {
   resolviendoObservador = true;
   sinWorkerVinculado = false;
 
+  // Correo del elaborador: por defecto el del trabajador logueado; se puede
+  // sobrescribir manualmente activando el checkbox (siempre debe ser @abril.pe).
+  emailTrabajadorLogueado?: string;
+  usarOtroCorreo = false;
+
+  // @abril.pe sin espacios, tildes ni símbolos raros.
+  private readonly correoAbrilRegex = /^[a-z0-9._-]+@abril\.pe$/;
+
   trabajadorNuevo: TrabajadorAfectadoRequest = { trabajadorNombre: '' };
 
   readonly nivelesConsecuencia = NIVELES_CONSECUENCIA;
@@ -334,6 +342,19 @@ export class AccidenteCrearEditarComponent implements OnInit {
         this.elaboradoPorWorkerId = me.id;
         this.form.elaboradoPorNombre = me.apellidoNombre;
         this.form.elaboradoPorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+
+        // Correo por defecto: el corporativo del trabajador logueado. Si su ficha no
+        // tiene un @abril.pe válido, forzamos el modo manual para que lo escriba.
+        const emailMe = (me.emailCorporativo ?? '').trim().toLowerCase();
+        if (this.correoAbrilRegex.test(emailMe)) {
+          this.emailTrabajadorLogueado = emailMe;
+          this.usarOtroCorreo = false;
+          this.form.elaboradoPorEmail = emailMe;
+        } else {
+          this.emailTrabajadorLogueado = undefined;
+          this.usarOtroCorreo = true;
+          this.form.elaboradoPorEmail = '';
+        }
         this.cdr.detectChanges();
       },
       error: () => {
@@ -344,10 +365,33 @@ export class AccidenteCrearEditarComponent implements OnInit {
     });
   }
 
+  /** Al (des)activar "Usar otro correo": si se apaga, vuelve al del trabajador logueado. */
+  onToggleOtroCorreo(): void {
+    if (!this.usarOtroCorreo) {
+      this.form.elaboradoPorEmail = this.emailTrabajadorLogueado ?? '';
+      delete this.errores['elaboradoPorEmail'];
+    } else {
+      this.form.elaboradoPorEmail = '';
+    }
+    this.cdr.detectChanges();
+  }
+
   // ── Validación y guardado ──────────────────────────────────────────────────
 
   validar(): boolean {
     this.errores = {};
+
+    // Correo del elaborador: obligatorio y @abril.pe limpio (es el destinatario del reporte).
+    const email = (this.form.elaboradoPorEmail ?? '').trim().toLowerCase();
+    if (!email) {
+      this.errores['elaboradoPorEmail'] = 'El correo del elaborador es obligatorio.';
+    } else if (!this.correoAbrilRegex.test(email)) {
+      this.errores['elaboradoPorEmail'] =
+        'Debe ser un correo @abril.pe válido (sin espacios ni símbolos).';
+    } else {
+      this.form.elaboradoPorEmail = email; // normalizado
+    }
+
     if (!this.form.proyectoId) this.errores['proyectoId'] = 'Proyecto requerido.';
     if (!this.form.tipoId) this.errores['tipoId'] = 'Tipo requerido.';
     if (!this.form.fecha) this.errores['fecha'] = 'Fecha requerida.';

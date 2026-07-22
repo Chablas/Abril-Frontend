@@ -5,7 +5,10 @@
     <div class="amp-header">
       <div class="amp-title">
         <i class="ti {{ icono }}"></i>
-        {{ titulo }}
+        <div class="amp-title-text">
+          <span class="amp-title-main">{{ titulo }}</span>
+          @if (subtitulo) { <span class="amp-title-sub">{{ subtitulo }}</span> }
+        </div>
       </div>
       <button type="button" class="amp-close" (click)="closeModal.emit()" title="Cerrar">✕</button>
     </div>

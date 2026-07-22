@@ -27,6 +27,8 @@ import { CommonModule } from '@angular/common';
 })
 export class AbrilModalPanel {
   @Input() titulo = '';
+  /** Subtítulo opcional bajo el título, dentro del header de color (p.ej. código · detalle). */
+  @Input() subtitulo = '';
   @Input() icono = 'ti-edit';
   @Input() variant: 'teal' | 'blue' = 'teal';
   @Input() width = '620px';

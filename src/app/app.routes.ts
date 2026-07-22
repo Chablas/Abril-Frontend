@@ -99,6 +99,13 @@ export const routes: Routes = [
       },
 
       {
+        path: 'gestion-gth',
+        loadChildren: () =>
+          import('./features/gestion-gth/gestion-gth.routes')
+          .then(m => m.GESTION_GTH_ROUTES)
+      },
+
+      {
         path: 'mejora-continua',
         loadChildren: () =>
           import('./features/mejora-continua/mejora-continua.routes')

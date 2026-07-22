@@ -1,0 +1,99 @@
+<app-base-modal [title]="'CONFIGURACIÓN DEL CORREO DE SOLICITUDES'" width="w-[560px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <p class="text-[12px] text-gray-500 leading-snug">
+      Define a quién se le envía el correo cuando se registra una nueva solicitud de personal.
+      Los <b>principales</b> van en «Para» y las <b>copias</b> en «CC». Cámbialos aquí para pruebas
+      y en producción sin necesidad de volver a desplegar.
+    </p>
+
+    <!-- ── Destinatarios principales (Para) ─────────────────────────────── -->
+    <div class="flex flex-col gap-[8px]">
+      <label class="text-sm font-semibold text-gray-700">Destinatarios principales (Para)</label>
+
+      <div class="flex gap-[8px]">
+        <input
+          type="email"
+          [(ngModel)]="nuevoPrincipal"
+          (keydown.enter)="$event.preventDefault(); agregarPrincipal()"
+          placeholder="correo@abril.pe"
+          class="flex-1 border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none" />
+        <button
+          type="button"
+          (click)="agregarPrincipal()"
+          class="px-[14px] py-[9px] rounded-[8px] text-sm font-medium text-white cursor-pointer whitespace-nowrap"
+          style="background:var(--color-abril-standard)">
+          Agregar
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-[8px]">
+        <span *ngIf="principales.length === 0" class="text-[12px] text-gray-400 italic">
+          Sin destinatarios principales. Sin al menos uno, el correo no se enviará.
+        </span>
+        <span *ngFor="let email of principales"
+              class="inline-flex items-center gap-[6px] rounded-full pl-[12px] pr-[6px] py-[4px] text-[12px] font-medium"
+              style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)">
+          {{ email }}
+          <button type="button" (click)="quitarPrincipal(email)"
+                  class="inline-flex items-center justify-center w-[16px] h-[16px] rounded-full hover:bg-black/10 cursor-pointer"
+                  title="Quitar">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <!-- ── Copias (CC) ──────────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-[8px]">
+      <label class="text-sm font-semibold text-gray-700">Copias (CC)</label>
+
+      <div class="flex gap-[8px]">
+        <input
+          type="email"
+          [(ngModel)]="nuevoCopia"
+          (keydown.enter)="$event.preventDefault(); agregarCopia()"
+          placeholder="correo@abril.pe"
+          class="flex-1 border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none" />
+        <button
+          type="button"
+          (click)="agregarCopia()"
+          class="px-[14px] py-[9px] rounded-[8px] text-sm font-medium text-white cursor-pointer whitespace-nowrap"
+          style="background:var(--color-abril-standard)">
+          Agregar
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-[8px]">
+        <span *ngIf="copias.length === 0" class="text-[12px] text-gray-400 italic">
+          Sin copias.
+        </span>
+        <span *ngFor="let email of copias"
+              class="inline-flex items-center gap-[6px] rounded-full pl-[12px] pr-[6px] py-[4px] text-[12px] font-medium bg-gray-100 text-gray-600">
+          {{ email }}
+          <button type="button" (click)="quitarCopia(email)"
+                  class="inline-flex items-center justify-center w-[16px] h-[16px] rounded-full hover:bg-black/10 cursor-pointer"
+                  title="Quitar">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="guardar()"
+        class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors text-white text-base font-medium"
+        style="background:var(--color-abril-standard)">
+        Guardar
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

@@ -46,6 +46,22 @@
 }
 .amp-title i { font-size: 20px; }
 
+/* Título (+ subtítulo opcional) apilados a la derecha del ícono. Sin subtítulo
+   el bloque es una sola línea, idéntico visualmente al header original. */
+.amp-title-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.amp-title-main { font-size: 16px; font-weight: 600; }
+.amp-title-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 1px;
+}
+
 .amp-close {
   background: none;
   border: none;

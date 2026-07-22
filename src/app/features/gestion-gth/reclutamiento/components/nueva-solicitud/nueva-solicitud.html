@@ -1,0 +1,148 @@
+<app-base-modal [title]="'Nueva solicitud de personal'" width="w-[880px]" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <!-- ── Área del solicitante (solo lectura) ─────────────────────────── -->
+    <div class="flex flex-col gap-[4px]">
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Área del solicitante</label>
+        <input type="text" disabled
+          [value]="formData.areaNombre || '(No se pudo identificar tu área)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+      <p class="text-[11px] text-gray-400">
+        Área asociada al usuario solicitante. No es editable.
+      </p>
+    </div>
+
+    <!-- ── Cantidad total de vacantes ──────────────────────────────────── -->
+    <div class="flex flex-col gap-[4px] w-[220px]">
+      <app-search-select
+        label="Cantidad total de vacantes"
+        placeholder="Selecciona la cantidad"
+        [options]="cantidadOptions"
+        valueField="id" displayField="nombre"
+        [value]="cantidad"
+        (valueChange)="onCantidadChange($event)" />
+      <p class="text-[11px] text-gray-400">Se generará un bloque para completar los datos de cada vacante.</p>
+    </div>
+
+    <!-- Info: una vacante = un requerimiento -->
+    <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+         style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
+      <p class="text-[13px] text-gray-600">
+        Cada vacante genera un <b>requerimiento independiente</b> con su propio seguimiento, long list y aprobación.
+      </p>
+    </div>
+
+    <!-- ── Bloques por vacante ─────────────────────────────────────────── -->
+    <div *ngFor="let v of vacantes; let i = index"
+         class="flex flex-col gap-[12px] rounded-[8px] border border-[#F0F0F0] p-[14px]">
+
+      <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-[6px]">
+        <div class="flex items-center gap-[8px]">
+          <span class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[12px] font-bold text-white"
+                style="background:var(--color-abril-standard)">{{ i + 1 }}</span>
+          <p class="text-[13px] font-bold text-gray-700">Puesto solicitado {{ i + 1 }}</p>
+        </div>
+        <span class="text-[11px] text-gray-400">Vacante {{ i + 1 }} de {{ vacantes.length }}</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Puesto" placeholder="Selecciona puesto"
+            [options]="formData.puestos" valueField="id" displayField="nombre"
+            [(value)]="v.puestoId" />
+          <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Tipo de requerimiento" placeholder="Selecciona tipo"
+            [options]="formData.tiposRequerimiento" valueField="id" displayField="nombre"
+            [(value)]="v.tipoRequerimientoId" />
+          <p *ngIf="submitted && !v.tipoRequerimientoId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Proyecto / Obra" placeholder="Buscar proyecto..."
+            [options]="formData.proyectos" valueField="id" displayField="nombre"
+            [(value)]="v.projectId" />
+          <p *ngIf="submitted && !v.projectId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <div class="flex flex-col gap-[4px]">
+          <app-date-picker
+            label="Fecha requerida de ingreso"
+            color="var(--color-abril-standard)"
+            [(value)]="v.fecha" />
+          <p *ngIf="submitted && !v.fecha" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Justificación general (opcional) ────────────────────────────── -->
+    <div class="flex flex-col gap-[4px]">
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Justificación general de la solicitud (opcional)</label>
+        <textarea [(ngModel)]="justificacion" rows="3"
+          placeholder="Explique el motivo de la solicitud, el impacto del personal requerido y cualquier información relevante..."
+          class="w-full border border-[#e2e8f0] rounded-[7px] px-[10px] py-[8px] text-[13px] text-gray-700 focus:outline-none resize-y"></textarea>
+      </div>
+    </div>
+
+    <!-- ── Adjuntar sustento (opcional) ────────────────────────────────── -->
+    <div class="flex flex-col gap-[6px]">
+      <label class="text-[12px] font-semibold text-gray-600">
+        Adjuntar sustento (opcional)
+        <span class="font-normal text-gray-400">— Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX. Máx. 10 MB.</span>
+      </label>
+
+      <div *ngIf="sustento"
+           class="flex items-center gap-[10px] rounded-[8px] px-[14px] py-[10px]"
+           style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="flex-shrink-0" style="color:var(--color-abril-standard)">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
+        </svg>
+        <span class="flex-1 min-w-0 truncate text-[13px] text-gray-700" [title]="sustento.file.name">
+          {{ sustento.file.name }}
+        </span>
+        <button type="button" (click)="quitarSustento()"
+                class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-colors"
+                title="Quitar sustento">
+          ✕
+        </button>
+      </div>
+
+      <app-file-selector *ngIf="!sustento"
+        accept=".pdf,.doc,.docx,.xls,.xlsx"
+        label="Arrastra el archivo aquí o"
+        hint="PDF, DOC, DOCX, XLS, XLSX"
+        color="var(--color-abril-standard)"
+        (fileSelected)="onSustentoSelected($event)" />
+    </div>
+
+    <p class="text-[12px] text-gray-400">
+      Al enviar, GTH recibirá una notificación interna y un correo con enlace directo para revisar la solicitud.
+    </p>
+
+    <!-- ── Botón enviar ────────────────────────────────────────────────── -->
+    <div class="flex justify-end gap-[10px] pt-[4px]">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[36px] px-[20px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="save()"
+        class="h-[36px] px-[22px] rounded-[7px] text-white text-[13px] font-medium cursor-pointer transition-colors hover:brightness-95"
+        style="background:var(--color-abril-standard)">
+        Enviar solicitud
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

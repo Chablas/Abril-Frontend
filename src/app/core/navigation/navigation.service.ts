@@ -170,6 +170,19 @@ export class NavigationService {
       ],
     },
     {
+      key: 'gestion-gth',
+      label: 'Gestión GTH',
+      iconKey: 'users-group',
+      baseRoute: '/gestion-gth',
+      behavior: 'expand',
+      landing: '/gestion-gth/reclutamiento',
+      items: [
+        { label: 'Reclutamiento', route: '/gestion-gth/reclutamiento', featureKey: 'gestion-gth.reclutamiento' },
+        // Onboarding y Base maestra se agregarán con sus respectivas funcionalidades.
+      ],
+      groups: [],
+    },
+    {
       key: 'habilitacion',
       label: 'Gestión de Ingresos',
       iconKey: 'users-group',
