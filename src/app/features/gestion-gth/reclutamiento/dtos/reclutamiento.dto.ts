@@ -1,90 +1,113 @@
-export interface OpcionDto {
+/** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
+export interface Opcion {
   id: number;
   nombre: string;
 }
 
-/** Datos del formulario "Nueva solicitud de personal" en una sola petición. */
-export interface ReclutamientoFormDataDto {
-  areaNombre: string | null;
-  areaScopeId: number | null;
-  maxVacantes: number;
-  puestos: OpcionDto[];
-  tiposRequerimiento: OpcionDto[];
-  proyectos: OpcionDto[];
+/** Contadores de las tarjetas de resumen de la vista de GTH (por ahora solo "En proceso"). */
+export interface ResumenReclutamiento {
+  /** Requerimientos activos actualmente (en curso dentro del pipeline). */
+  enProceso: number;
 }
 
-export interface VacanteCreateDto {
-  puestoId: number | null;
-  tipoRequerimientoId: number | null;
-  projectId: number | null;
-  /** Fecha requerida de ingreso en formato nativo "YYYY-MM-DD". */
-  fechaRequeridaIngreso: string;
-}
-
-export interface SolicitudPersonalCreateDto {
-  justificacion: string | null;
-  vacantes: VacanteCreateDto[];
-}
-
-export interface SolicitudPersonalCreateResult {
-  id: number;
-  codigos: string[];
-  message: string;
-}
-
-/** Destinatarios del correo de "nueva solicitud de personal" (config). */
-export interface CorreoDestinatarios {
-  /** Destinatarios principales (Para/To). */
-  principales: string[];
-  /** Destinatarios en copia (CC). */
-  copias: string[];
-}
-
-/** Una fase del pipeline dentro del seguimiento vertical del requerimiento. */
-export interface FaseSeguimiento {
+/** Fila de la tabla "Solicitudes de contratación" (un requerimiento de cualquier área). */
+export interface RequerimientoGthListItem {
+  requerimientoId: number;
+  /** Código REQ-AAAA-NNNN (columna "N° requerimiento"). */
   codigo: string;
+  /** Área solicitante (snapshot al registrar). */
+  area: string | null;
+  /** Puesto solicitado. */
+  puesto: string;
+  /** Proyecto/obra destino de la vacante. */
+  proyectoObra: string | null;
+  /** Fecha en que llegó la solicitud (ISO, ya en hora Perú). Columna "Fecha llegada". */
+  fechaLlegada: string;
+  /** Fecha requerida de ingreso ("YYYY-MM-DD"). Columna "Fecha requerida". */
+  fechaRequeridaIngreso: string;
+  /** Prioridad asignada (id del catálogo). Null si no tiene. Columna "Prioridad". */
+  prioridadId: number | null;
+  /** Nombre de la prioridad (Alta/Media/Baja). Null si no tiene. */
+  prioridadNombre: string | null;
+  estadoCodigo: string;
+  estadoNombre: string;
+}
+
+/** Respuesta de la bandeja de GTH: tarjetas + tabla + catálogos en una sola petición. */
+export interface BandejaReclutamiento {
+  resumen: ResumenReclutamiento;
+  solicitudes: RequerimientoGthListItem[];
+  /** Catálogo de prioridades (Alta/Media/Baja) para el desplegable de la columna. */
+  prioridades: Opcion[];
+}
+
+// ── Detalle del requerimiento (modal del ojo de la bandeja) ──────────────────
+
+/** Asignación interna de GTH de un requerimiento (null = sin asignar). */
+export interface AsignacionGth {
+  /** Id de gth_responsable_proceso (responsable del proceso). */
+  responsableId: number | null;
+  /** Id de gth_tipo_proceso (tipo de proceso y SLA). */
+  tipoProcesoId: number | null;
+  /** Id de gth_prioridad (prioridad interna). */
+  prioridadId: number | null;
+  /** Id de contributor (razón social activa). */
+  contributorId: number | null;
+}
+
+/** Opción del desplegable "Tipo de proceso y SLA". */
+export interface TipoProcesoOpcion {
+  id: number;
   nombre: string;
+  slaDias: number;
   descripcion: string | null;
-  orden: number;
-  /** Estado visual respecto a la fase actual: 'done' | 'current' | 'pending'. */
-  estado: 'done' | 'current' | 'pending';
 }
 
-/** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
-export interface Seguimiento {
+/** Opción del desplegable "Razón social activa", con sus cupos disponibles. */
+export interface RazonSocialOpcion {
+  id: number;
+  nombre: string;
+  /** Cupos = tope (20) − trabajadores vigentes en la base maestra (practicantes no consumen). */
+  cuposDisponibles: number;
+}
+
+/** Canal de publicación de vacantes y su estado para el requerimiento consultado. */
+export interface CanalPublicacion {
+  id: number;
+  nombre: string;
+  /** true = API disponible · publicación automática; false = registrar publicación manual. */
+  apiDisponible: boolean;
+  /** true = la vacante ya está registrada como publicada en este canal. */
+  publicado: boolean;
+}
+
+/**
+ * Estado resultante de una transición del pipeline (respuesta de publicar la vacante y de
+ * iniciar la revisión de CV): actualiza el badge y las secciones del modal sin refetch.
+ */
+export interface EstadoTransicionResult {
+  message: string;
+  estadoCodigo: string;
+  estadoNombre: string;
+}
+
+/** Detalle del requerimiento para la vista de GTH: cabecera + asignación + catálogos + canales. */
+export interface DetalleRequerimientoGth {
   requerimientoId: number;
   codigo: string;
   puesto: string;
+  area: string | null;
+  proyectoObra: string | null;
   tipoRequerimiento: string;
-  area: string | null;
-  proyectoObra: string | null;
-  justificacion: string | null;
-  /** Fecha requerida de ingreso ("YYYY-MM-DD"). */
+  /** Vacantes de este requerimiento (cada vacante genera su propio requerimiento → 1). */
+  vacantes: number;
   fechaRequeridaIngreso: string;
-  /** Fecha de envío (ISO, ya en hora Perú). */
-  enviado: string;
   estadoCodigo: string;
   estadoNombre: string;
-  estadoOrden: number;
-  /** ¿Requiere aprobación de Gerencia General? (solo puestos nuevos). */
-  aprobacionGgRequerida: boolean;
-  sustentoNombre: string | null;
-  sustentoUrl: string | null;
-  fases: FaseSeguimiento[];
-  /** Descripción de la fase actual (siguiente acción pendiente). */
-  siguientePaso: string | null;
-}
-
-/** Fila de la tabla "Mis solicitudes de vacante" (un requerimiento del usuario). */
-export interface SolicitudVacanteListItem {
-  requerimientoId: number;
-  codigo: string;
-  puesto: string;
-  justificacion: string | null;
-  area: string | null;
-  proyectoObra: string | null;
-  /** Fecha de envío (ISO, ya en hora Perú). */
-  enviado: string;
-  estadoCodigo: string;
-  estadoNombre: string;
+  asignacion: AsignacionGth;
+  responsables: Opcion[];
+  tiposProceso: TipoProcesoOpcion[];
+  prioridades: Opcion[];
+  razonesSociales: RazonSocialOpcion[];
+  canales: CanalPublicacion[];
 }

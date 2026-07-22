@@ -6,8 +6,8 @@ import { StatusBadge } from '../../../../../shared/components/status-badge/statu
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ReclutamientoService } from '../../services/reclutamiento.service';
-import { Seguimiento } from '../../dtos/reclutamiento.dto';
+import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
+import { Seguimiento } from '../../dtos/solicitud-personal.dto';
 
 /**
  * Modal "Estado del reclutamiento" (solo lectura): cabecera con datos clave del
@@ -28,7 +28,7 @@ export class GthSeguimiento implements OnInit {
   seguimiento: Seguimiento | null = null;
 
   constructor(
-    private service: ReclutamientoService,
+    private service: SolicitudPersonalService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}

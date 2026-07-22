@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ReclutamientoService } from '../../services/reclutamiento.service';
+import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
 
 /**
  * Configuración de los destinatarios del correo que se envía al registrar una nueva
@@ -31,7 +31,7 @@ export class GthConfiguracionCorreos implements OnInit {
   private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   constructor(
-    private service: ReclutamientoService,
+    private service: SolicitudPersonalService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}

@@ -1,0 +1,370 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-arrow-left"
+  titulo="Volver a la lista"
+  width="940px"
+  (closeModal)="cerrar()">
+
+  @if (detalle) {
+    <div class="flex flex-col gap-[16px]">
+
+      <!-- ── Cabecera del requerimiento ─────────────────────────────────── -->
+      <div>
+        <div class="flex items-center gap-[10px] flex-wrap">
+          <span class="text-[13px] font-bold tracking-wide" style="color:var(--color-abril-logo-blue)">
+            {{ detalle.codigo }}
+          </span>
+          <app-status-badge
+            [text]="detalle.estadoNombre"
+            [bgColor]="estadoColors(detalle.estadoCodigo).bg"
+            [textColor]="estadoColors(detalle.estadoCodigo).text" />
+        </div>
+
+        <h2 class="text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
+          {{ detalle.puesto | titleCase }}
+        </h2>
+
+        <p class="text-[13px] text-gray-500 mt-[2px]">
+          {{ (detalle.area | titleCase) || 'Sin área' }}
+          · {{ (detalle.proyectoObra | titleCase) || 'Sin proyecto' }}
+          · {{ detalle.vacantes }} vacante(s)
+        </p>
+        <p class="text-[12px] text-gray-400 mt-[2px]">
+          Fecha requerida: {{ detalle.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}
+        </p>
+        @if (tipoProcesoSeleccionado) {
+          <p class="text-[13px] font-semibold mt-[6px]" style="color:var(--color-abril-logo-blue)">
+            Plazo estimado del proceso: {{ tipoProcesoSeleccionado.slaDias }} días
+          </p>
+        }
+      </div>
+
+      <!-- ── Asignación interna de GTH ──────────────────────────────────── -->
+      <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+        <button type="button"
+          class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+          (click)="seccionAsignacion = !seccionAsignacion">
+          <i class="ti text-[15px] text-gray-500 transition-transform"
+             [ngClass]="seccionAsignacion ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+          <h3 class="text-[14px] font-bold text-gray-800">Asignación interna de GTH</h3>
+        </button>
+
+        @if (seccionAsignacion) {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-[16px] gap-y-[14px] mt-[10px]">
+
+            <!-- Responsable del proceso -->
+            <div>
+              <app-search-select
+                label="Responsable del proceso"
+                [options]="detalle.responsables"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.responsableId"
+                (valueChange)="onAsignacionChange('responsableId', $event)"
+                placeholder="Sin asignar"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                La asignación se realiza al revisar la bandeja de solicitudes.
+              </p>
+            </div>
+
+            <!-- Tipo de proceso y SLA -->
+            <div>
+              <app-search-select
+                label="Tipo de proceso y SLA"
+                [options]="tiposProcesoOpts"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.tipoProcesoId"
+                (valueChange)="onAsignacionChange('tipoProcesoId', $event)"
+                placeholder="Selecciona tipo de proceso"
+                [sortAlpha]="false"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              @if (tipoProcesoSeleccionado) {
+                <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                  {{ tipoProcesoSeleccionado.descripcion }}
+                  SLA referencial: {{ tipoProcesoSeleccionado.slaDias }} días.
+                </p>
+              }
+              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                La clasificación la determina GTH considerando especialización, oferta del
+                mercado, banda salarial y dificultad de búsqueda.
+              </p>
+            </div>
+
+            <!-- Prioridad interna -->
+            <div>
+              <app-search-select
+                label="Prioridad interna"
+                [options]="detalle.prioridades"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.prioridadId"
+                (valueChange)="onAsignacionChange('prioridadId', $event)"
+                placeholder="Selecciona prioridad"
+                [sortAlpha]="false"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                Uso exclusivo de GTH. Se asigna al revisar la solicitud y no la define el
+                cliente interno.
+              </p>
+            </div>
+
+            <!-- Razón social activa -->
+            <div>
+              <app-search-select
+                label="Razón social activa"
+                [options]="detalle.razonesSociales"
+                valueField="id"
+                displayField="nombre"
+                [value]="detalle.asignacion.contributorId"
+                (valueChange)="onAsignacionChange('contributorId', $event)"
+                placeholder="Selecciona razón social"
+                color="var(--color-abril-logo-blue)">
+              </app-search-select>
+              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                @if (razonSocialSeleccionada) {
+                  Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b>.
+                }
+                El cálculo se actualiza desde la base maestra; los practicantes no consumen
+                el tope de 20.
+              </p>
+              @if (sinCupos) {
+                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
+                  La razón social seleccionada no cuenta con cupos suficientes para las
+                  {{ detalle.vacantes }} vacantes.
+                </p>
+              }
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <!-- ── Publicado: canales de publicación (antes de publicar) ──────── -->
+      @if (!vacantePublicada) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionPublicacion = !seccionPublicacion">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionPublicacion ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Publicado: canales de publicación</h3>
+          </button>
+
+          @if (seccionPublicacion) {
+            <p class="text-[13px] text-gray-600 mt-[10px]">Publicar vacante en</p>
+
+            <div class="flex flex-col gap-[10px] mt-[8px]">
+              @for (canal of detalle.canales; track canal.id) {
+                <label
+                  class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[10px] cursor-pointer hover:bg-gray-50 transition-colors"
+                  style="border-color:var(--color-abril-border)">
+                  <div>
+                    <p class="text-[13.5px] font-semibold text-gray-800">{{ canal.nombre }}</p>
+                    <p class="text-[12px] mt-[1px]"
+                       [ngClass]="canal.apiDisponible ? 'text-emerald-600' : 'text-red-600'">
+                      {{ canal.apiDisponible
+                        ? 'API disponible · publicación automática'
+                        : 'API no disponible · registrar publicación manual' }}
+                    </p>
+                  </div>
+                  <input type="checkbox"
+                    class="w-[16px] h-[16px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)"
+                    [checked]="canalesSeleccionados.has(canal.id)"
+                    (change)="toggleCanal(canal.id)" />
+                </label>
+              }
+            </div>
+
+            <button type="button"
+              class="w-full h-[40px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
+              [ngClass]="puedePublicar ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
+              style="background:var(--color-abril-logo-blue)"
+              [disabled]="!puedePublicar"
+              (click)="publicar()">
+              Publicar vacante en canales seleccionados
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── Revisión de CV (publicado, aún sin long list) ──────────────── -->
+      @if (vacantePublicada && !enLongList) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionRevisionCv = !seccionRevisionCv">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionRevisionCv ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Revisión de CV</h3>
+          </button>
+
+          @if (seccionRevisionCv) {
+            <button type="button"
+              class="w-full h-[44px] mt-[12px] rounded-[7px] bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[13.5px] font-semibold cursor-pointer transition-colors"
+              style="color:var(--color-abril-logo-blue)"
+              (click)="iniciarRevisionCv()">
+              Iniciar revisión de CV
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── Long list: CVs seleccionados ───────────────────────────────── -->
+      @if (enLongList) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionLongList = !seccionLongList">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionLongList ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Long list: CVs seleccionados</h3>
+          </button>
+
+          @if (seccionLongList) {
+            <div class="rounded-[8px] bg-[#EFF6FF] px-[14px] py-[11px] mt-[12px]">
+              <p class="text-[13px] font-semibold" style="color:var(--color-abril-logo-blue)">
+                Carga de candidatos para long list
+              </p>
+              <p class="text-[12.5px] text-gray-600 mt-[2px] leading-snug">
+                Sube los CVs previamente filtrados por GTH para la long list. Registra el nombre,
+                la fuente de reclutamiento y adjunta el CV que revisará el solicitante.
+              </p>
+            </div>
+
+            <p class="text-[13px] font-semibold text-gray-700 mt-[14px]">CVs seleccionados</p>
+
+            <input #cvInput type="file" class="hidden" multiple accept=".pdf,.doc,.docx"
+              (change)="onCvsSeleccionados($event)" />
+            <button type="button"
+              class="w-full h-[44px] mt-[8px] rounded-[7px] border border-dashed bg-[#F8FBFF] hover:bg-[#EFF6FF] flex items-center justify-center gap-[8px] text-[13px] font-semibold cursor-pointer transition-colors"
+              style="border-color:#93C5FD;color:var(--color-abril-logo-blue)"
+              (click)="cvInput.click()">
+              <i class="ti ti-file-text text-[16px]"></i>
+              Subir CVs que quedaron para la long list
+            </button>
+
+            @for (c of candidatos; track c; let i = $index) {
+              <div class="rounded-[10px] border px-[16px] py-[14px] mt-[12px]"
+                   style="border-color:var(--color-abril-border)">
+
+                <div class="flex items-start justify-between gap-[12px]">
+                  <div class="min-w-0">
+                    <p class="text-[14px] font-bold text-gray-800">Candidato {{ i + 1 }}</p>
+                    <p class="text-[12.5px] text-gray-500 mt-[2px] break-all">CV: {{ c.cv.name }}</p>
+                  </div>
+                  <button type="button"
+                    class="text-[12.5px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
+                    (click)="quitarCandidato(i)">
+                    Quitar
+                  </button>
+                </div>
+
+                <!-- Nombre y apellido -->
+                <div class="abril-field mt-[14px]">
+                  <label class="abril-field-label" [for]="'candidato-nombre-' + i">
+                    Nombre y apellido del candidato
+                  </label>
+                  <input [id]="'candidato-nombre-' + i" type="text" class="abril-field-input"
+                    [(ngModel)]="c.nombre"
+                    placeholder="Escribe el nombre y apellido si no se detecta automáticamente" />
+                </div>
+                <p class="text-[11.5px] text-gray-500 mt-[6px] leading-snug">
+                  El sistema toma el nombre del CV. Si no lo identifica correctamente, puedes
+                  escribirlo o corregirlo manualmente.
+                </p>
+
+                <!-- Fuente de reclutamiento -->
+                <div class="mt-[10px]">
+                  <app-search-select
+                    label="Fuente de reclutamiento"
+                    [options]="detalle.canales"
+                    valueField="id"
+                    displayField="nombre"
+                    [value]="c.fuenteCanalId"
+                    (valueChange)="c.fuenteCanalId = $event"
+                    placeholder="Selecciona fuente"
+                    [sortAlpha]="false"
+                    color="var(--color-abril-logo-blue)">
+                  </app-search-select>
+                </div>
+
+                <!-- Comentario de GTH -->
+                <div class="abril-field mt-[10px]">
+                  <label class="abril-field-label" [for]="'candidato-comentario-' + i">
+                    Comentario de GTH
+                  </label>
+                  <textarea [id]="'candidato-comentario-' + i" class="abril-field-input" rows="3"
+                    [(ngModel)]="c.comentario"
+                    placeholder="Registrar observaciones internas de GTH sobre el candidato..."></textarea>
+                </div>
+
+                <!-- Informe del candidato -->
+                <p class="text-[13px] font-semibold text-gray-700 mt-[12px]">Informe del candidato</p>
+                <input #informeInput type="file" class="hidden" accept=".pdf,.doc,.docx"
+                  (change)="onInformeSeleccionado(c, $event)" />
+                @if (!c.informe) {
+                  <button type="button"
+                    class="w-full h-[42px] mt-[6px] rounded-[7px] border border-dashed hover:bg-gray-50 flex items-center justify-center gap-[8px] text-[13px] font-semibold cursor-pointer transition-colors"
+                    style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue)"
+                    (click)="informeInput.click()">
+                    <i class="ti ti-file-text text-[16px]"></i>
+                    Adjuntar informe
+                  </button>
+                } @else {
+                  <div class="flex items-center justify-between gap-[12px] mt-[6px] rounded-[7px] border px-[12px] py-[9px]"
+                       style="border-color:var(--color-abril-border)">
+                    <p class="text-[12.5px] text-gray-700 break-all min-w-0">{{ c.informe.name }}</p>
+                    <button type="button"
+                      class="text-[12.5px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
+                      (click)="quitarInforme(c)">
+                      Quitar
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Envío de la long list: se habilitará cuando se implemente el guardado
+                 (SharePoint/BD) y la notificación por correo al solicitante. -->
+            <button type="button"
+              class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+              style="background:var(--color-abril-logo-blue)"
+              disabled>
+              Enviar long list y notificar por correo al solicitante
+            </button>
+          }
+        </div>
+      }
+
+      <!-- ── Siguiente paso ─────────────────────────────────────────────── -->
+      <div>
+        <p class="text-[13px] font-semibold text-gray-700 mb-[6px]">Siguiente paso</p>
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:#FEF9E7;border:1px solid #F5E1A4">
+          <i class="ti ti-alert-circle text-[18px] shrink-0 mt-[1px]" style="color:#B45309"></i>
+          <p class="text-[13px] text-gray-700">{{ siguientePasoTexto }}</p>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- Footer: un solo botón "Cerrar" a la derecha. -->
+  <div modalFooter class="w-full flex justify-end">
+    <button type="button" (click)="cerrar()"
+      class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      Cerrar
+    </button>
+  </div>
+
+</app-abril-modal-panel>

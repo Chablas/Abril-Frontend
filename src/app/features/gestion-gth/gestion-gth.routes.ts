@@ -5,6 +5,7 @@ import { roleGuard } from '../../core/guards/role.guard';
 export const GESTION_GTH_ROUTES: Routes = [
   { path: '', redirectTo: 'reclutamiento', pathMatch: 'full' },
   {
+    // Vista de GTH: bandeja de solicitudes de contratación de toda la organización.
     path: 'reclutamiento',
     loadComponent: () =>
       import('./reclutamiento/reclutamiento').then((m) => m.GthReclutamiento),
@@ -12,6 +13,17 @@ export const GESTION_GTH_ROUTES: Routes = [
     data: {
       titulo: 'RECLUTAMIENTO',
       featureKey: 'gestion-gth.reclutamiento',
+    },
+  },
+  {
+    // Vista del solicitante (jefatura/gerencia): registra y hace seguimiento a sus vacantes.
+    path: 'solicitud-personal',
+    loadComponent: () =>
+      import('./solicitud-personal/solicitud-personal').then((m) => m.GthSolicitudPersonal),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'SOLICITUD DE PERSONAL',
+      featureKey: 'gestion-gth.solicitud-personal',
     },
   },
 ];

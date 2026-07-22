@@ -349,6 +349,9 @@ export class ContractorRegistration implements OnInit {
 
     const formData = new FormData();
     formData.append('IsUpdateRequest', isUpdateRequest ? 'true' : 'false');
+    // Regla de RUTA: solo el registro interno (/contractors/registro-interno) notifica
+    // por correo al equipo de Costos; la ruta pública (/contractors/registro) no.
+    formData.append('IsInternalRegistration', this.modoInterno ? 'true' : 'false');
     formData.append('GraphAccessToken', localStorage.getItem('graph_access_token') ?? '');
     formData.append('ContributorRuc', this.form.contributorRuc);
     formData.append('ContributorName', this.form.contributorName);

@@ -9,12 +9,12 @@ import { DatePicker } from '../../../../../shared/components/date-picker/date-pi
 import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ReclutamientoService } from '../../services/reclutamiento.service';
+import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
 import {
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
   VacanteCreateDto,
-} from '../../dtos/reclutamiento.dto';
+} from '../../dtos/solicitud-personal.dto';
 
 /** Estado en memoria de una vacante del formulario. */
 interface VacanteForm {
@@ -54,7 +54,7 @@ export class GthNuevaSolicitud implements OnInit {
   submitted = false;
 
   constructor(
-    private service: ReclutamientoService,
+    private service: SolicitudPersonalService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}

@@ -412,7 +412,8 @@
           </svg>
           Enviar solicitud
         </button>
-        <p class="text-xs text-gray-400 text-center">
+        <!-- Solo en la ruta pública: el personal interno no necesita este aviso. -->
+        <p *ngIf="!modoInterno" class="text-xs text-gray-400 text-center">
           Un representante de Abril revisará tus datos y te enviará tus credenciales de acceso.
         </p>
       </div>
