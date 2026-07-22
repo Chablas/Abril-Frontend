@@ -4652,3 +4652,45 @@ La página (heredada, no de esta sesión) usaba los tokens `--color-abril-primar
 1. Los 4 dropdowns de filtro "Proyecto" que no respetan `Active` (sección 3) — requiere cambio de backend, coordinar con la otra terminal.
 2. SQL de `role_feature` para "Actas de Reunión" — aplicado solo en local, falta aplicar en producción (túnel SSH) y avisar al usuario de prueba que cierre sesión después (regla D4).
 3. Backend de "Actas de Reunión" no localizado en el checkout de `Abril_Backend` — puede estar en una rama sin mergear, sin confirmar.
+
+## Sesión 2026-07-21 — Rediseño completo de Respuesta de Informes (report-response-control)
+
+Rediseño integral de `features/projects/report-response-control` siguiendo el estándar UI 2026 + DESIGN-VICTOR.md. El backend ya soportaba `projectId`/`stateId` como query params opcionales en `GET /api/v1/residentReportIncidence/paged` (nada de backend en esta sesión).
+
+### 1. Inversión de la propiedad de datos (padre = smart)
+Antes el fetch HTTP vivía en `list.ts` y la paginación en el padre, acoplados por `@ViewChild(List)`. Se invirtió: `report-response-control.ts` pasa a ser el componente smart (fetch + filtros + toggle + paginación + dueño de los 3 modales). `list` y el nuevo `report-cards` quedaron **presentacionales** (`@Input() data/loading`, `@Output() respond/openView`), para que ambas vistas compartan los mismos modales.
+
+### 2. Filtros + paginado server-side
+- `filtros = { projectId, stateId }` en el padre. `load(page)` pasa `{...filtros, page}`.
+- Regla respetada: **cambio de filtro → `load(1)`**; **solo `onPageChange(p)` → `load(p)`** conservando filtros; `limpiarFiltros()` → reset + `load(1)`.
+- `ResidentReportIncidenceService.getReportsPaged(page, projectId?, stateId?)` arma la URL con `HttpParams`, agregando cada filtro **solo si `!= null`**.
+- `app-filter-trigger` (proyectado en `tabsExtra`) + `app-filter-modal` con dos `app-search-select`: **Proyecto** (selector, catálogo vía `ProjectResidentService.getProjectsDescription()`) y **Estado** (Levantado→stateId 5 / No levantado→stateId 6, confirmado por backend). Sin filtro de especialidad (descartado).
+- Cumpliendo la regla R1 (ngOnInit máx 1 GET): los proyectos del filtro se cargan **perezosamente al abrir el panel de filtros** (`abrirFiltros()`), dejando `ngOnInit` con un solo GET (la lista).
+
+### 3. Toggle tabla/tarjetas
+- `type ViewMode = 'cards' | 'table'`, default `'table'`, `setView()`.
+- Estado `.active` del toggle **diseñado explícito** con paleta DESIGN-VICTOR (pastilla blanca + texto navy `#1E3A5F`, inactivo `#64748B`) — el precedente `resident-monitoring-measurement` no tenía `.active` resuelto visualmente, así que no se copió.
+- **Nueva vista tarjetas** `report-cards/` a 3 columnas (`xl:grid-cols-3`, igual que resident-card): imagen o placeholder, proyecto, descripción, badge de estado, y el mismo botón/texto de respuesta con **idéntico gating de rol** (RESIDENTE ve botón, ADMINISTRADOR_RESIDENTES ve "Sin respuesta").
+- Badges LEVANTADO/NO LEVANTADO con colores exactos §6.3 (`#dcfce7`/`#166534` y `#fee2e2`/`#991b1b`) en ambas vistas.
+- Tabla migrada a `abril-table` + `abril-table-wrap`.
+
+### 4. Modales
+- Create modal migrado a `app-base-modal`; `app-file-selector` con `[color]="var(--color-abril-standard)"` (antes verde viejo `#64BC04`). Se removió un `console.log` residual.
+- `respond-report-modal` (ya usaba `app-base-modal`): sin firma digital, solo estilo/tokens actualizados.
+- FAB "Nuevo registro" vía `app-fab`, gated a ADMINISTRADOR_RESIDENTES, `*ngIf="!showCreateModal"`.
+
+### 5. Migración de tokens
+Barrido completo de `--color-abril-primary`/`#64BC04` → `--color-abril-standard` en toda la página, incluido el modal de detalle (`report-view-modal` + `report-view-detail`/`report-view-images`/`report-view-active-tab`). **0 tokens viejos restantes** (verificado por grep).
+
+### Archivos clave
+- `core/services/residentReportIncidence.service.ts` (firma de `getReportsPaged`)
+- `report-response-control.ts`/`.html`/`.css` (smart component + toggle + filtros)
+- `report-cards/` (nuevo, vista tarjetas)
+- `list/list.ts`/`.html`/`.css` (presentacional + skeleton)
+- `report-response-control-create/` y `list/respond-report-modal/` (modales)
+- `list/report-view-modal/**` (barrido de tokens)
+
+**Reglas**: F1/F4 (`ng build` limpio, 0 errores nuevos; mismos warnings preexistentes de terceros), F8 (skeleton shimmer en tabla y tarjetas), F9 (error visible vía `ErrorService`), F11 (títulos de modal en MAYÚSCULAS). No probado visualmente en navegador (sin acceso a browser en este entorno).
+
+### Pendiente / notas
+- Los `.spec.ts` del feature son smoke tests (`should create`) y no referencian la API removida — compilan sin cambios.
