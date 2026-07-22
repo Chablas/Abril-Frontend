@@ -16,10 +16,21 @@ export class ResidentReportIncidenceService {
 
   constructor(private http: HttpClient) {}
 
-  getReportsPaged(page: number): Observable<PagedResponseDTO<ResidentReportIncidenceDTO>> {
+  getReportsPaged(
+    page: number,
+    projectId?: number | null,
+    stateId?: number | null,
+  ): Observable<PagedResponseDTO<ResidentReportIncidenceDTO>> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<PagedResponseDTO<ResidentReportIncidenceDTO>>(`${this.apiUrl}/paged?page=${page}`, {
+
+    let params = new HttpParams().set('page', String(page));
+    // Solo se envían los filtros que tienen valor: si son null/undefined, no se agrega el param.
+    if (projectId != null) params = params.set('projectId', String(projectId));
+    if (stateId != null) params = params.set('stateId', String(stateId));
+
+    return this.http.get<PagedResponseDTO<ResidentReportIncidenceDTO>>(`${this.apiUrl}/paged`, {
       headers: { Authorization: `Bearer ${token}` },
+      params,
     });
   }
 

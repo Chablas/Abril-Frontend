@@ -6,17 +6,17 @@ import { Roles } from '../../../../core/constants/roles';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
 /**
- * Vista tabla (presentacional) del control de respuesta de informes. No hace HTTP:
- * recibe los datos ya paginados del padre y emite las acciones de fila
- * (ver detalle / responder), que el padre resuelve abriendo el modal correspondiente.
+ * Vista tarjetas (presentacional) del control de respuesta de informes. Espejo de la
+ * vista tabla: mismos datos (@Input) y mismas acciones de fila (@Output). El gating de
+ * rol del botón/texto de respuesta es idéntico al de la tabla.
  */
 @Component({
-  selector: 'app-list',
+  selector: 'app-report-cards',
   imports: [CommonModule, TitleCasePipe],
-  templateUrl: './list.html',
-  styleUrl: './list.css',
+  templateUrl: './report-cards.html',
+  styleUrl: './report-cards.css',
 })
-export class List {
+export class ReportCards {
   readonly Roles = Roles;
 
   @Input() data: ResidentReportIncidenceDTO[] = [];
@@ -25,8 +25,8 @@ export class List {
   @Output() respond = new EventEmitter<ResidentReportIncidenceDTO>();
   @Output() openView = new EventEmitter<ResidentReportIncidenceDTO>();
 
-  /** Filas fantasma para el skeleton de carga inicial (F8). */
-  readonly skeletonRows = Array.from({ length: 6 });
+  /** Tarjetas fantasma para el skeleton de carga inicial (F8). */
+  readonly skeletonCards = Array.from({ length: 6 });
 
   constructor(public authService: AuthService) {}
 

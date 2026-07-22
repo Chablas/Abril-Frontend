@@ -1,8 +1,8 @@
 <div class="flex mt-[15px]">
     <p *ngFor="let tab of tabs" (click)="tabChange.emit(tab.key)"
         class="cursor-pointer border rounded-t-lg py-[10px] px-[15px] font-medium" [ngClass]="activeTab === tab.key
-       ? 'border-t-[var(--color-abril-primary)] border-x-[var(--color-abril-primary)] border-b-white text-[var(--color-abril-primary)]'
-       : 'border-t-[#E2E2E2] border-x-[#E2E2E2] border-b-[var(--color-abril-primary)] text-[#224051] bg-[#F8F8F8]'">
+       ? 'border-t-[var(--color-abril-standard)] border-x-[var(--color-abril-standard)] border-b-white text-[var(--color-abril-standard)]'
+       : 'border-t-[#E2E2E2] border-x-[#E2E2E2] border-b-[var(--color-abril-standard)] text-[#224051] bg-[#F8F8F8]'">
         {{ tab.label }}
     </p>
 </div>
