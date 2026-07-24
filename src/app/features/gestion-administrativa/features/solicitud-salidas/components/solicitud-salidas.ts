@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { SolicitudSalidaCreate } from './create/create';
 import { SolicitudSalidasService } from '../services/solicitud-salidas.service';
@@ -18,7 +19,7 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-
+
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 @Component({
   standalone: true,
@@ -53,6 +54,7 @@ export class SolicitudSalidas implements OnInit {
     { value: 'Pendiente', label: 'Pendientes' },
     { value: 'Aprobado',  label: 'Aprobadas' },
     { value: 'Rechazado', label: 'Rechazadas' },
+    { value: 'Cancelado', label: 'Canceladas' },
   ];
   readonly estadoRendicionOptions = [
     { value: null,         label: 'Todas' },
@@ -204,6 +206,41 @@ export class SolicitudSalidas implements OnInit {
     return this.selectedSolicitudes.filter((s) => this.esSeleccionable(s));
   }
 
+  /** Seleccionadas que se pueden cancelar: solo las que siguen Pendientes (todas son propias aquí). */
+  get selectedCancelables(): SolicitudSalidaListItemDto[] {
+    return this.selectedSolicitudes.filter((s) => s.estadoAprobacion === 'Pendiente');
+  }
+
+  /** Cancela en bloque las solicitudes pendientes seleccionadas. */
+  async cancelarBulk(): Promise<void> {
+    const items = this.selectedCancelables;
+    if (items.length === 0) return;
+
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: items.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${items.length} solicitudes?`,
+      text: 'Se anularán tus solicitudes pendientes seleccionadas. Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#D30000',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    forkJoin(items.map((s) => this.service.cancelar(s.id))).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) cancelada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ── Acción bulk: rendir + descargar planilla ─────────────────────────
   rendirBulk(): Promise<void> {
     return this.rendir(this.selectedRendibles.map((s) => s.id));
@@ -284,6 +321,7 @@ export class SolicitudSalidas implements OnInit {
     switch (estado) {
       case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
       case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+      case 'Cancelado': return { bg: '#E5E7EB', text: '#4B5563' };
       default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
     }
   }

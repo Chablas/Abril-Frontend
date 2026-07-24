@@ -26,7 +26,7 @@ import { FabButton } from '../../../../../shared/components/fab-button/fab-butto
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-
+
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -59,6 +59,7 @@ export class GestionSalidas implements OnInit {
     { value: 'Pendiente', label: 'Pendientes' },
     { value: 'Aprobado',  label: 'Aprobadas' },
     { value: 'Rechazado', label: 'Rechazadas' },
+    { value: 'Cancelado', label: 'Canceladas' },
   ];
 
   filters = {
@@ -505,6 +506,44 @@ export class GestionSalidas implements OnInit {
     return this.selectedSalidas.filter((s) => this.esSeleccionable(s));
   }
 
+  /**
+   * Seleccionadas que el usuario puede cancelar: solo las SUYAS (esPropia) y en estado Pendiente.
+   * Nunca se cancelan solicitudes de otros trabajadores.
+   */
+  get selectedCancelables(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => s.esPropia && s.estadoAprobacion === 'Pendiente');
+  }
+
+  /** Cancela en bloque las solicitudes propias y pendientes de la selección. */
+  async cancelarBulk(): Promise<void> {
+    const items = this.selectedCancelables;
+    if (items.length === 0) return;
+
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: items.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${items.length} solicitud(es)?`,
+      text: 'Se anularán tus solicitudes pendientes seleccionadas. Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#D30000',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    forkJoin(items.map((s) => this.service.cancelar(s.id))).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ title: `${items.length} solicitud(es) cancelada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.load(this.currentPage);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   async marcarRendidasBulk(): Promise<void> {
     const ids = this.selectedRendibles.map((s) => s.id);
     if (ids.length === 0) return;
@@ -584,6 +623,7 @@ export class GestionSalidas implements OnInit {
     switch (estado) {
       case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
       case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+      case 'Cancelado': return { bg: '#E5E7EB', text: '#4B5563' };
       default:          return { bg: '#FEF9C3', text: '#92400E' };
     }
   }

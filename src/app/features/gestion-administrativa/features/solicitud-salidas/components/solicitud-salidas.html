@@ -25,6 +25,19 @@
       </svg>
       Rendir<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
     </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="cancelarBulk()"
+      [disabled]="selectedCancelables.length === 0"
+      title="Solo puedes cancelar tus solicitudes pendientes">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <circle cx="12" cy="12" r="9"/>
+        <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4"/>
+      </svg>
+      Cancelar<span *ngIf="selectedCancelables.length > 0"> ({{ selectedCancelables.length }})</span>
+    </button>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->

@@ -72,6 +72,13 @@ export class SolicitudSalidasService {
     });
   }
 
+  /** Cancela una solicitud propia que esté Pendiente (registrada por error o salida no realizada). */
+  cancelar(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/cancelar`, {}, {
+      headers: this.headers,
+    });
+  }
+
   /**
    * El trabajador rinde sus propias solicitudes seleccionadas Y descarga la planilla de gasto
    * por movilidad. El backend responde con un PDF; el conteo viene en el header X-Rendidas-Count.

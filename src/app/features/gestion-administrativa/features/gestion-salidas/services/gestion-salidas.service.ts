@@ -83,6 +83,13 @@ export class GestionSalidasService {
     });
   }
 
+  /** El propio trabajador cancela una solicitud SUYA que esté Pendiente. */
+  cancelar(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/cancelar`, {}, {
+      headers: this.headers,
+    });
+  }
+
   /**
    * Marca las solicitudes como rendidas Y descarga la planilla de gasto por movilidad.
    * El backend responde con un .xlsx; el conteo de procesadas viene en el header X-Rendidas-Count.
