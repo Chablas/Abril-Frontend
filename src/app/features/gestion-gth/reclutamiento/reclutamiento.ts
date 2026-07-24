@@ -12,9 +12,11 @@ import { SearchSelect } from '../../../shared/components/search-select/search-se
 import { ClientPager } from '../../../shared/utils/client-pager';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ReclutamientoService } from './services/reclutamiento.service';
 import { Opcion, RequerimientoGthListItem } from './dtos/reclutamiento.dto';
 import { GthDetalleRequerimiento } from './components/detalle/detalle';
+import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { estadoColors } from './estado-colors';
 
 /**
@@ -38,6 +40,7 @@ import { estadoColors } from './estado-colors';
     SearchInput,
     SearchSelect,
     GthDetalleRequerimiento,
+    GthConfiguracionCorreos,
   ],
   templateUrl: './reclutamiento.html',
   styles: [`
@@ -63,13 +66,30 @@ export class GthReclutamiento implements OnInit {
   /** Requerimiento abierto en el modal de detalle (null = modal cerrado). */
   detalleId: number | null = null;
 
+  /** Modal de configuración del correo de long list (solo con la feature). */
+  showConfig = false;
+
   private readonly pager = new ClientPager<RequerimientoGthListItem>();
 
   constructor(
     private service: ReclutamientoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
   ) {}
+
+  /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
+  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
+
+  /** ¿El usuario puede configurar el correo? (según los roles asignados a la feature). */
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GthReclutamiento.FEATURE_CONFIG);
+  }
+
+  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
 
   ngOnInit(): void {
     this.load();

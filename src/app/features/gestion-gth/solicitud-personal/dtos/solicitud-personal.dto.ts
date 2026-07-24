@@ -32,14 +32,6 @@ export interface SolicitudPersonalCreateResult {
   message: string;
 }
 
-/** Destinatarios del correo de "nueva solicitud de personal" (config). */
-export interface CorreoDestinatarios {
-  /** Destinatarios principales (Para/To). */
-  principales: string[];
-  /** Destinatarios en copia (CC). */
-  copias: string[];
-}
-
 /** Una fase del pipeline dentro del seguimiento vertical del requerimiento. */
 export interface FaseSeguimiento {
   codigo: string;

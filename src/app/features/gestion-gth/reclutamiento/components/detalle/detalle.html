@@ -218,8 +218,8 @@
         </div>
       }
 
-      <!-- ── Long list: CVs seleccionados ───────────────────────────────── -->
-      @if (enLongList) {
+      <!-- ── Long list: CVs seleccionados (solo mientras no se haya enviado) ─ -->
+      @if (enLongList && !longListEnviada) {
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
           <button type="button"
@@ -334,14 +334,21 @@
               </div>
             }
 
-            <!-- Envío de la long list: se habilitará cuando se implemente el guardado
-                 (SharePoint/BD) y la notificación por correo al solicitante. -->
+            <!-- Envío de la long list: sube los CVs/informes, dispara el correo al solicitante
+                 y avanza el requerimiento a "Long list enviada". -->
             <button type="button"
-              class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+              class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
+              [ngClass]="puedeEnviarLongList ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
               style="background:var(--color-abril-logo-blue)"
-              disabled>
-              Enviar long list y notificar por correo al solicitante
+              [disabled]="!puedeEnviarLongList"
+              (click)="enviarLongList()">
+              {{ enviando ? 'Enviando…' : 'Enviar long list y notificar por correo al solicitante' }}
             </button>
+            @if (candidatos.length === 0) {
+              <p class="text-[11.5px] text-gray-500 mt-[6px] text-center">
+                Sube al menos un CV para habilitar el envío de la long list.
+              </p>
+            }
           }
         </div>
       }

@@ -1,17 +1,19 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
-import { LoaderService } from '../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../core/services/error.service';
-import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
+import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { LoaderService } from '../../../../core/services/loader.service';
+import { ErrorService } from '../../../../core/services/error.service';
+import { CorreoDestinatariosService, CorreoTipo } from '../services/correo-destinatarios.service';
 
 /**
- * Configuración de los destinatarios del correo que se envía al registrar una nueva
- * solicitud de personal. Dos listas de correos: principales (Para) y copias (CC).
- * Permite cambiar fácilmente entre un correo de pruebas y el de GTH sin redeploy.
+ * Configuración de los destinatarios de un correo de Reclutamiento. Dos listas de correos:
+ * principales (Para) y copias (CC). Reutilizable por tipo de correo:
+ *   - `solicitud` → correo de nueva solicitud de personal (va a GTH).
+ *   - `long-list` → correo de long list enviada (va al solicitante).
+ * Permite cambiar fácilmente entre un correo de pruebas y el de producción sin redeploy.
  */
 @Component({
   standalone: true,
@@ -20,6 +22,13 @@ import { SolicitudPersonalService } from '../../services/solicitud-personal.serv
   templateUrl: './configuracion-correos.html',
 })
 export class GthConfiguracionCorreos implements OnInit {
+  /** Qué correo se está configurando. */
+  @Input({ required: true }) tipo!: CorreoTipo;
+  /** Título del modal. */
+  @Input() titulo = 'CONFIGURACIÓN DEL CORREO';
+  /** Texto introductorio que explica a quién se envía el correo. */
+  @Input() intro = '';
+
   @Output() closeModal = new EventEmitter<void>();
 
   principales: string[] = [];
@@ -31,14 +40,14 @@ export class GthConfiguracionCorreos implements OnInit {
   private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   constructor(
-    private service: SolicitudPersonalService,
+    private service: CorreoDestinatariosService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
     this.loaderService.show();
-    this.service.getCorreoDestinatarios().subscribe({
+    this.service.get(this.tipo).subscribe({
       next: (data) => {
         this.principales = data.principales ?? [];
         this.copias = data.copias ?? [];
@@ -116,18 +125,16 @@ export class GthConfiguracionCorreos implements OnInit {
     }
 
     this.loaderService.show();
-    this.service
-      .saveCorreoDestinatarios({ principales: this.principales, copias: this.copias })
-      .subscribe({
-        next: (res) => {
-          this.loaderService.hide();
-          Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
-          this.closeModal.emit();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-        },
-      });
+    this.service.save(this.tipo, { principales: this.principales, copias: this.copias }).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.closeModal.emit();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 }

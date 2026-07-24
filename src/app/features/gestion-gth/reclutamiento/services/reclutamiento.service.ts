@@ -79,4 +79,45 @@ export class ReclutamientoService {
       { headers: this.headers },
     );
   }
+
+  /**
+   * Envía la long list al solicitante (multipart): metadatos de cada candidato en `data`
+   * y los archivos (CV e informe opcional) como form files con claves `cv_i` / `informe_i`.
+   * El backend envía el correo configurado y avanza el requerimiento a LONG_LIST_ENVIADA.
+   */
+  enviarLongList(
+    requerimientoId: number,
+    candidatos: LongListCandidatoEnvio[],
+  ): Observable<EstadoTransicionResult> {
+    const formData = new FormData();
+    const meta = candidatos.map((c, i) => {
+      formData.append(`cv_${i}`, c.cv, c.cv.name);
+      const informeKey = c.informe ? `informe_${i}` : null;
+      if (c.informe) formData.append(`informe_${i}`, c.informe, c.informe.name);
+      return {
+        nombre: c.nombre,
+        fuenteNombre: c.fuenteNombre,
+        comentario: c.comentario,
+        cvKey: `cv_${i}`,
+        informeKey,
+      };
+    });
+    formData.append('data', JSON.stringify({ candidatos: meta }));
+
+    return this.http.post<EstadoTransicionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/enviar`,
+      formData,
+      { headers: this.headers },
+    );
+  }
+}
+
+/** Candidato de la long list a enviar (CV obligatorio, informe opcional). */
+export interface LongListCandidatoEnvio {
+  nombre: string;
+  /** Nombre de la fuente de reclutamiento (canal), para mostrar en el correo. */
+  fuenteNombre: string | null;
+  comentario: string;
+  cv: File;
+  informe: File | null;
 }

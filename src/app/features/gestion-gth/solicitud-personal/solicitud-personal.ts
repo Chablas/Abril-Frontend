@@ -14,7 +14,7 @@ import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { GthNuevaSolicitud } from './components/nueva-solicitud/nueva-solicitud';
-import { GthConfiguracionCorreos } from './components/configuracion-correos/configuracion-correos';
+import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
 import { SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';

@@ -1,12 +1,8 @@
-<app-base-modal [title]="'CONFIGURACIÓN DEL CORREO DE SOLICITUDES'" width="w-[560px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="titulo" width="w-[560px]" (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
-    <p class="text-[12px] text-gray-500 leading-snug">
-      Define a quién se le envía el correo cuando se registra una nueva solicitud de personal.
-      Los <b>principales</b> van en «Para» y las <b>copias</b> en «CC». Cámbialos aquí para pruebas
-      y en producción sin necesidad de volver a desplegar.
-    </p>
+    <p class="text-[12px] text-gray-500 leading-snug">{{ intro }}</p>
 
     <!-- ── Destinatarios principales (Para) ─────────────────────────────── -->
     <div class="flex flex-col gap-[8px]">

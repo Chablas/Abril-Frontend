@@ -58,6 +58,7 @@ export const Roles = {
   PREVENCIONISTA:                   '72', // PREVENCIONISTA
   CONTRATISTA_SUPERVISOR_CAMPO:     '74', // CONTRATISTA - SUPERVISOR DE CAMPO
   ADMINISTRADOR_SOLICITUD_SALIDAS:  '76', // ADMINISTRADOR DE SOLICITUD DE SALIDAS
+  USUARIO_GTH:                      '77', // USUARIO DE GTH
 } as const;
 
 /** Unión de los valores literales de rol (para tipar parámetros que esperen un rol). */

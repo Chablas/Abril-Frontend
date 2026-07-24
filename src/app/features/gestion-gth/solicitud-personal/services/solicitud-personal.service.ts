@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
-  CorreoDestinatarios,
   ReclutamientoFormDataDto,
   Seguimiento,
   SolicitudPersonalCreateDto,
@@ -40,22 +39,6 @@ export class SolicitudPersonalService {
   getSeguimiento(requerimientoId: number): Observable<Seguimiento> {
     return this.http.get<Seguimiento>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/seguimiento`,
-      { headers: this.headers },
-    );
-  }
-
-  /** Destinatarios configurados del correo de nueva solicitud. */
-  getCorreoDestinatarios(): Observable<CorreoDestinatarios> {
-    return this.http.get<CorreoDestinatarios>(`${this.apiUrl}/config/correo-destinatarios`, {
-      headers: this.headers,
-    });
-  }
-
-  /** Guarda (reemplaza) los destinatarios del correo de nueva solicitud. */
-  saveCorreoDestinatarios(dto: CorreoDestinatarios): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(
-      `${this.apiUrl}/config/correo-destinatarios`,
-      dto,
       { headers: this.headers },
     );
   }

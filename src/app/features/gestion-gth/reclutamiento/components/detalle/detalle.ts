@@ -9,7 +9,7 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ReclutamientoService } from '../../services/reclutamiento.service';
+import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/reclutamiento.service';
 import { AsignacionGth, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
 import { estadoColors, faseAlcanzada } from '../../estado-colors';
 
@@ -70,6 +70,9 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionRevisionCv = true;
   seccionLongList = true;
 
+  /** true mientras se envía la long list (deshabilita el botón para evitar doble envío). */
+  enviando = false;
+
   private huboCambios = false;
 
   constructor(
@@ -117,8 +120,15 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST');
   }
 
+  /** true si la long list ya fue enviada al solicitante (fase LONG_LIST_ENVIADA o posterior). */
+  get longListEnviada(): boolean {
+    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_ENVIADA');
+  }
+
   /** Texto del recuadro "Siguiente paso" según la fase actual. */
   get siguientePasoTexto(): string {
+    if (this.longListEnviada)
+      return 'Esperar revisión del solicitante para continuar con evaluación.';
     if (this.enLongList)
       return (
         'Subir los CVs seleccionados para la long list y registrar, para cada candidato, ' +
@@ -248,6 +258,65 @@ export class GthDetalleRequerimiento implements OnInit {
 
   quitarInforme(candidato: CandidatoLongList): void {
     candidato.informe = null;
+  }
+
+  /** true si se puede enviar la long list (hay al menos un candidato y no se está enviando). */
+  get puedeEnviarLongList(): boolean {
+    return this.candidatos.length > 0 && !this.enviando;
+  }
+
+  /**
+   * Envía la long list al solicitante: sube los CVs/informes, dispara el correo configurado
+   * y avanza el requerimiento a LONG_LIST_ENVIADA. Al terminar, el modal pasa al estado
+   * "Long list enviada" (se oculta la carga de candidatos y cambia el "Siguiente paso").
+   */
+  enviarLongList(): void {
+    if (!this.detalle || !this.puedeEnviarLongList) return;
+
+    // Cada candidato debe tener nombre; el CV ya es obligatorio por construcción.
+    const sinNombre = this.candidatos.some((c) => !c.nombre.trim());
+    if (sinNombre) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el nombre de un candidato',
+        text: 'Registra el nombre y apellido de cada candidato antes de enviar la long list.',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    const canales = this.detalle.canales;
+    const candidatos: LongListCandidatoEnvio[] = this.candidatos.map((c) => ({
+      nombre: c.nombre.trim(),
+      fuenteNombre: canales.find((canal) => canal.id === c.fuenteCanalId)?.nombre ?? null,
+      comentario: c.comentario.trim(),
+      cv: c.cv,
+      informe: c.informe,
+    }));
+
+    this.enviando = true;
+    this.loaderService.show();
+    this.service.enviarLongList(this.requerimientoId, candidatos).subscribe({
+      next: (res) => {
+        this.huboCambios = true;
+        this.detalle!.estadoCodigo = res.estadoCodigo;
+        this.detalle!.estadoNombre = res.estadoNombre;
+        this.candidatos = [];
+        this.enviando = false;
+        this.loaderService.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Long list enviada',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviando = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   /**
