@@ -6,7 +6,13 @@
 
     <!-- ── Destinatarios principales (Para) ─────────────────────────────── -->
     <div class="flex flex-col gap-[8px]">
-      <label class="text-sm font-semibold text-gray-700">Destinatarios principales (Para)</label>
+      <label class="text-sm font-semibold text-gray-700">
+        {{ principalOpcional ? 'Destinatarios principales adicionales (Para)' : 'Destinatarios principales (Para)' }}
+      </label>
+      <p *ngIf="principalOpcional" class="text-[12px] text-gray-500 leading-snug -mt-[2px]">
+        El solicitante que registró la solicitud siempre va como destinatario principal (Para)
+        de forma automática. Aquí solo agregas correos principales adicionales si los necesitas.
+      </p>
 
       <div class="flex gap-[8px]">
         <input
@@ -26,7 +32,9 @@
 
       <div class="flex flex-wrap gap-[8px]">
         <span *ngIf="principales.length === 0" class="text-[12px] text-gray-400 italic">
-          Sin destinatarios principales. Sin al menos uno, el correo no se enviará.
+          {{ principalOpcional
+              ? 'Sin principales adicionales. El correo se enviará solo al solicitante.'
+              : 'Sin destinatarios principales. Sin al menos uno, el correo no se enviará.' }}
         </span>
         <span *ngFor="let email of principales"
               class="inline-flex items-center gap-[6px] rounded-full pl-[12px] pr-[6px] py-[4px] text-[12px] font-medium"

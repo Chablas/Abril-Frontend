@@ -16,8 +16,9 @@ import { AuthService } from '../../../core/services/auth.service';
 import { GthNuevaSolicitud } from './components/nueva-solicitud/nueva-solicitud';
 import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { GthSeguimiento } from './components/seguimiento/seguimiento';
+import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
-import { SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';
+import { GestionCandidatoCard, SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';
 
 @Component({
   standalone: true,
@@ -35,6 +36,7 @@ import { SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';
     GthNuevaSolicitud,
     GthConfiguracionCorreos,
     GthSeguimiento,
+    GthRevisionLongList,
   ],
   templateUrl: './solicitud-personal.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -46,6 +48,12 @@ export class GthSolicitudPersonal implements OnInit {
 
   /** Requerimiento cuyo seguimiento se está viendo (null = modal cerrado). */
   seguimientoId: number | null = null;
+
+  /** Requerimiento cuya long list se está revisando (null = modal cerrado). */
+  revisionId: number | null = null;
+
+  /** Tarjetas "Gestión de candidatos" (long lists que GTH ya envió para revisar). */
+  gestionCandidatos: GestionCandidatoCard[] = [];
 
   solicitudes: SolicitudVacanteListItem[] = [];
 
@@ -81,9 +89,10 @@ export class GthSolicitudPersonal implements OnInit {
 
   load(): void {
     this.loaderService.show();
-    this.service.getMisSolicitudes().subscribe({
+    this.service.getPanel().subscribe({
       next: (data) => {
-        this.solicitudes = data;
+        this.gestionCandidatos = data.gestionCandidatos;
+        this.solicitudes = data.misSolicitudes;
         this.pager.reset();
         this.loaderService.hide();
       },
@@ -108,6 +117,15 @@ export class GthSolicitudPersonal implements OnInit {
 
   cerrarSeguimiento(): void {
     this.seguimientoId = null;
+  }
+
+  // ── Revisión de la long list ("Revisar long list y CVs") ───────────────
+  abrirRevision(c: GestionCandidatoCard): void {
+    this.revisionId = c.requerimientoId;
+  }
+
+  cerrarRevision(): void {
+    this.revisionId = null;
   }
 
   // ── Tarjetas resumen (solo las dos que ya funcionan) ───────────────────

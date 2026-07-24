@@ -96,6 +96,10 @@ export class ReclutamientoService {
       if (c.informe) formData.append(`informe_${i}`, c.informe, c.informe.name);
       return {
         nombre: c.nombre,
+        puesto: c.puesto,
+        experienciaAnios: c.experienciaAnios,
+        disponibilidad: c.disponibilidad,
+        fuenteCanalId: c.fuenteCanalId,
         fuenteNombre: c.fuenteNombre,
         comentario: c.comentario,
         cvKey: `cv_${i}`,
@@ -115,6 +119,14 @@ export class ReclutamientoService {
 /** Candidato de la long list a enviar (CV obligatorio, informe opcional). */
 export interface LongListCandidatoEnvio {
   nombre: string;
+  /** Puesto detectado en el CV (texto libre). Null si no se determinó. */
+  puesto: string | null;
+  /** Tiempo de experiencia en años. Null si no se determinó. */
+  experienciaAnios: number | null;
+  /** Disponibilidad del candidato (texto libre). Null si no se determinó. */
+  disponibilidad: string | null;
+  /** Id del canal de publicación usado como fuente de reclutamiento. */
+  fuenteCanalId: number | null;
   /** Nombre de la fuente de reclutamiento (canal), para mostrar en el correo. */
   fuenteNombre: string | null;
   comentario: string;

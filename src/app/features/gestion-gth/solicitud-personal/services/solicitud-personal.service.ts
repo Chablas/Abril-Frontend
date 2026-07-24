@@ -4,10 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   ReclutamientoFormDataDto,
+  RevisionLongList,
   Seguimiento,
+  SolicitantePanel,
   SolicitudPersonalCreateDto,
   SolicitudPersonalCreateResult,
-  SolicitudVacanteListItem,
 } from '../dtos/solicitud-personal.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -28,11 +29,22 @@ export class SolicitudPersonalService {
     });
   }
 
-  /** Tabla "Mis solicitudes de vacante" del usuario logueado. */
-  getMisSolicitudes(): Observable<SolicitudVacanteListItem[]> {
-    return this.http.get<SolicitudVacanteListItem[]>(`${this.apiUrl}/mis-solicitudes`, {
+  /**
+   * Panel del solicitante en una sola petición: tarjetas de "Gestión de candidatos" (long lists
+   * que GTH le envió) + tabla "Mis solicitudes de vacante".
+   */
+  getPanel(): Observable<SolicitantePanel> {
+    return this.http.get<SolicitantePanel>(`${this.apiUrl}/solicitante/panel`, {
       headers: this.headers,
     });
+  }
+
+  /** Revisión de la long list de un requerimiento (cabecera + candidatos con su CV). */
+  getRevisionLongList(requerimientoId: number): Observable<RevisionLongList> {
+    return this.http.get<RevisionLongList>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/revision`,
+      { headers: this.headers },
+    );
   }
 
   /** Detalle de seguimiento de un requerimiento (cabecera + fases del pipeline). */

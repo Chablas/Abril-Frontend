@@ -7,6 +7,7 @@ import { RacService } from '../../services/rac.service';
 import { RacDetalleDto, RacCerrarRequest } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 import Swal from 'sweetalert2';
@@ -33,6 +34,7 @@ export class RacCerrar implements OnInit {
     private racService: RacService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -54,6 +56,20 @@ export class RacCerrar implements OnInit {
       next: (rac) => {
         this.rac = rac;
         if (rac.estado === 'Cerrado') {
+          this.router.navigate(['/ssoma/gestion/rac', id]);
+          return;
+        }
+        // Solo la empresa observada (reportada) puede cerrar. Si un contratista llega
+        // aquí por URL directa siendo solo la reportante, se le devuelve al detalle con
+        // un mensaje claro en vez de dejarlo subir la evidencia y fallar al confirmar.
+        if (this.authService.isContratista()
+            && this.authService.getEmpresaId() !== rac.empresaReportadaId) {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'info',
+            title: 'No disponible',
+            text: 'Solo la empresa observada puede cerrar este RAC.',
+          });
           this.router.navigate(['/ssoma/gestion/rac', id]);
           return;
         }

@@ -17,7 +17,7 @@
         <i class="ti ti-file-type-pdf"></i>
         {{ descargandoPdf ? 'Generando...' : 'PDF' }}
       </button>
-      <button type="button" class="btn-primary" *ngIf="rac.estado === 'Abierto'" (click)="irACerrar()">
+      <button type="button" class="btn-primary" *ngIf="puedeCerrar" (click)="irACerrar()">
         <i class="ti ti-lock"></i> Cerrar RAC
       </button>
     </div>

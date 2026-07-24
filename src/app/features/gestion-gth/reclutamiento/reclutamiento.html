@@ -147,7 +147,8 @@
   *ngIf="showConfig && puedeConfigurar"
   tipo="long-list"
   titulo="CONFIGURACIÓN DEL CORREO DE LONG LIST"
-  intro="Define a quién se le envía el correo cuando GTH envía la long list de CVs al solicitante. Los principales van en «Para» y las copias en «CC». Cámbialos aquí para pruebas y en producción sin necesidad de volver a desplegar."
+  [principalOpcional]="true"
+  intro="Cuando GTH envía la long list de CVs, el destinatario principal (Para) es SIEMPRE el solicitante que registró la solicitud. Aquí solo defines destinatarios principales adicionales y las copias (CC). Cámbialos para pruebas y en producción sin necesidad de volver a desplegar."
   (closeModal)="showConfig = false">
 </app-gth-configuracion-correos>
 

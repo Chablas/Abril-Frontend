@@ -28,6 +28,12 @@ export class GthConfiguracionCorreos implements OnInit {
   @Input() titulo = 'CONFIGURACIÓN DEL CORREO';
   /** Texto introductorio que explica a quién se envía el correo. */
   @Input() intro = '';
+  /**
+   * Si es true, los destinatarios principales (Para) son OPCIONALES: el destinatario principal
+   * ya lo pone el backend automáticamente (ej. long-list → siempre el solicitante) y esta lista
+   * solo agrega principales extra. Con false (default) se exige al menos un principal.
+   */
+  @Input() principalOpcional = false;
 
   @Output() closeModal = new EventEmitter<void>();
 
@@ -114,7 +120,7 @@ export class GthConfiguracionCorreos implements OnInit {
 
   // ── Guardar ─────────────────────────────────────────────────────────────
   guardar(): void {
-    if (this.principales.length === 0) {
+    if (!this.principalOpcional && this.principales.length === 0) {
       Swal.fire({
         title: 'Falta un destinatario principal',
         text: 'Agrega al menos un correo principal (Para) para que se envíe la notificación.',

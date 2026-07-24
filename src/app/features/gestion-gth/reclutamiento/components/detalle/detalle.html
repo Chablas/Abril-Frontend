@@ -283,6 +283,35 @@
                   escribirlo o corregirlo manualmente.
                 </p>
 
+                <!-- Puesto -->
+                <div class="abril-field mt-[12px]">
+                  <label class="abril-field-label" [for]="'candidato-puesto-' + i">Puesto</label>
+                  <input [id]="'candidato-puesto-' + i" type="text" class="abril-field-input"
+                    [(ngModel)]="c.puesto"
+                    placeholder="Puesto al que postula (ej. Supervisor de Obra)" />
+                </div>
+
+                <!-- Tiempo de experiencia (años) y disponibilidad -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-[10px] mt-[10px]">
+                  <div class="abril-field">
+                    <label class="abril-field-label" [for]="'candidato-experiencia-' + i">Tiempo de experiencia (años)</label>
+                    <input [id]="'candidato-experiencia-' + i" type="number" min="0" max="60" class="abril-field-input"
+                      [(ngModel)]="c.experienciaAnios"
+                      placeholder="Ej. 8" />
+                  </div>
+                  <div class="abril-field">
+                    <label class="abril-field-label" [for]="'candidato-disponibilidad-' + i">Disponibilidad</label>
+                    <input [id]="'candidato-disponibilidad-' + i" type="text" class="abril-field-input"
+                      [(ngModel)]="c.disponibilidad"
+                      placeholder="Ej. 15 días / Inmediata" />
+                  </div>
+                </div>
+
+                <p class="text-[11.5px] text-gray-500 mt-[6px] leading-snug">
+                  A futuro estos datos se completarán automáticamente desde el CV; por ahora se
+                  registran a mano.
+                </p>
+
                 <!-- Fuente de reclutamiento -->
                 <div class="mt-[10px]">
                   <app-search-select

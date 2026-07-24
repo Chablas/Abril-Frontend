@@ -22,6 +22,15 @@ interface CandidatoLongList {
   cv: File;
   /** Nombre y apellido (prellenado desde el nombre del archivo; el usuario lo corrige). */
   nombre: string;
+  /**
+   * Puesto detectado en el CV. Hoy se escribe a mano; a futuro lo prellenará una IA a partir
+   * del CV (con corrección manual como respaldo).
+   */
+  puesto: string;
+  /** Tiempo de experiencia en años (a futuro lo prellenará la IA). Null si no se indicó. */
+  experienciaAnios: number | null;
+  /** Disponibilidad del candidato ("15 días", "Inmediata"…; a futuro la prellenará la IA). */
+  disponibilidad: string;
   /** Canal de publicación usado como fuente de reclutamiento. */
   fuenteCanalId: number | null;
   /** Observaciones internas de GTH sobre el candidato. */
@@ -238,6 +247,9 @@ export class GthDetalleRequerimiento implements OnInit {
       this.candidatos.push({
         cv: file,
         nombre: this.derivarNombre(file.name),
+        puesto: '',
+        experienciaAnios: null,
+        disponibilidad: '',
         fuenteCanalId: null,
         comentario: '',
         informe: null,
@@ -288,6 +300,10 @@ export class GthDetalleRequerimiento implements OnInit {
     const canales = this.detalle.canales;
     const candidatos: LongListCandidatoEnvio[] = this.candidatos.map((c) => ({
       nombre: c.nombre.trim(),
+      puesto: c.puesto.trim() || null,
+      experienciaAnios: c.experienciaAnios,
+      disponibilidad: c.disponibilidad.trim() || null,
+      fuenteCanalId: c.fuenteCanalId,
       fuenteNombre: canales.find((canal) => canal.id === c.fuenteCanalId)?.nombre ?? null,
       comentario: c.comentario.trim(),
       cv: c.cv,

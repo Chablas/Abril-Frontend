@@ -80,3 +80,58 @@ export interface SolicitudVacanteListItem {
   estadoCodigo: string;
   estadoNombre: string;
 }
+
+/**
+ * Tarjeta de "Gestión de candidatos": un requerimiento cuya long list ya fue enviada por
+ * GTH (estado LONG_LIST_ENVIADA) y está pendiente de la revisión del solicitante.
+ */
+export interface GestionCandidatoCard {
+  requerimientoId: number;
+  codigo: string;
+  puesto: string;
+  area: string | null;
+  proyectoObra: string | null;
+  /** Cantidad de candidatos que GTH cargó en la long list. */
+  totalCandidatos: number;
+  estadoCodigo: string;
+  estadoNombre: string;
+}
+
+/** Panel de la vista del solicitante: tarjetas de gestión de candidatos + tabla de solicitudes. */
+export interface SolicitantePanel {
+  gestionCandidatos: GestionCandidatoCard[];
+  misSolicitudes: SolicitudVacanteListItem[];
+}
+
+/** Un candidato de la long list como lo revisa el solicitante (modal "Revisar long list y CVs"). */
+export interface CandidatoRevision {
+  candidatoId: number;
+  nombre: string;
+  puesto: string | null;
+  experienciaAnios: number | null;
+  disponibilidad: string | null;
+  /** Fuente de reclutamiento (nombre del canal). */
+  fuenteNombre: string | null;
+  comentario: string | null;
+  /** Nombre y link del CV en SharePoint (para "Ver CV completo"). */
+  cvNombre: string | null;
+  cvUrl: string | null;
+  /** Nombre y link del informe en SharePoint (opcional). */
+  informeNombre: string | null;
+  informeUrl: string | null;
+  /** Estado de revisión (PENDIENTE / APROBADO / RECHAZADO). */
+  estadoCodigo: string;
+  estadoNombre: string;
+}
+
+/** Revisión de la long list de un requerimiento: cabecera + candidatos. */
+export interface RevisionLongList {
+  requerimientoId: number;
+  codigo: string;
+  puesto: string;
+  area: string | null;
+  proyectoObra: string | null;
+  estadoCodigo: string;
+  estadoNombre: string;
+  candidatos: CandidatoRevision[];
+}
