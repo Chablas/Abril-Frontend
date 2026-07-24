@@ -313,8 +313,14 @@ export class SolicitudSalidas implements OnInit {
     this.capturasId = s.id;
   }
 
-  cerrarCapturas(): void {
+  /**
+   * Cierra el modal de capturas. Si se subió al menos una captura (`recargar`), recarga el listado
+   * para refrescar `puedeRendirse` — de lo contrario el botón "Rendir" seguiría deshabilitado con
+   * datos viejos. No recarga si el usuario solo abrió y cerró sin subir nada.
+   */
+  cerrarCapturas(recargar: boolean): void {
     this.capturasId = null;
+    if (recargar) this.load();
   }
 
   aprobacionColors(estado: string): { bg: string; text: string } {

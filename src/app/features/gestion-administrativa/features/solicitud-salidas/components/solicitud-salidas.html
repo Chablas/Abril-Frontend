@@ -213,7 +213,7 @@
 <app-solicitud-salida-capturas-modal
   *ngIf="capturasId !== null"
   [solicitudId]="capturasId"
-  (close)="cerrarCapturas()" />
+  (close)="cerrarCapturas($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
