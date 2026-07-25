@@ -4694,3 +4694,23 @@ Barrido completo de `--color-abril-primary`/`#64BC04` → `--color-abril-standar
 
 ### Pendiente / notas
 - Los `.spec.ts` del feature son smoke tests (`should create`) y no referencian la API removida — compilan sin cambios.
+
+## Sesión 2026-07-25 — Merge de `origin/master` a `victor-frontend`
+
+Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `victor-frontend` los cambios que avanzaron en `master`/`origin/master` mientras esta rama estaba en curso.
+
+### Qué se hizo
+1. `git merge master` (local) → `Already up to date` (no había commits nuevos en el `master` local que no estuvieran ya en la rama).
+2. `git fetch origin master` + `git merge origin/master` → merge limpio por estrategia `ort`, **sin conflictos** (commit `6b913131`). Nada relacionado a `report-response-control` apareció en la lista de cambios.
+3. `ng build` (vía `npm run build`) tras el merge: **0 errores**, mismos warnings preexistentes de terceros (CommonJS/ESM de `canvg`, `flatpickr`).
+4. Push a `origin/victor-frontend` vía skill `guardar-rama`.
+
+### Contenido traído por el merge (no escrito en esta sesión, viene de `master`)
+- Feature nuevo **`gestion-gth`** completo: rutas (`gestion-gth.routes.ts`), `reclutamiento` (lista + detalle + service + dto + colores de estado) y `solicitud-personal` (lista, nueva-solicitud, revision-long-list, seguimiento, service + dto), más `configuracion-correos` compartido (destinatarios de correo).
+- **`notificaciones-bell`** nuevo en `shared/components/notificaciones/` (bell + service + dto).
+- Reescritura grande de `gestion-salidas` y `solicitud-salidas` (gestión-administrativa): cambios sustanciales en `.ts`/`.html` de ambos, servicios y DTOs.
+- Ajustes menores en `auth.service.ts`, `navigation.service.ts`, `roles.ts`, `app.routes.ts`, `contractor-registration`, `abril-modal-panel`, `abril-page-header`, `worker-search.model.ts`, y en SSOMA (`accidente-crear-editar`, `rac-cerrar`, `rac-detalle`).
+
+### Estado final
+- `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión.
+- Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
